@@ -1,0 +1,11 @@
+biceps 
+Bicepscurl 
+LegExtensions 
+Lowseated 
+Pecdeck 
+Plank 
+Pulldown 
+Pushups 
+SeatedChestPress 
+Tricepspress
+LyingKneeRaise
