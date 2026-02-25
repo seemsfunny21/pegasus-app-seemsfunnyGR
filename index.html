@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pegasus Workout - Final Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="navbar" id="navbar"></div>
+
+    <div class="pegasus-control-bar">
+        <div id="totalProgressContainer">
+            <div id="totalProgress"></div>
+            <div id="totalProgressTime">00:00</div>
+        </div>
+
+        <div class="control-buttons">
+            <button id="btnWarmup" class="p-btn">Προθέρμανση</button>
+            <button id="btnStart" class="p-btn">Έναρξη</button>
+            <button id="btnNext" class="p-btn">Επόμενο</button>
+            <button id="btnCalendarUI" class="p-btn">Ημερολόγιο</button>
+            <button id="btnAchUI" class="p-btn">Επιτεύγματα</button>
+            <button id="btnFoodUI" class="p-btn">Διατροφή</button> 
+            <button id="btnPreviewUI" class="p-btn" style="color: #4CAF50 !important; border-color: #4CAF50 !important;">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</button>
+            <button id="btnSettingsUI" class="p-btn btn-utility">Ρυθμίσεις</button>
+            <button id="btnManualEmail" class="p-btn">EMAIL</button>
+        </div>
+        
+        <div class="info-display">
+            <div class="weather-text">--°C</div>
+<div id="totalWorkoutsDisplay" class="workout-count-text" style="cursor: pointer; border: 1px solid #4CAF50; padding: 5px; border-radius: 5px;">
+    Προπονήσεις: <span id="workoutCounter">--</span>
+</div>
+
+<div id="cardioPanel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid #4CAF50; padding: 20px; z-index: 2000; width: 320px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.8);">
+    <h3 style="color: #4CAF50; margin-top: 0;">Καταγραφή Cardio</h3>
+    
+    <label>Ημερομηνία:</label>
+    <input type="date" id="cDate" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px;">
+    
+    <label>Διαδρομή (π.χ. Γύρος Λίμνης):</label>
+    <input type="text" id="cRoute" placeholder="Πού πήγες;" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px;">
+    
+    <label>Χιλιόμετρα (km):</label>
+    <input type="number" id="cKm" step="0.1" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px;">
+    
+    <label>Χρόνος (π.χ. 01:48):</label>
+    <input type="text" id="cTime" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px;">
+    
+    <label>Θερμίδες (kcal):</label>
+    <input type="number" id="cKcal" style="width:100%; margin-bottom:15px; background:#333; color:white; border:1px solid #444; padding:5px;">
+    
+<div style="display: flex; gap: 10px;">
+    <button onclick="saveCardioData()" style="flex: 1; background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Αποθήκευση</button>
+    
+    <button onclick="PegasusCardio.close()" style="flex: 1; background: #444; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Άκυρο</button>
+</div>
+</div>
+
+            <button id="kcalBtn" class="p-btn kcal-container">
+                🔥 <span class="kcal-value">0.0</span> kcal
+            </button>
+
+            <button id="btnToolsUI" class="p-btn">⚙️ ΕΡΓΑΛΕΙΑ</button>
+        </div>
+
+        <div id="toolsPanel" class="pegasus-panel">
+            <h3>ΕΡΓΑΛΕΙΑ PEGASUS</h3>
+            <div class="setting-item" style="border-top: 1px solid #333; padding-top: 10px; margin-top: 10px;">
+                <p style="color: #4CAF50; font-size: 11px; margin-bottom: 5px; letter-spacing: 1px;">ΣΥΣΤΗΜΑ ΣΥΝΕΡΓΑΤΗ</p>
+                <input type="text" id="partnerNameInput" list="partnerList" placeholder="Όνομα συνεργάτη..." 
+                       style="width: 100%; background: #111; color: #4CAF50; border: 1px solid #4CAF50; padding: 8px; margin-bottom: 5px; border-radius: 4px; font-family: inherit;">
+                <datalist id="partnerList"></datalist>
+                <button id="btnPartnerMode" class="p-btn" onclick="togglePartnerMode()" style="width:100%">ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ</button>
+            </div>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <p>Ήχος:</p>
+                    <button id="btnMuteTools" class="p-btn" style="width:100%">Ήχος: ΕΝΕΡΓΟΣ</button>
+                </div>
+                <div class="setting-item">
+                    <p>Λειτουργία Turbo:</p>
+                    <button id="btnTurboTools" class="p-btn" style="width:100%">Turbo: ΑΝΕΝΕΡΓΟ</button>
+                </div>
+                <div class="setting-item">
+                    <p>Αντίγραφο Ασφαλείας:</p>
+                    <button onclick="window.exportPegasusData()" class="p-btn" style="width:100%">Αποθήκευση Αρχείου</button>
+                </div>
+                <div class="setting-item">
+                    <p>Επαναφορά:</p>
+                    <button onclick="document.getElementById('importFileTools').click()" class="p-btn" style="width:100%">Φόρτωση Αρχείου</button>
+                    <input type="file" id="importFileTools" style="display:none" onchange="window.importPegasusData(event)">
+                </div>
+                <button id="btnOpenGallery" class="p-btn" style="width:100%; margin-top:10px;">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="galleryPanel" class="pegasus-panel" style="width: 550px; height: 750px; display: none; z-index: 9999;">
+        <h3>ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</h3>
+        <div class="upload-zone" onclick="document.getElementById('photoUpload').click()">
+            <p>➕ ΑΝΕΒΑΣΕ ΦΩΤΟΓΡΑΦΙΑ (JPG/PNG)</p>
+            <input type="file" id="photoUpload" accept="image/*" style="display:none" onchange="window.handlePhotoUpload(event)">
+        </div>
+        <div id="progressTimeline" class="timeline-container" style="margin-top:20px; height: calc(100% - 120px); overflow-y:auto;"></div>
+    </div>
+
+    <div id="calendarPanel" class="pegasus-panel panel-calendar">
+        <h3>ΗΜΕΡΟΛΟΓΙΟ PEGASUS</h3>
+        <div id="calendarContent"></div>
+    </div>
+
+    <div id="achievementsPanel" class="pegasus-panel panel-achievements">
+        <h3>Level & Achievements</h3>
+        <div id="achPanelContent"></div>
+    </div>
+
+<div id="settingsPanel" class="pegasus-panel">
+    <h3>ΡΥΘΜΙΣΕΙΣ PEGASUS</h3>
+    <div class="settings-grid">
+        <div class="setting-item"><p>Βάρος (kg):</p><input type="number" id="userWeightInput"></div>
+        <div class="setting-item"><p>Ύψος (cm):</p><input type="number" id="userHeightInput"></div>
+        <div class="setting-item"><p>Ηλικία:</p><input type="number" id="userAgeInput"></div>
+        <div class="setting-item">
+            <p>Φύλο:</p>
+            <select id="userGenderInput">
+                <option value="male">Άνδρας</option>
+                <option value="female">Γυναίκα</option>
+            </select>
+        </div>
+        
+        <hr class="panel-divider" style="grid-column: span 2; border: 0; border-top: 1px solid #333; margin: 15px 0;">
+
+        <div class="setting-item"><p class="label-highlight">Στόχος Θερμίδων:</p><input type="number" id="goalKcalInput"></div>
+        <div class="setting-item"><p class="label-highlight">Στόχος Πρωτεΐνης:</p><input type="number" id="goalProteinInput"></div>
+        
+        <div class="setting-item"><p class="label-highlight" style="color: #4CAF50;">Χρόνος Άσκησης (s):</p><input type="number" id="exerciseTimeInput" placeholder="45"></div>
+        <div class="setting-item"><p class="label-highlight" style="color: #4CAF50;">Χρόνος Διαλείμματος (s):</p><input type="number" id="restTimeInput" placeholder="60"></div>
+
+        <button id="btnSaveSettings" class="p-btn" style="width: 100%; grid-column: span 2; margin-top: 10px;">ΑΠΟΘΗΚΕΥΣΗ ΡΥΘΜΙΣΕΩΝ</button>
+    </div>
+</div>
+
+    <div id="foodPanel" class="pegasus-panel">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px;">
+            <button id="btnPrevDay" class="p-btn" style="padding: 5px 10px;">◀</button>
+            <h3 id="currentFoodDateDisplay" style="margin: 0; font-size: 16px;">Ημερολόγιο Διατροφής</h3>
+            <button id="btnNextDay" class="p-btn" style="padding: 5px 10px;">▶</button>
+        </div>
+        <div class="pegasus-stats-container">
+            <div class="stat-group">
+                <div class="stat-label-row"><span>ΘΕΡΜΙΔΕΣ</span><span id="kcalStatus">0 / 3100 kcal</span></div>
+                <div class="progress-track"><div id="kcalBar" class="progress-fill"></div></div>
+            </div>
+            <div class="stat-group">
+                <div class="stat-label-row"><span>ΠΡΩΤΕΪΝΗ</span><span id="proteinStatus">0 / 160g</span></div>
+                <div class="progress-track"><div id="proteinBar" class="progress-fill"></div></div>
+            </div>
+        </div>
+        <div class="food-input-row">
+            <input type="text" id="foodName" placeholder="Φαγητό" class="flex-2">
+            <input type="number" id="foodKcal" placeholder="kcal" class="flex-1">
+            <input type="text" id="foodNote" placeholder="Πρωτεΐνη (g)" class="flex-1-5">
+            <button id="btnAddFood" class="p-btn">➕</button>
+        </div>
+        <hr class="panel-divider">
+        <div class="food-layout">
+            <div class="food-section">
+                <h4 class="section-title-today">Σήμερα (<span id="todayTotalKcal">0</span> kcal)</h4>
+                <div id="todayFoodList"></div>
+            </div>
+            <div class="food-section">
+                <h4 class="section-title-library">Συχνές Επιλογές</h4>
+                <input type="text" id="librarySearch" placeholder="🔍 Αναζήτηση..." onkeyup="filterLibrary()" style="width: 100%; padding: 8px; background: #000; border: 1px solid #4CAF50; color: #4CAF50; border-radius: 4px; font-size: 13px;">
+                <div id="libraryFoodList"></div>
+            </div>
+			<div id="weeklyAvgDisplay" style="text-align:center; font-size:12px; margin-bottom:15px; font-weight:bold;"></div>
+
+<div id="koukiQuickMenu"></div>
+        </div>
+    </div>
+	
+
+    <div class="content" id="content">
+        <div class="exercise-container">
+            <div class="exercise-list" id="exList"></div>
+            <div class="video-container">
+                <video id="video" loop muted playsinline class="main-video"></video>
+                <video id="webcam" autoplay playsinline class="webcam-overlay"></video>
+                <div id="phaseTimer" class="phase-label">Επίλεξε Ημέρα</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="previewPanel" class="pegasus-panel" style="display:none;">
+        <h3 id="previewTitle" style="text-align: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-top: 10px;">ΑΣΚΗΣΕΙΣ ΗΜΕΡΑΣ</h3>
+        <div id="previewContent" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; max-height: 60vh; overflow-y: auto;"></div>
+        <div style="text-align: center; padding: 15px;">
+            <button class="p-btn" onclick="document.getElementById('previewPanel').style.display='none'">ΚΛΕΙΣΙΜΟ</button>
+        </div>
+    </div>
+
+    <div id="phaseTimerBar" class="hidden-timer"><div id="phaseTimerFill"></div></div>
+
+    <script src="data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="settings.js"></script>
+    <script src="calories.js"></script>
+    <script src="backup.js"></script>
+    <script src="partner.js"></script>
+    <script src="reporting.js"></script>
+    <script src="calendar.js"></script>
+    <script src="achievements.js"></script>
+    <script src="gallery.js"></script>
+    <script src="weather.js"></script>
+    <script src="dragDrop.js"></script>
+    <script src="food.js"></script>
+	<script src="extensions.js"></script>
+    <script src="debug.js"></script>
+	<script src="cardio.js"></script>
+    <script src="app.js"></script>
+</body>
+</body>
+</html>
