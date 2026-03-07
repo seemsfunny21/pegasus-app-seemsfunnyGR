@@ -1,15 +1,14 @@
 /* ==========================================================================
-   PEGASUS EMS MODULE - STABLE VERSION (V2.4)
-   Description: Optimized UI with auto-close for Tools Panel and focus.
+   PEGASUS EMS MODULE - FINAL STABLE (V2.6)
+   Description: Modal Interface, UI Exclusivity & Pop-up Alert System.
    ========================================================================== */
 
 /**
  * Υπολογίζει την ημερομηνία της Τετάρτης για την τρέχουσα εβδομάδα.
- * @returns {string} Date in YYYY-MM-DD format.
  */
 function getTargetWednesday() {
     const now = new Date();
-    const currentDay = now.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed
+    const currentDay = now.getDay(); // 0: Κυριακή, 1: Δευτέρα... 3: Τετάρτη
     const diff = 3 - currentDay;
     const targetDate = new Date(now);
     targetDate.setDate(now.getDate() + diff);
@@ -17,59 +16,53 @@ function getTargetWednesday() {
 }
 
 /**
- * Ανοίγει το Modal, κλείνει τα υπόλοιπα πάνελ και προετοιμάζει τα πεδία.
+ * Ανοίγει το Modal και κλείνει τα υπόλοιπα πάνελ.
  */
 window.logEMSData = function() {
     console.log("EMS UI Triggered");
 
-    // 1. Αποκλειστικότητα UI: Κλείσιμο του Tools Panel αν είναι ανοιχτό
+    // 1. Κλείσιμο του Tools Panel για αποφυγή επικάλυψης
     const toolsPanel = document.getElementById('toolsPanel');
-    if (toolsPanel) {
-        toolsPanel.style.display = 'none';
-    }
+    if (toolsPanel) toolsPanel.style.display = 'none';
 
-    // 2. Εντοπισμός στοιχείων Modal
     const emsModal = document.getElementById('emsModal');
     const dateInput = document.getElementById('emsDate');
     const avgInput = document.getElementById('emsAvg');
     const kcalInput = document.getElementById('emsKcal');
 
     if (!emsModal) {
-        console.error("ΣΦΑΛΜΑ: Το emsModal δεν βρέθηκε στο index.html");
+        console.error("ΣΦΑΛΜΑ: Το emsModal δεν βρέθηκε.");
         return;
     }
 
-    // 3. Αυτόματη συμπλήρωση τιμών
+    // 2. Προεπιλεγμένες τιμές
     dateInput.value = getTargetWednesday();
     avgInput.value = "45.1"; 
     kcalInput.value = "2350"; 
 
-    // 4. Εμφάνιση Panel και Focus στην ένταση
+    // 3. Εμφάνιση και Focus
     emsModal.style.display = 'block';
     setTimeout(() => avgInput.focus(), 100);
 };
 
 /**
- * Κλείνει το Modal χωρίς αποθήκευση.
+ * Κλείνει το Modal.
  */
 window.closeEMSModal = function() {
     const emsModal = document.getElementById('emsModal');
-    if (emsModal) {
-        emsModal.style.display = 'none';
-    }
+    if (emsModal) emsModal.style.display = 'none';
 };
 
 /**
- * Επικυρώνει και αποθηκεύει τα δεδομένα στο LocalStorage.
+ * Αποθήκευση δεδομένων στο LocalStorage.
  */
 window.saveEMSFinal = function() {
     const date = document.getElementById('emsDate').value;
     const avg = document.getElementById('emsAvg').value;
     const kcal = document.getElementById('emsKcal').value;
 
-    // Data Validation
     if (!date || isNaN(parseFloat(avg)) || isNaN(parseFloat(kcal))) {
-        alert("ΑΠΟΤΥΧΙΑ: Παρακαλώ εισάγετε έγκυρα αριθμητικά δεδομένα.");
+        alert("ΑΠΟΤΥΧΙΑ: Εισάγετε έγκυρα αριθμητικά δεδομένα.");
         return;
     }
 
@@ -88,48 +81,66 @@ window.saveEMSFinal = function() {
     try {
         let dayHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
         
-        // Καθαρισμός προηγούμενων εγγραφών EMS για την ίδια μέρα
+        // Αφαίρεση τυχόν παλιάς εγγραφής EMS για την ίδια μέρα
         dayHistory = dayHistory.filter(item => item.type !== "EMS Training");
 
         dayHistory.push(emsEntry);
         localStorage.setItem(historyKey, JSON.stringify(dayHistory));
 
-        alert(`ΕΠΙΤΥΧΙΑ: Καταχωρήθηκαν ${kcal} e-Kcal στο ιστορικό της ${date}.`);
-        
+        alert(`ΕΠΙΤΥΧΙΑ: Καταχωρήθηκαν ${kcal} e-Kcal για τις ${date}.`);
         window.closeEMSModal();
-        
-        // Refresh για ενημέρωση του συστήματος
         window.location.reload();
         
     } catch (e) {
         console.error("Storage Error:", e);
-        alert("ΣΦΑΛΜΑ: Η αποθήκευση απέτυχε.");
     }
 };
 
+/**
+ * Σύστημα Προειδοποίησης (Pop-up Alert)
+ * Εμφανίζεται αν λείπουν τα δεδομένα EMS μετά την Τετάρτη.
+ */
 window.checkEMSReminder = function() {
-    const lastWednesday = window.getTargetWednesday(); // Η Τετάρτη αυτής της εβδομάδας
+    const lastWednesday = getTargetWednesday(); 
     const historyKey = `pegasus_history_${lastWednesday}`;
     const data = JSON.parse(localStorage.getItem(historyKey) || '[]');
     
     const hasEMS = data.some(item => item.type === "EMS Training");
     const today = new Date().getDay();
 
-    // Αν είναι μετά την Τετάρτη (4=Πέμπτη, 5=Παρασκευή, 6=Σάββατο, 0=Κυριακή) και λείπει το EMS
+    // Εμφάνιση μόνο Πέμπτη(4), Παρασκευή(5), Σάββατο(6), Κυριακή(0)
     if (!hasEMS && (today > 3 || today === 0)) {
-        const warning = document.createElement('div');
-        warning.innerHTML = `
-            <div id="emsAlertBanner" style="background: #ff9800; color: black; text-align: center; padding: 10px; font-weight: bold; cursor: pointer; z-index: 10001; position: relative;">
-                ⚠️ ΠΡΟΣΟΧΗ: Λείπουν τα δεδομένα EMS της Τετάρτης. Το θερμιδικό πλάνο είναι ανακριβές. 
-                <span style="text-decoration: underline;">ΚΑΤΑΓΡΑΦΗ ΤΩΡΑ</span>
-            </div>`;
-        document.body.prepend(warning);
-        warning.onclick = () => {
+        const overlay = document.createElement('div');
+        overlay.id = "emsAlertOverlay";
+        overlay.style = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100000; display: flex; align-items: center; justify-content: center;";
+        
+        overlay.innerHTML = `
+            <div style="background: #1a1a1a; border: 2px solid #ff9800; padding: 30px; border-radius: 15px; text-align: center; width: 280px; box-shadow: 0 0 30px rgba(255,152,0,0.5); font-family: sans-serif;">
+                <div style="font-size: 40px; margin-bottom: 15px;">⚠️</div>
+                <h3 style="color: #ff9800; margin: 0 0 10px 0; letter-spacing: 1px;">ΕΛΛΕΙΨΗ ΔΕΔΟΜΕΝΩΝ</h3>
+                <p style="color: #ccc; font-size: 13px; line-height: 1.5; margin-bottom: 25px;">
+                    Δεν εντοπίστηκε καταγραφή <strong>EMS</strong> για την Τετάρτη.<br>
+                    Το θερμιδικό πλάνο χρήζει ενημέρωσης.
+                </p>
+                <button id="btnAlertLog" style="width: 100%; background: #ff9800; color: black; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-bottom: 12px; font-size: 14px;">ΚΑΤΑΓΡΑΦΗ ΤΩΡΑ</button>
+                <button id="btnAlertClose" style="width: 100%; background: transparent; color: #777; border: 1px solid #444; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 11px;">ΑΓΝΟΗΣΗ</button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+
+        document.getElementById('btnAlertLog').onclick = () => {
+            overlay.remove();
             window.logEMSData();
-            warning.remove();
+        };
+        
+        document.getElementById('btnAlertClose').onclick = () => {
+            overlay.remove();
         };
     }
 };
 
-// Εκτέλεση ελέγχου 2 δευτερόλεπτα μετά το φόρτωμα
-setTimeout(window.checkEMSReminder, 2000);
+// Εκτέλεση ελέγχου 2.5 δευτερόλεπτα μετά το πλήρες φόρτωμα της σελίδας
+window.addEventListener('load', () => {
+    setTimeout(window.checkEMSReminder, 2500);
+});
