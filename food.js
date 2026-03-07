@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - FIXED IDs & SYNC VERSION
+   PEGASUS FOOD ENGINE - DAILY MAINS ONLY (V3.4)
    ========================================================================== */
 
 // Διασφάλιση ημερομηνίας
@@ -34,6 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('btnNextDay');
     if (prevBtn) prevBtn.onclick = () => changeFoodDate(-1);
     if (nextBtn) nextBtn.onclick = () => changeFoodDate(1);
+    
+    // Hook για το Quick Menu
+    const btnFoodUI = document.getElementById('btnFoodUI');
+    if (btnFoodUI) {
+        btnFoodUI.addEventListener('click', () => {
+            setTimeout(window.renderKoukiMenu, 300);
+        });
+    }
 });
 
 function changeFoodDate(days) {
@@ -45,11 +53,9 @@ window.updateFoodUI = function() {
     const d = window.currentFoodDate;
     const dateStr = d.toLocaleDateString('el-GR');
     
-    // Ενημέρωση τίτλου ημερομηνίας (αν υπάρχει το ID)
     const display = document.getElementById('currentFoodDateDisplay');
     if (display) display.textContent = dateStr;
 
-    // ΠΡΟΣΟΧΗ: Χρησιμοποιούμε το κλειδί που περιμένει το υπόλοιπο σύστημα
     const storageKey = `food_log_${dateStr}`;
     const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
 
@@ -77,15 +83,15 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    // ΣΥΝΔΕΣΗ ΜΕ ΤΑ ΔΙΚΑ ΣΟΥ IDs (todayTotalKcal κλπ)
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = Math.round(totalKcal);
     
-    const proteinNum = document.getElementById('todayTotalProtein'); // Αν υπάρχει αυτό το ID
+    const proteinNum = document.getElementById('todayTotalProtein'); 
     if (proteinNum) proteinNum.textContent = Math.round(totalProtein);
     
     updateProgressBars(totalKcal, totalProtein);
     window.filterLibrary(); 
+    if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
 };
 
 function addFoodItem(name, kcal, protein) {
@@ -114,7 +120,7 @@ window.deleteFoodItem = function(index) {
 };
 
 function updateProgressBars(kcal, protein) {
-    const goalKcal = 2647; // Ο δικός σου αυστηρός στόχος
+    const goalKcal = 2647; 
     const goalProtein = 160;
     
     const kBar = document.getElementById('kcalBar');
@@ -129,6 +135,88 @@ function updateProgressBars(kcal, protein) {
     if (kStat) kStat.textContent = `${Math.round(kcal)} / ${goalKcal} kcal`;
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
+
+/* --- KOUKI & REVITHI QUICK MENU LOGIC --- */
+const weeklyKoukiMenu = {
+    "Δευτέρα": [
+        { name: "Μουσακάς", kcal: 600, protein: 25 },
+        { name: "Παστίτσιο", kcal: 600, protein: 28 },
+        { name: "Βακαλάος σκορδαλιά", kcal: 580, protein: 35 },
+        { name: "Μοσχάρι γιουβέτσι", kcal: 680, protein: 42 },
+        { name: "Κοτόπουλο γλυκόξινο", kcal: 550, protein: 38 },
+        { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 }
+    ],
+    "Τρίτη": [
+        { name: "Ρεβύθια πλακί", kcal: 450, protein: 18 },
+        { name: "Κοντοσούβλι κοτόπουλο", kcal: 580, protein: 52 },
+        { name: "Μοσχάρι κοκκινιστό", kcal: 650, protein: 45 },
+        { name: "Κεφτεδάκια τηγανητά", kcal: 620, protein: 32 },
+        { name: "Γιουβαρλάκια", kcal: 510, protein: 28 }
+    ],
+    "Τετάρτη": [
+        { name: "Λαζάνια με κιμά", kcal: 720, protein: 34 },
+        { name: "Μπιφτέκι κοτόπουλο", kcal: 480, protein: 45 },
+        { name: "Φακές", kcal: 410, protein: 21 },
+        { name: "Χταπόδι με κοφτό", kcal: 540, protein: 38 },
+        { name: "Σολομός φούρνου", kcal: 520, protein: 42 }
+    ],
+    "Πέμπτη": [
+        { name: "Σουπιές με σπανάκι", kcal: 380, protein: 28 },
+        { name: "Μοσχάρι με μελιτζάνες", kcal: 640, protein: 40 },
+        { name: "Γαριδομακαρονάδα", kcal: 610, protein: 30 },
+        { name: "Φιλέτο κοτόπουλο καρότο", kcal: 490, protein: 48 },
+        { name: "Μελιτζάνες ιμάμ", kcal: 410, protein: 5 }
+    ],
+    "Παρασκευή": [
+        { name: "Μπακαλιάρος σκορδαλιά", kcal: 580, protein: 35 },
+        { name: "Παπουτσάκια", kcal: 590, protein: 28 },
+        { name: "Μπιφτέκι γεμιστό", kcal: 610, protein: 44 },
+        { name: "Σουτζουκάκια", kcal: 650, protein: 32 },
+        { name: "Σπανακόρυζο", kcal: 340, protein: 6 }
+    ],
+    "Σάββατο": [
+        { name: "Ογκρατέν ζυμαρικών", kcal: 750, protein: 28 },
+        { name: "Αρνί με πατάτες", kcal: 820, protein: 55 },
+        { name: "Τσιπούρα φούρνου", kcal: 420, protein: 40 },
+        { name: "Κοντοσούβλι χοιρινό", kcal: 710, protein: 48 },
+        { name: "Γεμιστά κολοκυθάκια", kcal: 480, protein: 22 }
+    ],
+    "Κυριακή": [
+        { name: "Κανελόνια", kcal: 680, protein: 32 },
+        { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 },
+        { name: "Πέρκα φούρνου", kcal: 390, protein: 38 },
+        { name: "Κεφτεδάκια τηγανητά", kcal: 620, protein: 32 }
+    ]
+};
+
+window.renderKoukiMenu = function() {
+    const container = document.getElementById('koukiQuickMenu');
+    if (!container) return;
+
+    const days = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const todayName = days[new Date().getDay()];
+    const todayMenu = weeklyKoukiMenu[todayName] || [];
+
+    container.innerHTML = `
+        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px;">📍 ${todayName.toUpperCase()} (ΠΙΑΤΑ ΗΜΕΡΑΣ)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+            ${todayMenu.map(item => `
+                <button onclick="addQuickFood('${item.name}', ${item.kcal}, ${item.protein})" 
+                        style="background: #050505; border: 1px solid #4CAF50; color: #eee; padding: 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left;">
+                    <strong style="color: #4CAF50;">${item.name}</strong><br>
+                    <span>${item.kcal} kcal | ${item.protein}g P</span>
+                </button>
+            `).join('')}
+        </div>
+    `;
+};
+
+window.addQuickFood = function(name, kcal, protein) {
+    document.getElementById('foodName').value = name;
+    document.getElementById('foodKcal').value = kcal;
+    document.getElementById('foodNote').value = protein;
+    document.getElementById('btnAddFood').click();
+};
 
 /* --- LIBRARY LOGIC --- */
 window.filterLibrary = function() {
@@ -157,5 +245,4 @@ function addToLibrary(name, kcal, protein) {
     }
 }
 
-// Alias για συμβατότητα με το calendar.js
 window.renderFood = window.updateFoodUI;

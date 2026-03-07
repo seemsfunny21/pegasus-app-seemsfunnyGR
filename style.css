@@ -197,7 +197,7 @@ body::-webkit-scrollbar { display: none; }
 .pegasus-panel h3 { margin-top: 0; color: #4CAF50; text-align: center; text-transform: uppercase; font-size: 17px; letter-spacing: 2px; }
 
 /* ================= FOOD PANEL LAYOUT ================= */
-#foodPanel { width: 800px; max-width: 95vw; }
+#foodPanel { width: 1200px; max-width: 95vw; }
 .pegasus-stats-container { background: #111; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #4CAF50; }
 .stat-label-row { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 6px; color: #4CAF50; text-transform: uppercase; }
 .progress-track { width: 100%; height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid #4CAF50; margin-bottom: 10px; }
