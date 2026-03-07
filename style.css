@@ -133,17 +133,31 @@ body::-webkit-scrollbar { display: none; }
 }
 
 .exercise-skipped {
-    opacity: 0.3;
-    filter: grayscale(1);
-    border-style: dotted !important;
+    opacity: 0.25 !important; /* Πιο έντονο skip για ευκρίνεια */
+    filter: grayscale(1) blur(0.5px);
+    border: 2px dotted #ff4444 !important; /* Κόκκινο διακεκομμένο περίγραμμα */
+    background: rgba(255, 0, 0, 0.05) !important;
+    transition: all 0.3s ease;
+}
+
+/* Διασφάλιση ότι το κλικ για επαναφορά λειτουργεί */
+.exercise-skipped .exercise-info {
+    cursor: pointer;
+    pointer-events: auto; 
+}
+
+/* Visual cue για το hover στην απενεργοποιημένη άσκηση */
+.exercise-skipped:hover {
+    opacity: 0.5 !important;
 }
 
 .exercise-info { 
     display: flex; 
-    gap: 10px; 
+    gap: 15px; /* Αυξημένο gap για mobile-friendly χρήση */
     align-items: center; 
     margin-bottom: 10px; 
     cursor: pointer;
+    width: 100%; /* Για να πιάνει όλο το πλάτος το κλικ */
 }
 
 .set-counter { min-width: 40px; color: #4CAF50; font-weight: bold; font-size: 17px; }
@@ -429,3 +443,49 @@ button[onclick*="delete"]:hover {
     transform: scale(1.1);
     background: #45a049;
 }
+
+.weather-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px 0;
+    color: #4CAF50;
+    font-weight: bold;
+    font-size: 14px;
+    position: absolute;
+bottom: 0px;
+	left:20px;
+}
+
+/* Ο διακόπτης (Toggle Switch) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #333;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider { background-color: #ff4b2b; }
+input:checked + .slider:before { transform: translateX(26px); }

@@ -1,80 +1,71 @@
 /* ==========================================================================
-   PEGASUS BACKUP & RESTORE SYSTEM - FULL DATA EDITION
+   PEGASUS BACKUP & RESTORE - INDEXEDDB COMPATIBLE (V5.0)
    ========================================================================== */
 
-/**
- * 1. Εξαγωγή όλων των δεδομένων σε αρχείο .json
- * Περιλαμβάνει: Ρυθμίσεις, Βάρη, Διατροφή και Γκαλερί.
- */
-window.exportPegasusData = function() {
-    const data = {};
+window.exportPegasusData = async function() {
+    const data = { localStorage: {}, indexedDB: [] };
+    
+    // 1. Collect LocalStorage (Weights, Food, Goals)
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        
-        // Φίλτρο για να παίρνει ΟΛΑ τα σχετικά δεδομένα του Pegasus
-        if (
-            key.startsWith("pegasus_") || 
-            key.startsWith("weight_") || 
-            key.startsWith("food_") || 
-            key.startsWith("gallery_")
-        ) {
-            data[key] = localStorage.getItem(key);
+        if (key.startsWith("pegasus_") || key.startsWith("weight_") || key.startsWith("food_") || key.startsWith("cardio_") || key.includes("ANGELOS")) {
+            data.localStorage[key] = localStorage.getItem(key);
         }
     }
-    
-    // Έλεγχος αν υπάρχουν δεδομένα
-    if (Object.keys(data).length === 0) {
-        alert("PEGASUS STRICT: Δεν βρέθηκαν δεδομένα για αποθήκευση!");
-        return;
-    }
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    
-    // Όνομα αρχείου με τη σημερινή ημερομηνία
-    const timestamp = new Date().toISOString().slice(0, 10);
-    a.href = url;
-    a.download = `pegasus_full_backup_${timestamp}.json`;
-    
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    console.log("Backup completed successfully.");
+    // 2. Collect IndexedDB (Photos)
+    const dbRequest = indexedDB.open("PegasusLevels", 1);
+    dbRequest.onsuccess = async (e) => {
+        const db = e.target.result;
+        const tx = db.transaction("photos", "readonly");
+        const store = tx.objectStore("photos");
+        const photosReq = store.getAll();
+        
+        photosReq.onsuccess = () => {
+            data.indexedDB = photosReq.result;
+            
+            // 3. Create File
+            const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `PEGASUS_FULL_BACKUP_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            console.log("PEGASUS: Full Sync (LS + IDB) completed.");
+        };
+    };
 };
 
-/**
- * 2. Εισαγωγή δεδομένων από αρχείο
- * Φορτώνει τα πάντα και κάνει ανανέωση της εφαρμογής.
- */
 window.importPegasusData = function(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            
-            // Επιβεβαίωση από τον χρήστη
-            const confirmImport = confirm(
-                "ΠΡΟΣΟΧΗ: Η εισαγωγή θα συγχωνεύσει τα δεδομένα του αρχείου με τα τρέχοντα. Συνέχεια;"
-            );
+    reader.onload = async (e) => {
+        const imported = JSON.parse(e.target.result);
+        if (!confirm("Overwrite All Data?")) return;
 
-            if (confirmImport) {
-                Object.keys(importedData).forEach(key => {
-                    localStorage.setItem(key, importedData[key]);
-                });
-                
-                alert("PEGASUS: Τα δεδομένα εισήχθησαν με επιτυχία! Η εφαρμογή θα κάνει ανανέωση.");
-                window.location.reload();
-            }
-        } catch (err) {
-            alert("PEGASUS ERROR: Το αρχείο δεν είναι έγκυρο ή είναι κατεστραμμένο.");
-            console.error(err);
-        }
+        // Restore LocalStorage
+        Object.keys(imported.localStorage).forEach(k => localStorage.setItem(k, imported.localStorage[k]));
+
+        // Restore IndexedDB
+        const dbReq = indexedDB.open("PegasusLevels", 1);
+        dbReq.onsuccess = (ev) => {
+            const db = ev.target.result;
+            const tx = db.transaction("photos", "readwrite");
+            const store = tx.objectStore("photos");
+            store.clear();
+            imported.indexedDB.forEach(p => store.add(p));
+            alert("Συγχρονισμός Επιτυχής!");
+            window.location.reload();
+        };
     };
     reader.readAsText(file);
+};
+
+window.triggerPegasusImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = (e) => window.importPegasusData(e);
+    input.click();
 };

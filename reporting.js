@@ -1,21 +1,30 @@
-/* ===== PEGASUS REPORTING SYSTEM (STRICT EDITION) ===== */
+/* ===== PEGASUS REPORTING SYSTEM (STRICT & RECOVERY ENABLED) ===== */
 const PegasusReporting = {
     storageKey: "pegasus_daily_summary",
 
-    // Καταγραφή μέγιστων επιδόσεων και ελέγχου προόδου
+    /**
+     * 1. ΚΑΤΑΓΡΑΦΗ ΑΣΚΗΣΕΩΝ: Φιλτράρισμα βάσει δραστηριότητας
+     */
     saveWorkout: function(kcal) {
-        let data = { workout_kcal: kcal || "0", weights: "" };
         let dailyMax = {};
+        
+        // Προσπάθεια ανάκτησης από το DOM (dataset.done)
+        const activeNodes = Array.from(document.querySelectorAll('.exercise-node'))
+            .filter(node => parseInt(node.dataset.done || 0) > 0);
 
-        // 1. Βρες το μέγιστο βάρος για κάθε άσκηση σήμερα (φιλτράροντας τα ZZ και βοηθητικά)
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith("weight_") && !key.includes("_records") && !key.includes("_stagnation") && !key.includes("_ZZ_")) {
-                let val = parseFloat(localStorage.getItem(key));
-                let name = key.replace("weight_ANGELOS_", "").replace("weight_", "").trim();
-                
-                if (!dailyMax[name] || val > dailyMax[name]) {
-                    dailyMax[name] = val;
+        if (activeNodes.length > 0) {
+            activeNodes.forEach(node => {
+                const name = node.querySelector('.exercise-name').textContent.trim().replace(" ☀️", "");
+                const weight = parseFloat(node.querySelector('.weight-input').value) || 0;
+                if (!dailyMax[name] || weight > dailyMax[name]) dailyMax[name] = weight;
+            });
+        } else {
+            // Fallback: Αν το DOM είναι κενό, τράβα τα βάρη που έγιναν commit σήμερα στο localStorage
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith("weight_ANGELOS_")) {
+                    const name = key.replace("weight_ANGELOS_", "");
+                    dailyMax[name] = parseFloat(localStorage.getItem(key));
                 }
             }
         }
@@ -23,104 +32,74 @@ const PegasusReporting = {
         let summary = [];
         for (let exercise in dailyMax) {
             let currentWeight = dailyMax[exercise];
+            if (currentWeight === 0) continue; // Αγνοούμε τις κενές ασκήσεις
+
             let recordKey = `weight_${exercise}_records`;
             let stagnationKey = `weight_${exercise}_stagnation`;
-            
             let pastRecord = parseFloat(localStorage.getItem(recordKey) || "0");
             let stagnationCount = parseInt(localStorage.getItem(stagnationKey) || "0");
 
             if (currentWeight > pastRecord) {
-                // ΝΕΟ ΡΕΚΟΡ: Μηδενισμός στασιμότητας
-                let diff = currentWeight - pastRecord;
-                summary.push(`⭐ ${exercise}: ${currentWeight}kg (ΝΕΟ ΡΕΚΟΡ! +${diff}kg)`);
+                summary.push(`⭐ ${exercise}: ${currentWeight}kg (ΝΕΟ ΡΕΚΟΡ! +${currentWeight - pastRecord}kg)`);
                 localStorage.setItem(recordKey, currentWeight);
                 localStorage.setItem(stagnationKey, "0");
-            } 
-            else if (currentWeight === pastRecord && currentWeight > 0) {
-                // ΙΔΙΑ ΚΙΛΑ: Έλεγχος αν "κόλλησες" λόγω των 6κιλων πλακών
+            } else if (currentWeight === pastRecord) {
                 stagnationCount++;
                 let msg = `• ${exercise}: ${currentWeight}kg (Σταθερός για ${stagnationCount}η φορά)`;
-                
-                // Αν περάσουν 4 προπονήσεις στα ίδια κιλά, βγάζει προειδοποίηση
-                if (stagnationCount >= 4) {
-                    msg += ` 💡 (Πιεσέ για +2 reps πριν ανέβεις πλάκα)`;
-                }
-                
+                if (stagnationCount >= 4) msg += " 💡 (Πιεσέ για +2 reps)";
                 summary.push(msg);
                 localStorage.setItem(stagnationKey, stagnationCount);
-            } 
-            else {
-                // Χαμηλότερα κιλά από το ρεκόρ (π.χ. μέρα αποκατάστασης)
+            } else {
                 summary.push(`• ${exercise}: ${currentWeight}kg (Ρεκόρ: ${pastRecord}kg)`);
             }
         }
 
-        data.weights = summary.join("\n") || "Δεν καταγράφηκαν βάρη σήμερα";
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
+        localStorage.setItem(this.storageKey, JSON.stringify({
+            workout_kcal: kcal || "0.0",
+            weights: summary.join("\n") || "Δεν ολοκληρώθηκαν ασκήσεις"
+        }));
     },
 
+    /**
+     * 2. ΑΠΟΣΤΟΛΗ REPORT ΜΕ ΔΙΑΤΡΟΦΙΚΗ ΚΑΘΟΔΗΓΗΣΗ (74kg)
+     */
     checkAndSendMorningReport: function(isManual = false) {
         try {
             const today = new Date();
-            // Αν είναι manual (κουμπί) στέλνει το σήμερα, αν είναι αυτόματο το χθες
-            const reportDate = isManual ? today : new Date(new Date().setDate(today.getDate() - 1));
-            
-            const d = reportDate.getDate();
-            const m = reportDate.getMonth() + 1;
-            const y = reportDate.getFullYear();
-            
-            const displayDate = (d < 10 ? '0' + d : d) + "-" + (m < 10 ? '0' + m : m) + "-" + y;
-            const dateStr = `${d}/${m}/${y}`;
+            const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+            const displayDate = today.toLocaleDateString('el-GR').replace(/\//g, '-');
 
-            // Ανάκτηση δεδομένων από Food και Cardio
             const foodKey = "food_log_" + dateStr;
             const cardioKey = "cardio_log_" + dateStr;
-            
             const targetFood = JSON.parse(localStorage.getItem(foodKey) || "[]");
             const workoutData = JSON.parse(localStorage.getItem(this.storageKey) || "{}");
             const cardioData = JSON.parse(localStorage.getItem(cardioKey) || "null");
 
-            // Διαμόρφωση Cardio Summary
-            let cardioSummary = "Δεν καταγράφηκε cardio δραστηριότητα.";
-            if (cardioData) {
-                cardioSummary = `🚲 ${cardioData.route}\n📍 Απόσταση: ${cardioData.km}km\n⏱️ Χρόνος: ${cardioData.time}\n🔥 Καύση: ${cardioData.kcal}kcal`;
-            }
-
-            // Διαμόρφωση Food Summary
-            let foodSummary = targetFood.length > 0 
-                ? targetFood.map(f => "• " + f.name + " (" + Math.round(f.kcal) + "kcal | " + f.protein + "g P)").join("\n") 
-                : "Δεν βρέθηκαν γεύματα.";
+            // Λήψη Recovery Status από logicmetabolic.js
+            const recovery = window.PegasusLogic ? window.PegasusLogic.getRecoveryStatus() : { isRestDay: false, msg: "", nutrition: "" };
 
             const totalKcal = targetFood.reduce((sum, f) => sum + parseFloat(f.kcal || 0), 0);
             const totalProt = targetFood.reduce((sum, f) => sum + parseFloat(f.protein || 0), 0);
 
             const templateParams = {
-                name: "Άγγελος", // Για το template σου
+                name: "Άγγελος",
                 time: today.toLocaleTimeString('el-GR'),
                 workout_date: displayDate,
-                calories: workoutData.workout_kcal || "0.0",
-                weights_summary: workoutData.weights || "Δεν καταγράφηκαν βάρη",
-                food_summary: foodSummary,
-                cardio_activity: cardioSummary,
+                calories: workoutData.workout_kcal || localStorage.getItem("pegasus_today_kcal") || "0.0",
+                weights_summary: workoutData.weights,
+                food_summary: targetFood.map(f => `• ${f.name} (${f.kcal}kcal | ${f.protein}g P)`).join("\n") || "Δεν βρέθηκαν γεύματα",
+                cardio_activity: cardioData ? `🚲 ${cardioData.route} | ${cardioData.km}km | ${cardioData.kcal}kcal` : "Όχι cardio σήμερα",
                 total_food_kcal: Math.round(totalKcal),
-                total_food_protein: Math.round(totalProt)
+                total_food_protein: Math.round(totalProt),
+                recovery_status: recovery.msg,
+                nutrition_advice: recovery.nutrition
             };
 
-            console.log("Strict Report Data:", templateParams);
-
             emailjs.send('service_4znxhn4', 'template_e1cqkme', templateParams)
-                .then(function() {
-                    localStorage.setItem("pegasus_last_report_date", today.toLocaleDateString('el-GR'));
-                    if(isManual) alert("Η αναφορά εστάλη! Έλεγξε την πρόοδο και φάε κάτι!");
-                }, function(error) {
-                    console.error("EmailJS Error:", error);
-                    if(isManual) alert("Σφάλμα EmailJS: " + JSON.stringify(error));
-                });
+                .then(() => { if(isManual) alert("Η αναφορά εστάλη επιτυχώς!"); })
+                .catch(err => console.error("EmailJS Error:", err));
 
-        } catch (err) {
-            console.error("Reporting Error:", err);
-            if(isManual) alert("Σφάλμα: " + err.message);
-        }
+        } catch (err) { console.error("Reporting Error:", err); }
     }
 };
 
