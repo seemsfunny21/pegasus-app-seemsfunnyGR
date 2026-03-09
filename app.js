@@ -103,7 +103,7 @@ function createNavbar() {
         nav.appendChild(b);
     });
 }
-/* ===== SELECTDAY (PEGASUS NORMALIZED VERSION) ===== */
+/* ===== SELECTDAY (PEGASUS NORMALIZED v2.2 - EMS OPTIMIZED) ===== */
 function selectDay(btn, day) {
     // 1. UI RESET: Καθαρισμός όλων των κουμπιών (Επιστροφή σε Μαύρο)
     document.querySelectorAll(".navbar button").forEach(b => {
@@ -132,26 +132,32 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-// 4. Δυναμική Λήψη Δεδομένων (Normalizing Spillover + DVS Optimization)
+    // 4. Δυναμική Λήψη Δεδομένων (Normalizing Spillover + DVS Optimization)
     let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
-                      [...getFinalProgram(day, program)] : 
-                      ((program[day]) ? [...program[day]] : []);
+                      [...getFinalProgram(day, window.program)] : 
+                      ((window.program[day]) ? [...window.program[day]] : []);
 
     const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
     
-    if (day === "Παρασκευή" && isGoodWeather && program["Κυριακή"]) {
-        const sundayWeights = program["Κυριακή"].filter(ex => ex.name !== "Ποδηλασία 30km");
+    // Έλεγχος για Spillover από Κυριακή σε Παρασκευή (αν ο καιρός είναι καλός)
+    if (day === "Παρασκευή" && isGoodWeather && window.program["Κυριακή"]) {
+        const sundayWeights = window.program["Κυριακή"].filter(ex => ex.name !== "Ποδηλασία 30km");
         const bonusExercises = sundayWeights.map(ex => ({...ex, isSpillover: true}));
         rawBaseData = [...rawBaseData, ...bonusExercises];
     }
 
-    // ΕΝΕΡΓΟΠΟΙΗΣΗ DVS: Φιλτράρισμα και βελτιστοποίηση σετ βάσει ιστορικού εβδομάδας
-    let baseData = (window.DVS) ? window.DVS.optimize(rawBaseData) : rawBaseData;
+    // ΕΝΕΡΓΟΠΟΙΗΣΗ DVS: Φιλτράρισμα και βελτιστοποίηση σετ. 
+    // ΠΡΟΣΟΧΗ: Περνάμε το 'day' ως δεύτερη παράμετρο για να ενεργοποιηθεί ο κανόνας του Κορμού.
+    let baseData = (window.DVS) ? window.DVS.optimize(rawBaseData, day) : rawBaseData;
 
-    // 5. Ταξινόμηση (Drag & Drop)
+    // 5. Ταξινόμηση (Drag & Drop) βάσει αποθηκευμένης σειράς
     const savedOrder = JSON.parse(localStorage.getItem(`pegasus_order_${day}`));
     if (savedOrder && savedOrder.length === baseData.length) {
-        baseData.sort((a, b) => savedOrder.indexOf(a.name) - savedOrder.indexOf(b.name));
+        baseData.sort((a, b) => {
+            const indexA = savedOrder.indexOf(a.name);
+            const indexB = savedOrder.indexOf(b.name);
+            return (indexA !== -1 && indexB !== -1) ? indexA - indexB : 0;
+        });
     }
 
     // 6. DOM Rendering
@@ -169,20 +175,23 @@ function selectDay(btn, day) {
         d.dataset.index = idx;
         d.setAttribute("draggable", "true");
 
-        // Drag events
-        d.ondragstart = (event) => { event.dataTransfer.setData("text/plain", idx); d.classList.add("dragging"); };
+        // Drag & Drop Event Handlers
+        d.ondragstart = (event) => { 
+            event.dataTransfer.setData("text/plain", idx); 
+            d.classList.add("dragging"); 
+        };
         d.ondragend = () => d.classList.remove("dragging");
 
         let savedWeight = localStorage.getItem(`weight_${e.name}`) || "";
 
-        // UI ΕΝΔΕΙΞΗ: Προσθήκη emoji ☀️ αν η άσκηση είναι από την Κυριακή
+        // UI ΕΝΔΕΙΞΗ: Προσθήκη emoji ☀️ αν η άσκηση είναι Spillover από Κυριακή
         const displayName = e.isSpillover ? `${e.name} ☀️` : e.name;
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">0/${e.sets}</div>
                 <div class="exercise-name">${displayName}</div>
-                <input type="number" class="weight-input" value="${savedWeight}" 
+                <input type="number" class="weight-input" placeholder="kg" value="${savedWeight}" 
                        onclick="event.stopPropagation()" onchange="saveWeight('${e.name}', this.value)">
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
@@ -192,9 +201,15 @@ function selectDay(btn, day) {
         remainingSets.push(parseInt(e.sets) || 3);
     });
 
+    // 7. Final Calculations & Media Setup
     if (typeof calculateTotalTime === "function") calculateTotalTime();
-    // Φόρτωση πρώτου βίντεο (το showVideo θα καλέσει το showPreview με το καθαρό όνομα)
     if (typeof showVideo === "function") showVideo(0);
+
+    console.log(`PEGASUS: Day ${day} loaded. Exercises count: ${baseData.length}`);
+	// Στο τέλος της selectDay
+    if (typeof initDragDrop === "function") {
+        initDragDrop();
+    }
 }
 
 /* ===== REORDER LOGIC ===== */

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - HYBRID CYCLING EDITION v2.1 (OPTIMIZED VOLUME)
+   PEGASUS DATA ENGINE - HYBRID CYCLING & EMS BODYBUILDING v2.2
    ========================================================================== */
 
 // 1. Βάση Δεδομένων για το Inventory Handler
@@ -16,18 +16,19 @@ window.exercisesDB = [
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια" },
     { name: "Triceps Press", muscleGroup: "Χέρια" },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια" },
+    { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι" },
+    { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια" },
+    { name: "EMS Static Plank", muscleGroup: "Κορμός" },
+    { name: "EMS Static Crunches", muscleGroup: "Κορμός" },
     { name: "Plank", muscleGroup: "Κορμός" },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
     { name: "Reverse Crunch", muscleGroup: "Κορμός" },
     { name: "Lying Knee Raise", muscleGroup: "Κορμός" },
-    { name: "EMS Κοιλιακών", muscleGroup: "Κορμός" },
-    { name: "EMS Πλάτης", muscleGroup: "Πλάτη" },
-    { name: "EMS Ποδιών", muscleGroup: "Πόδια" },
     { name: "Ποδηλασία 30km", muscleGroup: "Πόδια" },
     { name: "Stretching", muscleGroup: "Recovery" }
 ];
 
-// 2. Εβδομαδιαίο Στατικό Πρόγραμμα (Βελτιστοποιημένα Σετ)
+// 2. Εβδομαδιαίο Στατικό Πρόγραμμα (Βελτιστοποιημένη Ανακατανομή)
 const program = {
     "Δευτέρα": [
         { name: "Stretching", sets: 1, duration: 338 }
@@ -42,9 +43,11 @@ const program = {
         { name: "Plank", sets: 3, duration: 45 }
     ],
     "Τετάρτη": [
-        { name: "EMS Κοιλιακών", sets: 1, duration: 45 },
-        { name: "EMS Πλάτης", sets: 1, duration: 45 },
-        { name: "EMS Ποδιών", sets: 1, duration: 45 }
+        { name: "EMS Lateral Raises (3kg)", sets: 4, duration: 300 }, // 5 min
+        { name: "EMS Bicep Curls (3kg)", sets: 4, duration: 300 },   // 5 min
+        { name: "EMS Static Plank", sets: 3, duration: 450 },       // 7.5 min
+        { name: "EMS Static Crunches", sets: 3, duration: 450 }     // 7.5 min
+        // Σύνολο EMS: 25 Λεπτά (1500s)
     ],
     "Πέμπτη": [
         { name: "Stretching", sets: 1, duration: 338 }
@@ -56,6 +59,7 @@ const program = {
         { name: "Standing Bicep Curl", sets: 3, duration: 45 },
         { name: "Triceps Press", sets: 3, duration: 45 },
         { name: "Triceps Overhead Extension", sets: 3, duration: 45 }
+        // Ο κορμός αφαιρέθηκε για να μειωθεί ο χρόνος στα 45'
     ],
     "Σάββατο": [
         { name: "Ποδηλασία 30km", sets: 1, duration: 3600 }
@@ -65,8 +69,7 @@ const program = {
         { name: "Low Seated Row", sets: 2, duration: 45 },
         { name: "Preacher Curl", sets: 2, duration: 45 },
         { name: "Leg Raise Hip Lift", sets: 3, duration: 45 },
-        { name: "Reverse Crunch", sets: 3, duration: 45 },
-        { name: "Lying Knee Raise", sets: 3, duration: 45 }
+        { name: "Reverse Crunch", sets: 3, duration: 45 }
     ]
 };
 
@@ -74,7 +77,6 @@ const program = {
 const videoMap = {
     "Lat Pulldown": "Pulldown",
     "Close Grip Pulldown": "Pulldown",
-    "Behind the Neck Pulldown": "Pulldown",
     "Low Seated Row": "LowSeatedRow",
     "Reverse Grip Cable Row": "ReverseGripCableRow",
     "Reverse Chest Press": "reverserow",
@@ -85,18 +87,17 @@ const videoMap = {
     "Standing Bicep Curl": "Bicepscurl",
     "Triceps Overhead Extension": "Tricepspress",
     "Triceps Press": "Tricepspress",
-    "Leg Extension": "LegExtensions",
     "Plank": "Plank",
     "Stretching": "stretching",
     "Lying Knee Raise": "LyingKneeRaise",
     "Reverse Crunch": "ReverseCrunch",
     "Leg Raise Hip Lift": "LegRaiseHipLift",
-    "EMS Κοιλιακών": "EMS_K",
-    "EMS Πλάτης": "EMS_P",
-    "EMS Ποδιών": "EMS_L",
+    "EMS Lateral Raises (3kg)": "EMS_L", // Χρήση υπάρχοντος EMS_L για ώμους
+    "EMS Bicep Curls (3kg)": "Bicepscurl",
+    "EMS Static Plank": "Plank",
+    "EMS Static Crunches": "EMS_K",
     "Ποδηλασία 30km": "cycling"
 };
 
-// 4. Global Exports
 window.program = program;
 window.videoMap = videoMap;
