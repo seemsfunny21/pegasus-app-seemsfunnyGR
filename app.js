@@ -114,11 +114,13 @@ function selectDay(btn, day) {
         b.style.color = "#fff";
     });
     
-    // 2. ACTIVE STATE: Η επιλεγμένη μέρα γίνεται πράσινη με λευκό πλαίσιο
+// 2. ACTIVE STATE: Η επιλεγμένη μέρα γίνεται πράσινη ΧΩΡΙΣ περιθώριο
     if (btn) {
         btn.classList.add("active");
         btn.style.setProperty('background-color', '#4CAF50', 'important');
-        btn.style.setProperty('border', '2px solid white', 'important');
+        btn.style.setProperty('border', 'none', 'important');    // Αφαιρεί το λευκό πλαίσιο
+        btn.style.setProperty('outline', 'none', 'important');   // Αφαιρεί τυχόν μπλε/άσπρο περίγραμμα εστίασης
+        btn.style.color = "#fff";                                // Διασφαλίζει ότι τα γράμματα είναι λευκά
     }
 
     // 3. Engine Reset
@@ -883,4 +885,5 @@ document.querySelectorAll('.weight-input').forEach(input => {
         localStorage.setItem(`weight_ANGELOS_${exName}`, weightVal);
         console.log(`PEGASUS: Weight updated for ${exName}: ${weightVal}kg`);
     });
+
 });
