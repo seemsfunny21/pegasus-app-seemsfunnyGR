@@ -1,5 +1,6 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - DAILY MAINS ONLY (V3.4)
+   PEGASUS FOOD ENGINE - FULL ANALYST EDITION (V5.0)
+   STRICT DATA ANALYST PROTOCOL - UPDATED 10/03/2026
    ========================================================================== */
 
 // Διασφάλιση ημερομηνίας
@@ -10,37 +11,47 @@ if (!(window.currentFoodDate instanceof Date) || isNaN(window.currentFoodDate.ge
 document.addEventListener('DOMContentLoaded', () => {
     updateFoodUI();
     
-    // Προσθήκη Φαγητού
+    // Προσθήκη Φαγητού (Manual)
     const btnAdd = document.getElementById('btnAddFood');
     if (btnAdd) {
         btnAdd.onclick = () => {
-            const name = document.getElementById('foodName')?.value;
-            const kcal = document.getElementById('foodKcal')?.value;
-            const protein = document.getElementById('foodNote')?.value;
+            const nameEl = document.getElementById('foodName');
+            const kcalEl = document.getElementById('foodKcal');
+            const protEl = document.getElementById('foodNote');
+            
+            const name = nameEl?.value;
+            const kcal = kcalEl?.value;
+            const protein = protEl?.value || 0;
+
             if (name && kcal) {
                 addFoodItem(name, kcal, protein);
-                // Καθαρισμός πεδίων
-                document.getElementById('foodName').value = "";
-                document.getElementById('foodKcal').value = "";
-                document.getElementById('foodNote').value = "";
+                nameEl.value = "";
+                kcalEl.value = "";
+                protEl.value = "";
             } else {
                 alert("PEGASUS STRICT: Συμπλήρωσε Φαγητό και Θερμίδες!");
             }
         };
     }
 
-    // Navigation
+    // Navigation Ημερομηνιών
     const prevBtn = document.getElementById('btnPrevDay');
     const nextBtn = document.getElementById('btnNextDay');
     if (prevBtn) prevBtn.onclick = () => changeFoodDate(-1);
     if (nextBtn) nextBtn.onclick = () => changeFoodDate(1);
     
-    // Hook για το Quick Menu
+    // Hook για το Quick Menu (Κουκί & Ρεβύθι)
     const btnFoodUI = document.getElementById('btnFoodUI');
     if (btnFoodUI) {
         btnFoodUI.addEventListener('click', () => {
             setTimeout(window.renderKoukiMenu, 300);
         });
+    }
+
+    // Αναζήτηση στη Βιβλιοθήκη
+    const searchInput = document.getElementById('librarySearch');
+    if (searchInput) {
+        searchInput.oninput = () => window.filterLibrary();
     }
 });
 
@@ -136,63 +147,20 @@ function updateProgressBars(kcal, protein) {
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
 
-/* --- KOUKI & REVITHI QUICK MENU LOGIC --- */
+/* --- KOUKI & REVITHI QUICK MENU --- */
 const weeklyKoukiMenu = {
-    "Δευτέρα": [
-        { name: "Μουσακάς", kcal: 600, protein: 25 },
-        { name: "Παστίτσιο", kcal: 600, protein: 28 },
-        { name: "Βακαλάος σκορδαλιά", kcal: 580, protein: 35 },
-        { name: "Μοσχάρι γιουβέτσι", kcal: 680, protein: 42 },
-        { name: "Κοτόπουλο γλυκόξινο", kcal: 550, protein: 38 },
-        { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 }
-    ],
-    "Τρίτη": [
-        { name: "Ρεβύθια πλακί", kcal: 450, protein: 18 },
-        { name: "Κοντοσούβλι κοτόπουλο", kcal: 580, protein: 52 },
-        { name: "Μοσχάρι κοκκινιστό", kcal: 650, protein: 45 },
-        { name: "Κεφτεδάκια τηγανητά", kcal: 620, protein: 32 },
-        { name: "Γιουβαρλάκια", kcal: 510, protein: 28 }
-    ],
-    "Τετάρτη": [
-        { name: "Λαζάνια με κιμά", kcal: 720, protein: 34 },
-        { name: "Μπιφτέκι κοτόπουλο", kcal: 480, protein: 45 },
-        { name: "Φακές", kcal: 410, protein: 21 },
-        { name: "Χταπόδι με κοφτό", kcal: 540, protein: 38 },
-        { name: "Σολομός φούρνου", kcal: 520, protein: 42 }
-    ],
-    "Πέμπτη": [
-        { name: "Σουπιές με σπανάκι", kcal: 380, protein: 28 },
-        { name: "Μοσχάρι με μελιτζάνες", kcal: 640, protein: 40 },
-        { name: "Γαριδομακαρονάδα", kcal: 610, protein: 30 },
-        { name: "Φιλέτο κοτόπουλο καρότο", kcal: 490, protein: 48 },
-        { name: "Μελιτζάνες ιμάμ", kcal: 410, protein: 5 }
-    ],
-    "Παρασκευή": [
-        { name: "Μπακαλιάρος σκορδαλιά", kcal: 580, protein: 35 },
-        { name: "Παπουτσάκια", kcal: 590, protein: 28 },
-        { name: "Μπιφτέκι γεμιστό", kcal: 610, protein: 44 },
-        { name: "Σουτζουκάκια", kcal: 650, protein: 32 },
-        { name: "Σπανακόρυζο", kcal: 340, protein: 6 }
-    ],
-    "Σάββατο": [
-        { name: "Ογκρατέν ζυμαρικών", kcal: 750, protein: 28 },
-        { name: "Αρνί με πατάτες", kcal: 820, protein: 55 },
-        { name: "Τσιπούρα φούρνου", kcal: 420, protein: 40 },
-        { name: "Κοντοσούβλι χοιρινό", kcal: 710, protein: 48 },
-        { name: "Γεμιστά κολοκυθάκια", kcal: 480, protein: 22 }
-    ],
-    "Κυριακή": [
-        { name: "Κανελόνια", kcal: 680, protein: 32 },
-        { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 },
-        { name: "Πέρκα φούρνου", kcal: 390, protein: 38 },
-        { name: "Κεφτεδάκια τηγανητά", kcal: 620, protein: 32 }
-    ]
+    "Δευτέρα": [{ name: "Μουσακάς", kcal: 600, protein: 25 }, { name: "Παστίτσιο", kcal: 600, protein: 28 }, { name: "Βακαλάος σκορδαλιά", kcal: 580, protein: 35 }, { name: "Μοσχάρι γιουβέτσι", kcal: 680, protein: 42 }, { name: "Κοτόπουλο γλυκόξινο", kcal: 550, protein: 38 }, { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 }],
+    "Τρίτη": [{ name: "Ρεβύθια πλακί", kcal: 450, protein: 18 }, { name: "Κοντοσούβλι κοτόπουλο", kcal: 580, protein: 52 }, { name: "Μοσχάρι κοκκινιστό", kcal: 650, protein: 45 }, { name: "Κεφτεδάκια τηγανητά", kcal: 620, protein: 32 }, { name: "Γιουβαρλάκια", kcal: 510, protein: 28 }],
+    "Τετάρτη": [{ name: "Λαζάνια με κιμά", kcal: 720, protein: 34 }, { name: "Μπιφτέκι κοτόπουλο", kcal: 480, protein: 45 }, { name: "Φακές", kcal: 410, protein: 21 }, { name: "Χταπόδι με κοφτό", kcal: 540, protein: 38 }, { name: "Σολομός φούρνου", kcal: 520, protein: 42 }],
+    "Πέμπτη": [{ name: "Σουπιές με σπανάκι", kcal: 380, protein: 28 }, { name: "Μοσχάρι με μελιτζάνες", kcal: 640, protein: 40 }, { name: "Γαριδομακαρονάδα", kcal: 610, protein: 30 }, { name: "Φιλέτο κοτόπουλο καρότο", kcal: 490, protein: 48 }, { name: "Μελιτζάνες ιμάμ", kcal: 410, protein: 5 }],
+    "Παρασκευή": [{ name: "Μπακαλιάρος σκορδαλιά", kcal: 580, protein: 35 }, { name: "Παπουτσάκια", kcal: 590, protein: 28 }, { name: "Μπιφτέκι γεμιστό", kcal: 610, protein: 44 }, { name: "Σουτζουκάκια", kcal: 650, protein: 32 }, { name: "Σπανακόρυζο", kcal: 340, protein: 6 }],
+    "Σάββατο": [{ name: "Ογκρατέν ζυμαρικών", kcal: 750, protein: 28 }, { name: "Αρνί με πατάτες", kcal: 820, protein: 55 }, { name: "Τσιπούρα φούρνου", kcal: 420, protein: 40 }, { name: "Κοντοσούβλι χοιρινό", kcal: 710, protein: 48 }, { name: "Γεμιστά κολοκυθάκια", kcal: 480, protein: 22 }],
+    "Κυριακή": [{ name: "Κανελόνια", kcal: 680, protein: 32 }, { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 }, { name: "Πέρκα φούρνου", kcal: 390, protein: 38 }, { name: "Κεφτεδάκια τηγανητά", kcal: 620, protein: 32 }]
 };
 
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
-
     const days = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = days[new Date().getDay()];
     const todayMenu = weeklyKoukiMenu[todayName] || [];
@@ -218,7 +186,7 @@ window.addQuickFood = function(name, kcal, protein) {
     document.getElementById('btnAddFood').click();
 };
 
-/* --- LIBRARY LOGIC --- */
+/* --- LIBRARY LOGIC (ΣΥΧΝΕΣ ΕΠΙΛΟΓΕΣ) --- */
 window.filterLibrary = function() {
     const searchTerm = document.getElementById('librarySearch')?.value.toLowerCase() || "";
     const library = JSON.parse(localStorage.getItem('food_library') || "[]");
@@ -228,12 +196,32 @@ window.filterLibrary = function() {
     libContainer.innerHTML = "";
 
     library.filter(item => item.name.toLowerCase().includes(searchTerm)).forEach(item => {
-        const btn = document.createElement('button');
-        btn.className = 'p-btn';
-        btn.style.cssText = "width:100%; margin-bottom:5px; text-align:left; font-size:12px; display: block; padding: 10px; background:#050505; color:#4CAF50; border:1px solid #222; cursor:pointer;";
-        btn.textContent = `+ ${item.name} (${item.kcal} kcal)`;
-        btn.onclick = () => addFoodItem(item.name, item.kcal, item.protein);
-        libContainer.appendChild(btn);
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border:1px solid #4CAF50; border-radius:4px;";
+
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = "display: flex; flex-direction: column; flex: 1; cursor: pointer;";
+        infoDiv.innerHTML = `
+            <span style="font-weight: bold; color: #eee; font-size: 14px;">+ ${item.name}</span>
+            <span style="font-size: 11px; color: #4CAF50;">${item.kcal} kcal | ${item.protein || 0}g P</span>
+        `;
+        infoDiv.onclick = () => addFoodItem(item.name, item.kcal, item.protein);
+
+        const btnDel = document.createElement('button');
+        btnDel.innerHTML = "&#10005;";
+        btnDel.style.cssText = "background:none; border:1px solid #4CAF50; color:#4CAF50; cursor:pointer; font-size:14px; width:25px; height:25px; display:flex; align-items:center; justify-content:center; border-radius:3px; margin-left:10px;";
+        
+        btnDel.onmouseover = () => { btnDel.style.color = "#ff4444"; btnDel.style.borderColor = "#ff4444"; };
+        btnDel.onmouseout = () => { btnDel.style.color = "#4CAF50"; btnDel.style.borderColor = "#4CAF50"; };
+
+        btnDel.onclick = (e) => {
+            e.stopPropagation();
+            removeFromLibrary(item.name);
+        };
+
+        wrapper.appendChild(infoDiv);
+        wrapper.appendChild(btnDel);
+        libContainer.appendChild(wrapper);
     });
 };
 
@@ -243,6 +231,14 @@ function addToLibrary(name, kcal, protein) {
         library.push({ name, kcal, protein: parseFloat(protein || 0) });
         localStorage.setItem('food_library', JSON.stringify(library));
     }
+}
+
+function removeFromLibrary(name) {
+    // Άμεση διαγραφή χωρίς confirm
+    let library = JSON.parse(localStorage.getItem('food_library') || "[]");
+    library = library.filter(item => item.name !== name);
+    localStorage.setItem('food_library', JSON.stringify(library));
+    window.filterLibrary();
 }
 
 window.renderFood = window.updateFoodUI;
