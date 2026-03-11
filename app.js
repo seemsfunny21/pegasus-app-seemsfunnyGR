@@ -14,53 +14,8 @@ let muted = false;
 let TURBO_MODE = false;
 let SPEED = 1;
 
-/* === INTEGRATED PROGRESS UI (FIXED) === */
-window.MuscleProgressUI = {
-    targets: { "Πλάτη": 18, "Στήθος": 14, "Χέρια": 18, "Κορμός": 15, "Πόδια": 6 },
-    
-    calculateStats() {
-        const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-        const mapping = { "Πλάτη": "Back", "Στήθος": "Chest", "Χέρια": "Arms", "Κορμός": "Abs", "Πόδια": "Legs" };
-        
-        return Object.keys(this.targets).map(group => {
-            // Άθροισμα Ελληνικού + Αγγλικού κλειδιού (π.χ. Στήθος + Chest)
-            const engKey = mapping[group];
-            const done = (history[group] || 0) + (history[engKey] || 0);
-            const target = this.targets[group];
-            return { 
-                name: group, 
-                done: done, 
-                target: target, 
-                percent: Math.min(100, Math.round((done / target) * 100)) 
-            };
-        });
-    },
+/* === INTEGRATED PROGRESS UI (DYNAMIC SYNC) === */
 
-    render() {
-        const container = document.getElementById('previewContent');
-        if (!container) return;
-        const stats = this.calculateStats();
-        
-        let html = `<div id="muscle-progress-section" style="width:100%; background:#0a0a0a; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #222; box-sizing:border-box;">
-                    <h3 style="color:#4CAF50; text-align:center; font-size:13px; margin-bottom:15px; text-transform:uppercase; margin-top:0;">Weekly Muscle Coverage</h3>`;
-        
-        stats.forEach(s => {
-            const color = s.percent >= 100 ? "#4CAF50" : "#ff9800";
-            html += `<div style="margin-bottom:12px; width:100%;">
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#eee;">
-                            <span>${s.name.toUpperCase()}</span>
-                            <span style="font-family:monospace;">${s.done}/${s.target} Sets (${s.percent}%)</span>
-                        </div>
-                        <div style="width:100%; height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden; border:1px solid #333;">
-                            <div style="width:${s.percent}%; height:100%; background:${color}; transition: width 1s ease-in-out;"></div>
-                        </div>
-                    </div>`;
-        });
-        html += `</div><div style="width:100%; text-align:center; color:#444; font-size:10px; margin-bottom:15px; letter-spacing:2px;">——— ΗΜΕΡΗΣΙΕΣ ΑΣΚΗΣΕΙΣ ———</div>`;
-        
-        container.insertAdjacentHTML('afterbegin', html);
-    }
-};
 
 // ΑΛΛΑΓΗ ΑΠΟ const ΣΕ let ΓΙΑ ΔΥΝΑΜΙΚΗ ΕΝΗΜΕΡΩΣΗ
 let workoutPhases = [
@@ -103,73 +58,88 @@ function createNavbar() {
         nav.appendChild(b);
     });
 }
-/* ===== SELECTDAY (PEGASUS NORMALIZED v2.2 - EMS OPTIMIZED) ===== */
+/* ===== PEGASUS UTILITIES: Muscle Mapper (Global Scope) ===== */
+const getMuscleGroup = (exName) => {
+    if (!exName) return "Άλλο";
+    const name = exName.toLowerCase();
+    if (name.includes("press") || name.includes("deck") || name.includes("pushups")) return "Στήθος";
+    if (name.includes("pulldown") || name.includes("row")) return "Πλάτη";
+    if (name.includes("curl") || name.includes("triceps")) return "Χέρια";
+    if (name.includes("plank") || name.includes("leg raise")) return "Κορμός";
+    return "Άλλο";
+};
+
+/* ===== SELECTDAY (PEGASUS SMART-SYNC v2.9 - ANALYST OPTIMIZED) ===== */
 function selectDay(btn, day) {
-    // 1. UI RESET: Καθαρισμός όλων των κουμπιών (Επιστροφή σε Μαύρο)
+    // 1. UI RESET
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', '#000', 'important');
         b.style.setProperty('border', 'none', 'important');
-        b.style.setProperty('outline', 'none', 'important');
         b.style.color = "#fff";
     });
     
-// 2. ACTIVE STATE: Η επιλεγμένη μέρα γίνεται πράσινη ΧΩΡΙΣ περιθώριο
+    // 2. ACTIVE STATE
     if (btn) {
         btn.classList.add("active");
         btn.style.setProperty('background-color', '#4CAF50', 'important');
-        btn.style.setProperty('border', 'none', 'important');    // Αφαιρεί το λευκό πλαίσιο
-        btn.style.setProperty('outline', 'none', 'important');   // Αφαιρεί τυχόν μπλε/άσπρο περίγραμμα εστίασης
-        btn.style.color = "#fff";                                // Διασφαλίζει ότι τα γράμματα είναι λευκά
+        btn.style.color = "#fff";
     }
 
-    // 3. Engine Reset
+    // 3. Engine & Timer Reset
     clearInterval(timer);
     timer = null;
     running = false;
     phase = 0;
     currentIdx = 0;
-    
     if (typeof resetKcal === "function") resetKcal();
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    // 4. Δυναμική Λήψη Δεδομένων (Normalizing Spillover + DVS Optimization)
+    // 4. Δυναμική Λήψη Δεδομένων & Spillover Logic
     let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
                       [...getFinalProgram(day, window.program)] : 
                       ((window.program[day]) ? [...window.program[day]] : []);
 
     const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
-    
-    // Έλεγχος για Spillover από Κυριακή σε Παρασκευή (αν ο καιρός είναι καλός)
     if (day === "Παρασκευή" && isGoodWeather && window.program["Κυριακή"]) {
-        const sundayWeights = window.program["Κυριακή"].filter(ex => ex.name !== "Ποδηλασία 30km");
-        const bonusExercises = sundayWeights.map(ex => ({...ex, isSpillover: true}));
-        rawBaseData = [...rawBaseData, ...bonusExercises];
+        const bonus = window.program["Κυριακή"]
+            .filter(ex => ex.name !== "Ποδηλασία 30km")
+            .map(ex => ({...ex, isSpillover: true}));
+        rawBaseData = [...rawBaseData, ...bonus];
     }
 
-    // ΕΝΕΡΓΟΠΟΙΗΣΗ DVS: Φιλτράρισμα και βελτιστοποίηση σετ. 
-    // ΠΡΟΣΟΧΗ: Περνάμε το 'day' ως δεύτερη παράμετρο για να ενεργοποιηθεί ο κανόνας του Κορμού.
     let baseData = (window.DVS) ? window.DVS.optimize(rawBaseData, day) : rawBaseData;
 
-    // 5. Ταξινόμηση (Drag & Drop) βάσει αποθηκευμένης σειράς
-    const savedOrder = JSON.parse(localStorage.getItem(`pegasus_order_${day}`));
-    if (savedOrder && savedOrder.length === baseData.length) {
-        baseData.sort((a, b) => {
-            const indexA = savedOrder.indexOf(a.name);
-            const indexB = savedOrder.indexOf(b.name);
-            return (indexA !== -1 && indexB !== -1) ? indexA - indexB : 0;
-        });
-    }
+    // 5. SMART TARGETS & STATUS MAPPING
+    const currentHistory = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    const settings = (typeof window.getPegasusSettings === "function") ? window.getPegasusSettings() : { muscleTargets: {} };
+    const userTargets = settings.muscleTargets;
 
-    // 6. DOM Rendering
+    // Εμπλουτισμός δεδομένων με κατάσταση ολοκλήρωσης
+    let mappedData = baseData.map(e => {
+        const muscle = e.muscle || getMuscleGroup(e.name);
+        const targetLimit = userTargets[muscle] || 14; 
+        const isCompleted = (currentHistory[muscle] >= targetLimit);
+        return { ...e, muscleGroup: muscle, isCompleted: isCompleted };
+    });
+
+    // 6. AUTO-SORTING (Ενεργές πάνω, 0/0 κάτω)
+    mappedData.sort((a, b) => {
+        if (a.isCompleted && !b.isCompleted) return 1;
+        if (!a.isCompleted && b.isCompleted) return -1;
+        return 0; // Διατήρηση αρχικής σειράς αν η κατάσταση είναι ίδια
+    });
+
+    // 7. DOM Rendering
     const list = document.getElementById("exList");
     if (!list) return;
     list.innerHTML = ""; 
     exercises = [];
     remainingSets = [];
 
-    baseData.forEach((e, idx) => {
+    mappedData.forEach((e, idx) => {
+        const displayTarget = e.isCompleted ? 0 : e.sets;
         const d = document.createElement("div");
         d.className = "exercise"; 
         d.dataset.total = e.sets;
@@ -177,22 +147,19 @@ function selectDay(btn, day) {
         d.dataset.index = idx;
         d.setAttribute("draggable", "true");
 
-        // Drag & Drop Event Handlers
-        d.ondragstart = (event) => { 
-            event.dataTransfer.setData("text/plain", idx); 
-            d.classList.add("dragging"); 
-        };
-        d.ondragend = () => d.classList.remove("dragging");
+        if (e.isCompleted) {
+            d.style.setProperty('opacity', '0.2', 'important');
+            d.style.setProperty('filter', 'grayscale(100%)', 'important');
+            d.classList.add("exercise-skipped"); 
+        }
 
-        let savedWeight = localStorage.getItem(`weight_${e.name}`) || "";
-
-        // UI ΕΝΔΕΙΞΗ: Προσθήκη emoji ☀️ αν η άσκηση είναι Spillover από Κυριακή
-        const displayName = e.isSpillover ? `${e.name} ☀️` : e.name;
+        const savedWeight = localStorage.getItem(`weight_ANGELOS_${e.name}`) || 
+                          localStorage.getItem(`weight_${e.name}`) || "";
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
-                <div class="set-counter">0/${e.sets}</div>
-                <div class="exercise-name">${displayName}</div>
+                <div class="set-counter">0/${displayTarget}</div>
+                <div class="exercise-name">${e.isSpillover ? `${e.name} ☀️` : e.name}</div>
                 <input type="number" class="weight-input" placeholder="kg" value="${savedWeight}" 
                        onclick="event.stopPropagation()" onchange="saveWeight('${e.name}', this.value)">
             </div>
@@ -200,18 +167,15 @@ function selectDay(btn, day) {
         `;
         list.appendChild(d);
         exercises.push(d);
-        remainingSets.push(parseInt(e.sets) || 3);
+        remainingSets.push(parseInt(displayTarget));
     });
 
-    // 7. Final Calculations & Media Setup
-    if (typeof calculateTotalTime === "function") calculateTotalTime();
-    if (typeof showVideo === "function") showVideo(0);
-
-    console.log(`PEGASUS: Day ${day} loaded. Exercises count: ${baseData.length}`);
-	// Στο τέλος της selectDay
-    if (typeof initDragDrop === "function") {
-        initDragDrop();
+    // 8. Final Sync
+    if (typeof calculateTotalTime === "function") {
+        setTimeout(() => { calculateTotalTime(); }, 50); 
     }
+    if (typeof showVideo === "function") showVideo(0);
+    if (typeof initDragDrop === "function") initDragDrop();
 }
 
 /* ===== REORDER LOGIC ===== */
@@ -265,38 +229,42 @@ function startPause() {
 
 
 /* =============================================================
-   PEGASUS CORE ENGINE - UNIFIED LOGIC & METABOLIC SYNC
+   PEGASUS CORE ENGINE - ULTRA-STRICT UI SYNC (OBLITERATE 1/3 BUG)
    ============================================================= */
 function runPhase() {
     if (!running) return;
     clearInterval(timer);
 
-    // 1. ΕΛΕΓΧΟΣ ΟΛΟΚΛΗΡΩΣΗΣ ΠΡΟΠΟΝΗΣΗΣ
+    // 1. ΕΛΕΓΧΟΣ ΟΛΟΚΛΗΡΩΣΗΣ
     if (remainingSets.every(s => s <= 0)) {
         finishWorkout();
         return;
     }
 
-    // 2. ΔΥΝΑΜΙΚΟΣ ΣΥΓΧΡΟΝΙΣΜΟΣ ΠΑΡΑΜΕΤΡΩΝ ΧΡΟΝΟΥ
+    // 2. ΔΥΝΑΜΙΚΟΣ ΣΥΓΧΡΟΝΙΣΜΟΣ ΡΥΘΜΙΣΕΩΝ
     workoutPhases[1].d = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
     workoutPhases[2].d = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
 
+    // Προσδιορισμός τρέχουσας άσκησης
     const e = exercises[currentIdx];
     if (!e) return;
     
     const exName = e.querySelector(".exercise-name").textContent.trim().replace(" ☀️", "");
     const wInput = e.querySelector(".weight-input");
 
-    // UI STYLING
-    exercises.forEach(ex => ex.style.borderColor = "#222");
+    // UI STYLING & TURN INDICATOR
+    exercises.forEach(ex => {
+        ex.style.borderColor = "#222";
+        ex.style.background = "transparent";
+    });
+    
     const isAngelosTurn = !partnerData.isActive || partnerData.isUser1Turn;
     e.style.borderColor = isAngelosTurn ? "#4CAF50" : "#00bcd4";
+    e.style.background = "rgba(76, 175, 80, 0.1)";
 
     let currentPhaseName = "";
     let t = 0;
-    const partnerName = (partnerData.currentPartner || "ΣΥΝΕΡΓΑΤΗΣ").toUpperCase();
 
-    // 3. ΕΠΙΛΟΓΗ ΧΡΟΝΟΥ ΚΑΙ ΟΝΟΜΑΤΟΣ ΦΑΣΗΣ
     if (phase === 0) {
         currentPhaseName = `ΠΡΟΕΤΟΙΜΑΣΙΑ (ΑΓΓΕΛΟΣ)`;
         t = workoutPhases[0].d;
@@ -306,27 +274,22 @@ function runPhase() {
         t = workoutPhases[1].d;
     } 
     else if (phase === 2) {
-        currentPhaseName = partnerData.isActive ? `ΑΣΚΗΣΗ (${partnerName})` : `ΔΙΑΛΕΙΜΜΑ (ΑΓΓΕΛΟΣ)`;
+        const pName = (partnerData.currentPartner || "ΣΥΝΕΡΓΑΤΗΣ").toUpperCase();
+        currentPhaseName = partnerData.isActive ? `ΑΣΚΗΣΗ (${pName})` : `ΔΙΑΛΕΙΜΜΑ (ΑΓΓΕΛΟΣ)`;
         t = workoutPhases[2].d; 
     }
 
     if (phase !== 2) showVideo(currentIdx);
 
-    // 4. TIMER LOOP (STRICT DATA COMMIT)
     timer = setInterval(() => {
         t -= 1;
         remainingSeconds = Math.max(0, remainingSeconds - 1);
         updateTotalBar();
 
-        // --- PEGASUS DATA ENGINE INTEGRATION ---
-        // Commit θερμίδων στο LocalStorage κάθε δευτερόλεπτο στη φάση άσκησης
+        // Metabolic Sync
         if (phase === 1 && window.PegasusLogic) {
             window.PegasusLogic.updateMetabolicData();
         }
-        // ---------------------------------------
-
-        if (t <= 3 && t > 0) playBeep(0.5);
-        if (t === 0) playBeep(0.9);
 
         const label = document.getElementById("phaseTimer");
         if (label) {
@@ -342,25 +305,42 @@ function runPhase() {
                 runPhase();
             } 
             else if (phase === 1) {
-                // ΤΕΛΟΣ ΦΑΣΗΣ ΑΣΚΗΣΗΣ
-                if (wInput) {
-                    const weightVal = wInput.value;
-                    saveWeight(exName, weightVal); 
-                    if (typeof window.logPegasusSet === "function") window.logPegasusSet(exName);
-                }
+                // --- ΚΡΙΣΙΜΟ ΣΗΜΕΙΟ: ΕΝΗΜΕΡΩΣΗ ΣΕΤ ---
+                if (wInput) saveWeight(exName, wInput.value);
+
+                // Re-fetch το στοιχείο από το DOM για να αποφύγουμε reference errors
+                const activeNode = document.querySelectorAll(".exercise")[currentIdx];
                 
+                if (activeNode) {
+                    let done = parseInt(activeNode.dataset.done) || 0;
+                    let total = parseInt(activeNode.dataset.total) || 0;
+
+                    done++;
+                    
+                    // Ενημέρωση Data
+                    activeNode.dataset.done = done;
+                    remainingSets[currentIdx] = total - done;
+
+                    // Ενημέρωση UI
+                    const counterDiv = activeNode.querySelector(".set-counter");
+                    if (counterDiv) {
+                        counterDiv.textContent = `${done}/${total}`;
+                        counterDiv.style.color = "#4CAF50";
+                        // Visual confirmation
+                        activeNode.style.boxShadow = "0 0 15px rgba(76, 175, 80, 0.4)";
+                        setTimeout(() => { activeNode.style.boxShadow = ""; }, 1500);
+                    }
+                    
+                    // Sync με Achievements
+                    if (window.updateAchievements) window.updateAchievements(exName);
+                }
+
                 phase = 2;
                 if (partnerData.isActive) partnerData.isUser1Turn = false;
                 runPhase();
             } 
             else if (phase === 2) {
-                // ΤΕΛΟΣ ΦΑΣΗΣ ΔΙΑΛΕΙΜΜΑΤΟΣ
                 if (partnerData.isActive && wInput) savePartnerWeight(exName, wInput.value);
-
-                e.dataset.done++;
-                remainingSets[currentIdx]--;
-                e.querySelector(".set-counter").textContent = `${e.dataset.done}/${e.dataset.total}`;
-                
                 if (partnerData.isActive) partnerData.isUser1Turn = true; 
                 
                 let nextIdx = getNextIndexCircuit();
@@ -537,37 +517,73 @@ function updateTotalBar() {
     }
 }
 
-/* ===== ΣΥΝΑΡΤΗΣΗ SKIP (TOGGLE STATUS) ===== */
+/* ===== ΣΥΝΑΡΤΗΣΗ SKIP (FINAL ANALYST FIX: Visual + Time Sync) ===== */
 window.toggleSkipExercise = function(idx) {
-    if (!exercises[idx]) {
-        console.error("PEGASUS: Exercise index not found.");
-        return;
+    // 1. Εύρεση του στοιχείου στο DOM
+    const exDiv = document.querySelectorAll('.exercise')[idx];
+    if (!exDiv) return;
+    
+    const counter = exDiv.querySelector(".set-counter");
+    // Χρησιμοποιούμε το dataset.total που ορίσαμε στη selectDay
+    const originalSets = parseInt(exDiv.dataset.total) || 3;
+
+    // 2. Εναλλαγή κλάσης και κατάστασης
+    const isSkipped = exDiv.classList.toggle("exercise-skipped");
+
+    // 3. Εφαρμογή αλλαγών (Visual + Data)
+    if (isSkipped) {
+        // ΚΑΤΑΣΤΑΣΗ: SKIP
+        exDiv.style.setProperty('opacity', '0.2', 'important');
+        exDiv.style.setProperty('filter', 'grayscale(100%)', 'important');
+        
+        // ΕΝΗΜΕΡΩΣΗ ΔΕΔΟΜΕΝΩΝ ΓΙΑ ΤΟ ΧΡΟΝΟ
+        remainingSets[idx] = 0; 
+        if (counter) counter.innerText = `0/0`;
+    } else {
+        // ΚΑΤΑΣΤΑΣΗ: ACTIVE
+        exDiv.style.setProperty('opacity', '1', 'important');
+        exDiv.style.setProperty('filter', 'none', 'important');
+        
+        // ΕΠΑΝΑΦΟΡΑ ΔΕΔΟΜΕΝΩΝ ΓΙΑ ΤΟ ΧΡΟΝΟ
+        remainingSets[idx] = originalSets; 
+        if (counter) counter.innerText = `0/${originalSets}`;
     }
     
-    const exDiv = exercises[idx];
-    // Εναλλαγή της κλάσης για οπτική σήμανση (γκριζάρισμα)
-    exDiv.classList.toggle("exercise-skipped");
-    
-    // Επανυπολογισμός συνολικού χρόνου προπόνησης
+    // 4. ΕΠΙΒΟΛΗ ΕΠΑΝΥΠΟΛΟΓΙΣΜΟΥ ΧΡΟΝΟΥ
+    // Σιγουρευόμαστε ότι η Global μεταβλητή exercises είναι συγχρονισμένη
+    if (typeof exercises !== 'undefined') {
+        exercises[idx] = exDiv;
+    }
+
     if (typeof calculateTotalTime === "function") {
+        console.log(`PEGASUS: Recalculating time. Set at index ${idx} is now ${remainingSets[idx]}`);
         calculateTotalTime();
     }
-    
-    console.log(`PEGASUS: Exercise ${idx} status changed. Workout time updated.`);
 };
 
-/* === FINISH WORKOUT LOGIC - METABOLIC & REPORTING SYNC === */
+/* =============================================================
+   PEGASUS FINISH LOGIC - AUTO-COMMIT & MORNING REPORT SYNC
+   ============================================================= */
 function finishWorkout() {
+    if (!running && !timer) return; // Αποφυγή διπλοεκτέλεσης
+    
     clearInterval(timer);
     running = false;
-    
-    // 1. Υπολογισμός workoutKey
+
+    const label = document.getElementById("phaseTimer");
+    if (label) {
+        label.textContent = "ΟΛΟΚΛΗΡΩΣΗ...";
+        label.style.color = "#4CAF50";
+    }
+
+    // 1. Υπολογισμός workoutKey (Ημερομηνία)
     let workoutKey;
     const activeBtn = document.querySelector(".navbar button.active");
+    const now = new Date();
+    
     if (activeBtn) {
         const dayName = activeBtn.textContent.trim();
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-        const now = new Date();
         const currentDayIdx = now.getDay();
         const targetDayIdx = greekDays.indexOf(dayName);
         
@@ -576,35 +592,39 @@ function finishWorkout() {
         targetDate.setDate(now.getDate() + diff);
         workoutKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
     } else {
-        const now = new Date();
         workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
 
-    // 2. Αποθήκευση στο LocalStorage
+    // 2. Αποθήκευση Ολοκλήρωσης στο Ημερολόγιο
     let data = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
     data[workoutKey] = true;
     localStorage.setItem("pegasus_workouts_done", JSON.stringify(data));
 
-    // 3. Update UI & Calendar Logic
+    // 3. Update UI
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     if (window.renderCalendar) window.renderCalendar();
-    
-    // 4. ΕΝΕΡΓΟΠΟΙΗΣΗ PEGASUS REPORTING (Filtered)
-    if (window.PegasusReporting) {
-        // Ανάκτηση τρεχουσών θερμίδων από τη μεταβολική μηχανή (74kg)
-        const currentKcal = localStorage.getItem("pegasus_today_kcal") || "0";
-        
-        // Αποθήκευση ΜΟΝΟ των ασκήσεων που έγιναν σήμερα (done > 0)
-        window.PegasusReporting.saveWorkout(currentKcal);
-        
-        // Αποστολή μέσω EmailJS
-        window.PegasusReporting.checkAndSendMorningReport(true);
-    } 
-    else if (window.PegasusLogic && typeof window.PegasusLogic.generateDailyReport === "function") {
-        window.PegasusLogic.generateDailyReport();
-    }
 
-    alert(`Η προπόνηση για την ημερομηνία ${workoutKey} καταγράφηκε επιτυχώς!`);
+    // 4. AUTO-COMMIT DELAY (5 Δευτερόλεπτα)
+    console.log("PEGASUS: Workout complete. Preparing pending report...");
+
+    setTimeout(() => {
+        if (window.PegasusReporting) {
+            const currentKcal = localStorage.getItem("pegasus_today_kcal") || "0";
+            
+            // ΚΛΕΙΔΩΜΑ ΔΕΔΟΜΕΝΩΝ: Προετοιμασία για το αυριανό πρωινό email
+            // Χρησιμοποιούμε τη νέα συνάρτηση που φτιάξαμε στο reporting.js
+            window.PegasusReporting.prepareAndSaveReport(currentKcal);
+            
+            // Μηδενισμός θερμίδων για τη νέα ημέρα
+            localStorage.setItem("pegasus_today_kcal", "0.0");
+        }
+
+        // Τελική ειδοποίηση και ανανέωση
+        console.log(`Η προπόνηση (${workoutKey}) αποθηκεύτηκε. Τα λέμε αύριο το πρωί!`);
+        
+        // Reload για να καθαρίσει το state και να επιστρέψει στην αρχική
+        location.reload(); 
+    }, 5000);
 }
 
 /* === PEGASUS WORKOUT COUNTER SYSTEM === */
@@ -885,5 +905,4 @@ document.querySelectorAll('.weight-input').forEach(input => {
         localStorage.setItem(`weight_ANGELOS_${exName}`, weightVal);
         console.log(`PEGASUS: Weight updated for ${exName}: ${weightVal}kg`);
     });
-
 });

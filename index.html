@@ -133,29 +133,87 @@
         <div id="achPanelContent"></div>
     </div>
 
-<div id="settingsPanel" class="pegasus-panel">
-    <h3>ΡΥΘΜΙΣΕΙΣ PEGASUS</h3>
-    <div class="settings-grid">
-        <div class="setting-item"><p>Βάρος (kg):</p><input type="number" id="userWeightInput"></div>
-        <div class="setting-item"><p>Ύψος (cm):</p><input type="number" id="userHeightInput"></div>
-        <div class="setting-item"><p>Ηλικία:</p><input type="number" id="userAgeInput"></div>
-        <div class="setting-item">
-            <p>Φύλο:</p>
-            <select id="userGenderInput">
+<div id="settingsPanel" class="pegasus-panel" style="max-width: 400px;">
+    <h3 style="text-align: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-bottom: 15px;">ΡΥΘΜΙΣΕΙΣ PEGASUS</h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
+            <span style="font-size: 13px; color: #ccc;">Βάρος (kg)</span>
+            <input type="number" id="userWeightInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
+            <span style="font-size: 13px; color: #ccc;">Ύψος (cm)</span>
+            <input type="number" id="userHeightInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
+            <span style="font-size: 13px; color: #ccc;">Ηλικία</span>
+            <input type="number" id="userAgeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
+            <span style="font-size: 13px; color: #ccc;">Φύλο</span>
+            <select id="userGenderInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; font-size: 12px; padding: 2px;">
                 <option value="male">Άνδρας</option>
                 <option value="female">Γυναίκα</option>
             </select>
         </div>
-        
-        <hr class="panel-divider" style="grid-column: span 2; border: 0; border-top: 1px solid #333; margin: 15px 0;">
 
-        <div class="setting-item"><p class="label-highlight">Στόχος Θερμίδων:</p><input type="number" id="goalKcalInput"></div>
-        <div class="setting-item"><p class="label-highlight">Στόχος Πρωτεΐνης:</p><input type="number" id="goalProteinInput"></div>
-        
-        <div class="setting-item"><p class="label-highlight" style="color: #4CAF50;">Χρόνος Άσκησης (s):</p><input type="number" id="exerciseTimeInput" placeholder="45"></div>
-        <div class="setting-item"><p class="label-highlight" style="color: #4CAF50;">Χρόνος Διαλείμματος (s):</p><input type="number" id="restTimeInput" placeholder="60"></div>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
 
-        <button id="btnSaveSettings" class="p-btn" style="width: 100%; grid-column: span 2; margin-top: 10px;">ΑΠΟΘΗΚΕΥΣΗ ΡΥΘΜΙΣΕΩΝ</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
+            <span style="font-size: 13px; color: #4CAF50; font-weight: bold;">Στόχος Kcal</span>
+            <input type="number" id="goalKcalInput" style="width: 70px; background: #000; border: 1px solid #4CAF50; color: #fff; text-align: center; padding: 3px;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
+            <span style="font-size: 13px; color: #4CAF50; font-weight: bold;">Πρωτεΐνη (g)</span>
+            <input type="number" id="goalProteinInput" style="width: 70px; background: #000; border: 1px solid #4CAF50; color: #fff; text-align: center; padding: 3px;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
+            <span style="font-size: 13px; color: #888;">Άσκηση (s)</span>
+            <input type="number" id="exerciseTimeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
+            <span style="font-size: 13px; color: #888;">Διάλειμμα (s)</span>
+            <input type="number" id="restTimeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
+        </div>
+
+        <div style="margin-top: 10px; background: rgba(76, 175, 80, 0.05); border: 1px solid #222; border-radius: 8px; padding: 10px;">
+            <p style="color: #4CAF50; font-size: 11px; font-weight: bold; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">WEEKLY SET TARGETS</p>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #eee;">Στήθος</span>
+                    <input type="number" id="targetΣτήθοςInput" style="width: 50px; background: #000; border: 1px solid #444; color: #4CAF50; text-align: center; border-radius: 4px;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #eee;">Πλάτη</span>
+                    <input type="number" id="targetΠλάτηInput" style="width: 50px; background: #000; border: 1px solid #444; color: #4CAF50; text-align: center; border-radius: 4px;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #eee;">Πόδια</span>
+                    <input type="number" id="targetΠόδιαInput" style="width: 50px; background: #000; border: 1px solid #444; color: #4CAF50; text-align: center; border-radius: 4px;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #eee;">Χέρια</span>
+                    <input type="number" id="targetΧέριαInput" style="width: 50px; background: #000; border: 1px solid #444; color: #4CAF50; text-align: center; border-radius: 4px;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #eee;">Ώμοι</span>
+                    <input type="number" id="targetΏμοιInput" style="width: 50px; background: #000; border: 1px solid #444; color: #4CAF50; text-align: center; border-radius: 4px;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #eee;">Κορμός</span>
+                    <input type="number" id="targetΚορμόςInput" style="width: 50px; background: #000; border: 1px solid #444; color: #4CAF50; text-align: center; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
+
+        <button id="btnSaveSettings" class="p-btn" style="width: 100%; margin-top: 15px; background: #4CAF50; color: #000; font-weight: bold;">ΑΠΟΘΗΚΕΥΣΗ</button>
     </div>
 </div>
 
