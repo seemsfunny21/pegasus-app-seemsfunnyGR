@@ -1,0 +1,92 @@
+ΠΛΗΡΗΣ ΚΑΤΑΛΟΓΟΣ ΚΩΔΙΚΑ PEGASUS (V1.0 - ALL FILES)
+1. Πυρήνας & Δεδομένα (Core & Data)
+index.html: Η δομή της εφαρμογής και η σειρά φόρτωσης όλων των scripts.
+
+style.css: Όλο το οπτικό θέμα (Strict Green Edition), τα animations και το responsive design.
+
+data.js: Η κεντρική βάση δεδομένων (Ασκήσεις, Πρόγραμμα, Video Mapping).
+
+app.js: Ο κεντρικός ενορχηστρωτής (UI Logic, Navigation, Modals).
+
+2. Λογική & Υπολογισμοί (Logic & Engines)
+logic.js: Σύστημα Dynamic Volume Scaling (DVS) – Προσαρμογή σετ βάσει εβδομαδιαίου στόχου.
+
+logicmetabolic.js: Η μηχανή υπολογισμού βασισμένη στο προφίλ σου (74kg / 1.87m).
+
+metabolic.js: Υπολογισμός MET και θερμίδων ανά άσκηση σε πραγματικό χρόνο.
+
+calories.js: Διαχείριση του ημερήσιου budget θερμίδων και οπτικοποίηση στο κουμπί kcalBtn.
+
+3. Διατροφή & Εξωτερική Σύνδεση (Nutrition & Food)
+food.js: Το ημερολόγιο διατροφής και η βιβλιοθήκη φαγητών.
+
+extensions.js: Σύνδεση με το μενού "Κουκί & Ρεβύθι" και το "Agreement Log" (30 γεύματα).
+
+4. Εξειδικευμένα Modules (Specialized Modules)
+ems.js: Ειδική λογική για τις Τετάρτες (EMS Data, Auto-Skip Logic).
+
+cardio.js: Καταγραφή εξωτερικών δραστηριοτήτων (Ποδηλασία 30km, Διαδρομές).
+
+partner.js: Smart Partner Engine για ταυτόχρονη προπόνηση με δεύτερο άτομο.
+
+weather.js: Fetching δεδομένων καιρού από το Open-Meteo API για τα Ιωάννινα.
+
+weatherHandler.js: Διαχείριση του "Rain Toggle" και εναλλαγή σε Legacy Προγράμματα.
+
+5. UI, Πρόοδος & Analytics (UX & Analytics)
+progressUI.js: Οπτικοποίηση των Muscle Bars (Πρόοδος ανά μυϊκή ομάδα).
+
+achievements.js: Σύστημα οροσήμων (Milestones) και καταμέτρηση συνολικών σετ ανά άσκηση.
+
+calendar.js: Το ιστορικό προπονήσεων και η σύνδεση με το ημερολόγιο διατροφής.
+
+dragDrop.js: Λειτουργικότητα αναδιάταξης των ασκήσεων (Custom Order) με Drag & Drop.
+
+6. Σύστημα Αναφορών & Ασφάλειας (Reporting & System)
+reporting.js: Data Commit και προετοιμασία του Morning Report (EmailJS).
+
+backup.js: Πλήρης εξαγωγή/εισαγωγή δεδομένων (LocalStorage + IndexedDB Photos).
+
+gallery.js: Διαχείριση φωτογραφιών σώματος (Transformation Tracker) μέσω IndexedDB.
+
+debug.js: Pegasus Health Check για τον εντοπισμό σφαλμάτων στη δομή των δεδομένων.
+
+
+⚙️ PEGASUS MASTER INVENTORY (22 Αρχεία)
+1. Βασική Δομή & Στυλ (2 αρχεία)
+
+index.html (Η κεντρική σελίδα)
+
+style.css (Το οπτικό θέμα "Strict Green")
+
+2. Δεδομένα & Ρυθμίσεις (3 αρχεία)
+3. data.js (Βάση ασκήσεων και προγράμματος)
+4. settings.js (Παράμετροι χρήστη: 74kg, 1.87m, στόχοι)
+5. debug.js (Έλεγχος υγείας συστήματος)
+
+3. Κύρια Λογική & UI (3 αρχεία)
+6. app.js (Ο ενορχηστρωτής του UI)
+7. dragDrop.js (Λειτουργία αναδιάταξης ασκήσεων)
+8. partner.js (Σύστημα Smart Partner)
+
+4. Μεταβολισμός & Θερμίδες (4 αρχεία)
+9. logicmetabolic.js (Υπολογισμοί βάσει προφίλ)
+10. metabolic.js (Μηχανή MET & Fail-safe)
+11. calories.js (Module υπολογισμού καύσης)
+12. food.js (Διαχείριση ημερήσιου φαγητού)
+
+5. Διαχείριση Προπόνησης (3 αρχεία)
+13. logic.js (Dynamic Volume Scaling - DVS)
+14. inventoryHandler.js (Κατανομή σετ ανά μυϊκή ομάδα)
+15. ems.js (Module ειδικών προπονήσεων EMS)
+
+6. Πρόοδος & Analytics (3 αρχεία)
+16. progressUI.js (Οπτικοποίηση μυϊκής προόδου)
+17. achievements.js (Σύστημα Milestone & Total Sets)
+18. calendar.js (Ιστορικό & Σύνδεση με Diet Panel)
+
+7. Εξωτερικές Λειτουργίες & Backup (4 αρχεία)
+19. extensions.js (Σύνδεση με "Κουκί & Ρεβύθι" / Agreement Log)
+20. weather.js (API Καιρού Ιωαννίνων)
+21. weatherHandler.js (Logic "Rain Toggle" & Legacy Programs)
+22. backup.js (Εξαγωγή/Εισαγωγή JSON δεδομένων)

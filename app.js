@@ -777,6 +777,11 @@ if (typeof PegasusReporting !== 'undefined') {
     }, 300);
 };
 
+/* ==========================================================================
+   PEGASUS WORKOUT SYSTEM - CORE LOGIC UPDATE (v5.2)
+   Protocol: Strict Data Analyst
+   ========================================================================== */
+
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) {
@@ -784,55 +789,39 @@ function openExercisePreview() {
         return;
     }
 
-    const currentDay = activeBtn.textContent;
+    const currentDay = activeBtn.textContent.trim().replace(" ☀️", "");
     const dayExercises = program[currentDay];
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
     
-    document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()}`;
-    
-    // 1. Εμφάνιση του panel
-    panel.style.display = 'block';
+    if (!panel || !content) return;
 
-    // 2. Καθαρισμός περιεχομένου
+    document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()}`;
+    panel.style.display = 'block';
     content.innerHTML = ''; 
 
-    // 3. FORCE RENDER (Διόρθωση 0% - Weekly Muscle Coverage)
-    // Καλούμε το MuscleProgressUI πριν το render των ασκήσεων
+    // 1. Force Render Muscle Progress
     if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
-        console.log("PEGASUS ANALYST: Rendering Muscle Progress Bars...");
         window.MuscleProgressUI.render();
-    } else {
-        console.error("PEGASUS ANALYST: MuscleProgressUI structure is invalid or missing!");
     }
 
-    // 4. Mapping Εικόνων (Ενσωμάτωση bikeImage)
+    // 2. Mapping & Rendering
     const smartMapping = { 
         "pulldown": "pulldownimage.png", 
         "triceps overhead extension": "tricepsoverheadimage.png", 
         "ems": "emsImage.png",
-        "ποδηλασία": "bikeImage.jpg", // Σάββατο Cardio
+        "ποδηλασία": "bikeImage.jpg",
         "cycling": "bikeImage.jpg"
     };
     
     dayExercises.forEach(ex => {
         const lowerName = ex.name.toLowerCase();
-        
-        // Αναζήτηση κλειδιού στο mapping
         const key = Object.keys(smartMapping).find(k => lowerName.includes(k));
         
-        // Καθορισμός αρχείου εικόνας
-        let imgFile;
-        if (key) {
-            imgFile = smartMapping[key];
-        } else {
-            // Δυναμικό όνομα αρχείου: αφαίρεση κενών και προσθήκη 'image.png'
-            imgFile = ex.name.replace(/\s+/g, '').toLowerCase() + "image.png";
-        }
+        let imgFile = key ? smartMapping[key] : (ex.name.replace(/\s+/g, '').toLowerCase() + "image.png");
 
-        // 5. Injection στο DOM
         content.innerHTML += `
-            <div class="preview-item" style="margin: 10px; text-align: center; width: 160px;">
+            <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
                 <img src="images/${imgFile}" onerror="this.src='images/placeholder.jpg'" 
                      style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
                 <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${ex.name}</p>
@@ -840,6 +829,66 @@ function openExercisePreview() {
         `;
     });
 }
+
+/* === GLOBAL PANEL AUTO-CLOSE LOGIC === */
+window.addEventListener('mousedown', (e) => {
+    const panels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel'];
+
+    panels.forEach(id => {
+        const panel = document.getElementById(id);
+        if (panel && panel.style.display === 'block') {
+            if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button')) {
+                panel.style.display = 'none';
+            }
+        }
+    });
+});
+
+/* === PEGASUS DATA TRACKING === */
+window.updateTotalWorkoutCount = function() {
+    const data = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
+    const total = Object.keys(data).length;
+    const display = document.getElementById("totalWorkoutsDisplay");
+    if (display) display.textContent = `Προπονήσεις: ${total}`;
+};
+
+window.logPegasusSet = function(exName) {
+    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || 
+                  { "Στήθος": 0, "Πλάτη": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0, "Ώμοι": 0 };
+    
+    if (!window.exercisesDB) return;
+    
+    const exercise = window.exercisesDB.find(ex => ex.name === exName);
+    if (exercise && exercise.muscleGroup) {
+        const value = (exercise.name.includes("Ποδηλασία")) ? 3 : 1;
+        history[exercise.muscleGroup] = (history[exercise.muscleGroup] || 0) + value;
+        localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+        if (window.MuscleProgressUI) window.MuscleProgressUI.render();
+    }
+};
+
+/* === REAL-TIME WEIGHT MONITORING === */
+// Πρέπει να καλείται μετά το render των ασκήσεων
+window.initWeightListeners = function() {
+    document.querySelectorAll('.weight-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const node = e.target.closest('.exercise-node') || e.target.closest('.exercise');
+            if (!node) return;
+            
+            const nameEl = node.querySelector('.exercise-name');
+            if (!nameEl) return;
+            
+            const exName = nameEl.textContent.trim().replace(" ☀️", "");
+            const weightVal = parseFloat(e.target.value) || 0;
+            
+            localStorage.setItem(`weight_ANGELOS_${exName}`, weightVal);
+            console.log(`PEGASUS: Weight sync -> ${exName}: ${weightVal}kg`);
+        });
+    });
+};
+
+// Initial calls
+updateTotalWorkoutCount();
 
 /* === GLOBAL PANEL AUTO-CLOSE LOGIC === */
 window.addEventListener('mousedown', (e) => {
