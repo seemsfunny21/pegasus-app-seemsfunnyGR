@@ -94,7 +94,7 @@ const PegasusReporting = {
         // Στέλνουμε μόνο αν η ημερομηνία καταγραφής είναι διαφορετική από τη σημερινή (επόμενο πρωί)
         if (pending.dateSent !== dateStr) {
             if (typeof emailjs !== 'undefined') {
-                emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
+              emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', pending.templateParams)
                     .then(() => {
                         console.log("✅ PEGASUS: Morning Report Sent Successfully.");
                         localStorage.removeItem(this.pendingReportKey);
