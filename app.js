@@ -639,7 +639,7 @@ window.updateTotalWorkoutCount = function() {
 window.onload = () => {
     // 1. Αρχικοποίηση EmailJS
     if (typeof emailjs !== 'undefined') {
-        emailjs.init('qsfyDrneUHP7zEFui');
+        emailjs.init('YOUR_EMAILJS_PUBLIC_KEY');
     }
     
 // 2. Έλεγχος για αυτόματη αποστολή (Μόνο αν δεν έχει σταλεί σήμερα)
