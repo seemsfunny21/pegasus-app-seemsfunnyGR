@@ -1,66 +1,20 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.1 (STRICT ANALYST FIX)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.2 (PASSIVE RENDER EDITION)
    ========================================================================== */
 
 window.MuscleProgressUI = {
     init() {
         this.checkWeeklyReset();
-        this.auditAndSync();
+        // Αφαιρέθηκε η κλήση this.auditAndSync() για αποτροπή επικάλυψης δεδομένων
         this.render();
         
         setInterval(() => {
-            this.auditAndSync();
             this.render();
         }, 3000);
     },
 
-    auditAndSync() {
-        let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {
-            "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
-        };
-        
-        let totalKm = 0;
-        const now = new Date();
-        
-        // Βρίσκουμε την τελευταία Δευτέρα για να μετράμε ΜΟΝΟ την τρέχουσα εβδομάδα
-        const lastMonday = new Date();
-        const day = lastMonday.getDay();
-        const diff = lastMonday.getDate() - day + (day === 0 ? -6 : 1);
-        lastMonday.setDate(diff);
-        lastMonday.setHours(0,0,0,0);
-
-        for (let i = 0; i < 7; i++) {
-            let d = new Date();
-            d.setDate(now.getDate() - i);
-            
-            // Αν η ημέρα που ελέγχουμε είναι πριν την τρέχουσα Δευτέρα, την αγνοούμε
-            if (d < lastMonday) continue;
-
-            let dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-            let raw = localStorage.getItem(`cardio_log_${dateKey}`);
-            if (raw) {
-                totalKm += parseFloat(JSON.parse(raw).km) || 0;
-            }
-        }
-
-        // Υπολογισμός: Αν δεν υπάρχει cardio/ems αυτή την εβδομάδα, τα σετ είναι 0
-        const cyclingSets = totalKm > 0 ? Math.round(totalKm / 3.33) : 0;
-        
-        // Έλεγχος αν σήμερα είναι Τετάρτη και αν έχει γίνει το EMS (για το base 6)
-        const isWednesdayDone = localStorage.getItem(`ems_log_${now.toISOString().split('T')[0]}`);
-        const baseEMS = isWednesdayDone ? 6 : 0;
-
-        const calculatedLegs = baseEMS + cyclingSets;
-
-        if (history["Πόδια"] !== calculatedLegs) {
-            history["Πόδια"] = calculatedLegs;
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
-            // Push στο cloud αμέσως για να ενημερωθεί η "πηγή"
-            if (window.PegasusCloud) window.PegasusCloud.push(true);
-        }
-    },
-
     calculateStats() {
+        // Διαβάζει παθητικά το 'pegasus_weekly_history' που ενημερώνουν τα άλλα scripts
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
                         { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
@@ -121,4 +75,7 @@ window.MuscleProgressUI = {
         }
     }
 };
-MuscleProgressUI.init();
+
+window.addEventListener('load', () => {
+    MuscleProgressUI.init();
+});
