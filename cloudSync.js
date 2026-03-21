@@ -1,6 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - FINAL ANALYST EDITION (v10.1)
-   Protocol: Zero-Failure Pull & Force Overwrite
+   PEGASUS CLOUD VAULT - AUTO-SYNC EDITION (v11.0)
    ========================================================================== */
 
 const PegasusCloud = {
@@ -14,7 +13,6 @@ const PegasusCloud = {
 
     getTodayKey: function() {
         const d = new Date();
-        // ΔΙΟΡΘΩΣΗ: Προσθήκη return και format D/M/YYYY
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
@@ -23,41 +21,41 @@ const PegasusCloud = {
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
             localStorage.setItem("pegasus_vault_pin", pin);
-            this.pull(); 
+            console.log("PEGASUS: Vault Unlocked. Triggering Initial Pull...");
+            this.pull(true); // Silent pull κατά την είσοδο
             return true;
         }
         return false;
     },
 
-    pull: async function() {
+    pull: async function(silent = false) {
         if (!this.isUnlocked) return;
-        console.log("PEGASUS: Fetching data...");
         try {
             const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
                 headers: { 'X-Master-Key': this.userKey, 'X-Bin-Meta': 'false' }
             });
             const cloudData = await res.json();
             
-            // ΑΜΕΣΗ ΕΠΙΒΟΛΗ (Χωρίς if/else ελέγχους ημερομηνίας)
             const dayKey = "food_log_" + this.getTodayKey();
             const cloudLog = cloudData.today_food_log || [];
             
+            // BACKUP ΠΡΙΝ ΤΗΝ ΑΝΤΙΚΑΤΑΣΤΑΣΗ
+            const localBefore = localStorage.getItem(dayKey);
+            if (localBefore) localStorage.setItem(dayKey + "_backup", localBefore);
+
             localStorage.setItem(dayKey, JSON.stringify(cloudLog));
             
             if (cloudData.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
             if (cloudData.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
 
-            console.log("✅ PEGASUS Pull Success. Items: " + cloudLog.length);
-            alert("ΛΗΨΗ ΟΛΟΚΛΗΡΩΘΗΚΕ: " + cloudLog.length + " εγγραφές.");
+            console.log("✅ Auto-Pull Complete. Items: " + cloudLog.length);
+            if (!silent) alert("Ο συγχρονισμός ολοκληρώθηκε (" + cloudLog.length + " εγγραφές)");
             
             if (typeof window.updateFoodUI === "function") window.updateFoodUI();
-        } catch (e) { 
-            console.error("❌ PEGASUS Pull Error", e);
-            alert("ΣΦΑΛΜΑ PULL: " + e.message);
-        }
+        } catch (e) { console.error("❌ Pull Error", e); }
     },
 
-    push: async function(silent = false) {
+    push: async function(silent = true) { // Default silent για την αυτοματοποίηση
         if (!this.isUnlocked) return;
         const todayStr = this.getTodayKey();
         const payload = {
@@ -73,12 +71,8 @@ const PegasusCloud = {
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
                 body: JSON.stringify(payload)
             });
-            console.log("✅ PEGASUS Push Success");
-            if (!silent) alert("ΕΠΙΤΥΧΗΣ ΑΠΟΣΤΟΛΗ ΣΤΟ CLOUD");
-        } catch (e) { 
-            console.error("❌ PEGASUS Push Error", e);
-            if (!silent) alert("ΑΠΟΤΥΧΙΑ ΑΠΟΣΤΟΛΗΣ.");
-        }
+            console.log("✅ Auto-Push Success");
+        } catch (e) { console.error("❌ Push Error", e); }
     }
 };
 
