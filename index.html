@@ -6,13 +6,12 @@
     <title>Pegasus Workout - Final Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
-	<script>
+<script>
     /* PEGASUS DEVICE ROUTING PROTOCOL */
     const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isSmallScreen = window.innerWidth <= 800;
 
     if (isMobileAgent || isSmallScreen) {
-        // Άμεση ανακατεύθυνση (αποτροπή επιστροφής με το πλήκτρο Back)
         window.location.replace("mobile.html");
     }
 </script>
