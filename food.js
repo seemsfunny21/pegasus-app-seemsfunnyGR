@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - AUTO-SYNC EDITION (V7.0)
+   PEGASUS FOOD ENGINE - FINAL ANALYST EDITION (V7.1)
    STRICT DATA ANALYST PROTOCOL - UPDATED 21/03/2026
+   FIX: KEY GENERATOR ALIGNMENT (DD/M/YYYY)
    ========================================================================== */
 
 // Διασφάλιση ημερομηνίας
@@ -60,10 +61,10 @@ function changeFoodDate(days) {
     updateFoodUI();
 }
 
-// ΚΕΝΤΡΙΚΗ ΓΕΝΝΗΤΡΙΑ ΚΛΕΙΔΙΩΝ (STRICT PROTOCOL)
+// ΚΕΝΤΡΙΚΗ ΓΕΝΝΗΤΡΙΑ ΚΛΕΙΔΙΩΝ (STRICT PROTOCOL) - ΔΙΟΡΘΩΘΗΚΕ
 window.getStrictStorageKey = function() {
     const d = window.currentFoodDate || new Date();
-    // Format DD/M/YYYY για απόλυτη συμβατότητα με το Cloud Vault
+    // ΠΡΟΣΟΧΗ: Format DD/M/YYYY για απόλυτη συμβατότητα με το Cloud και το Backup
     return "food_log_" + d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
 
@@ -117,10 +118,10 @@ window.addFoodItem = function(name, kcal, protein) {
 
     if (typeof window.addToLibrary === "function") window.addToLibrary(name, kcal, protein);
     window.updateFoodUI();
-
-    // ΑΥΤΟΜΑΤΟ PUSH ΣΤΟ CLOUD (Silent Mode)
-    if (window.PegasusCloud && PegasusCloud.isUnlocked) {
-        PegasusCloud.push(true); 
+    
+    // ΑΥΤΟΜΑΤΟ PUSH (Cloud Integration)
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+        window.PegasusCloud.push(true);
     }
 };
 
@@ -133,9 +134,9 @@ window.deleteFoodItem = function(index) {
     
     window.updateFoodUI();
     
-    // ΑΥΤΟΜΑΤΟ PUSH ΜΕΤΑ ΤΗ ΔΙΑΓΡΑΦΗ (Silent Mode)
-    if (window.PegasusCloud && PegasusCloud.isUnlocked) {
-        PegasusCloud.push(true); 
+    // ΑΥΤΟΜΑΤΟ PUSH ΜΕΤΑ ΤΗ ΔΙΑΓΡΑΦΗ
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+        window.PegasusCloud.push(true);
     }
 };
 
@@ -227,6 +228,9 @@ window.filterLibrary = function() {
         btnDel.innerHTML = "&#10005;";
         btnDel.style.cssText = "background:none; border:1px solid #4CAF50; color:#4CAF50; cursor:pointer; font-size:14px; width:25px; height:25px; display:flex; align-items:center; justify-content:center; border-radius:3px; margin-left:10px;";
         
+        btnDel.onmouseover = () => { btnDel.style.color = "#ff4444"; btnDel.style.borderColor = "#ff4444"; };
+        btnDel.onmouseout = () => { btnDel.style.color = "#4CAF50"; btnDel.style.borderColor = "#4CAF50"; };
+
         btnDel.onclick = (e) => {
             e.stopPropagation();
             removeFromLibrary(item.name);
@@ -243,6 +247,7 @@ function addToLibrary(name, kcal, protein) {
     if (!library.some(item => item.name.toLowerCase() === name.toLowerCase())) {
         library.push({ name, kcal, protein: parseFloat(protein || 0) });
         localStorage.setItem('pegasus_food_library', JSON.stringify(library));
+        localStorage.setItem('food_library', JSON.stringify(library));
     }
 }
 
@@ -250,6 +255,7 @@ function removeFromLibrary(name) {
     let library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
     library = library.filter(item => item.name !== name);
     localStorage.setItem('pegasus_food_library', JSON.stringify(library));
+    localStorage.setItem('food_library', JSON.stringify(library));
     window.filterLibrary();
 }
 
