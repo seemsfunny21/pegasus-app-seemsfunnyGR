@@ -419,46 +419,23 @@ function skipToNextExercise() {
 }
 
 /* ===== PEGASUS HYBRID MEDIA ENGINE (V6.5) ===== */
-/* ===== PEGASUS HYBRID MEDIA ENGINE (V6.7) ===== */
 function showVideo(i) {
-    try {
-        if (!exercises || !exercises[i]) return;
-        const ex = exercises[i];
-        
-        const wInput = ex.querySelector(".weight-input");
-        let name = wInput ? wInput.getAttribute("data-name") : "default";
-        const vid = document.getElementById("video");
-        
-        if (vid && typeof videoMap !== 'undefined') {
-            let mediaFile = videoMap[name] || "default";
-            
-            // Logic για EMS και Plank
-            if (name.toLowerCase().includes("ems") && name.toLowerCase().includes("plank")) {
-                mediaFile = "PlankImage";
-            } else if (name.toLowerCase().includes("ems")) {
-                mediaFile = "emslimage";
-            }
-
-            // Εξαναγκασμένη χρήση εικόνας αν το όνομα περιέχει "Image"
-            if (mediaFile.toLowerCase().includes("image")) {
-                vid.src = ""; 
-                vid.poster = "images/" + mediaFile + ".png";
-                vid.style.backgroundImage = "url('images/" + mediaFile + ".png')";
-                vid.style.backgroundSize = "contain";
-                vid.style.backgroundRepeat = "no-repeat";
-                vid.style.backgroundPosition = "center";
-                vid.style.opacity = "1";
-            } else {
-                // Αναζήτηση βίντεο για τα υπόλοιπα
-                vid.style.backgroundImage = "none";
-                vid.src = "videos/" + mediaFile + ".mp4";
-                vid.play().catch(() => console.log("Video mode: Falling back to poster"));
-            }
-        }
-    } catch (err) {
-        console.error("PEGASUS CRITICAL: showVideo error", err);
+    const ex = exercises[i];
+    if (!ex) return;
+    
+    const wInput = ex.querySelector(".weight-input");
+    let name = wInput ? wInput.getAttribute("data-name") : "default";
+    const vid = document.getElementById("video");
+    
+    if (vid && typeof videoMap !== 'undefined') {
+        let videoFile = videoMap[name] || "default";
+        if (name.toLowerCase().includes("ems")) videoFile = "ems";
+        vid.src = `videos/${videoFile}.mp4`;
+        vid.style.opacity = "1"; 
+        vid.play().catch(() => console.log(`Video not found: ${videoFile}`));
     }
 }
+
 window.calculateTotalTime = function() {
     workoutPhases[1].d = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
     workoutPhases[2].d = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
