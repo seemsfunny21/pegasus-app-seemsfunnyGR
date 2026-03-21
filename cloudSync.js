@@ -78,5 +78,15 @@ const PegasusCloud = {
 
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin) PegasusCloud.unlock(savedPin);
+    if (savedPin) {
+        window.PegasusCloud.unlock(savedPin);
+    } else {
+        // Καθυστέρηση 1.5 δευτερολέπτου για να φορτώσει πρώτα το UI
+        setTimeout(() => {
+            const pin = prompt("PEGASUS VAULT: Εισάγετε PIN για συγχρονισμό:");
+            if (pin && !window.PegasusCloud.unlock(pin)) {
+                alert("ΛΑΘΟΣ PIN. Ανανεώστε τη σελίδα για νέα προσπάθεια.");
+            }
+        }, 1500);
+    }
 });
