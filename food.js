@@ -119,9 +119,9 @@ window.addFoodItem = function(name, kcal, protein) {
     if (typeof window.addToLibrary === "function") window.addToLibrary(name, kcal, protein);
     window.updateFoodUI();
     
-    // ΑΥΤΟΜΑΤΟ PUSH (Cloud Integration)
-    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-        window.PegasusCloud.push(true);
+    // ΑΥΤΟΜΑΤΟ PUSH - Διορθωμένη Εμβέλεια (Scope)
+    if (typeof PegasusCloud !== "undefined" && PegasusCloud.isUnlocked) {
+        PegasusCloud.push(true);
     }
 };
 
@@ -134,9 +134,9 @@ window.deleteFoodItem = function(index) {
     
     window.updateFoodUI();
     
-    // ΑΥΤΟΜΑΤΟ PUSH ΜΕΤΑ ΤΗ ΔΙΑΓΡΑΦΗ
-    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-        window.PegasusCloud.push(true);
+    // ΑΥΤΟΜΑΤΟ PUSH - Διορθωμένη Εμβέλεια (Scope)
+    if (typeof PegasusCloud !== "undefined" && PegasusCloud.isUnlocked) {
+        PegasusCloud.push(true);
     }
 };
 
