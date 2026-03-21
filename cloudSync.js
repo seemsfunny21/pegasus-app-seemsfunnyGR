@@ -63,39 +63,47 @@ const PegasusCloud = {
     /**
      * 4. ΛΗΨΗ ΔΕΔΟΜΕΝΩΝ (PULL)
      */
-    pull: async function() {
+pull: async function() {
         if (!this.isUnlocked) return;
+        console.log("PEGASUS: Fetching data from Cloud...");
         try {
             const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
                 headers: { 'X-Master-Key': this.userKey, 'X-Bin-Meta': 'false' }
             });
             const cloudData = await res.json();
+            
+            // Επιβεβαίωση λήψης στην κονσόλα
+            console.log("✅ PEGASUS: Cloud Data Received", cloudData);
+            
             this.processMerge(cloudData);
-        } catch (e) { console.error("❌ PEGASUS Pull Error", e); }
+        } catch (e) { 
+            console.error("❌ PEGASUS Pull Error", e);
+            alert("ΣΦΑΛΜΑ ΛΗΨΗΣ: Ελέγξτε τη σύνδεση ή το Bin ID.");
+        }
     },
 
     /**
      * 5. ΣΥΓΧΩΝΕΥΣΗ (MERGE)
      */
 processMerge: function(cloudData) {
-    const todayStr = this.getTodayKey();
-    const dayKey = "food_log_" + todayStr;
+        const todayStr = this.getTodayKey();
+        const dayKey = "food_log_" + todayStr;
 
-    // Πρωτόκολλο Overwrite: Το Cloud είναι η μόνη πηγή αλήθειας
-    if (cloudData.last_update_date === todayStr) {
-        // Διαγράφουμε τα τοπικά και βάζουμε μόνο του Cloud
-        localStorage.setItem(dayKey, JSON.stringify(cloudData.today_food_log || []));
-        
-        // Ενημέρωση UI
-        if (typeof window.updateFoodUI === "function") window.updateFoodUI();
-        console.log("PEGASUS: Local Data Overwritten by Cloud.");
-    }
-
-    if (cloudData.weekly_history) {
-        localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
-        if (window.MuscleProgressUI) window.MuscleProgressUI.render();
-    }
-}
+        if (cloudData.last_update_date === todayStr) {
+            const cloudLog = cloudData.today_food_log || [];
+            
+            // Επιβολή Overwrite
+            localStorage.setItem(dayKey, JSON.stringify(cloudLog));
+            
+            console.log("🔄 PEGASUS: Local storage updated with " + cloudLog.length + " items.");
+            alert("ΣΥΓΧΡΟΝΙΣΜΟΣ: Λήψη " + cloudLog.length + " εγγραφών ολοκληρώθηκε.");
+            
+            if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+        } else {
+            console.warn("⚠️ PEGASUS: Cloud data date mismatch. Cloud: " + cloudData.last_update_date + " | Local: " + todayStr);
+            alert("ΠΡΟΣΟΧΗ: Τα δεδομένα στο Cloud είναι παλαιότερα (" + cloudData.last_update_date + ").");
+        }
+    },
 
     /**
      * 6. ΑΠΟΣΤΟΛΗ ΔΕΔΟΜΕΝΩΝ (PUSH)
