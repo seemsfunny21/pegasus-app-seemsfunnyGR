@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - STABLE EDITION (v12.0)
-   FIX: F5 REFRESH BUG & DATA STRUCTURE FAILSAFE
+   PEGASUS CLOUD VAULT - ACTIVE SYNC (v13.3)
+   FEAT: DESKTOP BACKGROUND POLLING & CACHE BYPASS
    ========================================================================== */
 
 const PegasusCloud = {
@@ -11,22 +11,39 @@ const PegasusCloud = {
     
     isUnlocked: false,
     userKey: "",
+    syncInterval: null,
 
     getTodayKey: function() {
         const d = new Date();
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
+    safeParse: function(key, fallback) {
+        try {
+            const val = localStorage.getItem(key);
+            return val ? JSON.parse(val) : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    },
+
     unlock: function(pin) {
         if (!pin) return false;
-        const cleanPin = pin.trim(); // Αφαίρεση τυχόν κενών χαρακτήρων
-        
+        const cleanPin = pin.trim();
         if (btoa(cleanPin) === "MjM3NQ==") { 
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
-            localStorage.setItem("pegasus_vault_pin", cleanPin); // Αποθήκευση για να μην το ζητάει στο F5
-            console.log("PEGASUS: Vault Unlocked. Pulling data...");
+            localStorage.setItem("pegasus_vault_pin", cleanPin);
+            
             this.pull(true);
+            
+            // ΕΝΕΡΓΟΠΟΙΗΣΗ BACKGROUND POLLING (Κάθε 10 δευτερόλεπτα)
+            if (!this.syncInterval) {
+                this.syncInterval = setInterval(() => {
+                    if (this.isUnlocked) this.pull(true);
+                }, 10000);
+            }
+            
             return true;
         }
         return false;
@@ -39,32 +56,82 @@ const PegasusCloud = {
                 headers: { 'X-Master-Key': this.userKey, 'X-Bin-Meta': 'false' }
             });
             const cloudData = await res.json();
-            
-            // Failsafe: Αν το JSONBin τυλίξει τα δεδομένα στο "record", τα εξάγουμε σωστά.
             const actualData = cloudData.record || cloudData;
             
-            const dayKey = "food_log_" + this.getTodayKey();
-            const cloudLog = actualData.today_food_log || [];
-            
-            localStorage.setItem(dayKey, JSON.stringify(cloudLog));
-            
-            if (actualData.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(actualData.weekly_history));
-            if (actualData.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(actualData.food_library));
+            let requiresUIReload = false;
 
-            console.log("✅ Auto-Pull Complete. Items: " + cloudLog.length);
+            const dayKey = "food_log_" + this.getTodayKey();
+            localStorage.setItem(dayKey, JSON.stringify(actualData.today_food_log || []));
             
-            if (typeof window.updateFoodUI === "function") window.updateFoodUI();
-        } catch (e) { console.error("❌ Pull Error", e); }
+            if (actualData.weekly_history) {
+                const localWeekly = localStorage.getItem('pegasus_weekly_history');
+                const cloudWeekly = JSON.stringify(actualData.weekly_history);
+                if (localWeekly !== cloudWeekly) {
+                    localStorage.setItem('pegasus_weekly_history', cloudWeekly);
+                    requiresUIReload = true;
+                }
+            }
+            
+            if (actualData.food_library) {
+                localStorage.setItem('pegasus_food_library', JSON.stringify(actualData.food_library));
+            }
+
+            if (actualData.cardio_logs) {
+                Object.keys(actualData.cardio_logs).forEach(k => {
+                    const localVal = localStorage.getItem(k);
+                    const cloudVal = JSON.stringify(actualData.cardio_logs[k]);
+                    if (localVal !== cloudVal) {
+                        localStorage.setItem(k, cloudVal);
+                        requiresUIReload = true;
+                    }
+                });
+            }
+            
+            if (actualData.history_logs) {
+                Object.keys(actualData.history_logs).forEach(k => {
+                    let val = actualData.history_logs[k];
+                    const cloudVal = typeof val === 'string' ? val : JSON.stringify(val);
+                    const localVal = localStorage.getItem(k);
+                    if (localVal !== cloudVal && k.includes('pegasus_history')) {
+                        localStorage.setItem(k, cloudVal);
+                        requiresUIReload = true;
+                    }
+                });
+            }
+
+            // Αυτόματο Refresh UI μόνο αν υπήρξαν ουσιαστικές αλλαγές
+            if (requiresUIReload) {
+                console.log("🔄 Νέα δεδομένα ελήφθησαν. Επανεκκίνηση UI...");
+                window.location.reload();
+            } else if (typeof window.updateFoodUI === "function") {
+                window.updateFoodUI();
+            }
+        } catch (e) {}
     },
 
     push: async function(silent = true) {
         if (!this.isUnlocked) return;
         const todayStr = this.getTodayKey();
+        
+        const cardioLogs = {};
+        const historyLogs = {};
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            try {
+                if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
+                if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
+                if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
+            } catch(e) {}
+        }
+
         const payload = {
             last_update_date: todayStr,
-            today_food_log: JSON.parse(localStorage.getItem("food_log_" + todayStr) || "[]"),
-            weekly_history: JSON.parse(localStorage.getItem('pegasus_weekly_history') || "{}"),
-            food_library: JSON.parse(localStorage.getItem('pegasus_food_library') || "[]")
+            today_food_log: this.safeParse("food_log_" + todayStr, []),
+            weekly_history: this.safeParse('pegasus_weekly_history', {}),
+            food_library: this.safeParse('pegasus_food_library', []),
+            cardio_logs: cardioLogs,
+            history_logs: historyLogs
         };
 
         try {
@@ -73,29 +140,19 @@ const PegasusCloud = {
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
                 body: JSON.stringify(payload)
             });
-            console.log("✅ PEGASUS Auto-Push Success");
-        } catch (e) { console.error("❌ Push Error", e); }
+        } catch (e) {}
     }
 };
 
-// ΕΞΑΓΩΓΗ ΣΤΟ GLOBAL WINDOW (Απαραίτητο για το food.js)
 window.PegasusCloud = PegasusCloud;
 
-// ΕΚΚΙΝΗΣΗ & ΕΛΕΓΧΟΣ ΜΝΗΜΗΣ
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
+    if (savedPin && window.PegasusCloud.unlock(savedPin)) return; 
     
-    // Αν υπάρχει PIN στη μνήμη (π.χ. μετά από F5), ξεκλειδώνει αθόρυβα
-    if (savedPin && window.PegasusCloud.unlock(savedPin)) {
-        return; 
-    }
-    
-    // Αν δεν υπάρχει μνήμη (πρώτη φορά στο Incognito), ζητάει PIN
     localStorage.removeItem("pegasus_vault_pin");
     setTimeout(() => {
         const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
-        if (pin && !window.PegasusCloud.unlock(pin)) {
-            alert("ΛΑΘΟΣ PIN. Πατήστε F5 για νέα προσπάθεια.");
-        }
+        if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN.");
     }, 1000);
 });
