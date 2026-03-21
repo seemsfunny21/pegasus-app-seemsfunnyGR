@@ -116,6 +116,7 @@ window.saveEMSFinal = function() {
 
         alert(`PEGASUS SYNC: Η Τετάρτη ολοκληρώθηκε αυτόματα με την καταγραφή EMS.`);
         window.closeEMSModal();
+		if(window.PegasusCloud) PegasusCloud.push();
         window.location.reload();
     } catch (e) {
         console.error("Storage Error:", e);

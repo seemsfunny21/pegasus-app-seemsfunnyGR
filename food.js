@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - FULL ANALYST EDITION (V5.0)
-   STRICT DATA ANALYST PROTOCOL - UPDATED 10/03/2026
+   PEGASUS FOOD ENGINE - FINAL ANALYST EDITION (V6.8)
+   STRICT DATA ANALYST PROTOCOL - UPDATED 16/03/2026
    ========================================================================== */
 
 // Διασφάλιση ημερομηνίας
@@ -25,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (name && kcal) {
                 addFoodItem(name, kcal, protein);
-                nameEl.value = "";
-                kcalEl.value = "";
-                protEl.value = "";
+                if (nameEl) nameEl.value = "";
+                if (kcalEl) kcalEl.value = "";
+                if (protEl) protEl.value = "";
             } else {
                 alert("PEGASUS STRICT: Συμπλήρωσε Φαγητό και Θερμίδες!");
             }
@@ -59,28 +59,31 @@ function changeFoodDate(days) {
     window.currentFoodDate.setDate(window.currentFoodDate.getDate() + days);
     updateFoodUI();
 }
+// ΚΕΝΤΡΙΚΗ ΓΕΝΝΗΤΡΙΑ ΚΛΕΙΔΙΩΝ (STRICT PROTOCOL)
+window.getStrictStorageKey = function() {
+    const d = window.currentFoodDate || new Date();
+    const offset = d.getTimezoneOffset();
+    const adjustedDate = new Date(d.getTime() - (offset * 60000));
+    return `food_log_${adjustedDate.toISOString().split('T')[0]}`;
+};
 
 window.updateFoodUI = function() {
-    const d = window.currentFoodDate;
-    const dateStr = d.toLocaleDateString('el-GR');
+    const storageKey = window.getStrictStorageKey();
+    const dateStr = storageKey.replace('food_log_', '');
     
     const display = document.getElementById('currentFoodDateDisplay');
     if (display) display.textContent = dateStr;
 
-    const storageKey = `food_log_${dateStr}`;
     const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
-
     const listContainer = document.getElementById('todayFoodList');
     if (!listContainer) return;
     
     listContainer.innerHTML = "";
-    let totalKcal = 0;
-    let totalProtein = 0;
+    let totalKcal = 0, totalProtein = 0;
 
     foodLog.forEach((item, index) => {
         totalKcal += parseFloat(item.kcal || 0);
         totalProtein += parseFloat(item.protein || 0);
-
         const div = document.createElement('div');
         div.className = 'food-item';
         div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border-left:3px solid #4CAF50; border-radius:4px;";
@@ -89,7 +92,7 @@ window.updateFoodUI = function() {
                 <span style="font-weight: bold; color: #eee; font-size: 14px;">${item.name}</span>
                 <span style="font-size: 11px; color: #4CAF50;">${item.kcal} kcal | ${item.protein || 0}g P</span>
             </div>
-            <button style="background:none; border:none; color:#ff4444; cursor:pointer; font-size:18px;" onclick="deleteFoodItem(${index})">✕</button>
+            <button class="delete-btn" onclick="deleteFoodItem(${index})">✕</button>
         `;
         listContainer.appendChild(div);
     });
@@ -100,34 +103,32 @@ window.updateFoodUI = function() {
     const proteinNum = document.getElementById('todayTotalProtein'); 
     if (proteinNum) proteinNum.textContent = Math.round(totalProtein);
     
-    updateProgressBars(totalKcal, totalProtein);
-    window.filterLibrary(); 
+    if (typeof window.updateProgressBars === "function") updateProgressBars(totalKcal, totalProtein);
+    if (typeof window.filterLibrary === "function") window.filterLibrary(); 
     if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
 };
 
-function addFoodItem(name, kcal, protein) {
-    const dateStr = window.currentFoodDate.toLocaleDateString('el-GR');
-    const storageKey = `food_log_${dateStr}`;
+window.addFoodItem = function(name, kcal, protein) {
+    const storageKey = window.getStrictStorageKey();
     const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
-
-    foodLog.push({ 
-        name, 
-        kcal: parseFloat(kcal), 
-        protein: parseFloat(protein || 0) 
-    });
+    
+    foodLog.push({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(storageKey, JSON.stringify(foodLog));
 
-    addToLibrary(name, kcal, protein);
-    updateFoodUI();
-}
+    if (typeof window.addToLibrary === "function") window.addToLibrary(name, kcal, protein);
+    window.updateFoodUI();
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push(true);
+};
 
 window.deleteFoodItem = function(index) {
-    const dateStr = window.currentFoodDate.toLocaleDateString('el-GR');
-    const storageKey = `food_log_${dateStr}`;
+    const storageKey = window.getStrictStorageKey();
     let foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    
     foodLog.splice(index, 1);
     localStorage.setItem(storageKey, JSON.stringify(foodLog));
-    updateFoodUI();
+    
+    window.updateFoodUI();
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push(true);
 };
 
 function updateProgressBars(kcal, protein) {
@@ -180,22 +181,30 @@ window.renderKoukiMenu = function() {
 };
 
 window.addQuickFood = function(name, kcal, protein) {
-    document.getElementById('foodName').value = name;
-    document.getElementById('foodKcal').value = kcal;
-    document.getElementById('foodNote').value = protein;
-    document.getElementById('btnAddFood').click();
+    const nameInp = document.getElementById('foodName');
+    const kcalInp = document.getElementById('foodKcal');
+    const protInp = document.getElementById('foodNote');
+    const addBtn = document.getElementById('btnAddFood');
+
+    if (nameInp && kcalInp && protInp && addBtn) {
+        nameInp.value = name;
+        kcalInp.value = kcal;
+        protInp.value = protein;
+        addBtn.click();
+    }
 };
 
 /* --- LIBRARY LOGIC (ΣΥΧΝΕΣ ΕΠΙΛΟΓΕΣ) --- */
 window.filterLibrary = function() {
     const searchTerm = document.getElementById('librarySearch')?.value.toLowerCase() || "";
-    const library = JSON.parse(localStorage.getItem('food_library') || "[]");
+    // Χρήση pegasus_food_library
+    const library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
     const libContainer = document.getElementById('libraryFoodList');
     if (!libContainer) return;
     
     libContainer.innerHTML = "";
 
-    library.filter(item => item.name.toLowerCase().includes(searchTerm)).forEach(item => {
+library.filter(item => (item && item.name ? item.name.toString().toLowerCase() : "").includes(searchTerm)).forEach(item => {
         const wrapper = document.createElement('div');
         wrapper.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border:1px solid #4CAF50; border-radius:4px;";
 
@@ -226,17 +235,19 @@ window.filterLibrary = function() {
 };
 
 function addToLibrary(name, kcal, protein) {
-    let library = JSON.parse(localStorage.getItem('food_library') || "[]");
+    // Ενημέρωση και των δύο κλειδιών για μέγιστη συμβατότητα
+    let library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
     if (!library.some(item => item.name.toLowerCase() === name.toLowerCase())) {
         library.push({ name, kcal, protein: parseFloat(protein || 0) });
+        localStorage.setItem('pegasus_food_library', JSON.stringify(library));
         localStorage.setItem('food_library', JSON.stringify(library));
     }
 }
 
 function removeFromLibrary(name) {
-    // Άμεση διαγραφή χωρίς confirm
-    let library = JSON.parse(localStorage.getItem('food_library') || "[]");
+    let library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
     library = library.filter(item => item.name !== name);
+    localStorage.setItem('pegasus_food_library', JSON.stringify(library));
     localStorage.setItem('food_library', JSON.stringify(library));
     window.filterLibrary();
 }

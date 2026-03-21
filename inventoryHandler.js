@@ -7,7 +7,7 @@
  */
 function getSortedMuscleGroups() {
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    const targets = { "Πλάτη": 18, "Στήθος": 14, "Χέρια": 18, "Κορμός": 15, "Πόδια": 6 };
+    const targets = { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Κορμός": 12, "Πόδια": 24 };
     
     let stats = Object.keys(targets).map(group => {
         let done = history[group] || 0;
