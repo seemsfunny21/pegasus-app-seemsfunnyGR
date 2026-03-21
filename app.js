@@ -702,15 +702,15 @@ function openExercisePreview() {
         dayExercises.forEach(ex => {
             const cleanName = ex.name.trim();
             
-            // Χρήση videoMap για σωστή αντιστοίχιση αρχείου (Case Sensitive)
-            let fileName = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
-                           ? videoMap[cleanName] 
-                           : cleanName.replace(/\s+/g, '').toLowerCase() + "image";
+            // ΠΡΟΣΟΧΗ: Εδώ αφαιρούμε το .toLowerCase() για να βρίσκει τα κεφαλαία (π.χ. PlankImage.png)
+            let imgFileName = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
+                              ? (videoMap[cleanName] + "Image") 
+                              : (cleanName.replace(/\s+/g, '') + "Image");
 
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
-                    <img src="images/${fileName}.png" 
-                         onerror="this.onerror=null; this.src='images/placeholder.jpg';"
+                    <img src="images/${imgFileName}.png" 
+                         onerror="this.src='images/placeholder.jpg'"
                          style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
                     <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
                 </div>
