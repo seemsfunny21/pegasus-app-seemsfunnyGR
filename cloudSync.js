@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - ANALYST FIXED (v9.8)
-   Protocol: Legacy Date Format Support (DD/M/YYYY) & PIN Protection
+   PEGASUS CLOUD VAULT - FINAL ANALYST EDITION (v10.0)
+   Protocol: Force Overwrite, Direct Pull & Status Reporting
    ========================================================================== */
 
 const PegasusCloud = {
@@ -13,11 +13,10 @@ const PegasusCloud = {
     userKey: "",
 
     /**
-     * 1. ΥΠΟΛΟΓΙΣΜΟΣ ΚΛΕΙΔΙΟΥ (Συμβατότητα με Backup 14/2/2026)
+     * 1. ΥΠΟΛΟΓΙΣΜΟΣ ΚΛΕΙΔΙΟΥ (Συμβατότητα με Legacy Backup DD/M/YYYY)
      */
     getTodayKey: function() {
         const d = new Date();
-        // Επιστρέφει DD/M/YYYY για να ταυτίζεται με το ιστορικό σας [cite: 8, 21]
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
@@ -35,7 +34,7 @@ const PegasusCloud = {
             localStorage.setItem("pegasus_vault_pin", pin);
             console.log("PEGASUS: Vault Unlocked. Starting Sync...");
             this.checkWeeklyReset();
-            this.pull();
+            this.pull(); // Αυτόματο Pull κατά την είσοδο
             return true;
         }
         return false;
@@ -61,20 +60,18 @@ const PegasusCloud = {
     },
 
     /**
-     * 4. ΛΗΨΗ ΔΕΔΟΜΕΝΩΝ (PULL)
+     * 4. ΛΗΨΗ ΔΕΔΟΜΕΝΩΝ (PULL) - FORCE OVERWRITE PROTOCOL
      */
-pull: async function() {
+    pull: async function() {
         if (!this.isUnlocked) return;
-        console.log("PEGASUS: Fetching data from Cloud...");
+        console.log("PEGASUS: Force Pull Initiated...");
         try {
             const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
                 headers: { 'X-Master-Key': this.userKey, 'X-Bin-Meta': 'false' }
             });
             const cloudData = await res.json();
             
-            // Επιβεβαίωση λήψης στην κονσόλα
             console.log("✅ PEGASUS: Cloud Data Received", cloudData);
-            
             this.processMerge(cloudData);
         } catch (e) { 
             console.error("❌ PEGASUS Pull Error", e);
@@ -83,25 +80,34 @@ pull: async function() {
     },
 
     /**
-     * 5. ΣΥΓΧΩΝΕΥΣΗ (MERGE)
+     * 5. ΕΠΕΞΕΡΓΑΣΙΑ & ΕΠΙΒΟΛΗ (MERGE/OVERWRITE)
      */
-processMerge: function(cloudData) {
+    processMerge: function(cloudData) {
         const todayStr = this.getTodayKey();
         const dayKey = "food_log_" + todayStr;
 
+        // Επιβολή δεδομένων Cloud (Overwrite) για αποφυγή ghost items
         if (cloudData.last_update_date === todayStr) {
             const cloudLog = cloudData.today_food_log || [];
             
-            // Επιβολή Overwrite
             localStorage.setItem(dayKey, JSON.stringify(cloudLog));
             
-            console.log("🔄 PEGASUS: Local storage updated with " + cloudLog.length + " items.");
-            alert("ΣΥΓΧΡΟΝΙΣΜΟΣ: Λήψη " + cloudLog.length + " εγγραφών ολοκληρώθηκε.");
+            console.log("🔄 PEGASUS: Local storage overwritten with " + cloudLog.length + " items.");
+            alert("ΛΗΨΗ ΟΛΟΚΛΗΡΩΘΗΚΕ: " + cloudLog.length + " εγγραφές από το Cloud.");
             
             if (typeof window.updateFoodUI === "function") window.updateFoodUI();
         } else {
-            console.warn("⚠️ PEGASUS: Cloud data date mismatch. Cloud: " + cloudData.last_update_date + " | Local: " + todayStr);
-            alert("ΠΡΟΣΟΧΗ: Τα δεδομένα στο Cloud είναι παλαιότερα (" + cloudData.last_update_date + ").");
+            console.warn("⚠️ PEGASUS: Date Mismatch. Cloud: " + cloudData.last_update_date + " | Local: " + todayStr);
+            alert("ΠΡΟΣΟΧΗ: Τα δεδομένα στο Cloud αφορούν άλλη ημερομηνία (" + cloudData.last_update_date + ").");
+        }
+
+        // Συγχρονισμός ιστορικού και βιβλιοθήκης
+        if (cloudData.weekly_history) {
+            localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
+            if (window.MuscleProgressUI) window.MuscleProgressUI.render();
+        }
+        if (cloudData.food_library) {
+            localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
         }
     },
 
@@ -128,8 +134,13 @@ processMerge: function(cloudData) {
                 body: JSON.stringify(payload)
             });
             localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-            if (!silent) console.log("✅ PEGASUS Cloud Sync Success");
-        } catch (e) { console.error("❌ PEGASUS Push Error", e); }
+            
+            console.log("✅ PEGASUS Cloud Push Success");
+            if (!silent) alert("ΕΠΙΤΥΧΗΣ ΑΠΟΣΤΟΛΗ ΣΤΟ CLOUD");
+        } catch (e) { 
+            console.error("❌ PEGASUS Push Error", e);
+            if (!silent) alert("ΑΠΟΤΥΧΙΑ ΑΠΟΣΤΟΛΗΣ ΔΕΔΟΜΕΝΩΝ.");
+        }
     }
 };
 
