@@ -680,7 +680,6 @@ window.onload = () => {
     }, 300);
 };
 
-/* ===== UI & PREVIEW LOGIC ===== */
 /* ===== UI & PREVIEW LOGIC (V6.9 CLEAN) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
@@ -703,7 +702,7 @@ function openExercisePreview() {
         dayExercises.forEach(ex => {
             const cleanName = ex.name.trim();
             
-            // Χρήση videoMap για σωστή αντιστοίχιση αρχείου
+            // Χρήση videoMap για σωστή αντιστοίχιση αρχείου (Case Sensitive)
             let fileName = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
                            ? videoMap[cleanName] 
                            : cleanName.replace(/\s+/g, '').toLowerCase() + "image";
@@ -711,7 +710,7 @@ function openExercisePreview() {
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
                     <img src="images/${fileName}.png" 
-                         onerror="this.onerror=null; this.src='images/placeholder.jpg'; console.warn('Preview 404: ' + this.src);"
+                         onerror="this.onerror=null; this.src='images/placeholder.jpg';"
                          style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
                     <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
                 </div>
