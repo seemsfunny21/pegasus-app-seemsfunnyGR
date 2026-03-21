@@ -34,8 +34,8 @@
             overflow: hidden; transition: 0.2s; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; text-align: center; 
             width: 100%; box-sizing: border-box;
-            min-height: 85px; /* ΚΛΕΙΔΩΜΑ ΜΕΓΕΘΟΥΣ */
-            flex-shrink: 0;   /* ΑΠΟΤΡΟΠΗ ΣΥΡΡΙΚΝΩΣΗΣ */
+            min-height: 85px; 
+            flex-shrink: 0;   
         }
         .mini-card:active { background: rgba(0, 255, 65, 0.2); }
         .mini-label { font-size: 10px; font-weight: 800; color: var(--main); text-transform: uppercase; pointer-events: none; }
@@ -43,7 +43,7 @@
         
         .copy-hint { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--main); color: #000; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; opacity: 0; transition: 0.3s; pointer-events: none; }
         
-        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 14px; box-sizing: border-box; text-align: center; }
+        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; }
         .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 13px; margin-bottom: 5px; }
         
         .bar-bg { width: 100%; background: #000; height: 5px; border-radius: 3px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
@@ -107,42 +107,45 @@
         <input type="text" id="libSearch" placeholder="Αναζήτηση..." oninput="renderLibrary()">
         <div id="libraryContainer"></div>
     </div>
-<script>const PEGASUS_CONFIG = { 
+
+<script>
+const PEGASUS_CONFIG = { 
     apiKeyPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
     binId: "69b6757ab7ec241ddc6d7230" 
 };
 
 let isUnlocked = false;
 
+// ΔΙΟΡΘΩΣΗ 1: Μορφή ημερομηνίας ταυτόσημη με το Desktop UI (DD/M/YYYY)
 function getStrictStorageKey() {
     const d = new Date();
-    const offset = d.getTimezoneOffset();
-    const adjustedDate = new Date(d.getTime() - (offset * 60000));
-    return adjustedDate.toISOString().split('T')[0];
+    return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 }
 
-unlock: function(pin) {
-    const check = (input) => { return btoa(input) === "MjM3NQ=="; };
+// ΔΙΟΡΘΩΣΗ 2: Ορθή δήλωση του αντικειμένου PegasusCloud
+const PegasusCloud = {
+    unlock: function(pin) {
+        const check = (input) => { return btoa(input) === "MjM3NQ=="; };
 
-    if (check(pin)) {
-        isUnlocked = true;
-        localStorage.setItem("pegasus_vault_pin", pin);
-        this.pull();
-        document.getElementById("sync-indicator").textContent = "ΣΥΝΔΕΔΕΜΕΝΟ";
-        document.getElementById("sync-indicator").style.color = "#00ff41";
-        return true;
-    }
-    return false;
-},
+        if (check(pin)) {
+            isUnlocked = true;
+            localStorage.setItem("pegasus_vault_pin", pin);
+            this.pull();
+            document.getElementById("sync-indicator").textContent = "ΣΥΝΔΕΔΕΜΕΝΟ";
+            document.getElementById("sync-indicator").style.color = "#00ff41";
+            return true;
+        }
+        return false;
+    },
 
     push: async function() {
         if (!isUnlocked) return;
-        const isoDate = getStrictStorageKey();
-        const storageKey = `food_log_${isoDate}`;
+        const dateStr = getStrictStorageKey();
+        const storageKey = `food_log_${dateStr}`;
         const syncTimestamp = Date.now();
         
         const payload = { 
-            last_update_date: isoDate, 
+            last_update_date: dateStr, 
             last_update_ts: syncTimestamp, 
             kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
             protein: localStorage.getItem("pegasus_today_protein") || "0", 
@@ -167,16 +170,18 @@ unlock: function(pin) {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS_CONFIG.binId}/latest?nocache=${Date.now()}`, { 
                 headers: { 'X-Master-Key': PEGASUS_CONFIG.apiKeyPart, 'X-Bin-Meta': 'false' } 
             });
-            const cloud = await res.json();
-            const isoDate = getStrictStorageKey();
-            const storageKey = `food_log_${isoDate}`;
+            const cloudData = await res.json();
+            const cloud = cloudData.record || cloudData; // Failsafe δομής JSON
+
+            const dateStr = getStrictStorageKey();
+            const storageKey = `food_log_${dateStr}`;
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 if (cloud.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
                 if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
                 
-                if (cloud.last_update_date === isoDate) { 
+                if (cloud.last_update_date === dateStr) { 
                     localStorage.setItem(storageKey, JSON.stringify(cloud.today_food_log || [])); 
                     localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
                     localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
@@ -201,8 +206,8 @@ function openView(id) {
 }
 
 function updateDietUI() {
-    const isoDate = getStrictStorageKey();
-    const storageKey = `food_log_${isoDate}`;
+    const dateStr = getStrictStorageKey();
+    const storageKey = `food_log_${dateStr}`;
     const history = JSON.parse(localStorage.getItem(storageKey) || "[]");
     let tk = 0, tp = 0;
     history.forEach(i => { tk += parseFloat(i.kcal || 0); tp += parseFloat(i.protein || 0); });
@@ -224,8 +229,8 @@ async function addFood() {
     const k = document.getElementById("fKcal").value;
     const p = document.getElementById("fProt").value;
     if(!k) return;
-    const isoDate = getStrictStorageKey();
-    const storageKey = `food_log_${isoDate}`;
+    const dateStr = getStrictStorageKey();
+    const storageKey = `food_log_${dateStr}`;
     let h = JSON.parse(localStorage.getItem(storageKey) || "[]");
     h.unshift({name:n, kcal:parseFloat(k), protein:parseFloat(p||0)});
     localStorage.setItem(storageKey, JSON.stringify(h));
@@ -237,8 +242,8 @@ async function addFood() {
 }
 
 async function deleteFood(i) {
-    const isoDate = getStrictStorageKey();
-    const storageKey = `food_log_${isoDate}`;
+    const dateStr = getStrictStorageKey();
+    const storageKey = `food_log_${dateStr}`;
     let h = JSON.parse(localStorage.getItem(storageKey) || "[]");
     h.splice(i, 1); 
     localStorage.setItem(storageKey, JSON.stringify(h));
