@@ -16,8 +16,10 @@ const PegasusCloud = {
      * Υπολογισμός κλειδιού ημερομηνίας (Συμβατότητα με Backup)
      */
     getTodayKey: function() {
-        const d = new Date();
-        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+// Αντικαταστήστε το: const today = new Date().toISOString().split('T')[0];
+// Με το παρακάτω:
+const d = new Date();
+const today = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     },
 
     unlock: function(pin) {
