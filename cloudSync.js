@@ -81,23 +81,21 @@ processMerge: function(cloudData) {
     const todayStr = this.getTodayKey();
     const dayKey = "food_log_" + todayStr;
 
-    // ΠΡΩΤΟΚΟΛΛΟ OVERWRITE: Το Cloud υπερισχύει του LocalStorage
+    // Πρωτόκολλο Overwrite: Το Cloud είναι η μόνη πηγή αλήθειας
     if (cloudData.last_update_date === todayStr) {
-        // Αντικαθιστούμε πλήρως την τοπική λίστα με αυτή του Cloud
+        // Διαγράφουμε τα τοπικά και βάζουμε μόνο του Cloud
         localStorage.setItem(dayKey, JSON.stringify(cloudData.today_food_log || []));
         
+        // Ενημέρωση UI
         if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+        console.log("PEGASUS: Local Data Overwritten by Cloud.");
     }
 
     if (cloudData.weekly_history) {
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
         if (window.MuscleProgressUI) window.MuscleProgressUI.render();
     }
-    
-    if (cloudData.food_library) {
-        localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
-    }
-},
+}
 
     /**
      * 6. ΑΠΟΣΤΟΛΗ ΔΕΔΟΜΕΝΩΝ (PUSH)
