@@ -698,10 +698,24 @@ function openExercisePreview() {
 
     if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") window.MuscleProgressUI.render();
 
-    const smartMapping = { 
-        "pulldown": "pulldownimage.png", "triceps overhead extension": "tricepsoverheadimage.png", 
-        "ems": "emsImage.png", "ποδηλασία": "bikeImage.jpg", "cycling": "bikeImage.jpg"
-    };
+    if(dayExercises) {
+        dayExercises.forEach(ex => {
+            const cleanName = ex.name.trim();
+            // Χρήση του videoMap για να βρούμε το σωστό αρχείο .mp4
+            const videoFile = (typeof videoMap !== 'undefined' && videoMap[cleanName]) ? videoMap[cleanName] : "default";
+            
+            content.innerHTML += `
+                <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
+                    <video src="videos/${videoFile}.mp4" muted loop playsinline 
+                           onmouseover="this.play()" onmouseout="this.pause()"
+                           style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
+                    </video>
+                    <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
+                </div>
+            `;
+        });
+    }
+}
     
     if(dayExercises) {
         dayExercises.forEach(ex => {
