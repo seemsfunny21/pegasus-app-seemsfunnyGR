@@ -1,10 +1,9 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - AUTO-SYNC FINAL (v11.2)
-   FIX: GLOBAL SCOPE EXPORT & PIN PROMPT INTEGRATION
+   PEGASUS CLOUD VAULT - STABLE EDITION (v12.0)
+   FIX: F5 REFRESH BUG & DATA STRUCTURE FAILSAFE
    ========================================================================== */
 
-// ΔΗΛΩΣΗ ΩΣ GLOBAL WINDOW OBJECT (Κρίσιμο για την επικοινωνία με το food.js)
-window.PegasusCloud = {
+const PegasusCloud = {
     config: {
         binId: "69b6757ab7ec241ddc6d7230",
         encryptedPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC" 
@@ -19,12 +18,15 @@ window.PegasusCloud = {
     },
 
     unlock: function(pin) {
-        if (btoa(pin) === "MjM3NQ==") { 
+        if (!pin) return false;
+        const cleanPin = pin.trim(); // Αφαίρεση τυχόν κενών χαρακτήρων
+        
+        if (btoa(cleanPin) === "MjM3NQ==") { 
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
-            localStorage.setItem("pegasus_vault_pin", pin);
-            console.log("PEGASUS: Vault Unlocked. Triggering Initial Pull...");
-            this.pull(true); // Silent pull κατά την είσοδο
+            localStorage.setItem("pegasus_vault_pin", cleanPin); // Αποθήκευση για να μην το ζητάει στο F5
+            console.log("PEGASUS: Vault Unlocked. Pulling data...");
+            this.pull(true);
             return true;
         }
         return false;
@@ -38,20 +40,18 @@ window.PegasusCloud = {
             });
             const cloudData = await res.json();
             
-            const dayKey = "food_log_" + this.getTodayKey();
-            const cloudLog = cloudData.today_food_log || [];
+            // Failsafe: Αν το JSONBin τυλίξει τα δεδομένα στο "record", τα εξάγουμε σωστά.
+            const actualData = cloudData.record || cloudData;
             
-            // BACKUP ΠΡΙΝ ΤΗΝ ΑΝΤΙΚΑΤΑΣΤΑΣΗ
-            const localBefore = localStorage.getItem(dayKey);
-            if (localBefore) localStorage.setItem(dayKey + "_backup", localBefore);
-
+            const dayKey = "food_log_" + this.getTodayKey();
+            const cloudLog = actualData.today_food_log || [];
+            
             localStorage.setItem(dayKey, JSON.stringify(cloudLog));
             
-            if (cloudData.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
-            if (cloudData.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
+            if (actualData.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(actualData.weekly_history));
+            if (actualData.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(actualData.food_library));
 
             console.log("✅ Auto-Pull Complete. Items: " + cloudLog.length);
-            if (!silent) alert("Ο συγχρονισμός ολοκληρώθηκε (" + cloudLog.length + " εγγραφές)");
             
             if (typeof window.updateFoodUI === "function") window.updateFoodUI();
         } catch (e) { console.error("❌ Pull Error", e); }
@@ -78,18 +78,24 @@ window.PegasusCloud = {
     }
 };
 
-// ΕΚΚΙΝΗΣΗ & ΕΛΕΓΧΟΣ PIN
+// ΕΞΑΓΩΓΗ ΣΤΟ GLOBAL WINDOW (Απαραίτητο για το food.js)
+window.PegasusCloud = PegasusCloud;
+
+// ΕΚΚΙΝΗΣΗ & ΕΛΕΓΧΟΣ ΜΝΗΜΗΣ
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin) {
-        window.PegasusCloud.unlock(savedPin);
-    } else {
-        // Καθυστέρηση για φόρτωση του UI πριν ζητηθεί το PIN
-        setTimeout(() => {
-            const pin = prompt("PEGASUS VAULT: Εισάγετε PIN για συγχρονισμό:");
-            if (pin && !window.PegasusCloud.unlock(pin)) {
-                alert("ΛΑΘΟΣ PIN. Ανανεώστε τη σελίδα για νέα προσπάθεια.");
-            }
-        }, 1500);
+    
+    // Αν υπάρχει PIN στη μνήμη (π.χ. μετά από F5), ξεκλειδώνει αθόρυβα
+    if (savedPin && window.PegasusCloud.unlock(savedPin)) {
+        return; 
     }
+    
+    // Αν δεν υπάρχει μνήμη (πρώτη φορά στο Incognito), ζητάει PIN
+    localStorage.removeItem("pegasus_vault_pin");
+    setTimeout(() => {
+        const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
+        if (pin && !window.PegasusCloud.unlock(pin)) {
+            alert("ΛΑΘΟΣ PIN. Πατήστε F5 για νέα προσπάθεια.");
+        }
+    }, 1000);
 });
