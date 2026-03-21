@@ -81,22 +81,19 @@ processMerge: function(cloudData) {
     const todayStr = this.getTodayKey();
     const dayKey = "food_log_" + todayStr;
 
-    // ΕΛΕΓΧΟΣ ΗΜΕΡΟΜΗΝΙΑΣ: Αν το Cloud έχει δεδομένα για σήμερα
+    // ΠΡΩΤΟΚΟΛΛΟ OVERWRITE: Το Cloud υπερισχύει του LocalStorage
     if (cloudData.last_update_date === todayStr) {
-        // ΑΥΣΤΗΡΟ ΠΡΩΤΟΚΟΛΛΟ: Αντικατάσταση τοπικών με δεδομένα Cloud
-        // Αυτό διασφαλίζει ότι αν σβήσετε κάτι σε μια συσκευή, θα σβηστεί παντού
+        // Αντικαθιστούμε πλήρως την τοπική λίστα με αυτή του Cloud
         localStorage.setItem(dayKey, JSON.stringify(cloudData.today_food_log || []));
         
         if (typeof window.updateFoodUI === "function") window.updateFoodUI();
     }
 
-    // Συγχρονισμός Ιστορικού Μυών
     if (cloudData.weekly_history) {
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
         if (window.MuscleProgressUI) window.MuscleProgressUI.render();
     }
     
-    // Συγχρονισμός Βιβλιοθήκης
     if (cloudData.food_library) {
         localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
     }
