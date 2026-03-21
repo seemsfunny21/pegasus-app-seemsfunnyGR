@@ -101,35 +101,34 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
 window.videoMap = {
-    // Strength Exercises
-    "Lat Pulldown": "Pulldown", 
-    "Close Grip Pulldown": "Pulldown", 
-    "Low Seated Row": "LowSeatedRow",
-    "Reverse Grip Cable Row": "ReverseGripCableRow", 
-    "Reverse Chest Press": "reverserow",
-    "Seated Chest Press": "SeatedChestPress", 
-    "Seated Chest Press ": "SeatedChestPress", // Mapping για την ονομασία με το κενό
-    "Pec Deck": "Pecdeck", 
-    "Pushups": "Pushups",
-    "Preacher Curl": "biceps", 
-    "Standing Bicep Curl": "Bicepscurl", 
-    "Triceps Overhead Extension": "Tricepspress",
-    "Triceps Press": "Tricepspress", 
-    "Shoulder Press": "SeatedChestPress", 
-    "Plank": "Plank",
-    "Stretching": "stretching", 
-    "Lying Knee Raise": "LyingKneeRaise", 
-    "Reverse Crunch": "ReverseCrunch",
-    "Leg Raise Hip Lift": "LegRaiseHipLift", 
+    // Strength Exercises - Updated to match physical filenames
+    "Lat Pulldown": "pulldownimage", 
+    "Close Grip Pulldown": "pulldownimage", 
+    "Low Seated Row": "lowseatedrowimage",
+    "Reverse Grip Cable Row": "reversegripcablerowimage", 
+    "Reverse Chest Press": "reversechestpressimage",
+    "Seated Chest Press": "SeatedChestPressImage", 
+    "Seated Chest Press ": "SeatedChestPressImage", 
+    "Pec Deck": "PecDeckImage", 
+    "Pushups": "PushupsImage",
+    "Preacher Curl": "preachercurlimage", 
+    "Standing Bicep Curl": "standingbicepcurlimage", 
+    "Triceps Overhead Extension": "tricepsoverheadimage",
+    "Triceps Press": "tricepspressimage", 
+    "Plank": "PlankImage",
+    "Stretching": "StretchingImage", 
+    "Lying Knee Raise": "lyingkneeraiseimage", 
+    "Reverse Crunch": "reversecrunchimage",
+    "Leg Raise Hip Lift": "legraisehipliftimage", 
     
     // EMS Exercises
-    "EMS Lateral Raises (3kg)": "EMS_L",
-    "EMS Bicep Curls (3kg)": "Bicepscurl", 
-    "EMS Static Plank": "Plank",
-    "EMS Static Crunches": "EMS_K", 
+    "EMS Lateral Raises (3kg)": "emslimage",
+    "EMS Bicep Curls (3kg)": "standingbicepcurlimage", 
+    "EMS Static Plank": "PlankImage",
+    "EMS Static Crunches": "reversecrunchimage", 
     
     // Cardio
-    "Ποδηλασία 30km": "cycling"
+    "Ποδηλασία 30km": "bikelimage"
 };
 
 window.exercisesDB = [...STRENGTH_EXERCISES, ...EMS_EXERCISES];
