@@ -1,5 +1,7 @@
+
+
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - ACTIVE SYNC (v13.4 - UNIFIED STRICT PROTOCOL)
+   PEGASUS CLOUD VAULT - ACTIVE SYNC (v13.5 - STRICT DESKTOP)
    ========================================================================== */
 
 const PegasusCloud = {
@@ -21,7 +23,9 @@ const PegasusCloud = {
         try {
             const val = localStorage.getItem(key);
             return val ? JSON.parse(val) : fallback;
-        } catch (e) { return fallback; }
+        } catch (e) {
+            return fallback;
+        }
     },
 
     unlock: function(pin) {
@@ -69,8 +73,7 @@ const PegasusCloud = {
                 }
                 
                 if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
-                
-                // UNIFIED FOOD SYNC
+
                 if (cloud.last_update_date === dateStr) { 
                     localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(cloud.today_food_log || [])); 
                     localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
@@ -81,7 +84,10 @@ const PegasusCloud = {
                     Object.keys(cloud.cardio_logs).forEach(k => {
                         const localVal = localStorage.getItem(k);
                         const cloudVal = JSON.stringify(cloud.cardio_logs[k]);
-                        if (localVal !== cloudVal) { localStorage.setItem(k, cloudVal); requiresUIReload = true; }
+                        if (localVal !== cloudVal) {
+                            localStorage.setItem(k, cloudVal);
+                            requiresUIReload = true;
+                        }
                     });
                 }
                 
@@ -91,7 +97,8 @@ const PegasusCloud = {
                         const cloudVal = typeof val === 'string' ? val : JSON.stringify(val);
                         const localVal = localStorage.getItem(k);
                         if (localVal !== cloudVal && k.includes('pegasus_history')) {
-                            localStorage.setItem(k, cloudVal); requiresUIReload = true;
+                            localStorage.setItem(k, cloudVal);
+                            requiresUIReload = true;
                         }
                     });
                 }
@@ -99,7 +106,6 @@ const PegasusCloud = {
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
 
                 if (requiresUIReload) {
-                    console.log("🔄 Νέα δεδομένα ελήφθησαν. Επανεκκίνηση UI...");
                     window.location.reload();
                 } else if (typeof window.updateFoodUI === "function") {
                     window.updateFoodUI();
@@ -125,14 +131,13 @@ const PegasusCloud = {
             } catch(e) {}
         }
 
-        // UNIFIED PAYLOAD (Συμφωνεί απόλυτα με το mobile.html)
         const payload = {
-            last_update_date: dateStr, 
-            last_update_ts: syncTimestamp, 
-            kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
-            protein: localStorage.getItem("pegasus_today_protein") || "0", 
-            weekly_history: this.safeParse("pegasus_weekly_history", {}), 
-            food_library: this.safeParse("pegasus_food_library", []), 
+            last_update_date: dateStr,
+            last_update_ts: syncTimestamp,
+            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
+            protein: localStorage.getItem("pegasus_today_protein") || "0",
+            weekly_history: this.safeParse("pegasus_weekly_history", {}),
+            food_library: this.safeParse("pegasus_food_library", []),
             today_food_log: this.safeParse(`food_log_${dateStr}`, []),
             cardio_logs: cardioLogs,
             history_logs: historyLogs
@@ -141,23 +146,4 @@ const PegasusCloud = {
         try {
             await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
-                body: JSON.stringify(payload)
-            });
-            localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-        } catch (e) {}
-    }
-};
-
-window.PegasusCloud = PegasusCloud;
-
-window.addEventListener('load', () => {
-    const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin && window.PegasusCloud.unlock(savedPin)) return; 
-    
-    localStorage.removeItem("pegasus_vault_pin");
-    setTimeout(() => {
-        const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
-        if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN.");
-    }, 1000);
-});
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key':
