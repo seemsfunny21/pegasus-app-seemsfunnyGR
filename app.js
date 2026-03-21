@@ -419,49 +419,46 @@ function skipToNextExercise() {
 }
 
 /* ===== PEGASUS HYBRID MEDIA ENGINE (V6.5) ===== */
+/* ===== PEGASUS HYBRID MEDIA ENGINE (V6.7) ===== */
 function showVideo(i) {
     try {
+        if (!exercises || !exercises[i]) return;
         const ex = exercises[i];
-        if (!ex) return;
         
         const wInput = ex.querySelector(".weight-input");
         let name = wInput ? wInput.getAttribute("data-name") : "default";
         const vid = document.getElementById("video");
         
         if (vid && typeof videoMap !== 'undefined') {
-            // 1. Λήψη ονόματος από το videoMap ή default
             let mediaFile = videoMap[name] || "default";
             
-            // 2. Ειδική διαχείριση EMS για το Plank
+            // Logic για EMS και Plank
             if (name.toLowerCase().includes("ems") && name.toLowerCase().includes("plank")) {
                 mediaFile = "PlankImage";
             } else if (name.toLowerCase().includes("ems")) {
                 mediaFile = "emslimage";
             }
 
-            // 3. Δοκιμή φόρτωσης (Hybrid Path)
-            // Αν το αρχείο καταλήγει σε Image, το ψάχνουμε στα images ως png
+            // Εξαναγκασμένη χρήση εικόνας αν το όνομα περιέχει "Image"
             if (mediaFile.toLowerCase().includes("image")) {
-                vid.src = ""; // Καθαρισμός προηγούμενου video
+                vid.src = ""; 
                 vid.poster = "images/" + mediaFile + ".png";
                 vid.style.backgroundImage = "url('images/" + mediaFile + ".png')";
                 vid.style.backgroundSize = "contain";
                 vid.style.backgroundRepeat = "no-repeat";
                 vid.style.backgroundPosition = "center";
+                vid.style.opacity = "1";
             } else {
-                // Διαφορετικά ψάχνουμε για video
-                vid.src = "videos/" + mediaFile + ".mp4";
-                vid.poster = "";
+                // Αναζήτηση βίντεο για τα υπόλοιπα
                 vid.style.backgroundImage = "none";
-                vid.play().catch(e => console.warn("Video play blocked or not found"));
+                vid.src = "videos/" + mediaFile + ".mp4";
+                vid.play().catch(() => console.log("Video mode: Falling back to poster"));
             }
-            vid.style.opacity = "1";
         }
     } catch (err) {
         console.error("PEGASUS CRITICAL: showVideo error", err);
     }
 }
-
 window.calculateTotalTime = function() {
     workoutPhases[1].d = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
     workoutPhases[2].d = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
