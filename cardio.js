@@ -39,21 +39,22 @@ const PegasusCardio = {
             date: dateKey
         };
 
-        // Αποθήκευση για το Reporting
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
         alert(`Η διαδρομή "${route}" αποθηκεύτηκε!`);
         this.close();
         
-        // Καθαρισμός φορμας
         document.getElementById("cRoute").value = "";
         document.getElementById("cKm").value = "";
         document.getElementById("cTime").value = "";
         document.getElementById("cKcal").value = "";
+        
+        // AUTO-SYNC TRIGGER
+        if (typeof window.PegasusCloud !== "undefined" && window.PegasusCloud.isUnlocked) {
+            window.PegasusCloud.push(true);
+        }
     }
 };
 
-// Αυτό συνδέει το onclick="saveCardioData()" του HTML σου
 window.saveCardioData = () => PegasusCardio.save();
-
 window.addEventListener("load", () => PegasusCardio.init());
