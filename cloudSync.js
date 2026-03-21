@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - DEEP SYNC EDITION (v13.0)
-   FEAT: FULL CARDIO & EMS HISTORY SYNCHRONIZATION
+   PEGASUS CLOUD VAULT - DEEP SYNC EDITION (v13.1)
+   FEAT: AUTO-REFRESH UI ON NEW MOBILE DATA
    ========================================================================== */
 
 const PegasusCloud = {
@@ -41,26 +41,51 @@ const PegasusCloud = {
             const cloudData = await res.json();
             const actualData = cloudData.record || cloudData;
             
+            let requiresUIReload = false; // FLAG: Ελέγχει αν ήρθαν νέα δεδομένα από το κινητό
+
             const dayKey = "food_log_" + this.getTodayKey();
             const cloudLog = actualData.today_food_log || [];
             localStorage.setItem(dayKey, JSON.stringify(cloudLog));
             
-            if (actualData.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(actualData.weekly_history));
+            if (actualData.weekly_history) {
+                const localWeekly = localStorage.getItem('pegasus_weekly_history');
+                const cloudWeekly = JSON.stringify(actualData.weekly_history);
+                if (localWeekly !== cloudWeekly) requiresUIReload = true;
+                localStorage.setItem('pegasus_weekly_history', cloudWeekly);
+            }
+            
             if (actualData.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(actualData.food_library));
 
-            // DEEP SYNC: Ανάκτηση όλου του Ιστορικού Cardio & EMS
+            // ΕΛΕΓΧΟΣ ΝΕΟΥ CARDIO ΑΠΟ MOBILE
             if (actualData.cardio_logs) {
-                Object.keys(actualData.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(actualData.cardio_logs[k])));
+                Object.keys(actualData.cardio_logs).forEach(k => {
+                    const localVal = localStorage.getItem(k);
+                    const cloudVal = JSON.stringify(actualData.cardio_logs[k]);
+                    if (localVal !== cloudVal) requiresUIReload = true; 
+                    localStorage.setItem(k, cloudVal);
+                });
             }
+            
+            // ΕΛΕΓΧΟΣ ΝΕΟΥ EMS ΑΠΟ MOBILE
             if (actualData.history_logs) {
                 Object.keys(actualData.history_logs).forEach(k => {
                     let val = actualData.history_logs[k];
-                    localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
+                    const cloudVal = typeof val === 'string' ? val : JSON.stringify(val);
+                    const localVal = localStorage.getItem(k);
+                    if (localVal !== cloudVal && k.includes('pegasus_history')) requiresUIReload = true;
+                    localStorage.setItem(k, cloudVal);
                 });
             }
 
             console.log("✅ Deep-Pull Complete");
-            if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+            
+            // Αν το κινητό έστειλε κάτι νέο (πχ νέα σετ ποδιών), κάνε reload αυτόματα
+            if (requiresUIReload) {
+                console.log("🔄 New workout data detected. Reloading UI...");
+                window.location.reload();
+            } else if (typeof window.updateFoodUI === "function") {
+                window.updateFoodUI();
+            }
         } catch (e) { console.error("❌ Pull Error", e); }
     },
 
@@ -68,7 +93,6 @@ const PegasusCloud = {
         if (!this.isUnlocked) return;
         const todayStr = this.getTodayKey();
         
-        // DEEP SYNC: Σάρωση όλης της μνήμης για δεδομένα
         const cardioLogs = {};
         const historyLogs = {};
         for (let i = 0; i < localStorage.length; i++) {
