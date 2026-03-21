@@ -328,5 +328,10 @@
 
     <script src="app.js"></script>
     <script src="debug.js"></script>
+	<div id="syncControl" style="position:fixed; bottom:10px; right:10px; background:#111; border:1px solid #4CAF50; padding:10px; border-radius:8px; z-index:9999; font-family:monospace; font-size:12px;">
+    <div style="color:#4CAF50; margin-bottom:5px; font-weight:bold;">PEGASUS CLOUD CONTROL</div>
+    <button onclick="PegasusCloud.push()" style="background:#4CAF50; border:none; color:white; padding:5px 10px; cursor:pointer; border-radius:4px; width:100%; margin-bottom:5px;">FORCE PUSH (Αποστολή)</button>
+    <button onclick="PegasusCloud.pull()" style="background:#2196F3; border:none; color:white; padding:5px 10px; cursor:pointer; border-radius:4px; width:100%;">FORCE PULL (Λήψη)</button>
+</div>
 </body>
 </html>
