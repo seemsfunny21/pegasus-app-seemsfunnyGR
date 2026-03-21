@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - PUBLIC REPO EDITION (v9.6)
-   Includes: Smart Merge, PIN Lock (2375), & Weekly Reset
+   PEGASUS CLOUD VAULT - COMPATIBILITY EDITION (v9.7)
+   Fix: DD/M/YYYY Date Format Support
    ========================================================================== */
 
 const PegasusCloud = {
@@ -13,49 +13,42 @@ const PegasusCloud = {
     userKey: "",
 
     /**
-     * ΞΕΚΛΕΙΔΩΜΑ ΜΕ PIN
+     * Υπολογισμός κλειδιού ημερομηνίας (Συμβατότητα με Backup)
      */
-/**
- * ΞΕΚΛΕΙΔΩΜΑ ΜΕ PIN (HASHED VERSION)
- */
-unlock: function(pin) {
-    // Το αποτύπωμα του "2375" σε MD5
-    const secureHash = "e86209cc5949d282e4e69d123d45f492"; 
-    
-    // Απλή συνάρτηση για έλεγχο χωρίς να φαίνεται το PIN
-    const check = (input) => {
-        // Εσωτερική λογική μετατροπής που μόνο ο Pegasus ξέρει
-        return btoa(input) === "MjM3NQ=="; 
-    };
+    getTodayKey: function() {
+        const d = new Date();
+        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    },
 
-    if (check(pin)) { 
-        this.userKey = this.config.encryptedPart;
-        this.isUnlocked = true;
-        localStorage.setItem("pegasus_vault_pin", pin);
-        this.checkWeeklyReset();
-        this.pull();
-        return true;
-    }
-    return false;
-},
+    unlock: function(pin) {
+        const check = (input) => {
+            return btoa(input) === "MjM3NQ=="; 
+        };
 
-    /**
-     * ΕΒΔΟΜΑΔΙΑΙΟ RESET (Κάθε Δευτέρα)
-     */
+        if (check(pin)) { 
+            this.userKey = this.config.encryptedPart;
+            this.isUnlocked = true;
+            localStorage.setItem("pegasus_vault_pin", pin);
+            this.checkWeeklyReset();
+            this.pull();
+            return true;
+        }
+        return false;
+    },
+
     checkWeeklyReset: function() {
         const now = new Date();
-        const dayOfWeek = now.getDay(); // 1 = Δευτέρα
+        const dayOfWeek = now.getDay(); 
         const currentWeekKey = `${now.getFullYear()}-W${Math.ceil(now.getDate() / 7)}`;
         const lastReset = localStorage.getItem('pegasus_last_weekly_reset');
 
         if (dayOfWeek === 1 && lastReset !== currentWeekKey) {
-            console.log("PEGASUS: Monday detected. Resetting Weekly History...");
             const emptyHistory = {
                 "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
             };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
             localStorage.setItem('pegasus_last_weekly_reset', currentWeekKey);
-            this.push(true); // Ενημέρωση Cloud
+            this.push(true); 
         }
     },
 
@@ -71,11 +64,11 @@ unlock: function(pin) {
     },
 
     processMerge: function(cloudData) {
-        const today = new Date().toISOString().split('T')[0];
-        const dayKey = `food_log_${today}`;
+        const todayStr = this.getTodayKey();
+        const dayKey = `food_log_${todayStr}`;
 
-        // Μηδενισμός ημέρας: Αν ο Cloud έχει παλιά ημερομηνία, δεν κάνουμε merge γεύματα
-        if (cloudData.last_update_date === today) {
+        // Merge ΜΟΝΟ αν ο Cloud έχει δεδομένα για τη σημερινή ημερομηνία
+        if (cloudData.last_update_date === todayStr) {
             let localLog = JSON.parse(localStorage.getItem(dayKey) || "[]");
             let cloudLog = cloudData.today_food_log || [];
             
@@ -88,22 +81,26 @@ unlock: function(pin) {
             if (typeof window.updateFoodUI === "function") window.updateFoodUI();
         }
 
-        // Συγχρονισμός εβδομαδιαίου ιστορικού (ανεξαρτήτως ημέρας)
         if (cloudData.weekly_history) {
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
             if (window.MuscleProgressUI) window.MuscleProgressUI.render();
+        }
+        
+        // Συγχρονισμός Βιβλιοθήκης (Πολύ σημαντικό για τα παλιά logs)
+        if (cloudData.food_library) {
+            localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
         }
     },
 
     push: async function(silent = false) {
         if (!this.isUnlocked) return;
-        const today = new Date().toISOString().split('T')[0];
+        const todayStr = this.getTodayKey();
         const syncTimestamp = Date.now();
 
         const payload = {
-            last_update_date: today,
+            last_update_date: todayStr,
             last_update_ts: syncTimestamp,
-            today_food_log: JSON.parse(localStorage.getItem(`food_log_${today}`) || "[]"),
+            today_food_log: JSON.parse(localStorage.getItem(`food_log_${todayStr}`) || "[]"),
             weekly_history: JSON.parse(localStorage.getItem('pegasus_weekly_history') || "{}"),
             food_library: JSON.parse(localStorage.getItem('pegasus_food_library') || "[]")
         };
@@ -119,15 +116,3 @@ unlock: function(pin) {
         } catch (e) { console.error("❌ Push Error", e); }
     }
 };
-
-window.addEventListener('load', () => {
-    const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin) {
-        PegasusCloud.unlock(savedPin);
-    } else {
-        setTimeout(() => {
-            const pin = prompt("PEGASUS OS: Εισάγετε PIN για συγχρονισμό:");
-            if (!PegasusCloud.unlock(pin)) alert("Λάθος PIN.");
-        }, 2000);
-    }
-});
