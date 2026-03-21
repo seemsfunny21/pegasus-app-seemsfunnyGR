@@ -121,18 +121,19 @@ function getStrictStorageKey() {
     return adjustedDate.toISOString().split('T')[0];
 }
 
-const PegasusCloud = {
-    unlock: function(pin) {
-        if (pin === "2375") {
-            isUnlocked = true;
-            localStorage.setItem("pegasus_vault_pin", pin);
-            this.pull();
-            document.getElementById("sync-indicator").textContent = "ΣΥΝΔΕΔΕΜΕΝΟ";
-            document.getElementById("sync-indicator").style.color = "#00ff41";
-            return true;
-        }
-        return false;
-    },
+unlock: function(pin) {
+    const check = (input) => { return btoa(input) === "MjM3NQ=="; };
+
+    if (check(pin)) {
+        isUnlocked = true;
+        localStorage.setItem("pegasus_vault_pin", pin);
+        this.pull();
+        document.getElementById("sync-indicator").textContent = "ΣΥΝΔΕΔΕΜΕΝΟ";
+        document.getElementById("sync-indicator").style.color = "#00ff41";
+        return true;
+    }
+    return false;
+},
 
     push: async function() {
         if (!isUnlocked) return;
