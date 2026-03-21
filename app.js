@@ -700,16 +700,20 @@ function openExercisePreview() {
 
     if(dayExercises) {
         dayExercises.forEach(ex => {
+            // 1. Καθαρισμός ονόματος από κενά (για το Seated Chest Press )
             const cleanName = ex.name.trim();
-            // Χρήση του videoMap για να βρούμε το σωστό αρχείο .mp4
-            const videoFile = (typeof videoMap !== 'undefined' && videoMap[cleanName]) ? videoMap[cleanName] : "default";
             
+            // 2. Χρήση του videoMap για σωστά κεφαλαία και ονόματα
+            let fileName = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
+                           ? videoMap[cleanName] 
+                           : cleanName.replace(/\s+/g, '') + "Image";
+
+            // 3. Δημιουργία HTML (Προσπάθεια για .png και fallback σε .mp4)
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
-                    <video src="videos/${videoFile}.mp4" muted loop playsinline 
-                           onmouseover="this.play()" onmouseout="this.pause()"
-                           style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
-                    </video>
+                    <img src="images/${fileName}.png" 
+                         onerror="this.onerror=null; this.parentElement.innerHTML='<video src=\'videos/${fileName}.mp4\' muted loop playsinline style=\'width:150px; height:100px; border:2px solid #4CAF50; border-radius:8px; object-fit:cover;\' onmouseover=\'this.play()\' onmouseout=\'this.pause()\'></video>'"
+                         style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
                     <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
                 </div>
             `;
