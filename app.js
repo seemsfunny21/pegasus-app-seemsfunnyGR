@@ -428,36 +428,11 @@ function showVideo(i) {
     const vid = document.getElementById("video");
     
     if (vid && typeof videoMap !== 'undefined') {
-        let mediaFile = videoMap[name] || "default";
-        
-        // 1. Έλεγχος αν το αρχείο είναι EMS
-        if (name.toLowerCase().includes("ems")) {
-            // Αν είναι Plank στο EMS, χρησιμοποίησε την εικόνα Plank
-            mediaFile = name.toLowerCase().includes("plank") ? "PlankImage" : "emslimage";
-        }
-
-        // 2. Προσπάθεια φόρτωσης ως Εικόνα (Προτεραιότητα βάσει του Inventory σας)
-        const imgPath = `images/${mediaFile}.png`;
-        const videoPath = `videos/${mediaFile}.mp4`;
-
-        // Δυναμική εναλλαγή: Αν το "video" element είναι στην πραγματικότητα img ή αν θέλουμε hybrid
-        // Για μέγιστη συμβατότητα, ανιχνεύουμε αν υπάρχει το αρχείο (ή υποθέτουμε εικόνα)
-        vid.poster = imgPath; // Χρήση της εικόνας ως poster στο video tag
-        vid.src = videoPath; 
-        
-        // Failsafe: Αν δεν υπάρχει βίντεο, δείξε την εικόνα σε πλήρες μέγεθος
-        vid.onerror = function() {
-            this.style.backgroundImage = `url('${imgPath}')`;
-            this.style.backgroundSize = "contain";
-            this.style.backgroundRepeat = "no-repeat";
-            this.style.backgroundPosition = "center";
-        };
-
-        vid.play().catch(() => {
-            console.log(`Video not found, showing image: ${mediaFile}`);
-            // Εξαναγκασμός εμφάνισης εικόνας αν το video αποτύχει
-            vid.style.opacity = "1";
-        });
+        let videoFile = videoMap[name] || "default";
+        if (name.toLowerCase().includes("ems")) videoFile = "ems";
+        vid.src = `videos/${videoFile}.mp4`;
+        vid.style.opacity = "1"; 
+        vid.play().catch(() => console.log(`Video not found: ${videoFile}`));
     }
 }
 
