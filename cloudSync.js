@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - ULTRA SAFE SYNC (v13.2)
-   FEAT: CRASH PREVENTION & AUTO-RELOAD
+   PEGASUS CLOUD VAULT - ACTIVE SYNC (v13.3)
+   FEAT: DESKTOP BACKGROUND POLLING & CACHE BYPASS
    ========================================================================== */
 
 const PegasusCloud = {
@@ -11,6 +11,7 @@ const PegasusCloud = {
     
     isUnlocked: false,
     userKey: "",
+    syncInterval: null,
 
     getTodayKey: function() {
         const d = new Date();
@@ -22,7 +23,6 @@ const PegasusCloud = {
             const val = localStorage.getItem(key);
             return val ? JSON.parse(val) : fallback;
         } catch (e) {
-            console.warn("Αγνόηση κατεστραμμένου κλειδιού:", key);
             return fallback;
         }
     },
@@ -34,7 +34,16 @@ const PegasusCloud = {
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
             localStorage.setItem("pegasus_vault_pin", cleanPin);
+            
             this.pull(true);
+            
+            // ΕΝΕΡΓΟΠΟΙΗΣΗ BACKGROUND POLLING (Κάθε 10 δευτερόλεπτα)
+            if (!this.syncInterval) {
+                this.syncInterval = setInterval(() => {
+                    if (this.isUnlocked) this.pull(true);
+                }, 10000);
+            }
+            
             return true;
         }
         return false;
@@ -57,18 +66,24 @@ const PegasusCloud = {
             if (actualData.weekly_history) {
                 const localWeekly = localStorage.getItem('pegasus_weekly_history');
                 const cloudWeekly = JSON.stringify(actualData.weekly_history);
-                if (localWeekly && localWeekly !== cloudWeekly) requiresUIReload = true;
-                localStorage.setItem('pegasus_weekly_history', cloudWeekly);
+                if (localWeekly !== cloudWeekly) {
+                    localStorage.setItem('pegasus_weekly_history', cloudWeekly);
+                    requiresUIReload = true;
+                }
             }
             
-            if (actualData.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(actualData.food_library));
+            if (actualData.food_library) {
+                localStorage.setItem('pegasus_food_library', JSON.stringify(actualData.food_library));
+            }
 
             if (actualData.cardio_logs) {
                 Object.keys(actualData.cardio_logs).forEach(k => {
                     const localVal = localStorage.getItem(k);
                     const cloudVal = JSON.stringify(actualData.cardio_logs[k]);
-                    if (localVal && localVal !== cloudVal) requiresUIReload = true; 
-                    localStorage.setItem(k, cloudVal);
+                    if (localVal !== cloudVal) {
+                        localStorage.setItem(k, cloudVal);
+                        requiresUIReload = true;
+                    }
                 });
             }
             
@@ -77,19 +92,21 @@ const PegasusCloud = {
                     let val = actualData.history_logs[k];
                     const cloudVal = typeof val === 'string' ? val : JSON.stringify(val);
                     const localVal = localStorage.getItem(k);
-                    if (localVal && localVal !== cloudVal && k.includes('pegasus_history')) requiresUIReload = true;
-                    localStorage.setItem(k, cloudVal);
+                    if (localVal !== cloudVal && k.includes('pegasus_history')) {
+                        localStorage.setItem(k, cloudVal);
+                        requiresUIReload = true;
+                    }
                 });
             }
 
-            console.log("✅ PC Pull Complete");
-            
+            // Αυτόματο Refresh UI μόνο αν υπήρξαν ουσιαστικές αλλαγές
             if (requiresUIReload) {
+                console.log("🔄 Νέα δεδομένα ελήφθησαν. Επανεκκίνηση UI...");
                 window.location.reload();
             } else if (typeof window.updateFoodUI === "function") {
                 window.updateFoodUI();
             }
-        } catch (e) { console.error("❌ PC Pull Error", e); }
+        } catch (e) {}
     },
 
     push: async function(silent = true) {
@@ -105,7 +122,7 @@ const PegasusCloud = {
                 if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
                 if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
                 if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
-            } catch(e) {} // Αθόρυβη προσπέραση σφαλμάτων
+            } catch(e) {}
         }
 
         const payload = {
@@ -123,8 +140,7 @@ const PegasusCloud = {
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
                 body: JSON.stringify(payload)
             });
-            console.log("✅ PC Push Success");
-        } catch (e) { console.error("❌ PC Push Error", e); }
+        } catch (e) {}
     }
 };
 
@@ -137,6 +153,6 @@ window.addEventListener('load', () => {
     localStorage.removeItem("pegasus_vault_pin");
     setTimeout(() => {
         const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
-        if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN. Πατήστε F5 για νέα προσπάθεια.");
+        if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN.");
     }, 1000);
 });
