@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pegasus OS v8.7 (Deep Sync)</title>
+    <title>Pegasus OS v8.7.1 (Ultra Safe Sync)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root { --main: #00ff41; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); }
@@ -125,7 +125,15 @@ function getStrictStorageKey() {
     return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 }
 
+/* 🟢 ANTI-CRASH (SAFE) PEGASUS CLOUD OBJECT 🟢 */
 const PegasusCloud = {
+    safeParse: function(key, fallback) {
+        try {
+            const val = localStorage.getItem(key);
+            return val ? JSON.parse(val) : fallback;
+        } catch(e) { return fallback; }
+    },
+
     unlock: function(pin) {
         if (btoa(pin) === "MjM3NQ==") {
             isUnlocked = true;
@@ -141,17 +149,19 @@ const PegasusCloud = {
     push: async function() {
         if (!isUnlocked) return;
         const dateStr = getStrictStorageKey();
-        const storageKey = `food_log_${dateStr}`;
         const syncTimestamp = Date.now();
         
-        // DEEP SYNC ΠΡΟΕΤΟΙΜΑΣΙΑ
         const cardioLogs = {};
         const historyLogs = {};
+        
+        // Try/Catch μέσα στη λούπα για να μην σκάει η εφαρμογή από κακά δεδομένα
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
-            if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
-            if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
-            if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
+            try {
+                if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
+                if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
+                if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
+            } catch(e) {} // Αθόρυβη παράκαμψη αν βρει corrupted αρχείο
         }
 
         const payload = { 
@@ -159,9 +169,9 @@ const PegasusCloud = {
             last_update_ts: syncTimestamp, 
             kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
             protein: localStorage.getItem("pegasus_today_protein") || "0", 
-            weekly_history: JSON.parse(localStorage.getItem("pegasus_weekly_history") || "{}"), 
-            food_library: JSON.parse(localStorage.getItem("pegasus_food_library") || "[]"), 
-            today_food_log: JSON.parse(localStorage.getItem(storageKey) || "[]"),
+            weekly_history: this.safeParse("pegasus_weekly_history", {}), 
+            food_library: this.safeParse("pegasus_food_library", []), 
+            today_food_log: this.safeParse(`food_log_${dateStr}`, []),
             cardio_logs: cardioLogs,
             history_logs: historyLogs
         };
@@ -186,7 +196,6 @@ const PegasusCloud = {
             const cloud = cloudData.record || cloudData;
 
             const dateStr = getStrictStorageKey();
-            const storageKey = `food_log_${dateStr}`;
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
@@ -194,7 +203,7 @@ const PegasusCloud = {
                 if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
                 
                 if (cloud.last_update_date === dateStr) { 
-                    localStorage.setItem(storageKey, JSON.stringify(cloud.today_food_log || [])); 
+                    localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(cloud.today_food_log || [])); 
                     localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
                     localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
                 }
@@ -258,7 +267,7 @@ async function saveMobileCardio() {
     // 2. Υπολογισμός και Ενημέρωση Προόδου Ποδιών (+1 Σετ ανά 2 Km)
     const legSetsEarned = Math.max(1, Math.round(km / 2));
     const weeklyKey = 'pegasus_weekly_history';
-    let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+    let weeklyStats = PegasusCloud.safeParse(weeklyKey, { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
     
     weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
@@ -291,7 +300,7 @@ async function saveMobileEMS() {
     const emsEntry = { id: "ems_" + timestamp, date: date, type: "EMS Training", stats: { intensity: parseFloat(avg).toFixed(1) + "%", energy: parseInt(kcal) + " e-Kcal" }, completed: true, recordedAt: new Date().toISOString() };
     const workoutRecord = { id: "workout_" + timestamp, date: date, title: "EMS FULL BODY SESSION", type: "Workout", status: "COMPLETED", duration: "20 min", kcal: parseInt(kcal), autoGenerated: true };
 
-    let dayHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
+    let dayHistory = PegasusCloud.safeParse(historyKey, []);
     dayHistory = dayHistory.filter(item => item.type !== "EMS Training" && item.title !== "EMS FULL BODY SESSION");
     dayHistory.push(emsEntry);
     dayHistory.push(workoutRecord);
@@ -300,7 +309,7 @@ async function saveMobileEMS() {
     localStorage.setItem(`pegasus_day_status_${date}`, 'COMPLETED');
 
     const weeklyKey = 'pegasus_weekly_history';
-    let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+    let weeklyStats = PegasusCloud.safeParse(weeklyKey, { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
     ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(g => weeklyStats[g] = (weeklyStats[g] || 0) + 6);
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
@@ -312,7 +321,7 @@ async function saveMobileEMS() {
 function updateDietUI() {
     const dateStr = getStrictStorageKey();
     const storageKey = `food_log_${dateStr}`;
-    const history = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    const history = PegasusCloud.safeParse(storageKey, []);
     let tk = 0, tp = 0;
     history.forEach(i => { tk += parseFloat(i.kcal || 0); tp += parseFloat(i.protein || 0); });
     document.getElementById("txtKcal").textContent = `${Math.round(tk)} / 2647`;
@@ -335,7 +344,7 @@ async function addFood() {
     if(!k) return;
     const dateStr = getStrictStorageKey();
     const storageKey = `food_log_${dateStr}`;
-    let h = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    let h = PegasusCloud.safeParse(storageKey, []);
     h.unshift({name:n, kcal:parseFloat(k), protein:parseFloat(p||0)});
     localStorage.setItem(storageKey, JSON.stringify(h));
     updateDietUI(); 
@@ -348,7 +357,7 @@ async function addFood() {
 async function deleteFood(i) {
     const dateStr = getStrictStorageKey();
     const storageKey = `food_log_${dateStr}`;
-    let h = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    let h = PegasusCloud.safeParse(storageKey, []);
     h.splice(i, 1); 
     localStorage.setItem(storageKey, JSON.stringify(h));
     updateDietUI(); 
@@ -356,7 +365,7 @@ async function deleteFood(i) {
 }
 
 function renderLibrary() {
-    const lib = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
+    const lib = PegasusCloud.safeParse('pegasus_food_library', []);
     const term = document.getElementById('libSearch').value.toLowerCase();
     document.getElementById('libraryContainer').innerHTML = lib.filter(i => (i.name||"").toLowerCase().includes(term)).map(i => `
         <div class="mini-card" onclick="quickAdd('${i.name}', ${i.kcal}, ${i.protein})">
@@ -382,7 +391,7 @@ function copyToClipboard(text, element) {
 }
 
 function updateMuscleUI() { 
-    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {}; 
+    const history = PegasusCloud.safeParse('pegasus_weekly_history', {}); 
     const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }; 
     document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => { 
         const done = history[g] || 0; 
