@@ -72,14 +72,23 @@
         <div id="foodHistoryList"></div>
     </div>
 
-    <div id="cardio" class="view">
+<div id="cardio" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <h2 style="margin-top:0; color:var(--main); font-weight:900;">ΚΑΤΑΓΡΑΦΗ CARDIO</h2>
         <input type="date" id="cDate" style="margin-bottom:15px; color:var(--main);">
-        <input type="text" id="cRoute" placeholder="Διαδρομή (π.χ. Γύρος Λίμνης)">
-        <input type="number" id="cKm" step="0.1" placeholder="Χιλιόμετρα (km)">
-        <input type="text" id="cTime" placeholder="Χρόνος (π.χ. 01:48)">
-        <input type="number" id="cKcal" placeholder="Θερμίδες (kcal)">
+        
+        <input type="text" id="cRoute" placeholder="Διαδρομή (π.χ. Γύρος Λίμνης)" autocomplete="on" name="routeHistory" list="routeOptions" onchange="document.getElementById('cKm').focus()">
+        <datalist id="routeOptions">
+            <option value="Γύρος Λίμνης">
+            <option value="Στάδιο">
+            <option value="Διάδρομος">
+        </datalist>
+
+        <input type="number" id="cKm" step="0.1" placeholder="Χιλιόμετρα (km)" inputmode="decimal">
+        
+        <input type="number" id="cTime" placeholder="Χρόνος (Συνολικά Λεπτά)" inputmode="numeric" pattern="[0-9]*">
+        
+        <input type="number" id="cKcal" placeholder="Θερμίδες (kcal)" inputmode="numeric" pattern="[0-9]*">
         <button class="primary-btn" onclick="saveMobileCardio()" style="margin-top:15px;">ΑΠΟΘΗΚΕΥΣΗ</button>
     </div>
 
@@ -261,10 +270,10 @@ async function saveMobileCardio() {
     const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     const entry = { route, km, time, kcal, date: dateKey };
 
-    // 1. Αποθήκευση Ιστορικού Ποδηλασίας
+    // Αποθήκευση Cardio Log
     localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-    // 2. Υπολογισμός και Ενημέρωση Προόδου Ποδιών (+1 Σετ ανά 2 Km)
+    // Αθόρυβος Υπολογισμός Προόδου Ποδιών
     const legSetsEarned = Math.max(1, Math.round(km / 2));
     const weeklyKey = 'pegasus_weekly_history';
     let weeklyStats = PegasusCloud.safeParse(weeklyKey, { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
@@ -272,12 +281,11 @@ async function saveMobileCardio() {
     weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    alert(`Αποθηκεύτηκε: ${route}\nΠρόοδος: +${legSetsEarned} Σετ Ποδιών`);
+    // Τροποποιημένο, καθαρό μήνυμα επιτυχίας
+    alert(`Αποθηκεύτηκε: ${route}`);
     
-    // 3. Συγχρονισμός με το Cloud
     await PegasusCloud.push();
     
-    // 4. Καθαρισμός Φόρμας και Ενημέρωση UI
     document.getElementById("cRoute").value = "";
     document.getElementById("cKm").value = "";
     document.getElementById("cTime").value = "";
