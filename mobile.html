@@ -120,8 +120,7 @@
         <div id="libraryContainer"></div>
     </div>
 
-<script>
-const PEGASUS_CONFIG = { 
+<script>const PEGASUS_CONFIG = { 
     apiKeyPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
     binId: "69b6757ab7ec241ddc6d7230" 
 };
@@ -133,7 +132,6 @@ function getStrictStorageKey() {
     return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 }
 
-/* 🟢 ANTI-CRASH (SAFE) PEGASUS CLOUD OBJECT 🟢 */
 const PegasusCloud = {
     safeParse: function(key, fallback) {
         try {
@@ -157,7 +155,7 @@ const PegasusCloud = {
     push: async function() {
         if (!isUnlocked) return;
         const dateStr = getStrictStorageKey();
-        const syncTimestamp = Date.now();
+        const syncTimestamp = Date.now(); // ΚΡΙΣΙΜΟ ΓΙΑ ΤΟ RELOAD ΤΟΥ PC
         
         const cardioLogs = {};
         const historyLogs = {};
@@ -173,7 +171,7 @@ const PegasusCloud = {
 
         const payload = { 
             last_update_date: dateStr, 
-            last_update_ts: syncTimestamp, 
+            last_update_ts: syncTimestamp, // ΕΝΗΜΕΡΩΝΕΙ ΤΟΝ ΥΠΟΛΟΓΙΣΤΗ ΟΤΙ ΥΠΑΡΧΕΙ ΑΛΛΑΓΗ
             kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
             protein: localStorage.getItem("pegasus_today_protein") || "0", 
             weekly_history: this.safeParse("pegasus_weekly_history", {}), 
@@ -189,7 +187,8 @@ const PegasusCloud = {
                 body: JSON.stringify(payload) 
             }); 
             localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-        } catch(e) {}
+            console.log("✅ Mobile Sync: Push Success");
+        } catch(e) { console.error("Push Fail", e); }
     },
 
     pull: async function() {
@@ -214,8 +213,15 @@ const PegasusCloud = {
                     localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
                 }
 
-                if (cloud.cardio_logs) Object.keys(cloud.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(cloud.cardio_logs[k])));
-                if (cloud.history_logs) Object.keys(cloud.history_logs).forEach(k => { let val = cloud.history_logs[k]; localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val)); });
+                if (cloud.cardio_logs) {
+                    Object.keys(cloud.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(cloud.cardio_logs[k])));
+                }
+                if (cloud.history_logs) {
+                    Object.keys(cloud.history_logs).forEach(k => {
+                        let val = cloud.history_logs[k];
+                        localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
+                    });
+                }
                 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 updateDietUI();
@@ -233,18 +239,13 @@ function openView(id) {
     if(id === 'diet') updateDietUI(); 
 }
 
-/* --- CARDIO & EMS LOGIC --- */
-function openCardio() {
-    document.getElementById('cDate').value = new Date().toISOString().split('T')[0];
-    openView('cardio');
-}
+function openCardio() { document.getElementById('cDate').value = new Date().toISOString().split('T')[0]; openView('cardio'); }
 
 function openEMS() {
     const now = new Date();
     const diff = 3 - now.getDay();
     const targetDate = new Date(now);
     targetDate.setDate(now.getDate() + diff);
-    
     document.getElementById('emsDate').value = targetDate.toISOString().split('T')[0];
     document.getElementById('emsAvg').value = "45.1";
     document.getElementById('emsKcal').value = "2350";
@@ -254,38 +255,15 @@ function openEMS() {
 async function saveMobileCardio() {
     const route = document.getElementById("cRoute").value;
     const km = parseFloat(document.getElementById("cKm").value);
-    const time = document.getElementById("cTime").value;
-    const kcal = document.getElementById("cKcal").value;
-    const rawDate = document.getElementById("cDate").value;
-
-    if (!route || isNaN(km) || km <= 0) { 
-        alert("Συμπλήρωσε Διαδρομή και έγκυρα Χιλιόμετρα!"); 
-        return; 
-    }
-
-    const d = new Date(rawDate);
-    const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-    const entry = { route, km, time, kcal, date: dateKey };
-
-    localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
-
+    if (!route || isNaN(km) || km <= 0) { alert("Συμπλήρωσε σωστά δεδομένα!"); return; }
+    const dateKey = getStrictStorageKey();
+    localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify({ route, km, date: dateKey }));
     const legSetsEarned = Math.max(1, Math.round(km / 2));
-    const weeklyKey = 'pegasus_weekly_history';
-    let weeklyStats = PegasusCloud.safeParse(weeklyKey, { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
-    
+    let weeklyStats = PegasusCloud.safeParse('pegasus_weekly_history', { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
     weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
-    localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
-
+    localStorage.setItem('pegasus_weekly_history', JSON.stringify(weeklyStats));
     alert(`Αποθηκεύτηκε: ${route}`);
-    
-    await PegasusCloud.push();
-    
-    document.getElementById("cRoute").value = "";
-    document.getElementById("cKm").value = "";
-    document.getElementById("cTime").value = "";
-    document.getElementById("cKcal").value = "";
-    
-    if (document.getElementById('preview').classList.contains('active')) updateMuscleUI();
+    await PegasusCloud.push(); // Τώρα στέλνει και το Timestamp
     openView('home');
 }
 
@@ -293,28 +271,20 @@ async function saveMobileEMS() {
     const date = document.getElementById('emsDate').value;
     const avg = document.getElementById('emsAvg').value;
     const kcal = document.getElementById('emsKcal').value;
-
     if (!date || isNaN(parseFloat(avg)) || isNaN(parseFloat(kcal))) { alert("Εισάγετε έγκυρα δεδομένα."); return; }
-
     const timestamp = Date.now();
     const historyKey = `pegasus_history_${date}`;
-
     const emsEntry = { id: "ems_" + timestamp, date: date, type: "EMS Training", stats: { intensity: parseFloat(avg).toFixed(1) + "%", energy: parseInt(kcal) + " e-Kcal" }, completed: true, recordedAt: new Date().toISOString() };
     const workoutRecord = { id: "workout_" + timestamp, date: date, title: "EMS FULL BODY SESSION", type: "Workout", status: "COMPLETED", duration: "20 min", kcal: parseInt(kcal), autoGenerated: true };
-
     let dayHistory = PegasusCloud.safeParse(historyKey, []);
     dayHistory = dayHistory.filter(item => item.type !== "EMS Training" && item.title !== "EMS FULL BODY SESSION");
     dayHistory.push(emsEntry);
     dayHistory.push(workoutRecord);
-    
     localStorage.setItem(historyKey, JSON.stringify(dayHistory));
     localStorage.setItem(`pegasus_day_status_${date}`, 'COMPLETED');
-
-    const weeklyKey = 'pegasus_weekly_history';
-    let weeklyStats = PegasusCloud.safeParse(weeklyKey, { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
+    let weeklyStats = PegasusCloud.safeParse('pegasus_weekly_history', { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
     ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(g => weeklyStats[g] = (weeklyStats[g] || 0) + 6);
-    localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
-
+    localStorage.setItem('pegasus_weekly_history', JSON.stringify(weeklyStats));
     alert("Η Τετάρτη ολοκληρώθηκε αυτόματα!");
     await PegasusCloud.push();
     openView('home');
@@ -335,7 +305,6 @@ function updateDietUI() {
             <button class="btn-del" onclick="deleteFood(${i})">✕</button>
             <span class="mini-label">${h.name}</span>
             <div class="mini-val">${h.kcal} kcal</div>
-            <small style="color:var(--main); font-size:9px; font-weight:800;">ΠΡΩΤΕΪΝΗ: ${h.protein||0}g</small>
         </div>`).join('');
 }
 
@@ -351,9 +320,7 @@ async function addFood() {
     localStorage.setItem(storageKey, JSON.stringify(h));
     updateDietUI(); 
     await PegasusCloud.push();
-    document.getElementById("fName").value=""; 
-    document.getElementById("fKcal").value=""; 
-    document.getElementById("fProt").value="";
+    document.getElementById("fName").value=""; document.getElementById("fKcal").value=""; document.getElementById("fProt").value="";
 }
 
 async function deleteFood(i) {
@@ -373,31 +340,18 @@ function renderLibrary() {
         <div class="mini-card" onclick="quickAdd('${i.name}', ${i.kcal}, ${i.protein})">
             <span class="mini-label">+ ΠΡΟΣΘΗΚΗ</span>
             <div class="mini-val">${i.name}</div>
-            <small style="color:var(--main); font-size:9px; font-weight:800;">${i.kcal} kcal | ${i.protein||0}g P</small>
         </div>`).join('');
 }
 
-function quickAdd(n, k, p) { 
-    document.getElementById("fName").value = n; 
-    document.getElementById("fKcal").value = k; 
-    document.getElementById("fProt").value = p || 0; 
-    addFood(); 
-    openView('diet'); 
-}
+function quickAdd(n, k, p) { document.getElementById("fName").value = n; document.getElementById("fKcal").value = k; document.getElementById("fProt").value = p || 0; addFood(); openView('diet'); }
 
-function copyToClipboard(text, element) { 
-    navigator.clipboard.writeText(text).then(() => { 
-        element.querySelector('.copy-hint').style.opacity = 1; 
-        setTimeout(() => element.querySelector('.copy-hint').style.opacity = 0, 1500); 
-    }); 
-}
+function copyToClipboard(text, element) { navigator.clipboard.writeText(text).then(() => { element.querySelector('.copy-hint').style.opacity = 1; setTimeout(() => element.querySelector('.copy-hint').style.opacity = 0, 1500); }); }
 
 function updateMuscleUI() { 
     const history = PegasusCloud.safeParse('pegasus_weekly_history', {}); 
     const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }; 
     document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => { 
-        const done = history[g] || 0; 
-        const per = Math.min((done/targets[g])*100, 100); 
+        const done = history[g] || 0; const per = Math.min((done/targets[g])*100, 100); 
         return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${done}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${per}%"></div></div></div>`; 
     }).join(''); 
 }
@@ -405,16 +359,7 @@ function updateMuscleUI() {
 window.onload = () => { 
     updateDietUI(); 
     const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin) {
-        PegasusCloud.unlock(savedPin);
-    } else {
-        document.getElementById("sync-indicator").textContent = "ΚΛΕΙΔΩΜΕΝΟ";
-        document.getElementById("sync-indicator").style.color = "#ff4444";
-        setTimeout(() => {
-            const pin = prompt("PEGASUS MOBILE: Εισάγετε PIN:");
-            if (!PegasusCloud.unlock(pin)) alert("Πρόσβαση Απορρίφθηκε.");
-        }, 1000);
-    }
+    if (savedPin) PegasusCloud.unlock(savedPin); 
     setInterval(() => { if(isUnlocked) PegasusCloud.pull(); }, 15000); 
 };
 </script>
