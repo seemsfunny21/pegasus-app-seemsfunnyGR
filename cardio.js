@@ -18,13 +18,13 @@ const PegasusCardio = {
 
     save: function() {
         const route = document.getElementById("cRoute").value;
-        const km = document.getElementById("cKm").value;
+        const km = parseFloat(document.getElementById("cKm").value);
         const time = document.getElementById("cTime").value;
         const kcal = document.getElementById("cKcal").value;
         const rawDate = document.getElementById("cDate").value;
 
-        if (!route || !km) {
-            alert("Συμπλήρωσε Διαδρομή και Χιλιόμετρα!");
+        if (!route || isNaN(km) || km <= 0) {
+            alert("Συμπλήρωσε Διαδρομή και έγκυρα Χιλιόμετρα!");
             return;
         }
 
@@ -39,9 +39,21 @@ const PegasusCardio = {
             date: dateKey
         };
 
+        // 1. Αποθήκευση Log Ποδηλασίας
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-        alert(`Η διαδρομή "${route}" αποθηκεύτηκε!`);
+        // 2. Ενημέρωση Προόδου (Πόδια) -> 1 Set ανά 2 Km
+        const legSetsEarned = Math.max(1, Math.round(km / 2));
+        
+        const weeklyKey = 'pegasus_weekly_history';
+        let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
+            "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
+        };
+        
+        weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
+        localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
+
+        alert(`Η διαδρομή "${route}" αποθηκεύτηκε!\nΚερδίσατε +${legSetsEarned} Σετ στα Πόδια.`);
         this.close();
         
         document.getElementById("cRoute").value = "";
