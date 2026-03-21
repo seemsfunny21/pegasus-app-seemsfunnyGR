@@ -1,8 +1,10 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - AUTO-SYNC EDITION (v11.0)
+   PEGASUS CLOUD VAULT - AUTO-SYNC FINAL (v11.2)
+   FIX: GLOBAL SCOPE EXPORT & PIN PROMPT INTEGRATION
    ========================================================================== */
 
-const PegasusCloud = {
+// ΔΗΛΩΣΗ ΩΣ GLOBAL WINDOW OBJECT (Κρίσιμο για την επικοινωνία με το food.js)
+window.PegasusCloud = {
     config: {
         binId: "69b6757ab7ec241ddc6d7230",
         encryptedPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC" 
@@ -55,7 +57,7 @@ const PegasusCloud = {
         } catch (e) { console.error("❌ Pull Error", e); }
     },
 
-    push: async function(silent = true) { // Default silent για την αυτοματοποίηση
+    push: async function(silent = true) {
         if (!this.isUnlocked) return;
         const todayStr = this.getTodayKey();
         const payload = {
@@ -71,17 +73,18 @@ const PegasusCloud = {
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
                 body: JSON.stringify(payload)
             });
-            console.log("✅ Auto-Push Success");
+            console.log("✅ PEGASUS Auto-Push Success");
         } catch (e) { console.error("❌ Push Error", e); }
     }
 };
 
+// ΕΚΚΙΝΗΣΗ & ΕΛΕΓΧΟΣ PIN
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
         window.PegasusCloud.unlock(savedPin);
     } else {
-        // Καθυστέρηση 1.5 δευτερολέπτου για να φορτώσει πρώτα το UI
+        // Καθυστέρηση για φόρτωση του UI πριν ζητηθεί το PIN
         setTimeout(() => {
             const pin = prompt("PEGASUS VAULT: Εισάγετε PIN για συγχρονισμό:");
             if (pin && !window.PegasusCloud.unlock(pin)) {
