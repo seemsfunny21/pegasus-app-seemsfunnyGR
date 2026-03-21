@@ -62,8 +62,8 @@ function changeFoodDate(days) {
 // ΚΕΝΤΡΙΚΗ ΓΕΝΝΗΤΡΙΑ ΚΛΕΙΔΙΩΝ (STRICT PROTOCOL)
 window.getStrictStorageKey = function() {
     const d = window.currentFoodDate || new Date();
-    // Επιστρέφει μορφή DD/M/YYYY (π.χ. 14/2/2026) για συμβατότητα με το backup
-    return `food_log_${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    // ΠΡΟΣΟΧΗ: Format DD/M/YYYY για πλήρη συμβατότητα με το ιστορικό Pegasus
+    return "food_log_" + d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
 
 window.updateFoodUI = function() {
