@@ -681,6 +681,7 @@ window.onload = () => {
 };
 
 /* ===== UI & PREVIEW LOGIC ===== */
+/* ===== UI & PREVIEW LOGIC (V6.9 CLEAN) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -700,19 +701,17 @@ function openExercisePreview() {
 
     if(dayExercises) {
         dayExercises.forEach(ex => {
-            // 1. Καθαρισμός ονόματος από κενά (για το Seated Chest Press )
             const cleanName = ex.name.trim();
             
-            // 2. Χρήση του videoMap για σωστά κεφαλαία και ονόματα
+            // Χρήση videoMap για σωστή αντιστοίχιση αρχείου
             let fileName = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
                            ? videoMap[cleanName] 
-                           : cleanName.replace(/\s+/g, '') + "Image";
+                           : cleanName.replace(/\s+/g, '').toLowerCase() + "image";
 
-            // 3. Δημιουργία HTML (Προσπάθεια για .png και fallback σε .mp4)
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
                     <img src="images/${fileName}.png" 
-                         onerror="this.onerror=null; this.parentElement.innerHTML='<video src=\'videos/${fileName}.mp4\' muted loop playsinline style=\'width:150px; height:100px; border:2px solid #4CAF50; border-radius:8px; object-fit:cover;\' onmouseover=\'this.play()\' onmouseout=\'this.pause()\'></video>'"
+                         onerror="this.onerror=null; this.src='images/placeholder.jpg'; console.warn('Preview 404: ' + this.src);"
                          style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
                     <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
                 </div>
@@ -720,90 +719,39 @@ function openExercisePreview() {
         });
     }
 }
-    
-    if(dayExercises) {
-        dayExercises.forEach(ex => {
-            const lowerName = ex.name.toLowerCase();
-            const key = Object.keys(smartMapping).find(k => lowerName.includes(k));
-            let imgFile = key ? smartMapping[key] : (ex.name.replace(/\s+/g, '').toLowerCase() + "image.png");
-
-            content.innerHTML += `
-                <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
-                    <img src="images/${imgFile}" onerror="this.src='images/placeholder.jpg'" 
-                         style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
-                    <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${ex.name}</p>
-                </div>
-            `;
-        });
-    }
-}
 
 window.addEventListener('mousedown', (e) => {
-    // Προστέθηκε το 'cardioPanel' στη λίστα για να κλείνει αυτόματα
-    const panels = [
-        'foodPanel', 'calendarPanel', 'achievementsPanel', 
-        'settingsPanel', 'previewPanel', 'toolsPanel', 
-        'galleryPanel', 'cardioPanel'
-    ];
-    
+    const panels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel'];
     let closedAny = false;
-    
     panels.forEach(id => {
         const panel = document.getElementById(id);
         if (panel && panel.style.display === 'block') {
-            // Έλεγχος αν το κλικ είναι εκτός του panel και των κουμπιών ελέγχου
             if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button')) {
                 panel.style.display = 'none';
                 closedAny = true;
             }
         }
     });
-    
-    // Αν έκλεισε οποιοδήποτε παράθυρο, γίνεται αυτόματα Push στο Cloud
-    if (closedAny && window.PegasusCloud) {
-        window.PegasusCloud.push(true); 
-    }
+    if (closedAny && window.PegasusCloud) window.PegasusCloud.push(true);
 });
 
 window.logPegasusSet = function(exName) {
-    // 1. Λήψη Ιστορικού
-    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { 
-        "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 16, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
-    };
-    
-    if (!window.exercisesDB) {
-        console.error("STRICT: exercisesDB not found.");
-        return;
-    }
-    
-    // 2. Εντοπισμός Άσκησης
+    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+    if (!window.exercisesDB) return;
     const exercise = window.exercisesDB.find(ex => ex.name.trim() === exName.trim());
-    
     if (exercise && exercise.muscleGroup) {
-        // Υπολογισμός βαρύτητας (Ποδηλασία = 3 σετ, απλή άσκηση = 1 σετ)
         const value = (exercise.name.includes("Ποδηλασία")) ? 3 : 1;
-        
-        // Ενημέρωση Data Store
         history[exercise.muscleGroup] = (history[exercise.muscleGroup] || 0) + value;
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
-        
-        // 3. UI REFRESH
         if (window.MuscleProgressUI) window.MuscleProgressUI.render();
-
-        // 4. CLOUD TRIGGER (Απαραίτητο για συγχρονισμό PC-Κινητού)
-        if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-            window.PegasusCloud.push(true); // silent=true για να μην πετάει alerts κατά την άσκηση
-        }
-    } else {
-        console.warn(`STRICT: Exercise "${exName}" not mapped to any muscle group.`);
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
     }
 };
 
 window.updateTotalWorkoutCount = function() {
     const data = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
-    const total = Object.keys(data).length;
     const display = document.getElementById("totalWorkoutsDisplay");
-    if (display) display.textContent = `Προπονήσεις: ${total}`;
+    if (display) display.textContent = `Προπονήσεις: ${Object.keys(data).length}`;
 };
 
 window.updateTotalWorkoutCount();
