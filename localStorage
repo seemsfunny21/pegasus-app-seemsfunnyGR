@@ -107,6 +107,7 @@ window.updateFoodUI = function() {
     if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
 };
 
+// Γραμμή 101: Ενημέρωση της addFoodItem
 window.addFoodItem = function(name, kcal, protein) {
     const storageKey = window.getStrictStorageKey();
     const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -116,9 +117,14 @@ window.addFoodItem = function(name, kcal, protein) {
 
     if (typeof window.addToLibrary === "function") window.addToLibrary(name, kcal, protein);
     window.updateFoodUI();
-    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push(true);
+    
+    // ΑΥΤΟΜΑΤΟ PUSH (v11.0 Protocol)
+    if (window.PegasusCloud && PegasusCloud.isUnlocked) {
+        PegasusCloud.push(true); 
+    }
 };
 
+// Γραμμή 113: Ενημέρωση της deleteFoodItem
 window.deleteFoodItem = function(index) {
     const storageKey = window.getStrictStorageKey();
     let foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -128,7 +134,7 @@ window.deleteFoodItem = function(index) {
     
     window.updateFoodUI();
     
-    // ΑΜΕΣΗ ΕΝΗΜΕΡΩΣΗ CLOUD
+    // ΑΥΤΟΜΑΤΟ PUSH ΜΕΤΑ ΤΗ ΔΙΑΓΡΑΦΗ
     if (window.PegasusCloud && PegasusCloud.isUnlocked) {
         PegasusCloud.push(true); 
     }
