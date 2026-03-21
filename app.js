@@ -418,32 +418,35 @@ function skipToNextExercise() {
     } else finishWorkout(); 
 }
 
-/* ===== PEGASUS VIDEO ENGINE - STRICT EDITION (V6.8) ===== */
+/* ===== PEGASUS VIDEO ENGINE - WORKOUT MODE (V7.1) ===== */
 function showVideo(i) {
+    // 1. Έλεγχος ύπαρξης άσκησης στο array
     if (!exercises || !exercises[i]) return;
     
     const ex = exercises[i];
     const wInput = ex.querySelector(".weight-input");
-    // Καθαρισμός κενών από το όνομα για σωστό ταίριασμα
+    
+    // 2. Λήψη ονόματος και καθαρισμός κενών (trim)
     let name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
     const vid = document.getElementById("video");
     
     if (vid && typeof videoMap !== 'undefined') {
-        // Λήψη ονόματος αρχείου από το videoMap
-        let videoFile = videoMap[name] || "default";
+        // 3. Ανάκτηση Base Name από το videoMap (π.χ. "Plank", "SeatedChestPress")
+        let videoFileName = videoMap[name] || name.replace(/\s+/g, '');
         
-        // Ειδική διαχείριση EMS: Αν υπάρχει συγκεκριμένο βίντεο στο Map (π.χ. EMS_L) το χρησιμοποιεί,
-        // αλλιώς αν περιέχει "ems" χρησιμοποιεί το γενικό ems.mp4
+        // 4. Ειδική διαχείριση EMS (αν δεν υπάρχει στο map, χρήση γενικού ems.mp4)
         if (name.toLowerCase().includes("ems") && !videoMap[name]) {
-            videoFile = "ems";
+            videoFileName = "ems";
         }
 
-        // Κατασκευή διαδρομής: videos/ + όνομα + .mp4
-        vid.src = "videos/" + videoFile + ".mp4";
+        // 5. Κατασκευή διαδρομής: videos/ + Base Name + .mp4
+        // ΠΡΟΣΟΧΗ: Δεν προσθέτουμε τη λέξη "Image" εδώ, γιατί θέλουμε το βίντεο
+        vid.src = `videos/${videoFileName}.mp4`;
         vid.style.opacity = "1";
         
+        // 6. Εκτέλεση αναπαραγωγής με διαχείριση σφαλμάτων
         vid.play().catch(err => {
-            console.warn(`PEGASUS: Video ${videoFile}.mp4 pending or missing.`);
+            console.warn(`PEGASUS: Video ${videoFileName}.mp4 not found in /videos/`);
         });
     }
 }
