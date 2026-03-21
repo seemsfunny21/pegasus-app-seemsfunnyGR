@@ -127,7 +127,11 @@ window.deleteFoodItem = function(index) {
     localStorage.setItem(storageKey, JSON.stringify(foodLog));
     
     window.updateFoodUI();
-    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push(true);
+    
+    // ΑΜΕΣΗ ΕΝΗΜΕΡΩΣΗ CLOUD
+    if (window.PegasusCloud && PegasusCloud.isUnlocked) {
+        PegasusCloud.push(true); 
+    }
 };
 
 function updateProgressBars(kcal, protein) {
