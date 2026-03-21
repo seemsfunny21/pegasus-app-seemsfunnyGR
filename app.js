@@ -418,21 +418,33 @@ function skipToNextExercise() {
     } else finishWorkout(); 
 }
 
-/* ===== PEGASUS HYBRID MEDIA ENGINE (V6.5) ===== */
+/* ===== PEGASUS VIDEO ENGINE - STRICT EDITION (V6.8) ===== */
 function showVideo(i) {
-    const ex = exercises[i];
-    if (!ex) return;
+    if (!exercises || !exercises[i]) return;
     
+    const ex = exercises[i];
     const wInput = ex.querySelector(".weight-input");
-    let name = wInput ? wInput.getAttribute("data-name") : "default";
+    // Καθαρισμός κενών από το όνομα για σωστό ταίριασμα
+    let name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
     const vid = document.getElementById("video");
     
     if (vid && typeof videoMap !== 'undefined') {
+        // Λήψη ονόματος αρχείου από το videoMap
         let videoFile = videoMap[name] || "default";
-        if (name.toLowerCase().includes("ems")) videoFile = "ems";
-        vid.src = `videos/${videoFile}.mp4`;
-        vid.style.opacity = "1"; 
-        vid.play().catch(() => console.log(`Video not found: ${videoFile}`));
+        
+        // Ειδική διαχείριση EMS: Αν υπάρχει συγκεκριμένο βίντεο στο Map (π.χ. EMS_L) το χρησιμοποιεί,
+        // αλλιώς αν περιέχει "ems" χρησιμοποιεί το γενικό ems.mp4
+        if (name.toLowerCase().includes("ems") && !videoMap[name]) {
+            videoFile = "ems";
+        }
+
+        // Κατασκευή διαδρομής: videos/ + όνομα + .mp4
+        vid.src = "videos/" + videoFile + ".mp4";
+        vid.style.opacity = "1";
+        
+        vid.play().catch(err => {
+            console.warn(`PEGASUS: Video ${videoFile}.mp4 pending or missing.`);
+        });
     }
 }
 
