@@ -77,35 +77,30 @@ const PegasusCloud = {
     /**
      * 5. ΣΥΓΧΩΝΕΥΣΗ (MERGE)
      */
-    processMerge: function(cloudData) {
-        const todayStr = this.getTodayKey();
-        const dayKey = "food_log_" + todayStr;
+processMerge: function(cloudData) {
+    const todayStr = this.getTodayKey();
+    const dayKey = "food_log_" + todayStr;
 
-        // Merge μόνο αν η ημερομηνία Cloud ταυτίζεται με τη σημερινή
-        if (cloudData.last_update_date === todayStr) {
-            let localLog = JSON.parse(localStorage.getItem(dayKey) || "[]");
-            let cloudLog = cloudData.today_food_log || [];
-            
-            const uniqueMap = new Map();
-            [...localLog, ...cloudLog].forEach(item => {
-                uniqueMap.set(item.name + "_" + item.kcal + "_" + item.protein, item);
-            });
+    // ΕΛΕΓΧΟΣ ΗΜΕΡΟΜΗΝΙΑΣ: Αν το Cloud έχει δεδομένα για σήμερα
+    if (cloudData.last_update_date === todayStr) {
+        // ΑΥΣΤΗΡΟ ΠΡΩΤΟΚΟΛΛΟ: Αντικατάσταση τοπικών με δεδομένα Cloud
+        // Αυτό διασφαλίζει ότι αν σβήσετε κάτι σε μια συσκευή, θα σβηστεί παντού
+        localStorage.setItem(dayKey, JSON.stringify(cloudData.today_food_log || []));
+        
+        if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+    }
 
-            localStorage.setItem(dayKey, JSON.stringify(Array.from(uniqueMap.values())));
-            if (typeof window.updateFoodUI === "function") window.updateFoodUI();
-        }
-
-        // Συγχρονισμός Εβδομαδιαίας Προόδου [cite: 14]
-        if (cloudData.weekly_history) {
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
-            if (window.MuscleProgressUI) window.MuscleProgressUI.render();
-        }
-
-        // Συγχρονισμός Βιβλιοθήκης Φαγητών 
-        if (cloudData.food_library) {
-            localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
-        }
-    },
+    // Συγχρονισμός Ιστορικού Μυών
+    if (cloudData.weekly_history) {
+        localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloudData.weekly_history));
+        if (window.MuscleProgressUI) window.MuscleProgressUI.render();
+    }
+    
+    // Συγχρονισμός Βιβλιοθήκης
+    if (cloudData.food_library) {
+        localStorage.setItem('pegasus_food_library', JSON.stringify(cloudData.food_library));
+    }
+},
 
     /**
      * 6. ΑΠΟΣΤΟΛΗ ΔΕΔΟΜΕΝΩΝ (PUSH)
