@@ -238,25 +238,43 @@ function openEMS() {
 
 async function saveMobileCardio() {
     const route = document.getElementById("cRoute").value;
-    const km = document.getElementById("cKm").value;
+    const km = parseFloat(document.getElementById("cKm").value);
     const time = document.getElementById("cTime").value;
     const kcal = document.getElementById("cKcal").value;
     const rawDate = document.getElementById("cDate").value;
 
-    if (!route || !km) { alert("Συμπλήρωσε Διαδρομή και Χιλιόμετρα!"); return; }
+    if (!route || isNaN(km) || km <= 0) { 
+        alert("Συμπλήρωσε Διαδρομή και έγκυρα Χιλιόμετρα!"); 
+        return; 
+    }
 
     const d = new Date(rawDate);
     const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     const entry = { route, km, time, kcal, date: dateKey };
 
+    // 1. Αποθήκευση Ιστορικού Ποδηλασίας
     localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
-    alert(`Αποθηκεύτηκε: ${route}`);
+
+    // 2. Υπολογισμός και Ενημέρωση Προόδου Ποδιών (+1 Σετ ανά 2 Km)
+    const legSetsEarned = Math.max(1, Math.round(km / 2));
+    const weeklyKey = 'pegasus_weekly_history';
+    let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+    
+    weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
+    localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
+
+    alert(`Αποθηκεύτηκε: ${route}\nΠρόοδος: +${legSetsEarned} Σετ Ποδιών`);
+    
+    // 3. Συγχρονισμός με το Cloud
     await PegasusCloud.push();
     
+    // 4. Καθαρισμός Φόρμας και Ενημέρωση UI
     document.getElementById("cRoute").value = "";
     document.getElementById("cKm").value = "";
     document.getElementById("cTime").value = "";
     document.getElementById("cKcal").value = "";
+    
+    if (document.getElementById('preview').classList.contains('active')) updateMuscleUI();
     openView('home');
 }
 
