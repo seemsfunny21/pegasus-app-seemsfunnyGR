@@ -67,27 +67,23 @@
             <div class="bar-bg"><div id="barKcal" class="bar-fill"></div></div>
         </div>
         <input type="text" id="fName" placeholder="Φαγητό">
-        <div style="display:flex; gap:8px; width: 100%;"><input type="number" id="fKcal" placeholder="Θερμίδες"><input type="number" id="fProt" placeholder="Πρωτεΐνη"></div>
+        <div style="display:flex; gap:8px; width: 100%;"><input type="number" id="fKcal" placeholder="Θερμίδες" inputmode="numeric"><input type="number" id="fProt" placeholder="Πρωτεΐνη" inputmode="numeric"></div>
         <button class="primary-btn" onclick="addFood()">ΠΡΟΣΘΗΚΗ</button>
         <div id="foodHistoryList"></div>
     </div>
 
-<div id="cardio" class="view">
+    <div id="cardio" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <h2 style="margin-top:0; color:var(--main); font-weight:900;">ΚΑΤΑΓΡΑΦΗ CARDIO</h2>
         <input type="date" id="cDate" style="margin-bottom:15px; color:var(--main);">
-        
-        <input type="text" id="cRoute" placeholder="Διαδρομή (π.χ. Γύρος Λίμνης)" autocomplete="on" name="routeHistory" list="routeOptions" onchange="document.getElementById('cKm').focus()">
+        <input type="text" id="cRoute" placeholder="Διαδρομή (π.χ. Γύρος Λίμνης)" autocomplete="on" list="routeOptions" onchange="document.getElementById('cKm').focus()">
         <datalist id="routeOptions">
             <option value="Γύρος Λίμνης">
             <option value="Στάδιο">
             <option value="Διάδρομος">
         </datalist>
-
         <input type="number" id="cKm" step="0.1" placeholder="Χιλιόμετρα (km)" inputmode="decimal">
-        
         <input type="number" id="cTime" placeholder="Χρόνος (Συνολικά Λεπτά)" inputmode="numeric" pattern="[0-9]*">
-        
         <input type="number" id="cKcal" placeholder="Θερμίδες (kcal)" inputmode="numeric" pattern="[0-9]*">
         <button class="primary-btn" onclick="saveMobileCardio()" style="margin-top:15px;">ΑΠΟΘΗΚΕΥΣΗ</button>
     </div>
@@ -96,9 +92,14 @@
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <h2 style="margin-top:0; color:var(--main); font-weight:900;">ΚΑΤΑΓΡΑΦΗ EMS</h2>
         <input type="date" id="emsDate" style="margin-bottom:15px; color:var(--main);">
-        <input type="number" id="emsAvg" step="0.1" placeholder="Μέση Ένταση (AVG %)">
-        <input type="number" id="emsKcal" placeholder="Θερμίδες (e-Kcal)">
+        <input type="number" id="emsAvg" step="0.1" placeholder="Μέση Ένταση (AVG %)" inputmode="decimal">
+        <input type="number" id="emsKcal" placeholder="Θερμίδες (e-Kcal)" inputmode="numeric">
         <button class="primary-btn" onclick="saveMobileEMS()" style="margin-top:15px;">ΑΠΟΘΗΚΕΥΣΗ</button>
+    </div>
+
+    <div id="preview" class="view">
+        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+        <div id="muscle-container" class="compact-grid"></div>
     </div>
 
     <div id="profile" class="view">
@@ -113,8 +114,6 @@
         </div>
     </div>
 
-    <div id="preview" class="view"><button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button><div id="muscle-container" class="compact-grid"></div></div>
-    
     <div id="library" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <input type="text" id="libSearch" placeholder="Αναζήτηση..." oninput="renderLibrary()">
@@ -163,14 +162,13 @@ const PegasusCloud = {
         const cardioLogs = {};
         const historyLogs = {};
         
-        // Try/Catch μέσα στη λούπα για να μην σκάει η εφαρμογή από κακά δεδομένα
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
             try {
                 if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
                 if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
                 if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
-            } catch(e) {} // Αθόρυβη παράκαμψη αν βρει corrupted αρχείο
+            } catch(e) {} 
         }
 
         const payload = { 
@@ -191,8 +189,7 @@ const PegasusCloud = {
                 body: JSON.stringify(payload) 
             }); 
             localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-            console.log("✅ Mobile Push Success");
-        } catch(e) { console.error("Mobile Push Error", e); }
+        } catch(e) {}
     },
 
     pull: async function() {
@@ -270,10 +267,8 @@ async function saveMobileCardio() {
     const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     const entry = { route, km, time, kcal, date: dateKey };
 
-    // Αποθήκευση Cardio Log
     localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-    // Αθόρυβος Υπολογισμός Προόδου Ποδιών
     const legSetsEarned = Math.max(1, Math.round(km / 2));
     const weeklyKey = 'pegasus_weekly_history';
     let weeklyStats = PegasusCloud.safeParse(weeklyKey, { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
@@ -281,7 +276,6 @@ async function saveMobileCardio() {
     weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    // Τροποποιημένο, καθαρό μήνυμα επιτυχίας
     alert(`Αποθηκεύτηκε: ${route}`);
     
     await PegasusCloud.push();
