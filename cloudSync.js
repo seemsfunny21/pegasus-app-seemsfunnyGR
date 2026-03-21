@@ -1,7 +1,6 @@
-
-
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - ACTIVE SYNC (v13.5 - STRICT DESKTOP)
+   PEGASUS CLOUD VAULT - STABLE EDITION (v12.0)
+   FIX: F5 REFRESH BUG & DATA STRUCTURE FAILSAFE
    ========================================================================== */
 
 const PegasusCloud = {
@@ -12,37 +11,22 @@ const PegasusCloud = {
     
     isUnlocked: false,
     userKey: "",
-    syncInterval: null,
 
     getTodayKey: function() {
         const d = new Date();
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
-    safeParse: function(key, fallback) {
-        try {
-            const val = localStorage.getItem(key);
-            return val ? JSON.parse(val) : fallback;
-        } catch (e) {
-            return fallback;
-        }
-    },
-
     unlock: function(pin) {
         if (!pin) return false;
-        const cleanPin = pin.trim();
+        const cleanPin = pin.trim(); // Αφαίρεση τυχόν κενών χαρακτήρων
+        
         if (btoa(cleanPin) === "MjM3NQ==") { 
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
-            localStorage.setItem("pegasus_vault_pin", cleanPin);
-            
+            localStorage.setItem("pegasus_vault_pin", cleanPin); // Αποθήκευση για να μην το ζητάει στο F5
+            console.log("PEGASUS: Vault Unlocked. Pulling data...");
             this.pull(true);
-            
-            if (!this.syncInterval) {
-                this.syncInterval = setInterval(() => {
-                    if (this.isUnlocked) this.pull(true);
-                }, 10000);
-            }
             return true;
         }
         return false;
@@ -55,95 +39,63 @@ const PegasusCloud = {
                 headers: { 'X-Master-Key': this.userKey, 'X-Bin-Meta': 'false' }
             });
             const cloudData = await res.json();
-            const cloud = cloudData.record || cloudData;
             
-            const dateStr = this.getTodayKey();
-            const lastPush = localStorage.getItem("pegasus_last_push") || "0";
+            // Failsafe: Αν το JSONBin τυλίξει τα δεδομένα στο "record", τα εξάγουμε σωστά.
+            const actualData = cloudData.record || cloudData;
+            
+            const dayKey = "food_log_" + this.getTodayKey();
+            const cloudLog = actualData.today_food_log || [];
+            
+            localStorage.setItem(dayKey, JSON.stringify(cloudLog));
+            
+            if (actualData.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(actualData.weekly_history));
+            if (actualData.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(actualData.food_library));
 
-            if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
-                let requiresUIReload = false;
-
-                if (cloud.weekly_history) {
-                    const localWeekly = localStorage.getItem('pegasus_weekly_history');
-                    const cloudWeekly = JSON.stringify(cloud.weekly_history);
-                    if (localWeekly !== cloudWeekly) {
-                        localStorage.setItem('pegasus_weekly_history', cloudWeekly);
-                        requiresUIReload = true;
-                    }
-                }
-                
-                if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
-
-                if (cloud.last_update_date === dateStr) { 
-                    localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(cloud.today_food_log || [])); 
-                    localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
-                    localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
-                }
-
-                if (cloud.cardio_logs) {
-                    Object.keys(cloud.cardio_logs).forEach(k => {
-                        const localVal = localStorage.getItem(k);
-                        const cloudVal = JSON.stringify(cloud.cardio_logs[k]);
-                        if (localVal !== cloudVal) {
-                            localStorage.setItem(k, cloudVal);
-                            requiresUIReload = true;
-                        }
-                    });
-                }
-                
-                if (cloud.history_logs) {
-                    Object.keys(cloud.history_logs).forEach(k => {
-                        let val = cloud.history_logs[k];
-                        const cloudVal = typeof val === 'string' ? val : JSON.stringify(val);
-                        const localVal = localStorage.getItem(k);
-                        if (localVal !== cloudVal && k.includes('pegasus_history')) {
-                            localStorage.setItem(k, cloudVal);
-                            requiresUIReload = true;
-                        }
-                    });
-                }
-
-                localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
-
-                if (requiresUIReload) {
-                    window.location.reload();
-                } else if (typeof window.updateFoodUI === "function") {
-                    window.updateFoodUI();
-                }
-            }
-        } catch (e) {}
+            console.log("✅ Auto-Pull Complete. Items: " + cloudLog.length);
+            
+            if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+        } catch (e) { console.error("❌ Pull Error", e); }
     },
 
     push: async function(silent = true) {
         if (!this.isUnlocked) return;
-        const dateStr = this.getTodayKey();
-        const syncTimestamp = Date.now();
-        
-        const cardioLogs = {};
-        const historyLogs = {};
-        
-        for (let i = 0; i < localStorage.length; i++) {
-            let key = localStorage.key(i);
-            try {
-                if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
-                if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
-                if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
-            } catch(e) {}
-        }
-
+        const todayStr = this.getTodayKey();
         const payload = {
-            last_update_date: dateStr,
-            last_update_ts: syncTimestamp,
-            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
-            protein: localStorage.getItem("pegasus_today_protein") || "0",
-            weekly_history: this.safeParse("pegasus_weekly_history", {}),
-            food_library: this.safeParse("pegasus_food_library", []),
-            today_food_log: this.safeParse(`food_log_${dateStr}`, []),
-            cardio_logs: cardioLogs,
-            history_logs: historyLogs
+            last_update_date: todayStr,
+            today_food_log: JSON.parse(localStorage.getItem("food_log_" + todayStr) || "[]"),
+            weekly_history: JSON.parse(localStorage.getItem('pegasus_weekly_history') || "{}"),
+            food_library: JSON.parse(localStorage.getItem('pegasus_food_library') || "[]")
         };
 
         try {
             await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key':
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
+                body: JSON.stringify(payload)
+            });
+            console.log("✅ PEGASUS Auto-Push Success");
+        } catch (e) { console.error("❌ Push Error", e); }
+    }
+};
+
+// ΕΞΑΓΩΓΗ ΣΤΟ GLOBAL WINDOW (Απαραίτητο για το food.js)
+window.PegasusCloud = PegasusCloud;
+
+// ΕΚΚΙΝΗΣΗ & ΕΛΕΓΧΟΣ ΜΝΗΜΗΣ
+window.addEventListener('load', () => {
+    const savedPin = localStorage.getItem("pegasus_vault_pin");
+    
+    // Αν υπάρχει PIN στη μνήμη (π.χ. μετά από F5), ξεκλειδώνει αθόρυβα
+    if (savedPin && window.PegasusCloud.unlock(savedPin)) {
+        return; 
+    }
+    
+    // Αν δεν υπάρχει μνήμη (πρώτη φορά στο Incognito), ζητάει PIN
+    localStorage.removeItem("pegasus_vault_pin");
+    setTimeout(() => {
+        const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
+        if (pin && !window.PegasusCloud.unlock(pin)) {
+            alert("ΛΑΘΟΣ PIN. Πατήστε F5 για νέα προσπάθεια.");
+        }
+    }, 1000);
+});
