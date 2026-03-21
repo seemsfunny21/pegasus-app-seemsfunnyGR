@@ -1,10 +1,8 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - FINAL ANALYST EDITION (V7.1)
-   STRICT DATA ANALYST PROTOCOL - UPDATED 21/03/2026
-   FIX: KEY GENERATOR ALIGNMENT (DD/M/YYYY)
+   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.0)
+   STRICT DATA ANALYST PROTOCOL - DESKTOP EDITION
    ========================================================================== */
 
-// Διασφάλιση ημερομηνίας
 if (!(window.currentFoodDate instanceof Date) || isNaN(window.currentFoodDate.getTime())) {
     window.currentFoodDate = new Date();
 }
@@ -35,13 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Navigation Ημερομηνιών
     const prevBtn = document.getElementById('btnPrevDay');
     const nextBtn = document.getElementById('btnNextDay');
     if (prevBtn) prevBtn.onclick = () => changeFoodDate(-1);
     if (nextBtn) nextBtn.onclick = () => changeFoodDate(1);
     
-    // Hook για το Quick Menu (Κουκί & Ρεβύθι)
     const btnFoodUI = document.getElementById('btnFoodUI');
     if (btnFoodUI) {
         btnFoodUI.addEventListener('click', () => {
@@ -49,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Αναζήτηση στη Βιβλιοθήκη
     const searchInput = document.getElementById('librarySearch');
     if (searchInput) {
         searchInput.oninput = () => window.filterLibrary();
@@ -61,10 +56,9 @@ function changeFoodDate(days) {
     updateFoodUI();
 }
 
-// ΚΕΝΤΡΙΚΗ ΓΕΝΝΗΤΡΙΑ ΚΛΕΙΔΙΩΝ (STRICT PROTOCOL) - ΔΙΟΡΘΩΘΗΚΕ
+// FORMAT ΗΜΕΡΟΜΗΝΙΑΣ ΙΔΙΟ ΜΕ ΤΟ MOBILE (DD/M/YYYY)
 window.getStrictStorageKey = function() {
     const d = window.currentFoodDate || new Date();
-    // ΠΡΟΣΟΧΗ: Format DD/M/YYYY για απόλυτη συμβατότητα με το Cloud και το Backup
     return "food_log_" + d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
 
@@ -98,6 +92,10 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
+    // ΔΙΟΡΘΩΣΗ: Αποθήκευση στο localStorage για να περάσει στο Cloud
+    localStorage.setItem("pegasus_today_kcal", Math.round(totalKcal).toString());
+    localStorage.setItem("pegasus_today_protein", Math.round(totalProtein).toString());
+
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = Math.round(totalKcal);
     
@@ -113,15 +111,16 @@ window.addFoodItem = function(name, kcal, protein) {
     const storageKey = window.getStrictStorageKey();
     const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
     
-    foodLog.push({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
+    // Εναρμόνιση με το κινητό: Νέα γεύματα μπαίνουν στην κορυφή
+    foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(storageKey, JSON.stringify(foodLog));
 
     if (typeof window.addToLibrary === "function") window.addToLibrary(name, kcal, protein);
     window.updateFoodUI();
     
-    // ΑΥΤΟΜΑΤΟ PUSH - Διορθωμένη Εμβέλεια (Scope)
-    if (typeof PegasusCloud !== "undefined" && PegasusCloud.isUnlocked) {
-        PegasusCloud.push(true);
+    // ΕΞΑΝΑΓΚΑΣΜΕΝΟ PUSH ΣΤΟ CLOUD ΜΕ EXPLICIT SCOPE
+    if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
+        window.PegasusCloud.push(true);
     }
 };
 
@@ -134,9 +133,9 @@ window.deleteFoodItem = function(index) {
     
     window.updateFoodUI();
     
-    // ΑΥΤΟΜΑΤΟ PUSH - Διορθωμένη Εμβέλεια (Scope)
-    if (typeof PegasusCloud !== "undefined" && PegasusCloud.isUnlocked) {
-        PegasusCloud.push(true);
+    // ΕΞΑΝΑΓΚΑΣΜΕΝΟ PUSH ΣΤΟ CLOUD ΜΕ EXPLICIT SCOPE
+    if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
+        window.PegasusCloud.push(true);
     }
 };
 
@@ -247,7 +246,6 @@ function addToLibrary(name, kcal, protein) {
     if (!library.some(item => item.name.toLowerCase() === name.toLowerCase())) {
         library.push({ name, kcal, protein: parseFloat(protein || 0) });
         localStorage.setItem('pegasus_food_library', JSON.stringify(library));
-        localStorage.setItem('food_library', JSON.stringify(library));
     }
 }
 
@@ -255,7 +253,6 @@ function removeFromLibrary(name) {
     let library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
     library = library.filter(item => item.name !== name);
     localStorage.setItem('pegasus_food_library', JSON.stringify(library));
-    localStorage.setItem('food_library', JSON.stringify(library));
     window.filterLibrary();
 }
 
