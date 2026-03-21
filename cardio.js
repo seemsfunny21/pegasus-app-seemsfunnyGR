@@ -30,40 +30,41 @@ const PegasusCardio = {
 
         const d = new Date(rawDate);
         const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        const entry = { route, km, time, kcal, date: dateKey };
 
-        const entry = {
-            route: route,
-            km: km,
-            time: time,
-            kcal: kcal,
-            date: dateKey
-        };
-
-        // 1. Αποθήκευση Log Ποδηλασίας
+        // 1. Αποθήκευση Cardio Log
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-        // 2. Ενημέρωση Προόδου (Πόδια) -> 1 Set ανά 2 Km
+        // 2. Αθόρυβος Υπολογισμός Προόδου Ποδιών (+1 Σετ ανά 2 Km)
         const legSetsEarned = Math.max(1, Math.round(km / 2));
-        
         const weeklyKey = 'pegasus_weekly_history';
-        let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
-            "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
-        };
+        let weeklyStats;
+        try {
+            weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+        } catch(e) {
+            weeklyStats = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+        }
         
         weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
         localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-        alert(`Η διαδρομή "${route}" αποθηκεύτηκε!\nΚερδίσατε +${legSetsEarned} Σετ στα Πόδια.`);
+        // 3. Καθαρό Μήνυμα
+        alert(`Αποθηκεύτηκε: ${route}`);
         this.close();
         
+        // 4. Καθαρισμός Φόρμας
         document.getElementById("cRoute").value = "";
         document.getElementById("cKm").value = "";
         document.getElementById("cTime").value = "";
         document.getElementById("cKcal").value = "";
         
-        // AUTO-SYNC TRIGGER
+        // 5. Cloud Push & Άμεσο UI Reload
         if (typeof window.PegasusCloud !== "undefined" && window.PegasusCloud.isUnlocked) {
-            window.PegasusCloud.push(true);
+            window.PegasusCloud.push(true).then(() => {
+                window.location.reload();
+            });
+        } else {
+            window.location.reload();
         }
     }
 };
