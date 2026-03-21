@@ -62,9 +62,8 @@ function changeFoodDate(days) {
 // ΚΕΝΤΡΙΚΗ ΓΕΝΝΗΤΡΙΑ ΚΛΕΙΔΙΩΝ (STRICT PROTOCOL)
 window.getStrictStorageKey = function() {
     const d = window.currentFoodDate || new Date();
-    const offset = d.getTimezoneOffset();
-    const adjustedDate = new Date(d.getTime() - (offset * 60000));
-    return `food_log_${adjustedDate.toISOString().split('T')[0]}`;
+    // Παραγωγή κλειδιού σε μορφή ΗΗ/ΜΜ/ΕΕΕΕ για συμβατότητα με το backup
+    return `food_log_${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 };
 
 window.updateFoodUI = function() {
