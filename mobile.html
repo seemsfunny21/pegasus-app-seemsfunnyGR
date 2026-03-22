@@ -19,8 +19,9 @@ body, html {
     color: #fff; 
     font-family: 'Inter', sans-serif; 
     text-align: center;
-    /* Κατάργηση του position: fixed αν δεν είναι απόλυτα απαραίτητο */
-    overscroll-behavior-y: none; 
+    overscroll-behavior: none; /* Απενεργοποίηση σε όλα τα επίπεδα */
+    position: fixed; /* Κλείδωμα viewport */
+    width: 100%;
 }
 
         body { 
@@ -464,7 +465,7 @@ function updateMuscleUI() {
         return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${done}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${per}%"></div></div></div>`; 
     }).join(''); 
 }
-// Tactical Pull-to-Refresh Kill Switch
+// Tactical Pull-to-Refresh Kill Switch v2
 let touchStartY = 0;
 
 document.addEventListener('touchstart', (e) => {
@@ -475,26 +476,25 @@ document.addEventListener('touchmove', (e) => {
     const touchMoveY = e.touches[0].pageY;
     const isScrollingDown = touchMoveY > touchStartY;
     
-    // Βρίσκουμε το στοιχείο που γίνεται το scroll
-    let target = e.target;
-    while (target && target !== document.body) {
-        // Αν το στοιχείο είναι scrollable (όπως η βιβλιοθήκη ή το food list)
-        const isScrollable = window.getComputedStyle(target).overflowY === 'auto' || 
-                             window.getComputedStyle(target).overflowY === 'scroll';
-        
-        if (isScrollable) {
-            // Αν είμαστε στην κορυφή του στοιχείου και πάμε να τραβήξουμε κι άλλο κάτω
-            if (isScrollingDown && target.scrollTop <= 0) {
-                break; // Θα πάει στο preventDefault
-            }
-            return; // Επιτρέπουμε το κανονικό scroll μέσα στη λίστα
-        }
-        target = target.parentNode;
-    }
-
-    // Αν φτάσαμε εδώ, σημαίνει ότι η κίνηση θα προκαλούσε refresh
+    // Αν ο χρήστης σέρνει προς τα κάτω
     if (isScrollingDown) {
-        e.preventDefault();
+        let target = e.target;
+        let canScrollUp = false;
+
+        // Ανεβαίνουμε το DOM tree για να βρούμε αν κάτι έχει scroll περιθώριο
+        while (target && target !== document) {
+            if (target.scrollTop > 0) {
+                canScrollUp = true;
+                break;
+            }
+            target = target.parentNode;
+        }
+
+        // Αν κανένα στοιχείο στη διαδρομή δεν μπορεί να πάει πιο πάνω (scrollTop 0)
+        // τότε μπλοκάρουμε την κίνηση για να μην βγει το βελάκι ανανέωσης
+        if (!canScrollUp) {
+            if (e.cancelable) e.preventDefault();
+        }
     }
 }, { passive: false });
 </script>
