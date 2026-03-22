@@ -182,11 +182,6 @@
         <div id="libraryContainer"></div>
     </div>
     
-    <div class="tile" onclick="exitPegasus()" style="border-color: var(--danger);">
-    <span class="tile-icon">🚫</span>
-    <span class="tile-label" style="color: var(--danger);">ΕΞΟΔΟΣ</span>
-</div>
-
 <script>
 const PEGASUS_CONFIG = { apiKeyPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", binId: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
@@ -404,19 +399,6 @@ document.addEventListener('touchmove', (e) => {
         if (!canScroll && e.cancelable) e.preventDefault();
     }
 }, { passive: false });
-    function exitPegasus() {
-    if (confirm("ΕΠΙΒΕΒΑΙΩΣΗ: ΚΛΕΙΣΙΜΟ ΣΥΣΤΗΜΑΤΟΣ;")) {
-        // Προσπάθεια κλεισίματος μέσω standard JS
-        window.close();
-        
-        // Για Android WebViews (WebIntoApp specific)
-        if (navigator.app) {
-            navigator.app.exitApp();
-        } else if (navigator.device) {
-            navigator.device.exitApp();
-        }
-    }
-}
 </script>
 </body>
 </html>
