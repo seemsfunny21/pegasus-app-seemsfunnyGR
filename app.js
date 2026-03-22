@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.8 - ULTIMATE BUILD)
-   Protocol: Dynamic Data Sync, Audio Unlocked, Smart Image Preview
+   PEGASUS WORKOUT ENGINE - ULTIMATE BUILD (V8.5)
+   Protocol: Pure Dynamic Data, Smart Preview Fix, Strict UI Isolation
    ========================================================================== */
 
 let exercises = [];
@@ -34,7 +34,7 @@ document.addEventListener('click', function() {
             sysAudio.pause();
             sysAudio.currentTime = 0;
             audioUnlocked = true;
-        }).catch(err => console.warn("PEGASUS OS: Audio unlock pending", err));
+        }).catch(err => console.warn("PEGASUS OS: Audio unlock pending"));
     }
 }, { once: true });
 
@@ -42,7 +42,7 @@ const playBeep = (volume = 1) => {
     if (!muted) {
         sysAudio.volume = volume;
         sysAudio.currentTime = 0; 
-        sysAudio.play().catch(e => console.log("Audio blocked by OS", e));
+        sysAudio.play().catch(e => console.log("Audio blocked by OS"));
     }
 };
 
@@ -99,9 +99,9 @@ function selectDay(btn, day) {
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
     // 1. Δυναμική Λήψη Προγράμματος
-    let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
-                      [...getFinalProgram(day)] : [];
+    let rawBaseData = (typeof getFinalProgram !== 'undefined') ? [...getFinalProgram(day)] : [];
 
+    // Spillover (Bonus Παρασκευής από Κυριακή)
     const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
     if (day === "Παρασκευή" && isGoodWeather && window.getFinalProgram) {
         const sundayData = window.getFinalProgram("Κυριακή");
@@ -393,7 +393,7 @@ function skipToNextExercise() {
     } else finishWorkout(); 
 }
 
-/* ===== PEGASUS VIDEO ENGINE ===== */
+/* ===== PEGASUS VIDEO ENGINE (FALLBACK RECOVERY) ===== */
 function showVideo(i) {
     if (!exercises || !exercises[i]) return;
     
@@ -407,11 +407,11 @@ function showVideo(i) {
         if (name.toLowerCase().includes("ems") && !videoMap[name]) {
             videoFileName = "ems";
         }
-        vid.src = `videos/${videoFileName}.mp4`;
+
+        // Αυτόματη μετατροπή σε πεζά (Λύση 404 για τα videos)
+        vid.src = `videos/${videoFileName.toLowerCase()}.mp4`;
         vid.style.opacity = "1";
-        vid.play().catch(err => {
-            console.warn(`PEGASUS: Video ${videoFileName}.mp4 not found.`);
-        });
+        vid.play().catch(err => { console.warn(`PEGASUS: Video ${videoFileName.toLowerCase()}.mp4 not found.`); });
     }
 }
 
@@ -533,13 +533,26 @@ function finishWorkout() {
     }, 5000);
 }
 
-/* ===== UI & PREVIEW LOGIC (SMART MAPPING RESTORED) ===== */
+/* ===== UI & PREVIEW LOGIC (STRICT IMAGE FIX) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
     const currentDay = activeBtn.textContent.trim().replace(" ☀️", "");
-    const dayExercises = window.getFinalProgram ? window.getFinalProgram(currentDay) : [];
+    
+    // Εξαγωγή ασκήσεων ημέρας
+    let dayExercises = window.getFinalProgram ? window.getFinalProgram(currentDay) : [];
+    
+    // Ενσωμάτωση του spillover στην προεπισκόπηση της Παρασκευής
+    const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
+    if (currentDay === "Παρασκευή" && isGoodWeather && window.getFinalProgram) {
+        const sundayData = window.getFinalProgram("Κυριακή");
+        if(sundayData && sundayData.length > 0) {
+            const bonus = sundayData.filter(ex => !ex.name.includes("Ποδηλασία")).map(ex => ({...ex, isSpillover: true}));
+            dayExercises = [...dayExercises, ...bonus];
+        }
+    }
+
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
     
@@ -549,9 +562,7 @@ function openExercisePreview() {
     panel.style.display = 'block';
     content.innerHTML = ''; 
 
-    // Το progressUI.js αναλαμβάνει αυτόματα τις μπάρες. Δεν χρειάζεται παρέμβαση εδώ.
-
-    // SMART MAPPING ΓΙΑ ΣΤΑΤΙΚΕΣ ΕΙΚΟΝΕΣ
+    // SMART MAPPING ΓΙΑ ΣΤΑΤΙΚΕΣ ΕΙΚΟΝΕΣ (Αγνοεί Emojis και Case Sensitivity)
     const smartMapping = { 
         "pulldown": "pulldownimage.png", 
         "triceps overhead extension": "tricepsoverheadimage.png", 
@@ -562,27 +573,27 @@ function openExercisePreview() {
 
     if(dayExercises) {
         dayExercises.forEach(ex => {
-            const cleanName = ex.name.trim();
-            const lowerName = cleanName.toLowerCase();
+            // 1. Καθαρίζουμε το όνομα από τυχόν Emojis ☀️ ή 🎯
+            let rawName = ex.name.replace(/☀️|🎯/g, '').trim(); 
+            let lowerName = rawName.toLowerCase();
+            
+            // 2. Έλεγχος αν υπάρχει στο SmartMapping
             const key = Object.keys(smartMapping).find(k => lowerName.includes(k));
             
-            let imgFileName;
+            let finalSrc;
             if (key) {
-                imgFileName = smartMapping[key];
+                finalSrc = smartMapping[key];
             } else {
-                imgFileName = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
-                              ? (videoMap[cleanName] + "Image.png") 
-                              : (cleanName.replace(/\s+/g, '') + "Image.png");
+                // 3. Αν δεν υπάρχει, κάνε το αυστηρά πεζό, χωρίς κενά (Λύση 404 Error)
+                finalSrc = rawName.replace(/\s+/g, '').toLowerCase() + "image.png";
             }
-
-            let finalSrc = imgFileName.includes('.') ? imgFileName : imgFileName + '.png';
 
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
                     <img src="images/${finalSrc}" 
                          onerror="this.src='images/placeholder.jpg'"
                          style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
-                    <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
+                    <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${rawName}</p>
                 </div>
             `;
         });
