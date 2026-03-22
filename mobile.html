@@ -11,16 +11,17 @@
         :root { --main: #00ff41; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); }
         
         /* Προσθήκη overscroll-behavior για αποτροπή pull-to-refresh */
-        body, html { 
-            height: 100%; 
-            margin: 0; 
-            overflow: hidden; 
-            background: var(--bg); 
-            color: #fff; 
-            font-family: 'Inter', sans-serif; 
-            text-align: center;
-            overscroll-behavior-y: contain; 
-        }
+body, html { 
+    height: 100%; 
+    margin: 0; 
+    overflow: hidden; 
+    background: var(--bg); 
+    color: #fff; 
+    font-family: 'Inter', sans-serif; 
+    text-align: center;
+    /* Κατάργηση του position: fixed αν δεν είναι απόλυτα απαραίτητο */
+    overscroll-behavior-y: none; 
+}
 
         body { 
             padding: 20px 15px; 
@@ -463,11 +464,36 @@ function updateMuscleUI() {
         return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${done}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${per}%"></div></div></div>`; 
     }).join(''); 
 }
-    // Αποτροπή pull-to-refresh μέσω JS
-window.addEventListener('touchstart', function(e) {
-    if (window.scrollY === 0) {
-        // Αν είμαστε στην κορυφή, επιτρέπουμε μόνο κίνηση προς τα πάνω (scroll down)
-        // και μπλοκάρουμε την κίνηση προς τα κάτω που θα έκανε refresh
+// Οριστική απενεργοποίηση Pull-to-Refresh
+let startY = 0;
+
+document.addEventListener('touchstart', function(e) {
+    startY = e.touches[0].pageY;
+}, {passive: false});
+
+document.addEventListener('touchmove', function(e) {
+    const moveY = e.touches[0].pageY;
+    const isScrollingDown = moveY > startY; // Ο χρήστης σέρνει το δάχτυλο προς τα κάτω
+
+    // Αν ο χρήστης σέρνει προς τα κάτω
+    if (isScrollingDown) {
+        const path = e.composedPath();
+        let canScrollUp = false;
+
+        // Ελέγχουμε αν το στοιχείο που αγγίζει ο χρήστης μπορεί να κάνει scroll προς τα πάνω
+        for (let i = 0; i < path.length; i++) {
+            const el = path[i];
+            if (el.scrollTop > 0) {
+                canScrollUp = true;
+                break;
+            }
+        }
+
+        // Αν ΔΕΝ μπορεί να πάει άλλο πάνω (είναι στην κορυφή), ακυρώνουμε την κίνηση
+        // Αυτό εμποδίζει το "βελάκι" του Android
+        if (!canScrollUp) {
+            e.preventDefault();
+        }
     }
 }, {passive: false});
 </script>
