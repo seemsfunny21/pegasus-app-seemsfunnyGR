@@ -383,8 +383,27 @@ function updateMuscleUI() {
 
 window.onload = () => { 
     updateDietUI(); 
-    const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin) PegasusCloud.unlock(savedPin); 
+    
+    let savedPin = localStorage.getItem("pegasus_vault_pin");
+    
+    // Αν δεν υπάρχει PIN (νέα εγκατάσταση κινητού), άνοιξε παράθυρο να το ζητήσει
+    if (!savedPin) {
+        savedPin = prompt("PEGASUS SECURITY: Εισάγετε το Master PIN (4 ψηφία):");
+    }
+    
+    // Προσπάθεια ξεκλειδώματος
+    if (savedPin) {
+        const isSuccess = PegasusCloud.unlock(savedPin);
+        if (!isSuccess) {
+            alert("Λάθος PIN. Το σύστημα θα λειτουργήσει τοπικά (Offline).");
+            document.getElementById("sync-indicator").textContent = "ΑΠΟΣΥΝΔΕΘΗΚΕ";
+            document.getElementById("sync-indicator").style.color = "#ff4444";
+        }
+    } else {
+        document.getElementById("sync-indicator").textContent = "ΤΟΠΙΚΗ ΧΡΗΣΗ";
+        document.getElementById("sync-indicator").style.color = "#aaa";
+    }
+
     setInterval(() => { if(isUnlocked) PegasusCloud.pull(); }, 15000); 
 };
 </script>
