@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pegasus OS v8.7.1 (Ultra Safe Sync)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
-<link rel="apple-touch-icon" href="images/favicon.png">
+    <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root { --main: #00ff41; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); }
@@ -64,12 +64,23 @@
 
     <div id="diet" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div style="margin-bottom:15px; width: 100%;">
-            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--main);"><span>ΗΜΕΡΗΣΙΕΣ ΘΕΡΜΙΔΕΣ</span><span id="txtKcal">0 / 2647</span></div>
-            <div class="bar-bg"><div id="barKcal" class="bar-fill"></div></div>
+        
+        <div style="display:flex; justify-content:space-between; gap:10px; width:100%; margin-bottom:15px;">
+            <div style="flex:1; background:rgba(0,255,65,0.05); padding:15px 10px; border-radius:15px; border:1px solid var(--border); text-align:center;">
+                <div style="font-size:10px; font-weight:800; color:var(--main); margin-bottom:5px;">ΘΕΡΜΙΔΕΣ</div>
+                <div id="txtKcal" style="font-size:18px; font-weight:900; color:#fff;">0 / 2800</div>
+            </div>
+            <div style="flex:1; background:rgba(0,188,212,0.05); padding:15px 10px; border-radius:15px; border:1px solid rgba(0,188,212,0.4); text-align:center;">
+                <div style="font-size:10px; font-weight:800; color:#00bcd4; margin-bottom:5px;">ΠΡΩΤΕΪΝΗ</div>
+                <div id="txtProt" style="font-size:18px; font-weight:900; color:#fff;">0 / 160g</div>
+            </div>
         </div>
+
         <input type="text" id="fName" placeholder="Φαγητό">
-        <div style="display:flex; gap:8px; width: 100%;"><input type="number" id="fKcal" placeholder="Θερμίδες" inputmode="numeric"><input type="number" id="fProt" placeholder="Πρωτεΐνη" inputmode="numeric"></div>
+        <div style="display:flex; gap:8px; width: 100%;">
+            <input type="number" id="fKcal" placeholder="Θερμίδες" inputmode="numeric">
+            <input type="number" id="fProt" placeholder="Πρωτεΐνη" inputmode="numeric">
+        </div>
         <button class="primary-btn" onclick="addFood()">ΠΡΟΣΘΗΚΗ</button>
         <div id="foodHistoryList"></div>
     </div>
@@ -157,7 +168,7 @@ const PegasusCloud = {
     push: async function() {
         if (!isUnlocked) return;
         const dateStr = getStrictStorageKey();
-        const syncTimestamp = Date.now(); // ΚΡΙΣΙΜΟ ΓΙΑ ΤΟ RELOAD ΤΟΥ PC
+        const syncTimestamp = Date.now();
         
         const cardioLogs = {};
         const historyLogs = {};
@@ -173,7 +184,7 @@ const PegasusCloud = {
 
         const payload = { 
             last_update_date: dateStr, 
-            last_update_ts: syncTimestamp, // ΕΝΗΜΕΡΩΝΕΙ ΤΟΝ ΥΠΟΛΟΓΙΣΤΗ ΟΤΙ ΥΠΑΡΧΕΙ ΑΛΛΑΓΗ
+            last_update_ts: syncTimestamp,
             kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
             protein: localStorage.getItem("pegasus_today_protein") || "0", 
             weekly_history: this.safeParse("pegasus_weekly_history", {}), 
@@ -265,7 +276,7 @@ async function saveMobileCardio() {
     weeklyStats["Πόδια"] = (weeklyStats["Πόδια"] || 0) + legSetsEarned;
     localStorage.setItem('pegasus_weekly_history', JSON.stringify(weeklyStats));
     alert(`Αποθηκεύτηκε: ${route}`);
-    await PegasusCloud.push(); // Τώρα στέλνει και το Timestamp
+    await PegasusCloud.push();
     openView('home');
 }
 
@@ -296,17 +307,29 @@ function updateDietUI() {
     const dateStr = getStrictStorageKey();
     const storageKey = `food_log_${dateStr}`;
     const history = PegasusCloud.safeParse(storageKey, []);
+    
     let tk = 0, tp = 0;
-    history.forEach(i => { tk += parseFloat(i.kcal || 0); tp += parseFloat(i.protein || 0); });
-    document.getElementById("txtKcal").textContent = `${Math.round(tk)} / 2647`;
-    document.getElementById("barKcal").style.width = Math.min((tk/2647)*100, 100) + "%";
+    history.forEach(i => { 
+        tk += parseFloat(i.kcal || 0); 
+        tp += parseFloat(i.protein || 0); 
+    });
+
+    const goalK = parseInt(localStorage.getItem("pegasus_goal_kcal")) || 2800; 
+    const goalP = parseInt(localStorage.getItem("pegasus_goal_protein")) || 160;
+
+    document.getElementById("txtKcal").textContent = `${Math.round(tk)} / ${goalK}`;
+    document.getElementById("txtProt").textContent = `${Math.round(tp)} / ${goalP}g`;
+    
     localStorage.setItem("pegasus_today_kcal", Math.round(tk));
     localStorage.setItem("pegasus_today_protein", Math.round(tp));
+    
     document.getElementById("foodHistoryList").innerHTML = history.map((h, i) => `
-        <div class="mini-card">
+        <div class="mini-card" style="align-items: flex-start; text-align: left; padding-right: 40px; justify-content: flex-start;">
             <button class="btn-del" onclick="deleteFood(${i})">✕</button>
-            <span class="mini-label">${h.name}</span>
-            <div class="mini-val">${h.kcal} kcal</div>
+            <div style="font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 4px;">${h.name}</div>
+            <div style="font-size: 11px; color: #aaa;">
+                <span style="color: var(--main); font-weight:bold;">${h.kcal} kcal</span> <span style="margin:0 5px;">|</span> <span style="color: #00bcd4; font-weight:bold;">${h.protein || 0}g Πρωτεΐνη</span>
+            </div>
         </div>`).join('');
 }
 
