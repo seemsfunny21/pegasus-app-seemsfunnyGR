@@ -98,8 +98,10 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    // 1. Δυναμική Λήψη Προγράμματος
-    let rawBaseData = (typeof getFinalProgram !== 'undefined') ? [...getFinalProgram(day)] : [];
+// 1. Δυναμική Λήψη Προγράμματος (Συμβατότητα με weatherHandler.js)
+    let rawBaseData = (typeof getFinalProgram !== 'undefined' && window.program) ? 
+                      [...getFinalProgram(day, window.program)] : 
+                      ((window.program && window.program[day]) ? [...window.program[day]] : []);
 
     // Spillover (Bonus Παρασκευής από Κυριακή)
     const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
