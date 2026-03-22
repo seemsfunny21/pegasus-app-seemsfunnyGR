@@ -1,25 +1,7 @@
 /* ==========================================================================
-   PEGASUS WEATHER LOGIC & FALLBACK SYSTEM - v6.9 (STRICT ANALYST)
-   Protocol: Data Guarding & Error Prevention
+   PEGASUS WEATHER LOGIC & FALLBACK SYSTEM - v8.5 (PURE DYNAMIC)
+   Protocol: Strict Analyst - No Static Data Allowed
    ========================================================================== */
-
-const legacySaturday = [
-    { name: "Reverse Chest Press", sets: 4, duration: 45 },
-    { name: "Close Grip Pulldown", sets: 4, duration: 45 },
-    { name: "Reverse Grip Cable Row", sets: 4, duration: 45 }, 
-    { name: "Standing Bicep Curl", sets: 3, duration: 45 },
-    { name: "Triceps Press", sets: 3, duration: 45 }
-];
-
-const legacySunday = [
-    { name: "Behind the Neck Pulldown", sets: 3, duration: 45 },
-    { name: "Low Seated Row", sets: 3, duration: 45 },
-    { name: "Triceps Overhead Extension", sets: 3, duration: 45 },
-    { name: "Preacher Curl", sets: 3, duration: 45 },
-    { name: "Lying Knee Raise", sets: 3, duration: 45 },
-    { name: "Reverse Crunch", sets: 3, duration: 45 },
-    { name: "Leg Raise Hip Lift", sets: 3, duration: 45 }
-];
 
 function isRaining() {
     const rainToggle = document.getElementById('rainToggle');
@@ -27,28 +9,39 @@ function isRaining() {
 }
 
 /**
- * Επιστρέφει το κατάλληλο πρόγραμμα με Strict Data Check.
+ * Επιστρέφει 100% Δυναμικό Πρόγραμμα και προσαρμόζεται στον καιρό.
  */
-function getFinalProgram(day, defaultProgram) {
+window.getFinalProgram = function(day) {
     const rain = isRaining();
     
-    // 1. DATA GUARD: Αν το defaultProgram δεν έχει προλάβει να φορτώσει (Fix for TypeError)
-    if (!defaultProgram || typeof defaultProgram !== 'object') {
-        console.warn("PEGASUS: Program data not available. Using emergency fallback.");
-        return [{ name: "Stretching", sets: 1, duration: 338 }];
+    // 1. DATA GUARD: Απευθείας κλήση του δυναμικού υπολογιστή από το data.js
+    let dailyData = [];
+    if (typeof window.calculateDailyProgram === 'function') {
+        dailyData = window.calculateDailyProgram(day);
+    } else {
+        console.warn("PEGASUS: Dynamic engine offline. Using emergency fallback.");
+        return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Recovery" }];
     }
 
-    // 2. WEATHER LOGIC: Σαββατοκύριακο με βροχή (Legacy fallback)
-    if (day === "Σάββατο" && rain) return legacySaturday;
-    if (day === "Κυριακή" && rain) return legacySunday;
+    // 2. WEATHER LOGIC: Αν βρέχει, αφαιρούμε τις εξωτερικές δραστηριότητες (Ποδηλασία)
+    if (rain) {
+        dailyData = dailyData.filter(ex => !ex.name.includes("Ποδηλασία"));
+        
+        // Αν η μέρα μείνει άδεια λόγω βροχής (π.χ. Σάββατο που είχε μόνο ποδήλατο), 
+        // εισάγουμε μια δυναμική εναλλακτική προπόνηση εσωτερικού χώρου.
+        if (dailyData.length === 0) {
+            dailyData = [
+                { name: "Pushups", sets: 4, duration: 45, muscleGroup: "Στήθος" },
+                { name: "Plank", sets: 4, duration: 45, muscleGroup: "Κορμός" },
+                { name: "Reverse Crunch", sets: 4, duration: 45, muscleGroup: "Κορμός" }
+            ];
+        }
+    }
 
-    // 3. NOMINAL LOGIC: Επιστροφή από το data.js (V4.9)
-    // Αν η μέρα δεν υπάρχει στο αντικείμενο (π.χ. λόγω καθυστέρησης φόρτωσης), 
-    // επιστρέφει Stretching αντί για σφάλμα.
-    return defaultProgram[day] || [{ name: "Stretching", sets: 1, duration: 338 }];
-}
+    return dailyData;
+};
 
-function updateWeatherUI() {
+window.updateWeatherUI = function() {
     const statusBox = document.getElementById('weather-status-alert');
     if (statusBox) statusBox.style.display = 'none';
-}
+};
