@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v4.8 (STRICT NAME EDITION)
+   PEGASUS DATA ENGINE - v4.9 (DYNAMIC TARGET COMPLETION)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -20,7 +20,6 @@ const STRENGTH_EXERCISES = [
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-    // Διατήρηση ονομασίας με κενό για την εικόνα Seated Chest Press στους Ώμους
     { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, 
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
@@ -54,6 +53,7 @@ window.calculateDailyProgram = function(dayName) {
         }
     }
 
+    // Ανάλυση Ελλειμμάτων
     const deficits = Object.keys(window.TARGET_SETS).map(group => {
         const current = history[group] || 0;
         const target = window.TARGET_SETS[group];
@@ -67,7 +67,6 @@ window.calculateDailyProgram = function(dayName) {
         
         for (const exercise of groupEx) {
             if (currentTotalMinutes >= MIN_TARGET_MINUTES) break;
-            
             if (availableExercises.find(e => e.name === exercise.name)) continue;
 
             let setsToSuggest = 4; 
@@ -101,14 +100,13 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
 window.videoMap = {
-    // Strength Exercises
     "Lat Pulldown": "Pulldown", 
     "Close Grip Pulldown": "Pulldown", 
     "Low Seated Row": "LowSeatedRow",
     "Reverse Grip Cable Row": "ReverseGripCableRow", 
     "Reverse Chest Press": "reverserow",
     "Seated Chest Press": "SeatedChestPress", 
-    "Seated Chest Press ": "SeatedChestPress", // Mapping για την ονομασία με το κενό
+    "Seated Chest Press ": "SeatedChestPress", 
     "Pec Deck": "Pecdeck", 
     "Pushups": "Pushups",
     "Preacher Curl": "biceps", 
@@ -121,14 +119,10 @@ window.videoMap = {
     "Lying Knee Raise": "LyingKneeRaise", 
     "Reverse Crunch": "ReverseCrunch",
     "Leg Raise Hip Lift": "LegRaiseHipLift", 
-    
-    // EMS Exercises
     "EMS Lateral Raises (3kg)": "EMS_L",
     "EMS Bicep Curls (3kg)": "Bicepscurl", 
     "EMS Static Plank": "Plank",
     "EMS Static Crunches": "EMS_K", 
-    
-    // Cardio
     "Ποδηλασία 30km": "cycling"
 };
 
