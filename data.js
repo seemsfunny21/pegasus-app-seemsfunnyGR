@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v4.8 (STRICT NAME EDITION)
+   PEGASUS DATA ENGINE - v4.7 (FINAL STABLE VERSION)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -20,7 +20,7 @@ const STRENGTH_EXERCISES = [
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-    // Διατήρηση ονομασίας με κενό για την εικόνα Seated Chest Press στους Ώμους
+    // Αλλαγή ονόματος εδώ για να τραβήξει την εικόνα Seated Chest Press
     { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, 
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
@@ -46,7 +46,7 @@ window.calculateDailyProgram = function(dayName) {
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     let currentTotalMinutes = 0;
     const availableExercises = [];
-    const MIN_TARGET_MINUTES = 50; 
+    const MIN_TARGET_MINUTES = 50; // Νέο κατώτατο όριο
 
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         if ((history["Πόδια"] || 0) < window.TARGET_SETS["Πόδια"]) {
@@ -54,20 +54,24 @@ window.calculateDailyProgram = function(dayName) {
         }
     }
 
+    // Ταξινόμηση βάσει ελλείμματος
     const deficits = Object.keys(window.TARGET_SETS).map(group => {
         const current = history[group] || 0;
         const target = window.TARGET_SETS[group];
         return { group, deficit: Math.max(0, target - current), ratio: current / target };
     }).sort((a, b) => a.ratio - b.ratio);
 
+    // Loop που συνεχίζει μέχρι να πιάσουμε το χρονικό όριο
     for (const item of deficits) {
         if (item.deficit <= 0 || item.group === "Πόδια") continue;
         
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
         
+        // Προσθήκη πολλαπλών ασκήσεων από την ίδια ομάδα αν χρειάζεται χρόνο
         for (const exercise of groupEx) {
             if (currentTotalMinutes >= MIN_TARGET_MINUTES) break;
             
+            // Έλεγχος αν η άσκηση έχει ήδη προστεθεί
             if (availableExercises.find(e => e.name === exercise.name)) continue;
 
             let setsToSuggest = 4; 
@@ -108,14 +112,13 @@ window.videoMap = {
     "Reverse Grip Cable Row": "ReverseGripCableRow", 
     "Reverse Chest Press": "reverserow",
     "Seated Chest Press": "SeatedChestPress", 
-    "Seated Chest Press ": "SeatedChestPress", // Mapping για την ονομασία με το κενό
     "Pec Deck": "Pecdeck", 
     "Pushups": "Pushups",
     "Preacher Curl": "biceps", 
     "Standing Bicep Curl": "Bicepscurl", 
     "Triceps Overhead Extension": "Tricepspress",
     "Triceps Press": "Tricepspress", 
-    "Shoulder Press": "SeatedChestPress", 
+    "Shoulder Press": "SeatedChestPress", // Εδώ γίνεται η σύνδεση με την εικόνα
     "Plank": "Plank",
     "Stretching": "stretching", 
     "Lying Knee Raise": "LyingKneeRaise", 
@@ -131,5 +134,5 @@ window.videoMap = {
     // Cardio
     "Ποδηλασία 30km": "cycling"
 };
-
+// ΣΥΝΕΝΩΣΗ ΒΑΣΗΣ ΔΕΔΟΜΕΝΩΝ ΓΙΑ ΤΟ DVS & INVENTORY
 window.exercisesDB = [...STRENGTH_EXERCISES, ...EMS_EXERCISES];
