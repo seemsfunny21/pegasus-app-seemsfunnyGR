@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v9.0 (DYNAMIC GENERATOR + MEDIA LOCK)
+   PEGASUS DATA ENGINE - v9.1 (DYNAMIC GENERATOR + STRICT MAP FIX)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -20,7 +20,7 @@ const STRENGTH_EXERCISES = [
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, 
+    { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, // Η άσκηση με το κενό
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 },
@@ -108,6 +108,7 @@ window.videoMap = {
     "Reverse Grip Cable Row": "ReverseGripCableRow", 
     "Reverse Chest Press": "reverserow",
     "Seated Chest Press": "SeatedChestPress", 
+    "Seated Chest Press ": "SeatedChestPress", // <-- Προσθήκη Κλειδιού με Κενό
     "Pec Deck": "Pecdeck", 
     "Pushups": "Pushups",
     "Preacher Curl": "biceps", 
