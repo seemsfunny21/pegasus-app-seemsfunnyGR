@@ -7,10 +7,29 @@
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <style>
+<style>
         :root { --main: #00ff41; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); }
-        body, html { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; text-align: center; }
-        body { padding: 20px 15px; box-sizing: border-box; background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); display: flex; flex-direction: column; align-items: center; }
+        
+        /* Προσθήκη overscroll-behavior για αποτροπή pull-to-refresh */
+        body, html { 
+            height: 100%; 
+            margin: 0; 
+            overflow: hidden; 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: 'Inter', sans-serif; 
+            text-align: center;
+            overscroll-behavior-y: contain; 
+        }
+
+        body { 
+            padding: 20px 15px; 
+            box-sizing: border-box; 
+            background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
         
         #sync-indicator { font-size: 9px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 25px; text-transform: uppercase; }
         .header h1 { font-size: 34px; font-weight: 900; margin: 0; letter-spacing: -1.5px; }
@@ -42,10 +61,21 @@
         .bar-bg { width: 100%; background: #000; height: 5px; border-radius: 3px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 1s; }
         
-        #libraryContainer, #foodHistoryList { overflow-y: auto; flex-grow: 1; width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        /* Βελτιστοποίηση scrolling για containers */
+        #libraryContainer, #foodHistoryList { 
+            overflow-y: auto; 
+            flex-grow: 1; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            margin-top: 10px;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .btn-del { position: absolute; top: 10px; right: 10px; color: #ff4444; background: none; border: none; font-size: 18px; font-weight: 900; cursor: pointer; z-index: 5; }
         
-        /* PEGASUS VAULT MODAL CSS */
         #pinModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
         .vault-card { background: #0a0a0a; border: 1px solid var(--main); box-shadow: 0 0 40px rgba(0,255,65,0.15); padding: 35px 25px; border-radius: 24px; width: 85%; max-width: 340px; text-align: center; }
         .vault-title { color: var(--main); font-weight: 900; font-size: 22px; letter-spacing: 1px; margin: 10px 0 5px 0; }
