@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pegasus OS v8.7.1 (Ultra Safe Sync)</title>
+    <title>Pegasus OS v8.7.2 (Tactical Vault)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -44,11 +44,31 @@
         
         #libraryContainer, #foodHistoryList { overflow-y: auto; flex-grow: 1; width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
         .btn-del { position: absolute; top: 10px; right: 10px; color: #ff4444; background: none; border: none; font-size: 18px; font-weight: 900; cursor: pointer; z-index: 5; }
+        
+        /* PEGASUS VAULT MODAL CSS */
+        #pinModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        .vault-card { background: #0a0a0a; border: 1px solid var(--main); box-shadow: 0 0 40px rgba(0,255,65,0.15); padding: 35px 25px; border-radius: 24px; width: 85%; max-width: 340px; text-align: center; }
+        .vault-title { color: var(--main); font-weight: 900; font-size: 22px; letter-spacing: 1px; margin: 10px 0 5px 0; }
+        .vault-sub { color: #888; font-size: 11px; font-weight: 800; letter-spacing: 2px; margin-bottom: 25px; }
+        .vault-input { font-size: 32px; letter-spacing: 12px; font-weight: 900; color: var(--main); background: #000; border: 1px solid #333; padding: 15px; border-radius: 16px; margin-bottom: 15px; }
+        .vault-input:focus { border-color: var(--main); outline: none; box-shadow: 0 0 15px rgba(0,255,65,0.2); }
     </style>
 </head>
 <body>
 
-    <div id="sync-indicator">ΣΥΓΧΡΟΝΙΣΜΕΝΟ</div>
+    <div id="pinModal">
+        <div class="vault-card">
+            <div style="font-size:40px; margin-bottom:5px;">🛡️</div>
+            <div class="vault-title">PEGASUS OS</div>
+            <div class="vault-sub">MASTER AUTHENTICATION</div>
+            <input type="password" id="pinInput" class="vault-input" inputmode="numeric" maxlength="4" placeholder="••••">
+            <div id="pinError" style="color:#ff4444; font-size:11px; font-weight:bold; margin-bottom:15px; min-height:15px;"></div>
+            <button class="primary-btn" onclick="attemptVaultUnlock()" style="margin-bottom:12px;">ΑΠΑΣΦΑΛΙΣΗ ΣΥΣΤΗΜΑΤΟΣ</button>
+            <button onclick="skipVault()" style="width:100%; background:transparent; color:#666; padding:12px; border:1px solid #222; border-radius:14px; font-weight:bold; font-size:11px; cursor:pointer;">ΕΚΚΙΝΗΣΗ OFFLINE</button>
+        </div>
+    </div>
+
+    <div id="sync-indicator">ΕΛΕΓΧΟΣ ΣΥΣΤΗΜΑΤΟΣ...</div>
 
     <div id="home" class="view active">
         <div class="header"><h1>PEGASUS<span>.</span></h1><p>Tactical mobile interface</p></div>
@@ -200,7 +220,6 @@ const PegasusCloud = {
                 body: JSON.stringify(payload) 
             }); 
             localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-            console.log("✅ Mobile Sync: Push Success");
         } catch(e) { console.error("Push Fail", e); }
     },
 
@@ -244,6 +263,40 @@ const PegasusCloud = {
     }
 };
 
+/* --- VAULT LOGIC --- */
+function attemptVaultUnlock() {
+    const pin = document.getElementById("pinInput").value;
+    if (!pin) return;
+    
+    if (PegasusCloud.unlock(pin)) {
+        document.getElementById("pinModal").style.display = "none";
+        setInterval(() => { if(isUnlocked) PegasusCloud.pull(); }, 15000);
+    } else {
+        document.getElementById("pinError").textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN";
+        document.getElementById("pinInput").value = "";
+    }
+}
+
+function skipVault() {
+    document.getElementById("pinModal").style.display = "none";
+    document.getElementById("sync-indicator").textContent = "ΤΟΠΙΚΗ ΧΡΗΣΗ";
+    document.getElementById("sync-indicator").style.color = "#aaa";
+}
+
+window.onload = () => { 
+    updateDietUI(); 
+    const savedPin = localStorage.getItem("pegasus_vault_pin");
+    
+    if (savedPin && PegasusCloud.unlock(savedPin)) {
+        // Ηδη συνδεδεμένος - Απόκρυψη Vault
+        setInterval(() => { if(isUnlocked) PegasusCloud.pull(); }, 15000); 
+    } else {
+        // Εμφάνιση Custom Vault Modal
+        document.getElementById("pinModal").style.display = "flex";
+    }
+};
+
+/* --- UI VIEWS --- */
 function openView(id) { 
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
     document.getElementById(id).classList.add('active'); 
@@ -380,32 +433,6 @@ function updateMuscleUI() {
         return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${done}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${per}%"></div></div></div>`; 
     }).join(''); 
 }
-
-window.onload = () => { 
-    updateDietUI(); 
-    
-    let savedPin = localStorage.getItem("pegasus_vault_pin");
-    
-    // Αν δεν υπάρχει PIN (νέα εγκατάσταση κινητού), άνοιξε παράθυρο να το ζητήσει
-    if (!savedPin) {
-        savedPin = prompt("PEGASUS SECURITY: Εισάγετε το Master PIN (4 ψηφία):");
-    }
-    
-    // Προσπάθεια ξεκλειδώματος
-    if (savedPin) {
-        const isSuccess = PegasusCloud.unlock(savedPin);
-        if (!isSuccess) {
-            alert("Λάθος PIN. Το σύστημα θα λειτουργήσει τοπικά (Offline).");
-            document.getElementById("sync-indicator").textContent = "ΑΠΟΣΥΝΔΕΘΗΚΕ";
-            document.getElementById("sync-indicator").style.color = "#ff4444";
-        }
-    } else {
-        document.getElementById("sync-indicator").textContent = "ΤΟΠΙΚΗ ΧΡΗΣΗ";
-        document.getElementById("sync-indicator").style.color = "#aaa";
-    }
-
-    setInterval(() => { if(isUnlocked) PegasusCloud.pull(); }, 15000); 
-};
 </script>
 </body>
 </html>
