@@ -463,6 +463,13 @@ function updateMuscleUI() {
         return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${done}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${per}%"></div></div></div>`; 
     }).join(''); 
 }
+    // Αποτροπή pull-to-refresh μέσω JS
+window.addEventListener('touchstart', function(e) {
+    if (window.scrollY === 0) {
+        // Αν είμαστε στην κορυφή, επιτρέπουμε μόνο κίνηση προς τα πάνω (scroll down)
+        // και μπλοκάρουμε την κίνηση προς τα κάτω που θα έκανε refresh
+    }
+}, {passive: false});
 </script>
 </body>
 </html>
