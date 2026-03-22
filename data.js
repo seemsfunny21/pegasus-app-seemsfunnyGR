@@ -87,7 +87,17 @@ window.calculateDailyProgram = function(dayName) {
     return availableExercises.length > 0 ? availableExercises : [{ name: "Stretching", sets: 1, duration: 338 }];
 };
 
-window.getFinalProgram = (day) => window.calculateDailyProgram(day);
+window.program = {
+    "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
+    "Τρίτη": window.calculateDailyProgram("Τρίτη"),
+    "Τετάρτη": window.calculateDailyProgram("Τετάρτη"),
+    "Πέμπτη": window.calculateDailyProgram("Πέμπτη"),
+    "Παρασκευή": window.calculateDailyProgram("Παρασκευή"),
+    "Σάββατο": window.calculateDailyProgram("Σάββατο"),
+    "Κυριακή": window.calculateDailyProgram("Κυριακή")
+};
+
+window.getFinalProgram = (day) => window.program[day];
 
 window.videoMap = {
     "Lat Pulldown": "Pulldown", 
