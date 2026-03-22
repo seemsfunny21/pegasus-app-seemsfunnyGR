@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v4.8 (STRICT NAME EDITION)
+   PEGASUS DATA ENGINE - v9.0 (DYNAMIC GENERATOR + MEDIA LOCK)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -20,7 +20,6 @@ const STRENGTH_EXERCISES = [
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-    // Διατήρηση ονομασίας με κενό για την εικόνα Seated Chest Press στους Ώμους
     { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, 
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
@@ -88,6 +87,7 @@ window.calculateDailyProgram = function(dayName) {
     return availableExercises.length > 0 ? availableExercises : [{ name: "Stretching", sets: 1, duration: 338 }];
 };
 
+// Προ-υπολογισμός για συμβατότητα με legacy αρχεία (weatherHandler.js)
 window.program = {
     "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
     "Τρίτη": window.calculateDailyProgram("Τρίτη"),
@@ -101,34 +101,32 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
 window.videoMap = {
-    // Strength Exercises
     "Lat Pulldown": "Pulldown", 
     "Close Grip Pulldown": "Pulldown", 
+    "Behind the Neck Pulldown": "Pulldown", 
     "Low Seated Row": "LowSeatedRow",
     "Reverse Grip Cable Row": "ReverseGripCableRow", 
     "Reverse Chest Press": "reverserow",
     "Seated Chest Press": "SeatedChestPress", 
-    "Seated Chest Press ": "SeatedChestPress", // Mapping για την ονομασία με το κενό
     "Pec Deck": "Pecdeck", 
     "Pushups": "Pushups",
     "Preacher Curl": "biceps", 
     "Standing Bicep Curl": "Bicepscurl", 
     "Triceps Overhead Extension": "Tricepspress",
     "Triceps Press": "Tricepspress", 
-    "Shoulder Press": "SeatedChestPress", 
+    "Leg Extension": "LegExtensions", 
     "Plank": "Plank",
     "Stretching": "stretching", 
     "Lying Knee Raise": "LyingKneeRaise", 
     "Reverse Crunch": "ReverseCrunch",
     "Leg Raise Hip Lift": "LegRaiseHipLift", 
-    
-    // EMS Exercises
+    "EMS Κοιλιακών": "EMS_K", 
+    "EMS Πλάτης": "EMS_P", 
+    "EMS Ποδιών": "EMS_L", 
     "EMS Lateral Raises (3kg)": "EMS_L",
     "EMS Bicep Curls (3kg)": "Bicepscurl", 
     "EMS Static Plank": "Plank",
     "EMS Static Crunches": "EMS_K", 
-    
-    // Cardio
     "Ποδηλασία 30km": "cycling"
 };
 
