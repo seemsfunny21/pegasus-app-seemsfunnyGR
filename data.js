@@ -103,7 +103,7 @@ window.videoMap = {
     "Shoulder Press": "SeatedChestPress", "Lateral Raises": "EMS_L",
     "Preacher Curl": "biceps", "Standing Bicep Curl": "Bicepscurl", 
     "Triceps Overhead Extension": "Tricepspress", "Triceps Press": "Tricepspress", 
-    "Plank": "Plank", "Stretching": "stretching", 
+    "Plank": "Plank", "Stretching": "Stretching", // Διόρθωση σε κεφαλαίο S
     "Leg Raise Hip Lift": "LegRaiseHipLift", "Reverse Crunch": "ReverseCrunch",
     "EMS Lateral Raises (3kg)": "EMS_L", "EMS Bicep Curls (3kg)": "Bicepscurl", 
     "EMS Static Plank": "Plank", "EMS Static Crunches": "EMS_K", "Ποδηλασία 30km": "cycling"
