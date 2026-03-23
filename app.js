@@ -95,14 +95,6 @@ function selectDay(btn, day) {
 
     const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
     
-    if (day === "Παρασκευή" && isGoodWeather && window.getFinalProgram) {
-        const sundayData = window.getFinalProgram("Κυριακή");
-        if(sundayData && sundayData.length > 0) {
-            const sundayWeights = sundayData.filter(ex => !ex.name.includes("Ποδηλασία"));
-            const bonusExercises = sundayWeights.map(ex => ({...ex, isSpillover: true}));
-            rawBaseData = [...rawBaseData, ...bonusExercises];
-        }
-    }
 
     // 2. Εφαρμογή DVS Optimize (Αν υπάρχει)
     let baseData = (window.DVS) ? window.DVS.optimize(rawBaseData, day) : rawBaseData;
