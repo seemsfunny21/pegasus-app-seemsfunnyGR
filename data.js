@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.2 (FINAL STABLE - VIDEO & OBJECT SYNC)
+   PEGASUS DATA ENGINE - v7.3 (STRICT VIDEO FILENAME SYNC)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -8,31 +8,40 @@ window.REST_TIME = 60;
 window.MAX_DAILY_MINUTES = 60;
 
 const STRENGTH_EXERCISES = [
+    // ΣΤΗΘΟΣ
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
-    { name: "Pec Deck", muscleGroup: "Στήθος", defaultDuration: 45 },
-    { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
-    { name: "Lat Pulldown Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Chest Flys", muscleGroup: "Στήθος", defaultDuration: 45 }, // Μετονομασία Pec Deck
+    { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 }, // Διατήρηση
+
+    // ΠΛΑΤΗ
+    { name: "Lat Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 }, // Μετονομασία Lat Pulldown Wide
     { name: "Close Grip Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Low Seated Row Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Straight Arm Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Bent Over Row Cable", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Upright Row Cable", muscleGroup: "Ώμοι", defaultDuration: 45 },
-    { name: "Standing Bicep Curl Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Preacher Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Triceps Press Down Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Ab Crunches Cable", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 }
+    { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 }, // Μετονομασία Straight Arm Pulldown
+    { name: "One Arm Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 }, // Μετονομασία One Arm Pulldown
+    { name: "Bent Over Rows", muscleGroup: "Πλάτη", defaultDuration: 45 }, // Μετονομασία Bent Over Row Cable
+
+    // ΩΜΟΙ
+    { name: "Upright Rows", muscleGroup: "Ώμοι", defaultDuration: 45 }, // Μενομασία Upright Row Cable
+
+    // ΧΕΡΙΑ
+    { name: "Bicep Curls", muscleGroup: "Χέρια", defaultDuration: 45 }, // Μετονομασία Standing Bicep Curl Bar
+    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια", defaultDuration: 45 }, // Μετονομασία Preacher Curl
+    { name: "Tricep Pulldowns", muscleGroup: "Χέρια", defaultDuration: 45 }, // Μετονομασία Triceps Press Down Bar
+
+    // ΚΟΡΜΟΣ
+    { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 }, // Διατήρηση
+    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 }, // Διατήρηση
+    { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 }, // Διατήρηση
+    { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 }, // Διατήρηση
+
+    // ΠΟΔΙΑ (Νέο βίντεο)
+    { name: "Glute Kickbacks", muscleGroup: "Πόδια", defaultDuration: 45 } 
 ];
 
 window.calculateDailyProgram = function(dayName) {
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
         return [{ name: "Stretching", sets: 1, duration: 338 }];
     }
-    
     if (dayName === "Τετάρτη") {
         return [
             { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
@@ -41,28 +50,25 @@ window.calculateDailyProgram = function(dayName) {
             { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
         ];
     }
-
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     let currentMins = 0;
     const program = [];
-
-    // ΣΑΒΒΑΤΟΚΥΡΙΑΚΟ: Κορμός Εδάφους + Deficits + Ποδηλασία
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         program.push({ name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" });
         program.push({ name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" });
         program.push({ name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" });
         currentMins = (9 * 105) / 60;
-
         const groups = ["Στήθος", "Πλάτη", "Ώμοι", "Χέρια"];
         const deficits = groups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
-
         for (const item of deficits) {
             if (item.ratio >= 1) continue;
             const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
             for (const ex of groupEx) {
-                let timeNeeded = (4 * 105) / 60;
+                if (program.find(p => p.name === ex.name)) continue;
+                let sets = 4;
+                let timeNeeded = (sets * 105) / 60;
                 if (currentMins + timeNeeded <= 60) {
-                    program.push({ name: ex.name, sets: 4, duration: 45, muscleGroup: ex.muscleGroup });
+                    program.push({ name: ex.name, sets: sets, duration: 45, muscleGroup: ex.muscleGroup });
                     currentMins += timeNeeded;
                 }
             }
@@ -70,11 +76,8 @@ window.calculateDailyProgram = function(dayName) {
         program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
         return program;
     }
-
-    // ΚΑΘΗΜΕΡΙΝΕΣ (Τρίτη/Παρασκευή): Μόνο Βάρη Μηχανήματος
     const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
     const deficits = focusGroups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
-
     for (const item of deficits) {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
         for (const ex of groupEx) {
@@ -89,45 +92,35 @@ window.calculateDailyProgram = function(dayName) {
     return program;
 };
 
-// Δημιουργία του αντικειμένου program για το debug.js
-window.program = {
-    "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
-    "Τρίτη": window.calculateDailyProgram("Τρίτη"),
-    "Τετάρτη": window.calculateDailyProgram("Τετάρτη"),
-    "Πέμπτη": window.calculateDailyProgram("Πέμπτη"),
-    "Παρασκευή": window.calculateDailyProgram("Παρασκευή"),
-    "Σάββατο": window.calculateDailyProgram("Σάββατο"),
-    "Κυριακή": window.calculateDailyProgram("Κυριακή")
-};
-
-window.getFinalProgram = (day) => window.program[day];
-
 window.videoMap = {
-    "Seated Chest Press": "chestpress",
-    "Pec Deck": "pecdeck",
-    "Pushups": "pushups",
-    "Lat Pulldown Wide": "pulldown",
-    "Close Grip Pulldown": "pulldown",
-    "Low Seated Row Wide": "lowseatedrow",
-    "Straight Arm Pulldown": "pulldown",
-    "Bent Over Row Cable": "reverserow",
-    "Reverse Chest Press": "reverserow",
-    "Upright Row Cable": "lowseatedrow",
-    "Standing Bicep Curl Bar": "bicepscurl",
-    "Preacher Curl": "biceps",
-    "Triceps Press Down Bar": "tricepspress",
-    "Triceps Overhead Extension": "tricepspress",
-    "Ab Crunches Cable": "reversecrunch", // ΔΙΟΡΘΩΣΗ: Πλέον δείχνει σωστό βίντεο κοιλιακών
+    // Σωστή αντιστοίχιση βάσει της φωτογραφίας
+    "Seated Chest Press": "seatedchestpress",
+    "Chest Flys": "chestflys", // Μετονομασία Pec Deck
+    "Pushups": "pushups", // Διατήρηση
+    "Lat Pulldowns": "latpulldowns", // Μετονομασία Lat Pulldown Wide
+    "Close Grip Pulldown": "latpulldowns",
+    "Straight Arm Pulldowns": "straightarmpulldowns", // Μετονομασία Straight Arm Pulldown
+    "One Arm Pulldowns": "onearmpulldowns", // Μετονομασία One Arm Pulldown
+    "Bent Over Rows": "bentoverrows", // Μετονομασία Bent Over Row Cable
+    "Upright Rows": "uprightrows", // Μετονομασία Upright Row Cable
+    "Bicep Curls": "bicepscurl", // Μετονομασία Standing Bicep Curl Bar (από προηγούμενο sync)
+    "Preacher Bicep Curls": "preacherbicepcurls", // Μετονομασία Preacher Curl
+    "Tricep Pulldowns": "triceppulldowns", // Μετονομασία Triceps Press Down Bar
+    "Glute Kickbacks": "glutekickbacks", // Νέο βίντεο
+
+    // Ασκήσεις Εδάφους (Διατήρηση)
     "Plank": "plank",
     "Leg Raise Hip Lift": "legraisehiplift",
     "Reverse Crunch": "reversecrunch",
     "Lying Knee Raise": "lyingkneeraise",
+
+    // Καρδιοαναπνευστικό
     "Ποδηλασία 30km": "cycling",
     "Stretching": "stretching",
+
+    // EMS
     "EMS Lateral Raises (3kg)": "ems",
     "EMS Bicep Curls (3kg)": "bicepscurl",
     "EMS Static Plank": "plank",
     "EMS Static Crunches": "ems"
 };
-
-window.exercisesDB = STRENGTH_EXERCISES;
