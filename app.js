@@ -108,22 +108,23 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    /* === DATA FETCHING & OPTIMIZATION === */
-    // 1. Λήψη ακατέργαστων δεδομένων
+/* === OPTIMIZED DATA FETCHING (V6.7) === */
     let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
                       [...getFinalProgram(day, window.program)] : 
                       ((window.program[day]) ? [...window.program[day]] : []);
 
-    // 2. Εφαρμογή Optimizer (Αντικαθιστά το παλιό manual logic)
     let mappedData = [];
     if (window.PegasusOptimizer) {
+        // Ο Optimizer αναλαμβάνει πλέον τα πάντα: Capping, Balancing και Sorting
         mappedData = PegasusOptimizer.apply(day, rawBaseData);
     } else {
         mappedData = rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
     }
 
-    // 3. Ταξινόμηση: Τα ολοκληρωμένα (0 sets) στο τέλος
+    // Η ταξινόμηση γίνεται βάσει των adjustedSets που επιστρέφει ο Optimizer
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
+
+    const list = document.getElementById("exList");
 
     /* === UI RENDERING === */
     const list = document.getElementById("exList");
