@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.4 (FINAL VIDEO & OBJECT SYNC)
+   PEGASUS DATA ENGINE - v7.5 (FINAL STABLE - MULTI-VIDEO SYNC)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -15,12 +15,13 @@ const STRENGTH_EXERCISES = [
     { name: "Close Grip Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Low Seated Row Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "One Arm Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Bent Over Rows", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Reverse Chest Press", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Upright Rows", muscleGroup: "Ώμοι", defaultDuration: 45 },
     { name: "Bicep Curls", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Preacher Bicep Curls", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Tricep Pulldowns", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Ab Crunches Cable", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
@@ -93,20 +94,21 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day];
 
 window.videoMap = {
-    // ΣΥΓΧΡΟΝΙΣΜΟΣ ΜΕ ΦΩΤΟΓΡΑΦΙΑ (Image 7)
+    // ΣΥΓΧΡΟΝΙΣΜΟΣ ΜΕ ΤΑ ΟΝΟΜΑΤΑ ΤΗΣ ΦΩΤΟΓΡΑΦΙΑΣ
     "Seated Chest Press": "chestpress",
     "Chest Flys": "chestflys",
     "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns",
-    "Close Grip Pulldown": "latpulldownclose",
+    "Close Grip Pulldown": "latpulldownclose", // ΔΙΑΦΟΡΕΤΙΚΟ ΒΙΝΤΕΟ
     "Low Seated Row Wide": "lowrowseated",
     "Straight Arm Pulldowns": "straightarmpulldowns",
+    "One Arm Pulldowns": "onearmpulldowns",
     "Bent Over Rows": "bentoverrows",
+    "Reverse Chest Press": "reverseseatedrows",
     "Upright Rows": "uprightrows",
     "Bicep Curls": "bicepcurls",
     "Preacher Bicep Curls": "preacherbicepcurls",
     "Tricep Pulldowns": "triceppulldowns",
-    "Triceps Overhead Extension": "triceppulldowns",
     "Ab Crunches Cable": "abcrunches",
     
     // ΚΟΡΜΟΣ & ΛΟΙΠΑ
