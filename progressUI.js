@@ -1,20 +1,19 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.2 (PASSIVE RENDER EDITION)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.3 (STRICT RESET EDITION)
    ========================================================================== */
 
 window.MuscleProgressUI = {
     init() {
         this.checkWeeklyReset();
-        // Αφαιρέθηκε η κλήση this.auditAndSync() για αποτροπή επικάλυψης δεδομένων
         this.render();
         
+        // Auto-refresh UI κάθε 3 δευτερόλεπτα για συγχρονισμό με το app.js
         setInterval(() => {
             this.render();
         }, 3000);
     },
 
     calculateStats() {
-        // Διαβάζει παθητικά το 'pegasus_weekly_history' που ενημερώνουν τα άλλα scripts
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
                         { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
@@ -37,7 +36,7 @@ window.MuscleProgressUI = {
         const stats = this.calculateStats();
         
         let htmlString = `<div id="muscle-progress-section" style="width: 100%; background: #000; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; box-sizing: border-box;">
-            <h3 style="color:#4CAF50; text-align:center; font-size:13px; margin-bottom:15px; text-transform:uppercase;">Weekly Muscle Coverage</h3>`;
+            <h3 style="color:#4CAF50; text-align:center; font-size:13px; margin-bottom:15px; text-transform:uppercase; margin-top:0;">Weekly Muscle Coverage</h3>`;
         
         stats.forEach(s => {
             const isDone = s.percent >= 100;
@@ -48,8 +47,8 @@ window.MuscleProgressUI = {
                     <span>${s.name.toUpperCase()}</span>
                     <span>${s.done}/${s.target} <span style="color:${color}; font-weight:bold;">(${isDone ? "DONE" : `-${diff} SETS`})</span></span>
                 </div>
-                <div style="width:100%; height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden;">
-                    <div style="width:${s.percent}%; height:100%; background:${color}; transition: width 0.8s;"></div>
+                <div style="width:100%; height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden; border:1px solid #222;">
+                    <div style="width:${s.percent}%; height:100%; background:${color}; transition: width 0.8s ease-in-out;"></div>
                 </div>
             </div>`;
         });
@@ -63,15 +62,22 @@ window.MuscleProgressUI = {
     },
 
     checkWeeklyReset() {
-        const lastReset = localStorage.getItem('pegasus_last_weekly_reset');
+        const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
         const now = new Date();
-        const weekKey = `${now.getFullYear()}-W${Math.ceil(now.getDate() / 7)}`;
+        const todayStr = now.toDateString(); // π.χ. "Mon Mar 23 2026"
 
-        if (lastReset !== weekKey && now.getDay() === 1) {
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify({
+        // Έλεγχος: Αν είναι Δευτέρα (getDay === 1) και δεν έχει γίνει reset σήμερα
+        if (now.getDay() === 1 && lastResetDate !== todayStr) {
+            const emptyHistory = {
                 "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
-            }));
-            localStorage.setItem('pegasus_last_weekly_reset', weekKey);
+            };
+            localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
+            localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
+            
+            console.log("PEGASUS SYSTEM: Weekly Reset Executed for " + todayStr);
+            
+            // Επιβολή επανασχεδίασης
+            this.render();
         }
     }
 };
