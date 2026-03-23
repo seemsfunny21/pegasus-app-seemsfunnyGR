@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v4.9 (LOWERCASE SYNC EDITION)
+   PEGASUS DATA ENGINE - v5.0 (TUESDAY ISOLATION + CORE PREP EDITION)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -35,18 +35,22 @@ const EMS_EXERCISES = [
 ];
 
 window.calculateDailyProgram = function(dayName) {
+    // RECOVERY DAYS
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
         return [{ name: "Stretching", sets: 1, duration: 338 }];
     }
+    
+    // EMS DAY
     if (dayName === "Τετάρτη") {
         return EMS_EXERCISES;
     }
 
+    // HYBRID WEEKEND: Core Prep + Cycling (Bicep Curls Removed)
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         return [
+            { name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" },
             { name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" },
             { name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" },
-            { name: "Standing Bicep Curl", sets: 2, duration: 45, muscleGroup: "Χέρια" },
             { name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" } 
         ];
     }
@@ -56,7 +60,8 @@ window.calculateDailyProgram = function(dayName) {
     let currentMins = 0;
     const program = [];
 
-    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Κορμός"] : ["Πλάτη", "Ώμοι", "Χέρια"];
+    // STRICT ISOLATION: Τρίτη μόνο βάρη, Παρασκευή Πλάτη/Ώμοι/Χέρια
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι"] : ["Πλάτη", "Ώμοι", "Χέρια"];
     
     const deficits = focusGroups.map(group => {
         const current = history[group] || 0;
@@ -99,7 +104,6 @@ window.program = {
 
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
-// ΟΡΙΣΤΙΚΟ LOWERCASE MAPPING ΓΙΑ ΤΑΥΤΙΣΗ ΜΕ ΤΑ ΑΡΧΕΙΑ ΣΑΣ
 window.videoMap = {
     "Lat Pulldown": "pulldown", 
     "Close Grip Pulldown": "pulldown", 
