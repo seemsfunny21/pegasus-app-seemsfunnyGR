@@ -678,7 +678,7 @@ window.onload = () => {
     }, 300);
 };
 
-/* ===== UI & PREVIEW LOGIC ===== */
+/* ===== UI & PREVIEW LOGIC (FIXED) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -698,32 +698,17 @@ function openExercisePreview() {
         window.MuscleProgressUI.render();
     }
 
-// CLEAN MAPPING - Πλήρης συγχρονισμός με τα ονόματα του GitHub
-    const smartMapping = { 
-        "ποδηλασία": "cycling", 
-        "cycling": "cycling"
-    };
-
     if(dayExercises) {
         dayExercises.forEach(ex => {
             const cleanName = ex.name.trim();
-            const lowerName = cleanName.toLowerCase();
             
-            let videoId;
-            const smartKey = Object.keys(smartMapping).find(k => lowerName.includes(k));
-            
-            if (smartKey) {
-                videoId = smartMapping[smartKey];
-            } else {
-                // Λήψη του ID από το videoMap (data.js) ή καθαρισμός ονόματος
-                // Αφαιρούμε πλέον το manual + "image.png"
-                videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
+            // Λήψη ID από το videoMap ή καθαρισμός ονόματος
+            let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
                           ? videoMap[cleanName] 
                           : cleanName.replace(/\s+/g, '').toLowerCase();
-            }
 
-            // Καθορισμός κατάληξης: .jpg για cycling, .png για όλα τα άλλα
-            let extension = (videoId === "cycling") ? ".jpg" : ".png";
+            // Καθορισμός αρχείου: .jpg για cycling, .png για τα υπόλοιπα
+            let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
             let imgFileName = videoId + extension;
 
             content.innerHTML += `
@@ -736,6 +721,7 @@ function openExercisePreview() {
             `;
         });
     }
+}
 
 window.addEventListener('mousedown', (e) => {
     const panels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel'];
@@ -757,7 +743,6 @@ window.logPegasusSet = function(exName) {
     if (!window.exercisesDB) return;
     const exercise = window.exercisesDB.find(ex => ex.name.trim() === exName.trim());
     if (exercise && exercise.muscleGroup) {
-        // PEGASUS PATCH: 18-Set Cycling Credit
         const value = (exercise.name.includes("Ποδηλασία")) ? 18 : 1;
         history[exercise.muscleGroup] = (history[exercise.muscleGroup] || 0) + value;
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
