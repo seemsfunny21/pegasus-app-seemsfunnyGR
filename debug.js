@@ -1,30 +1,10 @@
 /* ==========================================================================
-   PEGASUS HEALTH & DEBUG SYSTEM - v2.1 (INTEGRATED CACHE MONITOR)
-   Protocol: Strict Asynchronous System Audit
+   PEGASUS HEALTH & DEBUG SYSTEM - v2.3 (STRICT MONITOR + CACHE AUDIT)
    ========================================================================== */
 
-window.pegasusHealthCheck = async function() {
-    console.log("%c--- PEGASUS OS: INITIALIZING SYSTEM AUDIT ---", "color: #00ff41; font-weight: bold;");
-    
-    let errors = 0;
-    let warnings = 0;
+// 1. ASYNC CACHE AUDIT ENGINE
+window.verifyPegasusCache = async () => {
     const CACHE_NAME = 'pegasus-media-vault-v1';
-
-    // --- 1. CORE ENGINE CHECK ---
-    if (typeof exercises === 'undefined') { console.error("❌ Critical: Engine 'exercises' array is missing."); errors++; }
-    if (typeof program === 'undefined') { console.error("❌ Critical: 'program' object (data.js) not found."); errors++; }
-
-    // --- 2. LOCALSTORAGE INTEGRITY ---
-    const weight = localStorage.getItem("pegasus_weight");
-    if (!weight || weight == 0) { console.warn("⚠️ Profile: User weight not set. Kcal calculation compromised."); warnings++; }
-
-    // --- 3. DOM ARCHITECTURE ---
-    const essentialElements = ["btnStart", "exList", "totalProgress", "phaseTimer"];
-    essentialElements.forEach(id => {
-        if (!document.getElementById(id)) { console.error(`❌ UI: Element ID '${id}' missing.`); errors++; }
-    });
-
-    // --- 4. OFFLINE VAULT AUDIT (CACHE CHECK) ---
     const expectedAssets = [
         './videos/beep.mp3', './videos/abcrunches.mp4', './videos/bentoverrows.mp4', 
         './videos/bicepcurls.mp4', './videos/chestflys.mp4', './videos/chestpress.mp4', 
@@ -47,39 +27,83 @@ window.pegasusHealthCheck = async function() {
         './images/uprightrows.png'
     ];
 
+    console.log(`%c--- PEGASUS CACHE AUDIT ---`, 'color: #00bcd4; font-weight: bold;');
+    
     try {
         const cache = await caches.open(CACHE_NAME);
         const keys = await cache.keys();
         const cachedUrls = keys.map(request => {
             const url = new URL(request.url);
-            return '.' + url.pathname.replace('/seemsfunny', '');
+            return '.' + url.pathname.replace('/seemsfunny', ''); 
         });
 
         let missing = expectedAssets.filter(asset => !cachedUrls.some(url => url.includes(asset.replace('./', ''))));
 
+        console.table({
+            "Total Assets": expectedAssets.length,
+            "Cached": expectedAssets.length - missing.length,
+            "Missing": missing.length
+        });
+
         if (missing.length > 0) {
-            console.warn(`⚠️ Cache: ${missing.length} assets missing from Offline Vault.`);
-            console.log("Missing assets list:", missing);
-            warnings++;
+            console.warn("⚠️ Missing Assets List:", missing);
+            return false;
         } else {
-            console.log("%c✅ Cache: Offline Vault verified (100% complete).", "color: #00ff41;");
+            console.log("%c✅ Offline Vault: 100% Integrity Confirmed.", "color: #4CAF50; font-weight: bold;");
+            return true;
         }
-    } catch (e) {
-        console.error("❌ Cache: Failed to access Service Worker Cache.");
-        errors++;
+    } catch (err) {
+        console.error("❌ Cache Audit Failed:", err);
+        return false;
     }
-
-    // --- FINAL REPORT ---
-    console.log("--- AUDIT COMPLETE ---");
-    console.table({
-        "Engine Status": errors === 0 ? "NOMINAL" : "CRITICAL",
-        "Total Errors": errors,
-        "Total Warnings": warnings,
-        "Offline Ready": (warnings === 0 && errors === 0) ? "YES" : "NO"
-    });
-
-    return { errors, warnings };
 };
 
-// Αυτόματη εκτέλεση μετά τη φόρτωση
+// 2. CORE HEALTH CHECK (STRICT MONITOR)
+window.pegasusHealthCheck = async function() {
+    console.log("%c--- PEGASUS HEALTH CHECK START ---", "color: #4CAF50; font-weight: bold;");
+    let errors = [];
+    let warnings = [];
+
+    // 1. Core Variables Check
+    if (typeof exercises === 'undefined') errors.push("Critical: Variable 'exercises' is missing.");
+    if (typeof program === 'undefined') errors.push("Critical: 'program' object (data.js) not found.");
+
+    // 2. LocalStorage Check
+    const weight = localStorage.getItem("pegasus_weight");
+    if (!weight || weight == 0) warnings.push("Profile: User weight is not set. Calories inaccurate.");
+
+    // 3. Program Integrity
+    if (typeof program !== 'undefined' && typeof videoMap !== 'undefined') {
+        Object.keys(program).forEach(day => {
+            program[day].forEach(ex => {
+                if (!videoMap[ex.name] && !ex.name.toLowerCase().includes("ems")) {
+                    warnings.push(`Data: Exercise '${ex.name}' in '${day}' has no video mapping.`);
+                }
+            });
+        });
+    }
+
+    // 4. DOM Elements Check
+    const essentialElements = ["btnStart", "exList", "totalProgress", "phaseTimer"];
+    essentialElements.forEach(id => {
+        if (!document.getElementById(id)) errors.push(`UI: Element ID '${id}' missing.`);
+    });
+
+    // 5. Offline Vault Audit
+    const cacheStatus = await window.verifyPegasusCache();
+    if (!cacheStatus) warnings.push("Cache: Offline Vault is incomplete. Expect buffering.");
+
+    // RESULTS OUTPUT
+    if (errors.length === 0 && warnings.length === 0) {
+        console.log("%c✅ Pegasus System Healthy: All systems nominal.", "color: #4CAF50;");
+    } else {
+        errors.forEach(err => console.error("❌ " + err));
+        warnings.forEach(wrn => console.warn("⚠️ " + wrn));
+    }
+    
+    console.log("%c--- CHECK COMPLETE ---", "color: #4CAF50; font-weight: bold;");
+    return { errors: errors.length, warnings: warnings.length };
+};
+
+// AUTO-EXECUTION
 setTimeout(window.pegasusHealthCheck, 3000);
