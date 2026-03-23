@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v5.6 (STRICT ATTACHMENT & PEC DECK SYNC)
+   PEGASUS DATA ENGINE - v5.7 (MS-600 HARDWARE & VIDEO SYNC)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -8,32 +8,31 @@ window.REST_TIME = 60;
 window.MAX_DAILY_MINUTES = 60;
 
 const STRENGTH_EXERCISES = [
-    // ΣΤΗΘΟΣ
+    // ΣΤΗΘΟΣ (Chest Station)
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pec Deck", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
-    { name: "Rope Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
 
-    // ΠΛΑΤΗ
+    // ΠΛΑΤΗ (High & Low Pulley)
     { name: "Lat Pulldown Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Low Seated Row Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Straight Arm Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Face Pulls Rope", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Bent Over Row Cable", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Reverse Chest Press", muscleGroup: "Πλάτη", defaultDuration: 45 },
 
-    // ΩΜΟΙ
+    // ΩΜΟΙ (Low Pulley)
     { name: "Shoulder Press Wide", muscleGroup: "Ώμοι", defaultDuration: 45 },
     { name: "Upright Row Cable", muscleGroup: "Ώμοι", defaultDuration: 45 },
-    { name: "Front Raises Rope", muscleGroup: "Ώμοι", defaultDuration: 45 },
 
-    // ΧΕΡΙΑ
+    // ΧΕΡΙΑ (Low & High Pulley)
     { name: "Standing Bicep Curl Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Hammer Curls Rope", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Triceps Press Down Rope", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Preacher Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press Down Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
 
-    // ΚΟΡΜΟΣ
+    // ΚΟΡΜΟΣ (High Pulley & Floor)
+    { name: "Ab Crunches Cable", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 }
 ];
 
@@ -98,20 +97,19 @@ window.videoMap = {
     "Seated Chest Press": "seatedchestpress",
     "Pec Deck": "pecdeck",
     "Pushups": "pushups",
-    "Rope Chest Press": "seatedchestpress",
     "Lat Pulldown Wide": "pulldown",
     "Low Seated Row Wide": "lowseatedrow",
     "Straight Arm Pulldown": "pulldown",
-    "Face Pulls Rope": "reverserow",
+    "Bent Over Row Cable": "reverserow",
+    "Reverse Chest Press": "reverserow",
     "Shoulder Press Wide": "seatedchestpress",
     "Upright Row Cable": "lowseatedrow",
-    "Front Raises Rope": "bicepscurl",
     "Standing Bicep Curl Bar": "bicepscurl",
-    "Hammer Curls Rope": "bicepscurl",
-    "Triceps Press Down Rope": "tricepspress",
+    "Preacher Curl": "biceps",
     "Triceps Press Down Bar": "tricepspress",
+    "Triceps Overhead Extension": "tricepspress",
+    "Ab Crunches Cable": "ems",
     "Plank": "plank",
-    "Leg Raise Hip Lift": "legraisehiplift",
     "Reverse Crunch": "reversecrunch",
     "Stretching": "stretching",
     "Ποδηλασία 30km": "cycling",
