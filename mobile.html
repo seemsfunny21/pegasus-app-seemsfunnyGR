@@ -183,18 +183,29 @@
     </div>
     
 <script>
-const PEGASUS_CONFIG = { apiKeyPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", binId: "69b6757ab7ec241ddc6d7230" };
+/* ==========================================================================
+   PEGASUS MOBILE OS - v8.7.3 (TACTICAL SYNC PATCH)
+   Protocol: User-Gesture Driven Cloud Pull
+   ========================================================================== */
+
+const PEGASUS_CONFIG = { 
+    apiKeyPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
+    binId: "69b6757ab7ec241ddc6d7230" 
+};
 let isUnlocked = false;
 
+// Διαχείριση Κατάστασης Συγχρονισμού με οπτική ένδειξη
 function setSyncStatus(status) {
     const indicator = document.getElementById("sync-indicator");
-    if (status === 'online') {
-        document.body.classList.remove('offline');
-        indicator.textContent = "ΣΥΝΔΕΔΕΜΕΝΟ";
-    } else {
-        document.body.classList.add('offline');
-        indicator.textContent = "ΕΚΤΟΣ ΣΥΝΔΕΣΗΣ";
-    }
+    const colors = { 'online': '#00ff41', 'offline': '#ff4444', 'syncing': '#00bcd4', 'local': '#aaa' };
+    
+    document.body.classList.toggle('offline', status === 'offline');
+    indicator.style.color = colors[status] || colors.local;
+    
+    if (status === 'syncing') indicator.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ...";
+    else if (status === 'online') indicator.textContent = "ΣΥΝΔΕΔΕΜΕΝΟ";
+    else if (status === 'offline') indicator.textContent = "ΣΦΑΛΜΑ ΣΥΝΔΕΣΗΣ";
+    else indicator.textContent = "ΤΟΠΙΚΗ ΧΡΗΣΗ";
 }
 
 function getStrictStorageKey() {
@@ -210,17 +221,58 @@ const PegasusCloud = {
         } catch(e) { return fallback; }
     },
 
+    // Ξεκλείδωμα και άμεση ενεργοποίηση Pull (User Gesture)
     unlock: function(pin) {
         if (btoa(pin) === "MjM3NQ==") {
             isUnlocked = true;
             localStorage.setItem("pegasus_vault_pin", pin);
-            this.pull();
-            setSyncStatus('online');
+            console.log("PEGASUS MOBILE: Authentication Success. Triggering Initial Pull...");
+            this.pull(); // Άμεση κλήση λόγω User Gesture
             return true;
         }
         return false;
     },
 
+    // Ανάκτηση δεδομένων από το Cloud (Διορθωμένο για Mobile)
+    pull: async function() {
+        if (!isUnlocked) return;
+        setSyncStatus('syncing');
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS_CONFIG.binId}/latest`, { 
+                headers: { 
+                    'X-Master-Key': PEGASUS_CONFIG.apiKeyPart, 
+                    'X-Bin-Meta': 'false',
+                    'Cache-Control': 'no-cache' 
+                } 
+            });
+            if (!res.ok) throw new Error("Network response was not ok");
+            const cloud = await res.json();
+            
+            // Ενημέρωση LocalStorage με δεδομένα από το Cloud
+            if(cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
+            if(cloud.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
+            if(cloud.kcal) localStorage.setItem('pegasus_today_kcal', cloud.kcal);
+            if(cloud.protein) localStorage.setItem('pegasus_today_protein', cloud.protein);
+            
+            const dateStr = getStrictStorageKey();
+            if(cloud.today_food_log) localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(cloud.today_food_log));
+            
+            if(cloud.cardio_logs) {
+                for (const key in cloud.cardio_logs) {
+                    localStorage.setItem(key, JSON.stringify(cloud.cardio_logs[key]));
+                }
+            }
+
+            updateDietUI();
+            setSyncStatus('online');
+            console.log("PEGASUS MOBILE: Cloud Pull Complete.");
+        } catch(e) { 
+            console.error("Sync Error:", e);
+            setSyncStatus('offline'); 
+        }
+    },
+
+    // Αποστολή δεδομένων στο Cloud
     push: async function() {
         if (!isUnlocked) return;
         const dateStr = getStrictStorageKey();
@@ -231,8 +283,7 @@ const PegasusCloud = {
             weekly_history: this.safeParse("pegasus_weekly_history", {}), 
             food_library: this.safeParse("pegasus_food_library", []), 
             today_food_log: this.safeParse(`food_log_${dateStr}`, []),
-            cardio_logs: this.getLogs('cardio_log_'),
-            history_logs: this.getLogs('pegasus_history_')
+            cardio_logs: this.getLogs('cardio_log_')
         };
 
         try { 
@@ -248,23 +299,9 @@ const PegasusCloud = {
         const logs = {};
         for (let i = 0; i < localStorage.length; i++) {
             let k = localStorage.key(i);
-            if (k.startsWith(prefix)) logs[k] = this.safeParse(k, null);
+            if (k && k.startsWith(prefix)) logs[k] = this.safeParse(k, null);
         }
         return logs;
-    },
-
-    pull: async function() {
-        if (!isUnlocked) return;
-        try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS_CONFIG.binId}/latest`, { 
-                headers: { 'X-Master-Key': PEGASUS_CONFIG.apiKeyPart, 'X-Bin-Meta': 'false' } 
-            });
-            const cloud = await res.json();
-            // Sync logic simplified for brevity
-            if(cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
-            updateDietUI();
-            setSyncStatus('online');
-        } catch(e) { setSyncStatus('offline'); }
     }
 };
 
@@ -272,7 +309,8 @@ function attemptVaultUnlock() {
     const pin = document.getElementById("pinInput").value;
     if (PegasusCloud.unlock(pin)) {
         document.getElementById("pinModal").style.display = "none";
-        setInterval(() => PegasusCloud.pull(), 15000);
+        // Background Sync κάθε 30 δευτερόλεπτα για εξοικονόμηση μπαταρίας
+        setInterval(() => PegasusCloud.pull(), 30000);
     } else {
         document.getElementById("pinError").textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ";
     }
@@ -280,22 +318,23 @@ function attemptVaultUnlock() {
 
 function skipVault() {
     document.getElementById("pinModal").style.display = "none";
-    document.getElementById("sync-indicator").textContent = "ΤΟΠΙΚΗ ΧΡΗΣΗ";
-    document.getElementById("sync-indicator").style.color = "#aaa";
+    setSyncStatus('local');
 }
 
 window.onload = () => { 
     updateDietUI(); 
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
+        // Εδώ το pull θα ξεκινήσει αυτόματα αν το PIN είναι αποθηκευμένο
         PegasusCloud.unlock(savedPin);
         document.getElementById("pinModal").style.display = "none";
-        setInterval(() => PegasusCloud.pull(), 15000);
+        setInterval(() => PegasusCloud.pull(), 30000);
     } else {
         document.getElementById("pinModal").style.display = "flex";
     }
 };
 
+/* === UI FUNCTIONS === */
 function openView(id) { 
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
     document.getElementById(id).classList.add('active'); 
@@ -308,8 +347,10 @@ function openCardio() { document.getElementById('cDate').value = new Date().toIS
 async function saveMobileCardio() {
     const r = document.getElementById("cRoute").value;
     const k = parseFloat(document.getElementById("cKm").value);
+    const t = parseInt(document.getElementById("cTime").value) || 0;
+    const kc = parseInt(document.getElementById("cKcal").value) || 0;
     if (!r || isNaN(k)) return;
-    localStorage.setItem(`cardio_log_${getStrictStorageKey()}`, JSON.stringify({ r, k }));
+    localStorage.setItem(`cardio_log_${getStrictStorageKey()}`, JSON.stringify({ r, k, t, kc }));
     await PegasusCloud.push();
     openView('home');
 }
@@ -317,8 +358,9 @@ async function saveMobileCardio() {
 async function saveMobileEMS() {
     const d = document.getElementById('emsDate').value;
     const a = document.getElementById('emsAvg').value;
+    const kc = document.getElementById('emsKcal').value;
     if (!d || !a) return;
-    // Logic for EMS save...
+    localStorage.setItem(`ems_log_${d}`, JSON.stringify({ avg: a, kcal: kc }));
     await PegasusCloud.push();
     openView('home');
 }
@@ -388,7 +430,7 @@ function updateMuscleUI() {
     }).join('');
 }
 
-// Touch Block Logic
+// Mobile Touch Scroll Logic
 let touchStartY = 0;
 document.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].pageY; }, { passive: false });
 document.addEventListener('touchmove', (e) => {
