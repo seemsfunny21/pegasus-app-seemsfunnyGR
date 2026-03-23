@@ -1,5 +1,6 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v1.1 (PROGRESS BROADCAST)
+   PEGASUS PWA SERVICE WORKER - v1.2 (AUTO-RETRY & PROGRESS BROADCAST)
+   Protocol: Strict Media Caching with Error Recovery
    ========================================================================== */
 
 const CACHE_NAME = 'pegasus-media-vault-v1';
@@ -33,27 +34,48 @@ self.addEventListener('install', (event) => {
             const total = ASSETS_TO_CACHE.length;
 
             for (const url of ASSETS_TO_CACHE) {
-                try {
-                    await cache.add(url);
-                    downloaded++;
-                    // Αποστολή προόδου στο index.html
-                    const clients = await self.clients.matchAll();
-                    clients.forEach(client => {
-                        client.postMessage({
-                            type: 'CACHE_PROGRESS',
-                            percent: Math.round((downloaded / total) * 100),
-                            file: url
+                let success = false;
+                let retries = 3;
+
+                while (!success && retries > 0) {
+                    try {
+                        await cache.add(url);
+                        success = true;
+                        downloaded++;
+                        
+                        // Broadcast progress to UI
+                        const clients = await self.clients.matchAll();
+                        clients.forEach(client => {
+                            client.postMessage({
+                                type: 'CACHE_PROGRESS',
+                                percent: Math.round((downloaded / total) * 100),
+                                file: url
+                            });
                         });
-                    });
-                } catch (err) {
-                    console.warn(`Failed to cache: ${url}`);
+                    } catch (err) {
+                        retries--;
+                        console.warn(`PEGASUS SW: Retry (${3 - retries}/3) for ${url}`);
+                        if (retries === 0) console.error(`PEGASUS SW: Failed to cache ${url} after 3 attempts.`);
+                    }
                 }
             }
-            console.log('PEGASUS OS: Initial Caching Complete.');
+            console.log('PEGASUS OS: Caching Operations Finished.');
+        })
+    );
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((keys) => {
+            return Promise.all(keys.map((key) => {
+                if (key !== CACHE_NAME) return caches.delete(key);
+            }));
         })
     );
 });
 
 self.addEventListener('fetch', (event) => {
-    event.respondWith(caches.match(event.request).then(res => res || fetch(event.request)));
+    event.respondWith(
+        caches.match(event.request).then((res) => res || fetch(event.request))
+    );
 });
