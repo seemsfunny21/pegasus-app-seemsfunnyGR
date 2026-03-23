@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.11 (STRICT UNIFIED SYNC)
+   PEGASUS DATA ENGINE - v7.11 (STRICT UNIFIED SYNC - FIXED LOW ROW)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -100,7 +100,7 @@ window.videoMap = {
     "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns",
     "Close Grip Pulldown": "latpulldownsclose",
-    "Low Seated Row Wide": "lowrowseated",
+    "Low Seated Row Wide": "lowrowsseated", // ΔΙΟΡΘΩΣΗ: lowrowsseated (με διπλό s)
     "Straight Arm Pulldowns": "straightarmpulldowns",
     "One Arm Pulldowns": "onearmpulldowns",
     "One Arm Rows": "onearmrows",
