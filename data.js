@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v5.2 (FINAL MS-600 & LOWERCASE SYNC)
+   PEGASUS DATA ENGINE - v5.6 (STRICT ATTACHMENT & PEC DECK SYNC)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -8,72 +8,60 @@ window.REST_TIME = 60;
 window.MAX_DAILY_MINUTES = 60;
 
 const STRENGTH_EXERCISES = [
-    // ΣΤΗΘΟΣ (Chest Press / Butterfly Unit)
+    // ΣΤΗΘΟΣ
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pec Deck", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
-    { name: "Chest Press Incline Style", muscleGroup: "Στήθος", defaultDuration: 45 },
+    { name: "Rope Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
 
-    // ΠΛΑΤΗ (Lat Pull / Low Row Unit)
-    { name: "Lat Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Low Seated Row", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Close Grip Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Reverse Grip Cable Row", muscleGroup: "Πλάτη", defaultDuration: 45 },
-    { name: "Reverse Chest Press", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    // ΠΛΑΤΗ
+    { name: "Lat Pulldown Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Low Seated Row Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Straight Arm Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Face Pulls Rope", muscleGroup: "Πλάτη", defaultDuration: 45 },
 
-    // ΩΜΟΙ (Shoulder Press / Lateral Pulley)
-    { name: "Shoulder Press", muscleGroup: "Ώμοι", defaultDuration: 45 },
-    { name: "Lateral Raises Cable", muscleGroup: "Ώμοι", defaultDuration: 45 },
+    // ΩΜΟΙ
+    { name: "Shoulder Press Wide", muscleGroup: "Ώμοι", defaultDuration: 45 },
+    { name: "Upright Row Cable", muscleGroup: "Ώμοι", defaultDuration: 45 },
+    { name: "Front Raises Rope", muscleGroup: "Ώμοι", defaultDuration: 45 },
 
-    // ΧΕΡΙΑ (Bicep / Tricep Station)
-    { name: "Preacher Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Standing Bicep Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Triceps Press Down", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
+    // ΧΕΡΙΑ
+    { name: "Standing Bicep Curl Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Hammer Curls Rope", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Triceps Press Down Rope", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Triceps Press Down Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
 
-    // ΚΟΡΜΟΣ (Floor / Bodyweight - Σαββατοκύριακο)
+    // ΚΟΡΜΟΣ
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 }
-];
-
-const EMS_EXERCISES = [
-    { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
-    { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
-    { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
-    { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
+    { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 }
 ];
 
 window.calculateDailyProgram = function(dayName) {
-    // RECOVERY DAYS
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
         return [{ name: "Stretching", sets: 1, duration: 338 }];
     }
-    
-    // EMS DAY
     if (dayName === "Τετάρτη") {
-        return EMS_EXERCISES;
+        return [
+            { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
+            { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
+            { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
+            { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
+        ];
     }
-
-    // HYBRID WEEKEND: Core Prep + Cycling
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         return [
             { name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" },
-            { name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" },
             { name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" },
-            { name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" } 
+            { name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" }
         ];
     }
 
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    const dayLimits = { "Τρίτη": 60, "Παρασκευή": 55 };
     let currentMins = 0;
     const program = [];
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι"] : ["Πλάτη", "Χέρια"];
 
-    // STRICT ISOLATION: Τρίτη μόνο βάρη, Παρασκευή Πλάτη/Ώμοι/Χέρια
-    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι"] : ["Πλάτη", "Ώμοι", "Χέρια"];
-    
     const deficits = focusGroups.map(group => {
         const current = history[group] || 0;
         const target = window.TARGET_SETS[group];
@@ -83,23 +71,14 @@ window.calculateDailyProgram = function(dayName) {
     for (const item of deficits) {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
         for (const ex of groupEx) {
-            if (program.find(p => p.name === ex.name)) continue; 
-            
             let sets = 4;
             let timeNeeded = (sets * (ex.defaultDuration + window.REST_TIME)) / 60;
-            
-            if (currentMins + timeNeeded <= (dayLimits[dayName] || 60)) {
-                program.push({ 
-                    name: ex.name, 
-                    sets: sets, 
-                    duration: ex.defaultDuration, 
-                    muscleGroup: ex.muscleGroup 
-                });
+            if (currentMins + timeNeeded <= window.MAX_DAILY_MINUTES) {
+                program.push({ name: ex.name, sets: sets, duration: ex.defaultDuration, muscleGroup: ex.muscleGroup });
                 currentMins += timeNeeded;
             }
         }
     }
-
     return program.length > 0 ? program : [{ name: "Stretching", sets: 1, duration: 338 }];
 };
 
@@ -115,27 +94,25 @@ window.program = {
 
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
-// ΟΡΙΣΤΙΚΟ LOWERCASE VIDEO MAPPING (Sync με GitHub)
 window.videoMap = {
     "Seated Chest Press": "seatedchestpress",
     "Pec Deck": "pecdeck",
-    "Chest Press Incline Style": "seatedchestpress",
     "Pushups": "pushups",
-    "Lat Pulldown": "pulldown",
-    "Close Grip Pulldown": "pulldown",
-    "Low Seated Row": "lowseatedrow",
-    "Reverse Grip Cable Row": "reversegripcablerow",
-    "Reverse Chest Press": "reverserow",
-    "Shoulder Press": "seatedchestpress",
-    "Lateral Raises Cable": "bicepscurl",
-    "Preacher Curl": "biceps",
-    "Standing Bicep Curl": "bicepscurl",
-    "Triceps Press Down": "tricepspress",
-    "Triceps Overhead Extension": "tricepspress",
+    "Rope Chest Press": "seatedchestpress",
+    "Lat Pulldown Wide": "pulldown",
+    "Low Seated Row Wide": "lowseatedrow",
+    "Straight Arm Pulldown": "pulldown",
+    "Face Pulls Rope": "reverserow",
+    "Shoulder Press Wide": "seatedchestpress",
+    "Upright Row Cable": "lowseatedrow",
+    "Front Raises Rope": "bicepscurl",
+    "Standing Bicep Curl Bar": "bicepscurl",
+    "Hammer Curls Rope": "bicepscurl",
+    "Triceps Press Down Rope": "tricepspress",
+    "Triceps Press Down Bar": "tricepspress",
     "Plank": "plank",
     "Leg Raise Hip Lift": "legraisehiplift",
     "Reverse Crunch": "reversecrunch",
-    "Lying Knee Raise": "lyingkneeraise",
     "Stretching": "stretching",
     "Ποδηλασία 30km": "cycling",
     "EMS Lateral Raises (3kg)": "ems",
@@ -144,4 +121,4 @@ window.videoMap = {
     "EMS Static Crunches": "ems"
 };
 
-window.exercisesDB = [...STRENGTH_EXERCISES, ...EMS_EXERCISES];
+window.exercisesDB = STRENGTH_EXERCISES;
