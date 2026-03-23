@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS SMART INVENTORY HANDLER - STRICTOR EDITION
+   PEGASUS SMART INVENTORY HANDLER - STRICTOR EDITION (v10.5 SYNC)
    ========================================================================== */
 
 /**
@@ -36,17 +36,18 @@ function getSmartDailyProgram(day) {
     const sortedGroups = getSortedMuscleGroups();
     let program = [];
 
-    sortedGroups.slice(0, 2).forEach(group => {
-        if (group.remaining > 0) {
-            if (typeof exercisesDB !== 'undefined') {
-                const availableEx = exercisesDB.filter(ex => ex.muscleGroup === group.name);
-                availableEx.forEach(ex => {
-                    program.push({
-                        name: ex.name,
-                        sets: Math.min(4, group.remaining)
-                    });
+    // PEGASUS PATCH: Φιλτράρουμε τα "Πόδια" ώστε να μην προτείνονται ασκήσεις με βάρη
+    const availableGroups = sortedGroups.filter(g => g.name !== "Πόδια" && g.remaining > 0);
+
+    availableGroups.slice(0, 2).forEach(group => {
+        if (typeof exercisesDB !== 'undefined') {
+            const availableEx = exercisesDB.filter(ex => ex.muscleGroup === group.name);
+            availableEx.forEach(ex => {
+                program.push({
+                    name: ex.name,
+                    sets: Math.min(4, group.remaining)
                 });
-            }
+            });
         }
     });
 
@@ -79,7 +80,8 @@ function findMuscleGroup(exerciseName) {
         "bicep curls": "Χέρια",
         "plank": "Κορμός",
         "leg press": "Πόδια",
-        "ems full body": "Κορμός"
+        "ems full body": "Κορμός",
+        "ποδηλασία": "Πόδια" // Προσθήκη για σωστή χαρτογράφηση
     };
 
     // Αναζήτηση με partial match αν δεν υπάρχει ακριβές
@@ -93,16 +95,22 @@ function findMuscleGroup(exerciseName) {
 /**
  * Αποθηκεύει την πρόοδο στο εβδομαδιαίο ιστορικό
  */
-function saveProgress(muscleGroup, sets = 1) {
+function saveProgress(muscleGroup, sets = 1, exerciseName = "") {
     if (!muscleGroup) return;
 
     let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     
+    // PEGASUS PATCH: Αυτόματη πίστωση 18 σετ αν η άσκηση είναι ποδηλασία
+    let setValue = sets;
+    if (exerciseName && exerciseName.toLowerCase().includes("ποδηλασία")) {
+        setValue = 18;
+    }
+
     // Ενημέρωση συνόλου
-    history[muscleGroup] = (history[muscleGroup] || 0) + sets;
+    history[muscleGroup] = (history[muscleGroup] || 0) + setValue;
     
     localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
-    console.log(`PEGASUS DATA: +${sets} sets -> ${muscleGroup}. Current: ${history[muscleGroup]}`);
+    console.log(`PEGASUS DATA: +${setValue} sets -> ${muscleGroup}. Current: ${history[muscleGroup]}`);
 }
 
 /**
