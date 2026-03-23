@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v8.8.1 (Tactical Car & Sync)</title>
+    <title>Pegasus OS v8.8.2 (Tactical Car & Sync)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -111,7 +111,6 @@
                 <input type="text" id="carColor" placeholder="(R) Χρώμα">
             </div>
             <button class="primary-btn" onclick="saveCarSpecs()">ΑΠΟΘΗΚΕΥΣΗ SPECS</button>
-            <button class="primary-btn" onclick="copyCarSpecsForParts()" style="background:#222; color:var(--main); border:1px solid var(--main); margin-top:5px;">📋 COPY VIN & ENGINE</button>
         </div>
         
         <div class="section-title" style="margin-top:25px;">Service Log & Reminders</div>
@@ -195,7 +194,7 @@
 
 <script>
 /* ==========================================================================
-   PEGASUS MOBILE LOGIC v8.8.1 (TACTICAL DATA ANALYST MODE)
+   PEGASUS MOBILE LOGIC v8.8.2 (STRICT ANALYST MODE)
    ========================================================================== */
 const CONFIG = { 
     key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
@@ -215,13 +214,10 @@ const PegasusCloud = {
             const data = await res.json();
             const keys = ['food_library', 'weekly_history', 'car_specs', 'car_service', 'contacts'];
             keys.forEach(k => { if(data[k]) localStorage.setItem('pegasus_' + k, JSON.stringify(data[k])); });
-            
             if(data.kcal) localStorage.setItem('pegasus_today_kcal', data.kcal);
             if(data.protein) localStorage.setItem('pegasus_today_protein', data.protein);
-            
             const dateKey = `food_log_${new Date().getDate()}/${new Date().getMonth()+1}/${new Date().getFullYear()}`;
             if(data.today_food_log) localStorage.setItem(dateKey, JSON.stringify(data.today_food_log));
-
             updateDietUI(); renderServiceLog(); renderContacts();
             setSyncStatus('online');
         } catch(e) { setSyncStatus('offline'); }
@@ -263,13 +259,6 @@ async function saveCarSpecs() {
     localStorage.setItem('pegasus_car_specs', JSON.stringify(specs));
     await PegasusCloud.push();
     alert("Specs Saved.");
-}
-
-function copyCarSpecsForParts() {
-    const vin = document.getElementById('carVIN').value;
-    const eng = document.getElementById('carEngine').value;
-    navigator.clipboard.writeText(`VIN: ${vin}\nENGINE: ${eng}`);
-    alert("VIN & Engine Copied.");
 }
 
 async function addServiceEntry() {
