@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.5 - UI RESTORED)
+   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.6 - MODULAR UI)
    Protocol: Native Metabolic Engine, Audio Unlocked, LIVE CLOUD SYNC
-   + PEGASUS PATCH: Zero-Time Protocol, 18-Set Cycling Credit, No Spillover
+   + PEGASUS PATCH: Zero-Time Protocol, 18-Set Cycling Credit, External UI
    ========================================================================== */
 
 let exercises = [];
@@ -15,53 +15,6 @@ let remainingSeconds = 0;
 let muted = false;
 let TURBO_MODE = false;
 let SPEED = 1;
-
-/* === INTEGRATED PROGRESS UI (ΕΠΑΝΑΦΟΡΑ ΑΠΟ ΤΗΝ ΠΑΛΙΑ ΕΚΔΟΣΗ) === */
-window.MuscleProgressUI = {
-    targets: { "Πλάτη": 24, "Στήθος": 24, "Χέρια": 16, "Κορμός": 12, "Πόδια": 24, "Ώμοι": 16 },
-    
-    calculateStats() {
-        const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-        const mapping = { "Πλάτη": "Back", "Στήθος": "Chest", "Χέρια": "Arms", "Κορμός": "Abs", "Πόδια": "Legs", "Ώμοι": "Shoulders" };
-        
-        return Object.keys(this.targets).map(group => {
-            const engKey = mapping[group];
-            const done = (history[group] || 0) + (history[engKey] || 0);
-            const target = window.TARGET_SETS ? window.TARGET_SETS[group] : this.targets[group];
-            return { 
-                name: group, 
-                done: done, 
-                target: target, 
-                percent: Math.min(100, Math.round((done / target) * 100)) 
-            };
-        });
-    },
-
-    render() {
-        const container = document.getElementById('previewContent');
-        if (!container) return;
-        const stats = this.calculateStats();
-        
-        let html = `<div id="muscle-progress-section" style="width:100%; background:#0a0a0a; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #222; box-sizing:border-box;">
-                    <h3 style="color:#4CAF50; text-align:center; font-size:13px; margin-bottom:15px; text-transform:uppercase; margin-top:0;">Weekly Muscle Coverage</h3>`;
-        
-        stats.forEach(s => {
-            const color = s.percent >= 100 ? "#4CAF50" : "#ff9800";
-            html += `<div style="margin-bottom:12px; width:100%;">
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#eee;">
-                            <span>${s.name.toUpperCase()}</span>
-                            <span style="font-family:monospace;">${s.done}/${s.target} Sets (${s.percent}%)</span>
-                        </div>
-                        <div style="width:100%; height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden; border:1px solid #333;">
-                            <div style="width:${s.percent}%; height:100%; background:${color}; transition: width 1s ease-in-out;"></div>
-                        </div>
-                    </div>`;
-        });
-        html += `</div><div style="width:100%; text-align:center; color:#444; font-size:10px; margin-bottom:15px; letter-spacing:2px;">——— ΗΜΕΡΗΣΙΕΣ ΑΣΚΗΣΕΙΣ ———</div>`;
-        
-        container.insertAdjacentHTML('afterbegin', html);
-    }
-};
 
 /* === DYNAMIC PARAMETERS === */
 let workoutPhases = [
@@ -122,7 +75,7 @@ const getMuscleGroup = (exName) => {
     return "Άλλο";
 };
 
-/* ===== SELECTDAY (V6.5 - STRICT TARGET LOCKDOWN & DVS) ===== */
+/* ===== SELECTDAY (V6.6 - STRICT TARGET LOCKDOWN & DVS) ===== */
 function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
@@ -147,18 +100,14 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    // Λήψη βασικού προγράμματος
     let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
                       [...getFinalProgram(day, window.program)] : 
                       ((window.program[day]) ? [...window.program[day]] : []);
-
-    // PEGASUS PATCH: Αφαιρέθηκε η λογική Spillover για την Παρασκευή.
 
     const currentHistory = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     const settings = (typeof window.getPegasusSettings === "function") ? window.getPegasusSettings() : { muscleTargets: {} };
     const userTargets = settings.muscleTargets || window.TARGET_SETS;
 
-    // ΕΦΑΡΜΟΓΗ ΔΥΝΑΜΙΚΗΣ ΜΕΙΩΣΗΣ ΣΕΤ (DVS) ΣΤΟ ΣΤΑΤΙΚΟ ΠΡΟΓΡΑΜΜΑ
     let mappedData = rawBaseData.map(e => {
         const muscle = e.muscleGroup || getMuscleGroup(e.name);
         const done = currentHistory[muscle] || 0;
@@ -362,7 +311,6 @@ function runPhase() {
                     
                     if (window.logPegasusSet) window.logPegasusSet(exName);
                     
-                    // LIVE SYNC
                     if (typeof PegasusCloud !== 'undefined' && typeof PegasusCloud.push === "function") {
                         PegasusCloud.push(true); 
                     }
@@ -444,25 +392,52 @@ function skipToNextExercise() {
     } else finishWorkout(); 
 }
 
-/* ===== PEGASUS VIDEO ENGINE ===== */
+/* ===== PEGASUS DUAL VIDEO ENGINE (LOCAL & YOUTUBE) ===== */
 function showVideo(i) {
     if (!exercises || !exercises[i]) return;
     
     const ex = exercises[i];
     const wInput = ex.querySelector(".weight-input");
     let name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
-    const vid = document.getElementById("video");
     
-    if (vid && typeof videoMap !== 'undefined') {
-        let videoFileName = videoMap[name] || name.replace(/\s+/g, '');
+    const vid = document.getElementById("video");
+    if (!vid) return;
+
+    let ytFrame = document.getElementById("yt-video");
+    if (!ytFrame) {
+        ytFrame = document.createElement("iframe");
+        ytFrame.id = "yt-video";
+        ytFrame.style.width = "100%";
+        ytFrame.style.height = "100%";
+        ytFrame.style.border = "none";
+        ytFrame.style.borderRadius = vid.style.borderRadius || "8px";
+        ytFrame.style.display = "none";
+        ytFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture");
+        vid.parentNode.insertBefore(ytFrame, vid.nextSibling);
+    }
+    
+    if (typeof videoMap !== 'undefined') {
+        let mappedVal = videoMap[name] || name.replace(/\s+/g, '');
         if (name.toLowerCase().includes("ems") && !videoMap[name]) {
-            videoFileName = "ems";
+            mappedVal = "ems";
         }
-        vid.src = `videos/${videoFileName}.mp4`;
-        vid.style.opacity = "1";
-        vid.play().catch(err => {
-            console.warn(`PEGASUS: Video ${videoFileName}.mp4 not found in /videos/`);
-        });
+
+        if (mappedVal.startsWith("yt:")) {
+            const ytId = mappedVal.split("yt:")[1];
+            vid.style.display = "none";
+            vid.pause();
+            ytFrame.style.display = "block";
+            ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0`;
+        } else {
+            ytFrame.style.display = "none";
+            ytFrame.src = "";
+            vid.style.display = "block";
+            vid.src = `videos/${mappedVal}.mp4`;
+            vid.style.opacity = "1";
+            vid.play().catch(err => {
+                console.warn(`PEGASUS: Video ${mappedVal}.mp4 not found in /videos/`);
+            });
+        }
     }
 }
 
@@ -474,7 +449,6 @@ window.calculateTotalTime = function() {
     exercises.forEach((exDiv) => {
         if (exDiv.classList.contains("exercise-skipped")) return;
         
-        // PEGASUS PATCH: Μηδενισμός χρόνου για EMS και Ποδηλασία στο UI
         const nameNode = exDiv.querySelector(".exercise-name");
         const name = nameNode ? nameNode.textContent : "";
         if (name.includes("Ποδηλασία") || name.toUpperCase().includes("EMS")) return;
@@ -704,7 +678,7 @@ window.onload = () => {
     }, 300);
 };
 
-/* ===== UI & PREVIEW LOGIC (ΕΠΑΝΑΦΟΡΑ SMART MAPPING) ===== */
+/* ===== UI & PREVIEW LOGIC ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -724,7 +698,6 @@ function openExercisePreview() {
         window.MuscleProgressUI.render();
     }
 
-    // Επαναφορά του Smart Mapping για να βρίσκει εικόνες .jpg ή .png σωστά
     const smartMapping = { 
         "pulldown": "pulldownimage.png", 
         "triceps overhead extension": "tricepsoverheadimage.png", 
@@ -744,7 +717,7 @@ function openExercisePreview() {
             if (key) {
                 imgFileName = smartMapping[key];
             } else {
-                imgFileName = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
+                imgFileName = (typeof videoMap !== 'undefined' && videoMap[cleanName] && !videoMap[cleanName].startsWith("yt:")) 
                               ? (videoMap[cleanName] + "Image.png") 
                               : (cleanName.replace(/\s+/g, '') + "Image.png");
             }
