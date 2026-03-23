@@ -338,5 +338,27 @@
 
 <script src="app.js"></script>
 <script src="debug.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then((reg) => {
+            console.log('PEGASUS OS: Offline Vault Active.');
+        });
+    });
+
+    // LISTENER ΓΙΑ ΤΗΝ ΠΡΟΟΔΟ ΤΟΥ CACHING
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'CACHE_PROGRESS') {
+            console.clear(); // Καθαρισμός για καθαρή ένδειξη
+            console.log(`%c PEGASUS OFFLINE SYNC: ${event.data.percent}% `, 'background: #00ff41; color: #000; font-weight: bold;');
+            console.log(`Downloading: ${event.data.file}`);
+            
+            // Προαιρετικά: Ενημέρωση του UI (π.χ. στο phaseTimer)
+            const label = document.getElementById("phaseTimer");
+            if (label) label.textContent = `SYNCING MEDIA: ${event.data.percent}%`;
+        }
+    });
+}
+</script>
 </body>
 </html>
