@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v8.7.6 (Tactical Vault + EMS Cam)</title>
+    <title>Pegasus OS v8.8.0 (Car & Sync Update)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@
         .header h1 { font-size: 34px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; }
         .header p { font-size: 11px; color: var(--main); margin: 4px 0 25px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; padding-bottom: 20px; }
         .tile { background: var(--card); border: 1px solid rgba(0, 255, 65, 0.12); border-radius: 32px; padding: 25px 10px; text-align: center; backdrop-filter: blur(16px); transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tile:active { transform: scale(0.92); border-color: var(--main); }
         .tile-icon { font-size: 32px; margin-bottom: 10px; display: block; }
@@ -42,23 +42,23 @@
         .view.active { display: flex; animation: viewIn 0.4s forwards; }
         @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 800; padding: 10px 18px; border-radius: 14px; margin-bottom: 20px; cursor: pointer; }
+        .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 800; padding: 10px 18px; border-radius: 14px; margin-bottom: 20px; cursor: pointer; align-self: center; }
         .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
         
-        .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px 12px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; position: relative; overflow: hidden; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; box-sizing: border-box; min-height: 85px; flex-shrink: 0; }
+        .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px 12px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; position: relative; overflow: hidden; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; box-sizing: border-box; min-height: 85px; flex-shrink: 0; margin-bottom: 8px; }
         .mini-card:active { background: rgba(0, 255, 65, 0.2); }
         .mini-label { font-size: 10px; font-weight: 800; color: var(--main); text-transform: uppercase; }
         .mini-val { font-size: 15px; font-weight: 900; margin: 4px 0; color: #eee; }
         
         .copy-hint { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--main); color: #000; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; opacity: 0; transition: 0.3s; pointer-events: none; }
         
-        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; }
+        input, select { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; font-family: inherit; }
         .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 13px; margin-bottom: 5px; cursor: pointer;}
         
         .bar-bg { width: 100%; background: #000; height: 5px; border-radius: 3px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 1s; }
         
-        #libraryContainer, #foodHistoryList { 
+        #libraryContainer, #foodHistoryList, #serviceLogList, #contactList { 
             overflow-y: auto; flex-grow: 1; width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;
             overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
         }
@@ -70,6 +70,10 @@
         .vault-title { color: var(--main); font-weight: 900; font-size: 22px; letter-spacing: 1px; margin: 10px 0 5px 0; }
         .vault-sub { color: #888; font-size: 11px; font-weight: 800; letter-spacing: 2px; margin-bottom: 25px; }
         .vault-input { font-size: 32px; letter-spacing: 12px; font-weight: 900; color: var(--main); background: #000; border: 1px solid #333; padding: 15px; border-radius: 16px; margin-bottom: 15px; }
+
+        .section-title { font-size: 12px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 1px; margin: 15px 0 10px; text-align: left; width: 100%; }
+        .log-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; border-left: 4px solid var(--main); text-align: left; position: relative; }
+        .call-link { color: var(--main); text-decoration: none; font-weight: 900; font-size: 16px; display: block; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -97,7 +101,38 @@
             <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
             <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
             <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Προσωπικά</span></div>
+            <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Αυτοκίνητο</span></div>
+            <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Τηλέφωνα</span></div>
         </div>
+    </div>
+
+    <div id="car" class="view">
+        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">Στοιχεία Αδείας</div>
+        <input type="text" id="carPlate" placeholder="Αριθμός Κυκλοφορίας">
+        <input type="text" id="carVIN" placeholder="Αριθμός Πλαισίου (VIN)">
+        <input type="text" id="carEngine" placeholder="Κωδικός Κινητήρα">
+        <button class="primary-btn" onclick="saveCarSpecs()">Αποθήκευση Αδείας</button>
+        
+        <div class="section-title" style="margin-top:25px;">Service Log</div>
+        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:20px; width:100%; box-sizing:border-box;">
+            <input type="date" id="sDate">
+            <input type="text" id="sTask" placeholder="Εργασία (π.χ. Λάστιχα, Ιμάντες)">
+            <input type="number" id="sKm" placeholder="Χιλιόμετρα (km)" inputmode="numeric">
+            <button class="primary-btn" onclick="addServiceEntry()" style="background:#444; color:#fff;">Προσθήκη Εγγραφής</button>
+        </div>
+        <div id="serviceLogList"></div>
+    </div>
+
+    <div id="phones" class="view">
+        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">Νέα Επαφή</div>
+        <input type="text" id="pName" placeholder="Όνομα Επαφής">
+        <input type="tel" id="pNum" placeholder="Τηλέφωνο">
+        <button class="primary-btn" onclick="addContact()">Προσθήκη Στις Συχνές</button>
+        
+        <div class="section-title" style="margin-top:25px;">Γρήγορη Κλήση</div>
+        <div id="contactList"></div>
     </div>
 
     <div id="diet" class="view">
@@ -176,7 +211,7 @@
 
 <script>
 /* ==========================================================================
-   PEGASUS MOBILE OS - v8.7.6 (CAM + TACTICAL SYNC)
+   PEGASUS MOBILE OS - v8.8.0 (CAR & SYNC ENHANCED)
    ========================================================================== */
 const PEGASUS_CONFIG = { 
     apiKeyPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
@@ -226,10 +261,14 @@ const PegasusCloud = {
             if(cloud.kcal) localStorage.setItem('pegasus_today_kcal', cloud.kcal);
             if(cloud.protein) localStorage.setItem('pegasus_today_protein', cloud.protein);
             
+            // Car & Contact Pull
+            if(cloud.car_specs) localStorage.setItem('pegasus_car_specs', JSON.stringify(cloud.car_specs));
+            if(cloud.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(cloud.car_service));
+            if(cloud.contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.contacts));
+
             const dateStr = getStrictStorageKey();
             if(cloud.today_food_log) localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(cloud.today_food_log));
             
-            // Sync all prefixed logs
             ['cardio_log_', 'ems_log_', 'pegasus_history_'].forEach(pref => {
                 if(cloud[pref + 's']) {
                     for(let k in cloud[pref + 's']) localStorage.setItem(k, JSON.stringify(cloud[pref + 's'][k]));
@@ -237,6 +276,8 @@ const PegasusCloud = {
             });
 
             updateDietUI();
+            renderServiceLog();
+            renderContacts();
             setSyncStatus('online');
         } catch(e) { setSyncStatus('offline'); }
     },
@@ -251,7 +292,11 @@ const PegasusCloud = {
             food_library: this.safeParse("pegasus_food_library", []), 
             today_food_log: this.safeParse(`food_log_${dateStr}`, []),
             cardio_logs: this.getLogs('cardio_log_'),
-            ems_logs: this.getLogs('ems_log_')
+            ems_logs: this.getLogs('ems_log_'),
+            // Car & Contact Push
+            car_specs: this.safeParse("pegasus_car_specs", {}),
+            car_service: this.safeParse("pegasus_car_service", []),
+            contacts: this.safeParse("pegasus_contacts", [])
         };
         try { 
             await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS_CONFIG.binId}`, { 
@@ -271,6 +316,80 @@ const PegasusCloud = {
     }
 };
 
+/* --- CAR LOGIC --- */
+async function saveCarSpecs() {
+    const data = {
+        plate: document.getElementById('carPlate').value,
+        vin: document.getElementById('carVIN').value,
+        engine: document.getElementById('carEngine').value
+    };
+    localStorage.setItem('pegasus_car_specs', JSON.stringify(data));
+    await PegasusCloud.push();
+    alert("Στοιχεία Αποθηκεύτηκαν");
+}
+
+async function addServiceEntry() {
+    const date = document.getElementById('sDate').value;
+    const task = document.getElementById('sTask').value;
+    const km = document.getElementById('sKm').value;
+    if(!date || !task) return;
+
+    let log = PegasusCloud.safeParse('pegasus_car_service', []);
+    log.unshift({ date, task, km });
+    localStorage.setItem('pegasus_car_service', JSON.stringify(log));
+    renderServiceLog();
+    await PegasusCloud.push();
+}
+
+function renderServiceLog() {
+    const log = PegasusCloud.safeParse('pegasus_car_service', []);
+    document.getElementById('serviceLogList').innerHTML = log.map((item, idx) => `
+        <div class="log-item">
+            <button class="btn-del" onclick="deleteService(${idx})">✕</button>
+            <div style="font-size:10px; color:var(--main); font-weight:900;">${item.date}</div>
+            <div style="font-weight:900; margin:4px 0;">${item.task}</div>
+            <div style="font-size:11px; opacity:0.7;">${item.km} KM</div>
+        </div>`).join('');
+}
+
+async function deleteService(i) {
+    let log = PegasusCloud.safeParse('pegasus_car_service', []);
+    log.splice(i, 1);
+    localStorage.setItem('pegasus_car_service', JSON.stringify(log));
+    renderServiceLog(); await PegasusCloud.push();
+}
+
+/* --- CONTACT LOGIC --- */
+async function addContact() {
+    const name = document.getElementById('pName').value;
+    const num = document.getElementById('pNum').value;
+    if(!name || !num) return;
+
+    let list = PegasusCloud.safeParse('pegasus_contacts', []);
+    list.unshift({ name, num });
+    localStorage.setItem('pegasus_contacts', JSON.stringify(list));
+    document.getElementById('pName').value = ""; document.getElementById('pNum').value = "";
+    renderContacts();
+    await PegasusCloud.push();
+}
+
+function renderContacts() {
+    const list = PegasusCloud.safeParse('pegasus_contacts', []);
+    document.getElementById('contactList').innerHTML = list.map((c, idx) => `
+        <div class="log-item">
+            <button class="btn-del" onclick="deleteContact(${idx})">✕</button>
+            <div style="font-weight:900; text-transform:uppercase;">${c.name}</div>
+            <a href="tel:${c.num}" class="call-link">📞 ${c.num}</a>
+        </div>`).join('');
+}
+
+async function deleteContact(i) {
+    let list = PegasusCloud.safeParse('pegasus_contacts', []);
+    list.splice(i, 1);
+    localStorage.setItem('pegasus_contacts', JSON.stringify(list));
+    renderContacts(); await PegasusCloud.push();
+}
+
 /* --- CAMERA LOGIC --- */
 function handleEMSPhoto(input) {
     if (input.files && input.files[0]) {
@@ -285,7 +404,7 @@ function handleEMSPhoto(input) {
                 canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                currentEMSImageBase64 = canvas.toDataURL('image/jpeg', 0.6); // Aggressive compression for JSONBin
+                currentEMSImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
                 document.getElementById('emsPhotoPreview').src = currentEMSImageBase64;
                 document.getElementById('photoPreviewContainer').style.display = 'block';
             };
@@ -324,8 +443,22 @@ function skipVault() { document.getElementById("pinModal").style.display = "none
 window.onload = () => { 
     updateDietUI(); 
     const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin) { PegasusCloud.unlock(savedPin); document.getElementById("pinModal").style.display = "none"; setInterval(() => PegasusCloud.pull(), 30000); }
+    if (savedPin) { 
+        PegasusCloud.unlock(savedPin); 
+        document.getElementById("pinModal").style.display = "none"; 
+        setInterval(() => PegasusCloud.pull(), 30000); 
+    }
     else { document.getElementById("pinModal").style.display = "flex"; }
+    
+    // Load Car Specs
+    const specs = PegasusCloud.safeParse('pegasus_car_specs', null);
+    if(specs) {
+        document.getElementById('carPlate').value = specs.plate || "";
+        document.getElementById('carVIN').value = specs.vin || "";
+        document.getElementById('carEngine').value = specs.engine || "";
+    }
+    renderServiceLog();
+    renderContacts();
 };
 
 function openView(id) { 
@@ -333,6 +466,8 @@ function openView(id) {
     document.getElementById(id).classList.add('active'); 
     if(id === 'preview') updateMuscleUI(); 
     if(id === 'library') renderLibrary(); 
+    if(id === 'car') renderServiceLog();
+    if(id === 'phones') renderContacts();
 }
 
 function openCardio() { document.getElementById('cDate').value = new Date().toISOString().split('T')[0]; openView('cardio'); }
@@ -354,7 +489,7 @@ function updateDietUI() {
     document.getElementById("txtKcal").textContent = `${Math.round(tk)} / 2800`;
     document.getElementById("txtProt").textContent = `${Math.round(tp)} / 160g`;
     document.getElementById("foodHistoryList").innerHTML = h.map((item, idx) => `
-        <div class="mini-card" style="text-align:left;">
+        <div class="log-item" style="text-align:left;">
             <button class="btn-del" onclick="deleteFood(${idx})">✕</button>
             <div style="font-weight:900;">${item.name}</div>
             <div style="font-size:11px; color:var(--main);">${item.kcal} kcal | ${item.protein}g P</div>
