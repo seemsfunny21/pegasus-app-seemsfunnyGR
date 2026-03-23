@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.8 (PREVIEW IMAGE & VIDEO BUG FIX)
+   PEGASUS DATA ENGINE - v7.9 (STRICT VIDEO FILENAME ALIGNMENT)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -35,7 +35,6 @@ const STRENGTH_EXERCISES = [
 
 window.calculateDailyProgram = function(dayName) {
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338 }];
-    
     if (dayName === "Τετάρτη") return [
         { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
         { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
@@ -97,13 +96,13 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day];
 
 window.videoMap = {
-    // ΣΥΓΧΡΟΝΙΣΜΟΣ ΜΕ ΤΑ ΑΚΡΙΒΗ ΟΝΟΜΑΤΑ ΤΩΝ ΕΙΚΟΝΩΝ ΣΟΥ (images/*.png)
+    // ΑΥΣΤΗΡΗ ΑΝΤΙΣΤΟΙΧΙΑ ΜΕ .mp4
     "Seated Chest Press": "chestpress",
     "Chest Flys": "chestflys",
-    "Pushups": "chestpress", // Αν λείπει το pushups.png, χρησιμοποιούμε το chestpress
+    "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns",
     "Close Grip Pulldown": "latpulldownsclose",
-    "Low Seated Row Wide": "lowrowsseated", // ΔΙΟΡΘΩΣΗ: Διπλό 's' βάσει images/
+    "Low Seated Row Wide": "lowrowseated",
     "Straight Arm Pulldowns": "straightarmpulldowns",
     "One Arm Pulldowns": "onearmpulldowns",
     "One Arm Rows": "onearmrows",
@@ -114,19 +113,19 @@ window.videoMap = {
     "Preacher Bicep Curls": "preacherbicepcurls",
     "Tricep Pulldowns": "triceppulldowns",
     "Ab Crunches Cable": "abcrunches",
-    "Plank": "plankimage", // ΔΙΟΡΘΩΣΗ: Το αρχείο σου λέγεται plankimage.png
-    "Leg Raise Hip Lift": "legraisehipliftimage", // ΔΙΟΡΘΩΣΗ
-    "Reverse Crunch": "reversecrunchimage", // ΔΙΟΡΘΩΣΗ
-    "Lying Knee Raise": "lyingkneeraiseimage", // ΔΙΟΡΘΩΣΗ
+    "Plank": "plank",
+    "Leg Raise Hip Lift": "legraisehiplift",
+    "Reverse Crunch": "reversecrunch",
+    "Lying Knee Raise": "lyingkneeraise",
     "Situps": "situps",
     "Glute Kickbacks": "glutekickbacks",
     "Leg Extensions": "legextensions",
-    "Ποδηλασία 30km": "bikeimage", // ΔΙΟΡΘΩΣΗ: bikeimage.jpg
-    "Stretching": "stretchingimage", // ΔΙΟΡΘΩΣΗ
+    "Ποδηλασία 30km": "cycling",
+    "Stretching": "stretching",
     "Προθέρμανση": "warmup",
-    "EMS Lateral Raises (3kg)": "emsimage", // ΔΙΟΡΘΩΣΗ
+    "EMS Lateral Raises (3kg)": "ems",
     "EMS Bicep Curls (3kg)": "bicepcurls",
-    "EMS Static Plank": "plankimage",
+    "EMS Static Plank": "plank",
     "EMS Static Crunches": "abcrunches"
 };
 window.exercisesDB = STRENGTH_EXERCISES;
