@@ -698,13 +698,10 @@ function openExercisePreview() {
         window.MuscleProgressUI.render();
     }
 
-    // STRICT LOWERCASE MAPPING - Όλα σε μικρά γράμματα
+// CLEAN MAPPING - Πλήρης συγχρονισμός με τα ονόματα του GitHub
     const smartMapping = { 
-        "pulldown": "pulldownimage.png", 
-        "triceps overhead extension": "tricepsoverheadimage.png", 
-        "ems": "emsimage.png",
-        "ποδηλασία": "bikeimage.jpg", 
-        "cycling": "bikeimage.jpg"
+        "ποδηλασία": "cycling", 
+        "cycling": "cycling"
     };
 
     if(dayExercises) {
@@ -712,20 +709,22 @@ function openExercisePreview() {
             const cleanName = ex.name.trim();
             const lowerName = cleanName.toLowerCase();
             
-            const key = Object.keys(smartMapping).find(k => lowerName.includes(k));
+            let videoId;
+            const smartKey = Object.keys(smartMapping).find(k => lowerName.includes(k));
             
-            let imgFileName;
-            if (key) {
-                imgFileName = smartMapping[key];
+            if (smartKey) {
+                videoId = smartMapping[smartKey];
             } else {
-                // Παίρνουμε το όνομα από το videoMap ή το cleanName
-                // Αφαιρούμε κενά και τα κάνουμε όλα μικρά
-                let baseName = (typeof videoMap !== 'undefined' && videoMap[cleanName] && !videoMap[cleanName].startsWith("yt:")) 
-                              ? videoMap[cleanName] 
-                              : cleanName;
-                
-                imgFileName = baseName.replace(/\s+/g, '').toLowerCase() + "image.png";
+                // Λήψη του ID από το videoMap (data.js) ή καθαρισμός ονόματος
+                // Αφαιρούμε πλέον το manual + "image.png"
+                videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
+                          ? videoMap[cleanName] 
+                          : cleanName.replace(/\s+/g, '').toLowerCase();
             }
+
+            // Καθορισμός κατάληξης: .jpg για cycling, .png για όλα τα άλλα
+            let extension = (videoId === "cycling") ? ".jpg" : ".png";
+            let imgFileName = videoId + extension;
 
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
@@ -737,7 +736,6 @@ function openExercisePreview() {
             `;
         });
     }
-}
 
 window.addEventListener('mousedown', (e) => {
     const panels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel'];
