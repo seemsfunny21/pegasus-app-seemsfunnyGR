@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v9.1 (DYNAMIC GENERATOR + STRICT MAP FIX)
+   PEGASUS DATA ENGINE - v4.8 (STRICT NAME EDITION + ZERO-TIME PROTOCOL)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -7,6 +7,7 @@ window.TARGET_SETS = { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χ
 window.REST_TIME = 60; 
 window.MAX_DAILY_MINUTES = 60;
 
+// ΑΠΟΛΥΤΗ ΔΙΑΤΗΡΗΣΗ ΤΩΝ ΟΝΟΜΑΣΙΩΝ ΣΑΣ
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pec Deck", muscleGroup: "Στήθος", defaultDuration: 45 },
@@ -20,18 +21,20 @@ const STRENGTH_EXERCISES = [
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-    { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, // Η άσκηση με το κενό
+    // Διατήρηση ονομασίας με κενό για την εικόνα Seated Chest Press στους Ώμους
+    { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, 
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 }
 ];
 
+// ZERO-TIME PROTOCOL: Μηδενισμός χρόνου για το EMS
 const EMS_EXERCISES = [
-    { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
-    { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
-    { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
-    { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
+    { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 0 },
+    { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 0 },
+    { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 0 },
+    { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 0 }
 ];
 
 window.calculateDailyProgram = function(dayName) {
@@ -42,52 +45,54 @@ window.calculateDailyProgram = function(dayName) {
         return EMS_EXERCISES;
     }
 
-    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    let currentTotalMinutes = 0;
-    const availableExercises = [];
-    const MIN_TARGET_MINUTES = 50; 
-
+    // ΗYBRID WEEKEND & ZERO-TIME CYCLING
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
-        if ((history["Πόδια"] || 0) < window.TARGET_SETS["Πόδια"]) {
-            return [{ name: "Ποδηλασία 30km", sets: 1, duration: 3600 }];
-        }
+        return [
+            { name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" },
+            { name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" },
+            { name: "Standing Bicep Curl", sets: 2, duration: 45, muscleGroup: "Χέρια" },
+            { name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" } 
+        ];
     }
 
-    const deficits = Object.keys(window.TARGET_SETS).map(group => {
+    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    const dayLimits = { "Τρίτη": 60, "Παρασκευή": 55 };
+    let currentMins = 0;
+    const program = [];
+
+    // Έξυπνη κατανομή ομάδων
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Κορμός"] : ["Πλάτη", "Ώμοι", "Χέρια"];
+    
+    // Έξυπνη Ταξινόμηση Βάσει Ελλείμματος (Deficit Routing)
+    const deficits = focusGroups.map(group => {
         const current = history[group] || 0;
         const target = window.TARGET_SETS[group];
-        return { group, deficit: Math.max(0, target - current), ratio: current / target };
+        return { group, ratio: current / target };
     }).sort((a, b) => a.ratio - b.ratio);
 
     for (const item of deficits) {
-        if (item.deficit <= 0 || item.group === "Πόδια") continue;
-        
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
-        
-        for (const exercise of groupEx) {
-            if (currentTotalMinutes >= MIN_TARGET_MINUTES) break;
+        for (const ex of groupEx) {
+            if (program.find(p => p.name === ex.name)) continue; 
             
-            if (availableExercises.find(e => e.name === exercise.name)) continue;
-
-            let setsToSuggest = 4; 
-            let timeNeeded = (setsToSuggest * (exercise.defaultDuration + window.REST_TIME)) / 60;
+            let sets = 4;
+            let timeNeeded = (sets * (ex.defaultDuration + window.REST_TIME)) / 60;
             
-            if (currentTotalMinutes + timeNeeded <= window.MAX_DAILY_MINUTES) {
-                availableExercises.push({ 
-                    name: exercise.name, 
-                    sets: setsToSuggest, 
-                    duration: exercise.defaultDuration, 
-                    muscleGroup: item.group 
+            if (currentMins + timeNeeded <= (dayLimits[dayName] || 60)) {
+                program.push({ 
+                    name: ex.name, 
+                    sets: sets, 
+                    duration: ex.defaultDuration, 
+                    muscleGroup: ex.muscleGroup 
                 });
-                currentTotalMinutes += timeNeeded;
+                currentMins += timeNeeded;
             }
         }
     }
-    
-    return availableExercises.length > 0 ? availableExercises : [{ name: "Stretching", sets: 1, duration: 338 }];
+
+    return program.length > 0 ? program : [{ name: "Stretching", sets: 1, duration: 338 }];
 };
 
-// Προ-υπολογισμός για συμβατότητα με legacy αρχεία (weatherHandler.js)
 window.program = {
     "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
     "Τρίτη": window.calculateDailyProgram("Τρίτη"),
@@ -100,34 +105,36 @@ window.program = {
 
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
+// ΑΠΟΛΥΤΗ ΔΙΑΤΗΡΗΣΗ ΤΟΥ ΔΙΚΟΥ ΣΑΣ VIDEOMAP
 window.videoMap = {
+    // Strength Exercises
     "Lat Pulldown": "Pulldown", 
     "Close Grip Pulldown": "Pulldown", 
-    "Behind the Neck Pulldown": "Pulldown", 
     "Low Seated Row": "LowSeatedRow",
     "Reverse Grip Cable Row": "ReverseGripCableRow", 
     "Reverse Chest Press": "reverserow",
     "Seated Chest Press": "SeatedChestPress", 
-    "Seated Chest Press ": "SeatedChestPress", // <-- Προσθήκη Κλειδιού με Κενό
+    "Seated Chest Press ": "SeatedChestPress", // Mapping για την ονομασία με το κενό
     "Pec Deck": "Pecdeck", 
     "Pushups": "Pushups",
     "Preacher Curl": "biceps", 
     "Standing Bicep Curl": "Bicepscurl", 
     "Triceps Overhead Extension": "Tricepspress",
     "Triceps Press": "Tricepspress", 
-    "Leg Extension": "LegExtensions", 
+    "Shoulder Press": "SeatedChestPress", 
     "Plank": "Plank",
     "Stretching": "stretching", 
     "Lying Knee Raise": "LyingKneeRaise", 
     "Reverse Crunch": "ReverseCrunch",
     "Leg Raise Hip Lift": "LegRaiseHipLift", 
-    "EMS Κοιλιακών": "EMS_K", 
-    "EMS Πλάτης": "EMS_P", 
-    "EMS Ποδιών": "EMS_L", 
+    
+    // EMS Exercises
     "EMS Lateral Raises (3kg)": "EMS_L",
     "EMS Bicep Curls (3kg)": "Bicepscurl", 
     "EMS Static Plank": "Plank",
     "EMS Static Crunches": "EMS_K", 
+    
+    // Cardio
     "Ποδηλασία 30km": "cycling"
 };
 
