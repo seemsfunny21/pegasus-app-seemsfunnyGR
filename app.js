@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v9.0 (HYBRID SYNC + STRICT MEDIA)
+   PEGASUS WORKOUT ENGINE - v9.5 (FINAL ZERO-TIME & STRICT SYNC)
    ========================================================================== */
 
 let exercises = [];
@@ -93,8 +93,7 @@ function selectDay(btn, day) {
                       [...getFinalProgram(day)] : 
                       ((window.program && window.program[day]) ? [...window.program[day]] : []);
 
-    const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
-    
+    // (Το Spillover αφαιρέθηκε οριστικά εδώ)
 
     // 2. Εφαρμογή DVS Optimize (Αν υπάρχει)
     let baseData = (window.DVS) ? window.DVS.optimize(rawBaseData, day) : rawBaseData;
@@ -396,16 +395,6 @@ function openExercisePreview() {
     const currentDay = activeBtn.textContent.trim();
     let dayExercises = window.getFinalProgram ? window.getFinalProgram(currentDay) : [];
     
-    const isGoodWeather = (typeof isRaining !== 'undefined') ? !isRaining() : true;
-    if (currentDay === "Παρασκευή" && isGoodWeather && window.getFinalProgram) {
-        const sundayData = window.getFinalProgram("Κυριακή");
-        if(sundayData && sundayData.length > 0) {
-            const sundayWeights = sundayData.filter(ex => !ex.name.includes("Ποδηλασία"));
-            const bonus = sundayWeights.map(ex => ({...ex, isSpillover: true}));
-            dayExercises = [...dayExercises, ...bonus];
-        }
-    }
-
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
     
@@ -458,6 +447,11 @@ window.calculateTotalTime = function() {
     
     exercises.forEach((exDiv) => {
         if (exDiv.classList.contains("exercise-skipped")) return;
+        
+        const name = exDiv.querySelector(".exercise-name")?.textContent || "";
+        // STRICT RULE: Εξαίρεση EMS και Ποδηλασίας από τον υπολογισμό χρόνου στο UI
+        if (name.includes("Ποδηλασία") || name.toUpperCase().includes("EMS")) return;
+
         const sets = parseInt(exDiv.dataset.total) || 0;
         const cycleTime = workoutPhases[0].d + workoutPhases[1].d + workoutPhases[2].d;
         totalSeconds += sets * cycleTime;
@@ -699,7 +693,8 @@ window.logPegasusSet = function(exName) {
     
     const exercise = window.exercisesDB.find(ex => ex.name === exName);
     if (exercise && exercise.muscleGroup) {
-        const value = (exercise.name.includes("Ποδηλασία")) ? 3 : 1;
+        // STRICT RULE: Η ποδηλασία πιστώνει 18 σετ. Οι υπόλοιπες 1.
+        const value = (exercise.name.includes("Ποδηλασία")) ? 18 : 1;
         history[exercise.muscleGroup] = (history[exercise.muscleGroup] || 0) + value;
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
     }
