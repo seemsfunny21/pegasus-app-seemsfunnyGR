@@ -99,7 +99,7 @@ window.videoMap = {
     "Chest Flys": "chestflys",
     "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns",
-    "Close Grip Pulldown": "latpulldownclose", // ΔΙΑΦΟΡΕΤΙΚΟ ΒΙΝΤΕΟ
+    "Close Grip Pulldown": "latpulldownsclose", // ΔΙΑΦΟΡΕΤΙΚΟ ΒΙΝΤΕΟ
     "Low Seated Row Wide": "lowrowseated",
     "Straight Arm Pulldowns": "straightarmpulldowns",
     "One Arm Pulldowns": "onearmpulldowns",
