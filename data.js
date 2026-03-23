@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.0 (STRICT HARDWARE & COMPLETION SYNC)
+   PEGASUS DATA ENGINE - v7.1 (STRICT VIDEO & WEEKDAY WEIGHTS SYNC)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -8,28 +8,19 @@ window.REST_TIME = 60;
 window.MAX_DAILY_MINUTES = 60;
 
 const STRENGTH_EXERCISES = [
-    // ΣΤΗΘΟΣ (MS-600)
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pec Deck", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
-
-    // ΠΛΑΤΗ (MS-600)
     { name: "Lat Pulldown Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Close Grip Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Low Seated Row Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Straight Arm Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Bent Over Row Cable", muscleGroup: "Πλάτη", defaultDuration: 45 },
-
-    // ΩΜΟΙ (MS-600)
     { name: "Upright Row Cable", muscleGroup: "Ώμοι", defaultDuration: 45 },
-
-    // ΧΕΡΙΑ (MS-600)
     { name: "Standing Bicep Curl Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Preacher Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press Down Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-
-    // ΚΟΡΜΟΣ (MS-600 & Floor)
     { name: "Ab Crunches Cable", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
@@ -42,7 +33,7 @@ window.calculateDailyProgram = function(dayName) {
         return [{ name: "Stretching", sets: 1, duration: 338 }];
     }
     
-    if (dayName === "Τετάρτη") { // EMS - NO TREADMILL
+    if (dayName === "Τετάρτη") {
         return [
             { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
             { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
@@ -51,41 +42,46 @@ window.calculateDailyProgram = function(dayName) {
         ];
     }
 
-    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
-        const weekendProgram = [
-            { name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" },
-            { name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" },
-            { name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" },
-            { name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" }
-        ];
-        // Κυριακή: Προσθήκη Ώμων για συμπλήρωση deficit
-        if (dayName === "Κυριακή") {
-            weekendProgram.unshift({ name: "Upright Row Cable", sets: 4, duration: 45, muscleGroup: "Ώμοι" });
-        }
-        return weekendProgram;
-    }
-
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     let currentMins = 0;
     const program = [];
-    
-    // Μεγάλες προπονήσεις: Τρίτη (Focus: Στήθος/Ώμοι) & Παρασκευή (Focus: Πλάτη/Χέρια)
-    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Κορμός", "Πλάτη"] : ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
 
-    const deficits = focusGroups.map(group => {
-        const current = history[group] || 0;
-        const target = window.TARGET_SETS[group];
-        return { group, ratio: current / target };
-    }).sort((a, b) => a.ratio - b.ratio);
+    // WEEKEND: Core + Deficit Recovery + Cycling
+    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
+        program.push({ name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" });
+        program.push({ name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" });
+        program.push({ name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" });
+        currentMins = (9 * 105) / 60;
+
+        const groups = ["Στήθος", "Πλάτη", "Ώμοι", "Χέρια"];
+        const deficits = groups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
+
+        for (const item of deficits) {
+            if (item.ratio >= 1) continue;
+            const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
+            for (const ex of groupEx) {
+                let timeNeeded = (4 * 105) / 60;
+                if (currentMins + timeNeeded <= 60) {
+                    program.push({ name: ex.name, sets: 4, duration: 45, muscleGroup: ex.muscleGroup });
+                    currentMins += timeNeeded;
+                }
+            }
+        }
+        program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
+        return program;
+    }
+
+    // WEEKDAYS: Focus strictly on Weights
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
+    const deficits = focusGroups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
 
     for (const item of deficits) {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
         for (const ex of groupEx) {
             if (program.find(p => p.name === ex.name)) continue;
-            let sets = 4;
-            let timeNeeded = (sets * (ex.defaultDuration + window.REST_TIME)) / 60;
-            if (currentMins + timeNeeded <= window.MAX_DAILY_MINUTES) {
-                program.push({ name: ex.name, sets: sets, duration: ex.defaultDuration, muscleGroup: ex.muscleGroup });
+            let timeNeeded = (4 * 105) / 60;
+            if (currentMins + timeNeeded <= 60) {
+                program.push({ name: ex.name, sets: 4, duration: 45, muscleGroup: ex.muscleGroup });
                 currentMins += timeNeeded;
             }
         }
@@ -108,7 +104,7 @@ window.videoMap = {
     "Preacher Curl": "biceps",
     "Triceps Press Down Bar": "tricepspress",
     "Triceps Overhead Extension": "tricepspress",
-    "Ab Crunches Cable": "ems",
+    "Ab Crunches Cable": "reversecrunch",
     "Plank": "plank",
     "Leg Raise Hip Lift": "legraisehiplift",
     "Reverse Crunch": "reversecrunch",
