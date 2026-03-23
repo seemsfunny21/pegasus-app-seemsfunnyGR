@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.9 (STRICT VIDEO FILENAME ALIGNMENT)
+   PEGASUS DATA ENGINE - v7.6 (STABLE VIDEO SYNC - CLEAN FILENAMES)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -34,18 +34,20 @@ const STRENGTH_EXERCISES = [
 ];
 
 window.calculateDailyProgram = function(dayName) {
-    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338 }];
-    if (dayName === "Τετάρτη") return [
-        { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
-        { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
-        { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
-        { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
-    ];
-
+    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
+        return [{ name: "Stretching", sets: 1, duration: 338 }];
+    }
+    if (dayName === "Τετάρτη") {
+        return [
+            { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
+            { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
+            { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
+            { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
+        ];
+    }
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     let currentMins = 0;
     const program = [];
-
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         program.push({ name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" });
         program.push({ name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" });
@@ -58,32 +60,32 @@ window.calculateDailyProgram = function(dayName) {
             const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
             for (const ex of groupEx) {
                 if (program.find(p => p.name === ex.name)) continue;
-                if (currentMins + (4 * 105 / 60) <= 60) {
+                let timeNeeded = (4 * 105) / 60;
+                if (currentMins + timeNeeded <= 60) {
                     program.push({ name: ex.name, sets: 4, duration: 45, muscleGroup: ex.muscleGroup });
-                    currentMins += (4 * 105 / 60);
+                    currentMins += timeNeeded;
                 }
             }
         }
         program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
         return program;
     }
-
     const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
     const deficits = focusGroups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
     for (const item of deficits) {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
         for (const ex of groupEx) {
             if (program.find(p => p.name === ex.name)) continue;
-            if (currentMins + (4 * 105 / 60) <= 60) {
+            let timeNeeded = (4 * 105) / 60;
+            if (currentMins + timeNeeded <= 60) {
                 program.push({ name: ex.name, sets: 4, duration: 45, muscleGroup: ex.muscleGroup });
-                currentMins += (4 * 105 / 60);
+                currentMins += timeNeeded;
             }
         }
     }
     return program;
 };
 
-// INITIALIZE GLOBAL OBJECTS
 window.program = {
     "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
     "Τρίτη": window.calculateDailyProgram("Τρίτη"),
@@ -96,7 +98,6 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day];
 
 window.videoMap = {
-    // ΑΥΣΤΗΡΗ ΑΝΤΙΣΤΟΙΧΙΑ ΜΕ .mp4
     "Seated Chest Press": "chestpress",
     "Chest Flys": "chestflys",
     "Pushups": "pushups",
@@ -126,6 +127,6 @@ window.videoMap = {
     "EMS Lateral Raises (3kg)": "ems",
     "EMS Bicep Curls (3kg)": "bicepcurls",
     "EMS Static Plank": "plank",
-    "EMS Static Crunches": "abcrunches"
+    "EMS Static Crunches": "ems"
 };
 window.exercisesDB = STRENGTH_EXERCISES;
