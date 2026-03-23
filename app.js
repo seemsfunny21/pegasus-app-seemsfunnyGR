@@ -29,6 +29,7 @@ let userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
 let sysAudio = new Audio('videos/beep.mp3');
 let audioUnlocked = false;
 
+/* ===== AUDIO & MOBILE SYNC INITIALIZATION (v1.1) ===== */
 document.addEventListener('click', function() {
     if (!audioUnlocked) {
         sysAudio.play().then(() => {
@@ -36,6 +37,13 @@ document.addEventListener('click', function() {
             sysAudio.currentTime = 0;
             audioUnlocked = true;
             console.log("PEGASUS OS: Audio Unlocked");
+
+            // MOBILE SYNC PATCH: Εξαναγκασμός συγχρονισμού στο πρώτο User Gesture
+            if (window.PegasusCloud && typeof window.PegasusCloud.pull === "function") {
+                console.log("PEGASUS MOBILE: User Interaction Detected. Initializing Cloud Sync...");
+                window.PegasusCloud.pull();
+            }
+
         }).catch(err => console.warn("PEGASUS OS: Audio unlock pending", err));
     }
 }, { once: true });
