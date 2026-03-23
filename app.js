@@ -698,12 +698,13 @@ function openExercisePreview() {
         window.MuscleProgressUI.render();
     }
 
+    // STRICT LOWERCASE MAPPING - Όλα σε μικρά γράμματα
     const smartMapping = { 
         "pulldown": "pulldownimage.png", 
         "triceps overhead extension": "tricepsoverheadimage.png", 
-        "ems": "emsImage.png",
-        "ποδηλασία": "bikeImage.jpg", 
-        "cycling": "bikeImage.jpg"
+        "ems": "emsimage.png",
+        "ποδηλασία": "bikeimage.jpg", 
+        "cycling": "bikeimage.jpg"
     };
 
     if(dayExercises) {
@@ -717,16 +718,18 @@ function openExercisePreview() {
             if (key) {
                 imgFileName = smartMapping[key];
             } else {
-                imgFileName = (typeof videoMap !== 'undefined' && videoMap[cleanName] && !videoMap[cleanName].startsWith("yt:")) 
-                              ? (videoMap[cleanName] + "Image.png") 
-                              : (cleanName.replace(/\s+/g, '') + "Image.png");
+                // Παίρνουμε το όνομα από το videoMap ή το cleanName
+                // Αφαιρούμε κενά και τα κάνουμε όλα μικρά
+                let baseName = (typeof videoMap !== 'undefined' && videoMap[cleanName] && !videoMap[cleanName].startsWith("yt:")) 
+                              ? videoMap[cleanName] 
+                              : cleanName;
+                
+                imgFileName = baseName.replace(/\s+/g, '').toLowerCase() + "image.png";
             }
-
-            let finalSrc = imgFileName.includes('.') ? imgFileName : imgFileName + '.png';
 
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
-                    <img src="images/${finalSrc}" 
+                    <img src="images/${imgFileName}" 
                          onerror="this.src='images/placeholder.jpg'"
                          style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
                     <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
