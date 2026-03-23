@@ -95,8 +95,8 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
 window.videoMap = {
-    "Seated Chest Press": "seatedchestpress",
-    "Pec Deck": "pecdeck",
+"Seated Chest Press": "chestpress", // Μετονομάστε το σωστό βίντεο πιέσεων σε chestpress.mp4
+    "Pec Deck": "pecdeck",             // Χρησιμοποιήστε το βίντεο πεταλούδας ως pecdeck.mp4
     "Pushups": "pushups",
     "Lat Pulldown Wide": "pulldown",
     "Close Grip Pulldown": "pulldown",
