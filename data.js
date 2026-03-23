@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v4.8 (STRICT NAME EDITION + ZERO-TIME PROTOCOL)
+   PEGASUS DATA ENGINE - v4.9 (LOWERCASE SYNC EDITION)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -7,7 +7,6 @@ window.TARGET_SETS = { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χ
 window.REST_TIME = 60; 
 window.MAX_DAILY_MINUTES = 60;
 
-// ΑΠΟΛΥΤΗ ΔΙΑΤΗΡΗΣΗ ΤΩΝ ΟΝΟΜΑΣΙΩΝ ΣΑΣ
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pec Deck", muscleGroup: "Στήθος", defaultDuration: 45 },
@@ -21,7 +20,6 @@ const STRENGTH_EXERCISES = [
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
-    // Διατήρηση ονομασίας με κενό για την εικόνα Seated Chest Press στους Ώμους
     { name: "Seated Chest Press ", muscleGroup: "Ώμοι", defaultDuration: 45 }, 
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
@@ -29,7 +27,6 @@ const STRENGTH_EXERCISES = [
     { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 }
 ];
 
-// ZERO-TIME PROTOCOL: Μηδενισμός χρόνου για το EMS
 const EMS_EXERCISES = [
     { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 0 },
     { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 0 },
@@ -45,7 +42,6 @@ window.calculateDailyProgram = function(dayName) {
         return EMS_EXERCISES;
     }
 
-    // ΗYBRID WEEKEND & ZERO-TIME CYCLING
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         return [
             { name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" },
@@ -60,10 +56,8 @@ window.calculateDailyProgram = function(dayName) {
     let currentMins = 0;
     const program = [];
 
-    // Έξυπνη κατανομή ομάδων
     const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Κορμός"] : ["Πλάτη", "Ώμοι", "Χέρια"];
     
-    // Έξυπνη Ταξινόμηση Βάσει Ελλείμματος (Deficit Routing)
     const deficits = focusGroups.map(group => {
         const current = history[group] || 0;
         const target = window.TARGET_SETS[group];
@@ -105,36 +99,31 @@ window.program = {
 
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
-// ΑΠΟΛΥΤΗ ΔΙΑΤΗΡΗΣΗ ΤΟΥ ΔΙΚΟΥ ΣΑΣ VIDEOMAP
+// ΟΡΙΣΤΙΚΟ LOWERCASE MAPPING ΓΙΑ ΤΑΥΤΙΣΗ ΜΕ ΤΑ ΑΡΧΕΙΑ ΣΑΣ
 window.videoMap = {
-    // Strength Exercises
-    "Lat Pulldown": "Pulldown", 
-    "Close Grip Pulldown": "Pulldown", 
-    "Low Seated Row": "LowSeatedRow",
-    "Reverse Grip Cable Row": "ReverseGripCableRow", 
+    "Lat Pulldown": "pulldown", 
+    "Close Grip Pulldown": "pulldown", 
+    "Low Seated Row": "lowseatedrow",
+    "Reverse Grip Cable Row": "reversegripcablerow", 
     "Reverse Chest Press": "reverserow",
-    "Seated Chest Press": "SeatedChestPress", 
-    "Seated Chest Press ": "SeatedChestPress", // Mapping για την ονομασία με το κενό
-    "Pec Deck": "Pecdeck", 
-    "Pushups": "Pushups",
+    "Seated Chest Press": "seatedchestpress", 
+    "Seated Chest Press ": "seatedchestpress", 
+    "Pec Deck": "pecdeck", 
+    "Pushups": "pushups",
     "Preacher Curl": "biceps", 
-    "Standing Bicep Curl": "Bicepscurl", 
-    "Triceps Overhead Extension": "Tricepspress",
-    "Triceps Press": "Tricepspress", 
-    "Shoulder Press": "SeatedChestPress", 
-    "Plank": "Plank",
+    "Standing Bicep Curl": "bicepscurl", 
+    "Triceps Overhead Extension": "tricepspress",
+    "Triceps Press": "tricepspress", 
+    "Shoulder Press": "seatedchestpress", 
+    "Plank": "plank",
     "Stretching": "stretching", 
-    "Lying Knee Raise": "LyingKneeRaise", 
-    "Reverse Crunch": "ReverseCrunch",
-    "Leg Raise Hip Lift": "LegRaiseHipLift", 
-    
-    // EMS Exercises
-    "EMS Lateral Raises (3kg)": "EMS_L",
-    "EMS Bicep Curls (3kg)": "Bicepscurl", 
-    "EMS Static Plank": "Plank",
-    "EMS Static Crunches": "EMS_K", 
-    
-    // Cardio
+    "Lying Knee Raise": "lyingkneeraise", 
+    "Reverse Crunch": "reversecrunch",
+    "Leg Raise Hip Lift": "legraisehiplift", 
+    "EMS Lateral Raises (3kg)": "ems_l",
+    "EMS Bicep Curls (3kg)": "bicepscurl", 
+    "EMS Static Plank": "plank",
+    "EMS Static Crunches": "ems_k", 
     "Ποδηλασία 30km": "cycling"
 };
 
