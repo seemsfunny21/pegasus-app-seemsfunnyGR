@@ -1,6 +1,5 @@
 /* ==========================================================================
-   PEGASUS SMART INVENTORY HANDLER - v10.0 (STRICT NO-LEGS & CYCLING SYNC)
-   Protocol: No Weight Training for Legs. Cycling = 18 Sets Credit.
+   PEGASUS SMART INVENTORY HANDLER - STRICTOR EDITION
    ========================================================================== */
 
 /**
@@ -27,26 +26,27 @@ function getSortedMuscleGroups() {
  * Επιστρέφει το δυναμικό πρόγραμμα ημέρας βάσει ελλείψεων
  */
 function getSmartDailyProgram(day) {
-    if (day === "Τετάρτη") return []; // Διαχείριση μέσω ems.js 
-    
-    // Δευτέρα και Πέμπτη: Ημέρες Αποθεραπείας [cite: 2026-03-02]
+    if (day === "Τετάρτη") return [
+        { name: "EMS Full Body", sets: 1 },
+        { name: "Core Stabilization", sets: 3 }
+    ];
+    // Δευτέρα και Πέμπτη: Ημέρες Αποθεραπείας (Strict Rule)
     if (day === "Πέμπτη" || day === "Δευτέρα") return []; 
 
     const sortedGroups = getSortedMuscleGroups();
     let program = [];
 
-    // STRICT: Φιλτράρισμα ώστε να ΜΗΝ προτείνονται ποτέ βάρη για πόδια
-    const availableGroups = sortedGroups.filter(g => g.name !== "Πόδια" && g.remaining > 0);
-
-    availableGroups.slice(0, 2).forEach(group => {
-        if (typeof exercisesDB !== 'undefined') {
-            const availableEx = exercisesDB.filter(ex => ex.muscleGroup === group.name);
-            availableEx.forEach(ex => {
-                program.push({
-                    name: ex.name,
-                    sets: Math.min(4, group.remaining)
+    sortedGroups.slice(0, 2).forEach(group => {
+        if (group.remaining > 0) {
+            if (typeof exercisesDB !== 'undefined') {
+                const availableEx = exercisesDB.filter(ex => ex.muscleGroup === group.name);
+                availableEx.forEach(ex => {
+                    program.push({
+                        name: ex.name,
+                        sets: Math.min(4, group.remaining)
+                    });
                 });
-            });
+            }
         }
     });
 
@@ -58,50 +58,62 @@ function getSmartDailyProgram(day) {
  */
 function findMuscleGroup(exerciseName) {
     if (!exerciseName) return null;
+    
     const cleanName = exerciseName.trim().toLowerCase();
 
-    // Ειδική περίπτωση για Ποδηλασία [cite: 2026-03-23]
-    if (cleanName.includes("ποδηλασία")) return "Πόδια";
-
+    // 1. Έλεγχος στη βάση δεδομένων (αν υπάρχει)
     if (typeof exercisesDB !== 'undefined') {
         const found = exercisesDB.find(ex => ex.name.toLowerCase() === cleanName);
         if (found) return found.muscleGroup;
     }
     
+    // 2. Διευρυμένο Manual Mapping για ακρίβεια
     const manualMap = {
-        "seated chest press": "Στήθος", "pec deck": "Στήθος", "pushups": "Στήθος",
-        "lat pulldown": "Πλάτη", "low seated row": "Πλάτη",
-        "preacher curl": "Χέρια", "bicep curls": "Χέρια",
-        "plank": "Κορμός", "ems": "Κορμός"
+        "seated chest press": "Στήθος",
+        "chest press": "Στήθος",
+        "pec deck": "Στήθος",
+        "pushups": "Στήθος",
+        "lat pulldown": "Πλάτη",
+        "low seated row": "Πλάτη",
+        "preacher curl": "Χέρια",
+        "bicep curls": "Χέρια",
+        "plank": "Κορμός",
+        "leg press": "Πόδια",
+        "ems full body": "Κορμός"
     };
 
+    // Αναζήτηση με partial match αν δεν υπάρχει ακριβές
     for (let key in manualMap) {
         if (cleanName.includes(key)) return manualMap[key];
     }
+    
     return null;
 }
 
 /**
  * Αποθηκεύει την πρόοδο στο εβδομαδιαίο ιστορικό
- * STRICT: Η Ποδηλασία 30km πιστώνει αυτόματα 18 σετ [cite: 2026-03-23]
  */
-function saveProgress(muscleGroup, sets = 1, exerciseName = "") {
+function saveProgress(muscleGroup, sets = 1) {
     if (!muscleGroup) return;
 
     let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     
-    // Υπολογισμός αξίας σετ
-    let setValue = sets;
-    if (exerciseName.toLowerCase().includes("ποδηλασία")) {
-        setValue = 18; // Πίστωση λόγω διάρκειας 110 λεπτών [cite: 2026-03-23]
-    }
-
-    history[muscleGroup] = (history[muscleGroup] || 0) + setValue;
+    // Ενημέρωση συνόλου
+    history[muscleGroup] = (history[muscleGroup] || 0) + sets;
     
     localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
-    console.log(`PEGASUS DATA: +${setValue} sets -> ${muscleGroup}. Total: ${history[muscleGroup]}`);
+    console.log(`PEGASUS DATA: +${sets} sets -> ${muscleGroup}. Current: ${history[muscleGroup]}`);
 }
 
+/**
+ * Μηδενισμός ιστορικού
+ */
+function resetWeeklyInventory() {
+    localStorage.removeItem('pegasus_weekly_history');
+    console.log("PEGASUS DATA: Weekly history cleared.");
+}
+
+// Global Exports
 window.getSmartDailyProgram = getSmartDailyProgram;
 window.saveProgress = saveProgress;
 window.findMuscleGroup = findMuscleGroup;
