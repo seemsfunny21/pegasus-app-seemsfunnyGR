@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v5.8 (RESTORED CORE & CLOSE GRIP SYNC)
+   PEGASUS DATA ENGINE - v6.1 (FULL VIDEO SYNC - HARDWARE & CORE)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -8,32 +8,30 @@ window.REST_TIME = 60;
 window.MAX_DAILY_MINUTES = 60;
 
 const STRENGTH_EXERCISES = [
-    // ΣΤΗΘΟΣ
+    // ΣΤΗΘΟΣ (MS-600)
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pec Deck", muscleGroup: "Στήθος", defaultDuration: 45 },
-    { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
 
-    // ΠΛΑΤΗ (Προσθήκη Close Grip)
+    // ΠΛΑΤΗ (MS-600)
     { name: "Lat Pulldown Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Close Grip Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 }, // Μικρή μπάρα πάνω
     { name: "Low Seated Row Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Straight Arm Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Reverse Chest Press", muscleGroup: "Πλάτη", defaultDuration: 45 },
 
-    // ΩΜΟΙ
+    // ΩΜΟΙ (MS-600)
     { name: "Shoulder Press Wide", muscleGroup: "Ώμοι", defaultDuration: 45 },
     { name: "Upright Row Cable", muscleGroup: "Ώμοι", defaultDuration: 45 },
 
-    // ΧΕΡΙΑ
+    // ΧΕΡΙΑ (MS-600)
     { name: "Standing Bicep Curl Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Preacher Curl", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Press Down Bar", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Triceps Overhead Extension", muscleGroup: "Χέρια", defaultDuration: 45 },
 
-    // ΚΟΡΜΟΣ (Restored Floor Exercises)
+    // ΚΟΡΜΟΣ (Εδάφους - Με Βίντεο)
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 }
 ];
 
@@ -52,6 +50,7 @@ window.calculateDailyProgram = function(dayName) {
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         return [
             { name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" },
+            { name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" },
             { name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" },
             { name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" }
         ];
@@ -60,7 +59,7 @@ window.calculateDailyProgram = function(dayName) {
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     let currentMins = 0;
     const program = [];
-    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι"] : ["Πλάτη", "Χέρια"];
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Κορμός"] : ["Πλάτη", "Χέρια", "Ώμοι"];
 
     const deficits = focusGroups.map(group => {
         const current = history[group] || 0;
@@ -95,11 +94,11 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
 window.videoMap = {
-"Seated Chest Press": "chestpress", // Μετονομάστε το σωστό βίντεο πιέσεων σε chestpress.mp4
-    "Pec Deck": "pecdeck",             // Χρησιμοποιήστε το βίντεο πεταλούδας ως pecdeck.mp4
-    "Pushups": "pushups",
+    // MS-600 Exercises (Lowercase IDs)
+    "Seated Chest Press": "chestpress",
+    "Pec Deck": "pecdeck",
     "Lat Pulldown Wide": "pulldown",
-    "Close Grip Pulldown": "pulldown",
+    "Close Grip Pulldown": "pulldown", // Μικρή μπάρα πάνω
     "Low Seated Row Wide": "lowseatedrow",
     "Straight Arm Pulldown": "pulldown",
     "Reverse Chest Press": "reverserow",
@@ -109,12 +108,17 @@ window.videoMap = {
     "Preacher Curl": "biceps",
     "Triceps Press Down Bar": "tricepspress",
     "Triceps Overhead Extension": "tricepspress",
-    "Plank": "plank",
-    "Leg Raise Hip Lift": "legraisehiplift",
-    "Reverse Crunch": "reversecrunch",
-    "Lying Knee Raise": "lyingkneeraise",
-    "Stretching": "stretching",
+    
+    // Core Exercises (Full Video Sync with specific names)
+    "Leg Raise Hip Lift": "legraisehiplift", // Μετονομάστε το legraisehipliftimage.mp4 σε legraisehiplift.mp4
+    "Reverse Crunch": "reversecrunch",       // Μετονομάστε το reversecrunchimage.mp4 σε reversecrunch.mp4
+    "Plank": "plank",                       // Μετονομάστε το plankimage.mp4 σε plank.mp4
+    
+    // Cardio
     "Ποδηλασία 30km": "cycling",
+    "Stretching": "stretching",
+    
+    // EMS
     "EMS Lateral Raises (3kg)": "ems",
     "EMS Bicep Curls (3kg)": "bicepscurl",
     "EMS Static Plank": "plank",
