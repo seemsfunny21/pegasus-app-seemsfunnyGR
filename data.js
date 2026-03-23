@@ -97,16 +97,34 @@ window.program = {
 window.getFinalProgram = (day) => window.program[day] || window.calculateDailyProgram(day);
 
 window.videoMap = {
-    "Lat Pulldown": "Pulldown", "Low Seated Row": "LowSeatedRow",
-    "Close Grip Pulldown": "Pulldown", "Reverse Grip Cable Row": "ReverseGripCableRow",
-    "Seated Chest Press": "SeatedChestPress", "Pec Deck": "Pecdeck", "Pushups": "Pushups",
-    "Shoulder Press": "SeatedChestPress", "Lateral Raises": "EMS_L",
-    "Preacher Curl": "biceps", "Standing Bicep Curl": "Bicepscurl", 
-    "Triceps Overhead Extension": "Tricepspress", "Triceps Press": "Tricepspress", 
-    "Plank": "Plank", "Stretching": "Stretching", // Διόρθωση σε κεφαλαίο S
-    "Leg Raise Hip Lift": "LegRaiseHipLift", "Reverse Crunch": "ReverseCrunch",
-    "EMS Lateral Raises (3kg)": "EMS_L", "EMS Bicep Curls (3kg)": "Bicepscurl", 
-    "EMS Static Plank": "Plank", "EMS Static Crunches": "EMS_K", "Ποδηλασία 30km": "cycling"
+    "Lat Pulldown": "Pulldown", 
+    "Close Grip Pulldown": "Pulldown", 
+    "Behind the Neck Pulldown": "Pulldown", 
+    "Low Seated Row": "LowSeatedRow",
+    "Reverse Grip Cable Row": "ReverseGripCableRow", 
+    "Reverse Chest Press": "reverserow",
+    "Seated Chest Press": "SeatedChestPress", 
+    "Seated Chest Press ": "SeatedChestPress", // <-- Προσθήκη Κλειδιού με Κενό
+    "Pec Deck": "Pecdeck", 
+    "Pushups": "Pushups",
+    "Preacher Curl": "biceps", 
+    "Standing Bicep Curl": "Bicepscurl", 
+    "Triceps Overhead Extension": "Tricepspress",
+    "Triceps Press": "Tricepspress", 
+    "Leg Extension": "LegExtensions", 
+    "Plank": "Plank",
+    "Stretching": "stretching", 
+    "Lying Knee Raise": "LyingKneeRaise", 
+    "Reverse Crunch": "ReverseCrunch",
+    "Leg Raise Hip Lift": "LegRaiseHipLift", 
+    "EMS Κοιλιακών": "EMS_K", 
+    "EMS Πλάτης": "EMS_P", 
+    "EMS Ποδιών": "EMS_L", 
+    "EMS Lateral Raises (3kg)": "EMS_L",
+    "EMS Bicep Curls (3kg)": "Bicepscurl", 
+    "EMS Static Plank": "Plank",
+    "EMS Static Crunches": "EMS_K", 
+    "Ποδηλασία 30km": "cycling"
 };
 
 window.exercisesDB = [...STRENGTH_EXERCISES, ...EMS_EXERCISES];
