@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.1 (STRICT VIDEO & WEEKDAY WEIGHTS SYNC)
+   PEGASUS DATA ENGINE - v7.2 (FINAL STABLE - VIDEO & OBJECT SYNC)
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -46,7 +46,7 @@ window.calculateDailyProgram = function(dayName) {
     let currentMins = 0;
     const program = [];
 
-    // WEEKEND: Core + Deficit Recovery + Cycling
+    // ΣΑΒΒΑΤΟΚΥΡΙΑΚΟ: Κορμός Εδάφους + Deficits + Ποδηλασία
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         program.push({ name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" });
         program.push({ name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" });
@@ -71,7 +71,7 @@ window.calculateDailyProgram = function(dayName) {
         return program;
     }
 
-    // WEEKDAYS: Focus strictly on Weights
+    // ΚΑΘΗΜΕΡΙΝΕΣ (Τρίτη/Παρασκευή): Μόνο Βάρη Μηχανήματος
     const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
     const deficits = focusGroups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
 
@@ -89,6 +89,19 @@ window.calculateDailyProgram = function(dayName) {
     return program;
 };
 
+// Δημιουργία του αντικειμένου program για το debug.js
+window.program = {
+    "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
+    "Τρίτη": window.calculateDailyProgram("Τρίτη"),
+    "Τετάρτη": window.calculateDailyProgram("Τετάρτη"),
+    "Πέμπτη": window.calculateDailyProgram("Πέμπτη"),
+    "Παρασκευή": window.calculateDailyProgram("Παρασκευή"),
+    "Σάββατο": window.calculateDailyProgram("Σάββατο"),
+    "Κυριακή": window.calculateDailyProgram("Κυριακή")
+};
+
+window.getFinalProgram = (day) => window.program[day];
+
 window.videoMap = {
     "Seated Chest Press": "chestpress",
     "Pec Deck": "pecdeck",
@@ -104,7 +117,7 @@ window.videoMap = {
     "Preacher Curl": "biceps",
     "Triceps Press Down Bar": "tricepspress",
     "Triceps Overhead Extension": "tricepspress",
-    "Ab Crunches Cable": "reversecrunch",
+    "Ab Crunches Cable": "reversecrunch", // ΔΙΟΡΘΩΣΗ: Πλέον δείχνει σωστό βίντεο κοιλιακών
     "Plank": "plank",
     "Leg Raise Hip Lift": "legraisehiplift",
     "Reverse Crunch": "reversecrunch",
