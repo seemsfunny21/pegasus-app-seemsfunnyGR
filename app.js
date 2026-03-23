@@ -115,20 +115,17 @@ function selectDay(btn, day) {
 
     let mappedData = [];
     if (window.PegasusOptimizer) {
-        // Ο Optimizer αναλαμβάνει πλέον τα πάντα: Capping, Balancing και Sorting
         mappedData = PegasusOptimizer.apply(day, rawBaseData);
     } else {
         mappedData = rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
     }
 
-    // Η ταξινόμηση γίνεται βάσει των adjustedSets που επιστρέφει ο Optimizer
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
-
-    const list = document.getElementById("exList");
 
     /* === UI RENDERING === */
     const list = document.getElementById("exList");
     if (!list) return;
+
     list.innerHTML = ""; 
     exercises = [];
     remainingSets = [];
@@ -141,7 +138,6 @@ function selectDay(btn, day) {
         d.dataset.index = idx;
         d.setAttribute("draggable", "true");
 
-        // UI Feedback για ολοκληρωμένες ή κομμένες ασκήσεις
         if (e.isCompleted || e.adjustedSets === 0) {
             d.style.setProperty('opacity', '0.2', 'important');
             d.style.setProperty('filter', 'grayscale(100%)', 'important');
