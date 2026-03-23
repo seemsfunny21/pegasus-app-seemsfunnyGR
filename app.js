@@ -83,7 +83,7 @@ const getMuscleGroup = (exName) => {
     return "Άλλο";
 };
 
-/* ===== SELECTDAY (V6.6 - STRICT TARGET LOCKDOWN & DVS) ===== */
+/* ===== SELECTDAY (V6.7 - DYNAMIC OPTIMIZATION ENABLED) ===== */
 function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
@@ -108,33 +108,24 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
+    /* === DATA FETCHING & OPTIMIZATION === */
+    // 1. Λήψη ακατέργαστων δεδομένων
     let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
                       [...getFinalProgram(day, window.program)] : 
                       ((window.program[day]) ? [...window.program[day]] : []);
 
-    const currentHistory = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    const settings = (typeof window.getPegasusSettings === "function") ? window.getPegasusSettings() : { muscleTargets: {} };
-    const userTargets = settings.muscleTargets || window.TARGET_SETS;
+    // 2. Εφαρμογή Optimizer (Αντικαθιστά το παλιό manual logic)
+    let mappedData = [];
+    if (window.PegasusOptimizer) {
+        mappedData = PegasusOptimizer.apply(day, rawBaseData);
+    } else {
+        mappedData = rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
+    }
 
-    let mappedData = rawBaseData.map(e => {
-        const muscle = e.muscleGroup || getMuscleGroup(e.name);
-        const done = currentHistory[muscle] || 0;
-        const target = userTargets[muscle] || 24;
+    // 3. Ταξινόμηση: Τα ολοκληρωμένα (0 sets) στο τέλος
+    mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
 
-        let displaySets = e.sets;
-        let isCompleted = done >= target;
-
-        if (!isCompleted && (done + e.sets > target)) {
-            displaySets = target - done;
-        } else if (isCompleted) {
-            displaySets = 0;
-        }
-
-        return { ...e, muscleGroup: muscle, isCompleted: isCompleted, adjustedSets: displaySets };
-    });
-
-    mappedData.sort((a, b) => (a.isCompleted === b.isCompleted) ? 0 : a.isCompleted ? 1 : -1);
-
+    /* === UI RENDERING === */
     const list = document.getElementById("exList");
     if (!list) return;
     list.innerHTML = ""; 
@@ -149,6 +140,7 @@ function selectDay(btn, day) {
         d.dataset.index = idx;
         d.setAttribute("draggable", "true");
 
+        // UI Feedback για ολοκληρωμένες ή κομμένες ασκήσεις
         if (e.isCompleted || e.adjustedSets === 0) {
             d.style.setProperty('opacity', '0.2', 'important');
             d.style.setProperty('filter', 'grayscale(100%)', 'important');
@@ -163,7 +155,7 @@ function selectDay(btn, day) {
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">0/${e.adjustedSets}</div>
-                <div class="exercise-name">${e.isCompleted ? `${cleanName} 🎯` : (e.isSpillover ? `${cleanName} ☀️` : cleanName)}</div>
+                <div class="exercise-name">${e.isCompleted ? `${cleanName} 🎯` : cleanName}</div>
                 <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
                        onclick="event.stopPropagation()" onchange="saveWeight('${safeName}', this.value)">
             </div>
