@@ -1,19 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v1.0
-   Protocol: Offline-First Asset Caching
+   PEGASUS PWA SERVICE WORKER - v1.1 (PROGRESS BROADCAST)
    ========================================================================== */
 
 const CACHE_NAME = 'pegasus-media-vault-v1';
-
-// Λίστα αρχείων προς αποθήκευση (Βάσει της λίστας GitHub που έστειλες)
 const ASSETS_TO_CACHE = [
-    './',
-    './index.html',
-    './app.js',
-    './data.js',
-    './cloudSync.js',
-    './videos/beep.mp3',
-    // VIDEOS
+    './', './index.html', './app.js', './data.js', './cloudSync.js', './videos/beep.mp3',
     './videos/abcrunches.mp4', './videos/bentoverrows.mp4', './videos/bicepcurls.mp4',
     './videos/chestflys.mp4', './videos/chestpress.mp4', './videos/cycling.mp4',
     './videos/ems.mp4', './videos/glutekickbacks.mp4', './videos/latpulldowns.mp4',
@@ -23,7 +14,6 @@ const ASSETS_TO_CACHE = [
     './videos/pushups.mp4', './videos/reversecrunch.mp4', './videos/reverseseatedrows.mp4',
     './videos/situps.mp4', './videos/straightarmpulldowns.mp4', './videos/stretching.mp4',
     './videos/triceppulldowns.mp4', './videos/uprightrows.mp4', './videos/warmup.mp4',
-    // IMAGES
     './images/abcrunches.png', './images/bentoverrows.png', './images/bicepcurls.png',
     './images/chestflys.png', './images/chestpress.png', './images/cycling.jpg',
     './images/emsimage.png', './images/favicon.png', './images/glutekickbacks.png',
@@ -36,37 +26,34 @@ const ASSETS_TO_CACHE = [
     './images/uprightrows.png'
 ];
 
-// Εγκατάσταση και αποθήκευση στη μνήμη (Install & Cache)
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            console.log('PEGASUS OS: Opening Cache Vault...');
-            return cache.addAll(ASSETS_TO_CACHE);
+        caches.open(CACHE_NAME).then(async (cache) => {
+            let downloaded = 0;
+            const total = ASSETS_TO_CACHE.length;
+
+            for (const url of ASSETS_TO_CACHE) {
+                try {
+                    await cache.add(url);
+                    downloaded++;
+                    // Αποστολή προόδου στο index.html
+                    const clients = await self.clients.matchAll();
+                    clients.forEach(client => {
+                        client.postMessage({
+                            type: 'CACHE_PROGRESS',
+                            percent: Math.round((downloaded / total) * 100),
+                            file: url
+                        });
+                    });
+                } catch (err) {
+                    console.warn(`Failed to cache: ${url}`);
+                }
+            }
+            console.log('PEGASUS OS: Initial Caching Complete.');
         })
     );
 });
 
-// Ενεργοποίηση και καθαρισμός παλαιών caches
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cache) => {
-                    if (cache !== CACHE_NAME) {
-                        console.log('PEGASUS OS: Clearing Old Cache...');
-                        return caches.delete(cache);
-                    }
-                })
-            );
-        })
-    );
-});
-
-// Στρατηγική: Φόρτωση από Cache, αν δεν υπάρχει τότε από Δίκτυο
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
-    );
+    event.respondWith(caches.match(event.request).then(res => res || fetch(event.request)));
 });
