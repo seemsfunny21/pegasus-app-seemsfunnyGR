@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v8.8.2 (Tactical Car & Sync)</title>
+    <title>Pegasus OS v8.9.2 (Tactical Safe Vault)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
         input, select { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; font-family: inherit; }
         .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 13px; margin-bottom: 5px; cursor: pointer;}
         
-       .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px; text-align: center; width: 100%; }
+        .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px; text-align: center; width: 100%; }
         .log-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; border-left: 4px solid var(--main); text-align: center; position: relative; margin-bottom: 8px; }
         .btn-del { position: absolute; top: 10px; right: 10px; color: #ff4444; background: none; border: none; font-size: 18px; font-weight: 900; cursor: pointer; }
         
@@ -56,7 +56,7 @@
         .vault-input { font-size: 32px; letter-spacing: 12px; font-weight: 900; color: var(--main); background: #000; border: 1px solid #333; padding: 15px; border-radius: 16px; margin-bottom: 15px; width: 100%; text-align: center; }
 
         .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
-        .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px 12px; border-radius: 20px; border: 1px solid var(--border); transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; box-sizing: border-box; min-height: 85px; margin-bottom: 8px; }
+        .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px 12px; border-radius: 20px; border: 1px solid var(--border); transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; box-sizing: border-box; min-height: 85px; margin-bottom: 8px; position: relative; overflow: hidden; }
         .mini-label { font-size: 10px; font-weight: 800; color: var(--main); text-transform: uppercase; }
         .mini-val { font-size: 15px; font-weight: 900; margin: 4px 0; color: #eee; }
         .bar-bg { width: 100%; background: #000; height: 5px; border-radius: 3px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
@@ -96,19 +96,24 @@
 
     <div id="car" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Στοιχεία Αδείας (Lancia Delta)</div>
+        <div class="section-title">Στοιχεία Αδείας & Compliance</div>
         <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:20px; width:100%; box-sizing:border-box;">
             <input type="text" id="carPlate" placeholder="Αρ. Κυκλοφορίας">
-            <input type="text" id="carModel" placeholder="(D.3) Εμπορική Ονομασία">
-            <input type="text" id="carVIN" placeholder="(E) Αριθμός Πλαισίου (VIN)">
-            <input type="text" id="carEngine" placeholder="(P.5) Κωδικός Κινητήρα">
+            <input type="text" id="carModel" placeholder="Lancia Delta">
+            <input type="text" id="carVIN" placeholder="Αριθμός Πλαισίου (VIN)">
+            <input type="text" id="carEngine" placeholder="Κωδικός Κινητήρα">
             <div style="display:flex; gap:8px;">
-                <input type="text" id="carCC" placeholder="(P.1) Κυβισμός">
-                <input type="text" id="carKW" placeholder="(P.2) Ισχύς (kW)">
+                <input type="text" id="carCC" placeholder="cm³">
+                <input type="text" id="carKW" placeholder="kW">
             </div>
             <div style="display:flex; gap:8px;">
-                <input type="text" id="carDate" placeholder="(B) 1η Ημ. Κυκλοφορίας">
-                <input type="text" id="carColor" placeholder="(R) Χρώμα">
+                <input type="text" id="carDate" placeholder="1η Κυκλοφορία">
+                <input type="text" id="carColor" placeholder="Χρώμα">
+            </div>
+            <div class="section-title" style="margin: 10px 0; font-size: 9px; color: #888;">Compliance</div>
+            <div style="display:flex; gap:8px;">
+                <div style="flex:1;"><span style="font-size:9px; color:var(--main);">ΛΗΞΗ ΚΤΕΟ</span><input type="date" id="carKTEO"></div>
+                <div style="flex:1;"><span style="font-size:9px; color:var(--main);">ΛΗΞΗ ΑΣΦΑΛΕΙΑΣ</span><input type="date" id="carInsurance"></div>
             </div>
             <button class="primary-btn" onclick="saveCarSpecs()">ΑΠΟΘΗΚΕΥΣΗ SPECS</button>
         </div>
@@ -116,7 +121,7 @@
         <div class="section-title" style="margin-top:25px;">Service Log & Reminders</div>
         <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:20px; width:100%; box-sizing:border-box;">
             <input type="date" id="sDate">
-            <input type="text" id="sTask" placeholder="Εργασία (π.χ. Ιμάντες)">
+            <input type="text" id="sTask" placeholder="Εργασία">
             <input type="number" id="sKm" placeholder="Τρέχοντα KM" inputmode="numeric">
             <input type="number" id="sNext" placeholder="Επόμενο Service (KM)" inputmode="numeric">
             <button class="primary-btn" onclick="addServiceEntry()" style="background:#444; color:#fff;">ΚΑΤΑΓΡΑΦΗ SERVICE</button>
@@ -124,14 +129,36 @@
         <div id="serviceLogList" style="width:100%; margin-top:10px;"></div>
     </div>
 
-    <div id="phones" class="view">
+    <div id="profile" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Προσθήκη Επαφής</div>
-        <input type="text" id="pName" placeholder="Όνομα">
-        <input type="tel" id="pNum" placeholder="Τηλέφωνο">
-        <button class="primary-btn" onclick="addContact()">ΑΠΟΘΗΚΕΥΣΗ ΕΠΑΦΗΣ</button>
-        <div class="section-title" style="margin-top:25px;">Κατάλογος</div>
-        <div id="contactList" style="width:100%;"></div>
+        <div class="section-title">Προσωπικό Vault (Local Only)</div>
+        <div style="background:rgba(0,255,65,0.03); padding:15px; border-radius:20px; width:100%; box-sizing:border-box; border:1px solid rgba(0,255,65,0.1);">
+            <div class="section-title" style="margin-top:0; font-size:9px; color:#888;">Tap to Copy (Δεν συγχρονίζεται με Cloud)</div>
+            
+            <div class="mini-card" onclick="copyDynamicToClipboard('pAFM', this)">
+                <span class="mini-label">ΑΦΜ</span>
+                <input type="text" id="pAFM" placeholder="---" onclick="event.stopPropagation()" style="border:none; margin:0; background:transparent; text-align:center; color:white; font-weight:900; width:100%;">
+                <div class="copy-hint">COPIED</div>
+            </div>
+            <div class="mini-card" onclick="copyDynamicToClipboard('pAMKA', this)">
+                <span class="mini-label">ΑΜΚΑ</span>
+                <input type="text" id="pAMKA" placeholder="---" onclick="event.stopPropagation()" style="border:none; margin:0; background:transparent; text-align:center; color:white; font-weight:900; width:100%;">
+                <div class="copy-hint">COPIED</div>
+            </div>
+            <div class="mini-card" onclick="copyDynamicToClipboard('pADT', this)">
+                <span class="mini-label">ΑΔΤ</span>
+                <input type="text" id="pADT" placeholder="---" onclick="event.stopPropagation()" style="border:none; margin:0; background:transparent; text-align:center; color:white; font-weight:900; width:100%;">
+                <div class="copy-hint">COPIED</div>
+            </div>
+            
+            <div style="display:flex; gap:8px;">
+                 <div class="mini-card"><span class="mini-label">ΥΨΟΣ</span><input type="text" id="pHeight" placeholder="1.87 m" style="border:none; margin:0; background:transparent; text-align:center; color:white; font-weight:900; width:100%;"></div>
+                 <div class="mini-card"><span class="mini-label">ΒΑΡΟΣ</span><input type="text" id="pWeight" placeholder="74 kg" style="border:none; margin:0; background:transparent; text-align:center; color:white; font-weight:900; width:100%;"></div>
+            </div>
+            
+            <button class="primary-btn" onclick="savePersonalSpecs()" style="margin-top:10px;">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ VAULT</button>
+            <p style="font-size:8px; color:#555; margin-top:10px; text-transform:uppercase; letter-spacing:1px;">Data stays encrypted on this device only.</p>
+        </div>
     </div>
 
     <div id="diet" class="view">
@@ -174,18 +201,6 @@
         <div id="muscle-container" class="compact-grid"></div>
     </div>
 
-    <div id="profile" class="view">
-        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="compact-grid">
-            <div class="mini-card" style="grid-column: span 2;" onclick="copyToClipboard('ΡΑΙ105324164', this)"><span class="mini-label">ΡΑΙ</span><div class="mini-val">ΡΑΙ105324164</div><div class="copy-hint">COPIED</div></div>
-            <div class="mini-card" onclick="copyToClipboard('105324164', this)"><span class="mini-label">ΑΦΜ</span><div class="mini-val">105324164</div><div class="copy-hint">COPIED</div></div>
-            <div class="mini-card" onclick="copyToClipboard('AB408644', this)"><span class="mini-label">ΑΔΤ</span><div class="mini-val">AB408644</div><div class="copy-hint">COPIED</div></div>
-            <div class="mini-card" style="grid-column: span 2;" onclick="copyToClipboard('23098704077', this)"><span class="mini-label">ΑΜΚΑ</span><div class="mini-val">23098704077</div><div class="copy-hint">COPIED</div></div>
-            <div class="mini-card"><span class="mini-label">ΥΨΟΣ</span><div class="mini-val">1.87 m</div></div>
-            <div class="mini-card"><span class="mini-label">ΒΑΡΟΣ</span><div class="mini-val">74 kg</div></div>
-        </div>
-    </div>
-
     <div id="library" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <input type="text" id="libSearch" placeholder="Search..." oninput="renderLibrary()">
@@ -194,7 +209,7 @@
 
 <script>
 /* ==========================================================================
-   PEGASUS MOBILE LOGIC v8.8.2 (STRICT ANALYST MODE)
+   PEGASUS MOBILE LOGIC v8.9.2 (SECURITY & ANALYTICS)
    ========================================================================== */
 const CONFIG = { 
     key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
@@ -254,11 +269,34 @@ async function saveCarSpecs() {
         cc: document.getElementById('carCC').value,
         kw: document.getElementById('carKW').value,
         date: document.getElementById('carDate').value,
-        color: document.getElementById('carColor').value
+        color: document.getElementById('carColor').value,
+        kteo: document.getElementById('carKTEO').value,
+        insurance: document.getElementById('carInsurance').value
     };
     localStorage.setItem('pegasus_car_specs', JSON.stringify(specs));
     await PegasusCloud.push();
+    checkCarCompliance();
     alert("Specs Saved.");
+}
+
+function checkCarCompliance() {
+    const specs = PegasusCloud.safeParse('pegasus_car_specs', null);
+    if (!specs) return;
+    const today = new Date();
+    const alertDays = 15;
+    let hasAlert = false;
+    [specs.kteo, specs.insurance].forEach(dateStr => {
+        if (dateStr) {
+            const expiry = new Date(dateStr);
+            const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+            if (diffDays <= alertDays) hasAlert = true;
+        }
+    });
+    const tile = document.querySelector('.tile[onclick="openView(\'car\')"]');
+    if (tile) {
+        tile.style.borderColor = hasAlert ? 'var(--danger)' : '';
+        tile.style.boxShadow = hasAlert ? '0 0 15px rgba(255, 68, 68, 0.2)' : '';
+    }
 }
 
 async function addServiceEntry() {
@@ -298,35 +336,28 @@ async function deleteService(i) {
     renderServiceLog(); await PegasusCloud.push();
 }
 
-/* --- CONTACTS --- */
-async function addContact() {
-    const name = document.getElementById('pName').value;
-    const num = document.getElementById('pNum').value;
-    if(!name || !num) return;
-    let list = PegasusCloud.safeParse('pegasus_contacts', []);
-    list.unshift({ name, num });
-    localStorage.setItem('pegasus_contacts', JSON.stringify(list));
-    renderContacts(); await PegasusCloud.push();
+/* --- SAFE VAULT SYSTEMS --- */
+function savePersonalSpecs() {
+    const p = {
+        afm: document.getElementById('pAFM').value,
+        amka: document.getElementById('pAMKA').value,
+        adt: document.getElementById('pADT').value,
+        height: document.getElementById('pHeight').value,
+        weight: document.getElementById('pWeight').value
+    };
+    localStorage.setItem('pegasus_personal_vault', JSON.stringify(p));
+    alert("Saved to local device memory.");
 }
 
-function renderContacts() {
-    const list = PegasusCloud.safeParse('pegasus_contacts', []);
-    document.getElementById('contactList').innerHTML = list.map((c, i) => `
-        <div class="log-item">
-            <button class="btn-del" onclick="deleteContact(${i})">✕</button>
-            <div style="font-weight:900;">${c.name}</div>
-            <a href="tel:${c.num}" style="color:var(--main); text-decoration:none; font-weight:900; font-size:16px;">📞 ${c.num}</a>
-        </div>`).join('');
+function copyDynamicToClipboard(id, el) { 
+    const val = document.getElementById(id).value;
+    if(!val || val === "---") return;
+    navigator.clipboard.writeText(val); 
+    el.querySelector('.copy-hint').style.opacity = 1; 
+    setTimeout(() => el.querySelector('.copy-hint').style.opacity = 0, 1500); 
 }
 
-async function deleteContact(i) {
-    let list = PegasusCloud.safeParse('pegasus_contacts', []);
-    list.splice(i, 1);
-    localStorage.setItem('pegasus_contacts', JSON.stringify(list));
-    renderContacts(); await PegasusCloud.push();
-}
-
-/* --- UI HELPERS --- */
+/* --- CORE SYSTEMS --- */
 function openView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -349,9 +380,6 @@ function attemptVaultUnlock() {
 
 function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('local'); }
 
-function copyToClipboard(t, el) { navigator.clipboard.writeText(t); el.querySelector('.copy-hint').style.opacity = 1; setTimeout(() => el.querySelector('.copy-hint').style.opacity = 0, 1500); }
-
-/* --- CORE PEGASUS --- */
 function updateDietUI() {
     const d = new Date();
     const key = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
@@ -399,40 +427,12 @@ function updateMuscleUI() {
     }).join('');
 }
 
-function handleEMSPhoto(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => { 
-            document.getElementById('emsPhotoPreview').src = e.target.result;
-            document.getElementById('photoPreviewContainer').style.display = 'block';
-            currentEMSImage = e.target.result; 
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-async function saveMobileEMS() {
-    const date = document.getElementById('emsDate').value;
-    if(!date) return;
-    localStorage.setItem(`ems_log_${date}`, JSON.stringify({ avg: document.getElementById('emsAvg').value, kcal: document.getElementById('emsKcal').value, photo: currentEMSImage }));
-    await PegasusCloud.push();
-    openView('home');
-}
-
-function openCardio() { document.getElementById('cDate').value = new Date().toISOString().split('T')[0]; openView('cardio'); }
-
-async function saveMobileCardio() {
-    const date = document.getElementById('cDate').value;
-    localStorage.setItem(`cardio_log_${date}`, JSON.stringify({ route: document.getElementById('cRoute').value, km: document.getElementById('cKm').value, time: document.getElementById('cTime').value }));
-    await PegasusCloud.push();
-    openView('home');
-}
-
 window.onload = () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) { PegasusCloud.unlock(savedPin); document.getElementById("pinModal").style.display = "none"; setInterval(() => PegasusCloud.pull(), 30000); }
     else { document.getElementById("pinModal").style.display = "flex"; }
     
+    // Load Car Specs
     const specs = PegasusCloud.safeParse('pegasus_car_specs', null);
     if(specs) {
         document.getElementById('carPlate').value = specs.plate || "";
@@ -443,8 +443,22 @@ window.onload = () => {
         document.getElementById('carKW').value = specs.kw || "";
         document.getElementById('carDate').value = specs.date || "";
         document.getElementById('carColor').value = specs.color || "";
+        document.getElementById('carKTEO').value = specs.kteo || "";
+        document.getElementById('carInsurance').value = specs.insurance || "";
+        checkCarCompliance();
     }
-    renderServiceLog(); renderContacts(); updateDietUI();
+
+    // Load Safe Profile Vault
+    const pVault = PegasusCloud.safeParse('pegasus_personal_vault', null);
+    if(pVault) {
+        document.getElementById('pAFM').value = pVault.afm || "";
+        document.getElementById('pAMKA').value = pVault.amka || "";
+        document.getElementById('pADT').value = pVault.adt || "";
+        document.getElementById('pHeight').value = pVault.height || "";
+        document.getElementById('pWeight').value = pVault.weight || "";
+    }
+
+    renderServiceLog(); updateDietUI();
 };
 </script>
 </body>
