@@ -147,6 +147,14 @@ const PegasusCloud = {
     }
 };
 
+    // --- HELPER: CONVERT IMAGE TO BASE64 ---
+const toBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+});
+
 // --- AI VISION (FINAL FIX) ---
 async function processAIPhoto(event) {
     const file = event.target.files[0];
