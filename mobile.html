@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.3.0 (Τακτική Προσήλωση)</title>
+    <title>Pegasus OS v9.3.2 (Τακτική Προσήλωση)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -106,12 +106,28 @@
 
     <div id="car" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Στοιχεία Οχήματος</div>
-        <div class="input-label">Πινακίδα</div><input type="text" id="carPlate" placeholder="ABC-1234">
-        <div class="input-label">Αριθμός Πλαισίου (VIN)</div><input type="text" id="carVin" placeholder="WBA...">
+        
+        <div class="section-title">Άδεια Κυκλοφορίας (Βασικά)</div>
+        <div class="input-label">Πινακίδα</div><input type="text" id="carPlate" placeholder="Αριθμός Κυκλοφορίας">
+        <div class="input-label">Μάρκα / Μοντέλο</div><input type="text" id="carModel" placeholder="π.χ. Toyota Yaris">
+        <div class="input-label">Αριθμός Πλαισίου (VIN)</div><input type="text" id="carVin" placeholder="17 χαρακτήρες">
+        <div class="input-label">Αριθμός Κινητήρα</div><input type="text" id="carEngine" placeholder="Κωδικός Κινητήρα">
+        <div class="input-label">Χρώμα</div><input type="text" id="carColor" placeholder="Χρώμα Οχήματος">
+
+        <div class="section-title">Τεχνικά & Τέλη</div>
+        <div class="input-label">Έτος 1ης Κυκλοφορίας</div><input type="text" id="carYear" placeholder="ΕΕΕΕ">
+        <div class="input-label">Κυβικά (CC) / Ίπποι (HP)</div><input type="text" id="carPower" placeholder="π.χ. 1400cc / 100hp">
+        <div class="input-label">Τύπος Καυσίμου</div><input type="text" id="carFuel" placeholder="Βενζίνη / Diesel / Hybrid">
+        <div class="input-label">Εκπομπές CO2 (g/km)</div><input type="text" id="carCO2" placeholder="π.χ. 110">
+        <div class="input-label">Τέλη Κυκλοφορίας (€)</div><input type="text" id="carTax" placeholder="Ποσό πληρωμής">
+
+        <div class="section-title">Ημερομηνίες & Συντήρηση</div>
         <div class="input-label">Λήξη ΚΤΕΟ</div><input type="text" id="carKTEO" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
         <div class="input-label">Λήξη Ασφάλειας</div><input type="text" id="carInsurance" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
+        <div class="input-label">Επόμενη Αλλαγή Λαδιών</div><input type="text" id="carOil" placeholder="Χιλιόμετρα ή Ημ/νία">
+        <div class="input-label">Αλλαγή Μπαταρίας</div><input type="text" id="carBattery" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
         <div class="input-label">Αλλαγή Ελαστικών</div><input type="text" id="carTires" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
+
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
             <button class="primary-btn" onclick="saveCarSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
@@ -215,9 +231,19 @@ function unlockFields(viewId) {
 function saveCarSpecs() {
     const data = {
         plate: document.getElementById('carPlate').value,
+        model: document.getElementById('carModel').value,
         vin: document.getElementById('carVin').value,
+        engine: document.getElementById('carEngine').value,
+        color: document.getElementById('carColor').value,
+        year: document.getElementById('carYear').value,
+        power: document.getElementById('carPower').value,
+        fuel: document.getElementById('carFuel').value,
+        co2: document.getElementById('carCO2').value,
+        tax: document.getElementById('carTax').value,
         kteo: document.getElementById('carKTEO').value,
         ins: document.getElementById('carInsurance').value,
+        oil: document.getElementById('carOil').value,
+        battery: document.getElementById('carBattery').value,
         tires: document.getElementById('carTires').value
     };
     localStorage.setItem("pegasus_car_specs", JSON.stringify(data));
@@ -239,9 +265,19 @@ function savePersonalSpecs() {
 function loadSpecs() {
     const c = PegasusCloud.safeParse("pegasus_car_specs", {});
     bindCopy('carPlate', c.plate);
+    bindCopy('carModel', c.model);
     bindCopy('carVin', c.vin);
+    bindCopy('carEngine', c.engine);
+    bindCopy('carColor', c.color);
+    bindCopy('carYear', c.year);
+    bindCopy('carPower', c.power);
+    bindCopy('carFuel', c.fuel);
+    bindCopy('carCO2', c.co2);
+    bindCopy('carTax', c.tax);
     bindCopy('carKTEO', c.kteo);
     bindCopy('carInsurance', c.ins);
+    bindCopy('carOil', c.oil);
+    bindCopy('carBattery', c.battery);
     bindCopy('carTires', c.tires);
     
     const p = PegasusCloud.safeParse("pegasus_vault_data", {});
