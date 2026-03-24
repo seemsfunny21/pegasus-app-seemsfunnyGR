@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.9.6 (Tactical Full Service)</title>
+    <title>Pegasus OS v9.9.7 (Clean Tactical)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -274,7 +274,7 @@ function addService() {
 function renderService() {
     const l = PegasusCloud.safeParse("peg_car_service", []);
     document.getElementById("serviceLogList").innerHTML = l.map(i => {
-        const isMajor = i.k === "286.000" || i.t.includes("ΜΕΓΑΛΗ");
+        const isMajor = i.k === "286.000" || i.t.includes("ΜΕΓΑΛΗ") || i.t.includes("ΙΜΑΝΤΑΣ");
         return `
         <div class="log-item" style="${isMajor ? 'border-left-color: #ffeb3b; background: rgba(255,235,59,0.05);' : ''}">
             <strong style="${isMajor ? 'color: #ffeb3b;' : ''}">${i.t}</strong><br>
@@ -295,7 +295,7 @@ function addContact() {
 
 function renderContacts() {
     const l = PegasusCloud.safeParse("peg_contacts", []);
-    document.getElementById("contactList").innerHTML = l.map((i, idx) => `<div class="log-item" style="display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.n}</strong><br><small>${i.nu}</small></div><div style="display:flex; gap:10px;"><a href="tel:${i.nu}" style="text-decoration:none; background:var(--main); color:#000; padding:8px; border-radius:50%;">📞</a><button onclick="deleteContact(${idx})" style="background:none; border:none; color:var(--danger); font-weight:900;">✕</button></div></div>`).join('');
+    document.getElementById("contactList").innerHTML = l.map((i, idx) => `<div class="log-item" style="display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.n}</strong><br><small>${i.nu}</small></div><div style="gap:10px; display:flex;"><a href="tel:${i.nu}" style="text-decoration:none; background:var(--main); color:#000; padding:8px; border-radius:50%;">📞</a><button onclick="deleteContact(${idx})" style="background:none; border:none; color:var(--danger); font-weight:900;">✕</button></div></div>`).join('');
 }
 
 function deleteContact(idx) {
@@ -388,14 +388,6 @@ function skipVault() { document.getElementById("pinModal").style.display = "none
 
 window.onload = () => {
     const pin = localStorage.getItem("peg_pin");
-    if (!localStorage.getItem("peg_car_service")) {
-        const initialH = [
-            { t: "Λάδια, Παραφλού", k: "296.000", d: "17/11/2025" },
-            { t: "ΜΕΓΑΛΗ ΑΛΛΑΓΗ ΑΜΑΞΙΟΥ (Ιμάντας, Μπουζί, Βαλβολίνες)", k: "286.000", d: "27/06/2025" },
-            { t: "Λάδια, Φίλτρα, Μπουζί", k: "267.000", d: "27/07/2024" }
-        ];
-        localStorage.setItem("peg_car_service", JSON.stringify(initialH));
-    }
     if(pin) { PegasusCloud.unlock(pin); document.getElementById("pinModal").style.display="none"; loadSpecs(); }
     else document.getElementById("pinModal").style.display="flex";
     updateDietUI(); updateSuppUI();
