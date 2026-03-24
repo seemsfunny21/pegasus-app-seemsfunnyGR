@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.9.7 (Clean Tactical)</title>
+    <title>Pegasus OS v11.2 (Absolute Unified)</title>
+
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const now = Date.now();
+            if (!params.has('v') || (now - parseInt(params.get('v')) > 30000)) {
+                window.location.replace(window.location.pathname + '?v=' + now + window.location.hash);
+            }
+        })();
+    </script>
+
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -193,29 +204,70 @@ let isUnlocked = false;
 
 const PegasusCloud = {
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
+    isDup: (a, b) => a.name === b.name && Math.abs(a.kcal - b.kcal) < 1,
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("peg_pin", p); PegasusCloud.pull(); return true; } return false; },
+    
     pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
             const data = await res.json();
-            ['supp_inventory', 'weekly_history', 'food_library', 'car_dates', 'car_service'].forEach(k => { if(data[k]) localStorage.setItem('peg_'+k, JSON.stringify(data[k])); });
+            
+            ['supp_inventory', 'weekly_history', 'food_library', 'car_dates', 'car_service', 'peg_contacts'].forEach(k => { 
+                let keyName = k.startsWith('peg_') ? k : 'peg_' + k;
+                if(data[k]) localStorage.setItem(keyName, JSON.stringify(data[k])); 
+            });
+
+            const d = new Date(); 
+            const dateStr = d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
+            const dk = `food_log_${dateStr}`;
+
+            if (data.last_update_date === dateStr) {
+                let localLog = PegasusCloud.safeParse(dk, []);
+                (data.today_food_log || []).forEach(ri => { 
+                    if (!localLog.some(li => PegasusCloud.isDup(li, ri))) localLog.push(ri); 
+                });
+                localStorage.setItem(dk, JSON.stringify(localLog));
+            }
+
             updateDietUI(); updateSuppUI(); loadSpecs(); setSyncStatus('online');
         } catch(e) { setSyncStatus('offline'); }
     },
+    
     push: async () => {
         if (!isUnlocked) return;
-        const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+        setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
+        const d = new Date(); 
+        const dateStr = d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
+        const dk = `food_log_${dateStr}`;
+        const syncTimestamp = Date.now();
+        
+        const log = PegasusCloud.safeParse(dk, []);
+        let tk=0, tp=0; log.forEach(i => { tk+=i.kcal; tp+=i.protein; });
+
         const payload = {
-            kcal: localStorage.getItem("peg_kcal") || "0",
+            last_update_date: dateStr,
+            last_update_ts: syncTimestamp,
+            kcal: tk.toString(),
+            protein: tp.toString(),
             supp_inventory: PegasusCloud.safeParse("peg_supp_inventory", {prot:2500, crea:1000}),
             weekly_history: PegasusCloud.safeParse("peg_weekly_history", {}),
             car_dates: PegasusCloud.safeParse("peg_car_dates", {}), 
             car_service: PegasusCloud.safeParse("peg_car_service", []),
-            today_food_log: PegasusCloud.safeParse(dk, [])
+            food_library: PegasusCloud.safeParse("peg_food_library", []),
+            peg_contacts: PegasusCloud.safeParse("peg_contacts", []),
+            today_food_log: log
         };
-        try { await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, body: JSON.stringify(payload) }); setSyncStatus('online'); } catch(e) { setSyncStatus('offline'); }
+        
+        try { 
+            await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key, 'X-Bin-Versioning': 'false' }, 
+                body: JSON.stringify(payload) 
+            }); 
+            setSyncStatus('online'); 
+        } catch(e) { setSyncStatus('offline'); }
     }
 };
 
@@ -290,7 +342,7 @@ function addContact() {
     l.push({ n, nu });
     localStorage.setItem("peg_contacts", JSON.stringify(l));
     document.getElementById('cName').value = ""; document.getElementById('cNum').value = "";
-    renderContacts();
+    renderContacts(); PegasusCloud.push();
 }
 
 function renderContacts() {
@@ -301,7 +353,7 @@ function renderContacts() {
 function deleteContact(idx) {
     let l = PegasusCloud.safeParse("peg_contacts", []);
     l.splice(idx, 1); localStorage.setItem("peg_contacts", JSON.stringify(l));
-    renderContacts();
+    renderContacts(); PegasusCloud.push();
 }
 
 async function saveCardio() {
@@ -320,10 +372,13 @@ async function addFood() {
     const p = parseFloat(document.getElementById("fProt").value) || 0;
     const low = n.toLowerCase();
     if(low.includes("πρωτεΐνη") || low.includes("scoop") || low.includes("whey")) consumeSupp('prot', 30, false);
+    
     const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     let log = PegasusCloud.safeParse(dk, []);
     log.unshift({name:n, kcal:k, protein:p});
     localStorage.setItem(dk, JSON.stringify(log));
+    
+    document.getElementById("fName").value = ""; document.getElementById("fKcal").value = ""; document.getElementById("fProt").value = "";
     updateDietUI(); await PegasusCloud.push();
 }
 
