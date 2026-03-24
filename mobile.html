@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.8.0 (Standalone Tactical)</title>
+    <title>Pegasus OS v9.9.1 (Tactical Hybrid Sync)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -12,28 +12,28 @@
         body, html { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; text-align: center; overscroll-behavior: none; position: fixed; width: 100%; }
         body { padding: 20px 15px; box-sizing: border-box; background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); display: flex; flex-direction: column; align-items: center; }
         #sync-indicator { font-size: 9px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 25px; text-transform: uppercase; text-align: center; width: 100%; }
-        .header h1 { font-size: 34px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; }
-        .header p { font-size: 11px; color: var(--main); margin: 4px 0 25px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+        .header h1 { font-size: 34px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; text-align: center; }
+        .header p { font-size: 11px; color: var(--main); margin: 4px 0 25px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; }
         .tile { background: var(--card); border: 1px solid rgba(0, 255, 65, 0.12); border-radius: 28px; padding: 20px 10px; text-align: center; backdrop-filter: blur(16px); transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tile:active { transform: scale(0.95); border-color: var(--main); }
-        .tile-icon { font-size: 28px; margin-bottom: 8px; }
-        .tile-label { font-size: 10px; font-weight: 800; text-transform: uppercase; }
-        .view { display: none; height: 85vh; flex-direction: column; width: 100%; align-items: center; overflow-y: auto; padding-bottom: 30px; }
+        .tile-icon { font-size: 28px; margin-bottom: 8px; text-align: center; }
+        .tile-label { font-size: 10px; font-weight: 800; text-transform: uppercase; text-align: center; }
+        .view { display: none; height: 85vh; flex-direction: column; width: 100%; align-items: center; overflow-y: auto; padding-bottom: 30px; text-align: center; }
         .view.active { display: flex; animation: viewIn 0.3s forwards; }
         @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 800; padding: 10px 18px; border-radius: 14px; margin-bottom: 20px; cursor: pointer; text-transform: uppercase; }
-        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif; }
+        .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 800; padding: 10px 18px; border-radius: 14px; margin-bottom: 20px; cursor: pointer; align-self: center; text-transform: uppercase; }
+        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; transition: 0.3s; font-family: 'Inter', sans-serif; }
         .input-label { font-size: 9px; color: #aaa; text-align: center; width: 100%; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer; }
-        .secondary-btn { width: 100%; padding: 16px; background: transparent; border: 1px solid var(--main); border-radius: 18px; color: var(--main); font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer; }
-        .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px; width: 100%; text-align: center; }
-        .log-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; border-left: 4px solid var(--main); position: relative; margin-bottom: 8px; width: 100%; box-sizing: border-box; text-align: center; }
-        .btn-del { position: absolute; top: 10px; right: 10px; color: #ff4444; background: none; border: none; font-size: 18px; font-weight: 900; cursor: pointer; }
+        .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer; text-align: center; }
+        .secondary-btn { width: 100%; padding: 16px; background: transparent; border: 1px solid var(--main); border-radius: 18px; color: var(--main); font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer; text-align: center; }
+        .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px; text-align: center; width: 100%; }
+        .log-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; border-left: 4px solid var(--main); text-align: center; position: relative; margin-bottom: 8px; width: 100%; box-sizing: border-box; }
+        .btn-del { position: absolute; top: 10px; right: 10px; color: #ff4444; background: none; border: none; font-size: 18px; cursor: pointer; font-weight: 900; }
         .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
-        .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 8px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; }
-        .mini-label { font-size: 9px; font-weight: 800; color: var(--main); text-transform: uppercase; }
-        .mini-val { font-size: 14px; font-weight: 900; color: #eee; }
+        .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 8px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; text-align: center; }
+        .mini-label { font-size: 9px; font-weight: 800; color: var(--main); text-transform: uppercase; pointer-events: none; text-align: center; }
+        .mini-val { font-size: 14px; font-weight: 900; color: #eee; pointer-events: none; text-align: center; }
         .bar-bg { width: 100%; background: #000; height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
         .bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 0.5s ease; }
     </style>
@@ -84,7 +84,7 @@
 
     <div id="library" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Βιβλιοθήκη</div>
+        <div class="section-title">Βιβλιοθήκη Γευμάτων</div>
         <input type="text" id="libSearch" placeholder="Αναζήτηση..." oninput="renderLibrary()">
         <div id="libraryContainer" style="width:100%;"></div>
     </div>
@@ -118,7 +118,7 @@
 
     <div id="profile" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Vault</div>
+        <div class="section-title">Προσωπικά Έγγραφα (Local)</div>
         <div class="input-label">ΑΔΤ</div><input type="text" id="pADT">
         <div class="input-label">ΑΦΜ</div><input type="text" id="pAFM">
         <div class="input-label">ΑΜΚΑ</div><input type="text" id="pAMKA">
@@ -131,20 +131,24 @@
 
     <div id="car" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Στοιχεία Οχήματος</div>
+        <div class="section-title">Στοιχεία Ταυτότητας (Local)</div>
         <div class="input-label">Πινακίδα</div><input type="text" id="carPlate">
         <div class="input-label">Μοντέλο</div><input type="text" id="carModel">
         <div class="input-label">Αρ. Πλαισίου (VIN)</div><input type="text" id="carVin">
         <div class="input-label">Αρ. Κινητήρα</div><input type="text" id="carEngine">
         <div class="input-label">CC / HP</div><input type="text" id="carPower">
+        
+        <div class="section-title">Ημερομηνίες & Service (Cloud)</div>
         <div class="input-label">Λήξη Ασφάλειας</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
         <div class="input-label">Λήξη ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
         <div class="input-label">Επόμενο Service (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 125.000">
+        
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
             <button class="primary-btn" onclick="saveCarSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
         </div>
-        <div class="section-title">Προσθήκη Εργασίας</div>
+        
+        <div class="section-title">Προσθήκη Εργασίας (Cloud)</div>
         <input type="text" id="srvTask" placeholder="Περιγραφή Εργασίας">
         <input type="number" id="srvKm" placeholder="Χιλιόμετρα" inputmode="numeric">
         <button class="primary-btn" onclick="addService()">ΚΑΤΑΓΡΑΦΗ SERVICE</button>
@@ -153,10 +157,10 @@
 
     <div id="phones" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Επαφές</div>
+        <div class="section-title">Επαφές (Local)</div>
         <input type="text" id="cName" placeholder="Όνομα">
         <input type="tel" id="cNum" placeholder="Τηλέφωνο">
-        <button class="primary-btn" onclick="addContact()">ΠΡΟΣΘΗΚΗ</button>
+        <button class="primary-btn" onclick="addContact()">ΠΡΟΣΘΗΚΗ ΕΠΑΦΗΣ</button>
         <div id="contactList" style="width:100%; margin-top: 15px;"></div>
     </div>
 
@@ -168,7 +172,7 @@
             <div class="bar-bg"><div id="protBar" class="bar-fill" style="background:#00bcd4;"></div></div>
             <div class="compact-grid" style="margin-top:10px;">
                 <button class="primary-btn" onclick="consumeSupp('prot', 30)" style="background:#222; color:#fff;">-30g</button>
-                <button class="primary-btn" onclick="refillSupp('prot', 2500)">REFILL</button>
+                <button class="primary-btn" onclick="refillSupp('prot', 2500)">ΑΝΑΠΛΗΡΩΣΗ</button>
             </div>
         </div>
         <div class="mini-card" style="width:100%; border-left: 4px solid #9c27b0;">
@@ -177,7 +181,7 @@
             <div class="bar-bg"><div id="creaBar" class="bar-fill" style="background:#9c27b0;"></div></div>
             <div class="compact-grid" style="margin-top:10px;">
                 <button class="primary-btn" onclick="consumeSupp('crea', 5)" style="background:#222; color:#fff;">-5g</button>
-                <button class="primary-btn" onclick="refillSupp('crea', 1000)">REFILL</button>
+                <button class="primary-btn" onclick="refillSupp('crea', 1000)">ΑΝΑΠΛΗΡΩΣΗ</button>
             </div>
         </div>
     </div>
@@ -186,6 +190,7 @@
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
+// Standalone Cloud Logic (Selective Sync)
 const PegasusCloud = {
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("peg_pin", p); PegasusCloud.pull(); return true; } return false; },
@@ -195,7 +200,8 @@ const PegasusCloud = {
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
             const data = await res.json();
-            ['car_specs', 'car_service', 'contacts', 'supp_inventory', 'weekly_history', 'food_library'].forEach(k => { if(data[k]) localStorage.setItem('peg_'+k, JSON.stringify(data[k])); });
+            // Συγχρονισμός μόνο των επιτρεπτών κλειδιών
+            ['supp_inventory', 'weekly_history', 'food_library', 'car_dates', 'car_service'].forEach(k => { if(data[k]) localStorage.setItem('peg_'+k, JSON.stringify(data[k])); });
             updateDietUI(); updateSuppUI(); loadSpecs(); setSyncStatus('online');
         } catch(e) { setSyncStatus('offline'); }
     },
@@ -204,14 +210,17 @@ const PegasusCloud = {
         const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
         const payload = {
             kcal: localStorage.getItem("peg_kcal") || "0",
-            car_specs: PegasusCloud.safeParse("peg_car_specs", {}), car_service: PegasusCloud.safeParse("peg_car_service", []),
-            contacts: PegasusCloud.safeParse("peg_contacts", []), supp_inventory: PegasusCloud.safeParse("peg_supp_inventory", {prot:2500, crea:1000}),
-            weekly_history: PegasusCloud.safeParse("peg_weekly_history", {}), today_food_log: PegasusCloud.safeParse(dk, [])
+            supp_inventory: PegasusCloud.safeParse("peg_supp_inventory", {prot:2500, crea:1000}),
+            weekly_history: PegasusCloud.safeParse("peg_weekly_history", {}),
+            car_dates: PegasusCloud.safeParse("peg_car_dates", {}), 
+            car_service: PegasusCloud.safeParse("peg_car_service", []),
+            today_food_log: PegasusCloud.safeParse(dk, [])
         };
         try { await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, body: JSON.stringify(payload) }); setSyncStatus('online'); } catch(e) { setSyncStatus('offline'); }
     }
 };
 
+// Tactical Copy Engine
 function bindCopy(id, val) {
     const el = document.getElementById(id); if (!el) return;
     el.value = val || ""; el.setAttribute('readonly', 'true'); el.style.border = "1px solid #222";
@@ -230,14 +239,14 @@ function unlockFields(v) {
     });
 }
 
+// Storage Logic (Split)
 function saveCarSpecs() {
-    const d = { 
-        plate: document.getElementById('carPlate').value, model: document.getElementById('carModel').value,
-        vin: document.getElementById('carVin').value, eng: document.getElementById('carEngine').value,
-        pwr: document.getElementById('carPower').value, ins: document.getElementById('carIns').value,
-        kteo: document.getElementById('carKteo').value, srv: document.getElementById('carSrv').value
-    };
-    localStorage.setItem("peg_car_specs", JSON.stringify(d));
+    const localId = { plate: document.getElementById('carPlate').value, model: document.getElementById('carModel').value, vin: document.getElementById('carVin').value, eng: document.getElementById('carEngine').value, pwr: document.getElementById('carPower').value };
+    localStorage.setItem("peg_car_identity", JSON.stringify(localId));
+
+    const syncDates = { ins: document.getElementById('carIns').value, kteo: document.getElementById('carKteo').value, srv: document.getElementById('carSrv').value };
+    localStorage.setItem("peg_car_dates", JSON.stringify(syncDates));
+    
     loadSpecs(); PegasusCloud.push();
 }
 
@@ -248,13 +257,19 @@ function savePersonalSpecs() {
 }
 
 function loadSpecs() {
-    const c = PegasusCloud.safeParse("peg_car_specs", {});
-    bindCopy('carPlate', c.plate); bindCopy('carModel', c.model); bindCopy('carVin', c.vin); bindCopy('carEngine', c.eng); bindCopy('carPower', c.pwr); bindCopy('carIns', c.ins); bindCopy('carKteo', c.kteo); bindCopy('carSrv', c.srv);
+    const identity = PegasusCloud.safeParse("peg_car_identity", {});
+    bindCopy('carPlate', identity.plate); bindCopy('carModel', identity.model); bindCopy('carVin', identity.vin); bindCopy('carEngine', identity.eng); bindCopy('carPower', identity.pwr);
+    
+    const dates = PegasusCloud.safeParse("peg_car_dates", {});
+    bindCopy('carIns', dates.ins); bindCopy('carKteo', dates.kteo); bindCopy('carSrv', dates.srv);
+    
     const p = PegasusCloud.safeParse("peg_vault_data", {});
     bindCopy('pADT', p.adt); bindCopy('pAFM', p.afm); bindCopy('pAMKA', p.amka); bindCopy('pIban', p.iban);
+    
     renderService(); renderContacts();
 }
 
+// Service, Contacts, Cardio
 function addService() {
     const t = document.getElementById('srvTask').value; const k = document.getElementById('srvKm').value;
     if(!t || !k) return;
@@ -277,12 +292,18 @@ function addContact() {
     l.push({ n, nu });
     localStorage.setItem("peg_contacts", JSON.stringify(l));
     document.getElementById('cName').value = ""; document.getElementById('cNum').value = "";
-    renderContacts(); PegasusCloud.push();
+    renderContacts();
 }
 
 function renderContacts() {
     const l = PegasusCloud.safeParse("peg_contacts", []);
-    document.getElementById("contactList").innerHTML = l.map(i => `<div class="log-item" style="display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.n}</strong><br><small>${i.nu}</small></div><a href="tel:${i.nu}" style="text-decoration:none; background:var(--main); color:#000; padding:8px; border-radius:50%;">📞</a></div>`).join('');
+    document.getElementById("contactList").innerHTML = l.map((i, idx) => `<div class="log-item" style="display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.n}</strong><br><small>${i.nu}</small></div><div style="display:flex; gap:10px;"><a href="tel:${i.nu}" style="text-decoration:none; background:var(--main); color:#000; padding:8px; border-radius:50%;">📞</a><button onclick="deleteContact(${idx})" style="background:none; border:none; color:var(--danger); font-weight:900;">✕</button></div></div>`).join('');
+}
+
+function deleteContact(idx) {
+    let l = PegasusCloud.safeParse("peg_contacts", []);
+    l.splice(idx, 1); localStorage.setItem("peg_contacts", JSON.stringify(l));
+    renderContacts();
 }
 
 async function saveCardio() {
@@ -295,12 +316,13 @@ async function saveCardio() {
     openView('home'); await PegasusCloud.push();
 }
 
+// Diet & Supps Standalone Logic
 async function addFood() {
     const n = document.getElementById("fName").value || "Γεύμα";
     const k = parseFloat(document.getElementById("fKcal").value) || 0;
     const p = parseFloat(document.getElementById("fProt").value) || 0;
-    const lower = n.toLowerCase();
-    if(lower.includes("πρωτεΐνη") || lower.includes("scoop") || lower.includes("whey")) consumeSupp('prot', 30, false);
+    const low = n.toLowerCase();
+    if(low.includes("πρωτεΐνη") || low.includes("scoop") || low.includes("whey")) consumeSupp('prot', 30, false);
     const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     let log = PegasusCloud.safeParse(dk, []);
     log.unshift({name:n, kcal:k, protein:p});
@@ -362,12 +384,8 @@ function updateMuscleUI() {
     }).join('');
 }
 
-function openView(id) { 
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
-    const t = document.getElementById(id); if(t) t.classList.add('active');
-    if(id==='supps') updateSuppUI(); if(id==='preview') updateMuscleUI(); if(id==='library') renderLibrary();
-}
-
+// System Logic
+function openView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); const t = document.getElementById(id); if(t) t.classList.add('active'); if(id==='supps') updateSuppUI(); if(id==='preview') updateMuscleUI(); if(id==='library') renderLibrary(); }
 function setSyncStatus(s) { const e = document.getElementById("sync-indicator"); e.textContent = s.toUpperCase(); e.style.color = s==='online'?'#00ff41':s==='offline'?'#ff4444':'#00bcd4'; }
 function attemptVaultUnlock() { if(PegasusCloud.unlock(document.getElementById("pinInput").value)) { document.getElementById("pinModal").style.display = "none"; loadSpecs(); } }
 function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); loadSpecs(); }
