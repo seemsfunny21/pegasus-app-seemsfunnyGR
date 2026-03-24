@@ -1,7 +1,9 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.0)
+   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.1)
    STRICT DATA ANALYST PROTOCOL - DESKTOP EDITION
    ========================================================================== */
+
+const USER_BMR = 1724;
 
 if (!(window.currentFoodDate instanceof Date) || isNaN(window.currentFoodDate.getTime())) {
     window.currentFoodDate = new Date();
@@ -10,7 +12,6 @@ if (!(window.currentFoodDate instanceof Date) || isNaN(window.currentFoodDate.ge
 document.addEventListener('DOMContentLoaded', () => {
     updateFoodUI();
     
-    // Προσθήκη Φαγητού (Manual)
     const btnAdd = document.getElementById('btnAddFood');
     if (btnAdd) {
         btnAdd.onclick = () => {
@@ -56,11 +57,28 @@ function changeFoodDate(days) {
     updateFoodUI();
 }
 
-// FORMAT ΗΜΕΡΟΜΗΝΙΑΣ ΙΔΙΟ ΜΕ ΤΟ MOBILE (DD/M/YYYY)
 window.getStrictStorageKey = function() {
     const d = window.currentFoodDate || new Date();
     return "food_log_" + d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
+
+function getDailyCardioBurn(dateStr) {
+    const cardioData = JSON.parse(localStorage.getItem(`cardio_log_${dateStr}`) || "null");
+    return cardioData ? parseInt(cardioData.kcal, 10) || 0 : 0;
+}
+
+function calculateDailyCalorieTarget(dateObj) {
+    const dayOfWeek = dateObj.getDay(); 
+    const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4);
+    
+    const activityMultiplier = isRecoveryDay ? 1.2 : 1.55;
+    const baseKcal = USER_BMR * activityMultiplier;
+
+    const dateStr = dateObj.getDate() + "/" + (dateObj.getMonth() + 1) + "/" + dateObj.getFullYear();
+    const cardioBurn = getDailyCardioBurn(dateStr);
+
+    return Math.round(baseKcal + cardioBurn);
+}
 
 window.updateFoodUI = function() {
     const storageKey = window.getStrictStorageKey();
@@ -92,7 +110,6 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    // ΔΙΟΡΘΩΣΗ: Αποθήκευση στο localStorage για να περάσει στο Cloud
     localStorage.setItem("pegasus_today_kcal", Math.round(totalKcal).toString());
     localStorage.setItem("pegasus_today_protein", Math.round(totalProtein).toString());
 
@@ -111,14 +128,12 @@ window.addFoodItem = function(name, kcal, protein) {
     const storageKey = window.getStrictStorageKey();
     const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
     
-    // Εναρμόνιση με το κινητό: Νέα γεύματα μπαίνουν στην κορυφή
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(storageKey, JSON.stringify(foodLog));
 
     if (typeof window.addToLibrary === "function") window.addToLibrary(name, kcal, protein);
     window.updateFoodUI();
     
-    // ΕΞΑΝΑΓΚΑΣΜΕΝΟ PUSH ΣΤΟ CLOUD ΜΕ EXPLICIT SCOPE
     if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
         window.PegasusCloud.push(true);
     }
@@ -133,15 +148,14 @@ window.deleteFoodItem = function(index) {
     
     window.updateFoodUI();
     
-    // ΕΞΑΝΑΓΚΑΣΜΕΝΟ PUSH ΣΤΟ CLOUD ΜΕ EXPLICIT SCOPE
     if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
         window.PegasusCloud.push(true);
     }
 };
 
 function updateProgressBars(kcal, protein) {
-    const goalKcal = 2647; 
-    const goalProtein = 160;
+    const goalKcal = calculateDailyCalorieTarget(window.currentFoodDate); 
+    const goalProtein = 160; 
     
     const kBar = document.getElementById('kcalBar');
     const pBar = document.getElementById('proteinBar');
@@ -171,11 +185,12 @@ window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
     const days = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const todayName = days[new Date().getDay()];
-    const todayMenu = weeklyKoukiMenu[todayName] || [];
+    const targetDate = window.currentFoodDate || new Date();
+    const targetDayName = days[targetDate.getDay()];
+    const todayMenu = weeklyKoukiMenu[targetDayName] || [];
 
     container.innerHTML = `
-        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px;">📍 ${todayName.toUpperCase()} (ΠΙΑΤΑ ΗΜΕΡΑΣ)</h4>
+        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px;">📍 ${targetDayName.toUpperCase()} (ΠΙΑΤΑ ΗΜΕΡΑΣ)</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
             ${todayMenu.map(item => `
                 <button onclick="addQuickFood('${item.name}', ${item.kcal}, ${item.protein})" 
