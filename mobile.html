@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.3.2 (Τακτική Προσήλωση)</title>
+    <title>Pegasus OS v9.3.3 (Τακτική Προσήλωση)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -56,7 +56,7 @@
         <div class="grid">
             <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
             <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
-            <div class="tile" onclick="openCardio()"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
+            <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
             <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
             <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
             <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
@@ -81,6 +81,30 @@
         <div id="foodHistoryList" style="width:100%;"></div>
     </div>
 
+    <div id="library" class="view">
+        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">Βιβλιοθήκη Γευμάτων</div>
+        <input type="text" id="librarySearch" placeholder="Αναζήτηση (Τρέχει μέσω food.js)">
+        <div id="libraryFoodList" style="width:100%; margin-top: 10px;"></div>
+    </div>
+
+    <div id="cardio" class="view">
+        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">Καταγραφή Cardio</div>
+        <div class="input-label">Ημερομηνία</div>
+        <input type="date" id="cDate">
+        <input type="text" id="cRoute" placeholder="Διαδρομή">
+        <input type="number" id="cKm" placeholder="Χιλιόμετρα" inputmode="numeric">
+        <input type="number" id="cTime" placeholder="Χρόνος (Λεπτά)" inputmode="numeric">
+        <input type="number" id="cKcal" placeholder="Θερμίδες (Kcal)" inputmode="numeric">
+        <button class="primary-btn" onclick="saveCardioData()">ΑΠΟΘΗΚΕΥΣΗ ΔΕΔΟΜΕΝΩΝ</button>
+    </div>
+
+    <div id="ems_panel" class="view">
+        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">Πίνακας EMS</div>
+        <p style="color:#aaa; font-size:12px; margin-top: 20px;">Τα δεδομένα συγχρονίζονται μέσω του ems.js</p>
+    </div>
     <div id="supps" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Απόθεμα Συμπληρωμάτων</div>
@@ -476,5 +500,27 @@ window.onload = () => {
     updateDietUI(); SuppManager.updateUI();
 };
 </script>
+
+    <script src="data.js"></script>
+    <script src="settings.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="weather.js"></script>
+    <script src="weatherHandler.js"></script>
+    <script src="backup.js"></script>
+    <script src="inventoryHandler.js"></script>
+    <script src="cloudSync.js"></script>
+    <script src="ems.js"></script>
+    <script src="food.js"></script>
+    <script src="extensions.js"></script>
+    <script src="cardio.js"></script>
+    <script src="calendar.js"></script>
+    <script src="gallery.js"></script>
+    <script src="partner.js"></script>
+    <script src="achievements.js"></script>
+    <script src="progressUI.js"></script>
+    <script src="dragDrop.js"></script>
+    <script src="reporting.js"></script>
+    <script src="app.js"></script>
+    <script src="debug.js"></script>
 </body>
 </html>
