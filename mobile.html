@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.9.1 (Tactical Hybrid Sync)</title>
+    <title>Pegasus OS v9.9.5 (Tactical Hybrid Sync)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -70,8 +70,8 @@
     <div id="diet" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="compact-grid">
-            <div class="mini-card"><span class="mini-label">ΘΕΡΜΙΔΕΣ</span><div id="txtKcal" class="mini-val">0/2800</div></div>
-            <div class="mini-card"><span class="mini-label">ΠΡΩΤΕΪΝΗ</span><div id="txtProt" class="mini-val">0/160g</div></div>
+            <div class="mini-card"><span class="mini-label">KCAL</span><div id="txtKcal" class="mini-val">0/2800</div></div>
+            <div class="mini-card"><span class="mini-label">PROT</span><div id="txtProt" class="mini-val">0/160g</div></div>
         </div>
         <input type="text" id="fName" placeholder="Όνομα Γεύματος">
         <div class="compact-grid">
@@ -119,6 +119,7 @@
     <div id="profile" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Προσωπικά Έγγραφα (Local)</div>
+        <div class="input-label">Προσωπικός Αριθμός</div><input type="text" id="pPA">
         <div class="input-label">ΑΔΤ</div><input type="text" id="pADT">
         <div class="input-label">ΑΦΜ</div><input type="text" id="pAFM">
         <div class="input-label">ΑΜΚΑ</div><input type="text" id="pAMKA">
@@ -172,7 +173,7 @@
             <div class="bar-bg"><div id="protBar" class="bar-fill" style="background:#00bcd4;"></div></div>
             <div class="compact-grid" style="margin-top:10px;">
                 <button class="primary-btn" onclick="consumeSupp('prot', 30)" style="background:#222; color:#fff;">-30g</button>
-                <button class="primary-btn" onclick="refillSupp('prot', 2500)">ΑΝΑΠΛΗΡΩΣΗ</button>
+                <button class="primary-btn" onclick="refillSupp('prot', 2500)">REFILL</button>
             </div>
         </div>
         <div class="mini-card" style="width:100%; border-left: 4px solid #9c27b0;">
@@ -181,7 +182,7 @@
             <div class="bar-bg"><div id="creaBar" class="bar-fill" style="background:#9c27b0;"></div></div>
             <div class="compact-grid" style="margin-top:10px;">
                 <button class="primary-btn" onclick="consumeSupp('crea', 5)" style="background:#222; color:#fff;">-5g</button>
-                <button class="primary-btn" onclick="refillSupp('crea', 1000)">ΑΝΑΠΛΗΡΩΣΗ</button>
+                <button class="primary-btn" onclick="refillSupp('crea', 1000)">REFILL</button>
             </div>
         </div>
     </div>
@@ -190,7 +191,6 @@
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
-// Standalone Cloud Logic (Selective Sync)
 const PegasusCloud = {
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("peg_pin", p); PegasusCloud.pull(); return true; } return false; },
@@ -200,7 +200,6 @@ const PegasusCloud = {
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
             const data = await res.json();
-            // Συγχρονισμός μόνο των επιτρεπτών κλειδιών
             ['supp_inventory', 'weekly_history', 'food_library', 'car_dates', 'car_service'].forEach(k => { if(data[k]) localStorage.setItem('peg_'+k, JSON.stringify(data[k])); });
             updateDietUI(); updateSuppUI(); loadSpecs(); setSyncStatus('online');
         } catch(e) { setSyncStatus('offline'); }
@@ -220,7 +219,6 @@ const PegasusCloud = {
     }
 };
 
-// Tactical Copy Engine
 function bindCopy(id, val) {
     const el = document.getElementById(id); if (!el) return;
     el.value = val || ""; el.setAttribute('readonly', 'true'); el.style.border = "1px solid #222";
@@ -239,19 +237,16 @@ function unlockFields(v) {
     });
 }
 
-// Storage Logic (Split)
 function saveCarSpecs() {
     const localId = { plate: document.getElementById('carPlate').value, model: document.getElementById('carModel').value, vin: document.getElementById('carVin').value, eng: document.getElementById('carEngine').value, pwr: document.getElementById('carPower').value };
     localStorage.setItem("peg_car_identity", JSON.stringify(localId));
-
     const syncDates = { ins: document.getElementById('carIns').value, kteo: document.getElementById('carKteo').value, srv: document.getElementById('carSrv').value };
     localStorage.setItem("peg_car_dates", JSON.stringify(syncDates));
-    
     loadSpecs(); PegasusCloud.push();
 }
 
 function savePersonalSpecs() {
-    const d = { adt: document.getElementById('pADT').value, afm: document.getElementById('pAFM').value, amka: document.getElementById('pAMKA').value, iban: document.getElementById('pIban').value };
+    const d = { pa: document.getElementById('pPA').value, adt: document.getElementById('pADT').value, afm: document.getElementById('pAFM').value, amka: document.getElementById('pAMKA').value, iban: document.getElementById('pIban').value };
     localStorage.setItem("peg_vault_data", JSON.stringify(d));
     loadSpecs();
 }
@@ -259,17 +254,13 @@ function savePersonalSpecs() {
 function loadSpecs() {
     const identity = PegasusCloud.safeParse("peg_car_identity", {});
     bindCopy('carPlate', identity.plate); bindCopy('carModel', identity.model); bindCopy('carVin', identity.vin); bindCopy('carEngine', identity.eng); bindCopy('carPower', identity.pwr);
-    
     const dates = PegasusCloud.safeParse("peg_car_dates", {});
     bindCopy('carIns', dates.ins); bindCopy('carKteo', dates.kteo); bindCopy('carSrv', dates.srv);
-    
     const p = PegasusCloud.safeParse("peg_vault_data", {});
-    bindCopy('pADT', p.adt); bindCopy('pAFM', p.afm); bindCopy('pAMKA', p.amka); bindCopy('pIban', p.iban);
-    
+    bindCopy('pPA', p.pa); bindCopy('pADT', p.adt); bindCopy('pAFM', p.afm); bindCopy('pAMKA', p.amka); bindCopy('pIban', p.iban);
     renderService(); renderContacts();
 }
 
-// Service, Contacts, Cardio
 function addService() {
     const t = document.getElementById('srvTask').value; const k = document.getElementById('srvKm').value;
     if(!t || !k) return;
@@ -316,7 +307,6 @@ async function saveCardio() {
     openView('home'); await PegasusCloud.push();
 }
 
-// Diet & Supps Standalone Logic
 async function addFood() {
     const n = document.getElementById("fName").value || "Γεύμα";
     const k = parseFloat(document.getElementById("fKcal").value) || 0;
@@ -376,7 +366,7 @@ function renderLibrary() {
 function quickAdd(n, k, p) { document.getElementById("fName").value = n; document.getElementById("fKcal").value = k; document.getElementById("fProt").value = p; addFood(); openView('diet'); }
 
 function updateMuscleUI() {
-    const h = PegasusCloud.safeParse('peg_weekly_history', {});
+    const h = PegasusCloud.safeParse('pegasus_weekly_history', {}); // Correct key for goals sync
     const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
     document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => {
         const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
@@ -384,7 +374,6 @@ function updateMuscleUI() {
     }).join('');
 }
 
-// System Logic
 function openView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); const t = document.getElementById(id); if(t) t.classList.add('active'); if(id==='supps') updateSuppUI(); if(id==='preview') updateMuscleUI(); if(id==='library') renderLibrary(); }
 function setSyncStatus(s) { const e = document.getElementById("sync-indicator"); e.textContent = s.toUpperCase(); e.style.color = s==='online'?'#00ff41':s==='offline'?'#ff4444':'#00bcd4'; }
 function attemptVaultUnlock() { if(PegasusCloud.unlock(document.getElementById("pinInput").value)) { document.getElementById("pinModal").style.display = "none"; loadSpecs(); } }
