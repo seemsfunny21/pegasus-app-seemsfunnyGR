@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.2.9 (Τακτική Προσήλωση)</title>
+    <title>Pegasus OS v9.3.0 (Τακτική Προσήλωση)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
         .view.active { display: flex; animation: viewIn 0.3s forwards; }
         @keyframes viewIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 800; padding: 10px 18px; border-radius: 14px; margin-bottom: 20px; cursor: pointer; }
-        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; }
+        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; transition: background 0.3s ease; }
         .input-label { font-size: 10px; color: #aaa; text-align: left; width: 100%; margin-bottom: 2px; padding-left: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer;}
         .secondary-btn { width: 100%; padding: 16px; background: transparent; border: 1px solid var(--main); border-radius: 18px; color: var(--main); font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer;}
@@ -112,7 +112,10 @@
         <div class="input-label">Λήξη ΚΤΕΟ</div><input type="text" id="carKTEO" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
         <div class="input-label">Λήξη Ασφάλειας</div><input type="text" id="carInsurance" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
         <div class="input-label">Αλλαγή Ελαστικών</div><input type="text" id="carTires" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
-        <button class="primary-btn" onclick="saveCarSpecs()">ΤΟΠΙΚΗ ΑΠΟΘΗΚΕΥΣΗ</button>
+        <div class="compact-grid">
+            <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
+            <button class="primary-btn" onclick="saveCarSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+        </div>
 
         <div class="section-title" style="margin-top: 30px;">Ιστορικό Service</div>
         <input type="text" id="srvDesc" placeholder="Περιγραφή Εργασίας">
@@ -129,7 +132,10 @@
         <input type="text" id="pAMKA" placeholder="ΑΜΚΑ">
         <input type="text" id="pPass" placeholder="Αρ. Διαβατηρίου">
         <input type="text" id="pIban" placeholder="IBAN Λογαριασμού">
-        <button class="primary-btn" onclick="savePersonalSpecs()">ΤΟΠΙΚΗ ΑΠΟΘΗΚΕΥΣΗ</button>
+        <div class="compact-grid">
+            <button class="secondary-btn" onclick="unlockFields('profile')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
+            <button class="primary-btn" onclick="savePersonalSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+        </div>
     </div>
 
     <div id="phones" class="view">
@@ -179,7 +185,33 @@ const PegasusCloud = {
     }
 };
 
-/* --- STRICT LOCAL SPECS ENGINE --- */
+/* --- STRICT COPY & LOCK ENGINE --- */
+function bindCopy(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = val || "";
+    el.setAttribute('readonly', 'true');
+    el.style.border = "1px solid #222";
+    
+    el.onclick = function() {
+        if (this.hasAttribute('readonly') && this.value) {
+            navigator.clipboard.writeText(this.value);
+            const originalBg = this.style.background;
+            this.style.background = "#004400";
+            setTimeout(() => { this.style.background = originalBg; }, 300);
+        }
+    };
+}
+
+function unlockFields(viewId) {
+    document.querySelectorAll(`#${viewId} input[readonly]`).forEach(el => {
+        el.removeAttribute('readonly');
+        el.onclick = null;
+        el.style.border = "1px solid var(--main)";
+    });
+}
+
+/* --- LOCAL SPECS ENGINE --- */
 function saveCarSpecs() {
     const data = {
         plate: document.getElementById('carPlate').value,
@@ -189,6 +221,7 @@ function saveCarSpecs() {
         tires: document.getElementById('carTires').value
     };
     localStorage.setItem("pegasus_car_specs", JSON.stringify(data));
+    loadSpecs();
 }
 
 function savePersonalSpecs() {
@@ -200,22 +233,23 @@ function savePersonalSpecs() {
         iban: document.getElementById('pIban').value
     };
     localStorage.setItem("pegasus_vault_data", JSON.stringify(data));
+    loadSpecs();
 }
 
 function loadSpecs() {
     const c = PegasusCloud.safeParse("pegasus_car_specs", {});
-    if(c.plate) document.getElementById('carPlate').value = c.plate;
-    if(c.vin) document.getElementById('carVin').value = c.vin;
-    if(c.kteo) document.getElementById('carKTEO').value = c.kteo;
-    if(c.ins) document.getElementById('carInsurance').value = c.ins;
-    if(c.tires) document.getElementById('carTires').value = c.tires;
+    bindCopy('carPlate', c.plate);
+    bindCopy('carVin', c.vin);
+    bindCopy('carKTEO', c.kteo);
+    bindCopy('carInsurance', c.ins);
+    bindCopy('carTires', c.tires);
     
     const p = PegasusCloud.safeParse("pegasus_vault_data", {});
-    if(p.adt) document.getElementById('pADT').value = p.adt;
-    if(p.afm) document.getElementById('pAFM').value = p.afm;
-    if(p.amka) document.getElementById('pAMKA').value = p.amka;
-    if(p.pass) document.getElementById('pPass').value = p.pass;
-    if(p.iban) document.getElementById('pIban').value = p.iban;
+    bindCopy('pADT', p.adt);
+    bindCopy('pAFM', p.afm);
+    bindCopy('pAMKA', p.amka);
+    bindCopy('pPass', p.pass);
+    bindCopy('pIban', p.iban);
 
     updateServiceUI();
     updateContactUI();
