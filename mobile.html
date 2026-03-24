@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v11.2 (Absolute Unified)</title>
+    <title>Pegasus OS v11.3 (Absolute Unified)</title>
 
     <script>
         (function() {
@@ -204,7 +204,6 @@ let isUnlocked = false;
 
 const PegasusCloud = {
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
-    isDup: (a, b) => a.name === b.name && Math.abs(a.kcal - b.kcal) < 1,
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("peg_pin", p); PegasusCloud.pull(); return true; } return false; },
     
     pull: async () => {
@@ -224,11 +223,8 @@ const PegasusCloud = {
             const dk = `food_log_${dateStr}`;
 
             if (data.last_update_date === dateStr) {
-                let localLog = PegasusCloud.safeParse(dk, []);
-                (data.today_food_log || []).forEach(ri => { 
-                    if (!localLog.some(li => PegasusCloud.isDup(li, ri))) localLog.push(ri); 
-                });
-                localStorage.setItem(dk, JSON.stringify(localLog));
+                // Bypass isDup filter to allow full replication of Cloud array (e.g., multiple identical items)
+                localStorage.setItem(dk, JSON.stringify(data.today_food_log || []));
             }
 
             updateDietUI(); updateSuppUI(); loadSpecs(); setSyncStatus('online');
