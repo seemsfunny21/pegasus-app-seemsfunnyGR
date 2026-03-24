@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.9.5 (Tactical Hybrid Sync)</title>
+    <title>Pegasus OS v9.9.6 (Tactical Full Service)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -142,14 +142,14 @@
         <div class="section-title">Ημερομηνίες & Service (Cloud)</div>
         <div class="input-label">Λήξη Ασφάλειας</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
         <div class="input-label">Λήξη ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
-        <div class="input-label">Επόμενο Service (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 125.000">
+        <div class="input-label">Επόμενο Service (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000">
         
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
             <button class="primary-btn" onclick="saveCarSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
         </div>
         
-        <div class="section-title">Προσθήκη Εργασίας (Cloud)</div>
+        <div class="section-title">Ιστορικό Εργασιών (Cloud)</div>
         <input type="text" id="srvTask" placeholder="Περιγραφή Εργασίας">
         <input type="number" id="srvKm" placeholder="Χιλιόμετρα" inputmode="numeric">
         <button class="primary-btn" onclick="addService()">ΚΑΤΑΓΡΑΦΗ SERVICE</button>
@@ -161,7 +161,7 @@
         <div class="section-title">Επαφές (Local)</div>
         <input type="text" id="cName" placeholder="Όνομα">
         <input type="tel" id="cNum" placeholder="Τηλέφωνο">
-        <button class="primary-btn" onclick="addContact()">ΠΡΟΣΘΗΚΗ ΕΠΑΦΗΣ</button>
+        <button class="primary-btn" onclick="addContact()">ΠΡΟΣΘΗΚΗ</button>
         <div id="contactList" style="width:100%; margin-top: 15px;"></div>
     </div>
 
@@ -273,7 +273,14 @@ function addService() {
 
 function renderService() {
     const l = PegasusCloud.safeParse("peg_car_service", []);
-    document.getElementById("serviceLogList").innerHTML = l.map(i => `<div class="log-item"><strong>${i.t}</strong><br><small>${i.k} km | ${i.d}</small></div>`).join('');
+    document.getElementById("serviceLogList").innerHTML = l.map(i => {
+        const isMajor = i.k === "286.000" || i.t.includes("ΜΕΓΑΛΗ");
+        return `
+        <div class="log-item" style="${isMajor ? 'border-left-color: #ffeb3b; background: rgba(255,235,59,0.05);' : ''}">
+            <strong style="${isMajor ? 'color: #ffeb3b;' : ''}">${i.t}</strong><br>
+            <small>${i.k} χλμ | ${i.d}</small>
+        </div>`;
+    }).join('');
 }
 
 function addContact() {
@@ -366,7 +373,7 @@ function renderLibrary() {
 function quickAdd(n, k, p) { document.getElementById("fName").value = n; document.getElementById("fKcal").value = k; document.getElementById("fProt").value = p; addFood(); openView('diet'); }
 
 function updateMuscleUI() {
-    const h = PegasusCloud.safeParse('pegasus_weekly_history', {}); // Correct key for goals sync
+    const h = PegasusCloud.safeParse('peg_weekly_history', {});
     const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
     document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => {
         const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
@@ -381,6 +388,14 @@ function skipVault() { document.getElementById("pinModal").style.display = "none
 
 window.onload = () => {
     const pin = localStorage.getItem("peg_pin");
+    if (!localStorage.getItem("peg_car_service")) {
+        const initialH = [
+            { t: "Λάδια, Παραφλού", k: "296.000", d: "17/11/2025" },
+            { t: "ΜΕΓΑΛΗ ΑΛΛΑΓΗ ΑΜΑΞΙΟΥ (Ιμάντας, Μπουζί, Βαλβολίνες)", k: "286.000", d: "27/06/2025" },
+            { t: "Λάδια, Φίλτρα, Μπουζί", k: "267.000", d: "27/07/2024" }
+        ];
+        localStorage.setItem("peg_car_service", JSON.stringify(initialH));
+    }
     if(pin) { PegasusCloud.unlock(pin); document.getElementById("pinModal").style.display="none"; loadSpecs(); }
     else document.getElementById("pinModal").style.display="flex";
     updateDietUI(); updateSuppUI();
