@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v8.8.5 (Tactical Simplified)</title>
+    <title>Pegasus OS v8.9.0 (Tactical Interface)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root { --main: #00ff41; --danger: #ff4444; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); }
@@ -24,7 +24,7 @@
         .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
         .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px 12px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; width:100%; box-sizing: border-box; }
         .mini-label { font-size: 9px; font-weight: 800; color: var(--main); text-transform: uppercase; pointer-events: none; }
-        .mini-val { font-size: 14px; font-weight: 900; margin: 4px 0; color: #eee; pointer-events: none; }
+        .mini-val { font-size: 13px; font-weight: 900; margin: 4px 0; color: #eee; word-break: break-all; pointer-events: none; }
         .copy-hint { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--main); color: #000; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; opacity: 0; transition: 0.3s; pointer-events: none; }
         input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; }
         .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 13px; margin-bottom: 5px; cursor: pointer;}
@@ -44,7 +44,7 @@
             <div style="color:var(--main); font-weight:900; margin-bottom:20px;">MASTER AUTH</div>
             <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px;" inputmode="numeric" maxlength="4" placeholder="••••">
             <button class="primary-btn" onclick="attemptVaultUnlock()">ΕΙΣΟΔΟΣ</button>
-            <button onclick="skipVault()" style="width:100%; background:transparent; color:#666; border:none; margin-top:15px; font-weight:bold; cursor:pointer;">START OFFLINE</button>
+            <button onclick="skipVault()" style="width:100%; background:transparent; color:#666; border:none; margin-top:15px; font-weight:bold; cursor:pointer;">OFFLINE MODE</button>
         </div>
     </div>
 
@@ -55,10 +55,10 @@
         <div class="grid">
             <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
             <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
-            <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Cardio</span></div>
             <div class="tile" onclick="openView('supps')"><span class="tile-icon">💊</span><span class="tile-label">Supps</span></div>
             <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
-            <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Προσωπικά</span></div>
+            <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Vault</span></div>
+            <div class="tile" onclick="openView('contacts')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
         </div>
     </div>
 
@@ -68,7 +68,7 @@
             <div class="mini-card"><span class="mini-label">KCAL</span><div id="txtKcal" class="mini-val">0/2800</div></div>
             <div class="mini-card"><span class="mini-label">PROT</span><div id="txtProt" class="mini-val">0/160g</div></div>
         </div>
-        <input type="text" id="fName" placeholder="Φαγητό">
+        <input type="text" id="fName" placeholder="Όνομα Γεύματος">
         <div style="display:flex; gap:8px; width:100%;">
             <input type="number" id="fKcal" placeholder="Kcal" inputmode="numeric">
             <input type="number" id="fProt" placeholder="Prot" inputmode="numeric">
@@ -97,14 +97,12 @@
 
     <div id="profile" class="view">
         <button class="btn-back" onclick="openView('home')">BACK</button>
-        
         <div class="section-title">Έγγραφα</div>
         <div class="compact-grid">
             <div class="mini-card" onclick="copy('AB408644', this)"><span class="mini-label">ΑΔΤ</span><div class="mini-val">AB408644</div><div class="copy-hint">COPIED</div></div>
             <div class="mini-card" onclick="copy('105324164', this)"><span class="mini-label">ΑΦΜ</span><div class="mini-val">105324164</div><div class="copy-hint">COPIED</div></div>
             <div class="mini-card" style="grid-column: span 2;" onclick="copy('GR001234567890123456789', this)"><span class="mini-label">IBAN</span><div class="mini-val">GR00...6789</div><div class="copy-hint">COPIED</div></div>
         </div>
-
         <div class="section-title">Όχημα</div>
         <div class="compact-grid">
             <div class="mini-card" onclick="copy('ABC-1234', this)"><span class="mini-label">Πινακίδα</span><div class="mini-val">ABC-1234</div><div class="copy-hint">COPIED</div></div>
@@ -112,17 +110,22 @@
             <div class="mini-card"><span class="mini-label">ΚΤΕΟ</span><div class="mini-val">12/05/2026</div></div>
             <div class="mini-card"><span class="mini-label">Ασφάλεια</span><div class="mini-val">22/10/2026</div></div>
         </div>
-
-        <div class="section-title">Επαφές</div>
-        <div id="contactList" style="width:100%;"></div>
     </div>
 
-    <div id="cardio" class="view"><button class="btn-back" onclick="openView('home')">BACK</button><input type="text" id="cRoute" placeholder="Διαδρομή"><input type="number" id="cKm" placeholder="Km"><button class="primary-btn" onclick="openView('home')">SAVE</button></div>
+    <div id="contacts" class="view">
+        <button class="btn-back" onclick="openView('home')">BACK</button>
+        <div class="section-title">Νέα Επαφή</div>
+        <input type="text" id="conName" placeholder="Όνομα">
+        <input type="tel" id="conPhone" placeholder="Τηλέφωνο">
+        <button class="primary-btn" onclick="saveContact()">SAVE CONTACT</button>
+        <div id="contactList" style="width:100%; margin-top:20px;"></div>
+    </div>
+
     <div id="preview" class="view"><button class="btn-back" onclick="openView('home')">BACK</button><div id="muscle-container" class="compact-grid"></div></div>
     <div id="library" class="view"><button class="btn-back" onclick="openView('home')">BACK</button><input type="text" id="libSearch" placeholder="Search..." oninput="renderLibrary()"><div id="libraryContainer" style="width:100%;"></div></div>
 
 <script>
-const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
+const CONFIG = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
 // Core Engine
@@ -132,6 +135,7 @@ function openView(id) {
     if(id === 'preview') updateMuscleUI();
     if(id === 'library') renderLibrary();
     if(id === 'supps') updateSuppUI();
+    if(id === 'contacts') renderContacts();
 }
 
 function copy(text, el) {
@@ -141,7 +145,27 @@ function copy(text, el) {
     setTimeout(() => hint.style.opacity = 0, 1000);
 }
 
-// Diet Logic
+// Diet Logic with -30g Protein deduction
+async function addFood() {
+    const n = document.getElementById("fName").value || "Meal";
+    const k = parseFloat(document.getElementById("fKcal").value) || 0;
+    const p = parseFloat(document.getElementById("fProt").value) || 0;
+    
+    const lowerN = n.toLowerCase();
+    if(lowerN.includes("πρωτεΐνη") || lowerN.includes("scoop") || lowerN.includes("whey")) {
+        consumeSupp('prot', 30);
+    }
+
+    const d = new Date(); const key = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    let h = JSON.parse(localStorage.getItem(key) || "[]");
+    h.unshift({name:n, kcal:k, protein:p});
+    localStorage.setItem(key, JSON.stringify(h));
+    updateDietUI(); push();
+    document.getElementById("fName").value = ""; 
+    document.getElementById("fKcal").value = ""; 
+    document.getElementById("fProt").value = "";
+}
+
 function updateDietUI() {
     const d = new Date(); const key = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     const h = JSON.parse(localStorage.getItem(key) || "[]");
@@ -157,25 +181,6 @@ function updateDietUI() {
         </div>`).join('');
 }
 
-async function addFood() {
-    const n = document.getElementById("fName").value || "Meal";
-    const k = parseFloat(document.getElementById("fKcal").value) || 0;
-    const p = parseFloat(document.getElementById("fProt").value) || 0;
-    
-    // Protein Deduction Logic (-30g)
-    const lowerN = n.toLowerCase();
-    if(lowerN.includes("πρωτεΐνη") || lowerN.includes("scoop") || lowerN.includes("whey")) {
-        consumeSupp('prot', 30);
-    }
-
-    const d = new Date(); const key = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    let h = JSON.parse(localStorage.getItem(key) || "[]");
-    h.unshift({name:n, kcal:k, protein:p});
-    localStorage.setItem(key, JSON.stringify(h));
-    updateDietUI(); push();
-    document.getElementById("fName").value = ""; document.getElementById("fKcal").value = ""; document.getElementById("fProt").value = "";
-}
-
 function deleteFood(i) {
     const d = new Date(); const key = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     let h = JSON.parse(localStorage.getItem(key) || "[]");
@@ -186,7 +191,7 @@ function deleteFood(i) {
 
 // Supps Engine
 function updateSuppUI() {
-    const s = JSON.parse(localStorage.getItem('pegasus_supps') || '{"prot":2500, "crea":1000}');
+    const s = JSON.parse(localStorage.getItem('peg_supps') || '{"prot":2500, "crea":1000}');
     document.getElementById('pLevel').textContent = `${Math.round(s.prot)}/2500g`;
     document.getElementById('pBar').style.width = Math.min((s.prot/2500)*100, 100) + '%';
     document.getElementById('cLevel').textContent = `${Math.round(s.crea)}/1000g`;
@@ -194,42 +199,57 @@ function updateSuppUI() {
 }
 
 function consumeSupp(t, a) {
-    let s = JSON.parse(localStorage.getItem('pegasus_supps') || '{"prot":2500, "crea":1000}');
+    let s = JSON.parse(localStorage.getItem('peg_supps') || '{"prot":2500, "crea":1000}');
     s[t] = Math.max(0, s[t] - a);
-    localStorage.setItem('pegasus_supps', JSON.stringify(s));
+    localStorage.setItem('peg_supps', JSON.stringify(s));
     updateSuppUI();
 }
 
 function refill(t) {
-    let s = JSON.parse(localStorage.getItem('pegasus_supps') || '{"prot":2500, "crea":1000}');
+    let s = JSON.parse(localStorage.getItem('peg_supps') || '{"prot":2500, "crea":1000}');
     s[t] = (t === 'prot') ? 2500 : 1000;
-    localStorage.setItem('pegasus_supps', JSON.stringify(s));
+    localStorage.setItem('peg_supps', JSON.stringify(s));
     updateSuppUI(); push();
 }
 
-// Vault / Cloud Logic
-async function push() {
-    if(!isUnlocked) return;
-    const payload = { 
-        kcal: localStorage.getItem("pegasus_today_kcal"), 
-        supps: localStorage.getItem("pegasus_supps") 
-    };
-    try { await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { 
-        method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, 
-        body: JSON.stringify(payload) 
-    }); } catch(e){}
+// Contacts Engine
+function saveContact() {
+    const n = document.getElementById("conName").value;
+    const p = document.getElementById("conPhone").value;
+    if(!n || !p) return;
+    let list = JSON.parse(localStorage.getItem('peg_contacts') || "[]");
+    list.push({name:n, phone:p});
+    localStorage.setItem('peg_contacts', JSON.stringify(list));
+    document.getElementById("conName").value = "";
+    document.getElementById("conPhone").value = "";
+    renderContacts();
 }
 
-function attemptVaultUnlock() {
-    if(btoa(document.getElementById("pinInput").value) === "MjM3NQ==") {
-        isUnlocked = true; document.getElementById("pinModal").style.display = "none";
-        localStorage.setItem("pegasus_pin", "2375");
-    }
+function renderContacts() {
+    const list = JSON.parse(localStorage.getItem('peg_contacts') || "[]");
+    document.getElementById('contactList').innerHTML = list.map((c, i) => `
+        <div class="log-item" style="display:flex; justify-content:space-between; align-items:center; border-left-color:#ffeb3b;">
+            <div style="text-align:left;">
+                <div style="font-weight:900;">${c.name}</div>
+                <div style="font-size:12px; color:#aaa;">${c.phone}</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <a href="tel:${c.phone}" style="text-decoration:none; font-size:20px;">📞</a>
+                <button onclick="deleteContact(${i})" style="background:none; border:none; color:var(--danger); font-weight:900;">✕</button>
+            </div>
+        </div>`).join('');
 }
-function skipVault() { document.getElementById("pinModal").style.display = "none"; }
 
+function deleteContact(i) {
+    let list = JSON.parse(localStorage.getItem('peg_contacts') || "[]");
+    list.splice(i, 1);
+    localStorage.setItem('peg_contacts', JSON.stringify(list));
+    renderContacts();
+}
+
+// Goals UI
 function updateMuscleUI() {
-    const h = JSON.parse(localStorage.getItem('pegasus_history') || "{}");
+    const h = JSON.parse(localStorage.getItem('peg_history') || "{}");
     const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
     document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => {
         const d = h[g] || 0; const p = Math.min((d/targets[g])*100, 100);
@@ -237,25 +257,31 @@ function updateMuscleUI() {
     }).join('');
 }
 
-function renderLibrary() {
-    const lib = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
-    document.getElementById('libraryContainer').innerHTML = lib.map(i => `
-        <div class="mini-card" onclick="quickAdd('${i.name}', ${i.kcal}, ${i.protein})">
-            <span class="mini-label">+ ADD</span>
-            <div class="mini-val">${i.name}</div>
-        </div>`).join('');
+// Authentication
+function attemptVaultUnlock() {
+    if(btoa(document.getElementById("pinInput").value) === "MjM3NQ==") {
+        isUnlocked = true; document.getElementById("pinModal").style.display = "none";
+        localStorage.setItem("peg_pin_status", "active");
+    }
 }
+function skipVault() { document.getElementById("pinModal").style.display = "none"; }
 
-function quickAdd(n, k, p) {
-    document.getElementById("fName").value = n;
-    document.getElementById("fKcal").value = k;
-    document.getElementById("fProt").value = p;
-    addFood(); openView('diet');
+async function push() {
+    if(!isUnlocked) return;
+    const payload = { 
+        kcal: localStorage.getItem("pegasus_today_kcal"), 
+        supps: localStorage.getItem("peg_supps"),
+        contacts: localStorage.getItem("peg_contacts")
+    };
+    try { await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.bin}`, { 
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.key }, 
+        body: JSON.stringify(payload) 
+    }); } catch(e){}
 }
 
 window.onload = () => { 
     updateDietUI(); 
-    if(localStorage.getItem("pegasus_pin")) {
+    if(localStorage.getItem("peg_pin_status")) {
         isUnlocked = true; document.getElementById("pinModal").style.display = "none";
     } else {
         document.getElementById("pinModal").style.display = "flex";
