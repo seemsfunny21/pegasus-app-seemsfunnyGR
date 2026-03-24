@@ -194,13 +194,27 @@ let isUnlocked = false;
 const PegasusCloud = {
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("peg_pin", p); PegasusCloud.pull(); return true; } return false; },
-    pull: async () => {
+pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { 
+                headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } 
+            });
             const data = await res.json();
-            ['supp_inventory', 'weekly_history', 'food_library', 'car_dates', 'car_service'].forEach(k => { if(data[k]) localStorage.setItem('peg_'+k, JSON.stringify(data[k])); });
+            
+            // 1. Συγχρονισμός σταθερών κλειδιών (Inventory, History, Car)
+            ['supp_inventory', 'weekly_history', 'food_library', 'car_dates', 'car_service'].forEach(k => { 
+                if(data[k]) localStorage.setItem('peg_'+k, JSON.stringify(data[k])); 
+            });
+
+            // 2. Συγχρονισμός Διατροφής (today_food_log -> Τοπική Ημερομηνία)
+            if(data.today_food_log) {
+                const d = new Date(); 
+                const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                localStorage.setItem(dk, JSON.stringify(data.today_food_log));
+            }
+
             updateDietUI(); updateSuppUI(); loadSpecs(); setSyncStatus('online');
         } catch(e) { setSyncStatus('offline'); }
     },
