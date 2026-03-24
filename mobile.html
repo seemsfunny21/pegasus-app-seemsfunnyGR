@@ -271,34 +271,55 @@ const PegasusCloud = {
 async function processAIPhoto(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
+    // Ανάκτηση κλειδιού από το πεδίο ή το localStorage
     const key = document.getElementById('aiKey').value || localStorage.getItem('peg_ai_key');
-    if (!key) { alert("ΑΠΑΙΤΕΙΤΑΙ GEMINI API KEY ΣΤΙΣ ΡΥΘΜΙΣΕΙΣ"); return; }
+    
+    if (!key || key.length < 30) { 
+        alert("ΣΦΑΛΜΑ: Το κλειδί λείπει ή είναι πολύ μικρό. Αποθηκεύστε το στα Έγγραφα."); 
+        return; 
+    }
     
     document.getElementById('aiStatus').style.display = 'block';
     const base64 = await toBase64(file);
     const rawBase64 = base64.split(',')[1];
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key.trim()}`, {
             method: 'POST',
             body: JSON.stringify({
                 contents: [{
                     parts: [
-                        { text: "Analyze this meal. Return ONLY a JSON object: {\"name\": \"Meal description in Greek\", \"kcal\": estimated_calories, \"protein\": estimated_protein_grams}. Be realistic for a 74kg/1.87m male." },
+                        { text: "Analyze this meal. Return ONLY a JSON object: {\"name\": \"Meal name in Greek\", \"kcal\": estimated_calories, \"protein\": estimated_protein_grams}. No other text." },
                         { inline_data: { mime_type: "image/jpeg", data: rawBase64 } }
                     ]
                 }]
             })
         });
+
         const result = await response.json();
+        
+        // Έλεγχος αν η Google επέστρεψε σφάλμα API
+        if (result.error) {
+            alert("API ERROR: " + result.error.message);
+            return;
+        }
+
         const text = result.candidates[0].content.parts[0].text;
-        const data = JSON.parse(text.replace(/```json|```/g, ""));
+        // Καθαρισμός του κειμένου από markdown αν υπάρχει
+        const cleanJson = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(cleanJson);
         
         document.getElementById('fName').value = data.name;
         document.getElementById('fKcal').value = data.kcal;
         document.getElementById('fProt').value = data.protein;
-    } catch (e) { alert("ΣΦΑΛΜΑ AI: Ελέγξτε το κλειδί σας."); console.error(e); }
-    finally { document.getElementById('aiStatus').style.display = 'none'; }
+        
+    } catch (e) { 
+        alert("ΤΕΧΝΙΚΟ ΣΦΑΛΜΑ: " + e.message);
+        console.error(e); 
+    } finally { 
+        document.getElementById('aiStatus').style.display = 'none'; 
+    }
 }
 
 const toBase64 = file => new Promise((resolve, reject) => {
