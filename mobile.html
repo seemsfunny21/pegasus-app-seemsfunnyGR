@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v9.2.3 (Tactical Adherence)</title>
+    <title>Pegasus OS v9.2.5 (Tactical Adherence)</title>
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
@@ -24,6 +24,7 @@
         @keyframes viewIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 800; padding: 10px 18px; border-radius: 14px; margin-bottom: 20px; cursor: pointer; }
         input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; }
+        .input-label { font-size: 10px; color: #aaa; text-align: left; width: 100%; margin-bottom: 2px; padding-left: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer;}
         .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px; text-align: center; width: 100%; }
         .log-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; border-left: 4px solid var(--main); text-align: center; position: relative; margin-bottom: 8px; }
@@ -101,8 +102,34 @@
         </div>
     </div>
 
-    <div id="car" class="view"><button class="btn-back" onclick="openView('home')">BACK</button><div class="section-title">Car Specs</div><input type="text" id="carPlate" placeholder="Πινακίδα"><input type="date" id="carKTEO"><input type="date" id="carInsurance"><button class="primary-btn" onclick="saveCarSpecs()">SAVE</button><div id="serviceLogList" style="width:100%;"></div></div>
-    <div id="profile" class="view"><button class="btn-back" onclick="openView('home')">BACK</button><div class="section-title">Vault</div><input type="text" id="pAFM" placeholder="ΑΦΜ"><input type="text" id="pAMKA" placeholder="ΑΜΚΑ"><button class="primary-btn" onclick="savePersonalSpecs()">SAVE LOCAL</button></div>
+    <div id="car" class="view">
+        <button class="btn-back" onclick="openView('home')">BACK</button>
+        <div class="section-title">Car Specs</div>
+        <div class="input-label">Πινακίδα</div>
+        <input type="text" id="carPlate" placeholder="ABC-1234">
+        <div class="input-label">Λήξη ΚΤΕΟ</div>
+        <input type="date" id="carKTEO">
+        <div class="input-label">Λήξη Ασφάλειας</div>
+        <input type="date" id="carInsurance">
+        <div class="input-label">Service (Χιλιόμετρα)</div>
+        <input type="number" id="carServiceKm" placeholder="π.χ. 120000">
+        <div class="input-label">Αλλαγή Ελαστικών (Ημ/νία)</div>
+        <input type="date" id="carTires">
+        <button class="primary-btn" onclick="saveCarSpecs()">SAVE CLOUD</button>
+        <div id="serviceLogList" style="width:100%;"></div>
+    </div>
+
+    <div id="profile" class="view">
+        <button class="btn-back" onclick="openView('home')">BACK</button>
+        <div class="section-title">Vault</div>
+        <input type="text" id="pADT" placeholder="Αρ. Ταυτότητας (ΑΔΤ)">
+        <input type="text" id="pAFM" placeholder="ΑΦΜ">
+        <input type="text" id="pAMKA" placeholder="ΑΜΚΑ">
+        <input type="text" id="pPass" placeholder="Αρ. Διαβατηρίου">
+        <input type="text" id="pIban" placeholder="IBAN Λογαριασμού">
+        <button class="primary-btn" onclick="savePersonalSpecs()">SAVE LOCAL</button>
+    </div>
+
     <div id="phones" class="view"><button class="btn-back" onclick="openView('home')">BACK</button><div id="contactList" style="width:100%;"></div></div>
     <div id="preview" class="view"><button class="btn-back" onclick="openView('home')">BACK</button><div id="muscle-container" class="compact-grid"></div></div>
 
@@ -120,7 +147,7 @@ const PegasusCloud = {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
             const data = await res.json();
             ['food_library', 'weekly_history', 'car_specs', 'car_service', 'contacts', 'supp_inventory'].forEach(k => { if(data[k]) localStorage.setItem('pegasus_'+k, JSON.stringify(data[k])); });
-            updateDietUI(); SuppManager.updateUI(); checkAdherence();
+            updateDietUI(); SuppManager.updateUI(); checkAdherence(); loadSpecs();
             setSyncStatus('online');
         } catch(e) { setSyncStatus('offline'); }
     },
@@ -137,7 +164,47 @@ const PegasusCloud = {
     }
 };
 
-/* --- SUPPS ENGINE v9.2.3 --- */
+/* --- SPECS ENGINE v9.2.5 --- */
+function saveCarSpecs() {
+    const data = {
+        plate: document.getElementById('carPlate').value,
+        kteo: document.getElementById('carKTEO').value,
+        ins: document.getElementById('carInsurance').value,
+        srv: document.getElementById('carServiceKm').value,
+        tires: document.getElementById('carTires').value
+    };
+    localStorage.setItem("pegasus_car_specs", JSON.stringify(data));
+    PegasusCloud.push();
+}
+
+function savePersonalSpecs() {
+    const data = {
+        adt: document.getElementById('pADT').value,
+        afm: document.getElementById('pAFM').value,
+        amka: document.getElementById('pAMKA').value,
+        pass: document.getElementById('pPass').value,
+        iban: document.getElementById('pIban').value
+    };
+    localStorage.setItem("pegasus_vault_data", JSON.stringify(data));
+}
+
+function loadSpecs() {
+    const c = PegasusCloud.safeParse("pegasus_car_specs", {});
+    if(c.plate) document.getElementById('carPlate').value = c.plate;
+    if(c.kteo) document.getElementById('carKTEO').value = c.kteo;
+    if(c.ins) document.getElementById('carInsurance').value = c.ins;
+    if(c.srv) document.getElementById('carServiceKm').value = c.srv;
+    if(c.tires) document.getElementById('carTires').value = c.tires;
+    
+    const p = PegasusCloud.safeParse("pegasus_vault_data", {});
+    if(p.adt) document.getElementById('pADT').value = p.adt;
+    if(p.afm) document.getElementById('pAFM').value = p.afm;
+    if(p.amka) document.getElementById('pAMKA').value = p.amka;
+    if(p.pass) document.getElementById('pPass').value = p.pass;
+    if(p.iban) document.getElementById('pIban').value = p.iban;
+}
+
+/* --- SUPPS ENGINE v9.2.5 --- */
 const SuppManager = {
     targets: { prot: 2500, crea: 1000 },
     updateUI: function() {
@@ -165,7 +232,7 @@ async function refillSupp(t, a) {
     SuppManager.updateUI(); await PegasusCloud.push();
 }
 
-/* --- ADHERENCE CHECK v9.2.3 --- */
+/* --- ADHERENCE CHECK v9.2.5 --- */
 function checkAdherence() {
     const now = new Date();
     const d = now.getDate(); const m = now.getMonth()+1; const y = now.getFullYear();
@@ -192,14 +259,15 @@ function checkAdherence() {
     }
 }
 
-/* --- DIET ENGINE v9.2.3 --- */
+/* --- DIET ENGINE v9.2.5 --- */
 async function addFood() {
     const n = document.getElementById("fName").value || "Meal";
     const k = parseFloat(document.getElementById("fKcal").value);
     const p = parseFloat(document.getElementById("fProt").value) || 0;
     if(isNaN(k)) return;
 
-    const isProt = n.toLowerCase().includes("πρωτεΐνη") || n.toLowerCase().includes("scoop");
+    // Strict 30g reduction per entry containing these keywords
+    const isProt = n.toLowerCase().includes("πρωτεΐνη") || n.toLowerCase().includes("scoop") || n.toLowerCase().includes("whey");
     const isCrea = n.toLowerCase().includes("κρεατίνη") || n.toLowerCase().includes("creatine");
 
     if(isProt) await consumeSupp('prot', 30, false);
@@ -218,6 +286,7 @@ async function deleteFood(i) {
     let log = PegasusCloud.safeParse(dk, []);
     let sd = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 });
     
+    // Strict 30g restoration if deleted item was a protein entry
     if(log[i].isSuppProt) sd.prot += 30;
     if(log[i].isSuppCrea) sd.crea += 5;
     
@@ -247,7 +316,7 @@ window.onload = () => {
     if(pin) { PegasusCloud.unlock(pin); document.getElementById("pinModal").style.display="none"; setInterval(()=>PegasusCloud.pull(), 30000); }
     else document.getElementById("pinModal").style.display="flex";
     
-    updateDietUI(); SuppManager.updateUI();
+    updateDietUI(); SuppManager.updateUI(); loadSpecs();
 };
 </script>
 </body>
