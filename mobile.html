@@ -194,7 +194,7 @@ let isUnlocked = false;
 const PegasusCloud = {
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("peg_pin", p); PegasusCloud.pull(); return true; } return false; },
-pull: async () => {
+    pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
@@ -203,12 +203,12 @@ pull: async () => {
             });
             const data = await res.json();
             
-            // 1. Συγχρονισμός σταθερών κλειδιών (Inventory, History, Car)
+            // 1. Συγχρονισμός σταθερών κλειδιών
             ['supp_inventory', 'weekly_history', 'food_library', 'car_dates', 'car_service'].forEach(k => { 
                 if(data[k]) localStorage.setItem('peg_'+k, JSON.stringify(data[k])); 
             });
 
-            // 2. Συγχρονισμός Διατροφής (today_food_log -> Τοπική Ημερομηνία)
+            // 2. Συγχρονισμός Διατροφής ημέρας
             if(data.today_food_log) {
                 const d = new Date(); 
                 const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
@@ -220,16 +220,32 @@ pull: async () => {
     },
     push: async () => {
         if (!isUnlocked) return;
-        const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+        const d = new Date(); 
+        const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+        
+        // Υπολογισμός τρέχοντος KCAL για το payload
+        const currentLog = PegasusCloud.safeParse(dk, []);
+        const totalKcal = currentLog.reduce((sum, item) => sum + item.kcal, 0);
+
         const payload = {
-            kcal: localStorage.getItem("peg_kcal") || "0",
+            kcal: totalKcal.toString(),
             supp_inventory: PegasusCloud.safeParse("peg_supp_inventory", {prot:2500, crea:1000}),
             weekly_history: PegasusCloud.safeParse("peg_weekly_history", {}),
+            food_library: PegasusCloud.safeParse("peg_food_library", []), // Προστέθηκε για συγχρονισμό βιβλιοθήκης
             car_dates: PegasusCloud.safeParse("peg_car_dates", {}), 
             car_service: PegasusCloud.safeParse("peg_car_service", []),
-            today_food_log: PegasusCloud.safeParse(dk, [])
+            today_food_log: currentLog
         };
-        try { await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, body: JSON.stringify(payload) }); setSyncStatus('online'); } catch(e) { setSyncStatus('offline'); }
+
+        try { 
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, 
+                body: JSON.stringify(payload) 
+            }); 
+            if(res.ok) setSyncStatus('online');
+            else setSyncStatus('offline');
+        } catch(e) { setSyncStatus('offline'); }
     }
 };
 
