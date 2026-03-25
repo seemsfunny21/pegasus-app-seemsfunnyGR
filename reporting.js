@@ -67,8 +67,10 @@ const PegasusReporting = {
         const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
         const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStr) || "[]");
         const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStr) || "null");
-        const recovery = (window.PegasusLogic && window.PegasusLogic.getRecoveryStatus) ? 
-                          window.PegasusLogic.getRecoveryStatus() : { msg: "Active", nutrition: "Standard" };
+        const isRecovery = (today.getDay() === 1 || today.getDay() === 4);
+        const recovery = isRecovery ? 
+            { msg: "Recovery Day Active", nutrition: "Focus on hydration & stretching" } : 
+            { msg: "Training Day", nutrition: "High protein intake required" };
 
         const pendingData = {
             dateSent: dateStr,
