@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v11.3 (Absolute Unified)</title>
+    <title>Pegasus OS v11.4 (Absolute Unified)</title>
 
     <script>
         (function() {
@@ -254,6 +254,7 @@ const PegasusCloud = {
                 localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(data.all_food_logs[`food_log_${dateStr}`]));
             }
 
+            // ΕΝΗΜΕΡΩΣΗ ΘΕΡΜΙΔΩΝ ΑΠΟ ΤΟ CLOUD
             if (data.kcal) localStorage.setItem("pegasus_today_kcal", data.kcal);
             if (data.protein) localStorage.setItem("pegasus_today_protein", data.protein);
 
@@ -408,7 +409,7 @@ async function addFood() {
     log.unshift({name:n, kcal:k, protein:p});
     localStorage.setItem(dk, JSON.stringify(log));
     
-    // Update totals
+    // Ενημέρωση συνόλων
     let tk = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
     let tp = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
     localStorage.setItem("pegasus_today_kcal", (tk + k).toFixed(1));
