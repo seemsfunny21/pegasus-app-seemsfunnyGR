@@ -76,6 +76,7 @@
             <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
             <div class="tile" onclick="openView('supps')" style="padding: 15px 12px;">
                 <span class="tile-label" style="margin-bottom: 10px; display: block;">Συμπληρώματα</span>
+                
                 <div style="width: 100%; text-align: left; margin-bottom: 8px;">
                     <div style="font-size: 9px; color: #00bcd4; display: flex; justify-content: space-between; font-weight: bold;">
                         <span>Πρωτεΐνη</span><span id="homeProtTxt">--%</span>
@@ -84,6 +85,7 @@
                         <div id="homeProtBar" class="bar-fill" style="background:#00bcd4; width: 0%;"></div>
                     </div>
                 </div>
+                
                 <div style="width: 100%; text-align: left;">
                     <div style="font-size: 9px; color: #9c27b0; display: flex; justify-content: space-between; font-weight: bold;">
                         <span>Κρεατίνη</span><span id="homeCreaTxt">--%</span>
@@ -135,8 +137,11 @@
             <div class="bar-bg"><div id="mainProgressBar" class="bar-fill"></div></div>
         </div>
         <div id="phaseTimer" style="font-size:40px; font-weight:900; color:var(--main); margin:20px 0;">25:00</div>
+        
         <div id="emsSteps" style="width:100%; margin-top:10px; box-sizing:border-box;"></div>
+        
         <button id="btnStart" class="primary-btn">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
+        
         <div id="emsTimeControls" class="compact-grid" style="display:none; margin-top:10px; width:100%;">
             <button class="secondary-btn" onclick="adjustEmsTime(-5)" style="color:#ff4444; border-color:#ff4444;">-5s ΑΣΚΗΣΗ</button>
             <button class="secondary-btn" onclick="adjustEmsTime(5)">+5s ΑΣΚΗΣΗ</button>
@@ -220,18 +225,11 @@
         </div>
     </div>
 
-<script src="data.js"></script>
-<script src="cloudSync.js"></script>
-<script src="metabolic.js"></script>
-<script src="calories.js"></script>
-<script src="app.js"></script>
-
 <script>
-// ΤΕΧΝΙΚΗ ΔΙΟΡΘΩΣΗ: Χρήση var και || για αποφυγή SyntaxError Redeclaration
-var PEGASUS = window.PEGASUS || { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
-var isUnlocked = false;
+const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
+let isUnlocked = false;
 
-var PegasusStore = window.PegasusStore || {
+const PegasusStore = {
     keys: {
         foodPrefix: "food_log_",
         kcalTotal: "pegasus_today_kcal",
@@ -257,8 +255,8 @@ var PegasusStore = window.PegasusStore || {
     }
 };
 
-var PegasusCloud = window.PegasusCloud || {
-    hasSuccessfullyPulled: false, 
+const PegasusCloud = {
+    hasSuccessfullyPulled: false, // 1. ΔΙΑΚΟΠΤΗΣ ΑΣΦΑΛΕΙΑΣ
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("pegasus_vault_pin", p); PegasusCloud.pull(); return true; } return false; },
     
@@ -292,10 +290,10 @@ var PegasusCloud = window.PegasusCloud || {
             if (data.kcal) localStorage.setItem(PegasusStore.keys.kcalTotal, data.kcal);
             if (data.protein) localStorage.setItem(PegasusStore.keys.protTotal, data.protein);
 
-            PegasusCloud.hasSuccessfullyPulled = true; 
+            PegasusCloud.hasSuccessfullyPulled = true; // 2. ΕΠΙΒΕΒΑΙΩΣΗ ΛΗΨΗΣ
             setSyncStatus('online');
         } catch(e) { 
-            PegasusCloud.hasSuccessfullyPulled = false; 
+            PegasusCloud.hasSuccessfullyPulled = false; // 3. ΑΣΦΑΛΙΣΗ ΣΕ ΠΕΡΙΠΤΩΣΗ ΣΦΑΛΜΑΤΟΣ
             setSyncStatus('offline'); 
             console.error("Pegasus Pull Error: ", e);
         } finally {
@@ -307,6 +305,8 @@ var PegasusCloud = window.PegasusCloud || {
     
     push: async () => {
         if (!isUnlocked) return;
+        
+        // 4. DATA GUARD: ΑΠΑΓΟΡΕΥΣΗ PUSH ΧΩΡΙΣ PULL
         if (!PegasusCloud.hasSuccessfullyPulled) {
             console.error("PEGASUS GUARD: Push blocked. Sync Guard Active.");
             setSyncStatus('ΣΦΑΛΜΑ GUARD');
@@ -562,7 +562,7 @@ function updateMuscleUI() {
 
 function openView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); const t = document.getElementById(id); if(t) t.classList.add('active'); if(id==='supps') updateSuppUI(); if(id==='preview') updateMuscleUI(); if(id==='library') renderLibrary(); }
 function setSyncStatus(s) { const e = document.getElementById("sync-indicator"); e.textContent = s.toUpperCase(); e.style.color = s==='online'?'#00ff41':s==='offline'?'#ff4444':'#00bcd4'; }
-function attemptVaultUnlock() { if(window.PegasusCloud && PegasusCloud.unlock(document.getElementById("pinInput").value)) { document.getElementById("pinModal").style.display = "none"; loadSpecs(); } }
+function attemptVaultUnlock() { if(PegasusCloud.unlock(document.getElementById("pinInput").value)) { document.getElementById("pinModal").style.display = "none"; loadSpecs(); } }
 function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); loadSpecs(); }
 
 
@@ -575,10 +575,10 @@ let emsSeconds = 1500;
 
 const emsCategories = [
     { id: 0, n: "Lateral Raises", t: 4 },
-    { id: 1, n: "Bicep Curls",     t: 4 },
-    { id: 2, n: "Static Plank",    t: 3 },
+    { id: 1, n: "Bicep Curls",    t: 4 },
+    { id: 2, n: "Static Plank",   t: 3 },
     { id: 3, n: "Static Crunches",t: 3 },
-    { id: 4, n: "Massage Mode",    t: 1 }
+    { id: 4, n: "Massage Mode",   t: 1 }
 ];
 
 let emsSchedule = [
@@ -708,9 +708,9 @@ async function promptEMSCompletion() {
 }
 
 async function saveEMSMobile(avg, kcal) {
-    let history = (window.PegasusCloud) ? PegasusCloud.safeParse('pegasus_weekly_history', { 
+    let history = PegasusCloud.safeParse('pegasus_weekly_history', { 
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
-    }) : { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+    });
     
     const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
     groups.forEach(g => history[g] = (history[g] || 0) + 6);
@@ -733,7 +733,7 @@ async function saveEMSMobile(avg, kcal) {
 window.onload = () => {
     const pin = localStorage.getItem("pegasus_vault_pin");
     if(pin) { 
-        if(window.PegasusCloud) PegasusCloud.unlock(pin); 
+        PegasusCloud.unlock(pin); 
         document.getElementById("pinModal").style.display="none"; 
         loadSpecs(); 
     } else {
