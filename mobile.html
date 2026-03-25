@@ -131,7 +131,7 @@
 
     <div id="ems_panel" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Προπόνηση EMS</div>
+        <div class="section-title">Προπόνηση EMS (Circuit)</div>
         <div class="mini-card" style="width:100%;">
             <div id="totalProgress" class="mini-val">0%</div>
             <div class="bar-bg"><div id="mainProgressBar" class="bar-fill"></div></div>
@@ -483,32 +483,56 @@ function attemptVaultUnlock() { if(PegasusCloud.unlock(document.getElementById("
 function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); loadSpecs(); }
 
 /* ==========================================================================
-   EMS SESSION LOGIC (MOBILE 25 MIN PROTOCOL - INTERNAL CYCLES)
+   EMS SESSION LOGIC (CIRCUIT TRAINING PROTOCOL - FLAT ARRAY)
    ========================================================================== */
 
 let emsTimer = null;
 let emsSeconds = 1500; // 25 λεπτά
 
-// Προσθήκη s (Sets) και w (Work seconds per set)
+// UI Κατηγορίες (Μόνο για την προβολή)
+const emsCategories = [
+    { id: 0, n: "Lateral Raises", totalD: 276 },
+    { id: 1, n: "Bicep Curls", totalD: 276 },
+    { id: 2, n: "Static Plank", totalD: 414 },
+    { id: 3, n: "Static Crunches", totalD: 414 },
+    { id: 4, n: "Massage Mode", totalD: 120 }
+];
+
+// Unrolled Array (Κυκλική Προπόνηση)
 let emsSchedule = [
-    { n: "Lateral Raises (4 Sets)", s: 4, d: 276, w: 45 },
-    { n: "Bicep Curls (4 Sets)", s: 4, d: 276, w: 45 },
-    { n: "Static Plank (3 Sets)", s: 3, d: 414, w: 90 },
-    { n: "Static Crunches (3 Sets)", s: 3, d: 414, w: 90 },
-    { n: "Massage Mode", s: 1, d: 120, w: 120 }
+    // Γύρος 1
+    { id: 0, w: 45, d: 69, sIdx: 1, sTot: 4 },
+    { id: 1, w: 45, d: 69, sIdx: 1, sTot: 4 },
+    { id: 2, w: 90, d: 138, sIdx: 1, sTot: 3 },
+    { id: 3, w: 90, d: 138, sIdx: 1, sTot: 3 },
+    // Γύρος 2
+    { id: 0, w: 45, d: 69, sIdx: 2, sTot: 4 },
+    { id: 1, w: 45, d: 69, sIdx: 2, sTot: 4 },
+    { id: 2, w: 90, d: 138, sIdx: 2, sTot: 3 },
+    { id: 3, w: 90, d: 138, sIdx: 2, sTot: 3 },
+    // Γύρος 3
+    { id: 0, w: 45, d: 69, sIdx: 3, sTot: 4 },
+    { id: 1, w: 45, d: 69, sIdx: 3, sTot: 4 },
+    { id: 2, w: 90, d: 138, sIdx: 3, sTot: 3 },
+    { id: 3, w: 90, d: 138, sIdx: 3, sTot: 3 },
+    // Γύρος 4
+    { id: 0, w: 45, d: 69, sIdx: 4, sTot: 4 },
+    { id: 1, w: 45, d: 69, sIdx: 4, sTot: 4 },
+    // Αποθεραπεία
+    { id: 4, w: 120, d: 120, sIdx: 1, sTot: 1 }
 ];
 
 function initEmsUI() {
     const container = document.getElementById('emsSteps');
     if (!container) return;
-    container.innerHTML = emsSchedule.map((ex, i) => `
-        <div id="emsEx_${i}" style="margin-bottom:15px; opacity:0.3; transition:0.4s;">
+    container.innerHTML = emsCategories.map(cat => `
+        <div id="emsEx_${cat.id}" style="margin-bottom:15px; opacity:0.3; transition:0.4s;">
             <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:5px; text-transform:uppercase;">
-                <span>${ex.n}</span>
-                <span id="emsTime_${i}">ΑΝΑΜΟΝΗ</span>
+                <span id="emsTitle_${cat.id}">${cat.n}</span>
+                <span id="emsTime_${cat.id}">ΑΝΑΜΟΝΗ</span>
             </div>
             <div class="bar-bg" style="height:6px; margin:0; background:rgba(255,255,255,0.05);">
-                <div id="emsBar_${i}" class="bar-fill" style="width:0%; height:100%;"></div>
+                <div id="emsBar_${cat.id}" class="bar-fill" style="width:0%; height:100%;"></div>
             </div>
         </div>
     `).join('');
@@ -528,30 +552,20 @@ document.getElementById('btnStart').onclick = function() {
 
 window.adjustEmsTime = function(delta) {
     if (!emsTimer) return;
-    
     const totalElapsed = 1500 - emsSeconds;
     let cumulative = 0;
-    let activeIndex = -1;
     
     for (let i = 0; i < emsSchedule.length; i++) {
         if (totalElapsed >= cumulative && totalElapsed < cumulative + emsSchedule[i].d) {
-            activeIndex = i;
+            let newW = emsSchedule[i].w + delta;
+            let newR = emsSchedule[i].d - newW;
+            if (newW >= 5 && newR >= 0) {
+                emsSchedule[i].w = newW; // Αλλαγή μόνο στο τρέχον σετ
+                updateEmsTick(true);
+            }
             break;
         }
         cumulative += emsSchedule[i].d;
-    }
-    
-    if (activeIndex !== -1) {
-        let ex = emsSchedule[activeIndex];
-        const T_set = ex.d / ex.s; // Συνολικός χρόνος σετ (Άσκηση + Παύση)
-        let newW = ex.w + delta;
-        let newR = T_set - newW;
-        
-        // Οριακές τιμές: Τουλάχιστον 5s άσκηση, 0s παύση
-        if (newW >= 5 && newR >= 0) {
-            ex.w = newW;
-            updateEmsTick(true); // Άμεση ανανέωση διεπαφής χωρίς μείωση χρονομέτρου
-        }
     }
 };
 
@@ -575,46 +589,59 @@ function updateEmsTick(skipDecrement = false) {
     document.getElementById('mainProgressBar').style.width = (totalElapsed / 1500 * 100) + '%';
     document.getElementById('totalProgress').textContent = Math.round(totalElapsed / 1500 * 100) + '%';
 
+    let categoryElapsed = {0:0, 1:0, 2:0, 3:0, 4:0};
     let cumulative = 0;
-    emsSchedule.forEach((ex, i) => {
-        const bar = document.getElementById(`emsBar_${i}`);
-        const row = document.getElementById(`emsEx_${i}`);
-        const timeLabel = document.getElementById(`emsTime_${i}`);
-        
-        if (totalElapsed >= cumulative + ex.d) {
+    let activeSet = null;
+    let activePhaseElapsed = 0;
+
+    for (let i = 0; i < emsSchedule.length; i++) {
+        let set = emsSchedule[i];
+        if (totalElapsed >= cumulative + set.d) {
+            categoryElapsed[set.id] += set.d;
+        } else if (totalElapsed >= cumulative && totalElapsed < cumulative + set.d) {
+            activeSet = set;
+            activePhaseElapsed = totalElapsed - cumulative;
+            categoryElapsed[set.id] += activePhaseElapsed;
+        }
+        cumulative += set.d;
+    }
+
+    emsCategories.forEach(cat => {
+        const row = document.getElementById(`emsEx_${cat.id}`);
+        const bar = document.getElementById(`emsBar_${cat.id}`);
+        const timeLabel = document.getElementById(`emsTime_${cat.id}`);
+        const titleLabel = document.getElementById(`emsTitle_${cat.id}`);
+
+        let progressPct = (categoryElapsed[cat.id] / cat.totalD) * 100;
+
+        if (categoryElapsed[cat.id] === cat.totalD) {
             bar.style.width = '100%';
             bar.style.background = 'rgba(255,255,255,0.2)';
             row.style.opacity = '0.15';
             row.style.filter = "grayscale(100%)";
             timeLabel.innerHTML = "DONE";
-        } else if (totalElapsed >= cumulative && totalElapsed < cumulative + ex.d) {
-            const exElapsed = totalElapsed - cumulative;
-            const T_set = ex.d / ex.s;
-            const t_set = exElapsed % T_set; 
+            titleLabel.innerHTML = `${cat.n}`;
+        } else if (activeSet && activeSet.id === cat.id) {
+            const isResting = activePhaseElapsed >= activeSet.w;
+            const phaseTimeLeft = isResting ? Math.ceil(activeSet.d - activePhaseElapsed) : Math.ceil(activeSet.w - activePhaseElapsed);
             
-            const isResting = (t_set >= ex.w);
-            const phaseTimeLeft = isResting ? Math.ceil(T_set - t_set) : Math.ceil(ex.w - t_set);
-            
-            const phaseDuration = isResting ? (T_set - ex.w) : ex.w;
-            const phaseElapsed = isResting ? (t_set - ex.w) : t_set;
-            const phaseProgress = (phaseElapsed / phaseDuration) * 100;
-            
-            bar.style.width = phaseProgress + '%';
+            bar.style.width = progressPct + '%';
             bar.style.background = isResting ? 'var(--danger)' : 'var(--main)';
-            
             row.style.opacity = '1';
             row.style.filter = isResting ? "drop-shadow(0 0 8px var(--danger))" : "drop-shadow(0 0 8px var(--main))";
             
             const phaseText = isResting ? "ΠΑΥΣΗ" : "ΑΣΚΗΣΗ";
             const phaseColor = isResting ? "var(--danger)" : "var(--main)";
             timeLabel.innerHTML = `<span style="color:${phaseColor}">${phaseText} ${String(Math.floor(phaseTimeLeft/60))}:${String(phaseTimeLeft%60).padStart(2,'0')}</span>`;
+            titleLabel.innerHTML = `${cat.n} (SET ${activeSet.sIdx}/${activeSet.sTot})`;
         } else {
-            bar.style.width = '0%';
-            row.style.opacity = '0.3';
+            bar.style.width = progressPct + '%';
+            bar.style.background = 'var(--main)';
+            row.style.opacity = '0.4';
             row.style.filter = "none";
             timeLabel.innerHTML = "ΑΝΑΜΟΝΗ";
+            titleLabel.innerHTML = `${cat.n}`;
         }
-        cumulative += ex.d;
     });
 }
 
