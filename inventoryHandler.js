@@ -9,8 +9,8 @@
 function getSortedMuscleGroups() {
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     // ΔΙΟΡΘΩΣΗ: Δυναμική ανάκτηση από το settings.js, αποφυγή στατικών δεδομένων
-    const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
-                    { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
+                { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
     
     let stats = Object.keys(targets).map(group => {
         let done = history[group] || 0;
