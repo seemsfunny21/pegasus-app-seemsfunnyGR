@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS EMS MODULE - STRICT ANALYST EDITION (V3.0)
-   Protocol: 25-Min Wednesday Session | +6 Set Universal Credit | Unified Keys
+   PEGASUS EMS MODULE - STRICT ANALYST EDITION (V3.1)
+   Protocol: 25-Min Wednesday Session | Unified Keys & Async Sync
    ========================================================================== */
 
 function getTargetWednesday() {
@@ -13,16 +13,10 @@ function getTargetWednesday() {
 }
 
 window.logEMSData = function() {
-    console.log("PEGASUS: EMS Logging Interface Activated.");
     const toolsPanel = document.getElementById('toolsPanel');
     if (toolsPanel) toolsPanel.style.display = 'none';
 
-    const emsModal = document.getElementById('emsModal');
-    if (!emsModal) {
-        createEMSModal();
-        return;
-    }
-
+    const emsModal = document.getElementById('emsModal') || createEMSModal();
     const dateInput = document.getElementById('emsDate');
     const avgInput = document.getElementById('emsAvg');
     const kcalInput = document.getElementById('emsKcal');
@@ -41,29 +35,31 @@ window.saveEMSFinal = async function() {
     const kcal = document.getElementById('emsKcal').value;
 
     if (!date || isNaN(parseFloat(avg)) || isNaN(parseFloat(kcal))) {
-        alert("ΑΠΟΤΥΧΙΑ: Εισάγετε έγκυρα αριθμητικά δεδομένα.");
+        alert("ΑΠΟΤΥΧΙΑ: Εισάγετε έγκυρα δεδομένα.");
         return;
     }
 
     const timestamp = Date.now();
-    const historyKey = `peg_history_${date}`; // Unified Key
+    
+    // Ενοποιημένα Κλειδιά (Συμβατά με mobile.html)
+    const weeklyKey = 'peg_weekly_history'; 
+    const kcalKey = 'peg_today_kcal';
+    const historyKey = `peg_history_${date}`;
 
-    // 1. Ενημέρωση Εβδομαδιαίου Ιστορικού (Χρήση 'peg_' για συμβατότητα με mobile)
-    const weeklyKey = 'peg_weekly_history';
+    // 1. Ενημέρωση Σετ
     let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
     };
     const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
-    groups.forEach(group => {
-        weeklyStats[group] = (weeklyStats[group] || 0) + 6;
-    });
+    groups.forEach(group => { weeklyStats[group] = (weeklyStats[group] || 0) + 6; });
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    // 2. Ενημέρωση Ημερήσιων Θερμίδων
-    let todayKcal = parseFloat(localStorage.getItem("peg_today_kcal")) || 0;
+    // 2. Ενημέρωση Θερμίδων
+    let todayKcal = parseFloat(localStorage.getItem(kcalKey)) || 0;
     todayKcal += parseFloat(kcal);
-    localStorage.setItem("peg_today_kcal", todayKcal.toFixed(1));
+    localStorage.setItem(kcalKey, todayKcal.toFixed(1));
 
+    // 3. Ιστορικό
     const emsEntry = {
         id: "ems_" + timestamp,
         date: date,
@@ -74,20 +70,21 @@ window.saveEMSFinal = async function() {
 
     try {
         let dayHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
-        dayHistory = dayHistory.filter(item => item.type !== "EMS Training");
         dayHistory.push(emsEntry);
         localStorage.setItem(historyKey, JSON.stringify(dayHistory));
         localStorage.setItem(`peg_day_status_${date}`, 'COMPLETED');
 
-        // 3. Ασφαλές Cloud Push (Αναμονή ολοκλήρωσης πριν το reload)
+        // ΚΡΙΣΙΜΟ: Αναμονή ολοκλήρωσης του Cloud Push
         if (window.PegasusCloud) {
+            console.log("PEGASUS: Initiating secure cloud push...");
             await window.PegasusCloud.push(true);
         }
         
-        alert(`PEGASUS SYNC: Πιστώθηκαν 36 σετ. Η προπόνηση αποθηκεύτηκε.`);
+        alert(`PEGASUS SYNC: Η προπόνηση αποθηκεύτηκε.`);
         window.location.reload();
     } catch (e) {
         console.error("Critical Sync Error:", e);
+        alert("ΣΦΑΛΜΑ ΣΥΓΧΡΟΝΙΣΜΟΥ. Τα δεδομένα αποθηκεύτηκαν μόνο τοπικά.");
     }
 };
 
@@ -104,8 +101,5 @@ function createEMSModal() {
         <button onclick="saveEMSFinal()" style="width:100%; background:#4CAF50; color:#000; border:none; padding:12px; font-weight:bold; border-radius:5px; cursor:pointer;">ΚΑΤΑΓΡΑΦΗ</button>
     `;
     document.body.appendChild(div);
+    return div;
 }
-
-window.addEventListener('load', () => {
-    setTimeout(() => { if(typeof window.checkEMSReminder === 'function') window.checkEMSReminder(); }, 2500);
-});
