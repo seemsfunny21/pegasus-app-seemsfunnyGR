@@ -20,7 +20,8 @@ window.getFinalProgram = function(day) {
         dailyData = window.calculateDailyProgram(day);
     } else {
         console.warn("PEGASUS: Dynamic engine offline. Using emergency fallback.");
-        return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Recovery" }];
+        // ΔΙΟΡΘΩΣΗ: Αλλαγή από "Recovery" σε "Κορμός" για αποφυγή ορφανών δεδομένων στο reporting
+        return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
     }
 
     // 2. WEATHER LOGIC: Αν βρέχει, αφαιρούμε τις εξωτερικές δραστηριότητες (Ποδηλασία)
@@ -28,7 +29,7 @@ window.getFinalProgram = function(day) {
         dailyData = dailyData.filter(ex => !ex.name.includes("Ποδηλασία"));
         
         // Αν η μέρα μείνει άδεια λόγω βροχής (π.χ. Σάββατο που είχε μόνο ποδήλατο), 
-        // εισάγουμε μια δυναμική εναλλακτική προπόνηση εσωτερικού χώρου.
+        // εισάγουμε μια δυναμική εναλλακτική προπόνηση εσωτερικού χώρου με σωστά Muscle Groups.
         if (dailyData.length === 0) {
             dailyData = [
                 { name: "Pushups", sets: 4, duration: 45, muscleGroup: "Στήθος" },
@@ -43,5 +44,9 @@ window.getFinalProgram = function(day) {
 
 window.updateWeatherUI = function() {
     const statusBox = document.getElementById('weather-status-alert');
-    if (statusBox) statusBox.style.display = 'none';
+    if (statusBox) {
+        const rain = isRaining();
+        statusBox.style.display = rain ? 'block' : 'none';
+        statusBox.innerHTML = rain ? "⚠️ INDOOR PROTOCOL ACTIVE" : "";
+    }
 };
