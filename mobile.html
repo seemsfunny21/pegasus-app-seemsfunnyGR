@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v12.1 (Sync Fixed)</title>
+    <title>Pegasus OS v12.2 (Final Backup Fix)</title>
 
     <script>
         (function() {
@@ -70,7 +70,7 @@
             <div style="color:var(--main); font-weight:900; margin-bottom:15px; letter-spacing:1px; text-transform:uppercase;">Λήψη Αντιγράφου</div>
             <p style="font-size:11px; color:#aaa; margin-bottom:10px;">ΟΝΟΜΑ ΑΡΧΕΙΟΥ:</p>
             <input type="text" id="backupFileName" style="border-color:var(--main); color:var(--main); font-weight:bold;">
-            <button class="primary-btn" onclick="confirmExport()">ΟΚ - ΛΗΨΗ</button>
+            <button class="primary-btn" onclick="confirmExport()">ΛΗΨΗ</button>
             <button class="secondary-btn" style="margin-top: 10px; border-color:#444; color:#666;" onclick="closeBackupModal()">ΑΚΥΡΟ</button>
         </div>
     </div>
@@ -288,11 +288,67 @@ const PegasusCloud = {
     }
 };
 
-function openBackupModal() { const d = new Date(); const dateStr = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`; document.getElementById('backupFileName').value = `PegasusBackup_${dateStr}`; document.getElementById('backupModal').style.display = 'flex'; }
-function closeBackupModal() { document.getElementById('backupModal').style.display = 'none'; }
-function confirmExport() { const fileName = document.getElementById('backupFileName').value || "PegasusBackup"; const backup = {}; const prefixes = ["pegasus_", "food_log_", "peg_car_", "weight_", "cardio_", "peg_vault_data", "peg_car_identity"]; for (let i = 0; i < localStorage.length; i++) { let k = localStorage.key(i); if (prefixes.some(p => k.startsWith(p))) backup[k] = localStorage.getItem(k); } const blob = new Blob([JSON.stringify(backup)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `${fileName}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); closeBackupModal(); }
-function importData(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); if (confirm("ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα αντικατασταθούν. Συνέχεια;")) { Object.keys(data).forEach(k => localStorage.setItem(k, data[k])); alert("Η επαναφορά ολοκληρώθηκε! Η εφαρμογή θα ανανεωθεί."); location.reload(); } } catch (err) { alert("Σφάλμα αρχείου."); } }; reader.readAsText(file); }
+/* --- PEGASUS CUSTOM BACKUP UI LOGIC (v12.2) --- */
+function openBackupModal() {
+    const d = new Date();
+    const dateStr = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    document.getElementById('backupFileName').value = `PegasusBackup_${dateStr}`;
+    document.getElementById('backupModal').style.display = 'flex';
+}
 
+function closeBackupModal() { document.getElementById('backupModal').style.display = 'none'; }
+
+function confirmExport() {
+    const fileName = document.getElementById('backupFileName').value || "PegasusBackup";
+    const backup = {};
+    const prefixes = ["pegasus_", "food_log_", "peg_car_", "weight_", "cardio_", "peg_vault_data", "peg_car_identity"];
+    
+    for (let i = 0; i < localStorage.length; i++) {
+        let k = localStorage.key(i);
+        if (prefixes.some(p => k.startsWith(p))) backup[k] = localStorage.getItem(k);
+    }
+    
+    const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    // MOBILE DOWNLOAD FIX
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${fileName}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Cleanup with delay to ensure download starts
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        closeBackupModal();
+    }, 100);
+}
+
+function importData(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (confirm("ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα αντικατασταθούν πλήρως. Συνέχεια;")) {
+                const prefixes = ["pegasus_", "food_log_", "peg_car_", "weight_", "cardio_", "peg_vault_data", "peg_car_identity"];
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (prefixes.some(p => key.startsWith(p))) localStorage.removeItem(key);
+                }
+                Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                PegasusCloud.hasSuccessfullyPulled = true;
+                alert("Η επαναφορά ολοκληρώθηκε! Η εφαρμογή θα ανανεωθεί.");
+                location.reload();
+            }
+        } catch (err) { alert("Σφάλμα αρχείου."); }
+    };
+    reader.readAsText(file);
+}
+
+/* --- UI RENDER FUNCTIONS --- */
 function bindCopy(id, val) { const el = document.getElementById(id); if (!el) return; el.value = val || ""; el.setAttribute('readonly', 'true'); el.style.border = "1px solid #222"; el.onclick = function() { if (this.hasAttribute('readonly') && this.value) { navigator.clipboard.writeText(this.value); const orig = this.style.background; this.style.background = "#004400"; setTimeout(() => this.style.background = orig, 300); } }; }
 function unlockFields(v) { document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { el.removeAttribute('readonly'); el.onclick = null; el.style.border = "1px solid var(--main)"; }); }
 function saveCarSpecs() { localStorage.setItem("peg_car_identity", JSON.stringify({ plate: document.getElementById('carPlate').value, model: document.getElementById('carModel').value, vin: document.getElementById('carVin').value, eng: document.getElementById('carEngine').value, pwr: document.getElementById('carPower').value })); localStorage.setItem("pegasus_car_dates", JSON.stringify({ ins: document.getElementById('carIns').value, kteo: document.getElementById('carKteo').value, srv: document.getElementById('carSrv').value })); loadSpecs(); PegasusCloud.push(); }
