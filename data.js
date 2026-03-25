@@ -25,7 +25,7 @@ const STRENGTH_EXERCISES = [
     { name: "Tricep Pulldowns", muscleGroup: "Χέρια", defaultDuration: 45 },
     { name: "Ab Crunches Cable", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
-    { name: "Leg Raise Hip Lift", muscleGroup: "Κormos", defaultDuration: 45 },
+    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Situps", muscleGroup: "Κορμός", defaultDuration: 45 },
