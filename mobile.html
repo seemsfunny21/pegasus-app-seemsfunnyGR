@@ -351,36 +351,65 @@ const PegasusCloud = {
 };
 
 /* --- BACKUP & RESTORE ENGINE --- */
+/* --- ΔΙΟΡΘΩΜΕΝΟ BACKUP & RESTORE ENGINE (v11.8) --- */
 function exportData() {
     const backup = {};
-    const prefixes = ["pegasus_", "food_log_", "peg_car_", "weight_", "cardio_"];
+    // Σαρώνουμε ΟΛΑ τα κλειδιά ανεξαιρέτως για να μην χαθεί τίποτα
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (prefixes.some(p => key.startsWith(p))) {
+        // Συμπεριλαμβάνουμε επαφές, οχήματα, φαγητά και ρυθμίσεις
+        if (key.startsWith("pegasus_") || key.startsWith("food_log_") || key.startsWith("peg_car_")) {
             backup[key] = localStorage.getItem(key);
         }
     }
+    
+    if (Object.keys(backup).length === 0) {
+        alert("Σφάλμα: Δεν βρέθηκαν δεδομένα για Backup.");
+        return;
+    }
+
     const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `PEGASUS_MOBILE_BACKUP_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `PEGASUS_FULL_SAFE_BACKUP_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
+    console.log("Backup Created with " + Object.keys(backup).length + " keys.");
 }
 
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            if (confirm("ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα αντικατασταθούν. Συνέχεια;")) {
-                Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-                alert("Η επαναφορά ολοκληρώθηκε! Η εφαρμογή θα ανανεωθεί.");
+            if (confirm("ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα αντικατασταθούν πλήρως. Συνέχεια;")) {
+                
+                // 1. Καθαρισμός παλιών δεδομένων για αποφυγή διπλότυπων
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith("pegasus_") || key.startsWith("food_log_") || key.startsWith("peg_car_")) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                // 2. Επαναφορά από το αρχείο
+                Object.keys(data).forEach(k => {
+                    localStorage.setItem(k, data[k]);
+                });
+
+                // 3. Απενεργοποίηση Sync Guard για να μην γίνει overwrite από το Cloud αμέσως
+                PegasusCloud.hasSuccessfullyPulled = true; 
+
+                alert("Η επαναφορά ολοκληρώθηκε! Πραγματοποιείται ανανέωση...");
                 location.reload();
             }
-        } catch (err) { alert("Σφάλμα κατά την ανάγνωση του αρχείου."); }
+        } catch (err) { 
+            alert("Σφάλμα: Το αρχείο δεν είναι έγκυρο backup του Pegasus."); 
+        }
     };
     reader.readAsText(file);
 }
