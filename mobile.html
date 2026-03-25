@@ -74,7 +74,27 @@
             <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
             <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
             <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
-            <div class="tile" onclick="openView('supps')"><span class="tile-icon" id="suppIcon">💊</span><span class="tile-label" id="suppLabel">Συμπληρώματα</span></div>
+            <div class="tile" onclick="openView('supps')" style="padding: 15px 12px;">
+    <span class="tile-label" style="margin-bottom: 10px; display: block;">Συμπληρώματα</span>
+    
+    <div style="width: 100%; text-align: left; margin-bottom: 8px;">
+        <div style="font-size: 9px; color: #00bcd4; display: flex; justify-content: space-between; font-weight: bold;">
+            <span>WHEY</span><span id="homeProtTxt">--%</span>
+        </div>
+        <div class="bar-bg" style="height: 5px; margin-top: 3px;">
+            <div id="homeProtBar" class="bar-fill" style="background:#00bcd4; width: 0%;"></div>
+        </div>
+    </div>
+    
+    <div style="width: 100%; text-align: left;">
+        <div style="font-size: 9px; color: #9c27b0; display: flex; justify-content: space-between; font-weight: bold;">
+            <span>CREA</span><span id="homeCreaTxt">--%</span>
+        </div>
+        <div class="bar-bg" style="height: 5px; margin-top: 3px;">
+            <div id="homeCreaBar" class="bar-fill" style="background:#9c27b0; width: 0%;"></div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 
@@ -396,10 +416,32 @@ function deleteFood(idx) {
 
 function updateSuppUI() {
     const s = PegasusCloud.safeParse('peg_supp_inventory', { prot: 2500, crea: 1000 });
-    document.getElementById('protLevelText').textContent = `${Math.round(s.prot)} / 2500g`;
-    document.getElementById('protBar').style.width = Math.min((s.prot/2500)*100, 100) + '%';
-    document.getElementById('creaLevelText').textContent = `${Math.round(s.crea)} / 1000g`;
-    document.getElementById('creaBar').style.width = Math.min((s.crea/1000)*100, 100) + '%';
+    
+    // Υπολογισμός Ποσοστών
+    const protPct = Math.min((s.prot / 2500) * 100, 100);
+    const creaPct = Math.min((s.crea / 1000) * 100, 100);
+
+    // Ενημέρωση Detailed View (Μέσα στο Panel)
+    const protTextEl = document.getElementById('protLevelText');
+    const protBarEl = document.getElementById('protBar');
+    const creaTextEl = document.getElementById('creaLevelText');
+    const creaBarEl = document.getElementById('creaBar');
+    
+    if (protTextEl) protTextEl.textContent = `${Math.round(s.prot)} / 2500g`;
+    if (protBarEl) protBarEl.style.width = protPct + '%';
+    if (creaTextEl) creaTextEl.textContent = `${Math.round(s.crea)} / 1000g`;
+    if (creaBarEl) creaBarEl.style.width = creaPct + '%';
+
+    // Ενημέρωση Home Screen Tile (Μικρές Μπάρες)
+    const homeProtTxt = document.getElementById('homeProtTxt');
+    const homeProtBar = document.getElementById('homeProtBar');
+    const homeCreaTxt = document.getElementById('homeCreaTxt');
+    const homeCreaBar = document.getElementById('homeCreaBar');
+
+    if (homeProtTxt) homeProtTxt.textContent = Math.round(protPct) + '%';
+    if (homeProtBar) homeProtBar.style.width = protPct + '%';
+    if (homeCreaTxt) homeCreaTxt.textContent = Math.round(creaPct) + '%';
+    if (homeCreaBar) homeCreaBar.style.width = creaPct + '%';
 }
 
 function consumeSupp(t, a, p = true) {
