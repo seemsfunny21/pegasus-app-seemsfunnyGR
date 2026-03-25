@@ -1,11 +1,52 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v7.11 (STRICT UNIFIED SYNC - FIXED LOW ROW)
+   PEGASUS DATA ENGINE - v8.0 (DATA ISOLATION & PROTECTED STORAGE)
+   Protocol: Strict Data Analyst - Protected Food Keys
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
 window.TARGET_SETS = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
 window.REST_TIME = 60; 
 window.MAX_DAILY_MINUTES = 60;
+
+/**
+ * 1. PEGASUS STORE PROTOCOL (Data Isolation Layer)
+ * Κλειδώνει τη διαχείριση του LocalStorage για την αποφυγή διαφθοράς δεδομένων.
+ */
+window.PegasusStore = {
+    // Protected Keys Map
+    keys: {
+        foodPrefix: "food_log_",
+        kcalTotal: "pegasus_today_kcal",
+        protTotal: "pegasus_today_protein",
+        library: "pegasus_food_library"
+    },
+
+    // Λήψη Log Φαγητού με Validation
+    getFoodLog: function(dateStr) {
+        const key = this.keys.foodPrefix + dateStr;
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            console.error("Store Error: Corrupted food log for " + dateStr);
+            return [];
+        }
+    },
+
+    // Αποθήκευση Log Φαγητού με Schema Guard
+    saveFoodLog: function(dateStr, logArray) {
+        if (!Array.isArray(logArray)) return false;
+        const key = this.keys.foodPrefix + dateStr;
+        localStorage.setItem(key, JSON.stringify(logArray));
+        return true;
+    },
+
+    // Ενημέρωση Ημερήσιων Συνόλων
+    updateDailyTotals: function(kcal, prot) {
+        localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1));
+        localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1));
+    }
+};
 
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
@@ -92,7 +133,6 @@ window.program = {
     "Σάββατο": window.calculateDailyProgram("Σάββατο"),
     "Κυριακή": window.calculateDailyProgram("Κυριακή")
 };
-window.getFinalProgram = (day) => window.program[day];
 
 window.videoMap = {
     "Seated Chest Press": "chestpress",
@@ -100,7 +140,7 @@ window.videoMap = {
     "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns",
     "Close Grip Pulldown": "latpulldownsclose",
-    "Low Seated Row Wide": "lowrowsseated", // ΔΙΟΡΘΩΣΗ: lowrowsseated (με διπλό s)
+    "Low Seated Row Wide": "lowrowsseated",
     "Straight Arm Pulldowns": "straightarmpulldowns",
     "One Arm Pulldowns": "onearmpulldowns",
     "One Arm Rows": "onearmrows",
