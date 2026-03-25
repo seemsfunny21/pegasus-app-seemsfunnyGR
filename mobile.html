@@ -136,9 +136,11 @@
             <div id="totalProgress" class="mini-val">0%</div>
             <div class="bar-bg"><div id="mainProgressBar" class="bar-fill"></div></div>
         </div>
-        <div id="phaseTimer" style="font-size:40px; font-weight:900; color:var(--main); margin:20px 0;">00:00</div>
+        <div id="phaseTimer" style="font-size:40px; font-weight:900; color:var(--main); margin:20px 0;">25:00</div>
+        
+        <div id="emsSteps" style="width:100%; margin-top:20px; padding:0 10px; box-sizing:border-box;"></div>
+        
         <button id="btnStart" class="primary-btn">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
-        <div id="exList" style="width:100%; margin-top:15px;"></div>
     </div>
 
     <div id="preview" class="view">
@@ -243,7 +245,7 @@ const PegasusCloud = {
             const dk = `food_log_${dateStr}`;
 
             if (data.last_update_date === dateStr) {
-                // Bypass isDup filter to allow full replication of Cloud array (e.g., multiple identical items)
+                // Bypass isDup filter to allow full replication of Cloud array
                 localStorage.setItem(dk, JSON.stringify(data.today_food_log || []));
             }
 
@@ -421,7 +423,7 @@ function updateSuppUI() {
     const protPct = Math.min((s.prot / 2500) * 100, 100);
     const creaPct = Math.min((s.crea / 1000) * 100, 100);
 
-    // Ενημέρωση Detailed View (Μέσα στο Panel)
+    // Ενημέρωση Detailed View
     const protTextEl = document.getElementById('protLevelText');
     const protBarEl = document.getElementById('protBar');
     const creaTextEl = document.getElementById('creaLevelText');
@@ -432,7 +434,7 @@ function updateSuppUI() {
     if (creaTextEl) creaTextEl.textContent = `${Math.round(s.crea)} / 1000g`;
     if (creaBarEl) creaBarEl.style.width = creaPct + '%';
 
-    // Ενημέρωση Home Screen Tile (Μικρές Μπάρες)
+    // Ενημέρωση Home Screen
     const homeProtTxt = document.getElementById('homeProtTxt');
     const homeProtBar = document.getElementById('homeProtBar');
     const homeCreaTxt = document.getElementById('homeCreaTxt');
@@ -479,12 +481,36 @@ function setSyncStatus(s) { const e = document.getElementById("sync-indicator");
 function attemptVaultUnlock() { if(PegasusCloud.unlock(document.getElementById("pinInput").value)) { document.getElementById("pinModal").style.display = "none"; loadSpecs(); } }
 function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); loadSpecs(); }
 
+
 /* ==========================================================================
-   EMS SESSION LOGIC (MOBILE 25 MIN PROTOCOL)
-========================================================================== */
+   EMS SESSION LOGIC (MOBILE 25 MIN PROTOCOL - DYNAMIC STEPS)
+   ========================================================================== */
 
 let emsTimer = null;
 let emsSeconds = 1500; // 25 λεπτά
+const emsSchedule = [
+    { n: "Lateral Raises (4 Sets)", d: 276 },
+    { n: "Bicep Curls (4 Sets)", d: 276 },
+    { n: "Static Plank (3 Sets)", d: 414 },
+    { n: "Static Crunches (3 Sets)", d: 414 },
+    { n: "Massage Mode", d: 120 }
+];
+
+function initEmsUI() {
+    const container = document.getElementById('emsSteps');
+    if (!container) return;
+    container.innerHTML = emsSchedule.map((ex, i) => `
+        <div id="emsEx_${i}" style="margin-bottom:15px; opacity:0.3; transition:0.4s;">
+            <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:5px; text-transform:uppercase;">
+                <span>${ex.n}</span>
+                <span id="emsTime_${i}">${Math.floor(ex.d/60)}:00</span>
+            </div>
+            <div class="bar-bg" style="height:4px; margin:0; background:rgba(255,255,255,0.05);">
+                <div id="emsBar_${i}" class="bar-fill" style="width:0%; height:100%;"></div>
+            </div>
+        </div>
+    `).join('');
+}
 
 document.getElementById('btnStart').onclick = function() {
     if (emsTimer) {
@@ -493,26 +519,59 @@ document.getElementById('btnStart').onclick = function() {
         this.textContent = "ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ";
         return;
     }
-
+    
+    if (emsSeconds === 1500) initEmsUI();
     this.textContent = "ΠΑΥΣΗ";
-    emsTimer = setInterval(() => {
-        emsSeconds--;
-        const mins = Math.floor(emsSeconds / 60);
-        const secs = emsSeconds % 60;
-        document.getElementById('phaseTimer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        
-        // Υπολογισμός και Ενημέρωση Progress Bar
-        const progress = ((1500 - emsSeconds) / 1500) * 100;
-        document.getElementById('mainProgressBar').style.width = progress + '%';
-        document.getElementById('totalProgress').textContent = Math.round(progress) + '%';
-
-        if (emsSeconds <= 0) {
-            clearInterval(emsTimer);
-            this.textContent = "ΟΛΟΚΛΗΡΩΘΗΚΕ";
-            promptEMSCompletion();
-        }
-    }, 1000);
+    emsTimer = setInterval(updateEmsTick, 1000);
 };
+
+function updateEmsTick() {
+    if (emsSeconds <= 0) {
+        clearInterval(emsTimer);
+        document.getElementById('btnStart').textContent = "ΟΛΟΚΛΗΡΩΘΗΚΕ";
+        promptEMSCompletion();
+        return;
+    }
+
+    emsSeconds--;
+    const totalElapsed = 1500 - emsSeconds;
+    
+    // Κύριος Χρονόμετρο & Κεντρική Μπάρα
+    const mins = Math.floor(emsSeconds / 60);
+    const secs = emsSeconds % 60;
+    document.getElementById('phaseTimer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    document.getElementById('mainProgressBar').style.width = (totalElapsed / 1500 * 100) + '%';
+    document.getElementById('totalProgress').textContent = Math.round(totalElapsed / 1500 * 100) + '%';
+
+    // Ενημέρωση επιμέρους ασκήσεων
+    let cumulative = 0;
+    emsSchedule.forEach((ex, i) => {
+        const bar = document.getElementById(`emsBar_${i}`);
+        const row = document.getElementById(`emsEx_${i}`);
+        const timeLabel = document.getElementById(`emsTime_${i}`);
+        
+        if (totalElapsed >= cumulative + ex.d) {
+            // Ολοκληρωμένη φάση
+            bar.style.width = '100%';
+            row.style.opacity = '0.15';
+            row.style.filter = "grayscale(100%)";
+            timeLabel.textContent = "DONE";
+        } else if (totalElapsed > cumulative) {
+            // Ενεργή φάση
+            const exElapsed = totalElapsed - cumulative;
+            const exRemaining = ex.d - exElapsed;
+            bar.style.width = (exElapsed / ex.d * 100) + '%';
+            row.style.opacity = '1';
+            row.style.filter = "drop-shadow(0 0 8px var(--main))";
+            timeLabel.textContent = `${Math.floor(exRemaining/60)}:${String(exRemaining%60).padStart(2,'0')}`;
+        } else {
+            // Μελλοντική φάση
+            bar.style.width = '0%';
+            row.style.opacity = '0.3';
+        }
+        cumulative += ex.d;
+    });
+}
 
 function promptEMSCompletion() {
     const intensity = prompt("ΕΙΣΑΓΕΤΕ ΜΕΣΗ ΕΝΤΑΣΗ (AVG %):", "45");
@@ -548,11 +607,20 @@ function saveEMSMobile(avg, kcal) {
     openView('home'); 
 }
 
+/* ==========================================================================
+   INITIALIZATION
+   ========================================================================== */
 window.onload = () => {
     const pin = localStorage.getItem("peg_pin");
-    if(pin) { PegasusCloud.unlock(pin); document.getElementById("pinModal").style.display="none"; loadSpecs(); }
-    else document.getElementById("pinModal").style.display="flex";
-    updateDietUI(); updateSuppUI();
+    if(pin) { 
+        PegasusCloud.unlock(pin); 
+        document.getElementById("pinModal").style.display="none"; 
+        loadSpecs(); 
+    } else {
+        document.getElementById("pinModal").style.display="flex";
+    }
+    updateDietUI(); 
+    updateSuppUI();
 };
 </script>
 </body>
