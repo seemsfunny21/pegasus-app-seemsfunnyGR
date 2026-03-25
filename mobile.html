@@ -138,7 +138,7 @@
         </div>
         <div id="phaseTimer" style="font-size:40px; font-weight:900; color:var(--main); margin:20px 0;">25:00</div>
         
-        <div id="emsSteps" style="width:100%; margin-top:20px; padding:0 10px; box-sizing:border-box;"></div>
+       
         
         <button id="btnStart" class="primary-btn">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
         
@@ -526,12 +526,12 @@ function initEmsUI() {
     const container = document.getElementById('emsSteps');
     if (!container) return;
     container.innerHTML = emsCategories.map(cat => `
-        <div id="emsEx_${cat.id}" style="margin-bottom:15px; opacity:0.3; transition:0.4s;">
-            <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:5px; text-transform:uppercase;">
+        <div id="emsEx_${cat.id}" style="margin-bottom:20px; opacity:0.3; transition:0.4s; width:100%;">
+            <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:8px; text-transform:uppercase; padding:0 5px;">
                 <span id="emsTitle_${cat.id}">${cat.n}</span>
                 <span id="emsTime_${cat.id}">ΑΝΑΜΟΝΗ</span>
             </div>
-            <div class="bar-bg" style="height:6px; margin:0; background:rgba(255,255,255,0.05);">
+            <div class="bar-bg" style="height:6px; margin:0; width:100%;">
                 <div id="emsBar_${cat.id}" class="bar-fill" style="width:0%; height:100%;"></div>
             </div>
         </div>
