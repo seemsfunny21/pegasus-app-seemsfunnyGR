@@ -1,47 +1,39 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.1 (DATA ISOLATION & PROTECTED STORAGE)
-   Protocol: Strict Data Analyst - Protected Food Keys (Calorie Conflict Fix)
+   PEGASUS DATA ENGINE - v8.2 (FINAL UNIFIED BUILD)
+   Protocol: Strict Data Analyst - Protected Storage Keys & Global Exports
    ========================================================================== */
 
-window.USER_PROFILE = window.USER_PROFILE || { weight: 74, height: 1.87, age: 38, gender: "male" };
-window.TARGET_SETS = window.TARGET_SETS || { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-window.REST_TIME = window.REST_TIME || 60; 
-window.MAX_DAILY_MINUTES = window.MAX_DAILY_MINUTES || 60;
+window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
+window.TARGET_SETS = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+window.REST_TIME = 60; 
+window.MAX_DAILY_MINUTES = 60;
 
 /**
- * 1. PEGASUS STORE PROTOCOL (Data Isolation Layer)
- * Κλειδώνει τη διαχείριση του LocalStorage για την αποφυγή διαφθοράς δεδομένων.
+ * 1. PEGASUS STORE PROTOCOL
+ * Διαχωρισμός θερμίδων φαγητού (pegasus_diet_kcal) από προπόνηση (pegasus_today_kcal)
  */
-window.PegasusStore = window.PegasusStore || {
-    // Protected Keys Map - ΔΙΟΡΘΩΣΗ: Διαχωρισμός θερμίδων φαγητού από προπόνηση
+window.PegasusStore = {
     keys: {
         foodPrefix: "food_log_",
-        kcalTotal: "pegasus_diet_kcal", // <--- Το φαγητό γράφει εδώ πλέον, όχι στο workout key!
+        kcalTotal: "pegasus_diet_kcal", 
         protTotal: "pegasus_today_protein",
         library: "pegasus_food_library"
     },
 
-    // Λήψη Log Φαγητού με Validation
     getFoodLog: function(dateStr) {
         const key = this.keys.foodPrefix + dateStr;
         try {
             const data = localStorage.getItem(key);
             return data ? JSON.parse(data) : [];
-        } catch (e) {
-            console.error("Store Error: Corrupted food log for " + dateStr);
-            return [];
-        }
+        } catch (e) { return []; }
     },
 
-    // Αποθήκευση Log Φαγητού με Schema Guard
     saveFoodLog: function(dateStr, logArray) {
         if (!Array.isArray(logArray)) return false;
-        const key = this.keys.foodPrefix + dateStr;
-        localStorage.setItem(key, JSON.stringify(logArray));
+        localStorage.setItem(this.keys.foodPrefix + dateStr, JSON.stringify(logArray));
         return true;
     },
 
-    // Ενημέρωση Ημερήσιων Συνόλων
     updateDailyTotals: function(kcal, prot) {
         localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1));
         localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1));
@@ -74,8 +66,13 @@ const STRENGTH_EXERCISES = [
     { name: "Leg Extensions", muscleGroup: "Πόδια", defaultDuration: 45 }
 ];
 
+window.exercisesDB = STRENGTH_EXERCISES;
+
+/**
+ * 2. DYNAMIC PROGRAM GENERATOR
+ */
 window.calculateDailyProgram = function(dayName) {
-    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338 }];
+    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
     if (dayName === "Τετάρτη") return [
         { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
         { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
@@ -87,40 +84,25 @@ window.calculateDailyProgram = function(dayName) {
     let currentMins = 0;
     const program = [];
 
-    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
-        program.push({ name: "Plank", sets: 3, duration: 45, muscleGroup: "Κορμός" });
-        program.push({ name: "Leg Raise Hip Lift", sets: 3, duration: 45, muscleGroup: "Κορμός" });
-        program.push({ name: "Reverse Crunch", sets: 3, duration: 45, muscleGroup: "Κορμός" });
-        currentMins = (9 * 105) / 60;
-        const groups = ["Στήθος", "Πλάτη", "Ώμοι", "Χέρια", "Πόδια"];
-        const deficits = groups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
-        for (const item of deficits) {
-            if (item.ratio >= 1) continue;
-            const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
-            for (const ex of groupEx) {
-                if (program.find(p => p.name === ex.name)) continue;
-                if (currentMins + (4 * 105 / 60) <= 60) {
-                    program.push({ name: ex.name, sets: 4, duration: 45, muscleGroup: ex.muscleGroup });
-                    currentMins += (4 * 105 / 60);
-                }
+    // Ορισμός προτεραιοτήτων ανά ημέρα
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
+                        (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : ["Κορμός"];
+    
+    focusGroups.forEach(group => {
+        const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
+        groupEx.forEach(ex => {
+            // Έλεγχος ορίου χρόνου (7 λεπτά μέσος όρος ανά άσκηση 4 σετ με διαλείμματα)
+            if (currentMins + 7 <= 60) {
+                program.push({ ...ex, sets: 4, duration: 45 });
+                currentMins += 7;
             }
-        }
+        });
+    });
+
+    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
-        return program;
     }
 
-    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
-    const deficits = focusGroups.map(group => ({ group, ratio: (history[group] || 0) / window.TARGET_SETS[group] })).sort((a, b) => a.ratio - b.ratio);
-    for (const item of deficits) {
-        const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === item.group);
-        for (const ex of groupEx) {
-            if (program.find(p => p.name === ex.name)) continue;
-            if (currentMins + (4 * 105 / 60) <= 60) {
-                program.push({ name: ex.name, sets: 4, duration: 45, muscleGroup: ex.muscleGroup });
-                currentMins += (4 * 105 / 60);
-            }
-        }
-    }
     return program;
 };
 
@@ -134,6 +116,9 @@ window.program = {
     "Κυριακή": window.calculateDailyProgram("Κυριακή")
 };
 
+/**
+ * 3. VIDEO MAPPING
+ */
 window.videoMap = {
     "Seated Chest Press": "chestpress",
     "Chest Flys": "chestflys",
@@ -166,4 +151,3 @@ window.videoMap = {
     "EMS Static Plank": "plank",
     "EMS Static Crunches": "abcrunches"
 };
-window.exercisesDB = STRENGTH_EXERCISES;
