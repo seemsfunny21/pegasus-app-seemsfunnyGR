@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v11.5 (Absolute Unified)</title>
+    <title>Pegasus OS v11.6 (Strict Data Isolation)</title>
 
     <script>
         (function() {
@@ -229,6 +229,33 @@
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
+// DATA ISOLATION PROTOCOL: Local Store Clone for Mobile
+const PegasusStore = {
+    keys: {
+        foodPrefix: "food_log_",
+        kcalTotal: "pegasus_today_kcal",
+        protTotal: "pegasus_today_protein",
+        library: "pegasus_food_library"
+    },
+    getFoodLog: function(dateStr) {
+        const key = this.keys.foodPrefix + dateStr;
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : [];
+        } catch (e) { return []; }
+    },
+    saveFoodLog: function(dateStr, logArray) {
+        if (!Array.isArray(logArray)) return false;
+        const key = this.keys.foodPrefix + dateStr;
+        localStorage.setItem(key, JSON.stringify(logArray));
+        return true;
+    },
+    updateDailyTotals: function(kcal, prot) {
+        localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1));
+        localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1));
+    }
+};
+
 const PegasusCloud = {
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
     unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("pegasus_vault_pin", p); PegasusCloud.pull(); return true; } return false; },
@@ -246,7 +273,7 @@ const PegasusCloud = {
             if(data.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(data.peg_contacts));
             if(data.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(data.car_dates));
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
-            if(data.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(data.food_library));
+            if(data.food_library) localStorage.setItem(PegasusStore.keys.library, JSON.stringify(data.food_library));
 
             if (data.all_food_logs) {
                 Object.keys(data.all_food_logs).forEach(k => {
@@ -254,22 +281,21 @@ const PegasusCloud = {
                 });
             }
 
-            // CRITICAL FALLBACK: Ρητή επαναφορά του σημερινού log σε περίπτωση που το all_food_logs είναι κενό
+            // CRITICAL FALLBACK (Protected via PegasusStore)
             if (data.today_food_log) {
                 const d = new Date();
-                const todayKey = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                localStorage.setItem(todayKey, JSON.stringify(data.today_food_log));
+                const dateStr = d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
+                PegasusStore.saveFoodLog(dateStr, data.today_food_log);
             }
 
-            if (data.kcal) localStorage.setItem("pegasus_today_kcal", data.kcal);
-            if (data.protein) localStorage.setItem("pegasus_today_protein", data.protein);
+            if (data.kcal) localStorage.setItem(PegasusStore.keys.kcalTotal, data.kcal);
+            if (data.protein) localStorage.setItem(PegasusStore.keys.protTotal, data.protein);
 
             setSyncStatus('online');
         } catch(e) { 
             setSyncStatus('offline'); 
             console.error("Pegasus Pull Error: ", e);
         } finally {
-            // Διασφάλιση ότι το UI θα ανανεωθεί ακόμα και αν αποτύχει μέρος του parsing
             updateDietUI(); 
             updateSuppUI(); 
             loadSpecs();
@@ -285,7 +311,7 @@ const PegasusCloud = {
         const allFoodLogs = {};
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
-            if (key.startsWith('food_log_')) {
+            if (key.startsWith(PegasusStore.keys.foodPrefix)) {
                 try { allFoodLogs[key] = JSON.parse(localStorage.getItem(key)); } catch(e) {}
             }
         }
@@ -293,15 +319,15 @@ const PegasusCloud = {
         const payload = {
             last_update_date: dateStr,
             last_update_ts: Date.now(),
-            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
-            protein: localStorage.getItem("pegasus_today_protein") || "0",
+            kcal: localStorage.getItem(PegasusStore.keys.kcalTotal) || "0",
+            protein: localStorage.getItem(PegasusStore.keys.protTotal) || "0",
             supp_inventory: PegasusCloud.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
             weekly_history: PegasusCloud.safeParse("pegasus_weekly_history", {}),
             car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}), 
             car_service: PegasusCloud.safeParse("pegasus_car_service", []),
-            food_library: PegasusCloud.safeParse("pegasus_food_library", []),
+            food_library: PegasusCloud.safeParse(PegasusStore.keys.library, []),
             peg_contacts: PegasusCloud.safeParse("pegasus_contacts", []),
-            today_food_log: PegasusCloud.safeParse(`food_log_${dateStr}`, []),
+            today_food_log: PegasusStore.getFoodLog(dateStr),
             all_food_logs: allFoodLogs
         };
         
@@ -418,30 +444,27 @@ async function addFood() {
     const low = n.toLowerCase();
     if(low.includes("πρωτεΐνη") || low.includes("scoop") || low.includes("whey")) consumeSupp('prot', 30, false);
     
-    const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    let log = PegasusCloud.safeParse(dk, []);
-    if (!Array.isArray(log)) log = []; // DATA GUARD: Αποτρέπει το crash αν τα δεδομένα διαφθαρούν
+    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    let log = PegasusStore.getFoodLog(dateStr);
 
     log.unshift({name:n, kcal:k, protein:p});
-    localStorage.setItem(dk, JSON.stringify(log));
+    PegasusStore.saveFoodLog(dateStr, log);
     
-    // Ενημέρωση συνόλων
-    let tk = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-    let tp = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
-    localStorage.setItem("pegasus_today_kcal", (tk + k).toFixed(1));
-    localStorage.setItem("pegasus_today_protein", (tp + p).toFixed(1));
+    // Ενημέρωση συνόλων μέσω PegasusStore
+    let tk = parseFloat(localStorage.getItem(PegasusStore.keys.kcalTotal)) || 0;
+    let tp = parseFloat(localStorage.getItem(PegasusStore.keys.protTotal)) || 0;
+    PegasusStore.updateDailyTotals(tk + k, tp + p);
 
     document.getElementById("fName").value = ""; document.getElementById("fKcal").value = ""; document.getElementById("fProt").value = "";
     updateDietUI(); await PegasusCloud.push();
 }
 
 function updateDietUI() {
-    const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    let log = PegasusCloud.safeParse(dk, []);
-    if (!Array.isArray(log)) log = []; // DATA GUARD
+    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    let log = PegasusStore.getFoodLog(dateStr);
 
-    const tk = localStorage.getItem("pegasus_today_kcal") || "0";
-    const tp = localStorage.getItem("pegasus_today_protein") || "0";
+    const tk = localStorage.getItem(PegasusStore.keys.kcalTotal) || "0";
+    const tp = localStorage.getItem(PegasusStore.keys.protTotal) || "0";
     
     document.getElementById("txtKcal").textContent = `${Math.round(tk)}/2800`;
     document.getElementById("txtProt").textContent = `${Math.round(tp)}/160g`;
@@ -456,19 +479,19 @@ function updateDietUI() {
 }
 
 async function deleteFood(idx) {
-    const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    let log = PegasusCloud.safeParse(dk, []);
-    if (!Array.isArray(log)) log = [];
+    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    let log = PegasusStore.getFoodLog(dateStr);
     const item = log[idx];
     
     if (item) {
-        let tk = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-        let tp = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
-        localStorage.setItem("pegasus_today_kcal", Math.max(0, tk - item.kcal).toFixed(1));
-        localStorage.setItem("pegasus_today_protein", Math.max(0, tp - item.protein).toFixed(1));
+        let tk = parseFloat(localStorage.getItem(PegasusStore.keys.kcalTotal)) || 0;
+        let tp = parseFloat(localStorage.getItem(PegasusStore.keys.protTotal)) || 0;
+        PegasusStore.updateDailyTotals(Math.max(0, tk - item.kcal), Math.max(0, tp - item.protein));
     }
     
-    log.splice(idx, 1); localStorage.setItem(dk, JSON.stringify(log));
+    log.splice(idx, 1); 
+    PegasusStore.saveFoodLog(dateStr, log);
+    
     updateDietUI(); await PegasusCloud.push();
 }
 
@@ -513,7 +536,7 @@ function refillSupp(t, a) {
 }
 
 function renderLibrary() {
-    const lib = PegasusCloud.safeParse('pegasus_food_library', []);
+    const lib = PegasusCloud.safeParse(PegasusStore.keys.library, []);
     const term = document.getElementById('libSearch').value.toLowerCase();
     document.getElementById('libraryContainer').innerHTML = lib.filter(i => i.name.toLowerCase().includes(term)).map(i => `<div class="mini-card" onclick="quickAdd('${i.name}', ${i.kcal}, ${i.protein})"><span class="mini-label">+ ΠΡΟΣΘΗΚΗ</span><div class="mini-val">${i.name}</div></div>`).join('');
 }
@@ -685,9 +708,10 @@ async function saveEMSMobile(avg, kcal) {
     groups.forEach(g => history[g] = (history[g] || 0) + 6);
     localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
 
-    let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+    let currentKcal = parseFloat(localStorage.getItem(PegasusStore.keys.kcalTotal)) || 0;
+    let currentProt = parseFloat(localStorage.getItem(PegasusStore.keys.protTotal)) || 0;
     currentKcal += parseFloat(kcal);
-    localStorage.setItem("pegasus_today_kcal", currentKcal.toFixed(1));
+    PegasusStore.updateDailyTotals(currentKcal, currentProt);
 
     if (window.PegasusCloud) {
         document.getElementById('btnStart').textContent = "ΑΠΟΘΗΚΕΥΣΗ...";
