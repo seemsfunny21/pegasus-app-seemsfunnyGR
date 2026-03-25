@@ -484,13 +484,12 @@ function skipVault() { document.getElementById("pinModal").style.display = "none
 
 
 /* ==========================================================================
-   EMS SESSION LOGIC (CIRCUIT PROTOCOL - COMPACT VIEW)
+   EMS SESSION LOGIC (CIRCUIT PROTOCOL - COMPACT VIEW V3.0)
    ========================================================================== */
 
 let emsTimer = null;
-let emsSeconds = 1500; // 25 λεπτά
+let emsSeconds = 1500; 
 
-// UI Κατηγορίες: 5 μόνιμες γραμμές
 const emsCategories = [
     { id: 0, n: "Lateral Raises", t: 4 },
     { id: 1, n: "Bicep Curls",    t: 4 },
@@ -499,34 +498,20 @@ const emsCategories = [
     { id: 4, n: "Massage Mode",   t: 1 }
 ];
 
-// Κρυφή δομή δεδομένων (15 βήματα)
 let emsSchedule = [
-    { cid: 0, w: 45, d: 69, s: 1 },
-    { cid: 1, w: 45, d: 69, s: 1 },
-    { cid: 2, w: 90, d: 138, s: 1 },
-    { cid: 3, w: 90, d: 138, s: 1 },
-    
-    { cid: 0, w: 45, d: 69, s: 2 },
-    { cid: 1, w: 45, d: 69, s: 2 },
-    { cid: 2, w: 90, d: 138, s: 2 },
-    { cid: 3, w: 90, d: 138, s: 2 },
-    
-    { cid: 0, w: 45, d: 69, s: 3 },
-    { cid: 1, w: 45, d: 69, s: 3 },
-    { cid: 2, w: 90, d: 138, s: 3 },
-    { cid: 3, w: 90, d: 138, s: 3 },
-    
-    { cid: 0, w: 45, d: 69, s: 4 },
-    { cid: 1, w: 45, d: 69, s: 4 },
-    
+    { cid: 0, w: 45, d: 69, s: 1 }, { cid: 1, w: 45, d: 69, s: 1 },
+    { cid: 2, w: 90, d: 138, s: 1 }, { cid: 3, w: 90, d: 138, s: 1 },
+    { cid: 0, w: 45, d: 69, s: 2 }, { cid: 1, w: 45, d: 69, s: 2 },
+    { cid: 2, w: 90, d: 138, s: 2 }, { cid: 3, w: 90, d: 138, s: 2 },
+    { cid: 0, w: 45, d: 69, s: 3 }, { cid: 1, w: 45, d: 69, s: 3 },
+    { cid: 2, w: 90, d: 138, s: 3 }, { cid: 3, w: 90, d: 138, s: 3 },
+    { cid: 0, w: 45, d: 69, s: 4 }, { cid: 1, w: 45, d: 69, s: 4 },
     { cid: 4, w: 120, d: 120, s: 1 }
 ];
 
 function initEmsUI() {
     const container = document.getElementById('emsSteps');
     if (!container) return;
-    
-    // Δημιουργία μόνο 5 γραμμών (μια για κάθε κατηγορία)
     container.innerHTML = emsCategories.map(cat => `
         <div id="emsCatRow_${cat.id}" style="margin-bottom:15px; opacity:0.3; transition:0.3s; width:100%;">
             <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:8px; text-transform:uppercase; padding:0 5px;">
@@ -554,7 +539,6 @@ window.adjustEmsTime = function(delta) {
     if (!emsTimer) return;
     let cumulative = 0;
     const totalElapsed = 1500 - emsSeconds;
-    
     for (let i = 0; i < emsSchedule.length; i++) {
         if (totalElapsed >= cumulative && totalElapsed < cumulative + emsSchedule[i].d) {
             let s = emsSchedule[i];
@@ -589,7 +573,6 @@ function updateEmsTick(skipDecrement = false) {
     let activeIndex = -1;
     let activePhaseElapsed = 0;
 
-    // Εύρεση του τρέχοντος ενεργού σετ στο Schedule
     for (let i = 0; i < emsSchedule.length; i++) {
         if (totalElapsed >= cumulative && totalElapsed < cumulative + emsSchedule[i].d) {
             activeIndex = i;
@@ -598,63 +581,36 @@ function updateEmsTick(skipDecrement = false) {
         }
         cumulative += emsSchedule[i].d;
     }
-    
-    // Fallback αν τελείωσε ο χρόνος
-    if (activeIndex === -1 && totalElapsed >= 1500) activeIndex = emsSchedule.length - 1;
 
-    // Ανανέωση των 5 UI γραμμών βάσει του activeIndex
     emsCategories.forEach(cat => {
         const row = document.getElementById(`emsCatRow_${cat.id}`);
         const bar = document.getElementById(`emsCatBar_${cat.id}`);
         const txt = document.getElementById(`emsCatTime_${cat.id}`);
         const title = document.getElementById(`emsCatTitle_${cat.id}`);
-
-        // Εύρεση του τελευταίου σετ αυτής της κατηγορίας
+        
         let lastIndexForCat = -1;
         for (let i = emsSchedule.length - 1; i >= 0; i--) {
-            if (emsSchedule[i].cid === cat.id) {
-                lastIndexForCat = i;
-                break;
-            }
+            if (emsSchedule[i].cid === cat.id) { lastIndexForCat = i; break; }
         }
 
         if (activeIndex > lastIndexForCat) {
-            // Η άσκηση ολοκληρώθηκε πλήρως
             row.style.opacity = "0.15";
-            row.style.transform = "scale(1)";
             bar.style.width = "100%";
             bar.style.background = "#333";
             txt.textContent = "DONE";
-            title.innerHTML = `${cat.n} <small style="opacity:0.7;">(SET ${cat.t}/${cat.t})</small>`;
         } else if (activeIndex !== -1 && emsSchedule[activeIndex].cid === cat.id) {
-            // Η άσκηση είναι η τρέχουσα ενεργή
             let step = emsSchedule[activeIndex];
             const isResting = activePhaseElapsed >= step.w;
             const timeLeft = isResting ? (step.d - activePhaseElapsed) : (step.w - activePhaseElapsed);
-
             row.style.opacity = "1";
-            row.style.transform = "scale(1.02)";
             bar.style.width = (activePhaseElapsed / step.d * 100) + '%';
             bar.style.background = isResting ? 'var(--danger)' : 'var(--main)';
-
-            const label = isResting ? "ΠΑΥΣΗ" : "ΑΣΚΗΣΗ";
-            txt.innerHTML = `<span style="color:${isResting?'var(--danger)':'var(--main)'}">${label} ${Math.ceil(timeLeft)}s</span>`;
+            txt.innerHTML = `<span style="color:${isResting?'var(--danger)':'var(--main)'}">${isResting?'ΠΑΥΣΗ':'ΑΣΚΗΣΗ'} ${Math.ceil(timeLeft)}s</span>`;
             title.innerHTML = `${cat.n} <small style="opacity:0.7;">(SET ${step.s}/${cat.t})</small>`;
         } else {
-            // Η άσκηση βρίσκεται σε αναμονή (μελλοντικά σετ)
-            let nextSetNum = 1;
-            for (let i = Math.max(0, activeIndex); i <= lastIndexForCat; i++) {
-                if (emsSchedule[i].cid === cat.id) {
-                    nextSetNum = emsSchedule[i].s;
-                    break;
-                }
-            }
-
             row.style.opacity = "0.3";
-            row.style.transform = "scale(1)";
             bar.style.width = "0%";
             txt.textContent = "ΑΝΑΜΟΝΗ";
-            title.innerHTML = `${cat.n} <small style="opacity:0.7;">(SET ${nextSetNum}/${cat.t})</small>`;
         }
     });
 }
@@ -662,30 +618,22 @@ function updateEmsTick(skipDecrement = false) {
 function promptEMSCompletion() {
     const intensity = prompt("ΕΙΣΑΓΕΤΕ ΜΕΣΗ ΕΝΤΑΣΗ (AVG %):", "45");
     const kcal = prompt("ΕΙΣΑΓΕΤΕ ΘΕΡΜΙΔΕΣ (KCAL):", "350");
-
-    if (intensity && kcal) {
-        saveEMSMobile(intensity, kcal);
-    }
+    if (intensity && kcal) saveEMSMobile(intensity, kcal);
 }
 
-function saveEMSMobile(avg, kcal) {
-    const d = new Date();
-    const dateStr = d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
-    
+async function saveEMSMobile(avg, kcal) {
     let history = PegasusCloud.safeParse('peg_weekly_history', {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
     });
-    
     const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
     groups.forEach(g => history[g] = (history[g] || 0) + 6);
     localStorage.setItem('peg_weekly_history', JSON.stringify(history));
 
-    let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+    let currentKcal = parseFloat(localStorage.getItem("peg_today_kcal")) || 0;
     currentKcal += parseFloat(kcal);
-    localStorage.setItem("pegasus_today_kcal", currentKcal.toFixed(1));
+    localStorage.setItem("peg_today_kcal", currentKcal.toFixed(1));
 
-    if (window.PegasusCloud) PegasusCloud.push();
-
+    if (window.PegasusCloud) await PegasusCloud.push();
     alert("PEGASUS: EMS Ολοκληρώθηκε! Πιστώθηκαν 36 Sets.");
     openView('home'); 
 }
