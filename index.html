@@ -2,12 +2,12 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pegasus Workout - Final Edition</title>
     <link rel="stylesheet" href="style.css">
 <link rel="icon" type="image/png" href="images/favicon.png">
 <link rel="apple-touch-icon" href="images/favicon.png">
-	<script>
+    <script>
     /* PEGASUS DEVICE ROUTING PROTOCOL */
     const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isSmallScreen = window.innerWidth <= 800;
@@ -21,8 +21,8 @@
 
 
     <div class="navbar" id="navbar"></div>
-	
-	<div id="weather-status-alert"></div>
+    
+    <div id="weather-status-alert"></div>
 
 <div class="weather-control">
     <span>☀️ Καλός Καιρός</span>
@@ -117,13 +117,13 @@
                     <input type="file" id="importFileTools" style="display:none" onchange="window.importPegasusData(event)">
                 </div>
                 <button id="btnOpenGallery" class="p-btn" style="width:100%; margin-top:10px;">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
-				<button onclick="logEMSData()" id="btnEMS" class="p-btn" style="width:100%; margin-top:10px;">
+                <button onclick="logEMSData()" id="btnEMS" class="p-btn" style="width:100%; margin-top:10px;">
     ⚡ ΚΑΤΑΓΡΑΦΗ EMS
 </button>
             </div>
         </div>
     </div>
-	
+    
 
     <div id="galleryPanel" class="pegasus-panel" style="width: 550px; height: 750px; display: none; z-index: 9999;">
         <h3>ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</h3>
@@ -261,12 +261,12 @@
                 <input type="text" id="librarySearch" placeholder="🔍 Αναζήτηση..." onkeyup="filterLibrary()" style="width: 100%; padding: 8px; background: #000; border: 1px solid #4CAF50; color: #4CAF50; border-radius: 4px; font-size: 13px;">
                 <div id="libraryFoodList"></div>
             </div>
-			<div id="weeklyAvgDisplay" style="text-align:center; font-size:12px; margin-bottom:15px; font-weight:bold;"></div>
+            <div id="weeklyAvgDisplay" style="text-align:center; font-size:12px; margin-bottom:15px; font-weight:bold;"></div>
 
 <div id="koukiQuickMenu"></div>
         </div>
     </div>
-	
+    
 
     <div class="content" id="content">
         <div class="exercise-container">
@@ -288,7 +288,7 @@
     </div>
 
     <div id="phaseTimerBar" class="hidden-timer"><div id="phaseTimerFill"></div></div>
-	
+    
 <div id="emsModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid #4CAF50; padding: 25px; z-index: 99999 !important; width: 320px; border-radius: 15px; box-shadow: 0 0 30px rgba(0,0,0,1); font-family: sans-serif; color: white;">
     <h3 style="color: #4CAF50; margin-top: 0; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</h3>
     
