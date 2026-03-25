@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIFIED SYNC (v13.5)
-   FIX: FULL DATA PAYLOAD & BACKGROUND POLLING
+   PEGASUS CLOUD VAULT - UNIFIED SYNC (v13.6)
+   FIX: FULL DATA PAYLOAD & BACKGROUND POLLING (ALL FOOD LOGS)
    ========================================================================== */
 
 const PegasusCloud = {
@@ -70,9 +70,17 @@ const PegasusCloud = {
                 // 2. Food Library Sync
                 if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
                 
-                // 3. Today Food Sync
-                if (cloud.last_update_date === dateStr) { 
+                // 3. All Food Logs Sync (New Logic)
+                if (cloud.all_food_logs) {
+                    Object.keys(cloud.all_food_logs).forEach(k => {
+                        localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
+                    });
+                } else if (cloud.last_update_date === dateStr) { 
+                    // Fallback για το παλιό format
                     localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(cloud.today_food_log || [])); 
+                }
+
+                if (cloud.last_update_date === dateStr) {
                     localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
                     localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
                     requiresUIReload = true;
@@ -102,6 +110,7 @@ const PegasusCloud = {
         
         const cardioLogs = {};
         const historyLogs = {};
+        const allFoodLogs = {};
         
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
@@ -109,6 +118,7 @@ const PegasusCloud = {
                 if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
                 if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
                 if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
+                if (key.startsWith('food_log_')) allFoodLogs[key] = JSON.parse(localStorage.getItem(key));
             } catch(e) {}
         }
 
@@ -120,6 +130,7 @@ const PegasusCloud = {
             weekly_history: this.safeParse("pegasus_weekly_history", {}), 
             food_library: this.safeParse("pegasus_food_library", []), 
             today_food_log: this.safeParse(`food_log_${dateStr}`, []),
+            all_food_logs: allFoodLogs,
             cardio_logs: cardioLogs,
             history_logs: historyLogs
         };
