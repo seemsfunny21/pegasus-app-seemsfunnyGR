@@ -26,7 +26,6 @@ window.logEMSData = function() {
 
     const emsModal = document.getElementById('emsModal');
     if (!emsModal) {
-        // Αν λείπει το modal από το HTML, το δημιουργούμε δυναμικά
         createEMSModal();
         return;
     }
@@ -35,10 +34,9 @@ window.logEMSData = function() {
     const avgInput = document.getElementById('emsAvg');
     const kcalInput = document.getElementById('emsKcal');
 
-    // Αρχικοποίηση με λογικές τιμές για συνεδρία 25 λεπτών
     dateInput.value = getTargetWednesday();
-    avgInput.value = ""; // Αφήνουμε κενό για χειροκίνητη εισαγωγή
-    kcalInput.value = ""; // Αφήνουμε κενό για χειροκίνητη εισαγωγή
+    avgInput.value = ""; 
+    kcalInput.value = ""; 
 
     emsModal.style.display = 'block';
     setTimeout(() => avgInput.focus(), 100);
@@ -71,7 +69,7 @@ window.saveEMSFinal = function() {
     });
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    // 2. Ενημέρωση Ημερήσιων Θερμίδων (για συγχρονισμό με το food.js)
+    // 2. Ενημέρωση Ημερήσιων Θερμίδων
     let todayKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
     todayKcal += parseFloat(kcal);
     localStorage.setItem("pegasus_today_kcal", todayKcal.toFixed(1));
@@ -91,7 +89,6 @@ window.saveEMSFinal = function() {
         dayHistory.push(emsEntry);
         localStorage.setItem(historyKey, JSON.stringify(dayHistory));
 
-        // 4. Σήμανση ημέρας ως ολοκληρωμένης
         localStorage.setItem(`pegasus_day_status_${date}`, 'COMPLETED');
 
         if (window.PegasusCloud) window.PegasusCloud.push(true);
@@ -104,7 +101,7 @@ window.saveEMSFinal = function() {
 };
 
 /**
- * Δυναμική Δημιουργία Modal (Fail-safe)
+ * Δυναμική Δημιουργία Modal
  */
 function createEMSModal() {
     const div = document.createElement('div');
