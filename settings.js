@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS SETTINGS ENGINE - PRO STRICT EDITION (v3.0 DYNAMIC SYNC)
-   STRICT DATA ANALYST PROTOCOL - MANDATORY RELOAD & SYNC
+   PEGASUS SETTINGS ENGINE - PRO STRICT EDITION (v3.1 DYNAMIC SYNC)
+   STRICT DATA ANALYST PROTOCOL - NaN CORRUPTION GUARD & MANDATORY RELOAD
    ========================================================================== */
 
 const DEFAULT_SETTINGS = {
@@ -102,21 +102,23 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSave.onclick = () => {
             try {
                 // Αποθήκευση Βασικών Παραμέτρων
-                localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput")?.value || 74);
-                localStorage.setItem("pegasus_height", document.getElementById("userHeightInput")?.value || 187);
-                localStorage.setItem("pegasus_age", document.getElementById("userAgeInput")?.value || 38);
-                localStorage.setItem("pegasus_gender", document.getElementById("userGenderInput")?.value || "male");
-                localStorage.setItem("pegasus_goal_kcal", document.getElementById("goalKcalInput")?.value || 2800);
-                localStorage.setItem("pegasus_goal_protein", document.getElementById("goalProteinInput")?.value || 160);
-                localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput")?.value || 45);
-                localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput")?.value || 60);
+                localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput")?.value || DEFAULT_SETTINGS.weight);
+                localStorage.setItem("pegasus_height", document.getElementById("userHeightInput")?.value || DEFAULT_SETTINGS.height);
+                localStorage.setItem("pegasus_age", document.getElementById("userAgeInput")?.value || DEFAULT_SETTINGS.age);
+                localStorage.setItem("pegasus_gender", document.getElementById("userGenderInput")?.value || DEFAULT_SETTINGS.gender);
+                localStorage.setItem("pegasus_goal_kcal", document.getElementById("goalKcalInput")?.value || DEFAULT_SETTINGS.goalKcal);
+                localStorage.setItem("pegasus_goal_protein", document.getElementById("goalProteinInput")?.value || DEFAULT_SETTINGS.goalProtein);
+                localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput")?.value || DEFAULT_SETTINGS.exTime);
+                localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput")?.value || DEFAULT_SETTINGS.restTime);
 
-                // Αποθήκευση Muscle Targets (Δυναμικά)
+                // Αποθήκευση Muscle Targets (Δυναμικά) με προστασία NaN
                 const targets = {};
                 ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
                     const el = document.getElementById(`target${m}Input`);
-                    // Μετατροπή σε Integer για τον οπτικοποιητή
-                    targets[m] = el ? parseInt(el.value) : (DEFAULT_SETTINGS.muscleTargets[m] || 14);
+                    let parsedVal = el ? parseInt(el.value) : NaN;
+                    
+                    // Fallback αν το parsedVal είναι NaN (π.χ. κενό πεδίο)
+                    targets[m] = isNaN(parsedVal) ? (DEFAULT_SETTINGS.muscleTargets[m] || 14) : parsedVal;
                 });
                 localStorage.setItem("pegasus_muscle_targets", JSON.stringify(targets));
 
