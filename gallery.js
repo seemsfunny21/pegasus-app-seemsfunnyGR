@@ -1,8 +1,9 @@
 /* ==========================================================================
-   PEGASUS GALLERY ENGINE - INDEXEDDB EDITION (V5.0)
+   PEGASUS GALLERY ENGINE - INDEXEDDB EDITION (v5.1 GLOBAL SYNC)
+   Protocol: Strict Data Analyst - Global Scope Export
    ========================================================================== */
 
-const GalleryEngine = {
+window.GalleryEngine = {
     dbName: "PegasusLevels",
     dbVersion: 1,
     db: null,
@@ -18,7 +19,11 @@ const GalleryEngine = {
         };
         request.onsuccess = (e) => {
             this.db = e.target.result;
+            console.log("PEGASUS: Gallery Engine (IndexedDB) Online.");
             this.setupUI();
+        };
+        request.onerror = (e) => {
+            console.error("PEGASUS: Gallery Database Error", e);
         };
     },
 
@@ -40,7 +45,7 @@ const GalleryEngine = {
 
     async handleUpload(event) {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file || !this.db) return;
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -52,13 +57,17 @@ const GalleryEngine = {
                 src: e.target.result // Base64
             });
             this.render();
+            // Αυτόματο Push στο Cloud μετά το upload αν είναι ενεργό
+            if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
+                window.PegasusCloud.push(true);
+            }
         };
         reader.readAsDataURL(file);
     },
 
     async render() {
         const container = document.getElementById('progressTimeline');
-        if (!container) return;
+        if (!container || !this.db) return;
 
         const tx = this.db.transaction("photos", "readonly");
         const store = tx.objectStore("photos");
@@ -122,5 +131,6 @@ const GalleryEngine = {
     }
 };
 
-window.handlePhotoUpload = (e) => GalleryEngine.handleUpload(e);
-document.addEventListener('DOMContentLoaded', () => GalleryEngine.init());
+// Global Handlers
+window.handlePhotoUpload = (e) => window.GalleryEngine.handleUpload(e);
+document.addEventListener('DOMContentLoaded', () => window.GalleryEngine.init());
