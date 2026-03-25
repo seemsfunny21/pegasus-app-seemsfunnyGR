@@ -39,7 +39,7 @@ const PegasusCloud = {
             if (!this.syncInterval) {
                 this.syncInterval = setInterval(() => {
                     if (this.isUnlocked) this.pull(true);
-                }, 10000);
+                }, 30000); // Αυξημένο σε 30s για εξοικονόμηση API calls
             }
             return true;
         }
@@ -60,6 +60,10 @@ const PegasusCloud = {
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 let requiresUIReload = false;
+
+                // ΔΙΟΡΘΩΣΗ: Προσθήκη συγχρονισμού στόχων και στατιστικών
+                if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
+                if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
 
                 if (cloud.weekly_history) {
                     localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
@@ -100,10 +104,10 @@ const PegasusCloud = {
                 if (typeof window.updateSuppUI === "function") window.updateSuppUI();
             }
             
-            this.hasSuccessfullyPulled = true; // 2. ΕΠΙΒΕΒΑΙΩΣΗ ΛΗΨΗΣ
+            this.hasSuccessfullyPulled = true; // ΕΠΙΒΕΒΑΙΩΣΗ ΛΗΨΗΣ
             
         } catch (e) {
-            this.hasSuccessfullyPulled = false; // 3. ΑΣΦΑΛΙΣΗ ΣΕ ΠΕΡΙΠΤΩΣΗ ΣΦΑΛΜΑΤΟΣ
+            this.hasSuccessfullyPulled = false; // ΑΣΦΑΛΙΣΗ
             console.error("PEGASUS Cloud Pull Error:", e);
         }
     },
@@ -111,7 +115,7 @@ const PegasusCloud = {
     push: async function(silent = true) {
         if (!this.isUnlocked) return;
         
-        // 4. DATA GUARD: ΑΠΑΓΟΡΕΥΣΗ PUSH ΧΩΡΙΣ PULL
+        // DATA GUARD: ΑΠΑΓΟΡΕΥΣΗ PUSH ΧΩΡΙΣ PULL
         if (!this.hasSuccessfullyPulled) {
             console.error("PEGASUS GUARD: Το Push ακυρώθηκε. Αποτροπή υπερεγγραφής του Cloud.");
             return;
@@ -141,6 +145,8 @@ const PegasusCloud = {
             protein: localStorage.getItem("pegasus_today_protein") || "0", 
             weekly_history: this.safeParse("pegasus_weekly_history", {}), 
             food_library: this.safeParse("pegasus_food_library", []), 
+            muscle_targets: this.safeParse("pegasus_muscle_targets", {}),
+            peg_stats: this.safeParse("pegasus_stats", {}),
             supp_inventory: this.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
             peg_contacts: this.safeParse("pegasus_contacts", []),
             car_dates: this.safeParse("pegasus_car_dates", {}),
