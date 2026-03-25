@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS EMS MODULE - STRICT ANALYST EDITION (V2.9)
-   Protocol: 25-Min Wednesday Session | +6 Set Universal Credit | Circuit
+   PEGASUS EMS MODULE - STRICT ANALYST EDITION (V3.0)
+   Protocol: 25-Min Wednesday Session | +6 Set Universal Credit | Unified Keys
    ========================================================================== */
 
 function getTargetWednesday() {
@@ -14,7 +14,6 @@ function getTargetWednesday() {
 
 window.logEMSData = function() {
     console.log("PEGASUS: EMS Logging Interface Activated.");
-
     const toolsPanel = document.getElementById('toolsPanel');
     if (toolsPanel) toolsPanel.style.display = 'none';
 
@@ -36,7 +35,7 @@ window.logEMSData = function() {
     setTimeout(() => avgInput.focus(), 100);
 };
 
-window.saveEMSFinal = function() {
+window.saveEMSFinal = async function() {
     const date = document.getElementById('emsDate').value;
     const avg = document.getElementById('emsAvg').value;
     const kcal = document.getElementById('emsKcal').value;
@@ -47,9 +46,10 @@ window.saveEMSFinal = function() {
     }
 
     const timestamp = Date.now();
-    const historyKey = `pegasus_history_${date}`;
+    const historyKey = `peg_history_${date}`; // Unified Key
 
-    const weeklyKey = 'pegasus_weekly_history';
+    // 1. Ενημέρωση Εβδομαδιαίου Ιστορικού (Χρήση 'peg_' για συμβατότητα με mobile)
+    const weeklyKey = 'peg_weekly_history';
     let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
     };
@@ -59,9 +59,10 @@ window.saveEMSFinal = function() {
     });
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    let todayKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+    // 2. Ενημέρωση Ημερήσιων Θερμίδων
+    let todayKcal = parseFloat(localStorage.getItem("peg_today_kcal")) || 0;
     todayKcal += parseFloat(kcal);
-    localStorage.setItem("pegasus_today_kcal", todayKcal.toFixed(1));
+    localStorage.setItem("peg_today_kcal", todayKcal.toFixed(1));
 
     const emsEntry = {
         id: "ems_" + timestamp,
@@ -76,15 +77,17 @@ window.saveEMSFinal = function() {
         dayHistory = dayHistory.filter(item => item.type !== "EMS Training");
         dayHistory.push(emsEntry);
         localStorage.setItem(historyKey, JSON.stringify(dayHistory));
+        localStorage.setItem(`peg_day_status_${date}`, 'COMPLETED');
 
-        localStorage.setItem(`pegasus_day_status_${date}`, 'COMPLETED');
-
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
+        // 3. Ασφαλές Cloud Push (Αναμονή ολοκλήρωσης πριν το reload)
+        if (window.PegasusCloud) {
+            await window.PegasusCloud.push(true);
+        }
         
-        alert(`PEGASUS SYNC: Πιστώθηκαν 36 σετ. Η Τετάρτη ολοκληρώθηκε.`);
+        alert(`PEGASUS SYNC: Πιστώθηκαν 36 σετ. Η προπόνηση αποθηκεύτηκε.`);
         window.location.reload();
     } catch (e) {
-        console.error("Storage Error:", e);
+        console.error("Critical Sync Error:", e);
     }
 };
 
