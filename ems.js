@@ -1,11 +1,8 @@
 /* ==========================================================================
    PEGASUS EMS MODULE - STRICT ANALYST EDITION (V2.9)
-   Protocol: 25-Min Wednesday Session | +6 Set Universal Credit
+   Protocol: 25-Min Wednesday Session | +6 Set Universal Credit | Circuit
    ========================================================================== */
 
-/**
- * Υπολογίζει την ημερομηνία της Τετάρτης για την τρέχουσα εβδομάδα.
- */
 function getTargetWednesday() {
     const now = new Date();
     const currentDay = now.getDay(); 
@@ -15,9 +12,6 @@ function getTargetWednesday() {
     return targetDate.toISOString().split('T')[0];
 }
 
-/**
- * Ανοίγει το Modal και προετοιμάζει τα πεδία.
- */
 window.logEMSData = function() {
     console.log("PEGASUS: EMS Logging Interface Activated.");
 
@@ -42,9 +36,6 @@ window.logEMSData = function() {
     setTimeout(() => avgInput.focus(), 100);
 };
 
-/**
- * Οριστικοποίηση και Πίστωση Σετ (Strict 6-Set Credit)
- */
 window.saveEMSFinal = function() {
     const date = document.getElementById('emsDate').value;
     const avg = document.getElementById('emsAvg').value;
@@ -58,7 +49,6 @@ window.saveEMSFinal = function() {
     const timestamp = Date.now();
     const historyKey = `pegasus_history_${date}`;
 
-    // 1. Ενημέρωση Εβδομαδιαίου Ιστορικού (+6 σετ σε όλες τις ομάδες)
     const weeklyKey = 'pegasus_weekly_history';
     let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
@@ -69,12 +59,10 @@ window.saveEMSFinal = function() {
     });
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    // 2. Ενημέρωση Ημερήσιων Θερμίδων
     let todayKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
     todayKcal += parseFloat(kcal);
     localStorage.setItem("pegasus_today_kcal", todayKcal.toFixed(1));
 
-    // 3. Καταγραφή εγγραφής EMS & Virtual Workout
     const emsEntry = {
         id: "ems_" + timestamp,
         date: date,
@@ -100,9 +88,6 @@ window.saveEMSFinal = function() {
     }
 };
 
-/**
- * Δυναμική Δημιουργία Modal
- */
 function createEMSModal() {
     const div = document.createElement('div');
     div.id = 'emsModal';
