@@ -238,7 +238,8 @@ const PegasusCloud = {
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
-            const data = await res.json();
+            const rawData = await res.json();
+            const data = rawData.record || rawData; // FIX: Αποσυμπίεση του record αν επιστρέφεται από το API
             
             // UNIFIED KEY MAPPING
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
@@ -248,10 +249,11 @@ const PegasusCloud = {
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
             if(data.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(data.food_library));
 
-            const d = new Date(); 
-            const dateStr = d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
-            if (data.all_food_logs && data.all_food_logs[`food_log_${dateStr}`]) {
-                localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(data.all_food_logs[`food_log_${dateStr}`]));
+            // FIX: Επαναφορά όλου του ιστορικού γευμάτων
+            if (data.all_food_logs) {
+                Object.keys(data.all_food_logs).forEach(k => {
+                    localStorage.setItem(k, JSON.stringify(data.all_food_logs[k]));
+                });
             }
 
             // ΕΝΗΜΕΡΩΣΗ ΘΕΡΜΙΔΩΝ ΑΠΟ ΤΟ CLOUD
