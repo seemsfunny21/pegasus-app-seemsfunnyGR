@@ -1,5 +1,6 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.3 (STRICT RESET EDITION)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.4 (STRICT RESET EDITION)
+   Protocol: Background Automation Reset Enabled
    ========================================================================== */
 
 window.MuscleProgressUI = {
@@ -7,8 +8,9 @@ window.MuscleProgressUI = {
         this.checkWeeklyReset();
         this.render();
         
-        // Auto-refresh UI κάθε 3 δευτερόλεπτα για συγχρονισμό με το app.js
+        // Auto-refresh UI & Reset Check κάθε 3 δευτερόλεπτα
         setInterval(() => {
+            this.checkWeeklyReset();
             this.render();
         }, 3000);
     },
@@ -76,7 +78,7 @@ window.MuscleProgressUI = {
             
             console.log("PEGASUS SYSTEM: Weekly Reset Executed for " + todayStr);
             
-            // Επιβολή επανασχεδίασης
+            // Επιβολή άμεσης επανασχεδίασης
             this.render();
         }
     }
