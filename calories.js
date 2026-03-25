@@ -1,11 +1,12 @@
 /* ==========================================================================
    PEGASUS CALORIE MODULE - FINAL GREEN VERSION
    ========================================================================== */
-let currentKcal = 0;
+var currentKcal = 0;
 
 function trackSetCalories(weight, durationSeconds) {
     let w = parseFloat(weight);
-    if (!w || w <= 0) w = 72; 
+    // ΔΙΟΡΘΩΣΗ: Ανάκτηση δυναμικού βάρους ή fallback στα 74kg του προφίλ.
+    if (!w || w <= 0) w = parseFloat(localStorage.getItem("pegasus_weight")) || 74; 
     
     let d = parseFloat(durationSeconds);
     if (!d || d <= 0) d = 45;
@@ -43,7 +44,7 @@ function finalizeWorkoutCalories() {
             note: "Αυτοματοποιημένη εγγραφή",
             date: new Date().toLocaleDateString('el-GR')
         });
-		// STRICT SYNC: Ενημέρωση του Reporting System για την προπόνηση
+        // STRICT SYNC: Ενημέρωση του Reporting System για την προπόνηση
         if (window.PegasusReporting) {
             PegasusReporting.saveWorkout(currentKcal.toFixed(1), "Δες το Log για λεπτομέρειες");
         }
