@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v12.2 (Final Backup Fix)</title>
+    <title>Pegasus OS v12.3 (One-Tap Backup)</title>
 
     <script>
         (function() {
@@ -47,9 +47,6 @@
         .mini-val { font-size: 14px; font-weight: 900; color: #eee; pointer-events: none; text-align: center; }
         .bar-bg { width: 100%; background: #000; height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
         .bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 0.5s ease, background-color 0.3s; }
-
-        #backupModal { display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
-        .modal-box { background:#0a0a0a; border:2px solid var(--main); padding:25px; border-radius:24px; text-align:center; width:85%; box-shadow: 0 0 30px rgba(0,255,65,0.2); }
     </style>
 </head>
 <body>
@@ -61,17 +58,6 @@
             <input type="password" id="pinInput" style="font-size:32px; letter-spacing:10px;" inputmode="numeric" maxlength="4" placeholder="••••">
             <button class="primary-btn" onclick="attemptVaultUnlock()">ΕΙΣΟΔΟΣ</button>
             <button class="secondary-btn" style="margin-top: 10px;" onclick="skipVault()">OFFLINE ΧΡΗΣΗ</button>
-        </div>
-    </div>
-
-    <div id="backupModal">
-        <div class="modal-box">
-            <div style="font-size:30px; margin-bottom:10px;">💾</div>
-            <div style="color:var(--main); font-weight:900; margin-bottom:15px; letter-spacing:1px; text-transform:uppercase;">Λήψη Αντιγράφου</div>
-            <p style="font-size:11px; color:#aaa; margin-bottom:10px;">ΟΝΟΜΑ ΑΡΧΕΙΟΥ:</p>
-            <input type="text" id="backupFileName" style="border-color:var(--main); color:var(--main); font-weight:bold;">
-            <button class="primary-btn" onclick="confirmExport()">ΛΗΨΗ</button>
-            <button class="secondary-btn" style="margin-top: 10px; border-color:#444; color:#666;" onclick="closeBackupModal()">ΑΚΥΡΟ</button>
         </div>
     </div>
 
@@ -235,7 +221,9 @@
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Διαχείριση Δεδομένων</div>
-        <button class="primary-btn" onclick="openBackupModal()">ΛΗΨΗ ΑΝΤΙΓΡΑΦΟΥ (BACKUP)</button>
+        
+        <button class="primary-btn" onclick="exportData()">ΛΗΨΗ ΑΝΤΙΓΡΑΦΟΥ (BACKUP)</button>
+        
         <label class="secondary-btn" style="display:block; cursor:pointer; margin-top:10px;">
             ΕΠΑΝΑΦΟΡΑ (RESTORE)
             <input type="file" style="display:none;" onchange="importData(event)">
@@ -288,18 +276,8 @@ const PegasusCloud = {
     }
 };
 
-/* --- PEGASUS CUSTOM BACKUP UI LOGIC (v12.2) --- */
-function openBackupModal() {
-    const d = new Date();
-    const dateStr = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-    document.getElementById('backupFileName').value = `PegasusBackup_${dateStr}`;
-    document.getElementById('backupModal').style.display = 'flex';
-}
-
-function closeBackupModal() { document.getElementById('backupModal').style.display = 'none'; }
-
-function confirmExport() {
-    const fileName = document.getElementById('backupFileName').value || "PegasusBackup";
+/* --- DIRECT BACKUP EXPORT (v12.3) --- */
+function exportData() {
     const backup = {};
     const prefixes = ["pegasus_", "food_log_", "peg_car_", "weight_", "cardio_", "peg_vault_data", "peg_car_identity"];
     
@@ -308,21 +286,28 @@ function confirmExport() {
         if (prefixes.some(p => k.startsWith(p))) backup[k] = localStorage.getItem(k);
     }
     
+    if (Object.keys(backup).length === 0) {
+        alert("Δεν βρέθηκαν δεδομένα για αποθήκευση.");
+        return;
+    }
+
+    const d = new Date();
+    const dateStr = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    const fileName = `PEGASUS_${dateStr}.json`;
+    
     const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     
-    // MOBILE DOWNLOAD FIX
     const a = document.createElement("a");
+    a.style.display = "none";
     a.href = url;
-    a.download = `${fileName}.json`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     
-    // Cleanup with delay to ensure download starts
     setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        closeBackupModal();
     }, 100);
 }
 
