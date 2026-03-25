@@ -5,11 +5,22 @@
 
 function getTargetWednesday() {
     const now = new Date();
-    const currentDay = now.getDay(); 
+    
+    // ΔΙΟΡΘΩΣΗ 1: Προσαρμογή στην Ελληνική εβδομάδα (Κυριακή = 7 αντί για 0)
+    let currentDay = now.getDay(); 
+    if (currentDay === 0) currentDay = 7; 
+    
+    // Υπολογισμός διαφοράς για την Τετάρτη (Ημέρα 3) της τρέχουσας εβδομάδας
     const diff = 3 - currentDay;
     const targetDate = new Date(now);
     targetDate.setDate(now.getDate() + diff);
-    return targetDate.toISOString().split('T')[0];
+    
+    // ΔΙΟΡΘΩΣΗ 2: Αποφυγή σφάλματος Timezone (UTC) του toISOString() 
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetDate.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
 }
 
 window.logEMSData = function() {
