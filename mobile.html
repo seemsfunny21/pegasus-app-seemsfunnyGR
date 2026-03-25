@@ -141,6 +141,11 @@
         <div id="emsSteps" style="width:100%; margin-top:20px; padding:0 10px; box-sizing:border-box;"></div>
         
         <button id="btnStart" class="primary-btn">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
+        
+        <div id="emsTimeControls" class="compact-grid" style="display:none; margin-top:10px; width:100%;">
+            <button class="secondary-btn" onclick="adjustEmsTime(-5)">-5s ΑΣΚΗΣΗ</button>
+            <button class="secondary-btn" onclick="adjustEmsTime(5)">+5s ΑΣΚΗΣΗ</button>
+        </div>
     </div>
 
     <div id="preview" class="view">
@@ -245,7 +250,6 @@ const PegasusCloud = {
             const dk = `food_log_${dateStr}`;
 
             if (data.last_update_date === dateStr) {
-                // Bypass isDup filter to allow full replication of Cloud array
                 localStorage.setItem(dk, JSON.stringify(data.today_food_log || []));
             }
 
@@ -488,7 +492,7 @@ function skipVault() { document.getElementById("pinModal").style.display = "none
 
 let emsTimer = null;
 let emsSeconds = 1500; // 25 λεπτά
-const emsSchedule = [
+let emsSchedule = [
     { n: "Lateral Raises (4 Sets)", d: 276 },
     { n: "Bicep Curls (4 Sets)", d: 276 },
     { n: "Static Plank (3 Sets)", d: 414 },
@@ -503,7 +507,7 @@ function initEmsUI() {
         <div id="emsEx_${i}" style="margin-bottom:15px; opacity:0.3; transition:0.4s;">
             <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:5px; text-transform:uppercase;">
                 <span>${ex.n}</span>
-                <span id="emsTime_${i}">${Math.floor(ex.d/60)}:00</span>
+                <span id="emsTime_${i}">${Math.floor(ex.d/60)}:${String(ex.d%60).padStart(2,'0')}</span>
             </div>
             <div class="bar-bg" style="height:4px; margin:0; background:rgba(255,255,255,0.05);">
                 <div id="emsBar_${i}" class="bar-fill" style="width:0%; height:100%;"></div>
@@ -513,27 +517,56 @@ function initEmsUI() {
 }
 
 document.getElementById('btnStart').onclick = function() {
-    if (emsTimer) {
-        clearInterval(emsTimer);
-        emsTimer = null;
-        this.textContent = "ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ";
-        return;
-    }
+    if (emsTimer) return; // Αποτροπή παύσης
     
     if (emsSeconds === 1500) initEmsUI();
-    this.textContent = "ΠΑΥΣΗ";
-    emsTimer = setInterval(updateEmsTick, 1000);
+    this.textContent = "ΣΕ ΕΞΕΛΙΞΗ";
+    this.style.background = "#222";
+    this.style.color = "#fff";
+    document.getElementById('emsTimeControls').style.display = 'grid';
+    
+    emsTimer = setInterval(() => updateEmsTick(false), 1000);
 };
 
-function updateEmsTick() {
-    if (emsSeconds <= 0) {
-        clearInterval(emsTimer);
-        document.getElementById('btnStart').textContent = "ΟΛΟΚΛΗΡΩΘΗΚΕ";
-        promptEMSCompletion();
-        return;
+window.adjustEmsTime = function(delta) {
+    if (!emsTimer) return;
+    
+    const totalElapsed = 1500 - emsSeconds;
+    let cumulative = 0;
+    let activeIndex = -1;
+    
+    for (let i = 0; i < emsSchedule.length; i++) {
+        if (totalElapsed >= cumulative && totalElapsed < cumulative + emsSchedule[i].d) {
+            activeIndex = i;
+            break;
+        }
+        cumulative += emsSchedule[i].d;
+    }
+    
+    // Προσαρμογή τρέχουσας άσκησης και αφαίρεση/προσθήκη από την επόμενη για διατήρηση του 25λέπτου
+    if (activeIndex !== -1 && activeIndex < emsSchedule.length - 1) {
+        if (emsSchedule[activeIndex].d + delta < 5 || emsSchedule[activeIndex+1].d - delta < 5) return;
+        
+        emsSchedule[activeIndex].d += delta;
+        emsSchedule[activeIndex+1].d -= delta;
+        
+        // Άμεση ανανέωση διεπαφής χωρίς μείωση του κεντρικού χρονομέτρου
+        updateEmsTick(true);
+    }
+};
+
+function updateEmsTick(skipDecrement = false) {
+    if (!skipDecrement) {
+        if (emsSeconds <= 0) {
+            clearInterval(emsTimer);
+            document.getElementById('btnStart').textContent = "ΟΛΟΚΛΗΡΩΘΗΚΕ";
+            document.getElementById('emsTimeControls').style.display = 'none';
+            promptEMSCompletion();
+            return;
+        }
+        emsSeconds--;
     }
 
-    emsSeconds--;
     const totalElapsed = 1500 - emsSeconds;
     
     // Κύριος Χρονόμετρο & Κεντρική Μπάρα
@@ -556,7 +589,7 @@ function updateEmsTick() {
             row.style.opacity = '0.15';
             row.style.filter = "grayscale(100%)";
             timeLabel.textContent = "DONE";
-        } else if (totalElapsed > cumulative) {
+        } else if (totalElapsed >= cumulative && totalElapsed < cumulative + ex.d) {
             // Ενεργή φάση
             const exElapsed = totalElapsed - cumulative;
             const exRemaining = ex.d - exElapsed;
@@ -568,6 +601,8 @@ function updateEmsTick() {
             // Μελλοντική φάση
             bar.style.width = '0%';
             row.style.opacity = '0.3';
+            row.style.filter = "none";
+            timeLabel.textContent = `${Math.floor(ex.d/60)}:${String(ex.d%60).padStart(2,'0')}`;
         }
         cumulative += ex.d;
     });
