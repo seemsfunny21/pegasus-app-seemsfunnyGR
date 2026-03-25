@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.2)
+   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.3 - MIDNIGHT ROLLOVER FIXED)
    STRICT DATA ANALYST PROTOCOL - DESKTOP EDITION (PEGASUS STORE INTEGRATION)
    ========================================================================== */
 
@@ -8,6 +8,8 @@ const USER_BMR = 1724;
 if (!(window.currentFoodDate instanceof Date) || isNaN(window.currentFoodDate.getTime())) {
     window.currentFoodDate = new Date();
 }
+// GLOBAL GUARD: Καταγραφή της τρέχουσας ημέρας συστήματος για έλεγχο αλλαγής (Rollover)
+window.lastKnownSystemDate = new Date().toDateString();
 
 document.addEventListener('DOMContentLoaded', () => {
     updateFoodUI();
@@ -58,6 +60,17 @@ function changeFoodDate(days) {
 }
 
 window.getStrictDateStr = function() {
+    // MIDNIGHT ROLLOVER GUARD: Έλεγχος αν άλλαξε η μέρα στο σύστημα
+    const currentSystemDate = new Date().toDateString();
+    if (window.lastKnownSystemDate !== currentSystemDate) {
+        // Εάν ο χρήστης βρισκόταν στη "Σημερινή" μέρα, ενημερώνουμε το currentFoodDate
+        if (window.currentFoodDate && window.currentFoodDate.toDateString() === window.lastKnownSystemDate) {
+            window.currentFoodDate = new Date();
+            console.log("PEGASUS GUARD: Midnight Rollover Detected. Auto-updated date to Today.");
+        }
+        window.lastKnownSystemDate = currentSystemDate;
+    }
+
     const d = window.currentFoodDate || new Date();
     return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
