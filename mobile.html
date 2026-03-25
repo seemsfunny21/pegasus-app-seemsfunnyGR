@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v11.4 (Absolute Unified)</title>
+    <title>Pegasus OS v11.5 (Absolute Unified)</title>
 
     <script>
         (function() {
@@ -239,9 +239,8 @@ const PegasusCloud = {
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
             const rawData = await res.json();
-            const data = rawData.record || rawData; // FIX: Αποσυμπίεση του record αν επιστρέφεται από το API
+            const data = rawData.record || rawData;
             
-            // UNIFIED KEY MAPPING
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
             if(data.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(data.peg_contacts));
@@ -249,19 +248,32 @@ const PegasusCloud = {
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
             if(data.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(data.food_library));
 
-            // FIX: Επαναφορά όλου του ιστορικού γευμάτων
             if (data.all_food_logs) {
                 Object.keys(data.all_food_logs).forEach(k => {
                     localStorage.setItem(k, JSON.stringify(data.all_food_logs[k]));
                 });
             }
 
-            // ΕΝΗΜΕΡΩΣΗ ΘΕΡΜΙΔΩΝ ΑΠΟ ΤΟ CLOUD
+            // CRITICAL FALLBACK: Ρητή επαναφορά του σημερινού log σε περίπτωση που το all_food_logs είναι κενό
+            if (data.today_food_log) {
+                const d = new Date();
+                const todayKey = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                localStorage.setItem(todayKey, JSON.stringify(data.today_food_log));
+            }
+
             if (data.kcal) localStorage.setItem("pegasus_today_kcal", data.kcal);
             if (data.protein) localStorage.setItem("pegasus_today_protein", data.protein);
 
-            updateDietUI(); updateSuppUI(); loadSpecs(); setSyncStatus('online');
-        } catch(e) { setSyncStatus('offline'); }
+            setSyncStatus('online');
+        } catch(e) { 
+            setSyncStatus('offline'); 
+            console.error("Pegasus Pull Error: ", e);
+        } finally {
+            // Διασφάλιση ότι το UI θα ανανεωθεί ακόμα και αν αποτύχει μέρος του parsing
+            updateDietUI(); 
+            updateSuppUI(); 
+            loadSpecs();
+        }
     },
     
     push: async () => {
@@ -408,6 +420,8 @@ async function addFood() {
     
     const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     let log = PegasusCloud.safeParse(dk, []);
+    if (!Array.isArray(log)) log = []; // DATA GUARD: Αποτρέπει το crash αν τα δεδομένα διαφθαρούν
+
     log.unshift({name:n, kcal:k, protein:p});
     localStorage.setItem(dk, JSON.stringify(log));
     
@@ -423,18 +437,28 @@ async function addFood() {
 
 function updateDietUI() {
     const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    const log = PegasusCloud.safeParse(dk, []);
+    let log = PegasusCloud.safeParse(dk, []);
+    if (!Array.isArray(log)) log = []; // DATA GUARD
+
     const tk = localStorage.getItem("pegasus_today_kcal") || "0";
     const tp = localStorage.getItem("pegasus_today_protein") || "0";
     
     document.getElementById("txtKcal").textContent = `${Math.round(tk)}/2800`;
     document.getElementById("txtProt").textContent = `${Math.round(tp)}/160g`;
-    document.getElementById("foodHistoryList").innerHTML = log.map((i, idx) => `<div class="log-item"><button class="btn-del" onclick="deleteFood(${idx})">✕</button><strong>${i.name}</strong><br><small>${i.kcal} kcal | ${i.protein}g P</small></div>`).join('');
+    
+    document.getElementById("foodHistoryList").innerHTML = log.map((i, idx) => `
+        <div class="log-item">
+            <button class="btn-del" onclick="deleteFood(${idx})">✕</button>
+            <strong>${i.name || 'Άγνωστο'}</strong><br>
+            <small>${i.kcal || 0} kcal | ${i.protein || 0}g P</small>
+        </div>
+    `).join('');
 }
 
 async function deleteFood(idx) {
     const d = new Date(); const dk = `food_log_${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     let log = PegasusCloud.safeParse(dk, []);
+    if (!Array.isArray(log)) log = [];
     const item = log[idx];
     
     if (item) {
