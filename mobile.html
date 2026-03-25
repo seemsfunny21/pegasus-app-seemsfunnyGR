@@ -138,8 +138,8 @@
         </div>
         <div id="phaseTimer" style="font-size:40px; font-weight:900; color:var(--main); margin:20px 0;">25:00</div>
         
-       
         <div id="emsSteps" style="width:100%; margin-top:20px; box-sizing:border-box;"></div>
+        
         <button id="btnStart" class="primary-btn">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
         
         <div id="emsTimeControls" class="compact-grid" style="display:none; margin-top:10px; width:100%;">
@@ -612,70 +612,6 @@ function updateEmsTick(skipDecrement = false) {
             txt.textContent = "ΑΝΑΜΟΝΗ";
         }
         cumulative += step.d;
-    });
-}
-
-    const totalElapsed = 1500 - emsSeconds;
-    
-    const mins = Math.floor(emsSeconds / 60);
-    const secs = emsSeconds % 60;
-    document.getElementById('phaseTimer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    document.getElementById('mainProgressBar').style.width = (totalElapsed / 1500 * 100) + '%';
-    document.getElementById('totalProgress').textContent = Math.round(totalElapsed / 1500 * 100) + '%';
-
-    let categoryElapsed = {0:0, 1:0, 2:0, 3:0, 4:0};
-    let cumulative = 0;
-    let activeSet = null;
-    let activePhaseElapsed = 0;
-
-    for (let i = 0; i < emsSchedule.length; i++) {
-        let set = emsSchedule[i];
-        if (totalElapsed >= cumulative + set.d) {
-            categoryElapsed[set.id] += set.d;
-        } else if (totalElapsed >= cumulative && totalElapsed < cumulative + set.d) {
-            activeSet = set;
-            activePhaseElapsed = totalElapsed - cumulative;
-            categoryElapsed[set.id] += activePhaseElapsed;
-        }
-        cumulative += set.d;
-    }
-
-    emsCategories.forEach(cat => {
-        const row = document.getElementById(`emsEx_${cat.id}`);
-        const bar = document.getElementById(`emsBar_${cat.id}`);
-        const timeLabel = document.getElementById(`emsTime_${cat.id}`);
-        const titleLabel = document.getElementById(`emsTitle_${cat.id}`);
-
-        let progressPct = (categoryElapsed[cat.id] / cat.totalD) * 100;
-
-        if (categoryElapsed[cat.id] === cat.totalD) {
-            bar.style.width = '100%';
-            bar.style.background = 'rgba(255,255,255,0.2)';
-            row.style.opacity = '0.15';
-            row.style.filter = "grayscale(100%)";
-            timeLabel.innerHTML = "DONE";
-            titleLabel.innerHTML = `${cat.n}`;
-        } else if (activeSet && activeSet.id === cat.id) {
-            const isResting = activePhaseElapsed >= activeSet.w;
-            const phaseTimeLeft = isResting ? Math.ceil(activeSet.d - activePhaseElapsed) : Math.ceil(activeSet.w - activePhaseElapsed);
-            
-            bar.style.width = progressPct + '%';
-            bar.style.background = isResting ? 'var(--danger)' : 'var(--main)';
-            row.style.opacity = '1';
-            row.style.filter = isResting ? "drop-shadow(0 0 8px var(--danger))" : "drop-shadow(0 0 8px var(--main))";
-            
-            const phaseText = isResting ? "ΠΑΥΣΗ" : "ΑΣΚΗΣΗ";
-            const phaseColor = isResting ? "var(--danger)" : "var(--main)";
-            timeLabel.innerHTML = `<span style="color:${phaseColor}">${phaseText} ${String(Math.floor(phaseTimeLeft/60))}:${String(phaseTimeLeft%60).padStart(2,'0')}</span>`;
-            titleLabel.innerHTML = `${cat.n} (SET ${activeSet.sIdx}/${activeSet.sTot})`;
-        } else {
-            bar.style.width = progressPct + '%';
-            bar.style.background = 'var(--main)';
-            row.style.opacity = '0.4';
-            row.style.filter = "none";
-            timeLabel.innerHTML = "ΑΝΑΜΟΝΗ";
-            titleLabel.innerHTML = `${cat.n}`;
-        }
     });
 }
 
