@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.0 (DATA ISOLATION & PROTECTED STORAGE)
-   Protocol: Strict Data Analyst - Protected Food Keys
+   PEGASUS DATA ENGINE - v8.1 (DATA ISOLATION & PROTECTED STORAGE)
+   Protocol: Strict Data Analyst - Protected Food Keys (Calorie Conflict Fix)
    ========================================================================== */
 
 window.USER_PROFILE = window.USER_PROFILE || { weight: 74, height: 1.87, age: 38, gender: "male" };
@@ -13,10 +13,10 @@ window.MAX_DAILY_MINUTES = window.MAX_DAILY_MINUTES || 60;
  * Κλειδώνει τη διαχείριση του LocalStorage για την αποφυγή διαφθοράς δεδομένων.
  */
 window.PegasusStore = window.PegasusStore || {
-    // Protected Keys Map
+    // Protected Keys Map - ΔΙΟΡΘΩΣΗ: Διαχωρισμός θερμίδων φαγητού από προπόνηση
     keys: {
         foodPrefix: "food_log_",
-        kcalTotal: "pegasus_today_kcal",
+        kcalTotal: "pegasus_diet_kcal", // <--- Το φαγητό γράφει εδώ πλέον, όχι στο workout key!
         protTotal: "pegasus_today_protein",
         library: "pegasus_food_library"
     },
