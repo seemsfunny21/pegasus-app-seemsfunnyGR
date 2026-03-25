@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.1)
-   STRICT DATA ANALYST PROTOCOL - DESKTOP EDITION
+   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.2)
+   STRICT DATA ANALYST PROTOCOL - DESKTOP EDITION (PEGASUS STORE INTEGRATION)
    ========================================================================== */
 
 const USER_BMR = 1724;
@@ -57,9 +57,9 @@ function changeFoodDate(days) {
     updateFoodUI();
 }
 
-window.getStrictStorageKey = function() {
+window.getStrictDateStr = function() {
     const d = window.currentFoodDate || new Date();
-    return "food_log_" + d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
+    return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
 
 function getDailyCardioBurn(dateStr) {
@@ -81,7 +81,6 @@ function calculateDailyCalorieTarget(dateObj) {
     const dateStr = dateObj.getDate() + "/" + (dateObj.getMonth() + 1) + "/" + dateObj.getFullYear();
     const dayOfWeek = dateObj.getDay(); 
     
-    // Έλεγχος αν όντως έγινε προπόνηση (ακόμα και σε Recovery Day)
     const workoutKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
     const workoutsDone = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
     const hasWorkedOut = workoutsDone[workoutKey] === true;
@@ -97,13 +96,12 @@ function calculateDailyCalorieTarget(dateObj) {
 }
 
 window.updateFoodUI = function() {
-    const storageKey = window.getStrictStorageKey();
-    const dateStr = storageKey.replace('food_log_', '');
-    
+    const dateStr = window.getStrictDateStr();
     const display = document.getElementById('currentFoodDateDisplay');
     if (display) display.textContent = dateStr;
 
-    const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    // DATA ISOLATION: Ανάκτηση μέσω PegasusStore
+    const foodLog = window.PegasusStore ? window.PegasusStore.getFoodLog(dateStr) : JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
     const listContainer = document.getElementById('todayFoodList');
     if (!listContainer) return;
     
@@ -126,8 +124,13 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    localStorage.setItem("pegasus_today_kcal", Math.round(totalKcal).toString());
-    localStorage.setItem("pegasus_today_protein", Math.round(totalProtein).toString());
+    // DATA ISOLATION: Αποθήκευση συνόλων μέσω PegasusStore
+    if (window.PegasusStore) {
+        window.PegasusStore.updateDailyTotals(totalKcal, totalProtein);
+    } else {
+        localStorage.setItem("pegasus_today_kcal", Math.round(totalKcal).toString());
+        localStorage.setItem("pegasus_today_protein", Math.round(totalProtein).toString());
+    }
 
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = Math.round(totalKcal);
@@ -141,11 +144,18 @@ window.updateFoodUI = function() {
 };
 
 window.addFoodItem = function(name, kcal, protein) {
-    const storageKey = window.getStrictStorageKey();
-    const foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    const dateStr = window.getStrictDateStr();
+    
+    // DATA ISOLATION: Ανάκτηση και αποθήκευση μέσω PegasusStore
+    let foodLog = window.PegasusStore ? window.PegasusStore.getFoodLog(dateStr) : JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
     
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
-    localStorage.setItem(storageKey, JSON.stringify(foodLog));
+    
+    if (window.PegasusStore) {
+        window.PegasusStore.saveFoodLog(dateStr, foodLog);
+    } else {
+        localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(foodLog));
+    }
 
     if (typeof window.addToLibrary === "function") window.addToLibrary(name, kcal, protein);
     window.updateFoodUI();
@@ -156,11 +166,18 @@ window.addFoodItem = function(name, kcal, protein) {
 };
 
 window.deleteFoodItem = function(index) {
-    const storageKey = window.getStrictStorageKey();
-    let foodLog = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    const dateStr = window.getStrictDateStr();
+    
+    // DATA ISOLATION: Διαγραφή μέσω PegasusStore
+    let foodLog = window.PegasusStore ? window.PegasusStore.getFoodLog(dateStr) : JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
     
     foodLog.splice(index, 1);
-    localStorage.setItem(storageKey, JSON.stringify(foodLog));
+    
+    if (window.PegasusStore) {
+        window.PegasusStore.saveFoodLog(dateStr, foodLog);
+    } else {
+        localStorage.setItem(`food_log_${dateStr}`, JSON.stringify(foodLog));
+    }
     
     window.updateFoodUI();
     
@@ -236,7 +253,8 @@ window.addQuickFood = function(name, kcal, protein) {
 /* --- LIBRARY LOGIC --- */
 window.filterLibrary = function() {
     const searchTerm = document.getElementById('librarySearch')?.value.toLowerCase() || "";
-    const library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
+    const libKey = window.PegasusStore ? window.PegasusStore.keys.library : 'pegasus_food_library';
+    const library = JSON.parse(localStorage.getItem(libKey) || "[]");
     const libContainer = document.getElementById('libraryFoodList');
     if (!libContainer) return;
     
@@ -273,17 +291,19 @@ window.filterLibrary = function() {
 };
 
 function addToLibrary(name, kcal, protein) {
-    let library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
+    const libKey = window.PegasusStore ? window.PegasusStore.keys.library : 'pegasus_food_library';
+    let library = JSON.parse(localStorage.getItem(libKey) || "[]");
     if (!library.some(item => item.name.toLowerCase() === name.toLowerCase())) {
         library.push({ name, kcal, protein: parseFloat(protein || 0) });
-        localStorage.setItem('pegasus_food_library', JSON.stringify(library));
+        localStorage.setItem(libKey, JSON.stringify(library));
     }
 }
 
 function removeFromLibrary(name) {
-    let library = JSON.parse(localStorage.getItem('pegasus_food_library') || "[]");
+    const libKey = window.PegasusStore ? window.PegasusStore.keys.library : 'pegasus_food_library';
+    let library = JSON.parse(localStorage.getItem(libKey) || "[]");
     library = library.filter(item => item.name !== name);
-    localStorage.setItem('pegasus_food_library', JSON.stringify(library));
+    localStorage.setItem(libKey, JSON.stringify(library));
     window.filterLibrary();
 }
 
