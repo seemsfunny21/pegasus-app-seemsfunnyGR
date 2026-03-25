@@ -261,14 +261,17 @@ function runPhase() {
         remainingSeconds = Math.max(0, remainingSeconds - 1);
         updateTotalBar();
 
-        if (phase === 1 || phase === 2) {
-            let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-            let burnRate = (phase === 1) ? (userWeight * 0.0017) : (userWeight * 0.0008);
-            currentKcal += burnRate;
-            localStorage.setItem("pegasus_today_kcal", currentKcal.toFixed(2));
-            
-            const kcalUI = document.querySelector(".kcal-value");
-            if (kcalUI) kcalUI.textContent = currentKcal.toFixed(1);
+if (phase === 1 || phase === 2) {
+            if (window.MetabolicEngine && phase === 1) {
+                window.MetabolicEngine.updateTracking(1, exName);
+            } else if (phase === 2) {
+                // Ελαφριά καύση κατά το διάλειμμα
+                let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+                currentKcal += (userWeight * 0.0008);
+                localStorage.setItem("pegasus_today_kcal", currentKcal.toFixed(2));
+                const kcalUI = document.querySelector(".kcal-value");
+                if (kcalUI) kcalUI.textContent = currentKcal.toFixed(1);
+            }
         }
 
         const label = document.getElementById("phaseTimer");
