@@ -499,16 +499,17 @@ window.toggleSkipExercise = function(idx) {
     const originalSets = parseInt(exDiv.dataset.total) || 3;
     const isSkipped = exDiv.classList.toggle("exercise-skipped");
 
+let done = parseInt(exDiv.dataset.done) || 0;
     if (isSkipped) {
         exDiv.style.setProperty('opacity', '0.2', 'important');
         exDiv.style.setProperty('filter', 'grayscale(100%)', 'important');
         remainingSets[idx] = 0; 
-        if (counter) counter.innerText = `0/0`;
+        if (counter) counter.innerText = `${done}/${done}`;
     } else {
         exDiv.style.setProperty('opacity', '1', 'important');
         exDiv.style.setProperty('filter', 'none', 'important');
-        remainingSets[idx] = originalSets; 
-        if (counter) counter.innerText = `0/${originalSets}`;
+        remainingSets[idx] = originalSets - done; 
+        if (counter) counter.innerText = `${done}/${originalSets}`;
     }
     
     if (typeof exercises !== 'undefined') exercises[idx] = exDiv;
