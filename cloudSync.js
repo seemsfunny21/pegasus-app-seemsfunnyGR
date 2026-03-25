@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIFIED SYNC (v13.7)
-   FIX: KEY UNIFICATION WITH MOBILE (Supps, Contacts, Car & Async Push)
+   PEGASUS CLOUD VAULT - UNIFIED SYNC (v13.8)
+   FIX: FULL DATA PAYLOAD & KEY UNIFICATION (Supps, Contacts, Car, Food)
    ========================================================================== */
 
 const PegasusCloud = {
@@ -35,6 +35,7 @@ const PegasusCloud = {
             
             this.pull(true);
             
+            // ΕΝΕΡΓΟΠΟΙΗΣΗ ΑΥΤΟΜΑΤΟΥ ΣΥΓΧΡΟΝΙΣΜΟΥ (Κάθε 10 δευτερόλεπτα)
             if (!this.syncInterval) {
                 this.syncInterval = setInterval(() => {
                     if (this.isUnlocked) this.pull(true);
@@ -57,22 +58,23 @@ const PegasusCloud = {
             const dateStr = this.getTodayKey();
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
+            // Έλεγχος αν τα δεδομένα στο Cloud είναι νεότερα από τα τοπικά
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 let requiresUIReload = false;
 
-                // 1. Weekly History Sync
+                // 1. Εβδομαδιαίο Ιστορικό (Sets)
                 if (cloud.weekly_history) {
                     localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
                     requiresUIReload = true;
                 }
                 
-                // 2. Supps, Contacts & Car (Unified Keys)
+                // 2. Συμπληρώματα, Επαφές & Αυτοκίνητο (Ενοποιημένα Κλειδιά)
                 if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
                 if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
                 if (cloud.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(cloud.car_dates));
                 if (cloud.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(cloud.car_service));
                 
-                // 3. All Food Logs & Library
+                // 3. Βιβλιοθήκη Φαγητών & Όλα τα Logs Φαγητού
                 if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
                 if (cloud.all_food_logs) {
                     Object.keys(cloud.all_food_logs).forEach(k => {
@@ -80,13 +82,14 @@ const PegasusCloud = {
                     });
                 }
 
+                // 4. Θερμίδες & Πρωτεΐνη Ημέρας
                 if (cloud.last_update_date === dateStr) {
                     localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
                     localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
                     requiresUIReload = true;
                 }
 
-                // 4. Cardio & History Logs
+                // 5. Logs Αερόβιας & Ιστορικού
                 if (cloud.cardio_logs) {
                     Object.keys(cloud.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(cloud.cardio_logs[k])));
                 }
@@ -98,10 +101,14 @@ const PegasusCloud = {
                 }
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
+                
+                // Ενημέρωση UI αν υπάρχουν ανοιχτά panels
                 if (requiresUIReload && typeof window.updateFoodUI === "function") window.updateFoodUI();
                 if (typeof window.updateSuppUI === "function") window.updateSuppUI();
             }
-        } catch (e) {}
+        } catch (e) {
+            console.error("PEGASUS Cloud Pull Error:", e);
+        }
     },
 
     push: async function(silent = true) {
@@ -113,6 +120,7 @@ const PegasusCloud = {
         const historyLogs = {};
         const allFoodLogs = {};
         
+        // Συλλογή όλων των δυναμικών logs από το LocalStorage
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
             try {
@@ -141,13 +149,16 @@ const PegasusCloud = {
         };
 
         try {
-            await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId, {
+            const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
                 body: JSON.stringify(payload)
             });
-            localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-            console.log("✅ PEGASUS Cloud Sync: Push Success");
+            
+            if (res.ok) {
+                localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
+                console.log("✅ PEGASUS Cloud Sync: Push Success");
+            }
         } catch (e) {
             console.error("❌ PEGASUS Cloud Sync: Push Failed", e);
         }
@@ -156,12 +167,15 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
+// Αυτόματη εκκίνηση κατά τη φόρτωση
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin && window.PegasusCloud.unlock(savedPin)) return; 
-    
-    setTimeout(() => {
-        const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
-        if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN.");
-    }, 1000);
+    if (savedPin) {
+        window.PegasusCloud.unlock(savedPin);
+    } else {
+        setTimeout(() => {
+            const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
+            if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN.");
+        }, 1000);
+    }
 });
