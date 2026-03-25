@@ -1,9 +1,16 @@
 /* =============================================================
-   PEGASUS METABOLIC ENGINE - FAIL-SAFE PRECISION (74kg)
+   PEGASUS METABOLIC ENGINE - FAIL-SAFE PRECISION
    ============================================================= */
 
 const MetabolicEngine = {
-    userWeight: 74,
+    // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 1: Δυναμική ανάκτηση βάρους αντί για hardcoded 74kg
+    get weight() {
+        return parseFloat(localStorage.getItem("pegasus_weight")) || 74;
+    },
+
+    // Προσωρινή μνήμη για αποφυγή I/O Overload στον δίσκο (LocalStorage)
+    pendingKcal: 0,
+    tickCount: 0,
 
     /**
      * Υπολογισμός MET βάσει φορτίου (Lifted Weight)
@@ -14,7 +21,7 @@ const MetabolicEngine = {
 
         let baseMET = 7.0; 
         if (weight > 0) {
-            const loadRatio = weight / this.userWeight;
+            const loadRatio = weight / this.weight;
             baseMET += (loadRatio * 5); 
         }
         return baseMET;
@@ -26,18 +33,20 @@ const MetabolicEngine = {
     updateTracking: function(durationSeconds, exerciseName) {
         let liftedWeight = 0;
 
-        // Α) Προσπάθεια ανάκτησης από το UI (Active Node)
+        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 2: Ασφαλής κλήση στο window scope για αποφυγή ReferenceError
         try {
-            const currentExNode = exercises[currentIdx];
-            if (currentExNode) {
-                const weightInput = currentExNode.querySelector(".weight-input");
-                liftedWeight = weightInput ? parseFloat(weightInput.value) || 0 : 0;
+            if (typeof window.exercises !== 'undefined' && typeof window.currentIdx !== 'undefined') {
+                const currentExNode = window.exercises[window.currentIdx];
+                if (currentExNode) {
+                    const weightInput = currentExNode.querySelector(".weight-input");
+                    liftedWeight = weightInput ? parseFloat(weightInput.value) || 0 : 0;
+                }
             }
         } catch (e) {
             console.warn("METABOLIC: UI Node not active, switching to storage backup.");
         }
 
-        // Β) FAIL-SAFE: Αν το UI είναι 0, τράβα από το LocalStorage (λόγω του EventListener στο app.js)
+        // FAIL-SAFE: Αν το UI είναι 0, τράβα από το LocalStorage
         if (liftedWeight === 0) {
             liftedWeight = parseFloat(localStorage.getItem(`weight_ANGELOS_${exerciseName}`)) || 0;
         }
@@ -45,17 +54,27 @@ const MetabolicEngine = {
         const activeMET = this.getDynamicMET(exerciseName, liftedWeight);
         const durationMins = durationSeconds / 60;
         
-        const kcalPerMin = (activeMET * 3.5 * this.userWeight) / 200;
-        const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(2));
+        const kcalPerMin = (activeMET * 3.5 * this.weight) / 200;
+        // Υψηλότερη ακρίβεια στη μνήμη για αποφυγή σφαλμάτων στρογγυλοποίησης
+        const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(4)); 
 
-        let dailyTotal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-        dailyTotal += addedKcal;
-        localStorage.setItem("pegasus_today_kcal", dailyTotal.toFixed(1));
+        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 3: I/O Bottleneck Fix (Εγγραφή στο δίσκο κάθε 5 ticks)
+        this.pendingKcal += addedKcal;
+        this.tickCount++;
 
+        let currentDiskKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+        const displayTotal = currentDiskKcal + this.pendingKcal;
+
+        // Άμεση ενημέρωση UI σε πραγματικό χρόνο
         const kcalDisplay = document.querySelector(".kcal-value");
-        if (kcalDisplay) kcalDisplay.textContent = dailyTotal.toFixed(1);
+        if (kcalDisplay) kcalDisplay.textContent = displayTotal.toFixed(1);
 
-        console.log(`PEGASUS METABOLIC: ${exerciseName} | Load: ${liftedWeight}kg | MET: ${activeMET.toFixed(1)} | +${addedKcal} kcal`);
+        // Εγγραφή στο LocalStorage μόνο κάθε 5 δευτερόλεπτα (ή ticks) για δραματική μείωση του I/O Load
+        if (this.tickCount >= 5) {
+            localStorage.setItem("pegasus_today_kcal", displayTotal.toFixed(2));
+            this.pendingKcal = 0;
+            this.tickCount = 0;
+        }
         
         return addedKcal;
     }
