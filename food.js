@@ -67,14 +67,30 @@ function getDailyCardioBurn(dateStr) {
     return cardioData ? parseInt(cardioData.kcal, 10) || 0 : 0;
 }
 
+function getDynamicBMR() {
+    const w = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
+    const h = parseFloat(localStorage.getItem("pegasus_height")) || 187;
+    const a = parseInt(localStorage.getItem("pegasus_age")) || 38;
+    const g = localStorage.getItem("pegasus_gender") || "male";
+    
+    let bmr = (10 * w) + (6.25 * h) - (5 * a);
+    return (g === "male") ? bmr + 5 : bmr - 161;
+}
+
 function calculateDailyCalorieTarget(dateObj) {
+    const dateStr = dateObj.getDate() + "/" + (dateObj.getMonth() + 1) + "/" + dateObj.getFullYear();
     const dayOfWeek = dateObj.getDay(); 
-    const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4);
+    
+    // Έλεγχος αν όντως έγινε προπόνηση (ακόμα και σε Recovery Day)
+    const workoutKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+    const workoutsDone = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
+    const hasWorkedOut = workoutsDone[workoutKey] === true;
+    
+    const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4) && !hasWorkedOut;
     
     const activityMultiplier = isRecoveryDay ? 1.2 : 1.55;
-    const baseKcal = USER_BMR * activityMultiplier;
+    const baseKcal = getDynamicBMR() * activityMultiplier;
 
-    const dateStr = dateObj.getDate() + "/" + (dateObj.getMonth() + 1) + "/" + dateObj.getFullYear();
     const cardioBurn = getDailyCardioBurn(dateStr);
 
     return Math.round(baseKcal + cardioBurn);
