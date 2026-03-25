@@ -4,26 +4,27 @@
    + PEGASUS PATCH: Zero-Time Protocol, 18-Set Cycling Credit, External UI
    ========================================================================== */
 
-let exercises = [];
-let remainingSets = [];
-let currentIdx = 0;
-let phase = 0; 
-let running = false;
-let timer = null;
-let totalSeconds = 0;
-let remainingSeconds = 0;
-let muted = false;
-let TURBO_MODE = false;
-let SPEED = 1;
+// ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 1: Χρήση var αντί για let για αυτόματη προσάρτηση στο window scope
+var exercises = [];
+var remainingSets = [];
+var currentIdx = 0;
+var phase = 0; 
+var running = false;
+var timer = null;
+var totalSeconds = 0;
+var remainingSeconds = 0;
+var muted = false;
+var TURBO_MODE = false;
+var SPEED = 1;
 
 /* === DYNAMIC PARAMETERS === */
-let workoutPhases = [
+var workoutPhases = [
     { n: "Προετοιμασία", d: 10 }, 
     { n: "Άσκηση", d: parseInt(localStorage.getItem("pegasus_ex_time")) || 45 },     
     { n: "Διάλειμμα", d: parseInt(localStorage.getItem("pegasus_rest_time")) || 60 }     
 ];
 
-let userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
+var userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
 
 /* ===== AUDIO (SYSTEM UNLOCK LOGIC) ===== */
 let sysAudio = new Audio('videos/beep.mp3');
@@ -240,6 +241,10 @@ function runPhase() {
 
     let currentPhaseName = "";
     let t = 0;
+    
+    // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 2: Τοπική μεταβλητή για αποφυγή I/O overload στο localStorage
+    let localRestKcal = 0; 
+    let baseKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
 
     if (phase === 0) {
         currentPhaseName = `ΠΡΟΕΤΟΙΜΑΣΙΑ (ΑΓΓΕΛΟΣ)`;
@@ -261,16 +266,14 @@ function runPhase() {
         remainingSeconds = Math.max(0, remainingSeconds - 1);
         updateTotalBar();
 
-if (phase === 1 || phase === 2) {
+        if (phase === 1 || phase === 2) {
             if (window.MetabolicEngine && phase === 1) {
                 window.MetabolicEngine.updateTracking(1, exName);
             } else if (phase === 2) {
-                // Ελαφριά καύση κατά το διάλειμμα
-                let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-                currentKcal += (userWeight * 0.0008);
-                localStorage.setItem("pegasus_today_kcal", currentKcal.toFixed(2));
+                // Υπολογισμός μνήμης αντί δίσκου
+                localRestKcal += (userWeight * 0.0008);
                 const kcalUI = document.querySelector(".kcal-value");
-                if (kcalUI) kcalUI.textContent = currentKcal.toFixed(1);
+                if (kcalUI) kcalUI.textContent = (baseKcal + localRestKcal).toFixed(1);
             }
         }
 
@@ -282,6 +285,13 @@ if (phase === 1 || phase === 2) {
         }
 
         if (t <= 0) {
+            // Commit των θερμίδων στο δίσκο ΜΟΝΟ στο τέλος του σετ
+            if (phase === 2 && localRestKcal > 0) {
+                let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+                localStorage.setItem("pegasus_today_kcal", (currentKcal + localRestKcal).toFixed(2));
+                localRestKcal = 0;
+            }
+
             clearInterval(timer);
             playBeep();
             
