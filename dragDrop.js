@@ -1,3 +1,8 @@
+/* ==========================================================================
+   PEGASUS DRAG & DROP ENGINE - v2.1 (ACTIVE SESSION GUARD)
+   Protocol: Strict State Management - Lock UI during active workout
+   ========================================================================== */
+
 function initDragDrop() {
     const list = document.getElementById("exList");
     if (!list) return;
@@ -7,12 +12,21 @@ function initDragDrop() {
     list.parentNode.replaceChild(newList, list);
 
     newList.addEventListener("dragstart", (e) => {
+        // SAFETY GUARD: Απαγόρευση αναδιάταξης αν η προπόνηση είναι ενεργή (app.js)
+        if (window.running === true) {
+            e.preventDefault();
+            console.warn("PEGASUS: Drag & Drop locked during active session.");
+            return;
+        }
+
         if (e.target.classList.contains("exercise")) {
             e.target.classList.add("dragging");
         }
     });
 
     newList.addEventListener("dragover", (e) => {
+        if (window.running === true) return; // Fail-safe
+        
         e.preventDefault();
         const draggingItem = document.querySelector(".dragging");
         if (!draggingItem) return;
@@ -26,6 +40,8 @@ function initDragDrop() {
     });
 
     newList.addEventListener("dragend", (e) => {
+        if (window.running === true) return; // Fail-safe
+
         if (e.target.classList.contains("exercise")) {
             e.target.classList.remove("dragging");
             
