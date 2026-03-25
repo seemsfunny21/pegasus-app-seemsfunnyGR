@@ -1,4 +1,7 @@
-/* ================= WEATHER COMPONENT FOR PEGASUS ================= */
+/* ==========================================================================
+   PEGASUS WEATHER COMPONENT - v2.0 (STRICT INDOOR PROTOCOL)
+   Protocol: Complete Precipitation Recognition (Rain + Snow)
+   ========================================================================== */
 
 /**
  * Μετατροπή κωδικού καιρού σε Emoji (Ακριβής χαρτογράφηση WMO)
@@ -37,11 +40,17 @@ async function fetchWeather() {
             
             weatherEl.innerHTML = `${icon} ${temp}°C`;
 
-            // PEGASUS AUTO-SYNC: Αυτόματη ενημέρωση του διακόπτη βροχής
+            // PEGASUS AUTO-SYNC: Αυτόματη ενημέρωση του διακόπτη (Βροχή & Χιόνι)
             const rainToggle = document.getElementById('rainToggle');
             if (rainToggle) {
-                const isRaining = ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95);
-                rainToggle.checked = isRaining;
+                const isPrecipitation = (
+                    (code >= 51 && code <= 67) || // Βροχή
+                    (code >= 71 && code <= 77) || // Χιόνι
+                    (code >= 80 && code <= 82) || // Μπόρες βροχής
+                    (code >= 85 && code <= 86) || // Μπόρες χιονιού
+                    code >= 95                    // Καταιγίδα
+                );
+                rainToggle.checked = isPrecipitation;
             }
 
         } else {
