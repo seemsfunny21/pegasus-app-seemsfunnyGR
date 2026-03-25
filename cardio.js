@@ -1,19 +1,31 @@
-const PegasusCardio = {
+/* ==========================================================================
+   PEGASUS CARDIO ENGINE - v5.1 (GLOBAL SCOPE EXPORT)
+   Protocol: Strict Data Analyst - Tracking & Storage
+   ========================================================================== */
+
+window.PegasusCardio = {
     init: function() {
         const btn = document.getElementById("totalWorkoutsDisplay");
         if (btn) {
             btn.onclick = () => this.open();
+            console.log("PEGASUS: Cardio Engine Listener Active.");
         }
     },
 
     open: function() {
-        document.getElementById("cardioPanel").style.display = "block";
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById("cDate").value = today;
+        const panel = document.getElementById("cardioPanel");
+        if (panel) {
+            panel.style.display = "block";
+            // Αυτόματη συμπλήρωση σημερινής ημερομηνίας
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById("cDate");
+            if (dateInput) dateInput.value = today;
+        }
     },
 
     close: function() {
-        document.getElementById("cardioPanel").style.display = "none";
+        const panel = document.getElementById("cardioPanel");
+        if (panel) panel.style.display = "none";
     },
 
     save: function() {
@@ -36,24 +48,40 @@ const PegasusCardio = {
             km: km,
             time: time,
             kcal: kcal,
-            date: dateKey
+            date: dateKey,
+            timestamp: Date.now()
         };
 
-        // Αποθήκευση για το Reporting
+        // Αποθήκευση στο LocalStorage με το πρότυπο κλειδί του Reporting
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-        alert(`Η διαδρομή "${route}" αποθηκεύτηκε!`);
+        // Ενημέρωση Cloud αν είναι ξεκλείδωτο
+        if (window.PegasusCloud && window.PegasusCloud.hasSuccessfullyPulled) {
+            window.PegasusCloud.push(true);
+        }
+
+        alert(`Η διαδρομή "${route}" αποθηκεύτηκε επιτυχώς!`);
         this.close();
         
-        // Καθαρισμός φορμας
-        document.getElementById("cRoute").value = "";
-        document.getElementById("cKm").value = "";
-        document.getElementById("cTime").value = "";
-        document.getElementById("cKcal").value = "";
+        // Καθαρισμός φόρμας για την επόμενη χρήση
+        this.resetForm();
+    },
+
+    resetForm: function() {
+        const fields = ["cRoute", "cKm", "cTime", "cKcal"];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+        });
     }
 };
 
-// Αυτό συνδέει το onclick="saveCardioData()" του HTML σου
-window.saveCardioData = () => PegasusCardio.save();
+// Global Handlers για σύνδεση με το UI (index.html)
+window.saveCardioData = () => window.PegasusCardio.save();
 
-window.addEventListener("load", () => PegasusCardio.init());
+// Εκκίνηση κατά το φόρτωμα της σελίδας
+window.addEventListener("load", () => {
+    if (window.PegasusCardio) {
+        window.PegasusCardio.init();
+    }
+});
