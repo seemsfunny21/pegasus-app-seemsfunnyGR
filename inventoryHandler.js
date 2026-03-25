@@ -1,20 +1,24 @@
 /* ==========================================================================
-   PEGASUS SMART INVENTORY HANDLER - STRICT EDITION (v11.1 SYNC)
+   PEGASUS SMART INVENTORY HANDLER - STRICT EDITION (v11.2 SYNC)
    INCLUDES MUSCLE TRACKING & SUPPLEMENT LOGISTICS
+   Protocol: Dynamic Targets Injection
    ========================================================================== */
 
 /* --- 1. MUSCLE INVENTORY ENGINE --- */
 
 function getSortedMuscleGroups() {
     const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    const targets = { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Κορμός": 12, "Πόδια": 24 };
+    // ΔΙΟΡΘΩΣΗ: Δυναμική ανάκτηση από το settings.js, αποφυγή στατικών δεδομένων
+    const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
+                    { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
     
     let stats = Object.keys(targets).map(group => {
         let done = history[group] || 0;
         let target = targets[group];
         return {
             name: group,
-            percent: (done / target) * 100,
+            // Fallback ασφαλείας για να μην προκύψει ποτέ διαίρεση με το μηδέν
+            percent: target > 0 ? (done / target) * 100 : 100,
             remaining: Math.max(0, target - done)
         };
     });
