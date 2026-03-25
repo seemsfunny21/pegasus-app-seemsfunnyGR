@@ -138,7 +138,7 @@
         </div>
         <div id="phaseTimer" style="font-size:40px; font-weight:900; color:var(--main); margin:20px 0;">25:00</div>
         
-        <div id="emsSteps" style="width:100%; margin-top:20px; box-sizing:border-box;"></div>
+        <div id="emsSteps" style="width:100%; margin-top:10px; box-sizing:border-box;"></div>
         
         <button id="btnStart" class="primary-btn">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
         
@@ -484,47 +484,57 @@ function skipVault() { document.getElementById("pinModal").style.display = "none
 
 
 /* ==========================================================================
-   EMS SESSION LOGIC (CIRCUIT PROTOCOL - UNROLLED STEPS)
+   EMS SESSION LOGIC (CIRCUIT PROTOCOL - COMPACT VIEW)
    ========================================================================== */
 
 let emsTimer = null;
 let emsSeconds = 1500; // 25 λεπτά
 
-// Ορισμός της κυκλικής ροής (Circuit) - 15 συνολικά βήματα
+// UI Κατηγορίες: 5 μόνιμες γραμμές
+const emsCategories = [
+    { id: 0, n: "Lateral Raises", t: 4 },
+    { id: 1, n: "Bicep Curls",    t: 4 },
+    { id: 2, n: "Static Plank",   t: 3 },
+    { id: 3, n: "Static Crunches",t: 3 },
+    { id: 4, n: "Massage Mode",   t: 1 }
+];
+
+// Κρυφή δομή δεδομένων (15 βήματα)
 let emsSchedule = [
-    { n: "Lateral Raises", w: 45, d: 69, s: 1, t: 4 },
-    { n: "Bicep Curls",    w: 45, d: 69, s: 1, t: 4 },
-    { n: "Static Plank",   w: 90, d: 138, s: 1, t: 3 },
-    { n: "Static Crunches",w: 90, d: 138, s: 1, t: 3 },
+    { cid: 0, w: 45, d: 69, s: 1 },
+    { cid: 1, w: 45, d: 69, s: 1 },
+    { cid: 2, w: 90, d: 138, s: 1 },
+    { cid: 3, w: 90, d: 138, s: 1 },
     
-    { n: "Lateral Raises", w: 45, d: 69, s: 2, t: 4 },
-    { n: "Bicep Curls",    w: 45, d: 69, s: 2, t: 4 },
-    { n: "Static Plank",   w: 90, d: 138, s: 2, t: 3 },
-    { n: "Static Crunches",w: 90, d: 138, s: 2, t: 3 },
+    { cid: 0, w: 45, d: 69, s: 2 },
+    { cid: 1, w: 45, d: 69, s: 2 },
+    { cid: 2, w: 90, d: 138, s: 2 },
+    { cid: 3, w: 90, d: 138, s: 2 },
     
-    { n: "Lateral Raises", w: 45, d: 69, s: 3, t: 4 },
-    { n: "Bicep Curls",    w: 45, d: 69, s: 3, t: 4 },
-    { n: "Static Plank",   w: 90, d: 138, s: 3, t: 3 },
-    { n: "Static Crunches",w: 90, d: 138, s: 3, t: 3 },
+    { cid: 0, w: 45, d: 69, s: 3 },
+    { cid: 1, w: 45, d: 69, s: 3 },
+    { cid: 2, w: 90, d: 138, s: 3 },
+    { cid: 3, w: 90, d: 138, s: 3 },
     
-    { n: "Lateral Raises", w: 45, d: 69, s: 4, t: 4 },
-    { n: "Bicep Curls",    w: 45, d: 69, s: 4, t: 4 },
+    { cid: 0, w: 45, d: 69, s: 4 },
+    { cid: 1, w: 45, d: 69, s: 4 },
     
-    { n: "Massage Mode",   w: 120, d: 120, s: 1, t: 1 }
+    { cid: 4, w: 120, d: 120, s: 1 }
 ];
 
 function initEmsUI() {
     const container = document.getElementById('emsSteps');
     if (!container) return;
-    // Δημιουργία 15 σειρών, μία για κάθε σετ της προπόνησης
-    container.innerHTML = emsSchedule.map((step, i) => `
-        <div id="emsStepRow_${i}" style="margin-bottom:20px; opacity:0.2; transition:0.3s; width:100%;">
+    
+    // Δημιουργία μόνο 5 γραμμών (μια για κάθε κατηγορία)
+    container.innerHTML = emsCategories.map(cat => `
+        <div id="emsCatRow_${cat.id}" style="margin-bottom:15px; opacity:0.3; transition:0.3s; width:100%;">
             <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:8px; text-transform:uppercase; padding:0 5px;">
-                <span>${step.n} <small style="opacity:0.7;">(SET ${step.s}/${step.t})</small></span>
-                <span id="emsStepTime_${i}">ΑΝΑΜΟΝΗ</span>
+                <span id="emsCatTitle_${cat.id}">${cat.n} <small style="opacity:0.7;">(SET 1/${cat.t})</small></span>
+                <span id="emsCatTime_${cat.id}">ΑΝΑΜΟΝΗ</span>
             </div>
             <div class="bar-bg" style="height:8px; margin:0; width:100%; background:rgba(255,255,255,0.05);">
-                <div id="emsStepBar_${i}" class="bar-fill" style="width:0%; height:100%; background:var(--main);"></div>
+                <div id="emsCatBar_${cat.id}" class="bar-fill" style="width:0%; height:100%; background:var(--main);"></div>
             </div>
         </div>
     `).join('');
@@ -548,10 +558,9 @@ window.adjustEmsTime = function(delta) {
     for (let i = 0; i < emsSchedule.length; i++) {
         if (totalElapsed >= cumulative && totalElapsed < cumulative + emsSchedule[i].d) {
             let s = emsSchedule[i];
-            // Προσαρμογή: +5 στην άσκηση σημαίνει -5 στο διάλειμμα του ίδιου σετ
             if (s.w + delta >= 5 && s.w + delta <= s.d) {
                 s.w += delta;
-                updateEmsTick(true); // Άμεσο refresh UI
+                updateEmsTick(true);
             }
             break;
         }
@@ -577,41 +586,76 @@ function updateEmsTick(skipDecrement = false) {
     document.getElementById('totalProgress').textContent = Math.round(totalElapsed / 1500 * 100) + '%';
 
     let cumulative = 0;
-    emsSchedule.forEach((step, i) => {
-        const row = document.getElementById(`emsStepRow_${i}`);
-        const bar = document.getElementById(`emsStepBar_${i}`);
-        const txt = document.getElementById(`emsStepTime_${i}`);
-        
-        if (totalElapsed >= cumulative + step.d) {
-            // Ολοκληρωμένο σετ
-            row.style.opacity = "0.1";
+    let activeIndex = -1;
+    let activePhaseElapsed = 0;
+
+    // Εύρεση του τρέχοντος ενεργού σετ στο Schedule
+    for (let i = 0; i < emsSchedule.length; i++) {
+        if (totalElapsed >= cumulative && totalElapsed < cumulative + emsSchedule[i].d) {
+            activeIndex = i;
+            activePhaseElapsed = totalElapsed - cumulative;
+            break;
+        }
+        cumulative += emsSchedule[i].d;
+    }
+    
+    // Fallback αν τελείωσε ο χρόνος
+    if (activeIndex === -1 && totalElapsed >= 1500) activeIndex = emsSchedule.length - 1;
+
+    // Ανανέωση των 5 UI γραμμών βάσει του activeIndex
+    emsCategories.forEach(cat => {
+        const row = document.getElementById(`emsCatRow_${cat.id}`);
+        const bar = document.getElementById(`emsCatBar_${cat.id}`);
+        const txt = document.getElementById(`emsCatTime_${cat.id}`);
+        const title = document.getElementById(`emsCatTitle_${cat.id}`);
+
+        // Εύρεση του τελευταίου σετ αυτής της κατηγορίας
+        let lastIndexForCat = -1;
+        for (let i = emsSchedule.length - 1; i >= 0; i--) {
+            if (emsSchedule[i].cid === cat.id) {
+                lastIndexForCat = i;
+                break;
+            }
+        }
+
+        if (activeIndex > lastIndexForCat) {
+            // Η άσκηση ολοκληρώθηκε πλήρως
+            row.style.opacity = "0.15";
+            row.style.transform = "scale(1)";
             bar.style.width = "100%";
             bar.style.background = "#333";
             txt.textContent = "DONE";
-        } else if (totalElapsed >= cumulative && totalElapsed < cumulative + step.d) {
-            // Ενεργό σετ
-            const elapsedInSet = totalElapsed - cumulative;
-            const isResting = elapsedInSet >= step.w;
-            const timeLeft = isResting ? (step.d - elapsedInSet) : (step.w - elapsedInSet);
-            
+            title.innerHTML = `${cat.n} <small style="opacity:0.7;">(SET ${cat.t}/${cat.t})</small>`;
+        } else if (activeIndex !== -1 && emsSchedule[activeIndex].cid === cat.id) {
+            // Η άσκηση είναι η τρέχουσα ενεργή
+            let step = emsSchedule[activeIndex];
+            const isResting = activePhaseElapsed >= step.w;
+            const timeLeft = isResting ? (step.d - activePhaseElapsed) : (step.w - activePhaseElapsed);
+
             row.style.opacity = "1";
             row.style.transform = "scale(1.02)";
-            bar.style.width = (elapsedInSet / step.d * 100) + '%';
+            bar.style.width = (activePhaseElapsed / step.d * 100) + '%';
             bar.style.background = isResting ? 'var(--danger)' : 'var(--main)';
-            
+
             const label = isResting ? "ΠΑΥΣΗ" : "ΑΣΚΗΣΗ";
             txt.innerHTML = `<span style="color:${isResting?'var(--danger)':'var(--main)'}">${label} ${Math.ceil(timeLeft)}s</span>`;
-            
-            // Scroll αυτόματα στην ενεργή άσκηση
-            if (!skipDecrement && elapsedInSet === 1) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            title.innerHTML = `${cat.n} <small style="opacity:0.7;">(SET ${step.s}/${cat.t})</small>`;
         } else {
-            // Μελλοντικό σετ
-            row.style.opacity = "0.2";
+            // Η άσκηση βρίσκεται σε αναμονή (μελλοντικά σετ)
+            let nextSetNum = 1;
+            for (let i = Math.max(0, activeIndex); i <= lastIndexForCat; i++) {
+                if (emsSchedule[i].cid === cat.id) {
+                    nextSetNum = emsSchedule[i].s;
+                    break;
+                }
+            }
+
+            row.style.opacity = "0.3";
             row.style.transform = "scale(1)";
             bar.style.width = "0%";
             txt.textContent = "ΑΝΑΜΟΝΗ";
+            title.innerHTML = `${cat.n} <small style="opacity:0.7;">(SET ${nextSetNum}/${cat.t})</small>`;
         }
-        cumulative += step.d;
     });
 }
 
