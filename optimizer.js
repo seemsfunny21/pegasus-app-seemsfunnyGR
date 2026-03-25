@@ -55,14 +55,21 @@ const PegasusOptimizer = {
         return { ...ex, adjustedSets: finalSets, isCompleted: remaining <= 0, muscleGroup: group };
     },
 
-    getGroup(name) {
-        const n = name.toLowerCase();
+getGroup(name) {
+        const cleanName = name.trim().replace(" ☀️", "");
+        if (window.exercisesDB) {
+            const exactMatch = window.exercisesDB.find(ex => ex.name === cleanName);
+            if (exactMatch && exactMatch.muscleGroup) return exactMatch.muscleGroup;
+        }
+        
+        // Fallback αν δεν βρεθεί στη βάση
+        const n = cleanName.toLowerCase();
         if (n.includes("chest") || n.includes("pushups") || n.includes("flys") || n.includes("στήθος")) return "Στήθος";
         if (n.includes("row") || n.includes("pulldown") || n.includes("back") || n.includes("πλάτη")) return "Πλάτη";
         if (n.includes("leg") || n.includes("cycling") || n.includes("πόδια") || n.includes("extensions") || n.includes("kickbacks")) return "Πόδια";
         if (n.includes("bicep") || n.includes("tricep") || n.includes("χέρια") || n.includes("curls") || n.includes("pulldowns")) return "Χέρια";
         if (n.includes("shoulder") || n.includes("upright") || n.includes("ώμοι")) return "Ώμοι";
-        if (n.includes("abs") || n.includes("crunch") || n.includes("situp") || n.includes("plank") || n.includes("raise")) return "Κορμός";
+        if (n.includes("abs") || n.includes("crunch") || n.includes("situp") || n.includes("plank") || n.includes("raise") || n.includes("ems full body")) return "Κορμός";
         return "Άλλο";
     }
 };
