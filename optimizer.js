@@ -1,17 +1,22 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v1.4 (TIME-AWARE BALANCER)
-   Protocol: Friday Load Balancing with 40-Minute Limit
+   PEGASUS DYNAMIC OPTIMIZER - v1.5 (TIME-AWARE BALANCER)
+   Protocol: Friday Load Balancing with 40-Minute Limit & DYNAMIC TARGETS
    ========================================================================== */
 
 const PegasusOptimizer = {
-    targets: { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 },
+    // ΔΙΟΡΘΩΣΗ: Δυναμική ανάκτηση από το settings.js, αποφυγή στατικών δεδομένων
+    getTargets() {
+        return JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
+               { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+    },
 
     apply(day, sessionExercises) {
         const progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         let sessionTracker = { ...progress };
+        const currentTargets = this.getTargets(); // Φόρτωση δυναμικών στόχων
 
         // 1. Capping των ασκήσεων της ημέρας
-        let mappedData = sessionExercises.map(ex => this.calculateExercise(ex, sessionTracker));
+        let mappedData = sessionExercises.map(ex => this.calculateExercise(ex, sessionTracker, currentTargets));
 
         // 2. SMART LOAD BALANCING (Παρασκευή Μόνο)
         // Υπολογισμός τρέχοντος χρόνου (κατά προσέγγιση: 2 λεπτά ανά σετ)
@@ -27,10 +32,10 @@ const PegasusOptimizer = {
 
                 const group = this.getGroup(sEx.name);
                 const done = sessionTracker[group] || 0;
-                const target = this.targets[group] || 24;
+                const target = currentTargets[group] || 24; // Χρήση δυναμικού στόχου
 
                 if (done < target && !mappedData.some(m => m.name.includes(sEx.name.trim()))) {
-                    const spilloverEx = this.calculateExercise(sEx, sessionTracker);
+                    const spilloverEx = this.calculateExercise(sEx, sessionTracker, currentTargets);
                     if (spilloverEx.adjustedSets > 0) {
                         spilloverEx.isSpillover = true;
                         spilloverEx.name = `${spilloverEx.name} ☀️`;
@@ -43,9 +48,10 @@ const PegasusOptimizer = {
         return mappedData;
     },
 
-    calculateExercise(ex, tracker) {
+    calculateExercise(ex, tracker, currentTargets) {
         const group = this.getGroup(ex.name);
-        const target = this.targets[group] || 24;
+        // Χρήση του δυναμικού target αντί του στατικού this.targets
+        const target = currentTargets ? (currentTargets[group] || 24) : (this.getTargets()[group] || 24);
         const remaining = target - (tracker[group] || 0);
         let finalSets = (remaining <= 0) ? 0 : (ex.sets > remaining ? remaining : ex.sets);
         
@@ -55,7 +61,7 @@ const PegasusOptimizer = {
         return { ...ex, adjustedSets: finalSets, isCompleted: remaining <= 0, muscleGroup: group };
     },
 
-getGroup(name) {
+    getGroup(name) {
         const cleanName = name.trim().replace(" ☀️", "");
         if (window.exercisesDB) {
             const exactMatch = window.exercisesDB.find(ex => ex.name === cleanName);
