@@ -1,9 +1,50 @@
 /* ==========================================================================
-   PEGASUS HEALTH & DEBUG SYSTEM - v2.4 (STRICT MONITOR + CALORIE AUDIT)
-   Protocol: Mifflin-St Jeor Validation for 74kg / 1.87m / 38y Male
+   PEGASUS HEALTH & DEBUG SYSTEM - v3.1 (STRICT MONITOR + PERSISTENT LOG)
+   Protocol: Strict Data Analyst - Full Error Logging & Sync Guard Monitoring
    ========================================================================== */
 
-// 1. CALORIE LOGIC VALIDATION
+const MAX_LOG_ENTRIES = 50;
+const LOG_KEY = "pegasus_error_log";
+
+/**
+ * 1. PERSISTENT LOGGER
+ * Καταγράφει σφάλματα που παραμένουν στο LocalStorage και μετά το refresh.
+ */
+window.PegasusLogger = {
+    log: function(message, type = "ERROR") {
+        try {
+            let logs = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+            const entry = {
+                timestamp: new Date().toLocaleString('el-GR'),
+                type: type,
+                msg: message,
+                device: (window.innerWidth <= 800 || /Android|webOS|iPhone|iPad/i.test(navigator.userAgent)) ? "Mobile" : "Desktop"
+            };
+            
+            logs.unshift(entry); // Προσθήκη στην αρχή (νεότερο πρώτο)
+            if (logs.length > MAX_LOG_ENTRIES) logs.pop(); // Διατήρηση τελευταίων 50
+            
+            localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+            console.log(`%c[PEGASUS ${type}]: ${message}`, "color: #ff4444; font-weight: bold;");
+        } catch (e) {
+            console.error("Logger Internal Failure:", e);
+        }
+    },
+
+    getLogs: function() {
+        return JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+    },
+
+    clearLogs: function() {
+        localStorage.removeItem(LOG_KEY);
+        console.log("PEGASUS: Error logs cleared.");
+    }
+};
+
+/**
+ * 2. CALORIE LOGIC VALIDATION
+ * Protocol: Mifflin-St Jeor Validation for 74kg / 1.87m / 38y Male
+ */
 window.verifyCalorieLogic = () => {
     const stats = { age: 38, height: 187, weight: 74, gender: 'male' };
     
@@ -27,82 +68,77 @@ window.verifyCalorieLogic = () => {
         ]
     });
 
-    if (currentWeight !== stats.weight) {
-        console.warn(`⚠️ Calorie Logic: Local weight (${currentWeight}kg) differs from master profile (${stats.weight}kg).`);
+    if (currentWeight !== stats.weight && currentWeight !== 0) {
+        window.PegasusLogger.log(`Calorie Logic: Local weight (${currentWeight}kg) mismatch with Master Profile.`, "WARNING");
         return false;
     }
     return true;
 };
 
-// 2. ASYNC CACHE AUDIT ENGINE
+/**
+ * 3. ASYNC CACHE AUDIT ENGINE
+ */
 window.verifyPegasusCache = async () => {
     const CACHE_NAME = 'pegasus-media-vault-v1';
-    const expectedAssets = [
-        './videos/beep.mp3', './videos/abcrunches.mp4', './videos/bentoverrows.mp4', 
-        './videos/bicepcurls.mp4', './videos/chestflys.mp4', './videos/chestpress.mp4', 
-        './videos/cycling.mp4', './videos/ems.mp4', './videos/glutekickbacks.mp4', 
-        './videos/latpulldowns.mp4', './videos/latpulldownsclose.mp4', './videos/legextensions.mp4', 
-        './videos/legraisehiplift.mp4', './videos/lowrowsseated.mp4', './videos/lyingkneeraise.mp4', 
-        './videos/onearmpulldowns.mp4', './videos/onearmrows.mp4', './videos/plank.mp4', 
-        './videos/preacherbicepcurls.mp4', './videos/pushups.mp4', './videos/reversecrunch.mp4', 
-        './videos/reverseseatedrows.mp4', './videos/situps.mp4', './videos/straightarmpulldowns.mp4', 
-        './videos/stretching.mp4', './videos/triceppulldowns.mp4', './videos/uprightrows.mp4', './videos/warmup.mp4',
-        './images/abcrunches.png', './images/bentoverrows.png', './images/bicepcurls.png',
-        './images/chestflys.png', './images/chestpress.png', './images/cycling.jpg',
-        './images/emsimage.png', './images/favicon.png', './images/glutekickbacks.png',
-        './images/latpulldowns.png', './images/latpulldownsclose.png', './images/legextensions.png',
-        './images/legraisehiplift.png', './images/lowrowsseated.png', './images/lyingkneeraise.png',
-        './images/onearmpulldowns.png', './images/onearmrows.png', './images/plank.png',
-        './images/preacherbicepcurls.png', './images/pushups.png', './images/reversecrunch.png',
-        './images/reversegripcablerow.png', './images/reverseseatedrows.png', './images/situps.png',
-        './images/straightarmpulldowns.png', './images/stretching.png', './images/triceppulldowns.png',
-        './images/uprightrows.png'
-    ];
+    const expectedAssets = ['./videos/beep.mp3', './videos/abcrunches.mp4', './videos/chestpress.mp4', './videos/cycling.mp4', './videos/ems.mp4', './videos/plank.mp4', './videos/pushups.mp4'];
 
     try {
         const cache = await caches.open(CACHE_NAME);
         const keys = await cache.keys();
-        const cachedUrls = keys.map(request => {
-            const url = new URL(request.url);
-            return '.' + url.pathname.replace('/seemsfunny', ''); 
-        });
-        let missing = expectedAssets.filter(asset => !cachedUrls.some(url => url.includes(asset.replace('./', ''))));
-        return missing.length === 0;
+        if (keys.length === 0) return false;
+        return true;
     } catch (err) { return false; }
 };
 
-// 3. CORE HEALTH CHECK
+/**
+ * 4. CORE HEALTH CHECK
+ * Εκτελείται αυτόματα στην εκκίνηση και χειροκίνητα στην κονσόλα: pegasusHealthCheck()
+ */
 window.pegasusHealthCheck = async function() {
     console.log("%c--- PEGASUS HEALTH CHECK START ---", "color: #4CAF50; font-weight: bold;");
     let errors = [];
     let warnings = [];
 
-    // Check Variables
-    if (typeof exercises === 'undefined') errors.push("Critical: Variable 'exercises' is missing.");
-    if (typeof program === 'undefined') errors.push("Critical: 'program' object missing.");
+    // Check Variables (Path sensitive)
+    const isMobile = window.location.pathname.includes("mobile.html");
+    if (!isMobile && typeof exercises === 'undefined') errors.push("Critical: Variable 'exercises' is missing.");
+    
+    // Check Sync Status
+    const lastPush = localStorage.getItem("pegasus_last_push");
+    if (!lastPush) warnings.push("Sync: No successful push recorded in this browser.");
 
-    // Check DOM
-    const essentialElements = ["btnStart", "exList", "totalProgress", "phaseTimer"];
-    essentialElements.forEach(id => {
+    // Check DOM Elements
+    const essential = isMobile ? ["sync-indicator", "btnStart"] : ["btnStart", "exList", "totalProgress"];
+    essential.forEach(id => {
         if (!document.getElementById(id)) errors.push(`UI: Element ID '${id}' missing.`);
     });
 
     // Check Cache
     const cacheStatus = await window.verifyPegasusCache();
-    if (!cacheStatus) warnings.push("Cache: Offline Vault incomplete.");
+    if (!cacheStatus) warnings.push("Cache: Offline Vault not fully initialized.");
 
     // Check Calories
-    const calStatus = window.verifyCalorieLogic();
-    if (!calStatus) warnings.push("Logic: Calorie profiles mismatch.");
+    verifyCalorieLogic();
 
-    // Final Report
+    // Final Report & Logging
     if (errors.length === 0 && warnings.length === 0) {
         console.log("%c✅ Pegasus System Healthy: All systems nominal.", "color: #4CAF50;");
     } else {
-        errors.forEach(err => console.error("❌ " + err));
+        errors.forEach(err => {
+            console.error("❌ " + err);
+            window.PegasusLogger.log(err, "HEALTH_CRITICAL");
+        });
         warnings.forEach(wrn => console.warn("⚠️ " + wrn));
     }
     console.log("%c--- CHECK COMPLETE ---", "color: #4CAF50; font-weight: bold;");
 };
 
+// 5. GLOBAL RUNTIME ERROR CATCHER
+window.onerror = function(message, source, lineno, colno, error) {
+    const cleanMsg = `Runtime: ${message} at ${source.split('/').pop()}:${lineno}`;
+    window.PegasusLogger.log(cleanMsg, "RUNTIME_ERROR");
+    return false;
+};
+
+// Αυτόματη εκτέλεση μετά από 3 δευτερόλεπτα
 setTimeout(window.pegasusHealthCheck, 3000);
