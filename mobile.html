@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v11.7 (Full Data Isolation & Universal Backup)</title>
+    <title>Pegasus OS v11.8 (Automated Backup & Sync Guard)</title>
 
     <script>
         (function() {
@@ -220,13 +220,13 @@
 
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Αντίγραφα Ασφαλείας</div>
+        <div class="section-title">Διαχείριση Δεδομένων</div>
         <button class="primary-btn" onclick="exportData()">ΛΗΨΗ ΑΝΤΙΓΡΑΦΟΥ (BACKUP)</button>
-        <label class="secondary-btn" style="display:block; cursor:pointer;">
+        <label class="secondary-btn" style="display:block; cursor:pointer; margin-top:10px;">
             ΕΠΑΝΑΦΟΡΑ (RESTORE)
             <input type="file" style="display:none;" onchange="importData(event)">
         </label>
-        <p style="font-size:9px; color:#666; margin-top:15px;">Περιλαμβάνει: Έγγραφα, Όχημα, Επαφές, Βιβλιοθήκη Φαγητού, Συμπληρώματα.</p>
+        <p style="font-size:9px; color:#666; margin-top:25px; line-height:1.4;">Το Backup περιλαμβάνει: Έγγραφα, Όχημα, Επαφές, Βιβλιοθήκη Φαγητού και Συμπληρώματα.<br>Όνομα αρχείου: PEGASUS_Ημερομηνία.json</p>
     </div>
 
 <script>
@@ -239,7 +239,8 @@ const PegasusStore = {
         foodPrefix: "food_log_",
         kcalTotal: "pegasus_today_kcal",
         protTotal: "pegasus_today_protein",
-        library: "pegasus_food_library"
+        library: "pegasus_food_library",
+        contacts: "pegasus_contacts"
     },
     getFoodLog: function(dateStr) {
         const key = this.keys.foodPrefix + dateStr;
@@ -275,7 +276,7 @@ const PegasusCloud = {
             
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
-            if(data.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(data.peg_contacts));
+            if(data.peg_contacts) localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(data.peg_contacts));
             if(data.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(data.car_dates));
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
             if(data.food_library) localStorage.setItem(PegasusStore.keys.library, JSON.stringify(data.food_library));
@@ -334,7 +335,7 @@ const PegasusCloud = {
             car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}), 
             car_service: PegasusCloud.safeParse("pegasus_car_service", []),
             food_library: PegasusCloud.safeParse(PegasusStore.keys.library, []),
-            peg_contacts: PegasusCloud.safeParse("pegasus_contacts", []),
+            peg_contacts: PegasusCloud.safeParse(PegasusStore.keys.contacts, []),
             today_food_log: PegasusStore.getFoodLog(dateStr),
             all_food_logs: allFoodLogs
         };
@@ -350,15 +351,15 @@ const PegasusCloud = {
     }
 };
 
-/* --- BACKUP & RESTORE ENGINE --- */
-/* --- ΔΙΟΡΘΩΜΕΝΟ BACKUP & RESTORE ENGINE (v11.8) --- */
+/* --- AUTOMATED BACKUP & RESTORE ENGINE (v11.8) --- */
 function exportData() {
     const backup = {};
-    // Σαρώνουμε ΟΛΑ τα κλειδιά ανεξαιρέτως για να μην χαθεί τίποτα
+    const d = new Date();
+    const dateFormatted = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        // Συμπεριλαμβάνουμε επαφές, οχήματα, φαγητά και ρυθμίσεις
-        if (key.startsWith("pegasus_") || key.startsWith("food_log_") || key.startsWith("peg_car_")) {
+        if (key.startsWith("pegasus_") || key.startsWith("food_log_") || key.startsWith("peg_car_") || key.startsWith("weight_") || key.startsWith("cardio_")) {
             backup[key] = localStorage.getItem(key);
         }
     }
@@ -372,44 +373,35 @@ function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `PEGASUS_FULL_SAFE_BACKUP_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `PEGASUS_${dateFormatted}.json`; // ΑΥΤΟΜΑΤΟ ΟΝΟΜΑ
     a.click();
-    console.log("Backup Created with " + Object.keys(backup).length + " keys.");
+    URL.revokeObjectURL(url);
+    console.log("Automated Backup Created: PEGASUS_" + dateFormatted + ".json");
 }
 
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
             if (confirm("ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα αντικατασταθούν πλήρως. Συνέχεια;")) {
-                
-                // 1. Καθαρισμός παλιών δεδομένων για αποφυγή διπλότυπων
                 const keysToRemove = [];
                 for (let i = 0; i < localStorage.length; i++) {
                     const key = localStorage.key(i);
-                    if (key.startsWith("pegasus_") || key.startsWith("food_log_") || key.startsWith("peg_car_")) {
+                    if (key.startsWith("pegasus_") || key.startsWith("food_log_") || key.startsWith("peg_car_") || key.startsWith("weight_") || key.startsWith("cardio_")) {
                         keysToRemove.push(key);
                     }
                 }
                 keysToRemove.forEach(k => localStorage.removeItem(k));
-
-                // 2. Επαναφορά από το αρχείο
-                Object.keys(data).forEach(k => {
-                    localStorage.setItem(k, data[k]);
-                });
-
-                // 3. Απενεργοποίηση Sync Guard για να μην γίνει overwrite από το Cloud αμέσως
+                Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                
                 PegasusCloud.hasSuccessfullyPulled = true; 
-
                 alert("Η επαναφορά ολοκληρώθηκε! Πραγματοποιείται ανανέωση...");
                 location.reload();
             }
-        } catch (err) { 
-            alert("Σφάλμα: Το αρχείο δεν είναι έγκυρο backup του Pegasus."); 
-        }
+        } catch (err) { alert("Σφάλμα: Το αρχείο δεν είναι έγκυρο backup του Pegasus."); }
     };
     reader.readAsText(file);
 }
@@ -477,21 +469,21 @@ function renderService() {
 function addContact() {
     const n = document.getElementById('cName').value; const nu = document.getElementById('cNum').value;
     if(!n || !nu) return;
-    let l = PegasusCloud.safeParse("pegasus_contacts", []);
+    let l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []);
     l.push({ n, nu });
-    localStorage.setItem("pegasus_contacts", JSON.stringify(l));
+    localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(l));
     document.getElementById('cName').value = ""; document.getElementById('cNum').value = "";
     renderContacts(); PegasusCloud.push();
 }
 
 function renderContacts() {
-    const l = PegasusCloud.safeParse("pegasus_contacts", []);
+    const l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []);
     document.getElementById("contactList").innerHTML = l.map((i, idx) => `<div class="log-item" style="display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.n}</strong><br><small>${i.nu}</small></div><div style="gap:10px; display:flex;"><a href="tel:${i.nu}" style="text-decoration:none; background:var(--main); color:#000; padding:8px; border-radius:50%;">📞</a><button onclick="deleteContact(${idx})" style="background:none; border:none; color:var(--danger); font-weight:900;">✕</button></div></div>`).join('');
 }
 
 function deleteContact(idx) {
-    let l = PegasusCloud.safeParse("pegasus_contacts", []);
-    l.splice(idx, 1); localStorage.setItem("pegasus_contacts", JSON.stringify(l));
+    let l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []);
+    l.splice(idx, 1); localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(l));
     renderContacts(); PegasusCloud.push();
 }
 
