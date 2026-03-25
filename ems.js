@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS EMS MODULE - STRICT ANALYST EDITION (V3.1)
-   Protocol: 25-Min Wednesday Session | Unified Keys & Async Sync
+   PEGASUS EMS MODULE - STRICT ANALYST EDITION (V3.2)
+   Unified Keys & Secure Async Sync
    ========================================================================== */
 
 function getTargetWednesday() {
@@ -39,9 +39,7 @@ window.saveEMSFinal = async function() {
         return;
     }
 
-    const timestamp = Date.now();
-    
-    // Ενοποιημένα Κλειδιά (Συμβατά με mobile.html)
+    // UNIFIED KEYS: Συμβατότητα με mobile.html και Cloud Sync
     const weeklyKey = 'peg_weekly_history'; 
     const kcalKey = 'peg_today_kcal';
     const historyKey = `peg_history_${date}`;
@@ -59,9 +57,9 @@ window.saveEMSFinal = async function() {
     todayKcal += parseFloat(kcal);
     localStorage.setItem(kcalKey, todayKcal.toFixed(1));
 
-    // 3. Ιστορικό
+    // 3. Καταγραφή Ιστορικού
     const emsEntry = {
-        id: "ems_" + timestamp,
+        id: "ems_" + Date.now(),
         date: date,
         type: "EMS Training",
         stats: { intensity: parseFloat(avg).toFixed(1) + "%", energy: parseInt(kcal) + " kcal" },
@@ -74,9 +72,8 @@ window.saveEMSFinal = async function() {
         localStorage.setItem(historyKey, JSON.stringify(dayHistory));
         localStorage.setItem(`peg_day_status_${date}`, 'COMPLETED');
 
-        // ΚΡΙΣΙΜΟ: Αναμονή ολοκλήρωσης του Cloud Push
+        // ΚΡΙΣΙΜΟ: Αναμονή επιβεβαίωσης από τον server
         if (window.PegasusCloud) {
-            console.log("PEGASUS: Initiating secure cloud push...");
             await window.PegasusCloud.push(true);
         }
         
@@ -84,7 +81,6 @@ window.saveEMSFinal = async function() {
         window.location.reload();
     } catch (e) {
         console.error("Critical Sync Error:", e);
-        alert("ΣΦΑΛΜΑ ΣΥΓΧΡΟΝΙΣΜΟΥ. Τα δεδομένα αποθηκεύτηκαν μόνο τοπικά.");
     }
 };
 
