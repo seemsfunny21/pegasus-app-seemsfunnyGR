@@ -622,7 +622,7 @@ function promptEMSCompletion() {
 }
 
 async function saveEMSMobile(avg, kcal) {
-    // 1. Ενημέρωση Εβδομαδιαίου Ιστορικού (Κλειδί: peg_weekly_history)
+    // 1. Ενημέρωση Σετ (Χρήση σωστού κλειδιού peg_weekly_history)
     let history = PegasusCloud.safeParse('peg_weekly_history', {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
     });
@@ -631,12 +631,12 @@ async function saveEMSMobile(avg, kcal) {
     groups.forEach(g => history[g] = (history[g] || 0) + 6);
     localStorage.setItem('peg_weekly_history', JSON.stringify(history));
 
-    // 2. Προσθήκη Θερμίδων (Κλειδί: peg_today_kcal)
+    // 2. Προσθήκη Θερμίδων (Χρήση σωστού κλειδιού peg_today_kcal)
     let currentKcal = parseFloat(localStorage.getItem("peg_today_kcal")) || 0;
     currentKcal += parseFloat(kcal);
     localStorage.setItem("peg_today_kcal", currentKcal.toFixed(1));
 
-    // 3. Ασφαλές Cloud Push
+    // 3. Cloud Sync με αναμονή ολοκλήρωσης
     if (window.PegasusCloud) {
         await PegasusCloud.push(); 
     }
