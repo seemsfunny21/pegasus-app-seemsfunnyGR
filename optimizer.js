@@ -1,38 +1,42 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v1.5 (TIME-AWARE BALANCER)
+   PEGASUS DYNAMIC OPTIMIZER - v1.6 (GLOBAL SCOPE & DYNAMIC TARGETS)
    Protocol: Friday Load Balancing with 40-Minute Limit & DYNAMIC TARGETS
    ========================================================================== */
 
-const PegasusOptimizer = {
-    // ΔΙΟΡΘΩΣΗ: Δυναμική ανάκτηση από το settings.js, αποφυγή στατικών δεδομένων
-    getTargets() {
-        return JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
-               { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+window.PegasusOptimizer = {
+    // Δυναμική ανάκτηση από το localStorage (Settings)
+    getTargets: function() {
+        try {
+            const stored = localStorage.getItem("pegasus_muscle_targets");
+            return stored ? JSON.parse(stored) : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        } catch (e) {
+            console.warn("PEGASUS: Error parsing targets, using defaults.");
+            return { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        }
     },
 
-    apply(day, sessionExercises) {
+    apply: function(day, sessionExercises) {
         const progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         let sessionTracker = { ...progress };
-        const currentTargets = this.getTargets(); // Φόρτωση δυναμικών στόχων
+        const currentTargets = this.getTargets(); 
 
         // 1. Capping των ασκήσεων της ημέρας
         let mappedData = sessionExercises.map(ex => this.calculateExercise(ex, sessionTracker, currentTargets));
 
         // 2. SMART LOAD BALANCING (Παρασκευή Μόνο)
-        // Υπολογισμός τρέχοντος χρόνου (κατά προσέγγιση: 2 λεπτά ανά σετ)
         let currentSets = mappedData.reduce((sum, ex) => sum + ex.adjustedSets, 0);
         let currentMinutes = currentSets * 2; 
 
         if (day === "Παρασκευή" && currentMinutes < 40) {
             console.log(`[BALANCER] Friday at ${currentMinutes}m. Pulling from Saturday...`);
-            const saturdayEx = window.program["Σάββατο"] || [];
+            const saturdayEx = window.program ? (window.program["Σάββατο"] || []) : [];
             
             for (let sEx of saturdayEx) {
-                if (currentMinutes >= 40) break; // Διακοπή αν φτάσουμε το όριο των 40 λεπτών
+                if (currentMinutes >= 40) break; 
 
                 const group = this.getGroup(sEx.name);
                 const done = sessionTracker[group] || 0;
-                const target = currentTargets[group] || 24; // Χρήση δυναμικού στόχου
+                const target = currentTargets[group] || 24; 
 
                 if (done < target && !mappedData.some(m => m.name.includes(sEx.name.trim()))) {
                     const spilloverEx = this.calculateExercise(sEx, sessionTracker, currentTargets);
@@ -48,11 +52,11 @@ const PegasusOptimizer = {
         return mappedData;
     },
 
-    calculateExercise(ex, tracker, currentTargets) {
+    calculateExercise: function(ex, tracker, currentTargets) {
         const group = this.getGroup(ex.name);
-        // Χρήση του δυναμικού target αντί του στατικού this.targets
-        const target = currentTargets ? (currentTargets[group] || 24) : (this.getTargets()[group] || 24);
+        const target = currentTargets ? (currentTargets[group] || 24) : 24;
         const remaining = target - (tracker[group] || 0);
+        
         let finalSets = (remaining <= 0) ? 0 : (ex.sets > remaining ? remaining : ex.sets);
         
         if (ex.name.includes("Ποδηλασία")) finalSets = (remaining >= 18) ? 1 : 0;
@@ -61,14 +65,13 @@ const PegasusOptimizer = {
         return { ...ex, adjustedSets: finalSets, isCompleted: remaining <= 0, muscleGroup: group };
     },
 
-    getGroup(name) {
+    getGroup: function(name) {
         const cleanName = name.trim().replace(" ☀️", "");
         if (window.exercisesDB) {
             const exactMatch = window.exercisesDB.find(ex => ex.name === cleanName);
             if (exactMatch && exactMatch.muscleGroup) return exactMatch.muscleGroup;
         }
         
-        // Fallback αν δεν βρεθεί στη βάση
         const n = cleanName.toLowerCase();
         if (n.includes("chest") || n.includes("pushups") || n.includes("flys") || n.includes("στήθος")) return "Στήθος";
         if (n.includes("row") || n.includes("pulldown") || n.includes("back") || n.includes("πλάτη")) return "Πλάτη";
