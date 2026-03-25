@@ -3,16 +3,16 @@
    Protocol: Strict Data Analyst - Protected Food Keys
    ========================================================================== */
 
-window.USER_PROFILE = { weight: 74, height: 1.87, age: 38, gender: "male" };
-window.TARGET_SETS = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-window.REST_TIME = 60; 
-window.MAX_DAILY_MINUTES = 60;
+window.USER_PROFILE = window.USER_PROFILE || { weight: 74, height: 1.87, age: 38, gender: "male" };
+window.TARGET_SETS = window.TARGET_SETS || { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+window.REST_TIME = window.REST_TIME || 60; 
+window.MAX_DAILY_MINUTES = window.MAX_DAILY_MINUTES || 60;
 
 /**
  * 1. PEGASUS STORE PROTOCOL (Data Isolation Layer)
  * Κλειδώνει τη διαχείριση του LocalStorage για την αποφυγή διαφθοράς δεδομένων.
  */
-window.PegasusStore = {
+window.PegasusStore = window.PegasusStore || {
     // Protected Keys Map
     keys: {
         foodPrefix: "food_log_",
