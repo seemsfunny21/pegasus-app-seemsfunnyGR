@@ -260,7 +260,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - LIVE API INTEGRATION (v2.3 - PAYLOAD FIX)
+   PEGASUS AI HANDLER - LIVE API INTEGRATION (v3.0 - BULLETPROOF INJECTION)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
@@ -274,7 +274,7 @@ const PegasusAI = {
 
         const responseBox = document.getElementById("aiResponse");
         
-        // Συλλογή Context
+        // 1. Συλλογή Context (Τα δεδομένα σου)
         const stats = {
             weight: localStorage.getItem("pegasus_weight") || 74,
             kcal: localStorage.getItem("pegasus_today_kcal") || 0,
@@ -282,30 +282,30 @@ const PegasusAI = {
             history: JSON.parse(localStorage.getItem("pegasus_weekly_history")) || {}
         };
 
+        // Εμφάνιση της ερώτησής σου στο UI
         responseBox.innerHTML += `<div style="margin-top:10px; color:#fff;"><b>Εσύ:</b> ${userQuery}</div>`;
         responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Ανάλυση Δεδομένων...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
-        // Ορισμός Προσωπικότητας & Δεδομένων του AI
-        const systemPrompt = `Είσαι ο Pegasus, ο προσωπικός AI data analyst και fitness assistant του Άγγελου. 
-        Δεδομένα χρήστη αυτή τη στιγμή: Βάρος ${stats.weight}kg. 
-        Σημερινές θερμίδες: ${stats.kcal} / 2800. Πρωτεΐνη: ${stats.protein}g / 160g. 
-        Εβδομαδιαία σετ μυϊκών ομάδων: ${JSON.stringify(stats.history)}. 
-        Να απαντάς σύντομα, data-driven, στοχευμένα, χωρίς μακροσκελείς χαιρετισμούς.`;
+        // 2. Ενσωμάτωση Συστήματος (Inline Injection)
+        const combinedPrompt = `Είσαι ο Pegasus, ο προσωπικός AI data analyst και fitness assistant του Άγγελου. 
+Δεδομένα χρήστη αυτή τη στιγμή: Βάρος ${stats.weight}kg. 
+Σημερινές θερμίδες: ${stats.kcal} / 2800. Πρωτεΐνη: ${stats.protein}g / 160g. 
+Εβδομαδιαία σετ μυϊκών ομάδων: ${JSON.stringify(stats.history)}. 
+Να απαντάς σύντομα, data-driven, στοχευμένα, χωρίς μακροσκελείς χαιρετισμούς. 
+
+ΕΡΩΤΗΣΗ ΧΡΗΣΤΗ:
+${userQuery}`;
 
         try {
-            // Κλήση στο σταθερό v1 API
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            // 3. Απλή και ασφαλής κλήση στο API (v1beta)
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    // ΔΙΟΡΘΩΣΗ: Αυστηρό snake_case για το system_instruction
-                    system_instruction: { 
-                        parts: [{ text: systemPrompt }] 
-                    },
                     contents: [{ 
                         role: "user",
-                        parts: [{ text: userQuery }] 
+                        parts: [{ text: combinedPrompt }] 
                     }]
                 })
             });
@@ -313,11 +313,12 @@ const PegasusAI = {
             const data = await res.json();
             document.getElementById("aiLoading")?.remove();
 
+            // Έλεγχος για σφάλματα από την Google
             if (!res.ok || data.error) {
                 throw new Error(data.error ? data.error.message : `HTTP Error ${res.status}`);
             }
 
-            // Εξαγωγή του κειμένου και μετατροπή αλλαγών γραμμής σε HTML
+            // 4. Εξαγωγή του κειμένου
             const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
             
             responseBox.innerHTML += `<div style="margin-top:5px; color:var(--ai);"><b>PEGASUS:</b> ${aiText}</div>`;
