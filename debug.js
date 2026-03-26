@@ -58,14 +58,10 @@ window.verifyCalorieLogic = () => {
     const currentWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 0;
     
     console.table({
-        "Parameter": ["BMR (Base)", "TDEE (Maintenance)", "Pegasus Target", "User Weight"],
-        "Value": [`${bmr} kcal`, `${tdee} kcal`, `${target} kcal`, `${currentWeight} kg`],
-        "Status": [
-            "NOMINAL", 
-            "NOMINAL", 
-            target > tdee ? "SURPLUS (BULK)" : "DEFICIT",
-            currentWeight === stats.weight ? "MATCH" : "MISMATCH"
-        ]
+        "0": { Parameter: "BMR (Base)", Value: `${bmr} kcal`, Status: "NOMINAL" },
+        "1": { Parameter: "TDEE (Maintenance)", Value: `${tdee} kcal`, Status: "NOMINAL" },
+        "2": { Parameter: "Pegasus Target", Value: `${target} kcal`, Status: target > tdee ? "SURPLUS (BULK)" : "DEFICIT" },
+        "3": { Parameter: "User Weight", Value: `${currentWeight} kg`, Status: currentWeight === stats.weight ? "MATCH" : "MISMATCH" }
     });
 
     if (currentWeight !== stats.weight && currentWeight !== 0) {
@@ -80,8 +76,6 @@ window.verifyCalorieLogic = () => {
  */
 window.verifyPegasusCache = async () => {
     const CACHE_NAME = 'pegasus-media-vault-v1';
-    const expectedAssets = ['./videos/beep.mp3', './videos/abcrunches.mp4', './videos/chestpress.mp4', './videos/cycling.mp4', './videos/ems.mp4', './videos/plank.mp4', './videos/pushups.mp4'];
-
     try {
         const cache = await caches.open(CACHE_NAME);
         const keys = await cache.keys();
@@ -101,14 +95,16 @@ window.pegasusHealthCheck = async function() {
 
     // Check Variables (Path sensitive)
     const isMobile = window.location.pathname.includes("mobile.html");
-    if (!isMobile && typeof exercises === 'undefined') errors.push("Critical: Variable 'exercises' is missing.");
+    
+    // Έλεγχος αν υπάρχουν τα βασικά αντικείμενα δεδομένων
+    if (typeof window.calculateDailyProgram !== 'function') errors.push("Critical: Dynamic Engine (data.js) not found.");
     
     // Check Sync Status
     const lastPush = localStorage.getItem("pegasus_last_push");
     if (!lastPush) warnings.push("Sync: No successful push recorded in this browser.");
 
     // Check DOM Elements
-    const essential = isMobile ? ["sync-indicator", "btnStart"] : ["btnStart", "exList", "totalProgress"];
+    const essential = isMobile ? ["sync-indicator"] : ["btnStart", "exList", "totalProgress"];
     essential.forEach(id => {
         if (!document.getElementById(id)) errors.push(`UI: Element ID '${id}' missing.`);
     });
@@ -118,11 +114,11 @@ window.pegasusHealthCheck = async function() {
     if (!cacheStatus) warnings.push("Cache: Offline Vault not fully initialized.");
 
     // Check Calories
-    verifyCalorieLogic();
+    window.verifyCalorieLogic();
 
     // Final Report & Logging
     if (errors.length === 0 && warnings.length === 0) {
-        console.log("%c✅ Pegasus System Healthy: All systems nominal.", "color: #4CAF50;");
+        console.log("%c✅ Pegasus System Healthy: All systems nominal.", "color: #4CAF50; font-weight: bold; font-size: 12px;");
     } else {
         errors.forEach(err => {
             console.error("❌ " + err);
@@ -135,10 +131,13 @@ window.pegasusHealthCheck = async function() {
 
 // 5. GLOBAL RUNTIME ERROR CATCHER
 window.onerror = function(message, source, lineno, colno, error) {
-    const cleanMsg = `Runtime: ${message} at ${source.split('/').pop()}:${lineno}`;
+    const fileName = source ? source.split('/').pop() : "unknown";
+    const cleanMsg = `Runtime: ${message} at ${fileName}:${lineno}`;
     window.PegasusLogger.log(cleanMsg, "RUNTIME_ERROR");
     return false;
 };
 
-// Αυτόματη εκτέλεση μετά από 3 δευτερόλεπτα
-setTimeout(window.pegasusHealthCheck, 3000);
+// Αυτόματη εκτέλεση μετά από 3 δευτερόλεπτα για να προλάβουν να φορτώσουν όλα τα scripts
+setTimeout(() => {
+    window.pegasusHealthCheck();
+}, 3000);
