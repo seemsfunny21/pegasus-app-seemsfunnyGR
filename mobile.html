@@ -323,21 +323,36 @@ const PegasusAI = {
     }
 };
 
-// ΑΝΑΒΑΘΜΙΣΜΕΝΗ openView ΓΙΑ ΑΥΤΟΜΑΤΗ ΕΚΚΙΝΗΣΗ
+/* ==========================================================================
+   VIEW MANAGER - WITH AI AUTO-EXECUTION FIX
+   ========================================================================== */
 function openView(id) {
+    // 1. Κλείσιμο όλων των views
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const t = document.getElementById(id);
-    if(t) t.classList.add('active');
     
-    if(id==='supps') updateSuppUI();
-    if(id==='preview') updateMuscleUI();
-    if(id==='library') renderLibrary();
-    
-    if(id==='gemini_panel') {
+    // 2. Ενεργοποίηση του συγκεκριμένου view
+    const targetView = document.getElementById(id);
+    if (targetView) {
+        targetView.classList.add('active');
+    }
+
+    // 3. UI Updates ανάλογα με το view
+    if (id === 'supps') updateSuppUI();
+    if (id === 'preview') updateMuscleUI();
+    if (id === 'library') renderLibrary();
+
+    // 4. ΕΙΔΙΚΟΣ ΧΕΙΡΙΣΜΟΣ ΓΙΑ GEMINI (ΑΥΤΟΜΑΤΗ ΑΠΑΝΤΗΣΗ)
+    if (id === 'gemini_panel') {
         const responseBox = document.getElementById("aiResponse");
-        responseBox.innerHTML = ""; // Καθαρισμός για φρέσκια ανάλυση
-        // Εκκίνηση αυτόματης ερώτησης
-        PegasusAI.ask("", true); 
+        if (responseBox) {
+            responseBox.innerHTML = ""; // Καθαρισμός παλιών μηνυμάτων
+            
+            // Μικρή καθυστέρηση 100ms για να προλάβει το DOM να γίνει active
+            setTimeout(() => {
+                console.log("🚀 PEGASUS AI: Triggering Stealth Auto-Audit...");
+                PegasusAI.ask("", true); // "" = καμία ερώτηση, true = Auto Audit mode
+            }, 100);
+        }
     }
 }
 
