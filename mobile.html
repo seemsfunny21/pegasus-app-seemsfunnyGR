@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v12.3 (One-Tap Backup)</title>
+    <title>Pegasus OS v12.4 (Intelligence Edition)</title>
 
     <script>
         (function() {
@@ -19,17 +19,24 @@
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { --main: #00ff41; --danger: #ff4444; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); }
+        :root { --main: #00ff41; --danger: #ff4444; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); --ai: #00bcd4; }
         body, html { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; text-align: center; overscroll-behavior: none; position: fixed; width: 100%; }
         body { padding: 20px 15px; box-sizing: border-box; background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); display: flex; flex-direction: column; align-items: center; }
         #sync-indicator { font-size: 9px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 25px; text-transform: uppercase; text-align: center; width: 100%; }
         .header h1 { font-size: 34px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; text-align: center; }
         .header p { font-size: 11px; color: var(--main); margin: 4px 0 25px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; }
-        .tile { background: var(--card); border: 1px solid rgba(0, 255, 65, 0.12); border-radius: 28px; padding: 20px 10px; text-align: center; backdrop-filter: blur(16px); transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .tile { background: var(--card); border: 1px solid rgba(0, 255, 65, 0.12); border-radius: 28px; padding: 20px 10px; text-align: center; backdrop-filter: blur(16px); transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
         .tile:active { transform: scale(0.95); border-color: var(--main); }
         .tile-icon { font-size: 28px; margin-bottom: 8px; text-align: center; }
         .tile-label { font-size: 10px; font-weight: 800; text-transform: uppercase; text-align: center; }
+        
+        /* ΕΙΔΙΚΟ TILE ΓΙΑ ΤΟ GEMINI AI */
+        .tile-ai { grid-column: span 2; background: rgba(0, 188, 212, 0.05); border-color: rgba(0, 188, 212, 0.4); }
+        .tile-ai:active { border-color: var(--ai); }
+        .tile-ai .tile-label { color: var(--ai); font-size: 12px; letter-spacing: 2px; }
+
         .view { display: none; height: 85vh; flex-direction: column; width: 100%; align-items: center; overflow-y: auto; padding-bottom: 30px; text-align: center; }
         .view.active { display: flex; animation: viewIn 0.3s forwards; }
         @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -94,7 +101,24 @@
                 </div>
             </div>
             <div class="tile" onclick="openView('settings_panel')"><span class="tile-icon">⚙️</span><span class="tile-label">Ρυθμίσεις</span></div>
+            
+            <div class="tile tile-ai" onclick="openView('gemini_panel')">
+                <span class="tile-icon">🧠</span>
+                <span class="tile-label">PEGASUS INTELLIGENCE</span>
+            </div>
         </div>
+    </div>
+
+    <div id="gemini_panel" class="view">
+        <button class="btn-back" onclick="openView('home')" style="color: var(--ai);">ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title" style="color: var(--ai);">Gemini Engine (Alpha)</div>
+        
+        <div id="aiResponse" style="padding:15px; font-size:13px; overflow-y:auto; height:45vh; text-align:left; background:rgba(0,0,0,0.5); border-radius:18px; border:1px solid rgba(0,188,212,0.3); width:100%; box-sizing:border-box; margin-bottom:15px; line-height:1.5;">
+            <span style="color: var(--ai); font-weight:900;">PEGASUS:</span> Σύστημα AI σε αναμονή. Πώς μπορώ να αναλύσω τα δεδομένα σου σήμερα;
+        </div>
+        
+        <input type="text" id="aiInput" placeholder="Δώσε εντολή ή ρώτησε κάτι..." style="border-color: rgba(0,188,212,0.5);">
+        <button class="primary-btn" style="background: var(--ai); color: #000;" onclick="handleAIPrompt()">ΑΝΑΛΥΣΗ ΔΕΔΟΜΕΝΩΝ</button>
     </div>
 
     <div id="diet" class="view">
@@ -221,9 +245,7 @@
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Διαχείριση Δεδομένων</div>
-        
         <button class="primary-btn" onclick="exportData()">ΛΗΨΗ ΑΝΤΙΓΡΑΦΟΥ (BACKUP)</button>
-        
         <label class="secondary-btn" style="display:block; cursor:pointer; margin-top:10px;">
             ΕΠΑΝΑΦΟΡΑ (RESTORE)
             <input type="file" style="display:none;" onchange="importData(event)">
@@ -234,6 +256,47 @@
 <script>
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
+
+/* ==========================================================================
+   PEGASUS AI HANDLER - MOBILE INTEGRATION (v1.0)
+   ========================================================================== */
+const PegasusAI = {
+    async ask(userQuery) {
+        if(!userQuery) return;
+        const responseBox = document.getElementById("aiResponse");
+        
+        // Context Extraction για αποστολή στο LLM
+        const stats = {
+            weight: localStorage.getItem("pegasus_weight") || 74,
+            kcal: localStorage.getItem("pegasus_today_kcal") || 0,
+            history: JSON.parse(localStorage.getItem("pegasus_weekly_history")) || {}
+        };
+
+        // UX Feedback
+        responseBox.innerHTML += `<div style="margin-top:10px; color:#fff;"><b>Εσύ:</b> ${userQuery}</div>`;
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Ανάλυση...</div>`;
+        responseBox.scrollTop = responseBox.scrollHeight;
+
+        console.log("PEGASUS AI: Analyzing query with context...", stats);
+        
+        // TODO: Σύνδεση με το πραγματικό API (OpenAI/Google Gemini)
+        // Προσοχή: Μην γράφεις το API Key σου εδώ. Χρειάζεται server-side proxy.
+        
+        // Simulation απάντησης (Placeholder)
+        setTimeout(() => {
+            const loading = document.getElementById("aiLoading");
+            if(loading) loading.remove();
+            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--ai);"><b>PEGASUS:</b> Λήφθηκε το αίτημα. Επί του παρόντος, το API endpoint πρέπει να συνδεθεί για να επεξεργαστώ το context (${stats.kcal} kcal σημερινές).</div>`;
+            responseBox.scrollTop = responseBox.scrollHeight;
+        }, 1500);
+    }
+};
+
+function handleAIPrompt() {
+    const inputField = document.getElementById('aiInput');
+    PegasusAI.ask(inputField.value);
+    inputField.value = "";
+}
 
 const PegasusStore = {
     keys: { foodPrefix: "food_log_", kcalTotal: "pegasus_today_kcal", protTotal: "pegasus_today_protein", library: "pegasus_food_library", contacts: "pegasus_contacts" },
