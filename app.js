@@ -244,7 +244,22 @@ function finishWorkout() {
 window.onload = () => {
     createNavbar();
     
-    // Σύνδεση βασικών κουμπιών ελέγχου
+    // 1. ΑΥΤΟΜΑΤΗ ΕΠΙΛΟΓΗ ΤΡΕΧΟΥΣΑΣ ΗΜΕΡΑΣ (FIX)
+    const daysGR = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const todayIndex = new Date().getDay(); // 0 για Κυριακή, 4 για Πέμπτη κλπ.
+    const todayName = daysGR[todayIndex];
+    
+    const targetBtn = document.getElementById(`nav-${todayName}`);
+    if (targetBtn) {
+        console.log(`PEGASUS: Auto-selecting Today -> ${todayName}`);
+        selectDay(targetBtn, todayName);
+    } else {
+        // Fallback αν για κάποιο λόγο δεν βρει το ID
+        const firstBtn = document.querySelector(".navbar button");
+        if (firstBtn) selectDay(firstBtn, firstBtn.textContent.trim());
+    }
+
+    // 2. ΣΥΝΔΕΣΗ ΒΑΣΙΚΩΝ ΚΟΥΜΠΙΩΝ ΕΛΕΓΧΟΥ
     const btnStart = document.getElementById("btnStart");
     if (btnStart) btnStart.onclick = startPause;
 
@@ -254,7 +269,7 @@ window.onload = () => {
     const btnWarmup = document.getElementById("btnWarmup");
     if (btnWarmup && typeof startWarmup === "function") btnWarmup.onclick = startWarmup;
 
-    // Modular Panel Toggles
+    // 3. MODULAR PANEL TOGGLES
     const uiBtns = { 
         "btnCalendarUI": "calendarPanel", 
         "btnAchUI": "achievementsPanel", 
@@ -270,13 +285,10 @@ window.onload = () => {
             const panel = document.getElementById(uiBtns[id]);
             const isVisible = panel.style.display === "block";
             
-            // Κλείσιμο όλων των panels
             document.querySelectorAll(".pegasus-panel").forEach(p => p.style.display = "none");
             
-            // Toggle current
             panel.style.display = isVisible ? "none" : "block";
             
-            // Trigger specific updates
             if (!isVisible) {
                 if (id === "btnAchUI" && window.renderAchievements) window.renderAchievements();
                 if (id === "btnFoodUI" && window.updateFoodUI) window.updateFoodUI();
@@ -286,22 +298,16 @@ window.onload = () => {
         };
     });
 
-    // Special Buttons
+    // 4. ΕΙΔΙΚΑ ΚΟΥΜΠΙΑ
     const btnManualEmail = document.getElementById("btnManualEmail");
     if (btnManualEmail) btnManualEmail.onclick = () => window.PegasusReporting?.sendEmail();
 
     const btnOpenGallery = document.getElementById("btnOpenGallery");
     if (btnOpenGallery) btnOpenGallery.onclick = () => {
+        document.querySelectorAll(".pegasus-panel").forEach(p => p.style.display = "none");
         document.getElementById("galleryPanel").style.display = "block";
         window.GalleryEngine?.render();
     };
 
-    console.log("✅ PEGASUS APP ENGINE: Unified Connector Ready.");
-};
-
-// Global Helpers
-window.PegasusWorkout = {
-    start: startPause,
-    next: skipToNextExercise,
-    warmup: () => typeof startWarmup === "function" ? startWarmup() : null
+    console.log("✅ PEGASUS APP ENGINE: Unified Connector & Auto-Day Ready.");
 };
