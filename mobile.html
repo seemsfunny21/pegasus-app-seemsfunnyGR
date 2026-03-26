@@ -324,41 +324,90 @@ const PegasusAI = {
 };
 
 /* ==========================================================================
-   VIEW MANAGER - SMART SYNC & AI AUTO-TRIGGER (v11.1)
+   PEGASUS AI HANDLER - HIGH SPEED ENGINE (v12.0)
+   ========================================================================== */
+const PegasusAI = {
+    async ask(userQuery, isAutoAudit = false) {
+        const apiKey = localStorage.getItem("pegasus_gemini_key");
+        if (!apiKey) return;
+
+        const responseBox = document.getElementById("aiResponse");
+        const now = new Date();
+        const currentHour = now.getHours();
+        const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+        
+        const kcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+        const prot = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
+        const todayLogs = PegasusStore.getFoodLog(dateStr);
+        const foodLib = PegasusCloud.safeParse(PegasusStore.keys.library, []);
+
+        if (!isAutoAudit && userQuery) {
+            responseBox.innerHTML += `<div style="margin-top:10px; color:#fff; border-bottom:1px solid #222; padding-bottom:5px;"><b>Εσύ:</b> ${userQuery}</div>`;
+        }
+        
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--main); font-size:11px; font-weight:bold; letter-spacing:1px;">ANALYZING DATA...</div>`;
+        responseBox.scrollTop = responseBox.scrollHeight;
+
+        const strictRules = `Ώρα: ${currentHour}:00. Στόχος: 2800kcal/160gP. 
+        Αν είναι μετά τις 20:00, πρότεινε ΜΟΝΟ ελαφριά (γιαούρτι, τοστ, σουβλάκια, whey). 
+        Απέκλεισε βαριά γεύματα όπως κρέπες αν είναι βράδυ. Αν έχει ξεπεράσει θερμίδες, πρότεινε μόνο μηδενικά.`;
+
+        const auditPrompt = `Είσαι ο Pegasus AI. 
+        Data: ${kcal}/2800 kcal, ${prot}/160g P. 
+        Εφαγε: ${todayLogs.map(l => l.name).join(', ')}.
+        Library: ${foodLib.map(f => f.name + '(' + f.kcal + 'kcal,' + f.protein + 'gP)').join('|')}.
+        ${isAutoAudit ? "Κάνε ΑΥΤΟΜΑΤΗ ΔΙΑΓΝΩΣΗ. " + strictRules : userQuery}`;
+
+        try {
+            // ΟΠΤΙΜΟΠΟΙΗΣΗ: Αφαιρέθηκε η διαγνωστική κλήση. Χρησιμοποιούμε απευθείας το 2.5-flash
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: auditPrompt }] }] })
+            });
+
+            const data = await res.json();
+            document.getElementById("aiLoading")?.remove();
+
+            if (!res.ok) throw new Error(data.error?.message || "Σφάλμα AI");
+
+            const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+            const prefix = isAutoAudit ? `<b style="color:var(--main); font-size:10px;">[STRATEGIC ANALYSIS @ ${currentHour}:00]</b><br>` : `<b style="color:var(--main);">PEGASUS:</b> `;
+            
+            responseBox.innerHTML += `<div style="margin-top:5px; color:#fff; background:rgba(0,255,65,0.06); padding:12px; border-radius:12px; border:1px solid rgba(0,255,65,0.15); line-height:1.4;">${prefix}${aiText}</div>`;
+            responseBox.scrollTop = responseBox.scrollHeight;
+
+        } catch (error) {
+            document.getElementById("aiLoading")?.remove();
+            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--danger); font-size:11px;">[ΣΦΑΛΜΑ] ${error.message}</div>`;
+        }
+    }
+};
+
+/* ==========================================================================
+   VIEW MANAGER - HIGH SPEED SYNC (v12.0)
    ========================================================================== */
 function openView(id) {
-    // 1. Κλασικό UI Switch
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const targetView = document.getElementById(id);
     if (targetView) targetView.classList.add('active');
 
-    // 2. UI Updates
     if (id === 'supps') updateSuppUI();
     if (id === 'preview') updateMuscleUI();
     if (id === 'library') renderLibrary();
 
-    // 3. ΕΙΔΙΚΟΣ ΧΕΙΡΙΣΜΟΣ ΓΙΑ GEMINI
     if (id === 'gemini_panel') {
         const responseBox = document.getElementById("aiResponse");
         if (!responseBox) return;
         
         responseBox.innerHTML = ""; 
-        responseBox.innerHTML = `<div id="aiLoading" style="color:var(--main); font-size:11px; font-weight:bold;">
-            <span style="opacity:0.5;">[CLOUD]</span> WAITING FOR DATA SYNC...
-        </div>`;
+        responseBox.innerHTML = `<div id="aiLoading" style="color:var(--main); font-size:11px; font-weight:bold;"><span style="opacity:0.5;">[CLOUD]</span> WAITING FOR DATA SYNC...</div>`;
 
-        // ΣΥΝΑΡΤΗΣΗ ΠΟΥ ΠΕΡΙΜΕΝΕΙ ΤΟ SYNC
-        const waitForDataAndAsk = () => {
-            // Ελέγχουμε αν το Cloud Vault τελείωσε (αν υπάρχει ένδειξη συγχρονισμού)
-            // Ή απλά περιμένουμε 3.5 δευτερόλεπτα για να είμαστε σίγουροι
-            setTimeout(() => {
-                console.log("🚀 PEGASUS AI: Data is ready. Triggering Analysis...");
-                document.getElementById("aiLoading").innerHTML = "SCANNING DATA & TIME...";
-                PegasusAI.ask("", true);
-            }, 3500); // 3.5 δευτερόλεπτα αναμονή
-        };
-
-        waitForDataAndAsk();
+        // ΟΠΤΙΜΟΠΟΙΗΣΗ: Ο χρόνος αναμονής έπεσε από τα 3500ms στα 800ms
+        setTimeout(() => {
+            document.getElementById("aiLoading").innerHTML = "ANALYZING DATA...";
+            PegasusAI.ask("", true);
+        }, 800); 
     }
 }
 
