@@ -1,151 +1,194 @@
 /* ==========================================================================
-   PEGASUS SMART INVENTORY HANDLER - v12.0 (MODULAR / FULLY DECOUPLED)
-   Protocol: Strict Data Analyst - Encapsulated Muscle & Supplement Tracking
+   PEGASUS SMART INVENTORY HANDLER - STRICT EDITION (v11.2 SYNC)
+   INCLUDES MUSCLE TRACKING & SUPPLEMENT LOGISTICS
+   Protocol: Dynamic Targets Injection
    ========================================================================== */
 
-const PegasusInventory = (function() {
-    // 1. ΙΔΙΩΤΙΚΕΣ ΣΤΑΘΕΡΕΣ (Private Configuration)
-    const SUPPLEMENT_CONFIG = {
-        shipping: {
-            freeThreshold: 50,
-            cost: 5,
-            standardDays: 3,
-            holidayDays: 5
-        }
-    };
+/* --- 1. MUSCLE INVENTORY ENGINE --- */
 
-    const DEFAULT_TARGETS = { 
-        "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 
-    };
-
-    // 2. ΕΣΩΤΕΡΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ ΥΠΟΛΟΓΙΣΜΩΝ (Private Methods)
-    const getTargets = () => {
-        try {
-            return JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || DEFAULT_TARGETS;
-        } catch (e) {
-            return DEFAULT_TARGETS;
-        }
-    };
-
-    const getHistory = () => {
-        try {
-            return JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-        } catch (e) {
-            return {};
-        }
-    };
-
-    const initSupplementInventory = () => {
-        try {
-            let inv = JSON.parse(localStorage.getItem('pegasus_supp_inventory'));
-            if (!inv) {
-                inv = { prot: 2500, crea: 1000 };
-                localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
-            }
-            return inv;
-        } catch (e) {
-            return { prot: 2500, crea: 1000 };
-        }
-    };
-
-    // 3. ΛΕΙΤΟΥΡΓΙΕΣ ΜΥΪΚΗΣ ΙΧΝΗΛΑΤΗΣΗΣ (Muscle Tracking)
-    const getSortedMuscleGroups = () => {
-        const history = getHistory();
-        const targets = getTargets();
-        
-        let stats = Object.keys(targets).map(group => {
-            let done = history[group] || 0;
-            let target = targets[group];
-            return {
-                name: group,
-                percent: target > 0 ? (done / target) * 100 : 100,
-                remaining: Math.max(0, target - done)
-            };
-        });
-
-        return stats.sort((a, b) => a.percent - b.percent);
-    };
-
-    const findMuscleGroup = (exerciseName) => {
-        if (window.exercisesDB) {
-            const ex = window.exercisesDB.find(e => e.name.toLowerCase() === exerciseName.toLowerCase().trim());
-            if (ex) return ex.muscleGroup;
-        }
-        return "Άλλο";
-    };
-
-    const resetWeeklyInventory = () => {
-        localStorage.setItem('pegasus_weekly_history', JSON.stringify({
-            "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
-        }));
-        console.log("[PEGASUS INVENTORY]: Weekly muscle history reset.");
-    };
-
-    // 4. ΛΕΙΤΟΥΡΓΙΕΣ ΣΥΜΠΛΗΡΩΜΑΤΩΝ (Supplement Logistics)
-    const consumeDailySupplements = (proteinGramsConsumed) => {
-        let inv = initSupplementInventory();
-        let updated = false;
-
-        // Υπολογισμός ανάλωσης σκόνης πρωτεΐνης βάσει του γεύματος
-        if (proteinGramsConsumed > 0) {
-            inv.prot = Math.max(0, inv.prot - proteinGramsConsumed);
-            updated = true;
-        }
-        
-        if (updated) {
-            localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
-            if (window.updateSuppUI) window.updateSuppUI();
-        }
-        return inv;
-    };
-
-    const restockSupplement = (type, grams) => {
-        let inv = initSupplementInventory();
-        if (inv[type] !== undefined) {
-            inv[type] += grams;
-            localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
-            if (window.updateSuppUI) window.updateSuppUI();
-        }
-        return inv;
-    };
-
-    const calculateOrderTotals = (cartItems, isHoliday = false) => {
-        let subtotal = 0;
-        cartItems.forEach(item => {
-            subtotal += (item.price * item.quantity);
-        });
-
-        const appliedShipping = (subtotal >= SUPPLEMENT_CONFIG.shipping.freeThreshold || subtotal === 0) 
-                                ? 0 
-                                : SUPPLEMENT_CONFIG.shipping.cost;
-
-        const deliveryEstimate = isHoliday ? SUPPLEMENT_CONFIG.shipping.holidayDays : SUPPLEMENT_CONFIG.shipping.standardDays;
-        const finalTotal = subtotal + appliedShipping;
-
+function getSortedMuscleGroups() {
+    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    // ΔΙΟΡΘΩΣΗ: Δυναμική ανάκτηση από το settings.js, αποφυγή στατικών δεδομένων
+const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
+                { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+    
+    let stats = Object.keys(targets).map(group => {
+        let done = history[group] || 0;
+        let target = targets[group];
         return {
-            subtotal: parseFloat(subtotal.toFixed(2)),
-            shippingCost: appliedShipping,
-            finalTotal: parseFloat(finalTotal.toFixed(2)),
-            deliveryEstimate: deliveryEstimate
+            name: group,
+            // Fallback ασφαλείας για να μην προκύψει ποτέ διαίρεση με το μηδέν
+            percent: target > 0 ? (done / target) * 100 : 100,
+            remaining: Math.max(0, target - done)
         };
+    });
+
+    return stats.sort((a, b) => a.percent - b.percent);
+}
+
+function getSmartDailyProgram(day) {
+    if (day === "Τετάρτη") return [
+        { name: "EMS Full Body", sets: 1 },
+        { name: "Core Stabilization", sets: 3 }
+    ];
+    if (day === "Πέμπτη" || day === "Δευτέρα") return []; 
+
+    const sortedGroups = getSortedMuscleGroups();
+    let program = [];
+
+    const availableGroups = sortedGroups.filter(g => g.name !== "Πόδια" && g.remaining > 0);
+
+    availableGroups.slice(0, 2).forEach(group => {
+        if (typeof exercisesDB !== 'undefined') {
+            const availableEx = exercisesDB.filter(ex => ex.muscleGroup === group.name);
+            availableEx.forEach(ex => {
+                program.push({
+                    name: ex.name,
+                    sets: Math.min(4, group.remaining)
+                });
+            });
+        }
+    });
+
+    return program;
+}
+
+function findMuscleGroup(exerciseName) {
+    if (!exerciseName) return null;
+    
+    const cleanName = exerciseName.trim().toLowerCase();
+
+    if (typeof exercisesDB !== 'undefined') {
+        const found = exercisesDB.find(ex => ex.name.toLowerCase() === cleanName);
+        if (found) return found.muscleGroup;
+    }
+    
+    const manualMap = {
+        "seated chest press": "Στήθος",
+        "chest press": "Στήθος",
+        "pec deck": "Στήθος",
+        "pushups": "Στήθος",
+        "lat pulldown": "Πλάτη",
+        "low seated row": "Πλάτη",
+        "preacher curl": "Χέρια",
+        "bicep curls": "Χέρια",
+        "plank": "Κορμός",
+        "leg press": "Πόδια",
+        "ems full body": "Κορμός",
+        "ποδηλασία": "Πόδια" 
     };
 
-    // 5. PUBLIC API
+    for (let key in manualMap) {
+        if (cleanName.includes(key)) return manualMap[key];
+    }
+    
+    return null;
+}
+
+function saveProgress(muscleGroup, sets = 1, exerciseName = "") {
+    if (!muscleGroup) return;
+
+    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    
+    let setValue = sets;
+    if (exerciseName && exerciseName.toLowerCase().includes("ποδηλασία")) {
+        setValue = 18;
+    }
+
+    history[muscleGroup] = (history[muscleGroup] || 0) + setValue;
+    localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+}
+
+function resetWeeklyInventory() {
+    localStorage.removeItem('pegasus_weekly_history');
+}
+
+/* --- 2. SUPPLEMENTS & ORDERS ENGINE --- */
+
+const SUPPLEMENT_CONFIG = {
+    doses: {
+        protein: 60,
+        creatine: 5  
+    },
+    thresholdDays: 12,
+    shipping: {
+        cost: 5.99,
+        freeThreshold: 60.00,
+        standardDays: "7-9 εργάσιμες ημέρες",
+        holidayDays: "Έως 12 εργάσιμες ημέρες (Αργία)"
+    }
+};
+
+function initSupplementInventory() {
+    return JSON.parse(localStorage.getItem('pegasus_supplements')) || {
+        protein: 0,
+        creatine: 0
+    };
+}
+
+function consumeDailySupplements() {
+    let inv = initSupplementInventory();
+
+    inv.protein = Math.max(0, inv.protein - SUPPLEMENT_CONFIG.doses.protein);
+    inv.creatine = Math.max(0, inv.creatine - SUPPLEMENT_CONFIG.doses.creatine);
+
+    localStorage.setItem('pegasus_supplements', JSON.stringify(inv));
+    return checkSupplementAlerts(inv);
+}
+
+function checkSupplementAlerts(inv) {
+    const proteinThreshold = SUPPLEMENT_CONFIG.doses.protein * SUPPLEMENT_CONFIG.thresholdDays; 
+    const creatineThreshold = SUPPLEMENT_CONFIG.doses.creatine * SUPPLEMENT_CONFIG.thresholdDays; 
+
+    let alerts = [];
+    if (inv.protein <= proteinThreshold && inv.protein > 0) {
+        alerts.push(`⚠️ Πρωτεΐνη: Χαμηλό απόθεμα (${inv.protein}g).`);
+    }
+    if (inv.creatine <= creatineThreshold && inv.creatine > 0) {
+        alerts.push(`⚠️ Κρεατίνη: Χαμηλό απόθεμα (${inv.creatine}g).`);
+    }
+
+    return alerts;
+}
+
+function calculateOrderTotals(cartItems, isHoliday = false) {
+    let subtotal = 0;
+    cartItems.forEach(item => {
+        subtotal += (item.price * item.quantity);
+    });
+
+    const appliedShipping = (subtotal >= SUPPLEMENT_CONFIG.shipping.freeThreshold || subtotal === 0) 
+                            ? 0 
+                            : SUPPLEMENT_CONFIG.shipping.cost;
+
+    const deliveryEstimate = isHoliday ? SUPPLEMENT_CONFIG.shipping.holidayDays : SUPPLEMENT_CONFIG.shipping.standardDays;
+    const finalTotal = subtotal + appliedShipping;
+
     return {
-        getSortedMuscleGroups: getSortedMuscleGroups,
-        findMuscleGroup: findMuscleGroup,
-        resetWeeklyInventory: resetWeeklyInventory,
-        consumeDailySupplements: consumeDailySupplements,
-        restockSupplement: restockSupplement,
-        calculateOrderTotals: calculateOrderTotals,
-        initInventory: initSupplementInventory
+        subtotal: parseFloat(subtotal.toFixed(2)),
+        shippingCost: appliedShipping,
+        finalTotal: parseFloat(finalTotal.toFixed(2)),
+        deliveryEstimate: deliveryEstimate
     };
-})();
+}
 
-// Εξαγωγή στο Window Scope για διασύνδεση με το υπόλοιπο σύστημα
-window.getSortedMuscleGroups = PegasusInventory.getSortedMuscleGroups;
-window.findMuscleGroup = PegasusInventory.findMuscleGroup;
-window.resetWeeklyInventory = PegasusInventory.resetWeeklyInventory;
-window.consumeDailySupplements = PegasusInventory.consumeDailySupplements;
-window.restockSupplement = PegasusInventory.restockSupplement;
-window.calculateOrderTotals = PegasusInventory.calculateOrderTotals;
+function restockSupplement(type, grams) {
+    let inv = initSupplementInventory();
+    if (inv[type] !== undefined) {
+        inv[type] += grams;
+        localStorage.setItem('pegasus_supplements', JSON.stringify(inv));
+    }
+    return inv;
+}
+
+// Global Exports
+window.getSmartDailyProgram = getSmartDailyProgram;
+window.saveProgress = saveProgress;
+window.findMuscleGroup = findMuscleGroup;
+window.getSortedMuscleGroups = getSortedMuscleGroups;
+window.resetWeeklyInventory = resetWeeklyInventory;
+
+window.consumeDailySupplements = consumeDailySupplements;
+window.calculateOrderTotals = calculateOrderTotals;
+window.restockSupplement = restockSupplement;
+window.initSupplementInventory = initSupplementInventory;

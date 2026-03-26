@@ -1,137 +1,136 @@
 /* ==========================================================================
-   PEGASUS GALLERY ENGINE - v6.0 (MODULAR / FULLY DECOUPLED)
-   Protocol: Strict Data Analyst - Isolated IndexedDB Management
+   PEGASUS GALLERY ENGINE - INDEXEDDB EDITION (v5.1 GLOBAL SYNC)
+   Protocol: Strict Data Analyst - Global Scope Export
    ========================================================================== */
 
-const PegasusGallery = (function() {
-    // 1. ΙΔΙΩΤΙΚΟ STATE & ΡΥΘΜΙΣΕΙΣ (Private State)
-    const DB_NAME = "PegasusLevels";
-    const DB_VERSION = 1;
-    let db = null;
-    let selectedPhotos = [];
+window.GalleryEngine = {
+    dbName: "PegasusLevels",
+    dbVersion: 1,
+    db: null,
+    selectedPhotos: [],
 
-    // 2. ΕΣΩΤΕΡΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
-    const setupUI = () => {
+    async init() {
+        const request = indexedDB.open(this.dbName, this.dbVersion);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains("photos")) {
+                db.createObjectStore("photos", { keyPath: "id" });
+            }
+        };
+        request.onsuccess = (e) => {
+            this.db = e.target.result;
+            console.log("PEGASUS: Gallery Engine (IndexedDB) Online.");
+            this.setupUI();
+        };
+        request.onerror = (e) => {
+            console.error("PEGASUS: Gallery Database Error", e);
+        };
+    },
+
+    setupUI() {
         const btnOpen = document.getElementById('btnOpenGallery');
         if (btnOpen) {
-            btnOpen.removeAttribute('onclick');
-            btnOpen.addEventListener('click', (e) => {
-                if (e) e.stopPropagation();
+            btnOpen.onclick = (e) => {
+                if(e) e.stopPropagation();
                 const tools = document.getElementById('toolsPanel');
                 if (tools) tools.style.display = 'none';
-                openGallery();
+                const gp = document.getElementById('galleryPanel');
+                if (gp) {
+                    gp.style.display = 'block';
+                    this.render();
+                }
+            };
+        }
+    },
+
+    async handleUpload(event) {
+        const file = event.target.files[0];
+        if (!file || !this.db) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const tx = this.db.transaction("photos", "readwrite");
+            const store = tx.objectStore("photos");
+            await store.add({
+                id: Date.now(),
+                date: new Date().toLocaleDateString('el-GR'),
+                src: e.target.result // Base64
             });
-        }
-        
-        const btnClear = document.getElementById('btnClearComparison');
-        if (btnClear) {
-            btnClear.removeAttribute('onclick');
-            btnClear.addEventListener('click', clearComparison);
-        }
-    };
-
-    const openGallery = () => {
-        const gp = document.getElementById('galleryPanel');
-        if (gp) {
-            gp.style.display = 'block';
-            render();
-        }
-    };
-
-    const render = () => {
-        if (!db) return;
-        const tx = db.transaction("photos", "readonly");
-        const store = tx.objectStore("photos");
-        const req = store.getAll();
-
-        req.onsuccess = () => {
-            const photos = req.result.sort((a, b) => b.timestamp - a.timestamp);
-            const grid = document.getElementById('galleryGrid');
-            if (!grid) return;
-
-            grid.innerHTML = photos.map(p => `
-                <div style="position:relative; background:#111; padding:5px; border-radius:5px; border:1px solid #333;">
-                    <img src="${p.data}" style="width:100%; height:120px; object-fit:cover; border-radius:3px; cursor:pointer;" onclick="PegasusGallery.selectForComparison('${p.data}', '${p.date}')">
-                    <div style="text-align:center; font-size:11px; color:#aaa; margin-top:5px; font-weight:bold;">${p.date}</div>
-                    <button onclick="PegasusGallery.deletePhoto(${p.id})" style="position:absolute; top:5px; right:5px; background:rgba(255,0,0,0.7); color:#fff; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer; font-weight:bold;">✕</button>
-                </div>
-            `).join('');
-        };
-    };
-
-    const selectForComparison = (src, date) => {
-        if (selectedPhotos.length < 2) {
-            selectedPhotos.push({ src, date });
-            updateComparisonUI();
-        } else {
-            alert("PEGASUS STRICT: Επίλεξε μέχρι 2 φωτογραφίες.");
-        }
-    };
-
-    const updateComparisonUI = () => {
-        const zone = document.getElementById('comparisonZone');
-        const flex = document.getElementById('comparisonFlex');
-        if (!zone || !flex) return;
-
-        zone.style.display = 'block';
-        flex.innerHTML = selectedPhotos.map((p, i) => `
-            <div style="flex:1; text-align:center;">
-                <div style="font-size:10px; font-weight:bold; color:${i === 0 ? '#aaa' : '#4CAF50'}">${i === 0 ? 'BEFORE' : 'AFTER'}</div>
-                <img src="${p.src}" style="width:100%; height:200px; object-fit:cover; border:1px solid #444; border-radius:5px; margin-top:5px;">
-            </div>
-        `).join('');
-    };
-
-    const clearComparison = () => {
-        selectedPhotos = [];
-        const zone = document.getElementById('comparisonZone');
-        if (zone) zone.style.display = 'none';
-        render();
-    };
-
-    const deletePhoto = (id) => {
-        if (!confirm("PEGASUS STRICT: Επιβεβαίωση διαγραφής;")) return;
-        const tx = db.transaction("photos", "readwrite");
-        const store = tx.objectStore("photos");
-        store.delete(id);
-        
-        tx.oncomplete = () => {
-            render();
-            // Ασφαλής επικοινωνία με το Cloud Vault (αν υπάρχει)
-            if (typeof window.PegasusCloud !== 'undefined' && window.PegasusCloud.hasSuccessfullyPulled) {
+            this.render();
+            // Αυτόματο Push στο Cloud μετά το upload αν είναι ενεργό
+            if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
                 window.PegasusCloud.push(true);
             }
         };
-    };
+        reader.readAsDataURL(file);
+    },
 
-    // 3. PUBLIC API & INITIALIZATION
-    return {
-        init: function() {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            
-            request.onupgradeneeded = (e) => {
-                const database = e.target.result;
-                if (!database.objectStoreNames.contains("photos")) {
-                    database.createObjectStore("photos", { keyPath: "id" });
-                }
-            };
-            
-            request.onsuccess = (e) => {
-                db = e.target.result;
-                console.log("[PEGASUS GALLERY]: IndexedDB Vault Online.");
-                setupUI();
-            };
-            
-            request.onerror = (e) => {
-                console.error("[PEGASUS GALLERY]: Database Initialization Error", e);
-            };
-        },
-        selectForComparison: selectForComparison,
-        deletePhoto: deletePhoto,
-        clearComparison: clearComparison
-    };
-})();
+    async render() {
+        const container = document.getElementById('progressTimeline');
+        if (!container || !this.db) return;
 
-// Εξαγωγή στο Window Scope για διασύνδεση με το παραγόμενο HTML
-window.addEventListener('DOMContentLoaded', PegasusGallery.init);
-window.PegasusGallery = PegasusGallery;
+        const tx = this.db.transaction("photos", "readonly");
+        const store = tx.objectStore("photos");
+        const photos = await new Promise(res => {
+            const req = store.getAll();
+            req.onsuccess = () => res(req.result.reverse());
+        });
+
+        if (photos.length === 0) {
+            container.innerHTML = `<p style="text-align:center; padding:20px; opacity:0.5;">Καμία φωτογραφία.</p>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div id="comparisonZone" style="display:none; margin-bottom:20px; padding:10px; background:#1a1a1a; border-radius:8px; border:1px solid #4CAF50;">
+                <h4 style="margin:0 0 10px 0; font-size:12px; color:#4CAF50; text-align:center;">ΣΥΓΚΡΙΣΗ PROGRESS</h4>
+                <div id="comparisonFlex" style="display:flex; gap:5px;"></div>
+                <button onclick="GalleryEngine.clearComparison()" style="width:100%; margin-top:10px; background:none; border:1px solid #555; color:#aaa; cursor:pointer; font-size:10px; padding:5px;">ΑΚΥΡΩΣΗ ΣΥΓΚΡΙΣΗΣ</button>
+            </div>
+            <div class="photos-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                ${photos.map(p => `
+                    <div class="timeline-item" style="border-left: 2px solid #4CAF50; padding-left: 15px; margin-bottom: 25px; position:relative;">
+                        <div style="font-size:11px; color:#4CAF50; font-weight:bold; margin-bottom:8px;">📅 ${p.date}</div>
+                        <img src="${p.src}" style="width:100%; border-radius:8px; cursor:pointer;" onclick="GalleryEngine.selectForComparison('${p.src}', '${p.date}')">
+                        <button onclick="GalleryEngine.delete(${p.id})" style="position:absolute; top:25px; right:5px; background:rgba(0,0,0,0.6); border:none; color:#ff4444; cursor:pointer; font-weight:bold; padding:5px; border-radius:50%; width:25px; height:25px;">✕</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    },
+
+    selectForComparison(src, date) {
+        if (this.selectedPhotos.length < 2) {
+            this.selectedPhotos.push({ src, date });
+            this.updateComparisonUI();
+        } else {
+            alert("Επίλεξε μέχρι 2 φωτογραφίες.");
+        }
+    },
+
+    updateComparisonUI() {
+        const zone = document.getElementById('comparisonZone');
+        const flex = document.getElementById('comparisonFlex');
+        if (!zone || !flex) return;
+        zone.style.display = 'block';
+        flex.innerHTML = this.selectedPhotos.map((p, i) => `
+            <div style="flex:1; text-align:center;">
+                <div style="font-size:10px; color:${i===0?'#aaa':'#4CAF50'}">${i===0?'BEFORE':'AFTER'}</div>
+                <img src="${p.src}" style="width:100%; height:200px; object-fit:cover; border:1px solid #444;">
+            </div>
+        `).join('');
+    },
+
+    clearComparison() { this.selectedPhotos = []; this.render(); },
+
+    async delete(id) {
+        if (!confirm("Διαγραφή;")) return;
+        const tx = this.db.transaction("photos", "readwrite");
+        tx.objectStore("photos").delete(id);
+        this.render();
+    }
+};
+
+// Global Handlers
+window.handlePhotoUpload = (e) => window.GalleryEngine.handleUpload(e);
+document.addEventListener('DOMContentLoaded', () => window.GalleryEngine.init());

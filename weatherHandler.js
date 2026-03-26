@@ -1,76 +1,52 @@
 /* ==========================================================================
-   PEGASUS WEATHER HANDLER - v5.0 (DECOUPLED BRIDGE)
-   Protocol: Strict Data Analyst - Integration with PegasusData v9.0
+   PEGASUS WEATHER LOGIC & FALLBACK SYSTEM - v8.5 (PURE DYNAMIC)
+   Protocol: Strict Analyst - No Static Data Allowed
    ========================================================================== */
 
-const PegasusWeatherHandler = (function() {
+function isRaining() {
+    const rainToggle = document.getElementById('rainToggle');
+    return rainToggle ? rainToggle.checked : false;
+}
+
+/**
+ * Επιστρέφει 100% Δυναμικό Πρόγραμμα και προσαρμόζεται στον καιρό.
+ */
+window.getFinalProgram = function(day) {
+    const rain = isRaining();
     
-    // 1. ΕΣΩΤΕΡΙΚΗ ΛΟΓΙΚΗ ΦΙΛΤΡΑΡΙΣΜΑΤΟΣ (Strict Logic)
-    const filterForWeather = (program, isRaining) => {
-        if (!Array.isArray(program)) return [];
-
-        // Αν βρέχει, αφαιρούμε τις εξωτερικές δραστηριότητες (Ποδηλασία)
-        if (isRaining) {
-            return program.filter(ex => !ex.name.includes("Ποδηλασία"));
-        }
-        return program;
-    };
-
-    // 2. ΕΝΗΜΕΡΩΣΗ UI ΚΑΙΡΟΥ
-    const updateWeatherUI = (temp, description, isRaining) => {
-        const tempEl = document.querySelector(".weather-text");
-        const statusEl = document.getElementById("weatherStatus");
-        const iconEl = document.getElementById("weatherIcon");
-
-        if (tempEl) tempEl.textContent = `${temp}°C`;
-        if (statusEl) statusEl.textContent = isRaining ? "Βροχή/Χιόνι" : "Καλός Καιρός";
-        if (iconEl) iconEl.textContent = isRaining ? "🌧️" : "☀️";
-
-        // Συγχρονισμός του Toggle Switch
-        const rainToggle = document.getElementById("rainToggle");
-        if (rainToggle) rainToggle.checked = isRaining;
-    };
-
-    // 3. ΠΑΡΑΓΩΓΗ ΤΕΛΙΚΟΥ ΠΡΟΓΡΑΜΜΑΤΟΣ (The Final Bridge)
-    const getFinalProgram = (dayName) => {
-        const rainToggle = document.getElementById("rainToggle");
-        const isRaining = rainToggle ? rainToggle.checked : false;
-
-        // Κλήση της μηχανής παραγωγής από το data.js (PegasusData)
-        let dailyProgram = [];
-        if (window.calculateDailyProgram) {
-            dailyProgram = window.calculateDailyProgram(dayName);
-        } else if (window.program && window.program[dayName]) {
-            dailyProgram = window.program[dayName];
-        }
-
-        return filterForWeather(dailyProgram, isRaining);
-    };
-
-    // 4. PUBLIC API
-    return {
-        getFinalProgram: getFinalProgram,
-        updateUI: updateWeatherUI
-    };
-})();
-
-// Εξαγωγή στο Window Scope για το app.js
-window.getFinalProgram = PegasusWeatherHandler.getFinalProgram;
-window.updateWeatherUI = PegasusWeatherHandler.updateUI;
-
-/* ==========================================================================
-   EVENT LISTENERS (STRICT BINDING)
-   ========================================================================== */
-document.addEventListener("DOMContentLoaded", () => {
-    const rainToggle = document.getElementById("rainToggle");
-    if (rainToggle) {
-        rainToggle.addEventListener("change", () => {
-            console.log("[PEGASUS]: Weather state changed. Re-calculating program...");
-            // Trigger UI reload μέσω του app.js/selectDay αν είναι ενεργό
-            const activeBtn = document.querySelector(".navbar button.active");
-            if (activeBtn && window.selectDay) {
-                window.selectDay(activeBtn, activeBtn.textContent.trim());
-            }
-        });
+    // 1. DATA GUARD: Απευθείας κλήση του δυναμικού υπολογιστή από το data.js
+    let dailyData = [];
+    if (typeof window.calculateDailyProgram === 'function') {
+        dailyData = window.calculateDailyProgram(day);
+    } else {
+        console.warn("PEGASUS: Dynamic engine offline. Using emergency fallback.");
+        // ΔΙΟΡΘΩΣΗ: Αλλαγή από "Recovery" σε "Κορμός" για αποφυγή ορφανών δεδομένων στο reporting
+        return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
     }
-});
+
+    // 2. WEATHER LOGIC: Αν βρέχει, αφαιρούμε τις εξωτερικές δραστηριότητες (Ποδηλασία)
+    if (rain) {
+        dailyData = dailyData.filter(ex => !ex.name.includes("Ποδηλασία"));
+        
+        // Αν η μέρα μείνει άδεια λόγω βροχής (π.χ. Σάββατο που είχε μόνο ποδήλατο), 
+        // εισάγουμε μια δυναμική εναλλακτική προπόνηση εσωτερικού χώρου με σωστά Muscle Groups.
+        if (dailyData.length === 0) {
+            dailyData = [
+                { name: "Pushups", sets: 4, duration: 45, muscleGroup: "Στήθος" },
+                { name: "Plank", sets: 4, duration: 45, muscleGroup: "Κορμός" },
+                { name: "Reverse Crunch", sets: 4, duration: 45, muscleGroup: "Κορμός" }
+            ];
+        }
+    }
+
+    return dailyData;
+};
+
+window.updateWeatherUI = function() {
+    const statusBox = document.getElementById('weather-status-alert');
+    if (statusBox) {
+        const rain = isRaining();
+        statusBox.style.display = rain ? 'block' : 'none';
+        statusBox.innerHTML = rain ? "⚠️ INDOOR PROTOCOL ACTIVE" : "";
+    }
+};

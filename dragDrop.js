@@ -1,85 +1,69 @@
 /* ==========================================================================
-   PEGASUS DRAG & DROP ENGINE - v3.0 (MODULAR / FULLY DECOUPLED)
-   Protocol: Strict State Management - Independent DOM Tracking
+   PEGASUS DRAG & DROP ENGINE - v2.1 (ACTIVE SESSION GUARD)
+   Protocol: Strict State Management - Lock UI during active workout
    ========================================================================== */
 
-const PegasusDragDrop = (function() {
-    let listElement = null;
+function initDragDrop() {
+    const list = document.getElementById("exList");
+    if (!list) return;
 
-    // 1. ΑΝΕΞΑΡΤΗΤΟΣ ΕΛΕΓΧΟΣ ΚΑΤΑΣΤΑΣΗΣ (Decoupled from app.js window.running)
-    const isWorkoutActive = () => {
-        const startBtn = document.getElementById("btnStart");
-        return startBtn && startBtn.innerHTML === "Παύση";
-    };
+    // Αποφυγή διπλότυπων listeners
+    const newList = list.cloneNode(true);
+    list.parentNode.replaceChild(newList, list);
 
-    // 2. ΑΥΤΟΝΟΜΗ ΑΠΟΘΗΚΕΥΣΗ ΔΕΔΟΜΕΝΩΝ (Decoupled from global arrays)
-    const commitOrderState = () => {
-        const activeBtn = document.querySelector(".navbar button.active");
-        if (!activeBtn) return;
-
-        const dayName = activeBtn.textContent.trim();
-        // Καθαρισμός ονόματος και εξαγωγή διάταξης απευθείας από το DOM
-        const names = [...document.querySelectorAll(".exercise-name")].map(el => 
-            el.textContent.replace(" ☀️", "").trim()
-        );
-        
-        localStorage.setItem(`pegasus_order_${dayName}`, JSON.stringify(names));
-        console.log(`[PEGASUS DRAG&DROP]: Order for ${dayName} strictly saved.`, names);
-    };
-
-    // 3. EVENT HANDLERS
-    const handleDragStart = (e) => {
-        if (isWorkoutActive()) {
+    newList.addEventListener("dragstart", (e) => {
+        // SAFETY GUARD: Απαγόρευση αναδιάταξης αν η προπόνηση είναι ενεργή (app.js)
+        if (window.running === true) {
             e.preventDefault();
-            console.warn("[PEGASUS DRAG&DROP]: System locked during active session.");
+            console.warn("PEGASUS: Drag & Drop locked during active session.");
             return;
         }
 
         if (e.target.classList.contains("exercise")) {
             e.target.classList.add("dragging");
         }
-    };
+    });
 
-    const handleDragOver = (e) => {
-        if (isWorkoutActive()) return; // Fail-safe
+    newList.addEventListener("dragover", (e) => {
+        if (window.running === true) return; // Fail-safe
         
         e.preventDefault();
         const draggingItem = document.querySelector(".dragging");
         if (!draggingItem) return;
 
-        const siblings = [...listElement.querySelectorAll(".exercise:not(.dragging)")];
+        const siblings = [...newList.querySelectorAll(".exercise:not(.dragging)")];
         let nextSibling = siblings.find(sibling => {
             return e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2;
         });
 
-        listElement.insertBefore(draggingItem, nextSibling);
-    };
+        newList.insertBefore(draggingItem, nextSibling);
+    });
 
-    const handleDragEnd = (e) => {
-        if (isWorkoutActive()) return; // Fail-safe
+    newList.addEventListener("dragend", (e) => {
+        if (window.running === true) return; // Fail-safe
 
         if (e.target.classList.contains("exercise")) {
             e.target.classList.remove("dragging");
-            commitOrderState(); // Απευθείας εγγραφή στο LocalStorage
+            
+            // 1. Συγχρονισμός πινάκων app.js
+            if (typeof exercises !== 'undefined') {
+                exercises = [...document.querySelectorAll(".exercise")];
+                remainingSets = exercises.map(el => parseInt(el.dataset.total) - parseInt(el.dataset.done));
+            }
+
+            // 2. Μόνιμη αποθήκευση με το σωστό κλειδί
+            const activeBtn = document.querySelector(".navbar button.active");
+            if (activeBtn) {
+                const dayName = activeBtn.textContent.trim();
+                // Καθαρισμός ονόματος από το emoji ☀️ για σωστό sorting αργότερα
+                const names = [...document.querySelectorAll(".exercise-name")].map(el => 
+                    el.textContent.replace(" ☀️", "").trim()
+                );
+                
+                // Αποθήκευση στο κλειδί που περιμένει η selectDay
+                localStorage.setItem(`pegasus_order_${dayName}`, JSON.stringify(names));
+                console.log(`PEGASUS: Order for ${dayName} strictly saved!`, names);
+            }
         }
-    };
-
-    // 4. PUBLIC API
-    return {
-        init: function() {
-            const originalList = document.getElementById("exList");
-            if (!originalList) return;
-
-            // Αποφυγή διπλότυπων listeners μέσω clone & replace
-            listElement = originalList.cloneNode(true);
-            originalList.parentNode.replaceChild(listElement, originalList);
-
-            listElement.addEventListener("dragstart", handleDragStart);
-            listElement.addEventListener("dragover", handleDragOver);
-            listElement.addEventListener("dragend", handleDragEnd);
-        }
-    };
-})();
-
-// Εξαγωγή της συνάρτησης αρχικοποίησης για κλήση κατά τη δημιουργία της λίστας
-window.initDragDrop = PegasusDragDrop.init;
+    });
+}

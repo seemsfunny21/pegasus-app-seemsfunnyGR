@@ -1,52 +1,67 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - v14.0 (MODULAR / FULLY DECOUPLED)
-   Protocol: Strict State Management - Isolated Scope & Sync Guard
+   PEGASUS CLOUD VAULT - UNIFIED SYNC (v13.9 - SYNC GUARD ENABLED)
+   FIX: FULL DATA PAYLOAD & KEY UNIFICATION (Supps, Contacts, Car, Food)
    ========================================================================== */
 
-const PegasusCloud = (function() {
-    // 1. ΙΔΙΩΤΙΚΟ STATE (Private State & Config)
-    const config = {
+const PegasusCloud = {
+    config: {
         binId: "69b6757ab7ec241ddc6d7230",
-        // Κρυπτογραφημένο κλειδί ασφαλείας
         encryptedPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC" 
-    };
+    },
     
-    let state = {
-        isUnlocked: false,
-        hasSuccessfullyPulled: false, // ΔΙΑΚΟΠΤΗΣ ΑΣΦΑΛΕΙΑΣ
-        userKey: "",
-        syncInterval: null
-    };
+    isUnlocked: false,
+    hasSuccessfullyPulled: false, // 1. ΔΙΑΚΟΠΤΗΣ ΑΣΦΑΛΕΙΑΣ
+    userKey: "",
+    syncInterval: null,
 
-    // 2. ΙΔΙΩΤΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
-    const getTodayKey = () => {
+    getTodayKey: function() {
         const d = new Date();
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
-    };
+    },
 
-    const safeParse = (key, fallback) => {
+    safeParse: function(key, fallback) {
         try {
             const val = localStorage.getItem(key);
             return val ? JSON.parse(val) : fallback;
         } catch (e) { return fallback; }
-    };
+    },
 
-    const pullData = async (silent = false) => {
-        if (!state.isUnlocked) return;
+    unlock: function(pin) {
+        if (!pin) return false;
+        const cleanPin = pin.trim();
+        if (btoa(cleanPin) === "MjM3NQ==") { 
+            this.userKey = this.config.encryptedPart;
+            this.isUnlocked = true;
+            localStorage.setItem("pegasus_vault_pin", cleanPin);
+            
+            this.pull(true);
+            
+            if (!this.syncInterval) {
+                this.syncInterval = setInterval(() => {
+                    if (this.isUnlocked) this.pull(true);
+                }, 30000); // Αυξημένο σε 30s για εξοικονόμηση API calls
+            }
+            return true;
+        }
+        return false;
+    },
+
+    pull: async function(silent = false) {
+        if (!this.isUnlocked) return;
         try {
-            const res = await fetch("https://api.jsonbin.io/v3/b/" + config.binId + "/latest?nocache=" + Date.now(), {
-                headers: { 'X-Master-Key': state.userKey, 'X-Bin-Meta': 'false' }
+            const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
+                headers: { 'X-Master-Key': this.userKey, 'X-Bin-Meta': 'false' }
             });
             const cloudData = await res.json();
             const cloud = cloudData.record || cloudData;
             
-            const dateStr = getTodayKey();
+            const dateStr = this.getTodayKey();
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 let requiresUIReload = false;
 
-                // Συγχρονισμός στόχων, στατιστικών και δεδομένων οχημάτων/διατροφής
+                // ΔΙΟΡΘΩΣΗ: Προσθήκη συγχρονισμού στόχων και στατιστικών
                 if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
                 if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
 
@@ -85,29 +100,28 @@ const PegasusCloud = (function() {
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
-                // Ασφαλής κλήση εξωτερικών συναρτήσεων UI
                 if (requiresUIReload && typeof window.updateFoodUI === "function") window.updateFoodUI();
                 if (typeof window.updateSuppUI === "function") window.updateSuppUI();
             }
             
-            state.hasSuccessfullyPulled = true; // ΕΠΙΒΕΒΑΙΩΣΗ ΛΗΨΗΣ
+            this.hasSuccessfullyPulled = true; // ΕΠΙΒΕΒΑΙΩΣΗ ΛΗΨΗΣ
             
         } catch (e) {
-            state.hasSuccessfullyPulled = false; // ΑΣΦΑΛΙΣΗ
-            console.error("[PEGASUS CLOUD]: Pull Error:", e);
+            this.hasSuccessfullyPulled = false; // ΑΣΦΑΛΙΣΗ
+            console.error("PEGASUS Cloud Pull Error:", e);
         }
-    };
+    },
 
-    const pushData = async (silent = true) => {
-        if (!state.isUnlocked) return;
+    push: async function(silent = true) {
+        if (!this.isUnlocked) return;
         
         // DATA GUARD: ΑΠΑΓΟΡΕΥΣΗ PUSH ΧΩΡΙΣ PULL
-        if (!state.hasSuccessfullyPulled) {
-            console.error("[PEGASUS CLOUD GUARD]: Το Push ακυρώθηκε. Αποτροπή υπερεγγραφής του Cloud.");
+        if (!this.hasSuccessfullyPulled) {
+            console.error("PEGASUS GUARD: Το Push ακυρώθηκε. Αποτροπή υπερεγγραφής του Cloud.");
             return;
         }
 
-        const dateStr = getTodayKey();
+        const dateStr = this.getTodayKey();
         const syncTimestamp = Date.now();
         
         const cardioLogs = {};
@@ -129,80 +143,47 @@ const PegasusCloud = (function() {
             last_update_ts: syncTimestamp, 
             kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
             protein: localStorage.getItem("pegasus_today_protein") || "0", 
-            weekly_history: safeParse("pegasus_weekly_history", {}), 
-            food_library: safeParse("pegasus_food_library", []), 
-            muscle_targets: safeParse("pegasus_muscle_targets", {}),
-            peg_stats: safeParse("pegasus_stats", {}),
-            supp_inventory: safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
-            peg_contacts: safeParse("pegasus_contacts", []),
-            car_dates: safeParse("pegasus_car_dates", {}),
-            car_service: safeParse("pegasus_car_service", []),
-            today_food_log: safeParse(`food_log_${dateStr}`, []),
+            weekly_history: this.safeParse("pegasus_weekly_history", {}), 
+            food_library: this.safeParse("pegasus_food_library", []), 
+            muscle_targets: this.safeParse("pegasus_muscle_targets", {}),
+            peg_stats: this.safeParse("pegasus_stats", {}),
+            supp_inventory: this.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
+            peg_contacts: this.safeParse("pegasus_contacts", []),
+            car_dates: this.safeParse("pegasus_car_dates", {}),
+            car_service: this.safeParse("pegasus_car_service", []),
+            today_food_log: this.safeParse(`food_log_${dateStr}`, []),
             all_food_logs: allFoodLogs,
             cardio_logs: cardioLogs,
             history_logs: historyLogs
         };
 
         try {
-            const res = await fetch("https://api.jsonbin.io/v3/b/" + config.binId, {
+            const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': state.userKey },
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
                 body: JSON.stringify(payload)
             });
             
             if (res.ok) {
                 localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-                console.log("✅ [PEGASUS CLOUD]: Push Success");
+                console.log("✅ PEGASUS Cloud Sync: Push Success");
             }
         } catch (e) {
-            console.error("❌ [PEGASUS CLOUD]: Push Failed", e);
+            console.error("❌ PEGASUS Cloud Sync: Push Failed", e);
         }
-    };
+    }
+};
 
-    const unlockVault = (pin) => {
-        if (!pin) return false;
-        const cleanPin = pin.trim();
-        // Base64 validation PIN
-        if (btoa(cleanPin) === "MjM3NQ==") { 
-            state.userKey = config.encryptedPart;
-            state.isUnlocked = true;
-            localStorage.setItem("pegasus_vault_pin", cleanPin);
-            
-            pullData(true);
-            
-            if (!state.syncInterval) {
-                state.syncInterval = setInterval(() => {
-                    if (state.isUnlocked) pullData(true);
-                }, 30000); 
-            }
-            return true;
-        }
-        return false;
-    };
-
-    const init = () => {
-        const savedPin = localStorage.getItem("pegasus_vault_pin");
-        if (savedPin) {
-            unlockVault(savedPin);
-        } else {
-            setTimeout(() => {
-                const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
-                if (pin && !unlockVault(pin)) alert("ΛΑΘΟΣ PIN.");
-            }, 1000);
-        }
-    };
-
-    // 3. PUBLIC API
-    return {
-        init: init,
-        unlock: unlockVault,
-        pull: pullData,
-        push: pushData,
-        get hasSuccessfullyPulled() { return state.hasSuccessfullyPulled; },
-        get isUnlocked() { return state.isUnlocked; }
-    };
-})();
-
-// Εξαγωγή αντικειμένου και σύνδεση Listener
 window.PegasusCloud = PegasusCloud;
-window.addEventListener('DOMContentLoaded', PegasusCloud.init);
+
+window.addEventListener('load', () => {
+    const savedPin = localStorage.getItem("pegasus_vault_pin");
+    if (savedPin) {
+        window.PegasusCloud.unlock(savedPin);
+    } else {
+        setTimeout(() => {
+            const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
+            if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN.");
+        }, 1000);
+    }
+});
