@@ -1,14 +1,13 @@
 /* ==========================================================================
-   PEGASUS CALENDAR SYSTEM - v4.0 (MODULAR / FULLY DECOUPLED)
-   Protocol: Strict State Management - Isolated Scope
+   PEGASUS CALENDAR SYSTEM - v5.0 (MODULAR / NUTRITION INTEGRATED)
+   Protocol: Strict State Management & Cross-Module Communication
    ========================================================================== */
 
 const PegasusCalendar = (function() {
-    // 1. ΙΔΙΩΤΙΚΟ STATE (Private State)
+    // 1. ΙΔΙΩΤΙΚΟ STATE
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
 
-    // 2. ΕΣΩΤΕΡΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ & EVENT HANDLERS
     const handlePrevMonth = (e) => {
         e.stopPropagation();
         currentMonth--;
@@ -23,6 +22,7 @@ const PegasusCalendar = (function() {
         render();
     };
 
+    // 2. RENDERING ENGINE (Matches Screenshot 2026-03-26 085455)
     const render = () => {
         const el = document.getElementById("calendarContent");
         if (!el) return;
@@ -60,23 +60,23 @@ const PegasusCalendar = (function() {
             let border = "1px solid #333";
             let color = "#fff";
 
-            // ΛΟΓΙΚΗ STRICT: Δευτέρα (1) & Πέμπτη (4) = Recovery Days
+            // ΛΟΓΙΚΗ STRICT RECOVERY: Δευτέρα (1) & Πέμπτη (4)
             const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4);
 
-            if (isRecoveryDay) {
-                bg = "#1e3a5f"; 
-                border = "1px solid #64B5F6";
-            } else if (data[workoutKey]) {
-                bg = "#4CAF50";
+            if (data[workoutKey]) {
+                bg = "#4CAF50"; // Πράσινο: Έγινε προπόνηση
                 border = "1px solid #4CAF50";
                 color = "#000";
+            } else if (isRecoveryDay) {
+                bg = "#1e3a5f"; // Μπλε: Recovery
+                border = "1px solid #64B5F6";
             } else if (loopDateTime < todayStart) {
-                bg = "#b71c1c";
+                bg = "#b71c1c"; // Κόκκινο: Χαμένη προπόνηση
                 border = "1px solid #ff5252";
             }
 
             if (loopDateTime === todayStart) {
-                border = "2px solid #FFD700";
+                border = "2px solid #FFD700"; // Χρυσό: Σήμερα
             }
 
             html += `<div style="background:${bg};border:${border};color:${color};padding:8px 0;text-align:center;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;" 
@@ -88,47 +88,39 @@ const PegasusCalendar = (function() {
         html += `</div>`;
         el.innerHTML = html;
 
-        // Δυναμική σύνδεση των Listeners
         document.getElementById("prevMonth").addEventListener("click", handlePrevMonth);
         document.getElementById("nextMonth").addEventListener("click", handleNextMonth);
     };
 
+    // 3. ΣΥΝΔΕΣΗ ΜΕ ΔΙΑΤΡΟΦΗ
     const viewFood = (dateStr) => {
         const parts = dateStr.split('/');
+        // Δημιουργία ημερομηνίας (Προσοχή: ο μήνας στο JS Date ξεκινά από 0)
         const selectedDate = new Date(parts[2], parts[1] - 1, parts[0]);
         
-        // Σύνδεση με το module Διατροφής (Food Engine)
+        // Ενημέρωση της Global μεταβλητής που χρησιμοποιεί το food.js
         window.currentFoodDate = selectedDate;
         
+        // Κλείσιμο όλων των πάνελ και άνοιγμα της Διατροφής
         document.querySelectorAll(".pegasus-panel").forEach(p => p.style.display = "none");
         
         const foodPanel = document.getElementById("foodPanel");
         if (foodPanel) {
             foodPanel.style.display = "block";
             
+            // Κλήση της συνάρτησης render του food.js
             if (typeof window.renderFood === 'function') {
                 window.renderFood();
-            } else if (typeof window.updateFoodUI === 'function') {
-                window.updateFoodUI();
             }
-            
-            setTimeout(() => {
-                const crossBtn = document.getElementById("btnAddFood");
-                if (crossBtn) {
-                    crossBtn.style.setProperty('color', '#4CAF50', 'important');
-                    crossBtn.style.setProperty('border-color', '#4CAF50', 'important');
-                }
-            }, 10);
         }
     };
 
-    // 3. PUBLIC API
     return {
         render: render,
         viewFood: viewFood
     };
 })();
 
-// Εξαγωγή στο Window Scope για διασύνδεση με το HTML
+// GLOBAL EXPOSURE
 window.renderCalendar = PegasusCalendar.render;
 window.viewFoodFromCalendar = PegasusCalendar.viewFood;
