@@ -260,74 +260,67 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - DIAGNOSTIC AUTO-SELECTOR ENGINE (v9.0)
+   PEGASUS AI HANDLER - PROACTIVE ENGINE (v10.1 - TACTICAL GREEN AUDIT)
    ========================================================================== */
 const PegasusAI = {
-    async ask(userQuery) {
-        if(!userQuery) return;
-        
+    async ask(userQuery, isAutoAudit = false) {
         const apiKey = localStorage.getItem("pegasus_gemini_key");
-        if (!apiKey) return alert("ΣΦΑΛΜΑ: Λείπει το API Key.");
+        if (!apiKey) return;
 
         const responseBox = document.getElementById("aiResponse");
-        const kcal = localStorage.getItem("pegasus_today_kcal") || 0;
-        const prot = localStorage.getItem("pegasus_today_protein") || 0;
         
-        responseBox.innerHTML += `<div style="margin-top:10px; color:#fff;"><b>Εσύ:</b> ${userQuery}</div>`;
-        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Ανίχνευση διαθέσιμων μοντέλων Google...</div>`;
+        // Λήψη δεδομένων ημέρας
+        const d = new Date();
+        const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+        const todayLogs = PegasusStore.getFoodLog(dateStr);
+        const kcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+        const prot = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
+        const foodLib = PegasusCloud.safeParse(PegasusStore.keys.library, []);
+
+        if (!isAutoAudit) {
+            responseBox.innerHTML += `<div style="margin-top:10px; color:#fff; border-bottom:1px solid #222; padding-bottom:5px;"><b>Εσύ:</b> ${userQuery}</div>`;
+        }
+        
+        // Φόρτωση σε Pegasus Green
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--main); font-size:11px; font-weight:bold;">PEGASUS IS THINKING...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
+        // Δυναμικό Prompt
+        const auditPrompt = `Είσαι ο Pegasus AI Data Analyst. 
+ΔΕΔΟΜΕΝΑ ΣΗΜΕΡΑ: ${kcal}/2800 kcal, ${prot}/160g Πρωτεΐνη. 
+ΓΕΥΜΑΤΑ ΠΟΥ ΕΦΑΓΕ: ${todayLogs.map(l => l.name).join(', ')}.
+ΔΙΑΘΕΣΙΜΑ ΣΤΗ ΒΙΒΛΙΟΘΗΚΗ ΤΟΥ: ${foodLib.map(f => f.name + '(' + f.kcal + 'kcal,' + f.protein + 'gP)').join('|')}.
+
+${isAutoAudit ? "Κάνε ΑΥΤΟΜΑΤΗ ΔΙΑΓΝΩΣΗ. Δες τι λείπει για να πιάσει το στόχο και πρότεινε συγκεκριμένα γεύματα από τη Βιβλιοθήκη του ή συνδυασμούς (π.χ. γιαούρτι, σουβλάκια). Μίλα του άμεσα στον ενικό." : userQuery}`;
+
         try {
-            // ΒΗΜΑ 1: Ζητάμε από την Google να μας πει ποια μοντέλα υπάρχουν
             const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             const modelsData = await modelsRes.json();
-
-            if (!modelsRes.ok) {
-                throw new Error("Αποτυχία ανάγνωσης μοντέλων: " + (modelsData.error?.message || modelsRes.status));
-            }
-
-            // Βρίσκουμε το πρώτο μοντέλο που υποστηρίζει παραγωγή κειμένου
-            const validModels = modelsData.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
-            
-            if (validModels.length === 0) {
-                throw new Error("Το API Key σου είναι έγκυρο, αλλά η Google δεν του δίνει πρόσβαση σε κανένα μοντέλο κειμένου.");
-            }
-
-            // Παίρνουμε το ακριβές όνομα (π.χ. "models/gemini-1.5-flash-8b")
-            const targetModel = validModels[0].name; 
-            
-            // Τυπώνουμε στο UI ποιο μοντέλο βρήκαμε για να ξέρουμε
-            responseBox.innerHTML += `<div style="margin-top:2px; color:#4CAF50; font-size:9px; font-weight:bold;">[ΣΥΣΤΗΜΑ] Επιτυχής σύνδεση. Επιλέχθηκε το: ${targetModel}</div>`;
-            document.getElementById("aiLoading").innerText = "Ανάλυση δεδομένων...";
-
-            // ΒΗΜΑ 2: Στέλνουμε το αίτημα στο ΔΟΚΙΜΑΣΜΕΝΟ και ΥΠΑΡΚΤΟ μοντέλο
-            const payload = {
-                contents: [{
-                    parts: [{ text: `Απάντησε σύντομα ως fitness AI. Άγγελος (74kg). Σήμερα φάγαμε: ${kcal}/2800 kcal και ${prot}/160g Πρωτεΐνη. Ερώτηση: ${userQuery}` }]
-                }]
-            };
+            const targetModel = modelsData.models.find(m => m.supportedGenerationMethods.includes("generateContent")).name;
 
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: auditPrompt }] }]
+                })
             });
 
             const data = await res.json();
             document.getElementById("aiLoading")?.remove();
 
-            if (!res.ok) {
-                throw new Error(data.error?.message || "Άγνωστο σφάλμα παραγωγής κειμένου.");
-            }
-
             const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--ai);"><b>PEGASUS:</b> ${aiText}</div>`;
+            
+            // ΤΡΟΠΟΠΟΙΗΣΗ ΧΡΩΜΑΤΩΝ (Tactical Green & White Text)
+            const prefix = isAutoAudit ? `<b style="color:var(--main); font-weight:900;">[AUTO-AUDIT]</b><br>` : `<b style="color:var(--main);">PEGASUS OS:</b> `;
+            
+            // Background σε σκούρο πράσινο, Κείμενο σε λευκό
+            responseBox.innerHTML += `<div style="margin-top:5px; color:#fff; background:rgba(0,255,65,0.06); padding:10px; border-radius:12px; border:1px solid rgba(0,255,65,0.15);">${prefix}${aiText}</div>`;
             responseBox.scrollTop = responseBox.scrollHeight;
 
         } catch (error) {
             document.getElementById("aiLoading")?.remove();
-            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--danger);"><b>ΣΦΑΛΜΑ GOOGLE API:</b> ${error.message}</div>`;
-            responseBox.scrollTop = responseBox.scrollHeight;
+            console.error("AI Error:", error);
         }
     }
 };
