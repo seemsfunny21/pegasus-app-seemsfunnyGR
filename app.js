@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS MASTER CONTROLLER - v30.0 (FINAL CUMULATIVE EDITION)
-   Protocol: Strict Data Analyst - Full UI Binding & Metabolic Integration
+   PEGASUS MASTER CONTROLLER - v31.0 (ULTIMATE CUMULATIVE EDITION)
+   Protocol: Strict Data Analyst - Full UI Orchestration & Event Binding
    ========================================================================== */
 
 const PegasusCore = (function() {
-    // 1. ΙΔΙΩΤΙΚΟ STATE (Private Engine State)
+    // 1. ΙΔΙΩΤΙΚΟ STATE (Engine State)
     let state = {
         isActive: false,
         timer: null,
@@ -15,7 +15,7 @@ const PegasusCore = (function() {
         totalSeconds: 0,
         remainingSeconds: 0,
         muted: false,
-        speed: 1, // Για Turbo Mode (10x)
+        speed: 1,
         audioUnlocked: false,
         userWeight: parseFloat(localStorage.getItem("pegasus_weight")) || 74
     };
@@ -45,7 +45,7 @@ const PegasusCore = (function() {
         if (todayBtn) window.selectDay(todayBtn, todayName);
     };
 
-    // 3. ΔΙΑΧΕΙΡΙΣΗ PANEL (UI Logic)
+    // 3. ΔΙΑΧΕΙΡΙΣΗ PANEL (Show/Hide Modals)
     const togglePanel = (panelId) => {
         const panels = ["foodPanel", "calendarPanel", "achievementsPanel", "settingsPanel", "previewPanel", "toolsPanel", "galleryPanel", "cardioPanel", "emsModal"];
         panels.forEach(id => {
@@ -53,7 +53,7 @@ const PegasusCore = (function() {
             if (p) p.style.display = (id === panelId) ? "block" : "none";
         });
 
-        // Trigger Module-Specific Renders
+        // Trigger Module Renders
         if (panelId === "foodPanel" && window.renderFood) window.renderFood();
         if (panelId === "calendarPanel" && window.renderCalendar) window.renderCalendar();
         if (panelId === "achievementsPanel" && window.renderAchievements) window.renderAchievements();
@@ -82,7 +82,7 @@ const PegasusCore = (function() {
         const wInput = currentExNode.querySelector(".weight-input");
         const exName = wInput ? wInput.dataset.name : "Unknown";
 
-        // Visual Reset
+        // Visual Reset & Focus
         state.exercises.forEach(ex => { 
             ex.style.borderColor = "#222"; 
             ex.style.background = "transparent"; 
@@ -96,9 +96,9 @@ const PegasusCore = (function() {
         state.timer = setInterval(() => {
             t--;
             state.remainingSeconds = Math.max(0, state.remainingSeconds - 1);
-            updateUI();
+            updateProgressBar();
 
-            // Metabolic / Calorie Tracking (Real-time)
+            // Metabolic Tracking
             if (state.phase === 1 && window.MetabolicEngine) {
                 window.MetabolicEngine.updateTracking(1, exName);
             }
@@ -139,28 +139,26 @@ const PegasusCore = (function() {
         if (counter) counter.textContent = `${done}/${total}`;
         
         if (window.logPegasusSet) window.logPegasusSet(name);
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
     };
 
     const playBeep = () => { if (!state.muted && state.audioUnlocked) sysAudio.play().catch(() => {}); };
 
-    const updateUI = () => {
-        // Progress Bar Update
+    const updateProgressBar = () => {
         const bar = document.getElementById("totalProgress");
-        if (bar && state.totalSeconds > 0) {
-            const pct = ((state.totalSeconds - state.remainingSeconds) / state.totalSeconds) * 100;
-            bar.style.width = `${Math.min(100, pct)}%`;
-        }
-        // Timer Text Update
-        const timerTxt = document.getElementById("totalProgressTime");
-        if (timerTxt) {
+        const text = document.getElementById("totalProgressTime");
+        if (!bar || state.totalSeconds <= 0) return;
+
+        const pct = ((state.totalSeconds - state.remainingSeconds) / state.totalSeconds) * 100;
+        bar.style.width = `${Math.min(100, pct)}%`;
+
+        if (text) {
             const m = Math.floor(state.remainingSeconds / 60);
             const s = state.remainingSeconds % 60;
-            timerTxt.textContent = `${m}:${String(s).padStart(2, "0")}`;
+            text.textContent = `${m}:${String(s).padStart(2, "0")}`;
         }
     };
 
-    // 5. GLOBAL ACCESSORS (Visible to HTML)
+    // 5. GLOBAL BRIDGES
     window.selectDay = (btn, day) => {
         document.querySelectorAll(".navbar button").forEach(b => b.classList.remove("active"));
         if (btn) btn.classList.add("active");
@@ -172,16 +170,13 @@ const PegasusCore = (function() {
         const startBtn = document.getElementById("btnStart");
         if (startBtn) startBtn.textContent = "Έναρξη";
 
-        // Logic Fetch
-        let rawData = window.getFinalProgram ? window.getFinalProgram(day) : [];
-        let mappedData = window.PegasusOptimizer ? window.PegasusOptimizer.apply(day, rawData) : rawData;
-
+        let data = window.getFinalProgram ? window.getFinalProgram(day) : [];
         const list = document.getElementById("exList");
         list.innerHTML = "";
         state.exercises = [];
         state.remainingSets = [];
 
-        mappedData.forEach((e, idx) => {
+        data.forEach((e, idx) => {
             const div = document.createElement("div");
             div.className = "exercise";
             div.dataset.total = e.sets || 4;
@@ -212,21 +207,21 @@ const PegasusCore = (function() {
         if (!vid || !state.exercises[idx]) return;
         const name = state.exercises[idx].querySelector(".weight-input").dataset.name;
         
-        let fileName = name.replace(/\s+/g, '').toLowerCase();
-        if (window.videoMap && window.videoMap[name]) {
-            fileName = window.videoMap[name];
-        }
+        let file = name.replace(/\s+/g, '').toLowerCase();
+        if (window.videoMap && window.videoMap[name]) file = window.videoMap[name];
 
-        const path = `videos/${fileName}.mp4?v=${Date.now()}`;
-        vid.src = path;
+        vid.src = `videos/${file}.mp4?v=${Date.now()}`;
         vid.load();
         vid.play().catch(() => {
-            if (fileName !== 'warmup') {
-                vid.src = 'videos/warmup.mp4';
-                vid.load();
-                vid.play();
-            }
+            if (file !== 'warmup') { vid.src = 'videos/warmup.mp4'; vid.load(); vid.play(); }
         });
+    };
+
+    window.calculateTotalTime = () => {
+        const cycle = 10 + (parseInt(localStorage.getItem("pegasus_ex_time")) || 45) + (parseInt(localStorage.getItem("pegasus_rest_time")) || 60);
+        state.totalSeconds = state.remainingSets.reduce((a, b) => a + (b * cycle), 0);
+        state.remainingSeconds = state.totalSeconds;
+        updateProgressBar();
     };
 
     window.toggleSkipExercise = (idx) => {
@@ -237,84 +232,84 @@ const PegasusCore = (function() {
         window.calculateTotalTime();
     };
 
-    window.calculateTotalTime = () => {
-        const cycle = 10 + (parseInt(localStorage.getItem("pegasus_ex_time")) || 45) + (parseInt(localStorage.getItem("pegasus_rest_time")) || 60);
-        state.totalSeconds = state.remainingSets.reduce((a, b) => a + (b * cycle), 0);
-        state.remainingSeconds = state.totalSeconds;
-        updateUI();
+    window.saveWeight = (name, val) => {
+        localStorage.setItem(`weight_ANGELOS_${name}`, val);
+        localStorage.setItem(`weight_${name}`, val);
     };
 
     window.finishWorkout = () => {
         clearInterval(state.timer);
         const kcal = document.querySelector(".kcal-value")?.textContent || "0";
         if (window.PegasusReporting) window.PegasusReporting.prepareAndSaveReport(kcal);
-        alert("PEGASUS: Η ΠΡΟΠΟΝΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!");
+        alert("ΠΡΟΠΟΝΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!");
         location.reload();
     };
 
-    window.saveWeight = (name, val) => {
-        localStorage.setItem(`weight_ANGELOS_${name}`, val);
-        localStorage.setItem(`weight_${name}`, val);
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
-    };
-
-    // 6. INITIALIZATION
-    return {
-        init: () => {
-            // Strict Profile Setup
-            if (!localStorage.getItem("pegasus_weight") || localStorage.getItem("pegasus_weight") === "0") {
-                localStorage.setItem("pegasus_weight", "74");
-                localStorage.setItem("pegasus_height", "187");
-                localStorage.setItem("pegasus_age", "38");
-            }
-            
-            createNavbar();
-
-            // Bind Control Buttons
-            const mapping = {
-                "btnStart": () => {
-                    state.isActive = !state.isActive;
-                    document.getElementById("btnStart").textContent = state.isActive ? "Παύση" : "Συνέχεια";
-                    if (state.isActive) runPhase(); else clearInterval(state.timer);
-                },
-                "btnNext": () => {
-                    clearInterval(state.timer);
-                    state.phase = 0;
-                    state.currentIdx = (state.currentIdx + 1) % state.exercises.length;
-                    runPhase();
-                },
-                "btnWarmup": () => {
-                    const v = document.getElementById("video");
-                    if (v) { v.src = "videos/warmup.mp4"; v.load(); v.play(); }
-                },
-                "btnCalendarUI": () => togglePanel("calendarPanel"),
-                "btnAchUI": () => togglePanel("achievementsPanel"),
-                "btnFoodUI": () => togglePanel("foodPanel"),
-                "btnPreviewUI": () => togglePanel("previewPanel"),
-                "btnSettingsUI": () => togglePanel("settingsPanel"),
-                "btnToolsUI": () => togglePanel("toolsPanel"),
-                "btnManualEmail": () => { if (window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true); },
-                "totalWorkoutsDisplay": () => { if (window.openCardio) window.openCardio(); else togglePanel("cardioPanel"); },
-                "btnEMS": () => { if (window.logEMSData) window.logEMSData(); else togglePanel("emsModal"); },
-                "btnOpenGallery": () => togglePanel("galleryPanel")
-            };
-
-            Object.entries(mapping).forEach(([id, func]) => {
-                const btn = document.getElementById(id);
-                if (btn) btn.onclick = (e) => { e.stopPropagation(); func(); };
-            });
-
-            // Audio Unlock Gesture
-            document.addEventListener('click', () => {
-                if (!state.audioUnlocked) {
-                    sysAudio.play().then(() => { sysAudio.pause(); state.audioUnlocked = true; });
-                }
-            }, { once: true });
-
-            if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
-            if (window.fetchWeather) window.fetchWeather();
+    // 6. INITIALIZATION & BINDING
+    const init = () => {
+        // Strict Profile Injection
+        if (!localStorage.getItem("pegasus_weight") || localStorage.getItem("pegasus_weight") === "0") {
+            localStorage.setItem("pegasus_weight", "74");
+            localStorage.setItem("pegasus_height", "187");
+            localStorage.setItem("pegasus_age", "38");
         }
+
+        createNavbar();
+
+        // BINDING MAP (IDs to Functions)
+        const uiMap = {
+            "btnStart": () => {
+                state.isActive = !state.isActive;
+                document.getElementById("btnStart").textContent = state.isActive ? "Παύση" : "Συνέχεια";
+                if (state.isActive) runPhase(); else clearInterval(state.timer);
+            },
+            "btnNext": () => {
+                clearInterval(state.timer);
+                state.phase = 0;
+                state.currentIdx = (state.currentIdx + 1) % state.exercises.length;
+                runPhase();
+            },
+            "btnWarmup": () => {
+                const v = document.getElementById("video");
+                if (v) { v.src = "videos/warmup.mp4"; v.load(); v.play(); }
+            },
+            "btnFoodUI": () => togglePanel("foodPanel"),
+            "btnCalendarUI": () => togglePanel("calendarPanel"),
+            "btnAchUI": () => togglePanel("achievementsPanel"),
+            "btnSettingsUI": () => togglePanel("settingsPanel"),
+            "btnToolsUI": () => togglePanel("toolsPanel"),
+            "btnPreviewUI": () => togglePanel("previewPanel"),
+            "btnOpenGallery": () => togglePanel("galleryPanel"),
+            "btnEMS": () => { if(window.logEMSData) window.logEMSData(); else togglePanel("emsModal"); },
+            "totalWorkoutsDisplay": () => { if(window.openCardio) window.openCardio(); else togglePanel("cardioPanel"); },
+            "btnManualEmail": () => { if(window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true); },
+            "btnSaveEMS": () => { if(window.saveEMSFinal) window.saveEMSFinal(); },
+            "btnCloseEMS": () => togglePanel(null),
+            "btnSaveCardio": () => { if(window.saveCardioData) window.saveCardioData(); },
+            "btnCloseCardio": () => togglePanel(null),
+            "btnSaveSettings": () => { if(window.PegasusSettings) window.PegasusSettings.save(); }
+        };
+
+        // Attach Listeners
+        Object.entries(uiMap).forEach(([id, func]) => {
+            const el = document.getElementById(id);
+            if (el) el.onclick = (e) => { e.stopPropagation(); func(); };
+        });
+
+        // Audio Unlock
+        document.addEventListener('click', () => {
+            if (!state.audioUnlocked) {
+                sysAudio.play().then(() => { sysAudio.pause(); state.audioUnlocked = true; });
+            }
+        }, { once: true });
+
+        // Initial Data Fetch
+        if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
+        if (window.fetchWeather) window.fetchWeather();
     };
+
+    return { init: init };
 })();
 
+// LAUNCH
 window.addEventListener("load", PegasusCore.init);
