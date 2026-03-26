@@ -260,7 +260,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - RAW FAILSAFE ENGINE (v5.0)
+   PEGASUS AI HANDLER - RAW FAILSAFE ENGINE (v6.0 - V1 STABLE)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
@@ -280,7 +280,7 @@ const PegasusAI = {
         responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Επικοινωνία με Google...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
-        // Το πιο απλό JSON Payload που δέχεται η Google
+        // Το πιο απλό JSON Payload
         const payload = {
             contents: [
                 {
@@ -293,7 +293,8 @@ const PegasusAI = {
         };
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            // Η ΟΡΙΣΤΙΚΗ ΔΙΟΡΘΩΣΗ: Αλλαγή του v1beta σε v1
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -318,7 +319,6 @@ const PegasusAI = {
         }
     }
 };
-
 function handleAIPrompt() {
     const inputField = document.getElementById('aiInput');
     PegasusAI.ask(inputField.value);
