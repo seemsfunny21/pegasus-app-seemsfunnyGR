@@ -321,3 +321,27 @@ function removeFromLibrary(name) {
 }
 
 window.renderFood = window.updateFoodUI;
+
+window.PegasusFood = {
+    init: function() {
+        const btn = document.getElementById("btnFoodUI");
+        if (btn) {
+            btn.onclick = () => {
+                const panel = document.getElementById("foodPanel");
+                if (panel) {
+                    const isVisible = panel.style.display === "block";
+                    document.querySelectorAll('.pegasus-panel').forEach(p => p.style.display = 'none');
+                    panel.style.display = isVisible ? "none" : "block";
+                    if (!isVisible) window.updateFoodUI();
+                }
+            };
+        }
+        const addBtn = document.getElementById("btnAddFood");
+        if (addBtn) addBtn.onclick = () => this.add();
+    },
+    add: function() {
+        console.log("Adding food...");
+        // Εδώ ο κώδικας της addFoodEntry που ήδη έχεις
+    }
+};
+window.addEventListener("load", () => window.PegasusFood.init());
