@@ -5,72 +5,171 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pegasus Workout - Final Edition (Modular)</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="apple-touch-icon" href="images/favicon.png">
     <script>
-        const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth <= 800;
-        if (isMobile) window.location.replace("mobile.html");
+        /* PEGASUS DEVICE ROUTING PROTOCOL */
+        const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isSmallScreen = window.innerWidth <= 800;
+
+        if (isMobileAgent || isSmallScreen) {
+            window.location.replace("mobile.html");
+        }
     </script>
 </head>
 <body>
+
     <div class="navbar" id="navbar"></div>
+    
     <div id="weather-status-alert"></div>
+
+    <div class="weather-control">
+        <span>☀️ Καλός Καιρός</span>
+        <label class="switch">
+            <input type="checkbox" id="rainToggle">
+            <span class="slider"></span>
+        </label>
+        <span>🌧️ Βροχή</span>
+    </div>
 
     <div class="pegasus-control-bar">
         <div id="totalProgressContainer">
             <div id="totalProgress"></div>
             <div id="totalProgressTime">00:00</div>
         </div>
+
         <div class="control-buttons">
             <button id="btnWarmup" class="p-btn">Προθέρμανση</button>
             <button id="btnStart" class="p-btn">Έναρξη</button>
+            <button id="btnFinish" class="p-btn" style="display:none; background:#F44336; color:#fff;">Τέλος</button>
             <button id="btnNext" class="p-btn">Επόμενο</button>
             <button id="btnCalendarUI" class="p-btn">Ημερολόγιο</button>
             <button id="btnAchUI" class="p-btn">Επιτεύγματα</button>
             <button id="btnFoodUI" class="p-btn">Διατροφή</button> 
-            <button id="btnPreviewUI" class="p-btn">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</button>
+            <button id="btnPreviewUI" class="p-btn" style="color: #4CAF50 !important; border-color: #4CAF50 !important;">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</button>
             <button id="btnSettingsUI" class="p-btn btn-utility">Ρυθμίσεις</button>
             <button id="btnManualEmail" class="p-btn">EMAIL</button>
         </div>
+        
         <div class="info-display">
-            <div class="weather-text" id="weatherText">--°C</div>
-            <div id="totalWorkoutsDisplay" class="workout-count-text">Προπονήσεις: <span id="workoutCounter">--</span></div>
-            <button id="kcalBtn" class="p-btn kcal-container">🔥 <span class="kcal-value">0.0</span> kcal</button>
+            <div class="weather-text" id="weatherDisplay">--°C</div>
+            <div id="totalWorkoutsDisplay" class="workout-count-text" style="cursor: pointer; border: 1px solid #4CAF50; padding: 5px; border-radius: 5px;">
+                Προπονήσεις: <span id="workoutCounter">--</span>
+            </div>
+
+            <button id="kcalBtn" class="p-btn kcal-container">
+                🔥 <span class="kcal-value">0.0</span> kcal
+            </button>
+
             <button id="btnToolsUI" class="p-btn">⚙️ ΕΡΓΑΛΕΙΑ</button>
         </div>
     </div>
 
-    <div class="content">
+    <div class="content" id="content">
         <div class="exercise-container">
             <div class="exercise-list" id="exList"></div>
+            
             <div class="video-container">
                 <video id="video" loop muted playsinline class="main-video"></video>
+                <video id="webcam" autoplay playsinline class="webcam-overlay"></video>
                 <div id="phaseTimer" class="phase-label">Επίλεξε Ημέρα</div>
             </div>
         </div>
     </div>
 
-    <div id="foodPanel" class="pegasus-panel"></div>
-    <div id="calendarPanel" class="pegasus-panel"></div>
-    <div id="settingsPanel" class="pegasus-panel"></div>
-    <div id="toolsPanel" class="pegasus-panel"></div>
-    <div id="cardioPanel" class="pegasus-panel"></div>
-    <div id="emsModal" class="pegasus-panel"></div>
-    <div id="previewPanel" class="pegasus-panel"></div>
-    <div id="achievementsPanel" class="pegasus-panel"></div>
-    <div id="galleryPanel" class="pegasus-panel"></div>
+    <div id="toolsPanel" class="pegasus-panel">
+        <h3>ΕΡΓΑΛΕΙΑ PEGASUS</h3>
+        <div class="setting-item" style="border-top: 1px solid #333; padding-top: 10px; margin-top: 10px;">
+            <p style="color: #4CAF50; font-size: 11px; margin-bottom: 5px; letter-spacing: 1px;">ΣΥΣΤΗΜΑ ΣΥΝΕΡΓΑΤΗ</p>
+            <input type="text" id="partnerNameInput" list="partnerList" placeholder="Όνομα συνεργάτη..." style="width: 100%; background: #111; color: #4CAF50; border: 1px solid #4CAF50; padding: 8px; margin-bottom: 5px; border-radius: 4px;">
+            <datalist id="partnerList"></datalist>
+            <button id="btnPartnerMode" class="p-btn" style="width:100%">ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ</button>
+        </div>
+        <div class="settings-grid">
+            <div class="setting-item"><p>Ήχος:</p><button id="btnMuteTools" class="p-btn" style="width:100%">Ήχος: ΕΝΕΡΓΟΣ</button></div>
+            <div class="setting-item"><p>Turbo:</p><button id="btnTurboTools" class="p-btn" style="width:100%">Turbo: OFF</button></div>
+            <div class="setting-item"><p>Backup:</p><button id="btnExportData" onclick="window.exportPegasusData()" class="p-btn" style="width:100%">Εξαγωγή</button></div>
+            <div class="setting-item"><p>Επαναφορά:</p><button onclick="document.getElementById('importFileTools').click()" class="p-btn" style="width:100%">Εισαγωγή</button><input type="file" id="importFileTools" style="display:none" onchange="window.importPegasusData(event)"></div>
+            <button id="btnOpenGallery" class="p-btn" style="width:100%; margin-top:10px;">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
+            <button id="btnEMS" class="p-btn" style="width:100%; margin-top:10px;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</button>
+        </div>
+    </div>
+
+    <div id="settingsPanel" class="pegasus-panel" style="max-width: 400px;">
+        <h3 style="text-align: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px;">ΡΥΘΜΙΣΕΙΣ</h3>
+        <div style="display: flex; flex-direction: column; gap: 6px;" id="settingsForm">
+            </div>
+        <button id="btnSaveSettings" class="p-btn" style="width: 100%; margin-top: 15px; background: #4CAF50; color: #000;">ΑΠΟΘΗΚΕΥΣΗ</button>
+    </div>
+
+    <div id="foodPanel" class="pegasus-panel">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px;">
+            <button id="btnPrevDay" class="p-btn">◀</button>
+            <h3 id="currentFoodDateDisplay">ΔΙΑΤΡΟΦΗ</h3>
+            <button id="btnNextDay" class="p-btn">▶</button>
+        </div>
+        <div class="pegasus-stats-container">
+            <div class="stat-group"><div class="stat-label-row"><span>ΘΕΡΜΙΔΕΣ</span><span id="kcalStatus">0 / 0</span></div><div class="progress-track"><div id="kcalBar" class="progress-fill"></div></div></div>
+            <div class="stat-group"><div class="stat-label-row"><span>ΠΡΩΤΕΪΝΗ</span><span id="proteinStatus">0 / 0</span></div><div class="progress-track"><div id="proteinBar" class="progress-fill"></div></div></div>
+        </div>
+        <div class="food-input-row">
+            <input type="text" id="foodName" placeholder="Φαγητό" class="flex-2">
+            <input type="number" id="foodKcal" placeholder="kcal" class="flex-1">
+            <input type="text" id="foodNote" placeholder="Πρωτεΐνη (g)" class="flex-1-5">
+            <button id="btnAddFood" class="p-btn">➕</button>
+        </div>
+        <div class="food-layout">
+            <div class="food-section"><h4>ΣΗΜΕΡΑ</h4><div id="todayFoodList"></div></div>
+            <div class="food-section"><h4>ΣΥΧΝΕΣ ΕΠΙΛΟΓΕΣ</h4><div id="libraryFoodList"></div></div>
+        </div>
+    </div>
+
+    <div id="calendarPanel" class="pegasus-panel panel-calendar"><h3>ΗΜΕΡΟΛΟΓΙΟ</h3><div id="calendarContent"></div></div>
+    <div id="achievementsPanel" class="pegasus-panel panel-achievements"><h3>ΕΠΙΤΕΥΓΜΑΤΑ</h3><div id="achPanelContent"></div></div>
+    <div id="previewPanel" class="pegasus-panel" style="display:none;"><h3 id="previewTitle">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</h3><div id="previewContent"></div></div>
+    <div id="galleryPanel" class="pegasus-panel" style="width: 550px; height: 750px; display: none;"><h3>ΓΚΑΛΕΡΙ</h3><div id="progressTimeline"></div></div>
+
+    <div id="emsModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid #4CAF50; padding: 25px; z-index: 100000; width: 320px; border-radius: 15px; color: white;">
+        <h3 style="color: #4CAF50; text-align: center;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</h3>
+        <label>Ημερομηνία:</label><input type="date" id="emsDate" class="ems-input" style="width:100%; margin-bottom:10px;">
+        <label>Avg %:</label><input type="number" id="emsAvg" class="ems-input" style="width:100%; margin-bottom:10px;">
+        <label>Kcal:</label><input type="number" id="emsKcal" class="ems-input" style="width:100%; margin-bottom:10px;">
+        <button id="btnSaveEMS" style="width:100%; background:#4CAF50; padding:10px; margin-top:10px;">ΑΠΟΘΗΚΕΥΣΗ</button>
+        <button id="btnCloseEMS" style="width:100%; background:#333; padding:10px; margin-top:5px;">ΑΚΥΡΟ</button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="debug.js"></script>
     <script src="data.js"></script>
     <script src="settings.js"></script>
+    <script src="optimizer.js"></script>
+    <script src="weather.js"></script>
     <script src="weatherHandler.js"></script>
-    <script src="metabolic.js"></script>
-    <script src="cardio.js"></script>
+    <script src="backup.js"></script>
+    <script src="inventoryHandler.js"></script>
+    <script src="cloudSync.js"></script>
     <script src="ems.js"></script>
     <script src="food.js"></script>
+    <script src="extensions.js"></script>
+    <script src="cardio.js"></script>
     <script src="calendar.js"></script>
     <script src="gallery.js"></script>
+    <script src="partner.js"></script>
     <script src="achievements.js"></script>
+    <script src="progressUI.js"></script>
+    <script src="dragDrop.js"></script>
     <script src="reporting.js"></script>
+    <script src="metabolic.js"></script>
     <script src="app.js"></script>
+    <script src="debug.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then((reg) => {
+                    console.log('PEGASUS OS: Offline Vault Active.');
+                });
+            });
+        }
+    </script>
 </body>
 </html>
