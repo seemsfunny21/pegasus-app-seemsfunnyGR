@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - CORE SYNC (v13.9 - SYNC GUARD ENABLED)
-   Protocol: Strict Data Analyst - Full Data Payload & UI Modal Integration
+   PEGASUS CLOUD VAULT - CORE SYNC (v13.9.1 - SILENT GUEST PROTOCOL)
+   Protocol: Strict Data Analyst - Dual Mode Architecture
    ========================================================================== */
 
 const PegasusCloud = {
@@ -10,7 +10,7 @@ const PegasusCloud = {
     },
     
     isUnlocked: false,
-    hasSuccessfullyPulled: false, // ΔΙΑΚΟΠΤΗΣ ΑΣΦΑΛΕΙΑΣ
+    hasSuccessfullyPulled: false, 
     userKey: "",
     syncInterval: null,
 
@@ -39,7 +39,7 @@ const PegasusCloud = {
             if (!this.syncInterval) {
                 this.syncInterval = setInterval(() => {
                     if (this.isUnlocked) this.pull(true);
-                }, 30000); // 30s interval
+                }, 30000); 
             }
             return true;
         }
@@ -61,7 +61,6 @@ const PegasusCloud = {
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 let requiresUIReload = false;
 
-                // Sync Core Params
                 if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
                 if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
 
@@ -70,7 +69,6 @@ const PegasusCloud = {
                     requiresUIReload = true;
                 }
                 
-                // Sync Mobile Extracted Params (Ακόμα κι αν το Desktop δεν τα δείχνει, πρέπει να τα κρατάει)
                 if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
                 if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
                 if (cloud.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(cloud.car_dates));
@@ -117,7 +115,6 @@ const PegasusCloud = {
     push: async function(silent = true) {
         if (!this.isUnlocked) return;
         
-        // DATA GUARD: ΑΠΑΓΟΡΕΥΣΗ PUSH ΧΩΡΙΣ PULL
         if (!this.hasSuccessfullyPulled) {
             console.error("PEGASUS GUARD: Το Push ακυρώθηκε. Αποτροπή υπερεγγραφής του Cloud.");
             return;
@@ -178,18 +175,14 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// DYNAMIC UI BINDING ΑΝΤΙ ΓΙΑ PROMPT
+// SILENT GUEST PROTOCOL: Ελέγχει στο παρασκήνιο, δεν ενοχλεί τον χρήστη.
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
         window.PegasusCloud.unlock(savedPin);
+        const vaultBtn = document.getElementById("btnMasterVault");
+        if (vaultBtn) vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
     } else {
-        // Ελέγχει αν υπάρχει το Modal του Desktop (αν το προσθέσουμε στο index.html)
-        const vaultModal = document.getElementById("pinModal");
-        if (vaultModal) {
-            vaultModal.style.display = "flex";
-        } else {
-            console.warn("PEGASUS: Απουσιάζει το PIN Modal. Το σύστημα τρέχει σε Offline/Guest mode.");
-        }
+        console.log("PEGASUS: Guest Mode Active. Το σύστημα τρέχει αποκλειστικά τοπικά.");
     }
 });
