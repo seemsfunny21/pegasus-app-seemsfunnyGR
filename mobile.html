@@ -260,17 +260,14 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - RAW FAILSAFE ENGINE (v6.0 - V1 STABLE)
+   PEGASUS AI HANDLER - RAW API DIAGNOSTIC ENGINE (v7.0)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
         if(!userQuery) return;
         
         const apiKey = localStorage.getItem("pegasus_gemini_key");
-        if (!apiKey) {
-            alert("ΣΦΑΛΜΑ: Λείπει το API Key.");
-            return;
-        }
+        if (!apiKey) return alert("ΣΦΑΛΜΑ: Λείπει το API Key.");
 
         const responseBox = document.getElementById("aiResponse");
         const kcal = localStorage.getItem("pegasus_today_kcal") || 0;
@@ -280,21 +277,18 @@ const PegasusAI = {
         responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Επικοινωνία με Google...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
-        // Το πιο απλό JSON Payload
         const payload = {
-            contents: [
-                {
-                    role: "user",
-                    parts: [
-                        { text: `Απάντησε σύντομα ως fitness AI. Άγγελος (74kg). Σήμερα φάγαμε: ${kcal}/2800 kcal και ${prot}/160g Πρωτεΐνη. Η ερώτηση είναι: ${userQuery}` }
-                    ]
-                }
-            ]
+            contents: [{
+                parts: [{ text: `Απάντησε σύντομα ως fitness AI. Άγγελος (74kg). Σήμερα φάγαμε: ${kcal}/2800 kcal και ${prot}/160g Πρωτεΐνη. Ερώτηση: ${userQuery}` }]
+            }]
         };
 
+        // ΤΟ ΑΠΟΛΥΤΟ, ΣΩΣΤΟ ENDPOINT ΤΗΣ GOOGLE ΓΙΑ ΤΟ GEMINI 1.5 FLASH
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        console.log("PEGASUS AI TARGET URL:", endpoint);
+
         try {
-            // Η ΟΡΙΣΤΙΚΗ ΔΙΟΡΘΩΣΗ: Αλλαγή του v1beta σε v1
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
