@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - CORE SYNC (v13.9.2 - WITH SUPP INTERCEPTOR)
+   PEGASUS CLOUD VAULT - CORE SYNC (v13.9.3 - DB LEVEL INTERCEPTOR)
    Protocol: Strict Data Analyst - Dual Mode Architecture
    ========================================================================== */
 
@@ -175,49 +175,66 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// SILENT GUEST PROTOCOL
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
         window.PegasusCloud.unlock(savedPin);
         const vaultBtn = document.getElementById("btnMasterVault");
         if (vaultBtn) vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-    } else {
-        console.log("PEGASUS: Guest Mode Active. Το σύστημα τρέχει αποκλειστικά τοπικά.");
     }
 });
 
 /* ==========================================================================
-   DATA INTERCEPTOR (DESKTOP) - ΥΠΟΚΛΟΠΗ ΠΡΩΤΕΪΝΗΣ/ΚΡΕΑΤΙΝΗΣ
+   DATA INTERCEPTOR (DESKTOP) - ΑΠΟΛΥΤΗ ΥΠΟΚΛΟΠΗ ΣΤΗ ΒΑΣΗ ΔΕΔΟΜΕΝΩΝ
    ========================================================================== */
-window.consumeSupp = function(type, amount, pushCloud = true) {
+window.consumeSupp = function(type, amount) {
     let s = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 });
     s[type] = Math.max(0, s[type] - amount);
-    localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+    
+    if (window.originalSetItem) {
+        window.originalSetItem.call(localStorage, 'pegasus_supp_inventory', JSON.stringify(s));
+    } else {
+        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+    }
+    
     if (typeof updateSuppUI === "function") updateSuppUI();
-    if (pushCloud && window.PegasusCloud) window.PegasusCloud.push();
+    
+    // Αναγκαστικό Push στο Cloud μετά από 1 δευτερόλεπτο
+    setTimeout(() => {
+        if (window.PegasusCloud) window.PegasusCloud.push();
+    }, 1000);
 };
 
-setTimeout(() => {
-    if (typeof window.addFood === "function" && !window.addFoodPatched) {
-        const originalAddFood = window.addFood;
-        window.addFood = async function() {
-            // Διαβάζει το όνομα φαγητού από το Desktop UI
-            const inputName = document.getElementById("foodName") || document.getElementById("fName");
-            const fname = (inputName && inputName.value) ? inputName.value.toLowerCase() : "";
-            
-            // Ανίχνευση λέξεων κλειδιών και αυτόματη μείωση αποθέματος
-            if(fname.includes("πρωτεΐνη") || fname.includes("whey") || fname.includes("πρωτεινη")) {
-                window.consumeSupp('prot', 30, false);
-            }
-            if(fname.includes("κρεατίνη") || fname.includes("creatine") || fname.includes("κρεατινη")) {
-                window.consumeSupp('crea', 5, false);
-            }
-            
-            // Εκτέλεση της αρχικής συνάρτησης addFood
-            await originalAddFood.apply(this, arguments);
-        };
-        window.addFoodPatched = true;
-        console.log("✅ PEGASUS DESKTOP: Supplement Interceptor Active");
-    }
-}, 1500);
+if (!window.originalSetItem) {
+    window.originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+        let oldArr = [];
+        if (key.startsWith("food_log_")) {
+            try { oldArr = JSON.parse(localStorage.getItem(key) || "[]"); } catch(e) {}
+        }
+        
+        // 1. Κανονική αποθήκευση
+        window.originalSetItem.apply(this, arguments);
+
+        // 2. Έλεγχος για Πρωτεΐνη/Κρεατίνη
+        if (key.startsWith("food_log_")) {
+            try {
+                let newArr = JSON.parse(value || "[]");
+                if (newArr.length > oldArr.length) {
+                    let addedItem = newArr[0]; 
+                    if (addedItem && addedItem.name) {
+                        let fname = addedItem.name.toLowerCase();
+                        if (fname.includes("πρωτε") || fname.includes("whey")) {
+                            window.consumeSupp('prot', 30);
+                            console.log("✅ DB INTERCEPTOR: -30g Πρωτεΐνη");
+                        }
+                        if (fname.includes("κρεατ") || fname.includes("creatine")) {
+                            window.consumeSupp('crea', 5);
+                            console.log("✅ DB INTERCEPTOR: -5g Κρεατίνη");
+                        }
+                    }
+                }
+            } catch(e) { console.error("Interceptor Error", e); }
+        }
+    };
+}
