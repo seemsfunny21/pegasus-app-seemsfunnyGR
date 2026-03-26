@@ -260,7 +260,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - LIVE API INTEGRATION (v2.0)
+   PEGASUS AI HANDLER - LIVE API INTEGRATION (v2.1 - API FIX)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
@@ -294,11 +294,13 @@ const PegasusAI = {
         Να απαντάς σύντομα, data-driven, στοχευμένα, χωρίς μακροσκελείς χαιρετισμούς.`;
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            // Διόρθωση 1: Χρήση του gemini-1.5-flash-latest
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    system_instruction: { parts: [{ text: systemPrompt }] },
+                    // Διόρθωση 2: systemInstruction σε camelCase
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
                     contents: [{ parts: [{ text: userQuery }] }]
                 })
             });
@@ -306,8 +308,8 @@ const PegasusAI = {
             const data = await res.json();
             document.getElementById("aiLoading")?.remove();
 
-            if (data.error) {
-                throw new Error(data.error.message);
+            if (!res.ok || data.error) {
+                throw new Error(data.error ? data.error.message : `HTTP Error ${res.status}`);
             }
 
             // Εξαγωγή του κειμένου και μετατροπή αλλαγών γραμμής σε HTML
@@ -318,7 +320,7 @@ const PegasusAI = {
 
         } catch (error) {
             document.getElementById("aiLoading")?.remove();
-            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--danger);"><b>ΣΦΑΛΜΑ API:</b> ${error.message}. Ελέγξτε αν το API Key σας είναι σωστό.</div>`;
+            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--danger);"><b>ΣΦΑΛΜΑ API:</b> ${error.message}</div>`;
             responseBox.scrollTop = responseBox.scrollHeight;
         }
     }
