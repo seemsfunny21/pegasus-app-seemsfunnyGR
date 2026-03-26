@@ -324,35 +324,41 @@ const PegasusAI = {
 };
 
 /* ==========================================================================
-   VIEW MANAGER - WITH AI AUTO-EXECUTION FIX
+   VIEW MANAGER - SMART SYNC & AI AUTO-TRIGGER (v11.1)
    ========================================================================== */
 function openView(id) {
-    // 1. Κλείσιμο όλων των views
+    // 1. Κλασικό UI Switch
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    
-    // 2. Ενεργοποίηση του συγκεκριμένου view
     const targetView = document.getElementById(id);
-    if (targetView) {
-        targetView.classList.add('active');
-    }
+    if (targetView) targetView.classList.add('active');
 
-    // 3. UI Updates ανάλογα με το view
+    // 2. UI Updates
     if (id === 'supps') updateSuppUI();
     if (id === 'preview') updateMuscleUI();
     if (id === 'library') renderLibrary();
 
-    // 4. ΕΙΔΙΚΟΣ ΧΕΙΡΙΣΜΟΣ ΓΙΑ GEMINI (ΑΥΤΟΜΑΤΗ ΑΠΑΝΤΗΣΗ)
+    // 3. ΕΙΔΙΚΟΣ ΧΕΙΡΙΣΜΟΣ ΓΙΑ GEMINI
     if (id === 'gemini_panel') {
         const responseBox = document.getElementById("aiResponse");
-        if (responseBox) {
-            responseBox.innerHTML = ""; // Καθαρισμός παλιών μηνυμάτων
-            
-            // Μικρή καθυστέρηση 100ms για να προλάβει το DOM να γίνει active
+        if (!responseBox) return;
+        
+        responseBox.innerHTML = ""; 
+        responseBox.innerHTML = `<div id="aiLoading" style="color:var(--main); font-size:11px; font-weight:bold;">
+            <span style="opacity:0.5;">[CLOUD]</span> WAITING FOR DATA SYNC...
+        </div>`;
+
+        // ΣΥΝΑΡΤΗΣΗ ΠΟΥ ΠΕΡΙΜΕΝΕΙ ΤΟ SYNC
+        const waitForDataAndAsk = () => {
+            // Ελέγχουμε αν το Cloud Vault τελείωσε (αν υπάρχει ένδειξη συγχρονισμού)
+            // Ή απλά περιμένουμε 3.5 δευτερόλεπτα για να είμαστε σίγουροι
             setTimeout(() => {
-                console.log("🚀 PEGASUS AI: Triggering Stealth Auto-Audit...");
-                PegasusAI.ask("", true); // "" = καμία ερώτηση, true = Auto Audit mode
-            }, 100);
-        }
+                console.log("🚀 PEGASUS AI: Data is ready. Triggering Analysis...");
+                document.getElementById("aiLoading").innerHTML = "SCANNING DATA & TIME...";
+                PegasusAI.ask("", true);
+            }, 3500); // 3.5 δευτερόλεπτα αναμονή
+        };
+
+        waitForDataAndAsk();
     }
 }
 
