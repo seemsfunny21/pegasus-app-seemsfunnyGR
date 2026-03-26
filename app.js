@@ -46,12 +46,29 @@ const PegasusCore = (function() {
     };
 
     // 3. ΔΙΑΧΕΙΡΙΣΗ PANEL (Show/Hide Modals)
-    const togglePanel = (panelId) => {
-        const panels = ["foodPanel", "calendarPanel", "achievementsPanel", "settingsPanel", "previewPanel", "toolsPanel", "galleryPanel", "cardioPanel", "emsModal"];
-        panels.forEach(id => {
-            const p = document.getElementById(id);
-            if (p) p.style.display = (id === panelId) ? "block" : "none";
-        });
+/* === ΔΙΟΡΘΩΣΗ ΣΤΟ app.js === */
+
+const togglePanel = (panelId) => {
+    const panels = ["foodPanel", "calendarPanel", "achievementsPanel", "settingsPanel", "previewPanel", "toolsPanel", "galleryPanel", "cardioPanel", "emsModal"];
+    panels.forEach(id => {
+        const p = document.getElementById(id);
+        if (p) p.style.display = (id === panelId) ? "block" : "none";
+    });
+
+    // ΕΝΕΡΓΟΠΟΙΗΣΗ RENDERING ΑΝΑ MODULE
+    if (panelId === "foodPanel" && window.renderFood) window.renderFood();
+    if (panelId === "calendarPanel" && window.renderCalendar) window.renderCalendar();
+    if (panelId === "achievementsPanel" && window.renderAchievements) window.renderAchievements();
+    if (panelId === "previewPanel" && window.openExercisePreview) window.openExercisePreview();
+    
+    // ΠΡΟΣΘΗΚΗ: Ενεργοποίηση ρυθμίσεων
+    if (panelId === "settingsPanel" && window.PegasusSettings) {
+        window.PegasusSettings.render(); 
+    }
+};
+
+// Ενημέρωση στο bindDashboardButtons
+"btnSettingsUI": () => togglePanel("settingsPanel"),
 
         // Trigger Module Renders
         if (panelId === "foodPanel" && window.renderFood) window.renderFood();
