@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIFIED SYNC (v13.9 - SYNC GUARD ENABLED)
-   FIX: FULL DATA PAYLOAD & KEY UNIFICATION (Supps, Contacts, Car, Food)
+   PEGASUS CLOUD VAULT - CORE SYNC (v13.9 - SYNC GUARD ENABLED)
+   Protocol: Strict Data Analyst - Full Data Payload & UI Modal Integration
    ========================================================================== */
 
 const PegasusCloud = {
@@ -10,7 +10,7 @@ const PegasusCloud = {
     },
     
     isUnlocked: false,
-    hasSuccessfullyPulled: false, // 1. ΔΙΑΚΟΠΤΗΣ ΑΣΦΑΛΕΙΑΣ
+    hasSuccessfullyPulled: false, // ΔΙΑΚΟΠΤΗΣ ΑΣΦΑΛΕΙΑΣ
     userKey: "",
     syncInterval: null,
 
@@ -39,7 +39,7 @@ const PegasusCloud = {
             if (!this.syncInterval) {
                 this.syncInterval = setInterval(() => {
                     if (this.isUnlocked) this.pull(true);
-                }, 30000); // Αυξημένο σε 30s για εξοικονόμηση API calls
+                }, 30000); // 30s interval
             }
             return true;
         }
@@ -61,7 +61,7 @@ const PegasusCloud = {
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 let requiresUIReload = false;
 
-                // ΔΙΟΡΘΩΣΗ: Προσθήκη συγχρονισμού στόχων και στατιστικών
+                // Sync Core Params
                 if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
                 if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
 
@@ -70,6 +70,7 @@ const PegasusCloud = {
                     requiresUIReload = true;
                 }
                 
+                // Sync Mobile Extracted Params (Ακόμα κι αν το Desktop δεν τα δείχνει, πρέπει να τα κρατάει)
                 if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
                 if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
                 if (cloud.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(cloud.car_dates));
@@ -102,12 +103,13 @@ const PegasusCloud = {
                 
                 if (requiresUIReload && typeof window.updateFoodUI === "function") window.updateFoodUI();
                 if (typeof window.updateSuppUI === "function") window.updateSuppUI();
+                if (window.MuscleProgressUI) window.MuscleProgressUI.render();
             }
             
-            this.hasSuccessfullyPulled = true; // ΕΠΙΒΕΒΑΙΩΣΗ ΛΗΨΗΣ
+            this.hasSuccessfullyPulled = true; 
             
         } catch (e) {
-            this.hasSuccessfullyPulled = false; // ΑΣΦΑΛΙΣΗ
+            this.hasSuccessfullyPulled = false; 
             console.error("PEGASUS Cloud Pull Error:", e);
         }
     },
@@ -166,7 +168,7 @@ const PegasusCloud = {
             
             if (res.ok) {
                 localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-                console.log("✅ PEGASUS Cloud Sync: Push Success");
+                if (!silent) console.log("✅ PEGASUS Cloud Sync: Push Success");
             }
         } catch (e) {
             console.error("❌ PEGASUS Cloud Sync: Push Failed", e);
@@ -176,14 +178,18 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
+// DYNAMIC UI BINDING ΑΝΤΙ ΓΙΑ PROMPT
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
         window.PegasusCloud.unlock(savedPin);
     } else {
-        setTimeout(() => {
-            const pin = prompt("PEGASUS VAULT: Εισάγετε PIN:");
-            if (pin && !window.PegasusCloud.unlock(pin)) alert("ΛΑΘΟΣ PIN.");
-        }, 1000);
+        // Ελέγχει αν υπάρχει το Modal του Desktop (αν το προσθέσουμε στο index.html)
+        const vaultModal = document.getElementById("pinModal");
+        if (vaultModal) {
+            vaultModal.style.display = "flex";
+        } else {
+            console.warn("PEGASUS: Απουσιάζει το PIN Modal. Το σύστημα τρέχει σε Offline/Guest mode.");
+        }
     }
 });
