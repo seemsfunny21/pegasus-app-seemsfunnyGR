@@ -1,122 +1,86 @@
 /* ==========================================================================
-   PEGASUS ACHIEVEMENTS SYSTEM - v3.0 (MODULAR / FULLY DECOUPLED)
-   Protocol: Strict State Management - Independent LocalStorage Tracking
+   PEGASUS ACHIEVEMENTS ENGINE - v5.0 (STRICT DATA HANDLING)
+   Protocol: Null-Safe Rendering & Muscle Credit Logic
    ========================================================================== */
 
 const PegasusAchievements = (function() {
-    const STATS_KEY = 'pegasus_stats';
+    
+    // 1. DATA RETRIEVAL (Null-Safe)
+    const getHistory = () => {
+        try {
+            const data = localStorage.getItem('pegasus_weekly_history');
+            return data ? JSON.parse(data) : { 
+                "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
+            };
+        } catch (e) {
+            return { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+        }
+    };
 
-    // 1. ΑΥΤΟΝΟΜΗ ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ (State Encapsulation)
-    const getStats = () => {
-        return JSON.parse(localStorage.getItem(STATS_KEY)) || {
-            totalSets: 0,
-            exerciseHistory: {}
+    // 2. RENDERING ENGINE (Fixed Line 98)
+    const render = () => {
+        const container = document.getElementById("achPanelContent");
+        if (!container) return;
+
+        const history = getHistory();
+        const targets = { 
+            "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Κορμός": 12, "Πόδια": 24 
         };
-    };
 
-    const saveStats = (stats) => {
-        localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-    };
+        let html = `<div class="achievements-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">`;
 
-    // 2. ΔΙΑΧΕΙΡΙΣΗ UI (Toasts & DOM Elements)
-    const createAchievementContainer = () => {
-        let div = document.getElementById('achievement-container');
-        if (!div) {
-            div = document.createElement('div');
-            div.id = 'achievement-container';
-            div.style.cssText = `position: fixed; bottom: 20px; right: 20px; z-index: 10002; display: flex; flex-direction: column; gap: 10px;`;
-            document.body.appendChild(div);
-        }
-        return div;
-    };
+        // Διόρθωση: Διασφάλιση ότι το history είναι αντικείμενο πριν το Object.entries
+        Object.entries(targets).forEach(([muscle, target]) => {
+            const current = history[muscle] || 0;
+            const progress = Math.min(100, (current / target) * 100);
+            const color = progress >= 100 ? "#4CAF50" : "#888";
 
-    const showAchievementPopup = (text) => {
-        const container = createAchievementContainer();
-        const toast = document.createElement('div');
-        toast.className = 'achievement-toast';
-        // Fallback CSS σε περίπτωση που λείπει από το style.css
-        toast.style.cssText = `background: #111; border: 1px solid #4CAF50; color: #4CAF50; padding: 10px 20px; border-radius: 5px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.5);`;
-        toast.innerText = `🏆 ${text}`;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
-    };
-
-    const checkMilestones = (stats, name) => {
-        const count = stats.exerciseHistory[name];
-        if (count && count % 50 === 0) showAchievementPopup(`Master of ${name}: ${count} Sets!`);
-        if (stats.totalSets > 0 && stats.totalSets % 100 === 0) showAchievementPopup(`Centurion: ${stats.totalSets} Total Sets!`);
-    };
-
-    // 3. PUBLIC API
-    return {
-        update: function(exerciseName) {
-            if (!exerciseName) return;
-            const cleanName = exerciseName.trim();
-            const stats = getStats();
-
-            stats.totalSets++;
-            if (!stats.exerciseHistory[cleanName]) {
-                stats.exerciseHistory[cleanName] = 0;
-            }
-            stats.exerciseHistory[cleanName]++;
-
-            saveStats(stats);
-            checkMilestones(stats, cleanName);
-        },
-
-        render: function() {
-            const content = document.getElementById('achPanelContent');
-            if (!content) return;
-
-            const stats = getStats();
-            const currentLevel = Math.floor(stats.totalSets / 20) + 1;
-            const xpInLevel = stats.totalSets % 20;
-            const progressPercent = (xpInLevel / 20) * 100;
-
-            let html = `
-                <div style="background:#111; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #4CAF50; text-align:center;">
-                    <div style="color:#4CAF50; font-size:12px; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">PEGASUS RANK</div>
-                    <div style="font-size:28px; color:#fff; font-weight:bold; margin-bottom:10px;">LEVEL ${currentLevel}</div>
-                    
-                    <div style="background:#000; height:8px; border-radius:4px; overflow:hidden; border: 1px solid #222; margin-bottom:5px;">
-                        <div style="background:#4CAF50; width:${progressPercent}%; height:100%; transition: width 0.5s ease;"></div>
+            html += `
+                <div class="ach-item" style="background: #111; padding: 10px; border-radius: 8px; border: 1px solid ${color};">
+                    <div style="font-size: 11px; color: ${color}; font-weight: bold;">${muscle.toUpperCase()}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 5px 0;">
+                        <span style="font-size: 14px; color: #fff;">${current} / ${target}</span>
+                        <span style="font-size: 10px; color: #666;">ΣΕΤ</span>
                     </div>
-                    <div style="font-size:11px; color:#888;">${xpInLevel} / 20 σετ για το επόμενο Level</div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:15px;">
-                    <div style="background:#111; padding:10px; border-radius:5px; text-align:center; border: 1px solid #222;">
-                        <span style="font-size:12px; color:#aaa;">Συνολικά Σετ:</span>
-                        <span style="font-size:18px; color:#4CAF50; font-weight:bold; margin-left:10px;">${stats.totalSets}</span>
+                    <div style="width: 100%; height: 4px; background: #222; border-radius: 2px; overflow: hidden;">
+                        <div style="width: ${progress}%; height: 100%; background: ${color}; transition: width 0.5s;"></div>
                     </div>
                 </div>
-
-                <div style="max-height:250px; overflow-y:auto; padding-right:5px;">
-                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
             `;
+        });
 
-            const sortedExercises = Object.entries(stats.exerciseHistory)
-                .sort((a, b) => b[1] - a[1]);
+        html += `</div>`;
+        
+        // Level Calculation Logic
+        const totalSets = Object.values(history).reduce((a, b) => a + b, 0);
+        const level = Math.floor(totalSets / 10) + 1;
+        
+        const headerHtml = `
+            <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 12px; border: 1px solid #4CAF50;">
+                <div style="font-size: 12px; color: #4CAF50;">PEGASUS RANK</div>
+                <div style="font-size: 28px; font-weight: bold; color: #fff;">LEVEL ${level}</div>
+                <div style="font-size: 11px; color: #888; margin-top: 5px;">ΣΥΝΟΛΙΚΑ ΣΕΤ ΕΒΔΟΜΑΔΑΣ: ${totalSets}</div>
+            </div>
+        `;
 
-            if (sortedExercises.length === 0) {
-                html += `<tr><td style="text-align:center; padding:20px; color:#666;">Ολοκλήρωσε το πρώτο σου σετ!</td></tr>`;
-            } else {
-                sortedExercises.forEach(([name, count]) => {
-                    html += `
-                        <tr style="border-bottom:1px solid #222;">
-                            <td style="padding:10px 0; color:#eee;">${name}</td>
-                            <td style="padding:10px 0; text-align:right; color:#4CAF50; font-weight:bold;">${count} <small style="color:#666">σετ</small></td>
-                        </tr>
-                    `;
-                });
-            }
+        container.innerHTML = headerHtml + html;
+    };
 
-            html += `</table></div>`;
-            content.innerHTML = html;
-        }
+    // 3. LOGGING (Global Bridge)
+    const update = (muscleGroup) => {
+        if (!muscleGroup) return;
+        let history = getHistory();
+        history[muscleGroup] = (history[muscleGroup] || 0) + 1;
+        localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+        render();
+    };
+
+    return {
+        render: render,
+        update: update
     };
 })();
 
-// Εξαγωγή στο Window Scope για διασύνδεση με το κεντρικό UI (Entry Point)
-window.updateAchievements = PegasusAchievements.update;
+// GLOBAL EXPOSURE
 window.renderAchievements = PegasusAchievements.render;
+window.logPegasusSet = PegasusAchievements.update;
