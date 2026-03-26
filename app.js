@@ -93,17 +93,33 @@ window.onload = () => {
     if (targetBtn) window.selectDay(targetBtn, today);
 
     // 3. Button Mapping (The "Fix")
+// 3. Smart Button Mapping (The "Resurrector")
     const map = {
-        "btnStart": () => { running = !running; document.getElementById("btnStart").innerHTML = running ? "Παύση" : "Συνέχεια"; },
-        "btnNext": () => { /* skip logic */ },
-        "btnFoodUI": () => togglePanel("foodPanel", window.updateFoodUI),
-        "btnSettingsUI": () => togglePanel("settingsPanel", window.loadSettings),
-        "btnCalendarUI": () => togglePanel("calendarPanel", window.renderCalendar),
-        "btnAchUI": () => togglePanel("achievementsPanel", window.renderAchievements),
+        "btnFoodUI": () => {
+            // Δοκιμάζει όλα τα πιθανά ονόματα για τη διατροφή
+            const updateFn = window.updateFoodUI || window.updateDietUI || window.renderFood;
+            togglePanel("foodPanel", updateFn);
+        },
+        "btnSettingsUI": () => {
+            const loadFn = window.loadSettings || window.loadSpecs || window.initSettings;
+            togglePanel("settingsPanel", loadFn);
+        },
+        "btnCalendarUI": () => {
+            togglePanel("calendarPanel", window.renderCalendar);
+        },
+        "btnAchUI": () => {
+            const achFn = window.updateAchievements || window.renderAchievements;
+            togglePanel("achievementsPanel", achFn);
+        },
+        "btnPreviewUI": () => {
+            togglePanel("previewPanel", window.showPreview);
+        },
         "btnToolsUI": () => togglePanel("toolsPanel"),
-        "btnPreviewUI": () => togglePanel("previewPanel", window.showPreview),
         "btnOpenGallery": () => togglePanel("galleryPanel", () => window.GalleryEngine?.render()),
-        "btnEMS": () => { if (window.logEMSData) window.logEMSData(); }
+        "btnEMS": () => { 
+            if (typeof window.logEMSData === 'function') window.logEMSData();
+            else if (typeof window.openEMS === 'function') window.openEMS();
+        }
     };
 
     Object.keys(map).forEach(id => {
