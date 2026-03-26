@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS MASTER CONTROLLER - v26.0 (FINAL MODULAR ORCHESTRATION)
+   PEGASUS MASTER CONTROLLER - v28.0 (FINAL MODULAR ORCHESTRATION)
    Protocol: Strict Data Analyst - Full Dashboard & Global Bridge Restoration
    ========================================================================== */
 
@@ -33,7 +33,6 @@ const PegasusCore = (function() {
             const b = document.createElement("button");
             b.textContent = d;
             b.id = `nav-${d}`;
-            // Σύνδεση με την Global selectDay
             b.onclick = () => window.selectDay(b, d);
             nav.appendChild(b);
         });
@@ -58,14 +57,21 @@ const PegasusCore = (function() {
 
         const exTime = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
         const restTime = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
-        const phases = [ {n: "ΠΡΟΕΤΟΙΜΑΣΙΑ", d: 10}, {n: "ΑΣΚΗΣΗ (ΑΓΓΕΛΟΣ)", d: exTime}, {n: "ΔΙΑΛΕΙΜΜΑ", d: restTime} ];
+        const phases = [ 
+            {n: "ΠΡΟΕΤΟΙΜΑΣΙΑ", d: 10}, 
+            {n: "ΑΣΚΗΣΗ (ΑΓΓΕΛΟΣ)", d: exTime}, 
+            {n: "ΔΙΑΛΕΙΜΜΑ", d: restTime} 
+        ];
 
         const currentExNode = state.exercises[state.currentIdx];
         const wInput = currentExNode.querySelector(".weight-input");
         const exName = wInput ? wInput.dataset.name : "Unknown";
 
-        // Visual Reset
-        state.exercises.forEach(ex => { ex.style.borderColor = "#222"; ex.style.background = "transparent"; });
+        // Visual Reset & Highlighting
+        state.exercises.forEach(ex => { 
+            ex.style.borderColor = "#222"; 
+            ex.style.background = "transparent"; 
+        });
         currentExNode.style.borderColor = "#4CAF50";
         currentExNode.style.background = "rgba(76, 175, 80, 0.1)";
 
@@ -152,7 +158,7 @@ const PegasusCore = (function() {
         }
     };
 
-    // 4. GLOBAL BRIDGE (Συναρτήσεις ορατές από το HTML)
+    // 4. GLOBAL BRIDGE (HTML-Visible Functions)
     window.selectDay = (btn, day) => {
         document.querySelectorAll(".navbar button").forEach(b => b.classList.remove("active"));
         if (btn) btn.classList.add("active");
@@ -163,7 +169,6 @@ const PegasusCore = (function() {
         state.currentIdx = 0;
         document.getElementById("btnStart").textContent = "Έναρξη";
 
-        // Ανάκτηση δεδομένων μέσω Optimizer & WeatherHandler
         let rawData = window.getFinalProgram ? window.getFinalProgram(day) : [];
         let mappedData = window.PegasusOptimizer ? window.PegasusOptimizer.apply(day, rawData) : rawData;
 
@@ -197,43 +202,35 @@ const PegasusCore = (function() {
         window.showVideo(0);
     };
 
-window.showVideo = (idx) => {
-    const vid = document.getElementById("video");
-    const label = document.getElementById("phaseTimer");
-    if (!vid || !state.exercises[idx]) return;
+    window.showVideo = (idx) => {
+        const vid = document.getElementById("video");
+        const label = document.getElementById("phaseTimer");
+        if (!vid || !state.exercises[idx]) return;
 
-    const wInput = state.exercises[idx].querySelector(".weight-input");
-    const originalName = wInput.dataset.name.trim();
+        const wInput = state.exercises[idx].querySelector(".weight-input");
+        const originalName = wInput.dataset.name.trim();
 
-    // 1. Μετατροπή σε πεζά και αφαίρεση κενών (Standard Pegasus Protocol)
-    let fileName = originalName.replace(/\s+/g, '').toLowerCase();
-
-    // 2. Έλεγχος για ειδικές αντιστοιχίσεις (videoMap)
-    if (window.videoMap && window.videoMap[originalName]) {
-        fileName = window.videoMap[originalName];
-    }
-
-    // 3. Κατασκευή URL με Cache Buster για να αποφύγουμε παλιά blocked αρχεία
-    const videoPath = `videos/${fileName}.mp4?v=${Date.now()}`;
-
-    // 4. Εκτέλεση Φόρτωσης
-    vid.pause();
-    vid.src = videoPath;
-    vid.load();
-    
-    vid.play().then(() => {
-        console.log(`[PEGASUS]: Playing ${videoPath}`);
-        if (label && state.phase === 0) label.textContent = originalName;
-    }).catch(err => {
-        console.warn(`[PEGASUS]: 404 - Missing Video: ${fileName}.mp4`);
-        // Fallback: Αν λείπει το βίντεο, δείξε το warmup
-        if (fileName !== 'warmup') {
-            vid.src = 'videos/warmup.mp4';
-            vid.load();
-            vid.play();
+        let fileName = originalName.replace(/\s+/g, '').toLowerCase();
+        if (window.videoMap && window.videoMap[originalName]) {
+            fileName = window.videoMap[originalName];
         }
-    });
-};
+
+        const videoPath = `videos/${fileName}.mp4?v=${Date.now()}`;
+
+        vid.pause();
+        vid.src = videoPath;
+        vid.load();
+        
+        vid.play().then(() => {
+            if (label && state.phase === 0) label.textContent = originalName;
+        }).catch(() => {
+            if (fileName !== 'warmup') {
+                vid.src = 'videos/warmup.mp4';
+                vid.load();
+                vid.play();
+            }
+        });
+    };
 
     window.saveWeight = (name, val) => {
         localStorage.setItem(`weight_ANGELOS_${name}`, val);
@@ -252,7 +249,7 @@ window.showVideo = (idx) => {
     window.calculateTotalTime = () => {
         const exT = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
         const restT = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
-        const cycle = 10 + exT + restT; // Total cycle per set
+        const cycle = 10 + exT + restT; 
         
         state.totalSeconds = state.remainingSets.reduce((a, b) => a + (b * cycle), 0);
         state.remainingSeconds = state.totalSeconds;
@@ -261,8 +258,9 @@ window.showVideo = (idx) => {
 
     window.finishWorkout = () => {
         clearInterval(state.timer);
+        const kcal = document.querySelector(".kcal-value")?.textContent || "0";
         if (window.PegasusReporting) {
-            window.PegasusReporting.prepareAndSaveReport(document.querySelector(".kcal-value").textContent);
+            window.PegasusReporting.prepareAndSaveReport(kcal);
         }
         alert("ΠΡΟΠΟΝΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!");
         location.reload();
@@ -270,43 +268,55 @@ window.showVideo = (idx) => {
 
     // 5. INITIALIZATION
     const init = () => {
-        // Strict Profile Check
+        // Defaults για νέους χρήστες / Καθαρισμένα Storage
         if (!localStorage.getItem("pegasus_weight")) {
             localStorage.setItem("pegasus_weight", "74");
             localStorage.setItem("pegasus_height", "187");
             localStorage.setItem("pegasus_age", "38");
+            localStorage.setItem("pegasus_ex_time", "45");
+            localStorage.setItem("pegasus_rest_time", "60");
         }
 
         createNavbar();
         
-        // Listeners για τα κουμπιά του Dashboard
-        document.getElementById("btnStart").onclick = () => {
-            state.isActive = !state.isActive;
-            document.getElementById("btnStart").textContent = state.isActive ? "Παύση" : "Συνέχεια";
-            if (state.isActive) runPhase();
-            else clearInterval(state.timer);
-        };
+        // Button Listeners (Bind IDs from Final HTML)
+        const btnStart = document.getElementById("btnStart");
+        if (btnStart) {
+            btnStart.onclick = () => {
+                state.isActive = !state.isActive;
+                btnStart.textContent = state.isActive ? "Παύση" : "Συνέχεια";
+                if (state.isActive) runPhase();
+                else clearInterval(state.timer);
+            };
+        }
 
-        document.getElementById("btnNext").onclick = () => {
-            clearInterval(state.timer);
-            state.currentIdx = getNextIndex();
-            state.phase = 0;
-            if (state.currentIdx !== -1) runPhase();
-        };
+        const btnNext = document.getElementById("btnNext");
+        if (btnNext) {
+            btnNext.onclick = () => {
+                clearInterval(state.timer);
+                state.currentIdx = getNextIndex();
+                state.phase = 0;
+                if (state.currentIdx !== -1) runPhase();
+                else window.finishWorkout();
+            };
+        }
 
-        document.getElementById("btnWarmup").onclick = () => {
-            const vid = document.getElementById("video");
-            if (vid) { vid.src = "videos/warmup.mp4"; vid.play(); }
-        };
+        const btnWarmup = document.getElementById("btnWarmup");
+        if (btnWarmup) {
+            btnWarmup.onclick = () => {
+                const vid = document.getElementById("video");
+                if (vid) { vid.src = "videos/warmup.mp4"; vid.load(); vid.play(); }
+            };
+        }
 
-        // Audio Unlock Protocol
+        // Audio Unlock Gesture
         document.addEventListener('click', () => {
             if (!state.audioUnlocked) {
                 sysAudio.play().then(() => { sysAudio.pause(); state.audioUnlocked = true; });
             }
         }, { once: true });
 
-        // Update Workout Count
+        // Update Workout Stats UI
         if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     };
 
