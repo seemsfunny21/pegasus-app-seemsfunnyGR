@@ -197,14 +197,43 @@ const PegasusCore = (function() {
         window.showVideo(0);
     };
 
-    window.showVideo = (idx) => {
-        const vid = document.getElementById("video");
-        if (!vid || !state.exercises[idx]) return;
-        const name = state.exercises[idx].querySelector(".weight-input").dataset.name;
-        let file = name.replace(/\s+/g, '').toLowerCase();
-        vid.src = `videos/${file}.mp4`;
-        vid.play().catch(() => console.warn(`Video ${file}.mp4 not found.`));
-    };
+window.showVideo = (idx) => {
+    const vid = document.getElementById("video");
+    const label = document.getElementById("phaseTimer");
+    if (!vid || !state.exercises[idx]) return;
+
+    const wInput = state.exercises[idx].querySelector(".weight-input");
+    const originalName = wInput.dataset.name.trim();
+
+    // 1. Μετατροπή σε πεζά και αφαίρεση κενών (Standard Pegasus Protocol)
+    let fileName = originalName.replace(/\s+/g, '').toLowerCase();
+
+    // 2. Έλεγχος για ειδικές αντιστοιχίσεις (videoMap)
+    if (window.videoMap && window.videoMap[originalName]) {
+        fileName = window.videoMap[originalName];
+    }
+
+    // 3. Κατασκευή URL με Cache Buster για να αποφύγουμε παλιά blocked αρχεία
+    const videoPath = `videos/${fileName}.mp4?v=${Date.now()}`;
+
+    // 4. Εκτέλεση Φόρτωσης
+    vid.pause();
+    vid.src = videoPath;
+    vid.load();
+    
+    vid.play().then(() => {
+        console.log(`[PEGASUS]: Playing ${videoPath}`);
+        if (label && state.phase === 0) label.textContent = originalName;
+    }).catch(err => {
+        console.warn(`[PEGASUS]: 404 - Missing Video: ${fileName}.mp4`);
+        // Fallback: Αν λείπει το βίντεο, δείξε το warmup
+        if (fileName !== 'warmup') {
+            vid.src = 'videos/warmup.mp4';
+            vid.load();
+            vid.play();
+        }
+    });
+};
 
     window.saveWeight = (name, val) => {
         localStorage.setItem(`weight_ANGELOS_${name}`, val);
