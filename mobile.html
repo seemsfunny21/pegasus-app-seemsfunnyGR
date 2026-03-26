@@ -260,7 +260,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - UNIVERSAL STABLE ENGINE (v8.0 - GEMINI PRO)
+   PEGASUS AI HANDLER - DIAGNOSTIC AUTO-SELECTOR ENGINE (v9.0)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
@@ -274,21 +274,40 @@ const PegasusAI = {
         const prot = localStorage.getItem("pegasus_today_protein") || 0;
         
         responseBox.innerHTML += `<div style="margin-top:10px; color:#fff;"><b>Εσύ:</b> ${userQuery}</div>`;
-        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Επικοινωνία με Google (Gemini Pro)...</div>`;
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Ανίχνευση διαθέσιμων μοντέλων Google...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
-        const payload = {
-            contents: [{
-                parts: [{ text: `Απάντησε σύντομα ως fitness AI. Άγγελος (74kg). Σήμερα φάγαμε: ${kcal}/2800 kcal και ${prot}/160g Πρωτεΐνη. Ερώτηση: ${userQuery}` }]
-            }]
-        };
-
-        // ΑΛΛΑΓΗ ΣΕ GEMINI-PRO (Καθολικά διαθέσιμο σε όλα τα API Keys)
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
-        console.log("PEGASUS AI TARGET URL:", endpoint);
-
         try {
-            const res = await fetch(endpoint, {
+            // ΒΗΜΑ 1: Ζητάμε από την Google να μας πει ποια μοντέλα υπάρχουν
+            const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+            const modelsData = await modelsRes.json();
+
+            if (!modelsRes.ok) {
+                throw new Error("Αποτυχία ανάγνωσης μοντέλων: " + (modelsData.error?.message || modelsRes.status));
+            }
+
+            // Βρίσκουμε το πρώτο μοντέλο που υποστηρίζει παραγωγή κειμένου
+            const validModels = modelsData.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
+            
+            if (validModels.length === 0) {
+                throw new Error("Το API Key σου είναι έγκυρο, αλλά η Google δεν του δίνει πρόσβαση σε κανένα μοντέλο κειμένου.");
+            }
+
+            // Παίρνουμε το ακριβές όνομα (π.χ. "models/gemini-1.5-flash-8b")
+            const targetModel = validModels[0].name; 
+            
+            // Τυπώνουμε στο UI ποιο μοντέλο βρήκαμε για να ξέρουμε
+            responseBox.innerHTML += `<div style="margin-top:2px; color:#4CAF50; font-size:9px; font-weight:bold;">[ΣΥΣΤΗΜΑ] Επιτυχής σύνδεση. Επιλέχθηκε το: ${targetModel}</div>`;
+            document.getElementById("aiLoading").innerText = "Ανάλυση δεδομένων...";
+
+            // ΒΗΜΑ 2: Στέλνουμε το αίτημα στο ΔΟΚΙΜΑΣΜΕΝΟ και ΥΠΑΡΚΤΟ μοντέλο
+            const payload = {
+                contents: [{
+                    parts: [{ text: `Απάντησε σύντομα ως fitness AI. Άγγελος (74kg). Σήμερα φάγαμε: ${kcal}/2800 kcal και ${prot}/160g Πρωτεΐνη. Ερώτηση: ${userQuery}` }]
+                }]
+            };
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -298,8 +317,7 @@ const PegasusAI = {
             document.getElementById("aiLoading")?.remove();
 
             if (!res.ok) {
-                console.error("RAW GOOGLE ERROR:", data);
-                throw new Error(data.error?.message || "Άγνωστο σφάλμα από την Google");
+                throw new Error(data.error?.message || "Άγνωστο σφάλμα παραγωγής κειμένου.");
             }
 
             const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
