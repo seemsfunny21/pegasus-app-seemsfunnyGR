@@ -260,7 +260,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - RAW API DIAGNOSTIC ENGINE (v7.0)
+   PEGASUS AI HANDLER - UNIVERSAL STABLE ENGINE (v8.0 - GEMINI PRO)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
@@ -274,7 +274,7 @@ const PegasusAI = {
         const prot = localStorage.getItem("pegasus_today_protein") || 0;
         
         responseBox.innerHTML += `<div style="margin-top:10px; color:#fff;"><b>Εσύ:</b> ${userQuery}</div>`;
-        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Επικοινωνία με Google...</div>`;
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Επικοινωνία με Google (Gemini Pro)...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
         const payload = {
@@ -283,8 +283,8 @@ const PegasusAI = {
             }]
         };
 
-        // ΤΟ ΑΠΟΛΥΤΟ, ΣΩΣΤΟ ENDPOINT ΤΗΣ GOOGLE ΓΙΑ ΤΟ GEMINI 1.5 FLASH
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // ΑΛΛΑΓΗ ΣΕ GEMINI-PRO (Καθολικά διαθέσιμο σε όλα τα API Keys)
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
         console.log("PEGASUS AI TARGET URL:", endpoint);
 
         try {
@@ -313,6 +313,9 @@ const PegasusAI = {
         }
     }
 };
+
+
+    
 function handleAIPrompt() {
     const inputField = document.getElementById('aiInput');
     PegasusAI.ask(inputField.value);
