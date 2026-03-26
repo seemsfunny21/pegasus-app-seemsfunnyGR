@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.7 - STABLE)
+   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V12.9 - STABLE)
    Protocol: Native Metabolic Engine, Audio Unlocked, LIVE CLOUD SYNC
-   FIX: Array Sync Integrity & Local Storage Commit Optimization
+   Architecture: Unified Modular Connector (Desktop Master)
    ========================================================================== */
 
 var exercises = [];
@@ -18,8 +18,8 @@ var SPEED = 1;
 
 var workoutPhases = [
     { n: "Προετοιμασία", d: 10 }, 
-    { n: "Άσκηση", d: parseInt(localStorage.getItem("pegasus_ex_time")) || 45 },     
-    { n: "Διάλειμμα", d: parseInt(localStorage.getItem("pegasus_rest_time")) || 60 }     
+    { n: "Άσκηση", d: parseInt(localStorage.getItem("pegasus_ex_time")) || 45 },      
+    { n: "Διάλειμμα", d: parseInt(localStorage.getItem("pegasus_rest_time")) || 60 }      
 ];
 
 var userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
@@ -27,12 +27,14 @@ var userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
 let sysAudio = new Audio('videos/beep.mp3');
 let audioUnlocked = false;
 
+// --- AUDIO & CLOUD UNLOCK PROTOCOL ---
 document.addEventListener('click', function() {
     if (!audioUnlocked) {
         sysAudio.play().then(() => {
             sysAudio.pause();
             sysAudio.currentTime = 0;
             audioUnlocked = true;
+            console.log("PEGASUS: Audio & Cloud Protocol Unlocked.");
             if (window.PegasusCloud && typeof window.PegasusCloud.pull === "function") {
                 window.PegasusCloud.pull();
             }
@@ -48,6 +50,7 @@ const playBeep = (volume = 1) => {
     }
 };
 
+// --- NAVIGATION & WORKOUT SELECTION ---
 function createNavbar() {
     const nav = document.getElementById("navbar");
     if (!nav) return;
@@ -103,7 +106,7 @@ function selectDay(btn, day) {
         const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || localStorage.getItem(`weight_${cleanName}`) || "";
 
         d.innerHTML = `
-            <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
+            <div class="exercise-info" onclick="window.toggleSkipExercise ? window.toggleSkipExercise(${idx}) : null">
                 <div class="set-counter">0/${e.adjustedSets}</div>
                 <div class="exercise-name">${cleanName}</div>
                 <input type="number" class="weight-input" data-name="${cleanName}" placeholder="kg" value="${savedWeight}" 
@@ -118,24 +121,9 @@ function selectDay(btn, day) {
 
     if (typeof calculateTotalTime === "function") calculateTotalTime(); 
     if (typeof showVideo === "function") showVideo(0);
-    if (typeof initDragDrop === "function") initDragDrop();
 }
 
-// FIX: Πλήρης συγχρονισμός και του remainingSets κατά το reorder
-function reorderExercises() {
-    const list = document.getElementById("exList");
-    const newExerciseElements = Array.from(list.querySelectorAll(".exercise"));
-    
-    exercises = newExerciseElements;
-    remainingSets = newExerciseElements.map(el => {
-        return parseInt(el.dataset.total) - parseInt(el.dataset.done);
-    });
-    
-    const newOrderNames = newExerciseElements.map(div => div.querySelector(".exercise-name").textContent.trim());
-    const activeBtn = document.querySelector(".navbar button.active");
-    if (activeBtn) localStorage.setItem(`pegasus_order_${activeBtn.textContent.trim()}`, JSON.stringify(newOrderNames));
-}
-
+// --- CORE WORKOUT ENGINE ---
 function startPause() {
     if (exercises.length === 0) return;
     running = !running;
@@ -220,24 +208,18 @@ function getNextIndexCircuit() {
 function skipToNextExercise() {
     clearInterval(timer);
     let nextIdx = getNextIndexCircuit();
-    if (nextIdx !== -1) { currentIdx = nextIdx; phase = 0; if (running) runPhase(); else showVideo(currentIdx); }
+    if (nextIdx !== -1) { 
+        currentIdx = nextIdx; 
+        phase = 0; 
+        if (running) runPhase(); 
+        else if (typeof showVideo === "function") showVideo(currentIdx); 
+    }
     else finishWorkout();
 }
 
 function saveWeight(exerciseName, weightValue) {
     localStorage.setItem(`weight_ANGELOS_${exerciseName}`, weightValue);
     if (window.PegasusCloud) window.PegasusCloud.push(true);
-}
-
-function showVideo(i) {
-    if (!exercises[i]) return;
-    const name = exercises[i].querySelector(".exercise-name").textContent.trim();
-    const vid = document.getElementById("video");
-    if (vid && window.videoMap) {
-        const mapped = window.videoMap[name] || "default";
-        vid.src = `videos/${mapped}.mp4`;
-        vid.play().catch(() => {});
-    }
 }
 
 function updateTotalBar() {
@@ -258,19 +240,68 @@ function finishWorkout() {
     location.reload();
 }
 
+// --- UI EVENT MAPPING ---
 window.onload = () => {
     createNavbar();
-    document.getElementById("btnStart").onclick = startPause;
-    document.getElementById("btnNext").onclick = skipToNextExercise;
     
-    // UI Panel Logic
-    const uiBtns = { "btnCalendarUI": "calendarPanel", "btnAchUI": "achievementsPanel", "btnFoodUI": "foodPanel" };
+    // Σύνδεση βασικών κουμπιών ελέγχου
+    const btnStart = document.getElementById("btnStart");
+    if (btnStart) btnStart.onclick = startPause;
+
+    const btnNext = document.getElementById("btnNext");
+    if (btnNext) btnNext.onclick = skipToNextExercise;
+
+    const btnWarmup = document.getElementById("btnWarmup");
+    if (btnWarmup && typeof startWarmup === "function") btnWarmup.onclick = startWarmup;
+
+    // Modular Panel Toggles
+    const uiBtns = { 
+        "btnCalendarUI": "calendarPanel", 
+        "btnAchUI": "achievementsPanel", 
+        "btnFoodUI": "foodPanel",
+        "btnSettingsUI": "settingsPanel",
+        "btnToolsUI": "toolsPanel",
+        "btnPreviewUI": "previewPanel"
+    };
+
     Object.keys(uiBtns).forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.onclick = () => {
+            const panel = document.getElementById(uiBtns[id]);
+            const isVisible = panel.style.display === "block";
+            
+            // Κλείσιμο όλων των panels
             document.querySelectorAll(".pegasus-panel").forEach(p => p.style.display = "none");
-            document.getElementById(uiBtns[id]).style.display = "block";
-            if (id === "btnAchUI" && window.renderAchievements) window.renderAchievements();
+            
+            // Toggle current
+            panel.style.display = isVisible ? "none" : "block";
+            
+            // Trigger specific updates
+            if (!isVisible) {
+                if (id === "btnAchUI" && window.renderAchievements) window.renderAchievements();
+                if (id === "btnFoodUI" && window.updateFoodUI) window.updateFoodUI();
+                if (id === "btnCalendarUI" && window.renderCalendar) window.renderCalendar();
+                if (id === "btnPreviewUI" && window.showPreview) window.showPreview();
+            }
         };
     });
+
+    // Special Buttons
+    const btnManualEmail = document.getElementById("btnManualEmail");
+    if (btnManualEmail) btnManualEmail.onclick = () => window.PegasusReporting?.sendEmail();
+
+    const btnOpenGallery = document.getElementById("btnOpenGallery");
+    if (btnOpenGallery) btnOpenGallery.onclick = () => {
+        document.getElementById("galleryPanel").style.display = "block";
+        window.GalleryEngine?.render();
+    };
+
+    console.log("✅ PEGASUS APP ENGINE: Unified Connector Ready.");
+};
+
+// Global Helpers
+window.PegasusWorkout = {
+    start: startPause,
+    next: skipToNextExercise,
+    warmup: () => typeof startWarmup === "function" ? startWarmup() : null
 };
