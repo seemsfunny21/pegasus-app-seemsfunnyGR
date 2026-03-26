@@ -355,7 +355,22 @@ const PegasusStore = {
 const PegasusCloud = {
     hasSuccessfullyPulled: false,
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
-    unlock: (p) => { if (btoa(p) === "MjM3NQ==") { isUnlocked = true; localStorage.setItem("pegasus_vault_pin", p); PegasusCloud.pull(); return true; } return false; },
+   unlock: (p) => { 
+        if (btoa(p) === "MjM3NQ==") { 
+            isUnlocked = true; 
+            localStorage.setItem("pegasus_vault_pin", p); 
+            PegasusCloud.pull(); 
+            
+            // Ενεργοποίηση αυτόματου συγχρονισμού (Background Polling) κάθε 30s
+            if (!window.pegasusSyncInterval) {
+                window.pegasusSyncInterval = setInterval(() => {
+                    if (isUnlocked) PegasusCloud.pull();
+                }, 30000);
+            }
+            return true; 
+        } 
+        return false; 
+    },
     pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
