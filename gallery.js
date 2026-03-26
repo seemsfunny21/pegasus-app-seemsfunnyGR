@@ -134,21 +134,3 @@ window.GalleryEngine = {
 // Global Handlers
 window.handlePhotoUpload = (e) => window.GalleryEngine.handleUpload(e);
 document.addEventListener('DOMContentLoaded', () => window.GalleryEngine.init());
-
-window.PegasusGallery = {
-    init: function() {
-        const btn = document.getElementById("btnOpenGallery");
-        if (btn) {
-            btn.onclick = () => {
-                const panel = document.getElementById("galleryPanel");
-                if (panel) {
-                    const isVisible = panel.style.display === "block";
-                    document.querySelectorAll('.pegasus-panel').forEach(p => p.style.display = 'none');
-                    panel.style.display = isVisible ? "none" : "block";
-                    if (!isVisible && window.GalleryEngine) window.GalleryEngine.render();
-                }
-            };
-        }
-    }
-};
-window.addEventListener("load", () => window.PegasusGallery.init());

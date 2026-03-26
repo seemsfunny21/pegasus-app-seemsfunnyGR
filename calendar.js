@@ -124,16 +124,3 @@ window.viewFoodFromCalendar = function(dateStr) {
         }, 10);
     }
 };
-
-window.addEventListener("load", () => {
-    const btn = document.getElementById("btnCalendarUI");
-    if (btn) {
-        btn.onclick = () => {
-            const panel = document.getElementById("calendarPanel");
-            const isVisible = panel.style.display === "block";
-            document.querySelectorAll('.pegasus-panel').forEach(p => p.style.display = 'none');
-            panel.style.display = isVisible ? "none" : "block";
-            if (!isVisible && window.renderCalendar) window.renderCalendar();
-        };
-    }
-});
