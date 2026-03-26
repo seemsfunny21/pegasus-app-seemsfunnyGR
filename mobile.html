@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v12.4 (Intelligence Edition)</title>
+    <title>Pegasus OS v12.5 (Intelligence Edition)</title>
 
     <script>
         (function() {
@@ -238,7 +238,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - HIGH SPEED ENGINE (v12.0)
+   PEGASUS AI HANDLER - HIGH SPEED ENGINE (v12.5)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery, isAutoAudit = false) {
@@ -259,7 +259,8 @@ const PegasusAI = {
             responseBox.innerHTML += `<div style="margin-top:10px; color:#fff; border-bottom:1px solid #222; padding-bottom:5px;"><b>Εσύ:</b> ${userQuery}</div>`;
         }
         
-        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--main); font-size:11px; font-weight:bold; letter-spacing:1px;">ANALYZING DATA...</div>`;
+        const loader = document.getElementById("aiLoading");
+        if (loader) loader.innerHTML = "ANALYZING DATA...";
         responseBox.scrollTop = responseBox.scrollHeight;
 
         const strictRules = `Ώρα: ${currentHour}:00. Στόχος: 2800kcal/160gP. 
@@ -298,7 +299,7 @@ const PegasusAI = {
 };
 
 /* ==========================================================================
-   VIEW MANAGER - HIGH SPEED SYNC (v12.0)
+   VIEW MANAGER - ZERO-LATENCY OBSERVER (v12.5)
    ========================================================================== */
 function openView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -313,13 +314,19 @@ function openView(id) {
         const responseBox = document.getElementById("aiResponse");
         if (!responseBox) return;
         
-        responseBox.innerHTML = ""; 
         responseBox.innerHTML = `<div id="aiLoading" style="color:var(--main); font-size:11px; font-weight:bold;"><span style="opacity:0.5;">[CLOUD]</span> WAITING FOR DATA SYNC...</div>`;
 
-        setTimeout(() => {
-            document.getElementById("aiLoading").innerHTML = "ANALYZING DATA...";
-            PegasusAI.ask("", true);
-        }, 800); 
+        // ΠΑΡΑΚΟΛΟΥΘΗΣΗ ΔΙΚΤΥΟΥ ΑΝΑ 0.2 ΔΕΥΤΕΡΟΛΕΠΤΑ
+        let attempts = 0;
+        const checker = setInterval(() => {
+            attempts++;
+            const syncStatus = document.getElementById("sync-indicator").innerText;
+            // Μόλις το δίκτυο γράψει ONLINE ή περάσουν 4 δευτερόλεπτα (failsafe), χτύπα το AI
+            if (syncStatus === 'ONLINE' || syncStatus === 'OFFLINE' || attempts > 20) {
+                clearInterval(checker);
+                PegasusAI.ask("", true);
+            }
+        }, 200); 
     }
 }
 
@@ -353,7 +360,15 @@ const PegasusCloud = {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest`, { headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } });
+            // CACHE-BUSTER: Προσθήκη "?t=Date.now()" για αναγκαστική λήψη νέου αρχείου
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest?t=${Date.now()}`, { 
+                headers: { 
+                    'X-Master-Key': PEGASUS.key, 
+                    'X-Bin-Meta': 'false', 
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                } 
+            });
             const rawData = await res.json();
             const data = rawData.record || rawData;
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
