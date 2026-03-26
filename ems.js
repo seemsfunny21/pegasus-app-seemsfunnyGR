@@ -109,3 +109,19 @@ function createEMSModal() {
     document.body.appendChild(div);
     return div;
 }
+
+window.PegasusEMS = {
+    init: function() {
+        const btn = document.getElementById("btnEMS");
+        if (btn) {
+            btn.onclick = () => {
+                if (typeof window.logEMSData === 'function') {
+                    window.logEMSData();
+                } else {
+                    console.error("EMS: logEMSData function missing!");
+                }
+            };
+        }
+    }
+};
+window.addEventListener("load", () => window.PegasusEMS.init());
