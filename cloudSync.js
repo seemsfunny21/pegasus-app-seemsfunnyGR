@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - CORE SYNC (v13.9.1 - SILENT GUEST PROTOCOL)
+   PEGASUS CLOUD VAULT - CORE SYNC (v13.9.2 - WITH SUPP INTERCEPTOR)
    Protocol: Strict Data Analyst - Dual Mode Architecture
    ========================================================================== */
 
@@ -175,7 +175,7 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// SILENT GUEST PROTOCOL: Ελέγχει στο παρασκήνιο, δεν ενοχλεί τον χρήστη.
+// SILENT GUEST PROTOCOL
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
@@ -186,3 +186,38 @@ window.addEventListener('load', () => {
         console.log("PEGASUS: Guest Mode Active. Το σύστημα τρέχει αποκλειστικά τοπικά.");
     }
 });
+
+/* ==========================================================================
+   DATA INTERCEPTOR (DESKTOP) - ΥΠΟΚΛΟΠΗ ΠΡΩΤΕΪΝΗΣ/ΚΡΕΑΤΙΝΗΣ
+   ========================================================================== */
+window.consumeSupp = function(type, amount, pushCloud = true) {
+    let s = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 });
+    s[type] = Math.max(0, s[type] - amount);
+    localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+    if (typeof updateSuppUI === "function") updateSuppUI();
+    if (pushCloud && window.PegasusCloud) window.PegasusCloud.push();
+};
+
+setTimeout(() => {
+    if (typeof window.addFood === "function" && !window.addFoodPatched) {
+        const originalAddFood = window.addFood;
+        window.addFood = async function() {
+            // Διαβάζει το όνομα φαγητού από το Desktop UI
+            const inputName = document.getElementById("foodName") || document.getElementById("fName");
+            const fname = (inputName && inputName.value) ? inputName.value.toLowerCase() : "";
+            
+            // Ανίχνευση λέξεων κλειδιών και αυτόματη μείωση αποθέματος
+            if(fname.includes("πρωτεΐνη") || fname.includes("whey") || fname.includes("πρωτεινη")) {
+                window.consumeSupp('prot', 30, false);
+            }
+            if(fname.includes("κρεατίνη") || fname.includes("creatine") || fname.includes("κρεατινη")) {
+                window.consumeSupp('crea', 5, false);
+            }
+            
+            // Εκτέλεση της αρχικής συνάρτησης addFood
+            await originalAddFood.apply(this, arguments);
+        };
+        window.addFoodPatched = true;
+        console.log("✅ PEGASUS DESKTOP: Supplement Interceptor Active");
+    }
+}, 1500);
