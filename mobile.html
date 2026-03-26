@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus OS v12.5 (Intelligence Edition)</title>
+    <title>Pegasus OS v13.0 (Intelligence Edition)</title>
 
     <script>
         (function() {
@@ -230,6 +230,9 @@
             ΕΠΑΝΑΦΟΡΑ (RESTORE)
             <input type="file" style="display:none;" onchange="importData(event)">
         </label>
+        
+        <button class="primary-btn" style="background: var(--danger); color: #fff; margin-top: 25px;" onclick="hardResetSystem()">🚨 ΕΚΚΑΘΑΡΙΣΗ ΜΝΗΜΗΣ (HARD RESET)</button>
+        
         <p style="font-size:9px; color:#666; margin-top:25px; line-height:1.4;">Το Backup περιλαμβάνει: Έγγραφα, Όχημα, Επαφές, Βιβλιοθήκη Φαγητού και Συμπληρώματα.</p>
     </div>
 
@@ -237,8 +240,25 @@
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
+function hardResetSystem() {
+    if(confirm("ΠΡΟΣΟΧΗ: Αυτό θα διαγράψει την προβληματική μνήμη (Cache) του κινητού και θα φέρει τον νέο κώδικα. Συνέχεια;")) {
+        if('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        caches.keys().then(function(names) {
+            for (let name of names) caches.delete(name);
+        });
+        alert("Η μνήμη καθαρίστηκε! Η εφαρμογή θα κάνει επανεκκίνηση τώρα.");
+        window.location.replace(window.location.pathname + '?v=' + Date.now());
+    }
+}
+
 /* ==========================================================================
-   PEGASUS AI HANDLER - HIGH SPEED ENGINE (v12.5)
+   PEGASUS AI HANDLER - HIGH SPEED ENGINE (v13.0 - gemini-1.5-flash-8b)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery, isAutoAudit = false) {
@@ -265,7 +285,7 @@ const PegasusAI = {
 
         const strictRules = `Ώρα: ${currentHour}:00. Στόχος: 2800kcal/160gP. 
         Αν είναι μετά τις 20:00, πρότεινε ΜΟΝΟ ελαφριά (γιαούρτι, τοστ, σουβλάκια, whey). 
-        Απέκλεισε βαριά γεύματα όπως κρέπες αν είναι βράδυ. Αν έχει ξεπεράσει θερμίδες, πρότεινε μόνο μηδενικά.`;
+        Απέκλεισε βαριά γεύματα όπως κρέπες αν είναι βράδυ. Αν έχει ξεπεράσει θερμίδες, πρότεινε μόνο μηδενικά. Μίλα σύντομα.`;
 
         const auditPrompt = `Είσαι ο Pegasus AI. 
         Data: ${kcal}/2800 kcal, ${prot}/160g P. 
@@ -274,7 +294,8 @@ const PegasusAI = {
         ${isAutoAudit ? "Κάνε ΑΥΤΟΜΑΤΗ ΔΙΑΓΝΩΣΗ. " + strictRules : userQuery}`;
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            // ΟΠΤΙΜΟΠΟΙΗΣΗ: Χρήση του gemini-1.5-flash-8b για απόκριση κάτω από 2 δευτερόλεπτα.
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [{ text: auditPrompt }] }] })
@@ -299,7 +320,7 @@ const PegasusAI = {
 };
 
 /* ==========================================================================
-   VIEW MANAGER - ZERO-LATENCY OBSERVER (v12.5)
+   VIEW MANAGER - ZERO-LATENCY OBSERVER (v13.0)
    ========================================================================== */
 function openView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -316,12 +337,10 @@ function openView(id) {
         
         responseBox.innerHTML = `<div id="aiLoading" style="color:var(--main); font-size:11px; font-weight:bold;"><span style="opacity:0.5;">[CLOUD]</span> WAITING FOR DATA SYNC...</div>`;
 
-        // ΠΑΡΑΚΟΛΟΥΘΗΣΗ ΔΙΚΤΥΟΥ ΑΝΑ 0.2 ΔΕΥΤΕΡΟΛΕΠΤΑ
         let attempts = 0;
         const checker = setInterval(() => {
             attempts++;
             const syncStatus = document.getElementById("sync-indicator").innerText;
-            // Μόλις το δίκτυο γράψει ONLINE ή περάσουν 4 δευτερόλεπτα (failsafe), χτύπα το AI
             if (syncStatus === 'ONLINE' || syncStatus === 'OFFLINE' || attempts > 20) {
                 clearInterval(checker);
                 PegasusAI.ask("", true);
@@ -355,13 +374,14 @@ const PegasusStore = {
 const PegasusCloud = {
     hasSuccessfullyPulled: false,
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
-   unlock: (p) => { 
+    
+    // ΠΡΟΣΘΗΚΗ: AUTO-POLLING ΚΑΘΕ 30 ΔΕΥΤΕΡΟΛΕΠΤΑ
+    unlock: (p) => { 
         if (btoa(p) === "MjM3NQ==") { 
             isUnlocked = true; 
             localStorage.setItem("pegasus_vault_pin", p); 
             PegasusCloud.pull(); 
             
-            // Ενεργοποίηση αυτόματου συγχρονισμού (Background Polling) κάθε 30s
             if (!window.pegasusSyncInterval) {
                 window.pegasusSyncInterval = setInterval(() => {
                     if (isUnlocked) PegasusCloud.pull();
@@ -371,11 +391,11 @@ const PegasusCloud = {
         } 
         return false; 
     },
+    
     pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
-            // CACHE-BUSTER: Προσθήκη "?t=Date.now()" για αναγκαστική λήψη νέου αρχείου
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest?t=${Date.now()}`, { 
                 headers: { 
                     'X-Master-Key': PEGASUS.key, 
