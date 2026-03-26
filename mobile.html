@@ -283,9 +283,8 @@ function hardResetSystem() {
     }
 }
 
-// --- PEGASUS AI (v13.2) ---
 /* ==========================================================================
-   PEGASUS AI HANDLER - STABLE SPEED ENGINE (v13.3)
+   PEGASUS AI HANDLER - AUTO-ADAPTIVE ENGINE (v13.4)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery, isAutoAudit = false) {
@@ -321,8 +320,21 @@ const PegasusAI = {
         ${isAutoAudit ? "Κάνε ΑΥΤΟΜΑΤΗ ΔΙΑΓΝΩΣΗ. " + strictRules : userQuery}`;
 
         try {
-            // STABLE CORE: gemini-1.5-flash
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            // AUTO-ADAPTIVE ENGINE: Βρίσκει το σωστό μοντέλο για το API Key σου και το αποθηκεύει
+            let targetModel = localStorage.getItem("pegasus_ai_model");
+            
+            if (!targetModel) {
+                const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                const modelsData = await modelsRes.json();
+                const validModel = modelsData.models.find(m => m.supportedGenerationMethods.includes("generateContent") && m.name.includes("gemini"));
+                
+                if (!validModel) throw new Error("Το API Key δεν έχει πρόσβαση σε μοντέλα Gemini.");
+                
+                targetModel = validModel.name;
+                localStorage.setItem("pegasus_ai_model", targetModel); // Αποθήκευση για μηδενική καθυστέρηση στο μέλλον
+            }
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [{ text: auditPrompt }] }] })
@@ -331,7 +343,14 @@ const PegasusAI = {
             const data = await res.json();
             document.getElementById("aiLoading")?.remove();
 
-            if (!res.ok) throw new Error(data.error?.message || "Σφάλμα AI");
+            if (!res.ok) {
+                // Αν το αποθηκευμένο μοντέλο σταματήσει να δουλεύει, κάνε reset
+                if (data.error && data.error.code === 404) {
+                    localStorage.removeItem("pegasus_ai_model");
+                    throw new Error("Ανανέωση μοντέλου AI... Παρακαλώ ξαναπατήστε ανάλυση.");
+                }
+                throw new Error(data.error?.message || "Σφάλμα AI");
+            }
 
             const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
             const prefix = isAutoAudit ? `<b style="color:var(--main); font-size:10px;">[STRATEGIC ANALYSIS @ ${currentHour}:00]</b><br>` : `<b style="color:var(--main);">PEGASUS:</b> `;
