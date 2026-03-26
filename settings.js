@@ -1,161 +1,109 @@
 /* ==========================================================================
-   PEGASUS SETTINGS ENGINE - v4.0 (MODULAR / FULLY DECOUPLED)
-   Protocol: Strict Data Analyst - NaN Corruption Guard & Encapsulated Profile
+   PEGASUS SETTINGS ENGINE - v5.1 (CUMULATIVE & DYNAMIC UI)
+   Protocol: Strict Data Analyst - Full Screenshot Restoration (085945)
    ========================================================================== */
 
 const PegasusSettings = (function() {
-    // 1. ΙΔΙΩΤΙΚΕΣ ΣΤΑΘΕΡΕΣ & ΠΡΟΕΠΙΛΟΓΕΣ (Private Configuration)
-    // Σταθερό προφίλ χρήστη ως Fallback
-    const DEFAULT_SETTINGS = {
-        weight: 74,
-        height: 187,
-        age: 38,
-        gender: 'male',
-        goalKcal: 2800,
-        goalProtein: 160,
-        exTime: 45,
-        restTime: 60,
-        muscleTargets: {
-            "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12
-        }
+    // 1. ΣΤΑΘΕΡΕΣ & ΠΡΟΕΠΙΛΟΓΕΣ (Base Profile: 1.87m, 74kg, 38y)
+    const DEFAULTS = {
+        weight: 74, height: 187, age: 38, gender: 'male',
+        kcal: 2672, prot: 160, ex: 45, rest: 60,
+        targets: { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 }
     };
 
-    // 2. ΕΣΩΤΕΡΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
-    const getSettings = () => {
-        try {
-            const storedTargets = localStorage.getItem("pegasus_muscle_targets");
-            return {
-                weight: parseFloat(localStorage.getItem("pegasus_weight")) || DEFAULT_SETTINGS.weight,
-                height: parseFloat(localStorage.getItem("pegasus_height")) || DEFAULT_SETTINGS.height,
-                age: parseInt(localStorage.getItem("pegasus_age")) || DEFAULT_SETTINGS.age,
-                gender: localStorage.getItem("pegasus_gender") || DEFAULT_SETTINGS.gender,
-                goalKcal: parseInt(localStorage.getItem("pegasus_goal_kcal")) || DEFAULT_SETTINGS.goalKcal,
-                goalProtein: parseInt(localStorage.getItem("pegasus_goal_protein")) || DEFAULT_SETTINGS.goalProtein,
-                exTime: parseInt(localStorage.getItem("pegasus_ex_time")) || DEFAULT_SETTINGS.exTime,
-                restTime: parseInt(localStorage.getItem("pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
-                muscleTargets: storedTargets ? JSON.parse(storedTargets) : DEFAULT_SETTINGS.muscleTargets
-            };
-        } catch (e) {
-            console.error("[PEGASUS SETTINGS]: Parse error. Returning defaults.", e);
-            return DEFAULT_SETTINGS;
-        }
-    };
-
-    const openPanel = () => {
+    // 2. RENDERING ENGINE (Ανακατασκευή UI βάσει Screenshot)
+    const renderUI = () => {
         const panel = document.getElementById("settingsPanel");
         if (!panel) return;
-        
-        const current = getSettings();
-        
-        // Φόρτωση τιμών στα πεδία
-        const fields = {
-            "weightInput": current.weight,
-            "heightInput": current.height,
-            "ageInput": current.age,
-            "goalKcalInput": current.goalKcal,
-            "goalProteinInput": current.goalProtein,
-            "exerciseTimeInput": current.exTime,
-            "restTimeInput": current.restTime
+
+        // Φόρτωση τρεχουσών τιμών
+        const s = {
+            w: localStorage.getItem("pegasus_weight") || DEFAULTS.weight,
+            h: localStorage.getItem("pegasus_height") || DEFAULTS.height,
+            a: localStorage.getItem("pegasus_age") || DEFAULTS.age,
+            g: localStorage.getItem("pegasus_gender") || DEFAULTS.gender,
+            k: localStorage.getItem("pegasus_goal_kcal") || DEFAULTS.kcal,
+            p: localStorage.getItem("pegasus_goal_protein") || DEFAULTS.prot,
+            ex: localStorage.getItem("pegasus_ex_time") || DEFAULTS.ex,
+            re: localStorage.getItem("pegasus_rest_time") || DEFAULTS.rest
         };
 
-        for (const [id, value] of Object.entries(fields)) {
-            const el = document.getElementById(id);
-            if (el) el.value = value;
-        }
+        panel.innerHTML = `
+            <h3 style="text-align: center; color: #4CAF50; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-bottom: 15px; letter-spacing: 2px;">ΡΥΘΜΙΣΕΙΣ PEGASUS</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div class="s-row"><span>Βάρος (kg)</span><input type="number" id="inp_w" value="${s.w}"></div>
+                <div class="s-row"><span>Ύψος (cm)</span><input type="number" id="inp_h" value="${s.h}"></div>
+                <div class="s-row"><span>Ηλικία</span><input type="number" id="inp_a" value="${s.a}"></div>
+                <div class="s-row"><span>Φύλο</span>
+                    <select id="inp_g">
+                        <option value="male" ${s.g === 'male' ? 'selected' : ''}>Άνδρας</option>
+                        <option value="female" ${s.g === 'female' ? 'selected' : ''}>Γυναίκα</option>
+                    </select>
+                </div>
 
-        // Φόρτωση Muscle Targets
-        ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
-            const el = document.getElementById(`target${m}Input`);
-            if (el) el.value = current.muscleTargets[m] || DEFAULT_SETTINGS.muscleTargets[m];
-        });
+                <hr style="border:0; border-top:1px solid #333; margin: 10px 0;">
 
-        panel.style.display = "block";
+                <div class="s-row"><span style="color:#4CAF50; font-weight:bold;">Στόχος Kcal</span><input type="number" id="inp_k" value="${s.k}" style="border-color:#4CAF50;"></div>
+                <div class="s-row"><span style="color:#4CAF50; font-weight:bold;">Πρωτεΐνη (g)</span><input type="number" id="inp_p" value="${s.p}" style="border-color:#4CAF50;"></div>
+                <div class="s-row"><span style="color:#888;">Άσκηση (s)</span><input type="number" id="inp_ex" value="${s.ex}"></div>
+                <div class="s-row"><span style="color:#888;">Διάλειμμα (s)</span><input type="number" id="inp_re" value="${s.re}"></div>
+
+                <div style="margin-top: 10px; background: rgba(76, 175, 80, 0.05); border: 1px solid #222; border-radius: 8px; padding: 10px;">
+                    <p style="color: #4CAF50; font-size: 11px; font-weight: bold; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">WEEKLY SET TARGETS</p>
+                    <div id="m_targets" style="display: flex; flex-direction: column; gap: 5px;">
+                        ${Object.keys(DEFAULTS.targets).map(m => `
+                            <div class="s-row" style="background:none; padding:0;">
+                                <span style="font-size: 12px; color: #eee;">${m}</span>
+                                <input type="number" class="t-inp" data-m="${m}" value="${localStorage.getItem('target_'+m) || 0}" style="width: 50px; background: #000; border: 1px solid #444; color: #4CAF50; text-align: center; border-radius: 4px;">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <button id="btnSaveSet" class="p-btn" style="width: 100%; margin-top: 15px; background: #4CAF50; color: #000; font-weight: bold; height: 40px; border-radius: 8px;">ΑΠΟΘΗΚΕΥΣΗ</button>
+            </div>
+        `;
+
+        document.getElementById("btnSaveSet").onclick = save;
     };
 
-    const closePanel = () => {
-        const panel = document.getElementById("settingsPanel");
-        if (panel) panel.style.display = "none";
-    };
-
-    const saveSettings = () => {
-        try {
-            // NaN CORRUPTION GUARD: Έλεγχος και Fallback πριν την εγγραφή
-            const safeParseFloat = (id, fallback) => {
-                const el = document.getElementById(id);
-                const val = el ? parseFloat(el.value) : NaN;
-                return isNaN(val) ? fallback : val;
-            };
-            const safeParseInt = (id, fallback) => {
-                const el = document.getElementById(id);
-                const val = el ? parseInt(el.value) : NaN;
-                return isNaN(val) ? fallback : val;
-            };
-
-            localStorage.setItem("pegasus_weight", safeParseFloat("weightInput", DEFAULT_SETTINGS.weight));
-            localStorage.setItem("pegasus_height", safeParseFloat("heightInput", DEFAULT_SETTINGS.height));
-            localStorage.setItem("pegasus_age", safeParseInt("ageInput", DEFAULT_SETTINGS.age));
-            localStorage.setItem("pegasus_goal_kcal", safeParseInt("goalKcalInput", DEFAULT_SETTINGS.goalKcal));
-            localStorage.setItem("pegasus_goal_protein", safeParseInt("goalProteinInput", DEFAULT_SETTINGS.goalProtein));
-            localStorage.setItem("pegasus_ex_time", safeParseInt("exerciseTimeInput", DEFAULT_SETTINGS.exTime));
-            localStorage.setItem("pegasus_rest_time", safeParseInt("restTimeInput", DEFAULT_SETTINGS.restTime));
-
-            // Δυναμική Αποθήκευση Στόχων Μυϊκών Ομάδων
-            const targets = {};
-            ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
-                const el = document.getElementById(`target${m}Input`);
-                let parsedVal = el ? parseInt(el.value) : NaN;
-                targets[m] = isNaN(parsedVal) ? (DEFAULT_SETTINGS.muscleTargets[m] || 14) : parsedVal;
-            });
-            localStorage.setItem("pegasus_muscle_targets", JSON.stringify(targets));
-
-            closePanel();
-
-            // Συγχρονισμός με το Cloud (Αν είναι διαθέσιμο)
-            if (window.PegasusCloud && window.PegasusCloud.hasSuccessfullyPulled) {
-                window.PegasusCloud.push(true);
-            }
-
-            console.log("[PEGASUS SETTINGS]: Settings saved safely. Reloading required.");
-            window.location.reload(); 
-        } catch (err) {
-            console.error("[PEGASUS SETTINGS]: Save Error:", err);
-            alert("Σφάλμα κατά την αποθήκευση. Δες την κονσόλα.");
-        }
-    };
-
-    const initListeners = () => {
-        // Αντικατάσταση inline onclicks από τα κουμπιά του DOM
-        const btnSave = document.getElementById("btnSaveSettings");
-        if (btnSave) {
-            btnSave.removeAttribute('onclick');
-            btnSave.addEventListener('click', saveSettings);
-        }
-
-        const btnOpen = document.getElementById("btnOpenSettings");
-        if (btnOpen) {
-            btnOpen.removeAttribute('onclick');
-            btnOpen.addEventListener('click', openPanel);
-        }
+    // 3. STORAGE PROTOCOL (NaN Guard Included)
+    const save = () => {
+        const getValue = (id) => document.getElementById(id).value;
         
-        // Διασύνδεση με το κουμπί κλεισίματος
-        const btnCloseList = document.querySelectorAll('#settingsPanel .close-btn');
-        btnCloseList.forEach(btn => {
-            btn.addEventListener('click', closePanel);
+        localStorage.setItem("pegasus_weight", getValue("inp_w"));
+        localStorage.setItem("pegasus_height", getValue("inp_h"));
+        localStorage.setItem("pegasus_age", getValue("inp_a"));
+        localStorage.setItem("pegasus_gender", getValue("inp_g"));
+        localStorage.setItem("pegasus_goal_kcal", getValue("inp_k"));
+        localStorage.setItem("pegasus_goal_protein", getValue("inp_p"));
+        localStorage.setItem("pegasus_ex_time", getValue("inp_ex"));
+        localStorage.setItem("pegasus_rest_time", getValue("inp_re"));
+
+        document.querySelectorAll(".t-inp").forEach(input => {
+            localStorage.setItem(`target_${input.dataset.m}`, input.value);
         });
+
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
+        
+        alert("PEGASUS: Ρυθμίσεις Αποθηκεύτηκαν!");
+        location.reload();
     };
 
-    // 3. PUBLIC API
     return {
-        init: initListeners,
-        get: getSettings,
-        open: openPanel,
-        close: closePanel,
-        save: saveSettings,
-        defaults: DEFAULT_SETTINGS
+        open: () => {
+            document.querySelectorAll('.pegasus-panel').forEach(p => p.style.display = 'none');
+            const p = document.getElementById("settingsPanel");
+            if (p) { p.style.display = "block"; renderUI(); }
+        },
+        init: () => {
+            const btn = document.getElementById("btnSettingsUI");
+            if (btn) btn.onclick = PegasusSettings.open;
+        }
     };
 })();
 
-// Εξαγωγή στο Window Scope
+// GLOBAL ACCESS
 window.addEventListener('DOMContentLoaded', PegasusSettings.init);
-window.getPegasusSettings = PegasusSettings.get;
 window.openSettings = PegasusSettings.open;
