@@ -32,7 +32,6 @@
         .tile-icon { font-size: 28px; margin-bottom: 8px; text-align: center; }
         .tile-label { font-size: 10px; font-weight: 800; text-transform: uppercase; text-align: center; }
         
-        /* ΕΙΔΙΚΟ TILE ΓΙΑ ΤΟ GEMINI AI */
         .tile-ai { grid-column: span 2; background: rgba(0, 188, 212, 0.05); border-color: rgba(0, 188, 212, 0.4); }
         .tile-ai:active { border-color: var(--ai); }
         .tile-ai .tile-label { color: var(--ai); font-size: 12px; letter-spacing: 2px; }
@@ -111,10 +110,10 @@
 
     <div id="gemini_panel" class="view">
         <button class="btn-back" onclick="openView('home')" style="color: var(--ai);">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title" style="color: var(--ai);">Gemini Engine (Alpha)</div>
+        <div class="section-title" style="color: var(--ai);">Gemini Engine (Live)</div>
         
         <div id="aiResponse" style="padding:15px; font-size:13px; overflow-y:auto; height:45vh; text-align:left; background:rgba(0,0,0,0.5); border-radius:18px; border:1px solid rgba(0,188,212,0.3); width:100%; box-sizing:border-box; margin-bottom:15px; line-height:1.5;">
-            <span style="color: var(--ai); font-weight:900;">PEGASUS:</span> Σύστημα AI σε αναμονή. Πώς μπορώ να αναλύσω τα δεδομένα σου σήμερα;
+            <span style="color: var(--ai); font-weight:900;">PEGASUS:</span> Σύστημα AI έτοιμο. Αναμένω δεδομένα προς ανάλυση.
         </div>
         
         <input type="text" id="aiInput" placeholder="Δώσε εντολή ή ρώτησε κάτι..." style="border-color: rgba(0,188,212,0.5);">
@@ -244,6 +243,9 @@
 
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">Pegasus Intelligence (AI)</div>
+        <button class="secondary-btn" onclick="setAIKey()" style="border-color:var(--ai); color:var(--ai);">🔑 ΟΡΙΣΜΟΣ GEMINI API KEY</button>
+        
         <div class="section-title">Διαχείριση Δεδομένων</div>
         <button class="primary-btn" onclick="exportData()">ΛΗΨΗ ΑΝΤΙΓΡΑΦΟΥ (BACKUP)</button>
         <label class="secondary-btn" style="display:block; cursor:pointer; margin-top:10px;">
@@ -258,37 +260,67 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - MOBILE INTEGRATION (v1.0)
+   PEGASUS AI HANDLER - LIVE API INTEGRATION (v2.0)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
         if(!userQuery) return;
+        
+        const apiKey = localStorage.getItem("pegasus_gemini_key");
+        if (!apiKey) {
+            alert("ΣΦΑΛΜΑ: Το Gemini API Key δεν βρέθηκε. Πήγαινε στις 'Ρυθμίσεις' για να το εισάγεις.");
+            return;
+        }
+
         const responseBox = document.getElementById("aiResponse");
         
-        // Context Extraction για αποστολή στο LLM
+        // Συλλογή Context
         const stats = {
             weight: localStorage.getItem("pegasus_weight") || 74,
             kcal: localStorage.getItem("pegasus_today_kcal") || 0,
+            protein: localStorage.getItem("pegasus_today_protein") || 0,
             history: JSON.parse(localStorage.getItem("pegasus_weekly_history")) || {}
         };
 
-        // UX Feedback
         responseBox.innerHTML += `<div style="margin-top:10px; color:#fff;"><b>Εσύ:</b> ${userQuery}</div>`;
-        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Ανάλυση...</div>`;
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Ανάλυση Δεδομένων...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
-        console.log("PEGASUS AI: Analyzing query with context...", stats);
-        
-        // TODO: Σύνδεση με το πραγματικό API (OpenAI/Google Gemini)
-        // Προσοχή: Μην γράφεις το API Key σου εδώ. Χρειάζεται server-side proxy.
-        
-        // Simulation απάντησης (Placeholder)
-        setTimeout(() => {
-            const loading = document.getElementById("aiLoading");
-            if(loading) loading.remove();
-            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--ai);"><b>PEGASUS:</b> Λήφθηκε το αίτημα. Επί του παρόντος, το API endpoint πρέπει να συνδεθεί για να επεξεργαστώ το context (${stats.kcal} kcal σημερινές).</div>`;
+        // Ορισμός Προσωπικότητας & Δεδομένων του AI
+        const systemPrompt = `Είσαι ο Pegasus, ο προσωπικός AI data analyst και fitness assistant του Άγγελου. 
+        Δεδομένα χρήστη αυτή τη στιγμή: Βάρος ${stats.weight}kg. 
+        Σημερινές θερμίδες: ${stats.kcal} / 2800. Πρωτεΐνη: ${stats.protein}g / 160g. 
+        Εβδομαδιαία σετ μυϊκών ομάδων: ${JSON.stringify(stats.history)}. 
+        Να απαντάς σύντομα, data-driven, στοχευμένα, χωρίς μακροσκελείς χαιρετισμούς.`;
+
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    system_instruction: { parts: [{ text: systemPrompt }] },
+                    contents: [{ parts: [{ text: userQuery }] }]
+                })
+            });
+
+            const data = await res.json();
+            document.getElementById("aiLoading")?.remove();
+
+            if (data.error) {
+                throw new Error(data.error.message);
+            }
+
+            // Εξαγωγή του κειμένου και μετατροπή αλλαγών γραμμής σε HTML
+            const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+            
+            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--ai);"><b>PEGASUS:</b> ${aiText}</div>`;
             responseBox.scrollTop = responseBox.scrollHeight;
-        }, 1500);
+
+        } catch (error) {
+            document.getElementById("aiLoading")?.remove();
+            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--danger);"><b>ΣΦΑΛΜΑ API:</b> ${error.message}. Ελέγξτε αν το API Key σας είναι σωστό.</div>`;
+            responseBox.scrollTop = responseBox.scrollHeight;
+        }
     }
 };
 
@@ -296,6 +328,15 @@ function handleAIPrompt() {
     const inputField = document.getElementById('aiInput');
     PegasusAI.ask(inputField.value);
     inputField.value = "";
+}
+
+function setAIKey() {
+    const currentKey = localStorage.getItem("pegasus_gemini_key") || "";
+    const key = prompt("Εισάγετε το Google Gemini API Key:\n(Θα αποθηκευτεί μόνο στον browser σας)", currentKey);
+    if (key !== null && key.trim() !== "") {
+        localStorage.setItem("pegasus_gemini_key", key.trim());
+        alert("Το API Key αποθηκεύτηκε τοπικά με ασφάλεια.");
+    }
 }
 
 const PegasusStore = {
