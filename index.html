@@ -27,7 +27,7 @@
             <input type="password" id="pinInput" style="font-size: 32px; letter-spacing: 12px; font-weight: 900; color: #00ff41; background: #000; border: 1px solid #333; padding: 15px; border-radius: 16px; margin-bottom: 15px; width: 80%; text-align: center; box-sizing: border-box;" inputmode="numeric" maxlength="4" placeholder="••••">
             <div id="pinError" style="color:#ff4444; font-size:11px; font-weight:bold; margin-bottom:15px; min-height:15px;"></div>
             <button onclick="attemptVaultUnlock()" style="width: 100%; padding: 16px; background: #00ff41; border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 13px; margin-bottom: 12px; cursor: pointer;">ΑΠΑΣΦΑΛΙΣΗ ΣΥΣΤΗΜΑΤΟΣ</button>
-            <button onclick="skipVault()" style="width:100%; background:transparent; color:#666; padding:12px; border:1px solid #222; border-radius:14px; font-weight:bold; font-size:11px; cursor:pointer;">ΕΚΚΙΝΗΣΗ OFFLINE</button>
+            <button onclick="skipVault()" style="width:100%; background:transparent; color:#666; padding:12px; border:1px solid #222; border-radius:14px; font-weight:bold; font-size:11px; cursor:pointer;">ΕΠΙΣΤΡΟΦΗ / ΑΚΥΡΟ</button>
         </div>
     </div>
 
@@ -127,6 +127,11 @@
                     <button onclick="document.getElementById('importFileTools').click()" class="p-btn" style="width:100%">Φόρτωση Αρχείου</button>
                     <input type="file" id="importFileTools" style="display:none" onchange="window.importPegasusData(event)">
                 </div>
+                
+                <button id="btnMasterVault" class="p-btn" onclick="document.getElementById('pinModal').style.display='flex'" style="width:100%; margin-top:15px; border-color:#00bcd4; color:#00bcd4; font-weight:bold;">
+                    🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ (MASTER)
+                </button>
+
                 <button id="btnOpenGallery" class="p-btn" style="width:100%; margin-top:10px;">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
                 <button onclick="logEMSData()" id="btnEMS" class="p-btn" style="width:100%; margin-top:10px;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</button>
             </div>
@@ -156,22 +161,18 @@
         <h3 style="text-align: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-bottom: 15px;">ΡΥΘΜΙΣΕΙΣ PEGASUS</h3>
         
         <div style="display: flex; flex-direction: column; gap: 6px;">
-            
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
                 <span style="font-size: 13px; color: #ccc;">Βάρος (kg)</span>
                 <input type="number" id="userWeightInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
             </div>
-
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
                 <span style="font-size: 13px; color: #ccc;">Ύψος (cm)</span>
                 <input type="number" id="userHeightInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
             </div>
-
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
                 <span style="font-size: 13px; color: #ccc;">Ηλικία</span>
                 <input type="number" id="userAgeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
             </div>
-
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
                 <span style="font-size: 13px; color: #ccc;">Φύλο</span>
                 <select id="userGenderInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; font-size: 12px; padding: 2px;">
@@ -186,17 +187,14 @@
                 <span style="font-size: 13px; color: #4CAF50; font-weight: bold;">Στόχος Kcal</span>
                 <input type="number" id="goalKcalInput" style="width: 70px; background: #000; border: 1px solid #4CAF50; color: #fff; text-align: center; padding: 3px;">
             </div>
-
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
                 <span style="font-size: 13px; color: #4CAF50; font-weight: bold;">Πρωτεΐνη (g)</span>
                 <input type="number" id="goalProteinInput" style="width: 70px; background: #000; border: 1px solid #4CAF50; color: #fff; text-align: center; padding: 3px;">
             </div>
-
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
                 <span style="font-size: 13px; color: #888;">Άσκηση (s)</span>
                 <input type="number" id="exerciseTimeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
             </div>
-
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
                 <span style="font-size: 13px; color: #888;">Διάλειμμα (s)</span>
                 <input type="number" id="restTimeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
@@ -320,13 +318,14 @@
 </div>
 
 <script>
-    // Συναρτήσεις διαχείρισης του Tactical Vault Modal για το Desktop περιβάλλον
     function attemptVaultUnlock() {
         const pin = document.getElementById("pinInput").value;
         if (!pin) return;
         
         if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
             document.getElementById("pinModal").style.display = "none";
+            const vaultBtn = document.getElementById("btnMasterVault");
+            if(vaultBtn) vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
         } else {
             document.getElementById("pinError").textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN";
             document.getElementById("pinInput").value = "";
@@ -335,7 +334,6 @@
 
     function skipVault() {
         document.getElementById("pinModal").style.display = "none";
-        console.warn("PEGASUS: Σύστημα σε Offline Mode. Ο συγχρονισμός απενεργοποιήθηκε.");
     }
 </script>
 
@@ -373,12 +371,10 @@ if ('serviceWorker' in navigator) {
         });
     });
 
-    // LISTENER ΓΙΑ ΤΗΝ ΠΡΟΟΔΟ ΤΟΥ CACHING
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'CACHE_PROGRESS') {
             console.clear(); 
             console.log(`%c PEGASUS OFFLINE SYNC: ${event.data.percent}% `, 'background: #00ff41; color: #000; font-weight: bold;');
-            console.log(`Downloading: ${event.data.file}`);
             
             const label = document.getElementById("phaseTimer");
             if (label) label.textContent = `SYNCING MEDIA: ${event.data.percent}%`;
