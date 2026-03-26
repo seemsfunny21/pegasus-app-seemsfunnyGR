@@ -284,6 +284,9 @@ function hardResetSystem() {
 }
 
 // --- PEGASUS AI (v13.2) ---
+/* ==========================================================================
+   PEGASUS AI HANDLER - STABLE SPEED ENGINE (v13.3)
+   ========================================================================== */
 const PegasusAI = {
     async ask(userQuery, isAutoAudit = false) {
         const apiKey = localStorage.getItem("pegasus_gemini_key");
@@ -318,7 +321,8 @@ const PegasusAI = {
         ${isAutoAudit ? "Κάνε ΑΥΤΟΜΑΤΗ ΔΙΑΓΝΩΣΗ. " + strictRules : userQuery}`;
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${apiKey}`, {
+            // STABLE CORE: gemini-1.5-flash
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [{ text: auditPrompt }] }] })
