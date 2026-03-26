@@ -260,7 +260,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - LIVE API INTEGRATION (v3.0 - BULLETPROOF INJECTION)
+   PEGASUS AI HANDLER - RAW FAILSAFE ENGINE (v5.0)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery) {
@@ -268,65 +268,52 @@ const PegasusAI = {
         
         const apiKey = localStorage.getItem("pegasus_gemini_key");
         if (!apiKey) {
-            alert("ΣΦΑΛΜΑ: Το Gemini API Key δεν βρέθηκε. Πήγαινε στις 'Ρυθμίσεις' για να το εισάγεις.");
+            alert("ΣΦΑΛΜΑ: Λείπει το API Key.");
             return;
         }
 
         const responseBox = document.getElementById("aiResponse");
+        const kcal = localStorage.getItem("pegasus_today_kcal") || 0;
+        const prot = localStorage.getItem("pegasus_today_protein") || 0;
         
-        // 1. Συλλογή Context (Τα δεδομένα σου)
-        const stats = {
-            weight: localStorage.getItem("pegasus_weight") || 74,
-            kcal: localStorage.getItem("pegasus_today_kcal") || 0,
-            protein: localStorage.getItem("pegasus_today_protein") || 0,
-            history: JSON.parse(localStorage.getItem("pegasus_weekly_history")) || {}
-        };
-
-        // Εμφάνιση της ερώτησής σου στο UI
         responseBox.innerHTML += `<div style="margin-top:10px; color:#fff;"><b>Εσύ:</b> ${userQuery}</div>`;
-        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Ανάλυση Δεδομένων...</div>`;
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--ai);">Επικοινωνία με Google...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
-        // 2. Ενσωμάτωση Συστήματος (Inline Injection)
-        const combinedPrompt = `Είσαι ο Pegasus, ο προσωπικός AI data analyst και fitness assistant του Άγγελου. 
-Δεδομένα χρήστη αυτή τη στιγμή: Βάρος ${stats.weight}kg. 
-Σημερινές θερμίδες: ${stats.kcal} / 2800. Πρωτεΐνη: ${stats.protein}g / 160g. 
-Εβδομαδιαία σετ μυϊκών ομάδων: ${JSON.stringify(stats.history)}. 
-Να απαντάς σύντομα, data-driven, στοχευμένα, χωρίς μακροσκελείς χαιρετισμούς. 
-
-ΕΡΩΤΗΣΗ ΧΡΗΣΤΗ:
-${userQuery}`;
+        // Το πιο απλό JSON Payload που δέχεται η Google
+        const payload = {
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: `Απάντησε σύντομα ως fitness AI. Άγγελος (74kg). Σήμερα φάγαμε: ${kcal}/2800 kcal και ${prot}/160g Πρωτεΐνη. Η ερώτηση είναι: ${userQuery}` }
+                    ]
+                }
+            ]
+        };
 
         try {
-            // 3. Απλή και ασφαλής κλήση στο API (v1beta)
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ 
-                        role: "user",
-                        parts: [{ text: combinedPrompt }] 
-                    }]
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await res.json();
             document.getElementById("aiLoading")?.remove();
 
-            // Έλεγχος για σφάλματα από την Google
-            if (!res.ok || data.error) {
-                throw new Error(data.error ? data.error.message : `HTTP Error ${res.status}`);
+            if (!res.ok) {
+                console.error("RAW GOOGLE ERROR:", data);
+                throw new Error(data.error?.message || "Άγνωστο σφάλμα από την Google");
             }
 
-            // 4. Εξαγωγή του κειμένου
             const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-            
             responseBox.innerHTML += `<div style="margin-top:5px; color:var(--ai);"><b>PEGASUS:</b> ${aiText}</div>`;
             responseBox.scrollTop = responseBox.scrollHeight;
 
         } catch (error) {
             document.getElementById("aiLoading")?.remove();
-            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--danger);"><b>ΣΦΑΛΜΑ API:</b> ${error.message}</div>`;
+            responseBox.innerHTML += `<div style="margin-top:5px; color:var(--danger);"><b>ΣΦΑΛΜΑ GOOGLE API:</b> ${error.message}</div>`;
             responseBox.scrollTop = responseBox.scrollHeight;
         }
     }
