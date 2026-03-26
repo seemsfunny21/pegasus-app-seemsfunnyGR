@@ -1,108 +1,138 @@
 /* ==========================================================================
-   PEGASUS PARTNER ENGINE - ULTIMATE SMART LIST (STRICT)
+   PEGASUS PARTNER ENGINE - v3.0 (MODULAR / FULLY DECOUPLED)
+   Protocol: Strict Data Analyst - Isolated Turn Management & Weight Tracking
    ========================================================================== */
 
-let partnerData = {
-    isActive: false,
-    currentPartner: "", 
-    isUser1Turn: true
-};
+const PegasusPartner = (function() {
+    // 1. ΙΔΙΩΤΙΚΟ STATE (Private State)
+    let state = {
+        isActive: false,
+        currentPartner: "", 
+        isUser1Turn: true
+    };
 
-// 1. ΕΝΕΡΓΟΠΟΙΗΣΗ / ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
-function togglePartnerMode() {
-    const nameInput = document.getElementById('partnerNameInput');
-    const btn = document.getElementById('btnPartnerMode');
-    
-    if (!partnerData.isActive) {
-        let rawName = nameInput.value.trim();
-        let upperName = rawName.toLocaleUpperCase('el-GR');
-
-        if (rawName === "" || upperName === "ANGELOS" || upperName === "ΑΓΓΕΛΟΣ" || upperName === "ZZ") {
-            alert("PEGASUS STRICT: Γράψε ένα έγκυρο όνομα συνεργάτη!");
-            return;
+    // 2. ΕΣΩΤΕΡΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
+    const savePartnerNameToList = (name) => {
+        let list = JSON.parse(localStorage.getItem('pegasus_partner_list') || "[]");
+        if (!list.includes(name)) {
+            list.push(name);
+            localStorage.setItem('pegasus_partner_list', JSON.stringify(list));
         }
+    };
 
-        partnerData.isActive = true;
-        partnerData.currentPartner = upperName;
+    const updatePartnerDatalist = () => {
+        const dataList = document.getElementById('partnerNames');
+        if (!dataList) return;
         
-        // ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΛΙΣΤΑ ΟΝΟΜΑΤΩΝ
-        savePartnerNameToList(upperName);
+        let partnerNames = new Set(JSON.parse(localStorage.getItem('pegasus_partner_list') || "[]"));
         
-        updatePartnerDatalist();
-        
-        btn.textContent = `ΣΥΝΕΡΓΑΤΗΣ: ${upperName} (ON)`;
-        btn.style.background = "#4CAF50";
-        btn.style.color = "#000";
-        nameInput.disabled = true;
-    } else {
-        partnerData.isActive = false;
-        btn.textContent = "ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ";
-        btn.style.background = "#222";
-        btn.style.color = "#4CAF50";
-        nameInput.disabled = false;
-        nameInput.value = ""; 
-    }
-}
-
-// 2. ΑΠΟΘΗΚΕΥΣΗ ΟΝΟΜΑΤΟΣ ΣΕ ΕΙΔΙΚΗ ΛΙΣΤΑ
-function savePartnerNameToList(name) {
-    let list = JSON.parse(localStorage.getItem("pegasus_partners_list") || "[]");
-    if (!list.includes(name)) {
-        list.push(name);
-        localStorage.setItem("pegasus_partners_list", JSON.stringify(list));
-    }
-}
-
-// 3. ΑΝΑΝΕΩΣΗ ΤΗΣ ΛΙΣΤΑΣ ΠΡΟΤΑΣΕΩΝ
-function updatePartnerDatalist() {
-    const dataList = document.getElementById('partnerList');
-    if (!dataList) return;
-
-    // Περνάμε τα ονόματα από 2 φίλτρα για να είμαστε σίγουροι
-    let partnerNames = new Set();
-
-    // Φίλτρο Α: Από την ειδική λίστα ονομάτων
-    let list = JSON.parse(localStorage.getItem("pegasus_partners_list") || "[]");
-    list.forEach(n => {
-        if(n !== "ZZ" && n !== "ANGELOS") partnerNames.add(n);
-    });
-
-    // Φίλτρο Β: Από υπάρχοντα βάρη (για παλιούς συνεργάτες)
-    Object.keys(localStorage).forEach(key => {
-        if (key.startsWith("weight_") && !key.startsWith("weight_ANGELOS_")) {
-            const parts = key.split('_');
-            if (parts.length >= 3) {
-                const foundName = parts[1];
-                if (foundName !== "ANGELOS" && foundName !== "" && foundName !== "ZZ") {
-                    partnerNames.add(foundName);
+        // Σάρωση υφιστάμενων δεδομένων (Backwards Compatibility)
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (key && key.startsWith("weight_") && !key.startsWith("weight_ANGELOS_")) {
+                const parts = key.split('_');
+                if (parts.length >= 3) {
+                    const foundName = parts[1];
+                    if (foundName !== "ANGELOS" && foundName !== "" && foundName !== "ZZ") {
+                        partnerNames.add(foundName);
+                    }
                 }
             }
         }
-    });
 
-    dataList.innerHTML = ""; 
-    partnerNames.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        dataList.appendChild(option);
-    });
-}
+        dataList.innerHTML = ""; 
+        partnerNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            dataList.appendChild(option);
+        });
+    };
 
-// 4. ΑΠΟΘΗΚΕΥΣΗ / ΦΟΡΤΩΣΗ ΚΙΛΩΝ
-function savePartnerWeight(exerciseName, weight) {
-    const userKey = partnerData.isUser1Turn ? "ANGELOS" : partnerData.currentPartner;
-    localStorage.setItem(`weight_${userKey}_${exerciseName.trim()}`, weight);
-    if (partnerData.isUser1Turn) localStorage.setItem(`weight_${exerciseName.trim()}`, weight);
-}
+    const toggleMode = () => {
+        const nameInput = document.getElementById('partnerNameInput');
+        const btn = document.getElementById('btnPartnerMode');
+        if (!nameInput || !btn) return;
+        
+        if (!state.isActive) {
+            let rawName = nameInput.value.trim();
+            let upperName = rawName.toLocaleUpperCase('el-GR');
 
-function loadPartnerWeight(exerciseName) {
-    const userKey = partnerData.isUser1Turn ? "ANGELOS" : partnerData.currentPartner;
-    return localStorage.getItem(`weight_${userKey}_${exerciseName.trim()}`) || localStorage.getItem(`weight_${exerciseName.trim()}`) || "";
-}
+            // Απαγόρευση χρήσης δεσμευμένων ονομάτων
+            if (rawName === "" || upperName === "ANGELOS" || upperName === "ΑΓΓΕΛΟΣ" || upperName === "ZZ") {
+                alert("PEGASUS STRICT: Γράψε ένα έγκυρο όνομα συνεργάτη!");
+                return;
+            }
 
-// 5. INITIALIZATION
-window.addEventListener('DOMContentLoaded', () => {
-    const nameInput = document.getElementById('partnerNameInput');
-    if (nameInput) nameInput.value = ""; 
-    updatePartnerDatalist();
-});
+            state.isActive = true;
+            state.currentPartner = upperName;
+            state.isUser1Turn = true; 
+            
+            savePartnerNameToList(upperName);
+            updatePartnerDatalist();
+            
+            btn.textContent = `ΣΥΝΕΡΓΑΤΗΣ: ${upperName} (ON)`;
+            btn.style.setProperty('background', '#4CAF50', 'important');
+            btn.style.setProperty('color', '#000', 'important');
+            nameInput.disabled = true;
+            
+        } else {
+            state.isActive = false;
+            state.currentPartner = "";
+            state.isUser1Turn = true;
+            
+            btn.textContent = "ΠΡΟΣΘΗΚΗ ΣΥΝΕΡΓΑΤΗ";
+            btn.style.background = "transparent";
+            btn.style.color = "#4CAF50";
+            nameInput.disabled = false;
+            nameInput.value = "";
+        }
+    };
+
+    const saveWeight = (exerciseName, weight) => {
+        if (!exerciseName) return;
+        const cleanName = exerciseName.trim();
+        const userKey = state.isUser1Turn ? "ANGELOS" : state.currentPartner;
+        
+        localStorage.setItem(`weight_${userKey}_${cleanName}`, weight);
+        
+        if (state.isUser1Turn) {
+            localStorage.setItem(`weight_${cleanName}`, weight);
+        }
+    };
+
+    const loadWeight = (exerciseName) => {
+        if (!exerciseName) return "";
+        const cleanName = exerciseName.trim();
+        const userKey = state.isUser1Turn ? "ANGELOS" : state.currentPartner;
+        
+        return localStorage.getItem(`weight_${userKey}_${cleanName}`) || 
+               localStorage.getItem(`weight_${cleanName}`) || "";
+    };
+
+    const initListeners = () => {
+        const btn = document.getElementById('btnPartnerMode');
+        if (btn) {
+            btn.removeAttribute('onclick'); 
+            btn.addEventListener('click', toggleMode);
+        }
+        updatePartnerDatalist();
+    };
+
+    // 3. PUBLIC API
+    return {
+        init: initListeners,
+        toggle: toggleMode,
+        saveWeight: saveWeight,
+        loadWeight: loadWeight,
+        state: state 
+    };
+})();
+
+// Εξαγωγή στο Window Scope
+window.addEventListener('DOMContentLoaded', PegasusPartner.init);
+window.togglePartnerMode = PegasusPartner.toggle;
+window.savePartnerWeight = PegasusPartner.saveWeight;
+window.loadPartnerWeight = PegasusPartner.loadWeight;
+
+// Proxy για το global partnerData που απαιτεί το app.js
+window.partnerData = PegasusPartner.state;

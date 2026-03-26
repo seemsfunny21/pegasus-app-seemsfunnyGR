@@ -1,83 +1,77 @@
-/* =============================================================
-   PEGASUS METABOLIC ENGINE - FAIL-SAFE PRECISION
-   ============================================================= */
+/* ==========================================================================
+   PEGASUS METABOLIC ENGINE - v4.0 (MODULAR / FULLY DECOUPLED)
+   Protocol: Strict Data Analyst - I/O Bottleneck Fix & Precision Tracking
+   ========================================================================== */
 
-const MetabolicEngine = {
-    // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 1: Δυναμική ανάκτηση βάρους αντί για hardcoded 74kg
-    get weight() {
+const PegasusMetabolic = (function() {
+    // 1. ΙΔΙΩΤΙΚΟ STATE (Private Cache & Counters)
+    let pendingKcal = 0;
+    let tickCount = 0;
+
+    // 2. ΕΣΩΤΕΡΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
+    const getWeight = () => {
+        // Ανάκτηση δυναμικού βάρους ή fallback στα 74kg (Profile Default)
         return parseFloat(localStorage.getItem("pegasus_weight")) || 74;
-    },
+    };
 
-    // Προσωρινή μνήμη για αποφυγή I/O Overload στον δίσκο (LocalStorage)
-    pendingKcal: 0,
-    tickCount: 0,
-
-    /**
-     * Υπολογισμός MET βάσει φορτίου (Lifted Weight)
-     */
-    getDynamicMET: function(exerciseName, weight) {
+    const getDynamicMET = (exerciseName, liftedWeight) => {
         if (exerciseName.includes("Ποδηλασία")) return 10.0;
         if (exerciseName.includes("Προθέρμανση")) return 3.0;
 
         let baseMET = 7.0; 
-        if (weight > 0) {
-            const loadRatio = weight / this.weight;
+        if (liftedWeight > 0) {
+            const loadRatio = liftedWeight / getWeight();
             baseMET += (loadRatio * 5); 
         }
         return baseMET;
-    },
+    };
 
-    /**
-     * Κύρια συνάρτηση υπολογισμού
-     */
-    updateTracking: function(durationSeconds, exerciseName) {
-        let liftedWeight = 0;
+    // 3. PUBLIC API
+    return {
+        updateTracking: function(durationSeconds, exerciseName) {
+            let liftedWeight = 0;
 
-        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 2: Ασφαλής κλήση στο window scope για αποφυγή ReferenceError
-        try {
-            if (typeof window.exercises !== 'undefined' && typeof window.currentIdx !== 'undefined') {
-                const currentExNode = window.exercises[window.currentIdx];
-                if (currentExNode) {
-                    const weightInput = currentExNode.querySelector(".weight-input");
-                    liftedWeight = weightInput ? parseFloat(weightInput.value) || 0 : 0;
-                }
+            // Safe DOM Retrieval
+            const cleanName = exerciseName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const wInput = document.querySelector(`.weight-input[data-name="${cleanName}"]`);
+            if (wInput && wInput.value) {
+                liftedWeight = parseFloat(wInput.value);
             }
-        } catch (e) {
-            console.warn("METABOLIC: UI Node not active, switching to storage backup.");
-        }
 
-        // FAIL-SAFE: Αν το UI είναι 0, τράβα από το LocalStorage
-        if (liftedWeight === 0) {
-            liftedWeight = parseFloat(localStorage.getItem(`weight_ANGELOS_${exerciseName}`)) || 0;
-        }
+            // Fallback στο LocalStorage αν το UI είναι 0
+            if (liftedWeight === 0) {
+                liftedWeight = parseFloat(localStorage.getItem(`weight_ANGELOS_${exerciseName}`)) || 
+                               parseFloat(localStorage.getItem(`weight_${exerciseName}`)) || 0;
+            }
 
-        const activeMET = this.getDynamicMET(exerciseName, liftedWeight);
-        const durationMins = durationSeconds / 60;
-        
-        const kcalPerMin = (activeMET * 3.5 * this.weight) / 200;
-        // Υψηλότερη ακρίβεια στη μνήμη για αποφυγή σφαλμάτων στρογγυλοποίησης
-        const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(4)); 
+            const activeMET = getDynamicMET(exerciseName, liftedWeight);
+            const durationMins = durationSeconds / 60;
+            
+            const kcalPerMin = (activeMET * 3.5 * getWeight()) / 200;
+            const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(4)); 
 
-        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 3: I/O Bottleneck Fix (Εγγραφή στο δίσκο κάθε 5 ticks)
-        this.pendingKcal += addedKcal;
-        this.tickCount++;
+            // Προσωρινή αποθήκευση στη μνήμη (Cache)
+            pendingKcal += addedKcal;
+            tickCount++;
 
-        let currentDiskKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-        const displayTotal = currentDiskKcal + this.pendingKcal;
+            let currentDiskKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+            const displayTotal = currentDiskKcal + pendingKcal;
 
-        // Άμεση ενημέρωση UI σε πραγματικό χρόνο
-        const kcalDisplay = document.querySelector(".kcal-value");
-        if (kcalDisplay) kcalDisplay.textContent = displayTotal.toFixed(1);
+            // Άμεση ενημέρωση UI
+            const kcalDisplay = document.querySelector(".kcal-value");
+            if (kcalDisplay) kcalDisplay.textContent = displayTotal.toFixed(1);
 
-        // Εγγραφή στο LocalStorage μόνο κάθε 5 δευτερόλεπτα (ή ticks) για δραματική μείωση του I/O Load
-        if (this.tickCount >= 5) {
-            localStorage.setItem("pegasus_today_kcal", displayTotal.toFixed(2));
-            this.pendingKcal = 0;
-            this.tickCount = 0;
-        }
-        
-        return addedKcal;
-    }
-};
+            // Εγγραφή στο δίσκο κάθε 5 ticks για εξοικονόμηση πόρων (I/O Optimization)
+            if (tickCount >= 5) {
+                localStorage.setItem("pegasus_today_kcal", displayTotal.toFixed(2));
+                pendingKcal = 0;
+                tickCount = 0;
+            }
+        },
 
-window.MetabolicEngine = MetabolicEngine;
+        getMET: getDynamicMET
+    };
+})();
+
+// Εξαγωγή στο Window Scope για διασύνδεση με το Workout Engine (app.js)
+window.MetabolicEngine = PegasusMetabolic;

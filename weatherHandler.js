@@ -1,52 +1,60 @@
 /* ==========================================================================
-   PEGASUS WEATHER LOGIC & FALLBACK SYSTEM - v8.5 (PURE DYNAMIC)
-   Protocol: Strict Analyst - No Static Data Allowed
+   PEGASUS WEATHER LOGIC & FALLBACK SYSTEM - v9.0 (MODULAR / FULLY DECOUPLED)
+   Protocol: Strict Data Analyst - Isolated Execution & Fallback Injection
    ========================================================================== */
 
-function isRaining() {
-    const rainToggle = document.getElementById('rainToggle');
-    return rainToggle ? rainToggle.checked : false;
-}
+const PegasusWeatherHandler = (function() {
+    // 1. ΙΔΙΩΤΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
+    const isRaining = () => {
+        const rainToggle = document.getElementById('rainToggle');
+        return rainToggle ? rainToggle.checked : false;
+    };
 
-/**
- * Επιστρέφει 100% Δυναμικό Πρόγραμμα και προσαρμόζεται στον καιρό.
- */
-window.getFinalProgram = function(day) {
-    const rain = isRaining();
-    
-    // 1. DATA GUARD: Απευθείας κλήση του δυναμικού υπολογιστή από το data.js
-    let dailyData = [];
-    if (typeof window.calculateDailyProgram === 'function') {
-        dailyData = window.calculateDailyProgram(day);
-    } else {
-        console.warn("PEGASUS: Dynamic engine offline. Using emergency fallback.");
-        // ΔΙΟΡΘΩΣΗ: Αλλαγή από "Recovery" σε "Κορμός" για αποφυγή ορφανών δεδομένων στο reporting
+    const generateFallbackProgram = () => {
+        console.warn("[PEGASUS WEATHER HANDLER]: Dynamic engine offline. Using emergency fallback.");
+        // Αποφυγή ορφανών δεδομένων στο reporting (Αντικατάσταση 'Recovery' με 'Κορμός')
         return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
-    }
+    };
 
-    // 2. WEATHER LOGIC: Αν βρέχει, αφαιρούμε τις εξωτερικές δραστηριότητες (Ποδηλασία)
-    if (rain) {
-        dailyData = dailyData.filter(ex => !ex.name.includes("Ποδηλασία"));
-        
-        // Αν η μέρα μείνει άδεια λόγω βροχής (π.χ. Σάββατο που είχε μόνο ποδήλατο), 
-        // εισάγουμε μια δυναμική εναλλακτική προπόνηση εσωτερικού χώρου με σωστά Muscle Groups.
-        if (dailyData.length === 0) {
-            dailyData = [
-                { name: "Pushups", sets: 4, duration: 45, muscleGroup: "Στήθος" },
-                { name: "Plank", sets: 4, duration: 45, muscleGroup: "Κορμός" },
-                { name: "Reverse Crunch", sets: 4, duration: 45, muscleGroup: "Κορμός" }
-            ];
-        }
-    }
+    const generateIndoorAlternative = () => {
+        return [
+            { name: "Pushups", sets: 4, duration: 45, muscleGroup: "Στήθος" },
+            { name: "Plank", sets: 4, duration: 45, muscleGroup: "Κορμός" },
+            { name: "Reverse Crunch", sets: 4, duration: 45, muscleGroup: "Κορμός" },
+            { name: "Lying Knee Raise", sets: 4, duration: 45, muscleGroup: "Κορμός" }
+        ];
+    };
 
-    return dailyData;
-};
-
-window.updateWeatherUI = function() {
-    const statusBox = document.getElementById('weather-status-alert');
-    if (statusBox) {
+    const buildFinalProgram = (day) => {
         const rain = isRaining();
-        statusBox.style.display = rain ? 'block' : 'none';
-        statusBox.innerHTML = rain ? "⚠️ INDOOR PROTOCOL ACTIVE" : "";
-    }
-};
+        let dailyData = [];
+
+        // 1. DATA GUARD: Ασφαλής κλήση του δυναμικού υπολογιστή
+        if (typeof window.calculateDailyProgram === 'function') {
+            dailyData = window.calculateDailyProgram(day);
+        } else {
+            return generateFallbackProgram();
+        }
+
+        // 2. WEATHER LOGIC: Αφαίρεση εξωτερικών δραστηριοτήτων (Ποδηλασία) σε περίπτωση βροχής
+        if (rain) {
+            dailyData = dailyData.filter(ex => !ex.name.includes("Ποδηλασία"));
+            
+            // Δυναμική εναλλακτική εσωτερικού χώρου αν η μέρα μείνει άδεια
+            if (dailyData.length === 0) {
+                dailyData = generateIndoorAlternative();
+            }
+        }
+
+        return dailyData;
+    };
+
+    // 2. PUBLIC API
+    return {
+        getFinalProgram: buildFinalProgram,
+        isPrecipitationActive: isRaining
+    };
+})();
+
+// Εξαγωγή στο Window Scope για διασύνδεση με τον Core Controller (app.js)
+window.getFinalProgram = PegasusWeatherHandler.getFinalProgram;

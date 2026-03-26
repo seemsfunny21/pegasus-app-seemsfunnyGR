@@ -1,108 +1,72 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V3.0 (STRICT ANALYST EDITION)
-   Protocol: Memory-First Commit, Full Nutrition & Cardio Integration
+   PEGASUS REPORTING SYSTEM - v4.0 (MODULAR / FULLY DECOUPLED)
+   Protocol: Strict Data Analyst - Isolated Memory-First Commit & EmailJS Sync
    ========================================================================== */
 
-const PegasusReporting = {
-    storageKey: "pegasus_daily_summary",
-    pendingReportKey: "pegasus_pending_report",
-    historyKey: "pegasus_weekly_history",
+const PegasusReporting = (function() {
+    // 1. ΙΔΙΩΤΙΚΕΣ ΣΤΑΘΕΡΕΣ & STATE (Private Configuration)
+    const STORAGE_KEY = "pegasus_daily_summary";
+    const PENDING_REPORT_KEY = "pegasus_pending_report";
+    const HISTORY_KEY = "pegasus_weekly_history";
 
-    /**
-     * 1. SAVE WORKOUT (Manual or Auto)
-     */
-    saveWorkout: function(kcalVal, memoryData = null) {
-        console.log("PEGASUS: Workout save/sync triggered...");
-        this.prepareAndSaveReport(kcalVal, memoryData);
-    },
-
-    /**
-     * 2. DATA COMMIT & PREPARATION
-     */
-    prepareAndSaveReport: function(kcal, sessionData = null) {
-        let dailyMax = {};
-        let weeklyHistory = JSON.parse(localStorage.getItem(this.historyKey)) || {
+    // 2. ΕΣΩΤΕΡΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
+    const prepareAndSaveReport = (kcal, sessionData = null) => {
+        let weeklyHistory = JSON.parse(localStorage.getItem(HISTORY_KEY)) || {
             "Πλάτη": 0, "Στήθος": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0, "Ώμοι": 0, "Άλλο": 0
         };
 
-        // Χρήση δεδομένων μνήμης (SessionData) για αποφυγή DOM Race Condition
-        // Fallback στο DOM αν δεν δοθούν δεδομένα μνήμης
-        const sourceData = sessionData || Array.from(document.querySelectorAll('.exercise'))
-            .map(node => ({
-                name: node.querySelector('.exercise-name').textContent.trim().replace(" ☀️", ""),
-                weight: parseFloat(node.querySelector('.weight-input').value) || 0,
-                done: parseInt(node.dataset.done || 0),
-                group: node.dataset.group
-            })).filter(ex => ex.done > 0);
+        // Memory-First Protocol: Χρήση δεδομένων μνήμης (SessionData) για αποφυγή DOM Race Condition
+        let completedText = "";
+        const sourceData = sessionData || Array.from(document.querySelectorAll('.exercise'));
 
-        if (sourceData.length > 0) {
+        if (sessionData) {
             sourceData.forEach(ex => {
-                if (!dailyMax[ex.name] || ex.weight > dailyMax[ex.name]) dailyMax[ex.name] = ex.weight;
-
-                let group = ex.group;
-                if (!group && window.exercisesDB) {
-                    const exDb = window.exercisesDB.find(db => db.name === ex.name);
-                    if (exDb) group = exDb.muscleGroup;
-                }
-                if (!group && typeof getMuscleGroup === "function") group = getMuscleGroup(ex.name);
-                if (!group) group = "Άλλο";
-
-                if (weeklyHistory[group] !== undefined) {
-                    weeklyHistory[group] += ex.done;
-                } else {
-                    weeklyHistory["Άλλο"] += (weeklyHistory["Άλλο"] || 0) + ex.done;
+                if (ex.isCompleted || (ex.adjustedSets && ex.adjustedSets > 0)) {
+                    completedText += `${ex.name}, `;
                 }
             });
-
-            localStorage.setItem(this.historyKey, JSON.stringify(weeklyHistory));
+        } else {
+            // Fallback στο DOM αν δεν δοθούν δεδομένα μνήμης
+            sourceData.forEach(ex => {
+                const nameEl = ex.querySelector('.exercise-name');
+                const weightEl = ex.querySelector('.weight-input');
+                if (nameEl && ex.classList.contains('exercise-skipped') === false) {
+                    const name = nameEl.textContent.replace("🎯", "").trim();
+                    const weight = weightEl && weightEl.value ? weightEl.value : "BW";
+                    completedText += `${name} (${weight}kg), `;
+                }
+            });
         }
 
-        // Σύνθεση Αναφοράς
-        let summary = Object.entries(dailyMax).map(([name, weight]) => `• ${name}: ${weight}kg`);
         const today = new Date();
         const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
         
-        // Ανάκτηση δεδομένων από άλλα modules (Cardio & Food)
-        const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStr) || "[]");
-        const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStr) || "null");
-        
-        // Nutrition & Recovery Logic
-        const isRecovery = (today.getDay() === 1 || today.getDay() === 4);
-        const recovery = isRecovery ? 
-            { msg: "Recovery Day Active", nutrition: "Focus on hydration & stretching" } : 
-            { msg: "Training Day", nutrition: "High protein intake required" };
-
-        const pendingData = {
-            dateSent: dateStr,
-            templateParams: {
-                name: "Άγγελος",
-                workout_date: today.toLocaleDateString('el-GR'),
-                calories: kcal || localStorage.getItem("pegasus_today_kcal") || "0.0",
-                weights_summary: summary.join("\n") || "Workout data committed.",
-                food_summary: targetFood.map(f => `• ${f.name} (${f.kcal}kcal)`).join("\n") || "No food logged",
-                cardio_activity: cardioData ? `🚲 ${cardioData.km}km (${cardioData.route})` : "No cardio",
-                total_food_kcal: targetFood.reduce((sum, f) => sum + parseFloat(f.kcal || 0), 0),
-                recovery_status: recovery.msg || "Updated",
-                nutrition_advice: recovery.nutrition || "Maintain macro balance"
-            }
+        // Κατασκευή του EmailJS Payload
+        const templateParams = {
+            date: dateStr,
+            kcal_burned: kcal || 0,
+            weight: localStorage.getItem("pegasus_weight") || 74,
+            completed_exercises: completedText || "Καμία νέα άσκηση",
+            history_stats: JSON.stringify(weeklyHistory)
         };
 
-        localStorage.setItem(this.pendingReportKey, JSON.stringify(pendingData));
-        console.log("✅ PEGASUS: Data Committed & Manual Save Complete.");
-        
-        // Σύγχρονη κλήση του CloudSync
-        if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-            window.PegasusCloud.push(true);
-        }
-    },
+        // Αποθήκευση στο Vault για επόμενη αποστολή
+        localStorage.setItem(PENDING_REPORT_KEY, JSON.stringify({
+            dateSent: "",
+            templateParams: templateParams
+        }));
+        console.log("[PEGASUS REPORTING]: Report prepared and pending for dispatch.");
+    };
 
-    /**
-     * 3. ΕΛΕΓΧΟΣ & ΑΠΟΣΤΟΛΗ (EMAILJS)
-     */
-    checkAndSendMorningReport: function(isManual = false) {
-        const rawData = localStorage.getItem(this.pendingReportKey);
+    const saveWorkout = (kcalVal, memoryData = null) => {
+        console.log("[PEGASUS REPORTING]: Workout save/sync triggered...");
+        prepareAndSaveReport(kcalVal, memoryData);
+    };
+
+    const checkAndSendMorningReport = (isManual = false) => {
+        const rawData = localStorage.getItem(PENDING_REPORT_KEY);
         if (!rawData) {
-            if(isManual) alert("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
+            if (isManual) alert("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
             return;
         }
 
@@ -115,21 +79,40 @@ const PegasusReporting = {
             if (typeof emailjs !== 'undefined') {
                 emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
                     .then(() => {
-                        console.log("✅ PEGASUS: Report Sent Successfully.");
-                        localStorage.removeItem(this.pendingReportKey);
-                        if(isManual) alert("Επιτυχία: Η αναφορά και ο συγχρονισμός ολοκληρώθηκαν!");
+                        console.log("✅ [PEGASUS REPORTING]: Report Sent Successfully.");
+                        localStorage.removeItem(PENDING_REPORT_KEY);
+                        if (isManual) alert("Επιτυχία: Η αναφορά και ο συγχρονισμός ολοκληρώθηκαν!");
                     })
                     .catch(err => {
-                        console.error("❌ PEGASUS: Email Error", err);
-                        if(isManual) alert("Σφάλμα κατά την αποστολή.");
+                        console.error("❌ [PEGASUS REPORTING]: Email Error", err);
+                        if (isManual) alert("Σφάλμα κατά την αποστολή.");
                     });
             } else {
-                console.warn("PEGASUS: EmailJS not loaded.");
+                console.warn("[PEGASUS REPORTING]: EmailJS API not loaded or blocked.");
             }
         } else {
-            console.log("PEGASUS: Report locked. Scheduled for tomorrow morning.");
+            console.log("[PEGASUS REPORTING]: Report locked. Scheduled for tomorrow morning.");
         }
-    }
-};
+    };
 
+    // 3. PUBLIC API & INITIALIZATION
+    return {
+        init: function() {
+            // Αυτόματος έλεγχος 5 δευτερόλεπτα μετά την εκκίνηση του συστήματος
+            setTimeout(() => { checkAndSendMorningReport(false); }, 5000);
+            
+            // Σύνδεση με το UI (Αν υπάρχει κουμπί χειροκίνητης αποστολής)
+            const manualBtn = document.getElementById("btnSendReport");
+            if (manualBtn) {
+                manualBtn.addEventListener("click", () => checkAndSendMorningReport(true));
+            }
+        },
+        saveWorkout: saveWorkout,
+        prepareAndSaveReport: prepareAndSaveReport,
+        checkAndSendMorningReport: checkAndSendMorningReport
+    };
+})();
+
+// Εξαγωγή στο Window Scope για διασύνδεση με το κεντρικό app.js (finishWorkout)
 window.PegasusReporting = PegasusReporting;
+window.addEventListener('DOMContentLoaded', PegasusReporting.init);

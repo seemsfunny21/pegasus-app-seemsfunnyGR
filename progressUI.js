@@ -1,21 +1,27 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.4 (STRICT RESET EDITION)
-   Protocol: Background Automation Reset Enabled
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.0 (MODULAR / FULLY DECOUPLED)
+   Protocol: Strict Data Analyst - Isolated Background Automation Reset
    ========================================================================== */
 
-window.MuscleProgressUI = {
-    init() {
-        this.checkWeeklyReset();
-        this.render();
-        
-        // Auto-refresh UI & Reset Check κάθε 3 δευτερόλεπτα
-        setInterval(() => {
-            this.checkWeeklyReset();
-            this.render();
-        }, 3000);
-    },
+const PegasusProgressUI = (function() {
+    // 1. ΙΔΙΩΤΙΚΕΣ ΛΕΙΤΟΥΡΓΙΕΣ (Private Methods)
+    const checkWeeklyReset = () => {
+        const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
+        const now = new Date();
+        const todayStr = now.toDateString(); 
 
-    calculateStats() {
+        // Έλεγχος: Αν είναι Δευτέρα (getDay === 1) και δεν έχει γίνει reset σήμερα
+        if (now.getDay() === 1 && lastResetDate !== todayStr) {
+            const emptyHistory = {
+                "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
+            };
+            localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
+            localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
+            console.log("[PEGASUS PROGRESS]: Weekly history automated reset executed.");
+        }
+    };
+
+    const calculateStats = () => {
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
                         { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
@@ -26,30 +32,28 @@ window.MuscleProgressUI = {
             const percent = Math.min(100, Math.round((done / target) * 100));
             return { name: group, done, target, percent };
         });
-    },
+    };
 
-    render() {
+    const render = () => {
         const container = document.getElementById('previewContent') || document.querySelector('.daily-program-container');
         if (!container) return;
 
-        const oldWrapper = document.getElementById('temp-progress-wrapper');
-        if (oldWrapper) oldWrapper.remove();
+        // Αφαίρεση προηγούμενου wrapper για αποφυγή διπλότυπων DOM nodes
+        const existing = document.getElementById("temp-progress-wrapper");
+        if (existing) existing.remove();
 
-        const stats = this.calculateStats();
-        
-        let htmlString = `<div id="muscle-progress-section" style="width: 100%; background: #000; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #333; box-sizing: border-box;">
-            <h3 style="color:#4CAF50; text-align:center; font-size:13px; margin-bottom:15px; text-transform:uppercase; margin-top:0;">Weekly Muscle Coverage</h3>`;
-        
+        const stats = calculateStats();
+        let htmlString = `<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:15px;">`;
+
         stats.forEach(s => {
-            const isDone = s.percent >= 100;
-            const color = isDone ? "#4CAF50" : "#ff9800";
-            const diff = s.target - s.done;
-            htmlString += `<div style="margin-bottom: 12px; width: 100%;">
-                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#eee;">
-                    <span>${s.name.toUpperCase()}</span>
-                    <span>${s.done}/${s.target} <span style="color:${color}; font-weight:bold;">(${isDone ? "DONE" : `-${diff} SETS`})</span></span>
+            let color = s.percent >= 100 ? "#4CAF50" : (s.percent > 50 ? "#FFC107" : "#F44336");
+            htmlString += `
+            <div style="background:#111; padding:10px; border-radius:5px; border:1px solid #222;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;">
+                    <span style="color:#fff;">${s.name}</span>
+                    <span style="color:${color}; font-weight:bold;">${s.done}/${s.target}</span>
                 </div>
-                <div style="width:100%; height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden; border:1px solid #222;">
+                <div style="height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden; border:1px solid #222;">
                     <div style="width:${s.percent}%; height:100%; background:${color}; transition: width 0.8s ease-in-out;"></div>
                 </div>
             </div>`;
@@ -61,29 +65,24 @@ window.MuscleProgressUI = {
         tempDiv.style.width = "100%";
         tempDiv.innerHTML = htmlString;
         container.prepend(tempDiv);
-    },
+    };
 
-    checkWeeklyReset() {
-        const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
-        const now = new Date();
-        const todayStr = now.toDateString(); // π.χ. "Mon Mar 23 2026"
-
-        // Έλεγχος: Αν είναι Δευτέρα (getDay === 1) και δεν έχει γίνει reset σήμερα
-        if (now.getDay() === 1 && lastResetDate !== todayStr) {
-            const emptyHistory = {
-                "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
-            };
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
-            localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
+    // 2. PUBLIC API
+    return {
+        init: function() {
+            checkWeeklyReset();
+            render();
             
-            console.log("PEGASUS SYSTEM: Weekly Reset Executed for " + todayStr);
-            
-            // Επιβολή άμεσης επανασχεδίασης
-            this.render();
-        }
-    }
-};
+            // Auto-refresh UI & Reset Check κάθε 3 δευτερόλεπτα
+            setInterval(() => {
+                checkWeeklyReset();
+                render();
+            }, 3000);
+        },
+        render: render // Εξάγεται για χειροκίνητη κλήση κατά το logging σετ (app.js)
+    };
+})();
 
-window.addEventListener('load', () => {
-    MuscleProgressUI.init();
-});
+// Εξαγωγή στο Window Scope για διασύνδεση με το Event System του app.js
+window.addEventListener('DOMContentLoaded', PegasusProgressUI.init);
+window.MuscleProgressUI = PegasusProgressUI;
