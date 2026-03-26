@@ -260,7 +260,7 @@ const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXr
 let isUnlocked = false;
 
 /* ==========================================================================
-   PEGASUS AI HANDLER - PROACTIVE ENGINE (v10.2 - TIME-AWARE AUDIT)
+   PEGASUS AI HANDLER - STEALTH AUTO-ENGINE (v11.0)
    ========================================================================== */
 const PegasusAI = {
     async ask(userQuery, isAutoAudit = false) {
@@ -268,34 +268,33 @@ const PegasusAI = {
         if (!apiKey) return;
 
         const responseBox = document.getElementById("aiResponse");
-        
-        // 1. Time & Data Extraction
         const now = new Date();
-        const currentHour = now.getHours(); // Λήψη ώρας (0-23)
+        const currentHour = now.getHours();
         const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
         
-        const todayLogs = PegasusStore.getFoodLog(dateStr);
         const kcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
         const prot = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
+        const todayLogs = PegasusStore.getFoodLog(dateStr);
         const foodLib = PegasusCloud.safeParse(PegasusStore.keys.library, []);
 
-        if (!isAutoAudit) {
+        // Αν είναι Auto-Audit, δεν τυπώνουμε την ερώτηση του χρήστη (Stealth Mode)
+        if (!isAutoAudit && userQuery) {
             responseBox.innerHTML += `<div style="margin-top:10px; color:#fff; border-bottom:1px solid #222; padding-bottom:5px;"><b>Εσύ:</b> ${userQuery}</div>`;
         }
         
-        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--main); font-size:11px; font-weight:bold;">PEGASUS IS ANALYZING TIME & DATA...</div>`;
+        responseBox.innerHTML += `<div id="aiLoading" style="margin-top:5px; color:var(--main); font-size:11px; font-weight:bold; letter-spacing:1px;">SCANNING DATA & TIME...</div>`;
         responseBox.scrollTop = responseBox.scrollHeight;
 
-        // 2. Ενσωμάτωση χρονικού περιορισμού στο Prompt
-        const timeContext = `Τρέχουσα ώρα: ${currentHour}:00. `;
-        const strictRules = `Αν η ώρα είναι μετά τις 20:00, πρότεινε ΜΟΝΟ ελαφριά γεύματα (π.χ. γιαούρτι, τοστ, πρωτεΐνη, σουβλάκια κοτόπουλο) και ΑΠΕΚΛΕΙΣΕ βαριά μεσημεριανά όπως μπακαλιάρο, λαδερά ή μαγειρευτά που δεν τρώγονται βράδυ. Αν είναι πρωί (06:00-11:00) πρότεινε πρωινά.`;
+        const strictRules = `Ώρα: ${currentHour}:00. Στόχος: 2800kcal/160gP. 
+        Αν είναι μετά τις 20:00, πρότεινε ΜΟΝΟ ελαφριά (γιαούρτι, τοστ, σουβλάκια κοτόπουλο, whey). 
+        Απέκλεισε βαριά γεύματα όπως κρέπες ή μπακαλιάρο αν είναι βράδυ. 
+        Αν έχει ήδη ξεπεράσει τις θερμίδες, πρότεινε μόνο μηδενικά ή πολύ ελαφριά.`;
 
-        const auditPrompt = `Είσαι ο Pegasus AI Data Analyst. ${timeContext}
-ΔΕΔΟΜΕΝΑ ΣΗΜΕΡΑ: ${kcal}/2800 kcal, ${prot}/160g Πρωτεΐνη. 
-ΓΕΥΜΑΤΑ ΠΟΥ ΕΦΑΓΕ: ${todayLogs.map(l => l.name).join(', ')}.
-ΔΙΑΘΕΣΙΜΑ ΣΤΗ ΒΙΒΛΙΟΘΗΚΗ: ${foodLib.map(f => f.name + '(' + f.kcal + 'kcal,' + f.protein + 'gP)').join('|')}.
-
-ΕΝΤΟΛΗ: ${isAutoAudit ? "Κάνε ΑΥΤΟΜΑΤΗ ΔΙΑΓΝΩΣΗ. " + strictRules + " Πρότεινε γεύματα από τη Βιβλιοθήκη που ταιριάζουν στην ΩΡΑ και καλύπτουν τα κενά σου. Μίλα σύντομα στον ενικό." : userQuery}`;
+        const auditPrompt = `Είσαι ο Pegasus AI. 
+        Data: ${kcal}/2800 kcal, ${prot}/160g P. 
+        Εφαγε: ${todayLogs.map(l => l.name).join(', ')}.
+        Library: ${foodLib.map(f => f.name + '(' + f.kcal + 'kcal,' + f.protein + 'gP)').join('|')}.
+        ${isAutoAudit ? "Κάνε ΑΥΤΟΜΑΤΗ ΔΙΑΓΝΩΣΗ. " + strictRules : userQuery}`;
 
         try {
             const modelsRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
@@ -305,18 +304,16 @@ const PegasusAI = {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: auditPrompt }] }]
-                })
+                body: JSON.stringify({ contents: [{ parts: [{ text: auditPrompt }] }] })
             });
 
             const data = await res.json();
             document.getElementById("aiLoading")?.remove();
 
             const aiText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-            const prefix = isAutoAudit ? `<b style="color:var(--main); font-weight:900;">[AUTO-AUDIT @ ${currentHour}:00]</b><br>` : `<b style="color:var(--main);">PEGASUS OS:</b> `;
+            const prefix = isAutoAudit ? `<b style="color:var(--main); font-size:10px;">[STRATEGIC ANALYSIS @ ${currentHour}:00]</b><br>` : `<b style="color:var(--main);">PEGASUS:</b> `;
             
-            responseBox.innerHTML += `<div style="margin-top:5px; color:#fff; background:rgba(0,255,65,0.06); padding:10px; border-radius:12px; border:1px solid rgba(0,255,65,0.15);">${prefix}${aiText}</div>`;
+            responseBox.innerHTML += `<div style="margin-top:5px; color:#fff; background:rgba(0,255,65,0.06); padding:12px; border-radius:12px; border:1px solid rgba(0,255,65,0.15); line-height:1.4;">${prefix}${aiText}</div>`;
             responseBox.scrollTop = responseBox.scrollHeight;
 
         } catch (error) {
@@ -325,6 +322,24 @@ const PegasusAI = {
         }
     }
 };
+
+// ΑΝΑΒΑΘΜΙΣΜΕΝΗ openView ΓΙΑ ΑΥΤΟΜΑΤΗ ΕΚΚΙΝΗΣΗ
+function openView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const t = document.getElementById(id);
+    if(t) t.classList.add('active');
+    
+    if(id==='supps') updateSuppUI();
+    if(id==='preview') updateMuscleUI();
+    if(id==='library') renderLibrary();
+    
+    if(id==='gemini_panel') {
+        const responseBox = document.getElementById("aiResponse");
+        responseBox.innerHTML = ""; // Καθαρισμός για φρέσκια ανάλυση
+        // Εκκίνηση αυτόματης ερώτησης
+        PegasusAI.ask("", true); 
+    }
+}
 
 
     
