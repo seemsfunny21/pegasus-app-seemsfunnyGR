@@ -2,35 +2,155 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PEGASUS OS v17.0 | TACTICAL REPLICA</title>
     
     <link rel="stylesheet" href="style.css">
+    
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript"> (function(){ emailjs.init("user_XpY7D9q8zL2mN1"); })(); </script>
 
     <style>
-        /* ΕΠΑΝΑΦΟΡΑ LEGACY LAYOUT */
-        body { background: #000; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        /* FULL LEGACY UI SPECIFICATIONS */
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #000; 
+            color: #eee; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow: hidden; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+        }
         
-        .top-nav { display: flex; background: #000; border-bottom: 2px solid #1a1a1a; }
-        .top-nav button { flex: 1; padding: 15px; background: #000; color: #fff; border: 1px solid #111; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 12px; }
-        .top-nav button.active { background: #4CAF50; color: #000; }
+        /* Top Day Navigation */
+        .top-nav { 
+            display: flex; 
+            background: #000; 
+            border-bottom: 2px solid #1a1a1a; 
+            z-index: 100;
+        }
+        .top-nav button { 
+            flex: 1; 
+            padding: 15px; 
+            background: #000; 
+            color: #fff; 
+            border: 1px solid #111; 
+            font-weight: 900; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            font-size: 11px; 
+            letter-spacing: 1px;
+        }
+        .top-nav button.active { 
+            background: #4CAF50; 
+            color: #000; 
+        }
 
-        .tools-bar { display: flex; gap: 5px; padding: 10px; background: #050505; flex-wrap: wrap; border-bottom: 1px solid #111; }
-        .tools-bar button, .tools-bar .status-item { background: #0a0a0a; border: 1px solid #4CAF50; color: #4CAF50; padding: 5px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .tools-bar button:hover { background: #4CAF50; color: #000; }
-
-        .main-container { display: flex; flex: 1; overflow: hidden; }
+        /* Tools Bar (Under Day Selector) */
+        .tools-bar { 
+            display: flex; 
+            gap: 5px; 
+            padding: 8px 10px; 
+            background: #050505; 
+            border-bottom: 1px solid #111; 
+            align-items: center;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .tools-bar button, .tools-bar .status-item { 
+            background: #0a0a0a; 
+            border: 1px solid #1a1a1a; 
+            color: #4CAF50; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            font-size: 10px; 
+            font-weight: bold;
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            text-transform: uppercase;
+        }
+        .tools-bar button:hover { background: #111; border-color: #4CAF50; }
         
-        #exList { width: 300px; background: #000; border-right: 1px solid #111; padding: 10px; overflow-y: auto; }
-        .exercise { background: #050505; border: 1px solid #111; margin-bottom: 8px; padding: 10px; border-radius: 4px; position: relative; }
-        .exercise.active { border-color: #4CAF50; box-shadow: 0 0 10px rgba(76,175,80,0.2); }
+        #clock { 
+            background: #111; 
+            color: #fff; 
+            padding: 6px 15px; 
+            border-radius: 4px; 
+            font-weight: 900; 
+            font-family: monospace;
+            border: 1px solid #333;
+        }
 
-        .video-display { flex: 1; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
-        #mainMedia { max-width: 100%; max-height: 100%; object-fit: contain; }
+        /* Main Workspace Layout */
+        .main-container { 
+            display: flex; 
+            flex: 1; 
+            overflow: hidden; 
+            position: relative;
+        }
+        
+        /* Left Exercise Column */
+        #exList { 
+            width: 320px; 
+            background: #000; 
+            border-right: 1px solid #111; 
+            padding: 15px; 
+            overflow-y: auto; 
+        }
 
-        .bottom-status { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 15px; font-size: 10px; color: #666; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 20px; }
+        /* Center Media Display */
+        .video-display { 
+            flex: 1; 
+            background: #000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative; 
+            border-right: 1px solid #111;
+        }
+        #mainMedia { 
+            max-width: 95%; 
+            max-height: 95%; 
+            object-fit: contain; 
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* Status & Timer Overlays */
+        #phaseTimer { 
+            position: absolute; 
+            top: 25px; 
+            right: 25px; 
+            font-size: 48px; 
+            font-weight: 900; 
+            color: #4CAF50; 
+            text-shadow: 0 0 20px rgba(0,0,0,0.8); 
+            font-family: monospace;
+        }
+
+        .bottom-left-status { 
+            position: absolute; 
+            bottom: 15px; 
+            left: 15px; 
+            display: flex; 
+            gap: 20px; 
+            font-size: 11px; 
+            color: #4CAF50; 
+            background: rgba(0,0,0,0.8); 
+            padding: 8px 15px; 
+            border-radius: 20px; 
+            border: 1px solid #1a1a1a;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -39,7 +159,7 @@
         </nav>
 
     <div class="tools-bar">
-        <div style="background:#111; color:#fff; padding:5px 15px; border-radius:4px; font-weight:900;" id="clock">15:20</div>
+        <div id="clock">00:00</div>
         <button onclick="window.startWarmup()">Προθέρμανση</button>
         <button id="btnStart">Έναρξη</button>
         <button id="btnNext">Επόμενο</button>
@@ -50,31 +170,37 @@
         <button onclick="document.getElementById('settingsPanel').style.display='block'">Ρυθμίσεις</button>
         <button onclick="window.PegasusReporting.checkAndSendMorningReport(true)">EMAIL</button>
         
-        <div class="status-item" id="weatherDisplay">☁️ 6°C Προπονήσεις: 46</div>
-        <div class="status-item" style="border-color:#ff9800; color:#ff9800;">🔥 <span class="kcal-value">0.0</span>kcal</div>
+        <div class="status-item" id="weatherDisplay">☁️ --°C Loading...</div>
+        <div class="status-item" style="border-color:#ff9800; color:#ff9800;">🔥 <span class="kcal-value">0.0</span> kcal</div>
         <button onclick="document.getElementById('toolsPanel').style.display='block'">⚙️ ΕΡΓΑΛΕΙΑ</button>
     </div>
 
     <div class="main-container">
-        <div id="exList"></div>
+        <div id="exList">
+            </div>
 
         <div class="video-display">
-            <img id="mainMedia" src="images/poster.jpg" alt="Pegasus Engine">
-            <div id="phaseTimer" style="position:absolute; top:20px; right:20px; font-size:40px; font-weight:900; color:#4CAF50; text-shadow:0 0 10px #000;">00:00</div>
+            <img id="mainMedia" src="images/poster.jpg" alt="Pegasus Core Engine">
+            <div id="phaseTimer">00:00</div>
+            
+            <div class="bottom-left-status">
+                <span><input type="checkbox" checked id="weatherGood"> Καλός Καιρός</span>
+                <span><input type="checkbox" id="weatherRain"> ☔ Βροχή</span>
+            </div>
         </div>
     </div>
 
-    <div class="bottom-status">
-        <span>☀️ Καλός Καιρός <input type="checkbox" checked></span>
-        <span>☔ Βροχή <input type="checkbox"></span>
+    <div id="foodPanel" class="pegasus-panel" style="width:450px; height:600px; top:10%; left:10%;">
+        <div class="panel-header"><span>🍱 NUTRITION HUB</span><button onclick="this.closest('.pegasus-panel').style.display='none'">✕</button></div>
+        <div id="foodLogContainer" style="padding:15px; height:calc(100% - 60px); overflow-y:auto;"></div>
     </div>
 
-    <div id="foodPanel" class="pegasus-panel" style="width:400px; height:500px; top:100px; left:100px;">
-        <div class="panel-header"><span>ΔΙΑΤΡΟΦΗ</span><button onclick="this.closest('.pegasus-panel').style.display='none'">✕</button></div>
-        <div id="foodLogContainer" style="padding:15px;"></div>
+    <div id="calendarPanel" class="pegasus-panel" style="width:90%; max-width:800px; top:5%; left:5%;">
+        <div class="panel-header"><span>📅 WORKOUT CALENDAR</span><button onclick="this.closest('.pegasus-panel').style.display='none'">✕</button></div>
+        <div id="calendarContent" style="padding:20px;"></div>
     </div>
 
-<script src="data.js"></script>
+    <script src="data.js"></script>
     <script src="debug.js"></script>
     <script src="backup.js"></script>
 
@@ -105,7 +231,7 @@
     <script src="app.js"></script>
 
     <script>
-        // Clock Update (Legacy UI Requirement)
+        /* BOOT INITIALIZATION */
         function updateClock() {
             const now = new Date();
             const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
@@ -116,10 +242,10 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // PWA Service Worker Registration
+        // PWA Registration
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log("✅ PEGASUS: Service Worker Active."));
+                .then(() => console.log("✅ PEGASUS: Service Worker Operational."));
         }
     </script>
 </body>
