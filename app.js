@@ -531,10 +531,6 @@ function finishWorkout() {
 
 
 
-/* ==========================================================================
-   PEGASUS UI INITIALIZATION - v17.0 (UNIFIED EVENT BRIDGE)
-   Protocol: Strict Modular Sync & Centralized Listener System
-   ========================================================================== */
 window.onload = () => {
     // 1. Email & Reporting Initialization
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
@@ -552,20 +548,15 @@ window.onload = () => {
 
     // 2. MASTER UI MAPPING (Centralized Control)
     const masterUI = {
-        // Core Logic Buttons
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-        "btnWarmup": () => { phase = 0; currentIdx = 0; showVideo(null); },
-        
-        // Tactical Overlays (Panels)
+        "btnWarmup": () => { phase = 0; currentIdx = 0; if(typeof showVideo === 'function') showVideo(null); },
         "btnCalendarUI": { id: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { id: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { id: "settingsPanel" },
         "btnFoodUI": { id: "foodPanel", init: window.renderFood },
         "btnToolsUI": { id: "toolsPanel" },
         "btnPreviewUI": { id: "previewPanel", init: openExercisePreview },
-        "btnCardioUI": { id: "cardioPanel" },
-        "btnGalleryUI": { id: "galleryPanel", init: window.renderGallery },
         "btnEMSUI": { id: "emsModal" }
     };
 
@@ -576,61 +567,87 @@ window.onload = () => {
 
         btn.onclick = (e) => {
             e.stopPropagation();
-            
-            // Πρωτόκολλο Καθαρισμού: Κλείνει ΟΛΑ τα ανοιχτά overlays
             const allOverlays = document.querySelectorAll('.pegasus-panel, #emsModal, #cardioPanel, #toolsPanel, #previewPanel');
             allOverlays.forEach(p => p.style.display = "none");
 
             const target = masterUI[btnId];
-
             if (typeof target === 'function') {
-                target(); // Εκτέλεση Logic (Start, Next, Warmup)
+                target();
             } else {
-                // Χειρισμός Panels
                 const panel = document.getElementById(target.id);
                 if (panel) {
                     panel.style.display = "block";
-                    if (target.init) target.init(); // Εκτέλεση initialization αν υπάρχει
+                    if (target.init) target.init();
                 }
             }
             console.log(`PEGASUS OS: ${btnId} Protocol Executed.`);
         };
     });
 
-    // 4. Global Event Listeners & Hardware Utils
+    /* ===== 4. INTERNAL PANEL CONNECTORS (The Fix for Settings/Save Buttons) ===== */
+    
+    // SAVE SETTINGS LOGIC
+    const btnSaveSettings = document.getElementById("btnSaveSettings");
+    if (btnSaveSettings) {
+        btnSaveSettings.onclick = () => {
+            const weight = document.getElementById("userWeightInput").value;
+            const exTime = document.getElementById("exerciseTimeInput") ? document.getElementById("exerciseTimeInput").value : 45;
+            const restTime = document.getElementById("restTimeInput") ? document.getElementById("restTimeInput").value : 60;
+            
+            localStorage.setItem("pegasus_weight", weight);
+            localStorage.setItem("pegasus_ex_time", exTime);
+            localStorage.setItem("pegasus_rest_time", restTime);
+            
+            // Sync with workout engine
+            workoutPhases[1].d = parseInt(exTime);
+            workoutPhases[2].d = parseInt(restTime);
+            
+            alert("PEGASUS OS: Οι ρυθμίσεις αποθηκεύτηκαν επιτυχώς.");
+            document.getElementById("settingsPanel").style.display = "none";
+            if(window.calculateTotalTime) window.calculateTotalTime();
+        };
+    }
+
+    // VAULT / PIN MODAL CONNECTORS
+    if (document.getElementById("btnVaultUnlock")) {
+        document.getElementById("btnVaultUnlock").onclick = () => { if(window.attemptVaultUnlock) window.attemptVaultUnlock(); };
+    }
+    if (document.getElementById("btnVaultSkip")) {
+        document.getElementById("btnVaultSkip").onclick = () => { document.getElementById("pinModal").style.display = "none"; };
+    }
+
+    // EMS / CARDIO SAVE CONNECTORS
+    if (document.getElementById("btnSaveEMS")) {
+        document.getElementById("btnSaveEMS").onclick = () => { if(window.saveEMSFinal) window.saveEMSFinal(); };
+    }
+    if (document.getElementById("btnCloseEMS")) {
+        document.getElementById("btnCloseEMS").onclick = () => { document.getElementById("emsModal").style.display = "none"; };
+    }
+    if (document.getElementById("btnClosePreview")) {
+        document.getElementById("btnClosePreview").onclick = () => { document.getElementById("previewPanel").style.display = "none"; };
+    }
+
+    // 5. Global Hardware Utils
     const mainVideo = document.getElementById("video");
     if (mainVideo) mainVideo.oncontextmenu = (e) => e.preventDefault();
 
     const btnMuteTools = document.getElementById("btnMuteTools");
     if (btnMuteTools) { 
-        btnMuteTools.onclick = function() { 
-            muted = !muted; 
-            this.innerHTML = muted ? "Ήχος: OFF" : "Ήχος: ON"; 
-        }; 
+        btnMuteTools.onclick = function() { muted = !muted; this.innerHTML = muted ? "Ήχος: OFF" : "Ήχος: ON"; }; 
     }
 
     const btnTurboTools = document.getElementById("btnTurboTools");
     if (btnTurboTools) { 
         btnTurboTools.onclick = function() { 
-            TURBO_MODE = !TURBO_MODE; 
-            SPEED = TURBO_MODE ? 10 : 1; 
+            TURBO_MODE = !TURBO_MODE; SPEED = TURBO_MODE ? 10 : 1; 
             this.innerHTML = TURBO_MODE ? "Turbo: ON" : "Turbo: OFF"; 
             if (running) runPhase(); 
         }; 
     }
 
-    const weightInp = document.getElementById("userWeightInput");
-    if (weightInp) {
-        weightInp.value = userWeight;
-        weightInp.onchange = (e) => { 
-            userWeight = parseFloat(e.target.value) || 74; 
-            localStorage.setItem("pegasus_weight", userWeight); 
-        };
-    }
-
     if (typeof fetchWeather === "function") fetchWeather();
     
-    // Auto-select Today Logic
+    // Auto-select Today
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = greekDays[new Date().getDay()];
     setTimeout(() => { 
@@ -638,17 +655,14 @@ window.onload = () => {
             if (b.textContent === todayName) selectDay(b, todayName); 
         }); 
     }, 300);
-   /* ===== WEATHER TOGGLE MONITOR ===== */
-const rainToggle = document.getElementById("rainToggle");
-if (rainToggle) {
-    rainToggle.addEventListener('change', () => {
-        const activeBtn = document.querySelector('.navbar button.active');
-        if (activeBtn) {
-            selectDay(activeBtn, activeBtn.textContent);
-            console.log("PEGASUS WEATHER: Day re-calculated for rainy/sunny conditions.");
-        }
-    });
-}
+
+    const rainToggle = document.getElementById("rainToggle");
+    if (rainToggle) {
+        rainToggle.addEventListener('change', () => {
+            const activeBtn = document.querySelector('.navbar button.active');
+            if (activeBtn) selectDay(activeBtn, activeBtn.textContent);
+        });
+    }
 };
 
 /* === PEGASUS PREVIEW ENGINE (OPTIMIZER INTEGRATED) === */
