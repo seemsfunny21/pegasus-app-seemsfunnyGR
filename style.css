@@ -490,15 +490,17 @@ bottom: 0px;
 input:checked + .slider { background-color: #ff4b2b; }
 input:checked + .slider:before { transform: translateX(26px); }
 
-/* ================= PREVIEW PANEL - UNIFIED STYLE ================= */
+/* ================= PREVIEW PANEL - RESTORE GRID LAYOUT (v13.9) ================= */
 #previewPanel {
-    transform: none; /* Απενεργοποίηση του default κεντραρίσματος */
+    transform: none;
     position: fixed;
     left: auto;
     right: 20px;
     top: 150px;
-    width: 380px; /* Ελαφρώς πιο φαρδύ για καλύτερο alignment */
-    min-width: 300px;
+    width: 550px; /* Αυξάνουμε το πλάτος για να χωράνε 2-3 ασκήσεις ανά σειρά */
+    min-width: 320px;
+    background: #0f0f0f;
+    z-index: 10001;
 }
 
 #previewPanel .panel-header {
@@ -506,5 +508,26 @@ input:checked + .slider:before { transform: translateX(26px); }
     padding: 10px;
     border-radius: 8px 8px 0 0;
     border-bottom: 1px solid #4CAF50;
-    margin: -25px -25px 15px -25px; /* offset για το padding του panel */
+    margin: -25px -25px 15px -25px;
+}
+
+/* Επαναφορά της οριζόντιας διάταξης */
+#previewContent {
+    display: flex !important;
+    flex-direction: row !important; /* Οριζόντια κατεύθυνση */
+    flex-wrap: wrap !important;     /* Σπάσιμο γραμμής όταν γεμίσει το πλάτος */
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.preview-item {
+    flex: 0 1 160px; /* Επιτρέπει στα items να έχουν βάση 160px και να μπαίνουν δίπλα-δίπλα */
+    text-align: center;
+    background: rgba(255,255,255,0.02);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #222;
 }
