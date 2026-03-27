@@ -684,10 +684,7 @@ window.onload = () => {
     }, 300);
 };
 
-/* ==========================================================================
-   UI & PREVIEW LOGIC - CLEAN GRID EDITION (v14.1)
-   Protocol: CSS Sovereignty - Removing Inline Style Overrides
-   ========================================================================== */
+/* === PEGASUS PREVIEW ENGINE v16.2 (CLEAN MINIMAL EDITION) === */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -699,7 +696,6 @@ function openExercisePreview() {
     
     if (!panel || !content) return;
 
-    // Προσθήκη δυναμικού μετρητή ασκήσεων στον τίτλο
     const exerciseCount = dayExercises ? dayExercises.length : 0;
     document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()} [${exerciseCount} ΑΣΚΗΣΕΙΣ]`;
     
@@ -710,9 +706,8 @@ function openExercisePreview() {
         window.MuscleProgressUI.render();
     }
 
-    /* === PEGASUS PREVIEW ENGINE v16.0 (WITH STEP BADGES) === */
     if(dayExercises) {
-        dayExercises.forEach((ex, index) => {
+        dayExercises.forEach((ex) => {
             const cleanName = ex.name.trim();
             let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
                           ? videoMap[cleanName] 
@@ -721,12 +716,9 @@ function openExercisePreview() {
             let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
             let imgFileName = videoId + extension;
 
+            // ΚΑΘΑΡΟ HTML ΧΩΡΙΣ BADGES
             content.innerHTML += `
                 <div class="preview-item">
-                    <div style="position: absolute; top: 12px; left: 12px; background: #4CAF50; color: #000; font-weight: 900; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 0 8px rgba(0,0,0,0.8); border: 1px solid #000;">
-                        ${index + 1}
-                    </div>
-                    
                     <img src="images/${imgFileName}" 
                          onerror="this.src='images/placeholder.jpg'">
                     <p>${cleanName}</p>
@@ -734,21 +726,7 @@ function openExercisePreview() {
             `;
         });
     }
-} // <--- ΑΥΤΗ Η ΑΓΚΥΛΗ ΕΛΕΙΠΕ ΚΑΙ ΠΡΟΚΑΛΟΥΣΕ ΤΟ CRASH
-
-/* === DATA & TRACKING LOGIC === */
-window.logPegasusSet = function(exName) {
-    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-    if (!window.exercisesDB) return;
-    const exercise = window.exercisesDB.find(ex => ex.name.trim() === exName.trim());
-    if (exercise && exercise.muscleGroup) {
-        const value = (exercise.name.includes("Ποδηλασία")) ? 18 : 1;
-        history[exercise.muscleGroup] = (history[exercise.muscleGroup] || 0) + value;
-        localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
-        if (window.MuscleProgressUI) window.MuscleProgressUI.render();
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
-    }
-};
+}
 
 window.updateTotalWorkoutCount = function() {
     const data = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
