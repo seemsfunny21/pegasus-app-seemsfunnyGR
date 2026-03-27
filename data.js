@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.6 (FINAL CLEAN BUILD)
-   Protocol: Strict Data Analyst - Emoji-Free Strings & Weather Logic
+   PEGASUS DATA ENGINE - v8.8 (FINAL CLEAN BUILD)
+   Protocol: Strict Data Analyst - Indoor Weekend Pivot & Emoji-Free
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
@@ -40,11 +40,10 @@ window.PegasusStore = {
 };
 
 /**
- * 2. MASTER EXERCISE DATABASE
+ * 2. MASTER EXERCISE DATABASE (v8.8 Filtered)
  */
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
-    { name: "Chest Flys", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Lat Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 },
     { name: "Close Grip Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
@@ -71,15 +70,13 @@ const STRENGTH_EXERCISES = [
 window.exercisesDB = STRENGTH_EXERCISES;
 
 /**
- * 3. DYNAMIC PROGRAM GENERATOR (v8.6 - RAIN AWARE)
+ * 3. DYNAMIC PROGRAM GENERATOR (v8.8 - WEEKEND PIVOT)
  */
 window.calculateDailyProgram = function(dayName, isRainy = false) {
-    // A. Recovery Days
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
         return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
     }
     
-    // B. EMS Specialized Training
     if (dayName === "Τετάρτη") {
         return [
             { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
@@ -91,24 +88,28 @@ window.calculateDailyProgram = function(dayName, isRainy = false) {
 
     let currentMins = 0;
     const program = [];
+    const MAX_MINS = (dayName === "Κυριακή") ? 40 : 60;
 
-    // C. FOCUS ALLOCATION: Αν βρέχει το Σ/Κ, ενεργοποιούμε Full Gym Program (Κορμός/Πόδια)
-    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
-                        (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : 
-                        (dayName === "Σάββατο" || dayName === "Κυριακή") ? ["Κορμός", "Πόδια"] : ["Κορμός"];
+    // DYNAMIC FOCUS SELECTION
+    let focusGroups = [];
+    if (dayName === "Τρίτη") focusGroups = ["Στήθος", "Ώμοι", "Πλάτη"];
+    else if (dayName === "Παρασκευή") focusGroups = ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
+    else if (dayName === "Σάββατο") focusGroups = isRainy ? ["Πόδια", "Κορμός"] : ["Κορμός"];
+    else if (dayName === "Κυριακή") focusGroups = ["Στήθος", "Ώμοι", "Πλάτη"];
+    else focusGroups = ["Κορμός"];
     
     focusGroups.forEach(group => {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
         groupEx.forEach(ex => {
-            if (currentMins + 7 <= 60) {
+            if (currentMins + 7 <= MAX_MINS) {
                 program.push({ ...ex, sets: 4, duration: 45 });
                 currentMins += 7;
             }
         });
     });
 
-    // D. WEATHER GUARD: Η Ποδηλασία προστίθεται ΜΟΝΟ αν ΔΕΝ βρέχει
-    if ((dayName === "Σάββατο" || dayName === "Κυριακή") && !isRainy) {
+    // Ποδηλασία μόνο αν έχει ήλιο και δεν είναι Κυριακή
+    if ((dayName === "Σάββατο" || dayName === "Κυριακή") && !isRainy && dayName !== "Κυριακή") {
         program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
     }
 
@@ -128,11 +129,9 @@ window.program = {
 
 /**
  * 4. VIDEO MAPPING SYSTEM
- * Clean keys for sanitized matching in app.js
  */
 window.videoMap = {
     "Seated Chest Press": "chestpress",
-    "Chest Flys": "chestflys",
     "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns",
     "Close Grip Pulldown": "latpulldownsclose",
