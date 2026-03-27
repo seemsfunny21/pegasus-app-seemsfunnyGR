@@ -42,7 +42,6 @@ window.PegasusOptimizer = {
                     const spilloverEx = this.calculateExercise(sEx, sessionTracker, currentTargets);
                     if (spilloverEx.adjustedSets > 0) {
                         spilloverEx.isSpillover = true;
-                        spilloverEx.name = `${spilloverEx.name} ☀️`;
                         mappedData.push(spilloverEx);
                         currentMinutes += (spilloverEx.adjustedSets * 2);
                     }
