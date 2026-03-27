@@ -3,250 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PEGASUS OS v17.0 | TACTICAL REPLICA</title>
+    <title>PEGASUS OS v17.0 | TRUE LEGACY</title>
     
     <link rel="stylesheet" href="style.css">
-    
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript"> (function(){ emailjs.init("user_XpY7D9q8zL2mN1"); })(); </script>
-
-    <style>
-        /* FULL LEGACY UI SPECIFICATIONS */
-        body { 
-            margin: 0; 
-            padding: 0; 
-            background: #000; 
-            color: #eee; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            overflow: hidden; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-        }
-        
-        /* Top Day Navigation */
-        .top-nav { 
-            display: flex; 
-            background: #000; 
-            border-bottom: 2px solid #1a1a1a; 
-            z-index: 100;
-        }
-        .top-nav button { 
-            flex: 1; 
-            padding: 15px; 
-            background: #000; 
-            color: #fff; 
-            border: 1px solid #111; 
-            font-weight: 900; 
-            cursor: pointer; 
-            text-transform: uppercase; 
-            font-size: 11px; 
-            letter-spacing: 1px;
-        }
-        .top-nav button.active { 
-            background: #4CAF50; 
-            color: #000; 
-        }
-
-        /* Tools Bar (Under Day Selector) */
-        .tools-bar { 
-            display: flex; 
-            gap: 5px; 
-            padding: 8px 10px; 
-            background: #050505; 
-            border-bottom: 1px solid #111; 
-            align-items: center;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        .tools-bar button, .tools-bar .status-item { 
-            background: #0a0a0a; 
-            border: 1px solid #1a1a1a; 
-            color: #4CAF50; 
-            padding: 6px 12px; 
-            border-radius: 4px; 
-            font-size: 10px; 
-            font-weight: bold;
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            text-transform: uppercase;
-        }
-        .tools-bar button:hover { background: #111; border-color: #4CAF50; }
-        
-        #clock { 
-            background: #111; 
-            color: #fff; 
-            padding: 6px 15px; 
-            border-radius: 4px; 
-            font-weight: 900; 
-            font-family: monospace;
-            border: 1px solid #333;
-        }
-
-        /* Main Workspace Layout */
-        .main-container { 
-            display: flex; 
-            flex: 1; 
-            overflow: hidden; 
-            position: relative;
-        }
-        
-        /* Left Exercise Column */
-        #exList { 
-            width: 320px; 
-            background: #000; 
-            border-right: 1px solid #111; 
-            padding: 15px; 
-            overflow-y: auto; 
-        }
-
-        /* Center Media Display */
-        .video-display { 
-            flex: 1; 
-            background: #000; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative; 
-            border-right: 1px solid #111;
-        }
-        #mainMedia { 
-            max-width: 95%; 
-            max-height: 95%; 
-            object-fit: contain; 
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        }
-
-        /* Status & Timer Overlays */
-        #phaseTimer { 
-            position: absolute; 
-            top: 25px; 
-            right: 25px; 
-            font-size: 48px; 
-            font-weight: 900; 
-            color: #4CAF50; 
-            text-shadow: 0 0 20px rgba(0,0,0,0.8); 
-            font-family: monospace;
-        }
-
-        .bottom-left-status { 
-            position: absolute; 
-            bottom: 15px; 
-            left: 15px; 
-            display: flex; 
-            gap: 20px; 
-            font-size: 11px; 
-            color: #4CAF50; 
-            background: rgba(0,0,0,0.8); 
-            padding: 8px 15px; 
-            border-radius: 20px; 
-            border: 1px solid #1a1a1a;
-            backdrop-filter: blur(5px);
-        }
-
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
-    </style>
 </head>
 <body>
 
-    <nav class="top-nav" id="navbar">
+    <nav class="day-nav" id="navbar">
         </nav>
 
-    <div class="tools-bar">
-        <div id="clock">00:00</div>
-        <button onclick="window.startWarmup()">Προθέρμανση</button>
-        <button id="btnStart">Έναρξη</button>
-        <button id="btnNext">Επόμενο</button>
-        <button onclick="document.getElementById('calendarPanel').style.display='block'">Ημερολόγιο</button>
-        <button onclick="document.getElementById('achievementsPanel').style.display='block'">Επιτεύγματα</button>
-        <button onclick="document.getElementById('foodPanel').style.display='block'">Διατροφή</button>
-        <button onclick="document.getElementById('previewPanel').style.display='block'">Προεπισκόπηση</button>
-        <button onclick="document.getElementById('settingsPanel').style.display='block'">Ρυθμίσεις</button>
-        <button onclick="window.PegasusReporting.checkAndSendMorningReport(true)">EMAIL</button>
-        
-        <div class="status-item" id="weatherDisplay">☁️ --°C Loading...</div>
-        <div class="status-item" style="border-color:#ff9800; color:#ff9800;">🔥 <span class="kcal-value">0.0</span> kcal</div>
-        <button onclick="document.getElementById('toolsPanel').style.display='block'">⚙️ ΕΡΓΑΛΕΙΑ</button>
-    </div>
-
-    <div class="main-container">
-        <div id="exList">
-            </div>
-
-        <div class="video-display">
-            <img id="mainMedia" src="images/poster.jpg" alt="Pegasus Core Engine">
-            <div id="phaseTimer">00:00</div>
-            
-            <div class="bottom-left-status">
-                <span><input type="checkbox" checked id="weatherGood"> Καλός Καιρός</span>
-                <span><input type="checkbox" id="weatherRain"> ☔ Βροχή</span>
-            </div>
+    <div class="sub-nav">
+        <div class="tool-group">
+            <div id="clock">15:20</div>
+            <button class="t-btn" onclick="window.startWarmup()">Προθέρμανση</button>
+            <button class="t-btn" id="btnStart">Έναρξη</button>
+            <button class="t-btn" id="btnNext">Επόμενο</button>
+            <button class="t-btn" onclick="document.getElementById('calendarPanel').style.display='block'">Ημερολόγιο</button>
+            <button class="t-btn">Επιτεύγματα</button>
+            <button class="t-btn" onclick="document.getElementById('foodPanel').style.display='block'">Διατροφή</button>
+            <button class="t-btn">ΠΡΟΕΠΙΣΚΟΠΗΣΗ</button>
+            <button class="t-btn" onclick="document.getElementById('settingsPanel').style.display='block'">Ρυθμίσεις</button>
+            <button class="t-btn" onclick="window.PegasusReporting.checkAndSendMorningReport(true)">EMAIL</button>
+        </div>
+        <div class="status-group">
+            <div class="s-item"><span id="weatherIcon">☁️</span> <span id="tempVal">6°C</span> Προπονήσεις: 46</div>
+            <div class="s-item" style="color:#ff9800; border-color:#ff9800;">🔥 <span class="kcal-value">0.0</span>kcal</div>
+            <button class="t-btn" style="border-color:#666;">⚙️ ΕΡΓΑΛΕΙΑ</button>
         </div>
     </div>
 
-    <div id="foodPanel" class="pegasus-panel" style="width:450px; height:600px; top:10%; left:10%;">
-        <div class="panel-header"><span>🍱 NUTRITION HUB</span><button onclick="this.closest('.pegasus-panel').style.display='none'">✕</button></div>
-        <div id="foodLogContainer" style="padding:15px; height:calc(100% - 60px); overflow-y:auto;"></div>
-    </div>
+    <div class="workspace">
+        <aside id="exList">
+            </aside>
 
-    <div id="calendarPanel" class="pegasus-panel" style="width:90%; max-width:800px; top:5%; left:5%;">
-        <div class="panel-header"><span>📅 WORKOUT CALENDAR</span><button onclick="this.closest('.pegasus-panel').style.display='none'">✕</button></div>
-        <div id="calendarContent" style="padding:20px;"></div>
+        <main class="media-engine">
+            <div id="mediaContainer">
+                <img id="mainMedia" src="images/poster.jpg">
+                <div id="exerciseOverlay">LAT PULLDOWNS</div>
+                <div id="phaseTimer">00:00</div>
+            </div>
+            
+            <div class="weather-switches">
+                <label>☀️ Καλός Καιρός <input type="checkbox" checked></label>
+                <label>☔ Βροχή <input type="checkbox"></label>
+            </div>
+        </main>
     </div>
 
     <script src="data.js"></script>
     <script src="debug.js"></script>
     <script src="backup.js"></script>
-
     <script src="metabolic.js"></script>
     <script src="inventoryHandler.js"></script>
     <script src="food.js"></script>
     <script src="calories.js"></script>
     <script src="cardio.js"></script>
     <script src="ems.js"></script>
-
     <script src="optimizer.js"></script>
     <script src="weather.js"></script>
     <script src="weatherHandler.js"></script>
     <script src="partner.js"></script>
     <script src="aiHandler.js"></script>
     <script src="cloudSync.js"></script>
-
     <script src="calendar.js"></script>
     <script src="gallery.js"></script>
     <script src="achievements.js"></script>
     <script src="progressUI.js"></script>
     <script src="extensions.js"></script>
     <script src="voice.js"></script>
-
     <script src="reporting.js"></script>
     <script src="settings.js"></script>
     <script src="dragDrop.js"></script>
     <script src="app.js"></script>
 
-    <script>
-        /* BOOT INITIALIZATION */
-        function updateClock() {
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
-                            now.getMinutes().toString().padStart(2, '0');
-            const clockEl = document.getElementById('clock');
-            if (clockEl) clockEl.textContent = timeStr;
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // PWA Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log("✅ PEGASUS: Service Worker Operational."));
-        }
-    </script>
 </body>
 </html>
