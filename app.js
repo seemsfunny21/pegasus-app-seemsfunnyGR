@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v17.7 FINAL STABLE
-   Protocol: Full Code Delivery, Anti-Corruption, Centralized Event Bridge
+   PEGASUS WORKOUT ENGINE - v17.8 MAXIMALIST
+   Protocol: Full Logic Recovery, Metabolic Tracking, UI Sync
    ========================================================================== */
 
 var exercises = [];
@@ -23,7 +23,7 @@ var workoutPhases = [
 ];
 var userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
 
-/* ===== AUDIO & SYNC INITIALIZATION ===== */
+/* ===== AUDIO SYSTEM ===== */
 let sysAudio = new Audio('videos/beep.mp3');
 let audioUnlocked = false;
 
@@ -32,21 +32,16 @@ document.addEventListener('click', function() {
         sysAudio.play().then(() => {
             sysAudio.pause(); sysAudio.currentTime = 0;
             audioUnlocked = true;
-            console.log("PEGASUS OS: Audio Unlocked & Cloud Sync Ready.");
             if (window.PegasusCloud && typeof window.PegasusCloud.pull === "function") window.PegasusCloud.pull();
-        }).catch(e => console.warn("Audio unlock pending..."));
+        }).catch(e => console.warn("Audio pending..."));
     }
 }, { once: true });
 
 const playBeep = (volume = 1) => {
-    if (!muted) { 
-        sysAudio.volume = volume; 
-        sysAudio.currentTime = 0; 
-        sysAudio.play().catch(e => {}); 
-    }
+    if (!muted) { sysAudio.volume = volume; sysAudio.currentTime = 0; sysAudio.play().catch(e => {}); }
 };
 
-/* ===== NAVIGATION ENGINE ===== */
+/* ===== NAVIGATION & DAY SELECTION ===== */
 function createNavbar() {
     const nav = document.getElementById("navbar");
     if (!nav) return;
@@ -61,12 +56,17 @@ function createNavbar() {
 }
 
 function selectDay(btn, day) {
-    document.querySelectorAll(".navbar button").forEach(b => b.classList.remove("active"));
-    if (btn) btn.classList.add("active");
+    document.querySelectorAll(".navbar button").forEach(b => {
+        b.classList.remove("active");
+        b.style.backgroundColor = "#000";
+    });
+    if (btn) {
+        btn.classList.add("active");
+        btn.style.backgroundColor = "#4CAF50";
+    }
 
     clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
-    const sBtn = document.getElementById("btnStart");
-    if (sBtn) sBtn.innerHTML = "Έναρξη";
+    document.getElementById("btnStart").innerHTML = "Έναρξη";
 
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     let rawBaseData = (typeof window.calculateDailyProgram !== 'undefined') ? 
@@ -83,7 +83,10 @@ function selectDay(btn, day) {
         const d = document.createElement("div");
         d.className = "exercise"; 
         d.dataset.total = e.adjustedSets; d.dataset.done = 0;
-        if (e.adjustedSets === 0) d.classList.add("exercise-skipped");
+        if (e.adjustedSets === 0) {
+            d.classList.add("exercise-skipped");
+            d.style.opacity = "0.2";
+        }
 
         const cleanName = e.name.trim();
         const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || "";
@@ -102,16 +105,15 @@ function selectDay(btn, day) {
         remainingSets.push(parseInt(e.adjustedSets));
     });
 
-    if (typeof calculateTotalTime === "function") calculateTotalTime();
+    calculateTotalTime();
     showVideo(0);
 }
 
-/* ===== WORKOUT CORE ENGINE ===== */
+/* ===== CORE ENGINE LOGIC ===== */
 function startPause() {
     if (exercises.length === 0) return;
     running = !running;
-    const sBtn = document.getElementById("btnStart");
-    if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
+    document.getElementById("btnStart").innerHTML = running ? "Παύση" : "Συνέχεια";
     if (running) runPhase();
     else { clearInterval(timer); timer = null; }
 }
@@ -130,7 +132,7 @@ function runPhase() {
     if (!e) return;
     
     let t = (phase === 0) ? prepTime : (phase === 1 ? exTime : restTime);
-    let currentPhaseName = (phase === 0) ? "ΠΡΟΘΕΡΜΑΝΣΗ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
+    let currentPhaseName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
 
     const label = document.getElementById("phaseTimer");
     if (label) {
@@ -143,6 +145,12 @@ function runPhase() {
     timer = setInterval(() => {
         t -= 1;
         if (remainingSeconds > 0) { remainingSeconds -= 1; updateTotalBar(); }
+        
+        // Metabolic Tracking Connection
+        if (window.MetabolicEngine && phase === 1) {
+            window.MetabolicEngine.updateTracking(1, e.querySelector(".weight-input").dataset.name);
+        }
+
         if (label) label.textContent = `${currentPhaseName} (${Math.max(0, t)})`;
 
         if (t <= 0) {
@@ -154,7 +162,10 @@ function runPhase() {
                 e.dataset.done = done;
                 remainingSets[currentIdx]--;
                 e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
+                
+                // Update Achievements
                 if (window.updateAchievements) window.updateAchievements(e.querySelector(".weight-input").dataset.name);
+                
                 phase = 2; runPhase();
             } else {
                 currentIdx = getNextIndexCircuit();
@@ -165,18 +176,42 @@ function runPhase() {
     }, 1000 / SPEED);
 }
 
-/* ===== VIDEO ENGINE ===== */
+/* ===== VIDEO & UI UPDATES ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
     if (!vid) return;
     const phaseLabel = document.getElementById("phaseTimer") ? document.getElementById("phaseTimer").textContent : "";
-    let name = (i === null || phaseLabel.includes("ΠΡΟΘΕΡΜΑΝΣΗ")) ? "Προθέρμανση" : 
+    let name = (i === null || phaseLabel.includes("ΠΡΟΕΤΟΙΜΑΣΙΑ")) ? "Προθέρμανση" : 
                (exercises[i] ? exercises[i].querySelector(".weight-input").dataset.name : "default");
 
     if (typeof videoMap !== 'undefined') {
         let mappedVal = videoMap[name] || name.replace(/\s+/g, '');
         vid.src = `videos/${mappedVal}.mp4`;
         vid.play().catch(() => { vid.src = "videos/warmup.mp4"; vid.play(); });
+    }
+}
+
+function calculateTotalTime() {
+    totalSeconds = 0;
+    exercises.forEach((exDiv) => {
+        if (exDiv.classList.contains("exercise-skipped")) return;
+        const sets = parseInt(exDiv.dataset.total) || 0;
+        totalSeconds += sets * (10 + workoutPhases[1].d + workoutPhases[2].d);
+    });
+    remainingSeconds = totalSeconds;
+    updateTotalBar();
+}
+
+function updateTotalBar() {
+    const bar = document.getElementById("totalProgress");
+    const timeText = document.getElementById("totalProgressTime");
+    if (!bar) return;
+    const progress = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+    bar.style.width = Math.max(0, Math.min(100, progress)) + "%";
+    if (timeText) {
+        const m = Math.floor(remainingSeconds / 60);
+        const s = Math.floor(remainingSeconds % 60);
+        timeText.textContent = `${m}:${String(s).padStart(2, "0")}`;
     }
 }
 
@@ -204,13 +239,20 @@ function skipToNextExercise() {
 
 function finishWorkout() {
     clearInterval(timer);
+    running = false;
     const label = document.getElementById("phaseTimer");
     if (label) label.textContent = "ΟΛΟΚΛΗΡΩΣΗ...";
+    
+    // Save to History
+    let history = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
+    history[new Date().toISOString().split('T')[0]] = true;
+    localStorage.setItem("pegasus_workouts_done", JSON.stringify(history));
+
     if (window.PegasusCloud) window.PegasusCloud.push();
     setTimeout(() => location.reload(), 3000);
 }
 
-/* ===== CENTRALIZED INITIALIZATION (v17.7) ===== */
+/* ===== INITIALIZATION (v17.8) ===== */
 window.onload = () => {
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     createNavbar();
@@ -231,7 +273,8 @@ window.onload = () => {
             localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput").value);
             localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput").value);
             localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput").value);
-            alert("PEGASUS OS: Ρυθμίσεις Σώθηκαν!");
+            alert("PEGASUS: Ρυθμίσεις Σώθηκαν!");
+            location.reload();
         },
         "btnSaveEMS": () => { if(window.saveEMSFinal) window.saveEMSFinal(); },
         "btnCloseEMS": () => { document.getElementById("emsModal").style.display = "none"; },
@@ -257,7 +300,6 @@ window.onload = () => {
         }
     });
 
-    // Hardware/Weather Sync
     const rainToggle = document.getElementById("rainToggle");
     if (rainToggle) rainToggle.onchange = () => {
         const activeBtn = document.querySelector('.navbar button.active');
@@ -269,7 +311,6 @@ window.onload = () => {
 
     if (typeof fetchWeather === "function") fetchWeather();
 
-    // Today selection logic
     const today = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"][new Date().getDay()];
     setTimeout(() => {
         document.querySelectorAll(".navbar button").forEach(b => { if (b.textContent === today) selectDay(b, today); });
@@ -283,5 +324,5 @@ window.toggleSkipExercise = function(idx) {
     if (!exDiv) return;
     exDiv.classList.toggle("exercise-skipped");
     remainingSets[idx] = exDiv.classList.contains("exercise-skipped") ? 0 : parseInt(exDiv.dataset.total);
-    if (typeof calculateTotalTime === "function") calculateTotalTime();
+    calculateTotalTime();
 };
