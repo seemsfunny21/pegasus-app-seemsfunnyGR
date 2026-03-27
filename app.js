@@ -185,15 +185,22 @@ function startPause() {
 
 function runPhase() {
     if (!running) return;
-    clearInterval(timer);
+    
+    // ΠΡΩΤΟΚΟΛΛΟ ΑΣΦΑΛΕΙΑΣ: Καθαρισμός προηγούμενου timer πριν την έναρξη νέου
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
 
     if (remainingSets.every(s => s <= 0)) {
         finishWorkout();
         return;
     }
 
-    workoutPhases[1].d = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
-    workoutPhases[2].d = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
+    // Δυναμική ανάκτηση χρόνων με ασφαλή fallbacks
+    const exTime = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
+    const restTime = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
+    const prepTime = 10;
 
     const e = exercises[currentIdx];
     if (!e) return;
@@ -201,112 +208,73 @@ function runPhase() {
     const wInput = e.querySelector(".weight-input");
     const exName = wInput ? wInput.getAttribute("data-name") : "Άγνωστο";
 
-    exercises.forEach(ex => {
-        ex.style.borderColor = "#222";
-        ex.style.background = "transparent";
+    // UI Feedback
+    exercises.forEach(ex => { 
+        ex.style.borderColor = "#222"; 
+        ex.style.background = "transparent"; 
     });
-    
-    const isAngelosTurn = typeof partnerData !== 'undefined' ? (!partnerData.isActive || partnerData.isUser1Turn) : true;
-    e.style.borderColor = isAngelosTurn ? "#4CAF50" : "#00bcd4";
+    e.style.borderColor = "#4CAF50";
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
-    let currentPhaseName = "";
-    let t = 0;
-    
-    let localRestKcal = 0; 
-    let baseKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-
-    if (phase === 0) {
-        currentPhaseName = `ΠΡΟΕΤΟΙΜΑΣΙΑ (ΑΓΓΕΛΟΣ)`;
-        t = workoutPhases[0].d;
-    } else if (phase === 1) {
-        currentPhaseName = `ΑΣΚΗΣΗ (ΑΓΓΕΛΟΣ)`;
-        t = workoutPhases[1].d;
-    } else if (phase === 2) {
-        const pName = typeof partnerData !== 'undefined' ? (partnerData.currentPartner || "ΣΥΝΕΡΓΑΤΗΣ").toUpperCase() : "ΣΥΝΕΡΓΑΤΗΣ";
-        const isPartnerActive = typeof partnerData !== 'undefined' ? partnerData.isActive : false;
-        currentPhaseName = isPartnerActive ? `ΑΣΚΗΣΗ (${pName})` : `ΔΙΑΛΕΙΜΜΑ (ΑΓΓΕΛΟΣ)`;
-        t = workoutPhases[2].d; 
-    }
+    // Καθορισμός χρόνου φάσης
+    let t = (phase === 0) ? prepTime : (phase === 1 ? exTime : restTime);
+    let currentPhaseName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
 
     if (phase !== 2) showVideo(currentIdx);
 
     timer = setInterval(() => {
         t -= 1;
-        remainingSeconds = Math.max(0, remainingSeconds - 1);
-        updateTotalBar();
+        
+        // Συγχρονισμός με τη συνολική μπάρα προόδου
+        if (remainingSeconds > 0) {
+            remainingSeconds -= 1;
+            updateTotalBar();
+        }
 
-        if (phase === 1 || phase === 2) {
-            if (window.MetabolicEngine && phase === 1) {
-                window.MetabolicEngine.updateTracking(1, exName);
-            } else if (phase === 2) {
-                localRestKcal += (userWeight * 0.0008);
-                const kcalUI = document.querySelector(".kcal-value");
-                if (kcalUI) kcalUI.textContent = (baseKcal + localRestKcal).toFixed(1);
-            }
+        // Metabolic Tracking (μόνο κατά την άσκηση)
+        if (window.MetabolicEngine && phase === 1) {
+            window.MetabolicEngine.updateTracking(1, exName);
         }
 
         const label = document.getElementById("phaseTimer");
         if (label) {
             label.textContent = `${currentPhaseName} (${Math.max(0, Math.ceil(t))})`;
-            const isPartnerActive = typeof partnerData !== 'undefined' ? partnerData.isActive : false;
-            label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? (isPartnerActive ? "#00bcd4" : "#FFC107") : "#64B5F6");
+            label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
         }
 
         if (t <= 0) {
-            if (phase === 2 && localRestKcal > 0) {
-                let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-                localStorage.setItem("pegasus_today_kcal", (currentKcal + localRestKcal).toFixed(2));
-                localRestKcal = 0;
-            }
-
             clearInterval(timer);
+            timer = null;
             playBeep();
             
             if (phase === 0) {
                 phase = 1;
                 runPhase();
             } else if (phase === 1) {
-                if (wInput) saveWeight(exName, wInput.value);
+                // Ολοκλήρωση σετ
+                let done = parseInt(e.dataset.done) || 0;
+                let total = parseInt(e.dataset.total) || 0;
+                done++;
+                e.dataset.done = done;
+                remainingSets[currentIdx] = total - done;
 
-                const activeNode = document.querySelectorAll(".exercise")[currentIdx];
-                if (activeNode) {
-                    let done = parseInt(activeNode.dataset.done) || 0;
-                    let total = parseInt(activeNode.dataset.total) || 0;
-                    done++;
-                    
-                    activeNode.dataset.done = done;
-                    remainingSets[currentIdx] = total - done;
-
-                    const counterDiv = activeNode.querySelector(".set-counter");
-                    if (counterDiv) {
-                        counterDiv.textContent = `${done}/${total}`;
-                        counterDiv.style.color = "#4CAF50";
-                        activeNode.style.boxShadow = "0 0 15px rgba(76, 175, 80, 0.4)";
-                        setTimeout(() => { activeNode.style.boxShadow = ""; }, 1500);
-                    }
-                    if (window.updateAchievements) window.updateAchievements(exName);
-                    
-                    if (window.logPegasusSet) window.logPegasusSet(exName);
-                    
-                    if (typeof PegasusCloud !== 'undefined' && typeof PegasusCloud.push === "function") {
-                        PegasusCloud.push(true); 
-                    }
-                }
-
+                const counterDiv = e.querySelector(".set-counter");
+                if (counterDiv) counterDiv.textContent = `${done}/${total}`;
+                
+                if (window.logPegasusSet) window.logPegasusSet(exName);
+                
                 phase = 2;
-                if (typeof partnerData !== 'undefined' && partnerData.isActive) partnerData.isUser1Turn = false;
                 runPhase();
             } else if (phase === 2) {
-                if (typeof partnerData !== 'undefined' && partnerData.isActive && wInput) savePartnerWeight(exName, wInput.value);
-                if (typeof partnerData !== 'undefined' && partnerData.isActive) partnerData.isUser1Turn = true; 
-                
+                // Μετάβαση στην επόμενη άσκηση/σετ
                 let nextIdx = getNextIndexCircuit();
                 if (nextIdx !== -1) {
                     currentIdx = nextIdx;
                     phase = 0;
                     runPhase();
-                } else finishWorkout();
+                } else {
+                    finishWorkout();
+                }
             }
         }
     }, 1000 / SPEED);
