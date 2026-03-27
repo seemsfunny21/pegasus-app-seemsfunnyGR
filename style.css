@@ -1,200 +1,186 @@
 /* ==========================================================================
-   PEGASUS OS UI CORE - CLEAN SWEEP v17.0
-   Protocol: Strict Green Protocol | Theme: Tactical Dark Matrix
+   PEGASUS OS STYLE - TRUE LEGACY REPLICA
+   Target: 100% Visual Matching with Screenshot 104313
    ========================================================================== */
 
 :root {
-    --pegasus-green: #4CAF50;
-    --pegasus-blue: #00bcd4;
-    --pegasus-red: #ff4444;
-    --bg-dark: #050505;
-    --panel-bg: rgba(10, 10, 10, 0.95);
-    --border-dim: #1a1a1a;
-    --text-main: #eeeeee;
-    --text-dim: #666666;
+    --p-green: #4CAF50;
+    --p-bg: #000000;
+    --p-panel: #050505;
+    --p-border: #1a1a1a;
+    --p-text: #ffffff;
 }
-
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
-    margin: 0;
-    padding: 0;
-    background: var(--bg-dark);
-    color: var(--text-main);
-    font-family: 'Segoe UI', Roboto, sans-serif;
-    overflow-x: hidden;
-    user-select: none;
-}
-
-/* --- TACTICAL OVERLAYS (DRAGGABLE PANELS) --- */
-.pegasus-panel {
-    position: fixed;
-    z-index: 10000;
-    background: var(--panel-bg);
-    border: 1px solid var(--border-dim);
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    display: none;
+    margin: 0; padding: 0;
+    background: var(--p-bg);
+    color: var(--p-text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
 }
 
-.panel-header {
-    padding: 15px;
-    background: rgba(20, 20, 20, 0.8);
-    border-bottom: 1px solid var(--border-dim);
-    cursor: move;
+/* DAY NAVIGATION */
+.day-nav {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* --- WORKOUT ENGINE UI --- */
-.navbar {
-    display: flex;
-    overflow-x: auto;
     background: #000;
-    padding: 10px;
-    gap: 8px;
-    border-bottom: 1px solid var(--border-dim);
-    position: sticky;
-    top: 0;
-    z-index: 100;
 }
-
-.navbar button {
-    background: #111;
-    border: 1px solid #222;
-    color: var(--text-dim);
-    padding: 10px 15px;
-    border-radius: 6px;
-    font-size: 11px;
+.day-nav button {
+    flex: 1;
+    padding: 12px;
+    background: #000;
+    color: #fff;
+    border: 1px solid var(--p-border);
     font-weight: 900;
-    text-transform: uppercase;
-    white-space: nowrap;
+    font-size: 11px;
     cursor: pointer;
+    text-transform: uppercase;
 }
-
-.navbar button.active {
-    background: var(--pegasus-green);
+.day-nav button.active {
+    background: var(--p-green);
     color: #000;
-    border-color: var(--pegasus-green);
 }
 
-.exercise-list {
-    padding: 15px;
-    padding-bottom: 120px;
-}
-
-.exercise {
-    background: #0a0a0a;
-    border: 1px solid #111;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    padding: 15px;
-    transition: all 0.3s ease;
-}
-
-.exercise.active-angelos { border-color: var(--pegasus-green); background: rgba(76, 175, 80, 0.05); }
-.exercise.active-partner { border-color: var(--pegasus-blue); background: rgba(0, 188, 212, 0.05); }
-
-.exercise-info {
+/* SUB NAVIGATION BAR */
+.sub-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 8px 10px;
+    background: #050505;
+    border-bottom: 1px solid var(--p-border);
 }
+.tool-group, .status-group { display: flex; gap: 5px; align-items: center; }
 
-.exercise-name {
+#clock {
+    background: #111;
+    padding: 5px 15px;
+    border: 1px solid #333;
     font-weight: 900;
-    font-size: 14px;
-    text-transform: uppercase;
-    flex: 1;
-    margin-left: 15px;
-}
-
-.set-counter {
-    background: #1a1a1a;
-    padding: 5px 10px;
+    font-size: 13px;
     border-radius: 4px;
-    font-family: monospace;
-    font-size: 14px;
-    color: var(--pegasus-green);
 }
 
-.weight-input {
-    width: 60px;
+.t-btn {
+    background: transparent;
+    border: 1px solid var(--p-green);
+    color: var(--p-green);
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 3px;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.s-item {
+    font-size: 10px;
+    color: var(--p-green);
+    border: 1px solid var(--p-green);
+    padding: 5px 10px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* WORKSPACE LAYOUT */
+.workspace {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+#exList {
+    width: 280px;
+    padding: 10px;
+    border-right: 1px solid var(--p-border);
+    overflow-y: auto;
+}
+
+/* EXERCISE CARDS (Left Column) */
+.ex-card {
+    display: grid;
+    grid-template-columns: 40px 1fr 60px;
+    align-items: center;
+    background: #050505;
+    border: 1px solid #111;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+.ex-card.active { border-color: var(--p-green); }
+
+.ex-progress { color: var(--p-green); font-weight: 900; font-size: 12px; }
+.ex-name { font-size: 11px; font-weight: 900; text-transform: uppercase; padding: 0 10px; }
+.ex-weight input {
+    width: 100%;
     background: #000;
     border: 1px solid #333;
-    color: var(--pegasus-green);
+    color: var(--p-green);
     text-align: center;
-    padding: 8px;
-    border-radius: 4px;
-    font-weight: 900;
-}
-
-/* --- PROGRESS BARS --- */
-.progress-box {
-    height: 4px;
-    background: #111;
-    margin-top: 10px;
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    height: 100%;
-    background: var(--pegasus-green);
-    width: 0%;
-    transition: width 0.5s ease;
-}
-
-/* --- MAIN CONTROLS (FIXED BOTTOM) --- */
-.controls-bar {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: rgba(0,0,0,0.9);
-    padding: 15px;
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 10px;
-    border-top: 1px solid var(--border-dim);
-}
-
-.btn-main {
-    padding: 15px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 900;
-    text-transform: uppercase;
-    cursor: pointer;
-}
-
-#btnStart { background: var(--pegasus-green); color: #000; }
-#btnNext { background: #222; color: #fff; }
-
-/* --- CALORIE HUB PULSE --- */
-#kcalBtn {
-    background: #0a0a0a;
-    border: 1px solid var(--pegasus-green);
-    color: var(--pegasus-green);
-    border-radius: 50px;
-    padding: 8px 15px;
+    padding: 5px;
     font-size: 11px;
+}
+
+/* MEDIA ENGINE (Center) */
+.media-engine {
+    flex: 1;
+    position: relative;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#mediaContainer {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#mainMedia {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#exerciseOverlay {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    background: #3498db; /* Blue background like screenshot */
+    color: white;
+    padding: 10px 25px;
+    font-size: 24px;
     font-weight: 900;
-    cursor: pointer;
+    font-style: italic;
+    text-transform: uppercase;
 }
 
-.pulse-active {
-    animation: pulse-green 1s infinite alternate;
+#phaseTimer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 40px;
+    font-weight: 900;
+    color: var(--p-green);
 }
 
-@keyframes pulse-green {
-    from { box-shadow: 0 0 5px rgba(76, 175, 80, 0.2); }
-    to { box-shadow: 0 0 15px rgba(76, 175, 80, 0.6); }
+.weather-switches {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    display: flex;
+    gap: 15px;
+    font-size: 10px;
+    color: var(--p-green);
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
 }
-
-/* --- SCROLLBAR --- */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #000; }
-::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
