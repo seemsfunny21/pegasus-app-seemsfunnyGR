@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.8 (FINAL CLEAN BUILD)
-   Protocol: Strict Data Analyst - Indoor Weekend Pivot & Emoji-Free
+   PEGASUS DATA ENGINE - v8.9 (STRICT TIME & POWER WEEKEND)
+   Protocol: Strict Data Analyst - 45m Limit (Fri-Sun) & 5-Set Volume Boost
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
@@ -40,7 +40,7 @@ window.PegasusStore = {
 };
 
 /**
- * 2. MASTER EXERCISE DATABASE (v8.8 Filtered)
+ * 2. MASTER EXERCISE DATABASE (v8.9 Filtered)
  */
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
@@ -70,7 +70,7 @@ const STRENGTH_EXERCISES = [
 window.exercisesDB = STRENGTH_EXERCISES;
 
 /**
- * 3. DYNAMIC PROGRAM GENERATOR (v8.8 - WEEKEND PIVOT)
+ * 3. DYNAMIC PROGRAM GENERATOR (v8.9 - Power Weekend)
  */
 window.calculateDailyProgram = function(dayName, isRainy = false) {
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
@@ -88,28 +88,45 @@ window.calculateDailyProgram = function(dayName, isRainy = false) {
 
     let currentMins = 0;
     const program = [];
-    const MAX_MINS = (dayName === "Κυριακή") ? 40 : 60;
+    
+    // ΠΕΡΙΟΡΙΣΜΟΣ 45 ΛΕΠΤΩΝ ΓΙΑ Π/Σ/Κ
+    let MAX_MINS = 60; 
+    if (dayName === "Παρασκευή" || dayName === "Σάββατο" || dayName === "Κυριακή") {
+        MAX_MINS = 45; 
+    }
 
     // DYNAMIC FOCUS SELECTION
     let focusGroups = [];
-    if (dayName === "Τρίτη") focusGroups = ["Στήθος", "Ώμοι", "Πλάτη"];
-    else if (dayName === "Παρασκευή") focusGroups = ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"];
-    else if (dayName === "Σάββατο") focusGroups = isRainy ? ["Πόδια", "Κορμός"] : ["Κορμός"];
-    else if (dayName === "Κυριακή") focusGroups = ["Στήθος", "Ώμοι", "Πλάτη"];
-    else focusGroups = ["Κορμός"];
+    if (dayName === "Τρίτη") {
+        focusGroups = ["Στήθος", "Ώμοι", "Πλάτη"];
+    } 
+    else if (dayName === "Παρασκευή") {
+        focusGroups = ["Πλάτη", "Ώμοι"];
+    } 
+    else if (dayName === "Σάββατο") {
+        focusGroups = isRainy ? ["Πόδια", "Κορμός"] : ["Κορμός"];
+    } 
+    else if (dayName === "Κυριακή") {
+        focusGroups = isRainy ? ["Στήθος", "Χέρια", "Κορμός"] : ["Στήθος", "Κορμός"];
+    }
+    else {
+        focusGroups = ["Κορμός"];
+    }
     
     focusGroups.forEach(group => {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
         groupEx.forEach(ex => {
-            if (currentMins + 7 <= MAX_MINS) {
-                program.push({ ...ex, sets: 4, duration: 45 });
-                currentMins += 7;
+            // Υπολογισμός: 5 σετ x ~1.9 λεπτά (άσκηση+διάλειμμα) = ~9.5 λεπτά ανά άσκηση
+            if (currentMins + 9.5 <= MAX_MINS) {
+                let setsCount = (dayName === "Παρασκευή" || dayName === "Σάββατο" || dayName === "Κυριακή") ? 5 : 4;
+                program.push({ ...ex, sets: setsCount, duration: 45 });
+                currentMins += 9.5;
             }
         });
     });
 
     // Ποδηλασία μόνο αν έχει ήλιο και δεν είναι Κυριακή
-    if ((dayName === "Σάββατο" || dayName === "Κυριακή") && !isRainy && dayName !== "Κυριακή") {
+    if (dayName === "Σάββατο" && !isRainy) {
         program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
     }
 
