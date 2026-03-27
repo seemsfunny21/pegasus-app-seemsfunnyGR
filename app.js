@@ -532,9 +532,8 @@ function finishWorkout() {
 
 
 window.onload = () => {
-    // 1. Email & Reporting Initialization
+    // 1. System Initializations
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
-    
     if (typeof PegasusReporting !== 'undefined') {
         const lastSent = localStorage.getItem("pegasus_last_auto_report");
         const todayStr = new Date().toLocaleDateString('el-GR');
@@ -543,10 +542,9 @@ window.onload = () => {
             localStorage.setItem("pegasus_last_auto_report", todayStr);
         }
     }
-
     createNavbar();
 
-    // 2. MASTER UI MAPPING (Centralized Control)
+    // 2. MASTER UI MAPPING (External Controls)
     const masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -557,104 +555,91 @@ window.onload = () => {
         "btnFoodUI": { id: "foodPanel", init: window.renderFood },
         "btnToolsUI": { id: "toolsPanel" },
         "btnPreviewUI": { id: "previewPanel", init: openExercisePreview },
-        "btnEMSUI": { id: "emsModal" }
+        "btnEMS": { id: "emsModal" }, // Αλλαγή ID για συμβατότητα με το παλιό HTML
+        "btnOpenGallery": { id: "galleryPanel", init: window.renderGallery }
     };
 
-    // 3. EVENT BRIDGE EXECUTION
+    // 3. EVENT BRIDGE (Mapping execution)
     Object.keys(masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
-        if (!btn) return;
-
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            const allOverlays = document.querySelectorAll('.pegasus-panel, #emsModal, #cardioPanel, #toolsPanel, #previewPanel');
-            allOverlays.forEach(p => p.style.display = "none");
-
-            const target = masterUI[btnId];
-            if (typeof target === 'function') {
-                target();
-            } else {
-                const panel = document.getElementById(target.id);
-                if (panel) {
-                    panel.style.display = "block";
-                    if (target.init) target.init();
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.pegasus-panel, #emsModal, #cardioPanel, #toolsPanel, #previewPanel').forEach(p => p.style.display = "none");
+                const target = masterUI[btnId];
+                if (typeof target === 'function') target();
+                else {
+                    const el = document.getElementById(target.id);
+                    if (el) { el.style.display = "block"; if (target.init) target.init(); }
                 }
-            }
-            console.log(`PEGASUS OS: ${btnId} Protocol Executed.`);
-        };
+            };
+        }
     });
 
-    /* ===== 4. INTERNAL PANEL CONNECTORS (The Fix for Settings/Save Buttons) ===== */
+    // 4. RESTORING HIDDEN LOGIC (From Old HTML)
     
-    // SAVE SETTINGS LOGIC
+    // Settings Save Connector
     const btnSaveSettings = document.getElementById("btnSaveSettings");
     if (btnSaveSettings) {
         btnSaveSettings.onclick = () => {
-            const weight = document.getElementById("userWeightInput").value;
-            const exTime = document.getElementById("exerciseTimeInput") ? document.getElementById("exerciseTimeInput").value : 45;
-            const restTime = document.getElementById("restTimeInput") ? document.getElementById("restTimeInput").value : 60;
-            
-            localStorage.setItem("pegasus_weight", weight);
-            localStorage.setItem("pegasus_ex_time", exTime);
-            localStorage.setItem("pegasus_rest_time", restTime);
-            
-            // Sync with workout engine
-            workoutPhases[1].d = parseInt(exTime);
-            workoutPhases[2].d = parseInt(restTime);
-            
-            alert("PEGASUS OS: Οι ρυθμίσεις αποθηκεύτηκαν επιτυχώς.");
+            localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput").value);
+            localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput").value);
+            localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput").value);
+            alert("PEGASUS: Ρυθμίσεις Αποθηκεύτηκαν!");
             document.getElementById("settingsPanel").style.display = "none";
             if(window.calculateTotalTime) window.calculateTotalTime();
         };
     }
 
-    // VAULT / PIN MODAL CONNECTORS
-    if (document.getElementById("btnVaultUnlock")) {
-        document.getElementById("btnVaultUnlock").onclick = () => { if(window.attemptVaultUnlock) window.attemptVaultUnlock(); };
-    }
-    if (document.getElementById("btnVaultSkip")) {
-        document.getElementById("btnVaultSkip").onclick = () => { document.getElementById("pinModal").style.display = "none"; };
-    }
-
-    // EMS / CARDIO SAVE CONNECTORS
-    if (document.getElementById("btnSaveEMS")) {
-        document.getElementById("btnSaveEMS").onclick = () => { if(window.saveEMSFinal) window.saveEMSFinal(); };
-    }
-    if (document.getElementById("btnCloseEMS")) {
-        document.getElementById("btnCloseEMS").onclick = () => { document.getElementById("emsModal").style.display = "none"; };
-    }
-    if (document.getElementById("btnClosePreview")) {
-        document.getElementById("btnClosePreview").onclick = () => { document.getElementById("previewPanel").style.display = "none"; };
+    // Rain Toggle Recovery
+    const rainToggle = document.getElementById("rainToggle");
+    if (rainToggle) {
+        rainToggle.addEventListener('change', () => {
+            const activeBtn = document.querySelector('.navbar button.active');
+            if (activeBtn) selectDay(activeBtn, activeBtn.textContent);
+        });
     }
 
-    // 5. Global Hardware Utils
+    // Food Search Recovery
+    const libSearch = document.getElementById("librarySearch");
+    if (libSearch) {
+        libSearch.onkeyup = () => { if(window.filterLibrary) window.filterLibrary(); };
+    }
+
+    // Photo Upload Trigger
+    const uploadZone = document.querySelector(".upload-zone");
+    if (uploadZone) {
+        uploadZone.onclick = () => document.getElementById("photoUpload").click();
+    }
+
+    // Manual Email Button
+    const btnManualEmail = document.getElementById("btnManualEmail");
+    if (btnManualEmail) {
+        btnManualEmail.onclick = () => { if(window.PegasusReporting) window.PegasusReporting.sendManualReport(); };
+    }
+
+    // 5. Hardware & Global Utils
     const mainVideo = document.getElementById("video");
     if (mainVideo) mainVideo.oncontextmenu = (e) => e.preventDefault();
-
-    const btnMuteTools = document.getElementById("btnMuteTools");
-    if (btnMuteTools) { 
-        btnMuteTools.onclick = function() { muted = !muted; this.innerHTML = muted ? "Ήχος: OFF" : "Ήχος: ON"; }; 
-    }
-
-    const btnTurboTools = document.getElementById("btnTurboTools");
-    if (btnTurboTools) { 
-        btnTurboTools.onclick = function() { 
-            TURBO_MODE = !TURBO_MODE; SPEED = TURBO_MODE ? 10 : 1; 
-            this.innerHTML = TURBO_MODE ? "Turbo: ON" : "Turbo: OFF"; 
-            if (running) runPhase(); 
-        }; 
-    }
+    
+    document.getElementById("btnMuteTools").onclick = function() { muted = !muted; this.innerHTML = muted ? "Ήχος: OFF" : "Ήχος: ON"; };
+    document.getElementById("btnTurboTools").onclick = function() { TURBO_MODE = !TURBO_MODE; SPEED = TURBO_MODE ? 10 : 1; this.innerHTML = TURBO_MODE ? "Turbo: ON" : "Turbo: OFF"; if(running) runPhase(); };
 
     if (typeof fetchWeather === "function") fetchWeather();
-    
+
     // Auto-select Today
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = greekDays[new Date().getDay()];
-    setTimeout(() => { 
-        document.querySelectorAll(".navbar button").forEach(b => { 
-            if (b.textContent === todayName) selectDay(b, todayName); 
-        }); 
+    setTimeout(() => {
+        document.querySelectorAll(".navbar button").forEach(b => {
+            if (b.textContent === todayName) selectDay(b, todayName);
+        });
     }, 300);
+};
+
+// ΠΡΟΣΘΗΚΗ ΜΕΤΑ ΤΟ ONLOAD ΓΙΑ ΤΑ ΠΑΛΙΑ GLOBAL FUNCTIONS
+window.attemptVaultUnlock = attemptVaultUnlock;
+window.skipVault = skipVault;
 
     const rainToggle = document.getElementById("rainToggle");
     if (rainToggle) {
