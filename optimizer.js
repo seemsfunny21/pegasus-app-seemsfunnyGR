@@ -1,10 +1,9 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v1.6 (GLOBAL SCOPE & DYNAMIC TARGETS)
-   Protocol: Friday Load Balancing with 40-Minute Limit & DYNAMIC TARGETS
+   PEGASUS DYNAMIC OPTIMIZER - v1.8 (STRICT CLEAN & ANTI-SPILLOVER)
+   Protocol: Friday Load Balancing with 40-Minute Limit & NO CYCLING ON FRIDAY
    ========================================================================== */
 
 window.PegasusOptimizer = {
-    // Δυναμική ανάκτηση από το localStorage (Settings)
     getTargets: function() {
         try {
             const stored = localStorage.getItem("pegasus_muscle_targets");
@@ -34,14 +33,18 @@ window.PegasusOptimizer = {
             for (let sEx of saturdayEx) {
                 if (currentMinutes >= 40) break; 
 
+                // --- DATA GUARD: Απαγόρευση Ποδηλασίας στην Παρασκευή ---
+                if (sEx.name.includes("Ποδηλασία")) continue; 
+
                 const group = this.getGroup(sEx.name);
                 const done = sessionTracker[group] || 0;
                 const target = currentTargets[group] || 24; 
 
-                if (done < target && !mappedData.some(m => m.name.includes(sEx.name.trim()))) {
+                if (done < target && !mappedData.some(m => m.name.trim() === sEx.name.trim())) {
                     const spilloverEx = this.calculateExercise(sEx, sessionTracker, currentTargets);
                     if (spilloverEx.adjustedSets > 0) {
                         spilloverEx.isSpillover = true;
+                        // Ο ήλιος αφαιρέθηκε βάσει πρωτοκόλλου
                         mappedData.push(spilloverEx);
                         currentMinutes += (spilloverEx.adjustedSets * 2);
                     }
@@ -77,7 +80,7 @@ window.PegasusOptimizer = {
         if (n.includes("leg") || n.includes("cycling") || n.includes("πόδια") || n.includes("extensions") || n.includes("kickbacks")) return "Πόδια";
         if (n.includes("bicep") || n.includes("tricep") || n.includes("χέρια") || n.includes("curls") || n.includes("pulldowns")) return "Χέρια";
         if (n.includes("shoulder") || n.includes("upright") || n.includes("ώμοι")) return "Ώμοι";
-        if (n.includes("abs") || n.includes("crunch") || n.includes("situp") || n.includes("plank") || n.includes("raise") || n.includes("ems full body")) return "Κορμός";
+        if (n.includes("abs") || n.includes("crunch") || n.includes("situp") || n.includes("plank") || n.includes("raise")) return "Κορμός";
         return "Άλλο";
     }
 };
