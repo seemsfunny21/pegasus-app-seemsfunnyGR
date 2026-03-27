@@ -510,8 +510,9 @@ input:checked + .slider:before { transform: translateX(26px); }
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: wrap !important;
-    justify-content: flex-start;
-    gap: 10px; /* Ελαφρώς μικρότερο gap για εξοικονόμηση χώρου */
+    /* ΑΛΛΑΓΗ: Στοίχιση αριστερά για να δημιουργηθεί τέλειο grid */
+    justify-content: flex-start !important; 
+    gap: 12px; 
     padding: 15px;
     max-height: 70vh;
     overflow-y: auto;
@@ -519,14 +520,15 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .preview-item {
-    /* Δυναμικός υπολογισμός για 4 items (25% μείον το gap) */
-    flex: 0 1 calc(25% - 8px); 
+    /* Υπολογισμός για 4 στήλες με ακρίβεια pixel */
+    flex: 0 1 calc(25% - 9px); 
     text-align: center;
     background: rgba(255,255,255,0.02);
     padding: 10px 5px;
     border-radius: 10px;
     border: 1px solid #222;
     box-sizing: border-box;
+    min-width: 140px; /* Ασφάλεια για να μην μικραίνουν πολύ */
 }
 
 .preview-item img {
