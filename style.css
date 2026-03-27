@@ -491,43 +491,82 @@ input:checked + .slider { background-color: #ff4b2b; }
 input:checked + .slider:before { transform: translateX(26px); }
 
 /* ================= PREVIEW PANEL - RESTORE GRID LAYOUT (v13.9) ================= */
+/* ================= PREVIEW PANEL - OPTIMIZED BALANCED GRID (v14.0) ================= */
 #previewPanel {
     transform: none;
     position: fixed;
     left: auto;
     right: 20px;
     top: 150px;
-    width: 550px; /* Αυξάνουμε το πλάτος για να χωράνε 2-3 ασκήσεις ανά σειρά */
+    /* Αυξάνουμε το πλάτος για να χωράνε άνετα 3 ασκήσεις ανά σειρά */
+    width: 620px; 
     min-width: 320px;
     background: #0f0f0f;
     z-index: 10001;
+    border: 2px solid #4CAF50;
+    border-radius: 12px;
 }
 
 #previewPanel .panel-header {
     background: rgba(76, 175, 80, 0.1);
-    padding: 10px;
-    border-radius: 8px 8px 0 0;
+    padding: 12px;
+    border-radius: 10px 10px 0 0;
     border-bottom: 1px solid #4CAF50;
-    margin: -25px -25px 15px -25px;
+    /* Αντισταθμίζουμε το padding του panel */
+    margin: -25px -25px 15px -25px; 
 }
 
-/* Επαναφορά της οριζόντιας διάταξης */
+/* Ο container των ασκήσεων */
 #previewContent {
     display: flex !important;
-    flex-direction: row !important; /* Οριζόντια κατεύθυνση */
-    flex-wrap: wrap !important;     /* Σπάσιμο γραμμής όταν γεμίσει το πλάτος */
-    justify-content: center;
-    gap: 10px;
-    padding: 10px;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start; /* Στοίχιση αριστερά για ισορροπία */
+    gap: 12px; /* Gap για αναπνοή */
+    padding: 15px;
     max-height: 60vh;
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
+/* Το κάθε στοιχείο άσκησης */
 .preview-item {
-    flex: 0 1 160px; /* Επιτρέπει στα items να έχουν βάση 160px και να μπαίνουν δίπλα-δίπλα */
+    /* Δυναμικός υπολογισμός για 3 items ανά σειρά μείον το gap */
+    flex: 0 1 calc(33.33% - 8px); 
     text-align: center;
     background: rgba(255,255,255,0.02);
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px 10px;
+    border-radius: 10px;
     border: 1px solid #222;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.preview-item:hover {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.05);
+}
+
+/* Προσαρμογή των εικόνων μέσα στο item */
+.preview-item img {
+    width: 100%;
+    height: 120px; /* Σταθερό ύψος για ομοιομορφία */
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    object-fit: cover; /* Crop για γέμισμα */
+    background: #222;
+}
+
+/* Προσαρμογή του κειμένου κάτω από την εικόνα */
+.preview-item p {
+    color: #4CAF50;
+    font-weight: bold;
+    font-size: 11px;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    /* Εμποδίζει το κείμενο να ξεφεύγει */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; 
 }
