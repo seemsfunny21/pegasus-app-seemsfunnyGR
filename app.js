@@ -684,7 +684,10 @@ window.onload = () => {
     }, 300);
 };
 
-/* ===== UI & PREVIEW LOGIC ===== */
+/* ==========================================================================
+   UI & PREVIEW LOGIC - CLEAN GRID EDITION (v14.1)
+   Protocol: CSS Sovereignty - Removing Inline Style Overrides
+   ========================================================================== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -714,12 +717,12 @@ function openExercisePreview() {
             let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
             let imgFileName = videoId + extension;
 
+            // ΚΑΘΑΡΟ HTML ΧΩΡΙΣ INLINE STYLES
             content.innerHTML += `
-                <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
+                <div class="preview-item">
                     <img src="images/${imgFileName}" 
-                         onerror="this.src='images/placeholder.jpg'"
-                         style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
-                    <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
+                         onerror="this.src='images/placeholder.jpg'">
+                    <p>${cleanName}</p>
                 </div>
             `;
         });
