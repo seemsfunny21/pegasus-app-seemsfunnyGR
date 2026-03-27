@@ -569,8 +569,12 @@ function finishWorkout() {
 
 
 
-/* ===== INITIALIZATION ===== */
+/* ==========================================================================
+   PEGASUS UI INITIALIZATION - v16.9 (UNIFIED PANEL SYNC)
+   Protocol: Strict Modular Sync - Closing all Tactical Overlays on Switch
+   ========================================================================== */
 window.onload = () => {
+    // 1. Email & Reporting Initialization
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     
     if (typeof PegasusReporting !== 'undefined') {
@@ -583,44 +587,25 @@ window.onload = () => {
     }
 
     createNavbar();
-  
-    
+
+    // 2. Core Engine Buttons
     const btnStart = document.getElementById("btnStart");
     if (btnStart) btnStart.onclick = startPause;
 
     const btnNext = document.getElementById("btnNext");
     if (btnNext) btnNext.onclick = skipToNextExercise;
-    
-    const btnPreview = document.getElementById("btnPreviewUI");
-    if (btnPreview) btnPreview.onclick = openExercisePreview;
 
-    const warmupBtn = document.getElementById("btnWarmup");
-    if (warmupBtn) {
-        warmupBtn.onclick = () => {
-            const vid = document.getElementById("video");
-            if (vid) {
-                vid.src = "videos/warmup.mp4";
-                vid.play().catch(e => console.log("Warmup error"));
-                if (document.getElementById("phaseTimer")) document.getElementById("phaseTimer").textContent = "Προθέρμανση...";
-            }
-        };
-    }
-
-    const btnEmail = document.getElementById("btnManualEmail");
-    if (btnEmail) {
-        btnEmail.onclick = function() {
-            if (window.PegasusReporting) {
-                const kcalVal = document.querySelector(".kcal-value")?.textContent || "0";
-                window.PegasusReporting.saveWorkout(kcalVal);
-                window.PegasusReporting.checkAndSendMorningReport(true);
-            } else alert("Σφάλμα: Το reporting.js δεν έχει φορτωθεί.");
-        };
-    }
-
+    // 3. UNIFIED PANEL HANDLER (The Fix for the "Workout Button" issue)
     const uiBtns = { 
-        "btnCalendarUI": "calendarPanel", "btnAchUI": "achievementsPanel", 
-        "btnSettingsUI": "settingsPanel", "btnFoodUI": "foodPanel", 
-        "btnToolsUI": "toolsPanel", "btnPreviewUI": "previewPanel" 
+        "btnCalendarUI": "calendarPanel", 
+        "btnAchUI": "achievementsPanel", 
+        "btnSettingsUI": "settingsPanel", 
+        "btnFoodUI": "foodPanel", 
+        "btnToolsUI": "toolsPanel", 
+        "btnPreviewUI": "previewPanel",
+        "btnCardioUI": "cardioPanel",
+        "btnGalleryUI": "galleryPanel",
+        "btnEMSUI": "emsModal" // Προσθήκη EMS για πλήρη συγχρονισμό
     };
 
     Object.keys(uiBtns).forEach(btnId => {
@@ -628,22 +613,39 @@ window.onload = () => {
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                Object.values(uiBtns).forEach(id => { 
-                    const el = document.getElementById(id); 
-                    if (el) el.style.display = "none"; 
-                });
-                const targetPanel = document.getElementById(uiBtns[btnId]);
+                
+                // Πρωτόκολλο Καθαρισμού: Κλείνει ΟΛΑ τα Tactical Overlays
+                if (window.PegasusUI && window.PegasusUI.panels) {
+                    window.PegasusUI.panels.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.style.display = "none";
+                    });
+                } else {
+                    // Fallback αν το dragdrop.js δεν έχει φορτώσει ακόμα
+                    Object.values(uiBtns).forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.style.display = "none";
+                    });
+                }
+
+                // Άνοιγμα του επιλεγμένου παραθύρου
+                const targetId = uiBtns[btnId];
+                const targetPanel = document.getElementById(targetId);
                 if (targetPanel) {
                     targetPanel.style.display = "block";
-                    if (btnId === "btnPreviewUI") openExercisePreview();
+                    
+                    // Εκτέλεση Logic ανάλογα με το Panel
+                    if (targetId === "previewPanel") openExercisePreview();
+                    if (targetId === "calendarPanel" && window.renderCalendar) window.renderCalendar();
+                    if (targetId === "achievementsPanel" && window.renderAchievements) window.renderAchievements();
+                    if (targetId === "foodPanel" && window.renderFood) window.renderFood();
+                    if (targetId === "galleryPanel" && window.renderGallery) window.renderGallery();
                 }
-                if (btnId === "btnCalendarUI" && window.renderCalendar) window.renderCalendar();
-                if (btnId === "btnAchUI" && window.renderAchievements) window.renderAchievements();
-                if (btnId === "btnFoodUI" && window.renderFood) window.renderFood();
             };
         }
     });
-    
+
+    // 4. Global Event Listeners & Utils
     const mainVideo = document.getElementById("video");
     if (mainVideo) mainVideo.oncontextmenu = (e) => e.preventDefault();
 
@@ -669,12 +671,14 @@ window.onload = () => {
     if (weightInp) {
         weightInp.value = userWeight;
         weightInp.onchange = (e) => { 
-            userWeight = parseFloat(e.target.value) || 80; 
+            userWeight = parseFloat(e.target.value) || 74; 
             localStorage.setItem("pegasus_weight", userWeight); 
         };
     }
 
     if (typeof fetchWeather === "function") fetchWeather();
+    
+    // Auto-select Today
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = greekDays[new Date().getDay()];
     setTimeout(() => { 
@@ -684,7 +688,7 @@ window.onload = () => {
     }, 300);
 };
 
-/* === PEGASUS PREVIEW ENGINE v16.2 (CLEAN MINIMAL EDITION) === */
+/* === PEGASUS PREVIEW ENGINE v16.9 (CLEAN MINIMAL EDITION) === */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -716,17 +720,29 @@ function openExercisePreview() {
             let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
             let imgFileName = videoId + extension;
 
-            // ΚΑΘΑΡΟ HTML ΧΩΡΙΣ BADGES
             content.innerHTML += `
                 <div class="preview-item">
-                    <img src="images/${imgFileName}" 
-                         onerror="this.src='images/placeholder.jpg'">
+                    <img src="images/${imgFileName}" onerror="this.src='images/placeholder.jpg'">
                     <p>${cleanName}</p>
                 </div>
             `;
         });
     }
 }
+
+/* === DATA & TRACKING LOGIC === */
+window.logPegasusSet = function(exName) {
+    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+    if (!window.exercisesDB) return;
+    const exercise = window.exercisesDB.find(ex => ex.name.trim() === exName.trim());
+    if (exercise && exercise.muscleGroup) {
+        const value = (exercise.name.includes("Ποδηλασία")) ? 18 : 1;
+        history[exercise.muscleGroup] = (history[exercise.muscleGroup] || 0) + value;
+        localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+        if (window.MuscleProgressUI) window.MuscleProgressUI.render();
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
+    }
+};
 
 window.updateTotalWorkoutCount = function() {
     const data = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
