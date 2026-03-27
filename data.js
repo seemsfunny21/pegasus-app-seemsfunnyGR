@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.2 (FINAL UNIFIED BUILD)
-   Protocol: Strict Data Analyst - Protected Storage Keys & Global Exports
+   PEGASUS DATA ENGINE - v8.3 (STABILIZED BUILD)
+   Protocol: Strict Data Analyst - Emoji-Safe Naming & Unified Video Mapping
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
@@ -10,7 +10,6 @@ window.MAX_DAILY_MINUTES = 60;
 
 /**
  * 1. PEGASUS STORE PROTOCOL
- * Διαχωρισμός θερμίδων φαγητού (pegasus_diet_kcal) από προπόνηση (pegasus_today_kcal)
  */
 window.PegasusStore = {
     keys: {
@@ -19,7 +18,6 @@ window.PegasusStore = {
         protTotal: "pegasus_today_protein",
         library: "pegasus_food_library"
     },
-
     getFoodLog: function(dateStr) {
         const key = this.keys.foodPrefix + dateStr;
         try {
@@ -27,13 +25,11 @@ window.PegasusStore = {
             return data ? JSON.parse(data) : [];
         } catch (e) { return []; }
     },
-
     saveFoodLog: function(dateStr, logArray) {
         if (!Array.isArray(logArray)) return false;
         localStorage.setItem(this.keys.foodPrefix + dateStr, JSON.stringify(logArray));
         return true;
     },
-
     updateDailyTotals: function(kcal, prot) {
         localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1));
         localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1));
@@ -69,10 +65,11 @@ const STRENGTH_EXERCISES = [
 window.exercisesDB = STRENGTH_EXERCISES;
 
 /**
- * 2. DYNAMIC PROGRAM GENERATOR
+ * 2. DYNAMIC PROGRAM GENERATOR (CLEAN NAMES ONLY)
  */
 window.calculateDailyProgram = function(dayName) {
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
+    
     if (dayName === "Τετάρτη") return [
         { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
         { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
@@ -80,18 +77,15 @@ window.calculateDailyProgram = function(dayName) {
         { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
     ];
 
-    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
     let currentMins = 0;
     const program = [];
 
-    // Ορισμός προτεραιοτήτων ανά ημέρα
     const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
                         (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : ["Κορμός"];
     
     focusGroups.forEach(group => {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
         groupEx.forEach(ex => {
-            // Έλεγχος ορίου χρόνου (7 λεπτά μέσος όρος ανά άσκηση 4 σετ με διαλείμματα)
             if (currentMins + 7 <= 60) {
                 program.push({ ...ex, sets: 4, duration: 45 });
                 currentMins += 7;
@@ -117,7 +111,7 @@ window.program = {
 };
 
 /**
- * 3. VIDEO MAPPING
+ * 3. VIDEO MAPPING - MASTER KEYS
  */
 window.videoMap = {
     "Seated Chest Press": "chestpress",
