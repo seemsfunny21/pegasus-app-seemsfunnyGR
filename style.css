@@ -490,16 +490,15 @@ bottom: 0px;
 input:checked + .slider { background-color: #ff4b2b; }
 input:checked + .slider:before { transform: translateX(26px); }
 
-/* ================= PREVIEW PANEL - RESTORE GRID LAYOUT (v13.9) ================= */
-/* ================= PREVIEW PANEL - OPTIMIZED BALANCED GRID (v14.0) ================= */
+/* ================= PREVIEW PANEL - 4-COLUMN SYMMETRY (v14.5) ================= */
 #previewPanel {
     transform: none;
     position: fixed;
     left: auto;
     right: 20px;
     top: 150px;
-    /* Αυξάνουμε το πλάτος για να χωράνε άνετα 3 ασκήσεις ανά σειρά */
-    width: 620px; 
+    /* Ιδανικό πλάτος για 4 στήλες των ~150px */
+    width: 680px; 
     min-width: 320px;
     background: #0f0f0f;
     z-index: 10001;
@@ -507,66 +506,45 @@ input:checked + .slider:before { transform: translateX(26px); }
     border-radius: 12px;
 }
 
-#previewPanel .panel-header {
-    background: rgba(76, 175, 80, 0.1);
-    padding: 12px;
-    border-radius: 10px 10px 0 0;
-    border-bottom: 1px solid #4CAF50;
-    /* Αντισταθμίζουμε το padding του panel */
-    margin: -25px -25px 15px -25px; 
-}
-
-/* Ο container των ασκήσεων */
 #previewContent {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: wrap !important;
-    justify-content: flex-start; /* Στοίχιση αριστερά για ισορροπία */
-    gap: 12px; /* Gap για αναπνοή */
+    justify-content: flex-start;
+    gap: 10px; /* Ελαφρώς μικρότερο gap για εξοικονόμηση χώρου */
     padding: 15px;
-    max-height: 60vh;
+    max-height: 70vh;
     overflow-y: auto;
     box-sizing: border-box;
 }
 
-/* Το κάθε στοιχείο άσκησης */
 .preview-item {
-    /* Δυναμικός υπολογισμός για 3 items ανά σειρά μείον το gap */
-    flex: 0 1 calc(33.33% - 8px); 
+    /* Δυναμικός υπολογισμός για 4 items (25% μείον το gap) */
+    flex: 0 1 calc(25% - 8px); 
     text-align: center;
     background: rgba(255,255,255,0.02);
-    padding: 12px 10px;
+    padding: 10px 5px;
     border-radius: 10px;
     border: 1px solid #222;
     box-sizing: border-box;
-    transition: all 0.2s ease;
 }
 
-.preview-item:hover {
-    border-color: #4CAF50;
-    background: rgba(76, 175, 80, 0.05);
-}
-
-/* Προσαρμογή των εικόνων μέσα στο item */
 .preview-item img {
     width: 100%;
-    height: 120px; /* Σταθερό ύψος για ομοιομορφία */
-    border: 2px solid #4CAF50;
-    border-radius: 8px;
-    object-fit: cover; /* Crop για γέμισμα */
+    height: 100px; /* Λίγο πιο χαμηλό ύψος για πιο "μαζεμένο" look */
+    border: 1px solid #4CAF50;
+    border-radius: 6px;
+    object-fit: cover;
     background: #222;
 }
 
-/* Προσαρμογή του κειμένου κάτω από την εικόνα */
 .preview-item p {
     color: #4CAF50;
     font-weight: bold;
-    font-size: 11px;
-    margin-top: 8px;
+    font-size: 10px; /* Micro-font για tactical αίσθηση */
+    margin-top: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    /* Εμποδίζει το κείμενο να ξεφεύγει */
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap; 
+    white-space: nowrap;
 }
