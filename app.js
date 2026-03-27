@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v17.8 MAXIMALIST
-   Protocol: Full Logic Recovery, Metabolic Tracking, UI Sync
+   PEGASUS WORKOUT ENGINE - v17.9 FULL ARCHIVE EDITION
+   Protocol: Zero-Loss Logic, Metabolic Tracking, Partner Sync, Preview Engine
    ========================================================================== */
 
 var exercises = [];
@@ -23,7 +23,7 @@ var workoutPhases = [
 ];
 var userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
 
-/* ===== AUDIO SYSTEM ===== */
+/* ===== AUDIO & SYNC INITIALIZATION ===== */
 let sysAudio = new Audio('videos/beep.mp3');
 let audioUnlocked = false;
 
@@ -33,15 +33,19 @@ document.addEventListener('click', function() {
             sysAudio.pause(); sysAudio.currentTime = 0;
             audioUnlocked = true;
             if (window.PegasusCloud && typeof window.PegasusCloud.pull === "function") window.PegasusCloud.pull();
-        }).catch(e => console.warn("Audio pending..."));
+        }).catch(e => console.warn("Audio unlock pending..."));
     }
 }, { once: true });
 
 const playBeep = (volume = 1) => {
-    if (!muted) { sysAudio.volume = volume; sysAudio.currentTime = 0; sysAudio.play().catch(e => {}); }
+    if (!muted) { 
+        sysAudio.volume = volume; 
+        sysAudio.currentTime = 0; 
+        sysAudio.play().catch(e => {}); 
+    }
 };
 
-/* ===== NAVIGATION & DAY SELECTION ===== */
+/* ===== NAVIGATION ENGINE ===== */
 function createNavbar() {
     const nav = document.getElementById("navbar");
     if (!nav) return;
@@ -109,7 +113,7 @@ function selectDay(btn, day) {
     showVideo(0);
 }
 
-/* ===== CORE ENGINE LOGIC ===== */
+/* ===== WORKOUT ENGINE (THE HEART) ===== */
 function startPause() {
     if (exercises.length === 0) return;
     running = !running;
@@ -146,7 +150,6 @@ function runPhase() {
         t -= 1;
         if (remainingSeconds > 0) { remainingSeconds -= 1; updateTotalBar(); }
         
-        // Metabolic Tracking Connection
         if (window.MetabolicEngine && phase === 1) {
             window.MetabolicEngine.updateTracking(1, e.querySelector(".weight-input").dataset.name);
         }
@@ -156,14 +159,14 @@ function runPhase() {
         if (t <= 0) {
             clearInterval(timer);
             playBeep();
-            if (phase === 0) { phase = 1; runPhase(); }
-            else if (phase === 1) {
+            if (phase === 0) {
+                phase = 1; runPhase();
+            } else if (phase === 1) {
                 let done = parseInt(e.dataset.done) + 1;
                 e.dataset.done = done;
                 remainingSets[currentIdx]--;
                 e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
                 
-                // Update Achievements
                 if (window.updateAchievements) window.updateAchievements(e.querySelector(".weight-input").dataset.name);
                 
                 phase = 2; runPhase();
@@ -176,7 +179,7 @@ function runPhase() {
     }, 1000 / SPEED);
 }
 
-/* ===== VIDEO & UI UPDATES ===== */
+/* ===== VIDEO ENGINE ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
     if (!vid) return;
@@ -191,6 +194,40 @@ function showVideo(i) {
     }
 }
 
+/* ===== PREVIEW ENGINE (RECOVERED) ===== */
+function openExercisePreview() {
+    const activeBtn = document.querySelector(".navbar button.active");
+    if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
+
+    const currentDay = activeBtn.textContent.trim();
+    const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
+    let rawData = (typeof window.calculateDailyProgram !== 'undefined') ? 
+                  window.calculateDailyProgram(currentDay, isRainy) : (window.program[currentDay] || []);
+    
+    const dayExercises = window.PegasusOptimizer ? window.PegasusOptimizer.apply(currentDay, rawData) : rawData;
+
+    const panel = document.getElementById('previewPanel');
+    const content = document.getElementById('previewContent');
+    if (!panel || !content) return;
+
+    panel.style.display = 'block';
+    content.innerHTML = ''; 
+
+    dayExercises.filter(ex => ex.sets > 0 || ex.adjustedSets > 0).forEach((ex) => {
+        const cleanName = ex.name.trim();
+        let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) ? videoMap[cleanName] : cleanName.replace(/\s+/g, '').toLowerCase();
+        let ext = (videoId === "cycling") ? ".jpg" : ".png";
+
+        content.innerHTML += `
+            <div class="preview-item">
+                <img src="images/${videoId}${ext}" onerror="this.src='images/placeholder.jpg'">
+                <p>${cleanName}</p>
+            </div>
+        `;
+    });
+}
+
+/* ===== UI PROGRESS & TIME CALCULATIONS ===== */
 function calculateTotalTime() {
     totalSeconds = 0;
     exercises.forEach((exDiv) => {
@@ -206,7 +243,7 @@ function updateTotalBar() {
     const bar = document.getElementById("totalProgress");
     const timeText = document.getElementById("totalProgressTime");
     if (!bar) return;
-    const progress = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+    const progress = totalSeconds > 0 ? ((totalSeconds - remainingSeconds) / totalSeconds) * 100 : 0;
     bar.style.width = Math.max(0, Math.min(100, progress)) + "%";
     if (timeText) {
         const m = Math.floor(remainingSeconds / 60);
@@ -215,7 +252,7 @@ function updateTotalBar() {
     }
 }
 
-/* ===== UTILS ===== */
+/* ===== UTILS & HELPERS ===== */
 function saveWeight(name, val) {
     localStorage.setItem(`weight_ANGELOS_${name}`, val);
     if (window.PegasusCloud) window.PegasusCloud.push(true);
@@ -243,7 +280,6 @@ function finishWorkout() {
     const label = document.getElementById("phaseTimer");
     if (label) label.textContent = "ΟΛΟΚΛΗΡΩΣΗ...";
     
-    // Save to History
     let history = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
     history[new Date().toISOString().split('T')[0]] = true;
     localStorage.setItem("pegasus_workouts_done", JSON.stringify(history));
@@ -252,7 +288,7 @@ function finishWorkout() {
     setTimeout(() => location.reload(), 3000);
 }
 
-/* ===== INITIALIZATION (v17.8) ===== */
+/* ===== UNIFIED INITIALIZATION (v17.9) ===== */
 window.onload = () => {
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     createNavbar();
@@ -273,7 +309,7 @@ window.onload = () => {
             localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput").value);
             localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput").value);
             localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput").value);
-            alert("PEGASUS: Ρυθμίσεις Σώθηκαν!");
+            alert("PEGASUS OS: Ρυθμίσεις Σώθηκαν!");
             location.reload();
         },
         "btnSaveEMS": () => { if(window.saveEMSFinal) window.saveEMSFinal(); },
@@ -317,7 +353,7 @@ window.onload = () => {
     }, 300);
 };
 
-/* ===== GLOBAL HELPERS ===== */
+/* ===== GLOBAL RECOVERY HELPERS ===== */
 window.saveWeight = saveWeight;
 window.toggleSkipExercise = function(idx) {
     const exDiv = exercises[idx];
