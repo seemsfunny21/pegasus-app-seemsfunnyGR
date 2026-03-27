@@ -729,21 +729,6 @@ function openExercisePreview() {
     }
 }
 
-// CLOSING LOGIC (Click Outside Protocol remains unmodified and functional)
-window.addEventListener('mousedown', (e) => {
-    const panels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel'];
-    let closedAny = false;
-    panels.forEach(id => {
-        const panel = document.getElementById(id);
-        if (panel && panel.style.display === 'block') {
-            if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button')) {
-                panel.style.display = 'none';
-                closedAny = true;
-            }
-        }
-    });
-    if (closedAny && window.PegasusCloud) window.PegasusCloud.push(true);
-});
 
 window.logPegasusSet = function(exName) {
     let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
