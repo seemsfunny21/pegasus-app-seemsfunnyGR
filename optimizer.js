@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v2.0 (RECOVERY AWARE & STRICT TIME)
-   Protocol: Load Management (Fri/Sat/Sun) - 45m Cap - 5 Set Volume Boost
+   PEGASUS DYNAMIC OPTIMIZER - v2.1 (STRICT ISOLATION & LOCK)
+   Protocol: Strict Load Management - No Group Overlap - Weather Aware
    ========================================================================== */
 
 window.PegasusOptimizer = {
@@ -8,28 +8,31 @@ window.PegasusOptimizer = {
         try {
             const stored = localStorage.getItem("pegasus_muscle_targets");
             return stored ? JSON.parse(stored) : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-        } catch (e) {
-            return { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-        }
+        } catch (e) { return { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρia": 16, "Ώμοι": 16, "Κορμός": 12 }; }
     },
 
     apply: function(day, sessionExercises) {
         const progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         let sessionTracker = { ...progress };
         const currentTargets = this.getTargets(); 
+        const rain = (typeof window.isRaining === 'function') ? window.isRaining() : false;
 
-        // 1. Αρχικό mapping βασικών ασκήσεων
+        // 1. DATA GUARD: Ποδηλασία μόνο Σάββατο και μόνο αν ΔΕΝ βρέχει
+        if (day !== "Σάββατο" || rain) {
+            sessionExercises = sessionExercises.filter(ex => !ex.name.includes("Ποδηλασία"));
+        }
+
+        // 2. Αρχικό mapping βασικών ασκήσεων
         let mappedData = sessionExercises.map(ex => this.calculateExercise(ex, sessionTracker, currentTargets));
 
-        // Υπολογισμός χρόνου: 1.9 λεπτά ανά άσκηση (5 σετ x 115" + μετάβαση)
+        // Υπολογισμός χρόνου: 1.9 λεπτά ανά άσκηση (5 σετ)
         const getActiveMins = (data) => data.reduce((sum, ex) => sum + (ex.adjustedSets > 0 ? (ex.adjustedSets * 1.9) : 0), 0);
         let currentMinutes = getActiveMins(mappedData);
 
-        // 2. SMART LOAD BALANCING (Π/Σ/Κ)
+        // 3. SMART LOAD BALANCING (Π/Σ/Κ) - Στόχος τα 45-50 λεπτά
         if ((day === "Παρασκευή" || day === "Σάββατο" || day === "Κυριακή") && currentMinutes < 45) {
-            console.log(`[OPTIMIZER v2.0] ${day} at ${currentMinutes.toFixed(1)}m. Balancing...`);
             
-            // Πρωτόκολλο Απομόνωσης Μυϊκών Ομάδων (Load Split)
+            // Πρωτόκολλο Αυστηρής Απομόνωσης (Strict Isolation)
             const dailyPriority = {
                 "Παρασκευή": ["Πλάτη", "Ώμοι"],
                 "Σάββατο": ["Πόδια", "Κορμός"],
@@ -39,25 +42,22 @@ window.PegasusOptimizer = {
             const searchGroups = dailyPriority[day] || ["Κορμός"];
             
             for (let groupName of searchGroups) {
-                if (currentMinutes >= 45) break;
+                if (currentMinutes >= 50) break; // Αυξήσαμε λίγο το όριο για σιγουριά
 
-                // Αναζήτηση στην Database για ασκήσεις της συγκεκριμένης ομάδας
+                // Αναζήτηση στην Database
                 const potentialEx = window.exercisesDB.filter(ex => ex.muscleGroup === groupName);
 
                 for (let sEx of potentialEx) {
-                    if (currentMinutes >= 45) break;
+                    if (currentMinutes >= 50) break;
                     
-                    // GUARD: Απαγόρευση Ποδηλασίας την Παρασκευή
-                    if (sEx.name.includes("Ποδηλασία")) continue;
-
                     const done = sessionTracker[groupName] || 0;
                     const target = currentTargets[groupName] || 24;
 
-                    // Έλεγχος αν η άσκηση λείπει από το σημερινό πλάνο και αν υπάρχει υπόλοιπο στα stats
+                    // Αν λείπουν σετ και η άσκηση δεν είναι ήδη στο πλάνο
                     if (done < target && !mappedData.some(m => m.name.trim() === sEx.name.trim())) {
-                        // Επιβολή 5 σετ για το τριήμερο (Volume Boost)
                         let spilloverEx = this.calculateExercise({...sEx, sets: 5}, sessionTracker, currentTargets);
                         
+                        // DATA LOCK: Αν η άσκηση δεν έδωσε σετ, μην την προσθέσεις
                         if (spilloverEx.adjustedSets > 0) {
                             spilloverEx.isSpillover = true;
                             mappedData.push(spilloverEx);
@@ -75,11 +75,12 @@ window.PegasusOptimizer = {
         const target = currentTargets[group] || 24;
         const remaining = target - (tracker[group] || 0);
         
-        // Capping σετ βάσει του τι απομένει στην εβδομάδα
         let finalSets = (remaining <= 0) ? 0 : (ex.sets > remaining ? remaining : ex.sets);
         
-        // Ειδική λογική για ποδηλασία (18 σετ weight)
-        if (ex.name.includes("Ποδηλασία")) finalSets = (remaining >= 18) ? 1 : 0;
+        // Λογική Ποδηλασίας (18 σετ weight lock)
+        if (ex.name.includes("Ποδηλασία")) {
+            finalSets = (remaining >= 18) ? 1 : 0;
+        }
         
         if (finalSets > 0) {
             tracker[group] += (ex.name.includes("Ποδηλασία") ? 18 : finalSets);
@@ -94,14 +95,6 @@ window.PegasusOptimizer = {
             const match = window.exercisesDB.find(ex => ex.name === cleanName);
             if (match) return match.muscleGroup;
         }
-        // Fallback mapping
-        const n = cleanName.toLowerCase();
-        if (n.includes("στήθος") || n.includes("chest") || n.includes("pushups")) return "Στήθος";
-        if (n.includes("πλάτη") || n.includes("row") || n.includes("pulldown")) return "Πλάτη";
-        if (n.includes("πόδια") || n.includes("leg") || n.includes("kickbacks") || n.includes("cycling")) return "Πόδια";
-        if (n.includes("χέρια") || n.includes("bicep") || n.includes("tricep") || n.includes("curls")) return "Χέρια";
-        if (n.includes("ώμοι") || n.includes("shoulder") || n.includes("upright")) return "Ώμοι";
-        if (n.includes("κορμός") || n.includes("abs") || n.includes("crunch") || n.includes("plank")) return "Κορμός";
         return "Άλλο";
     }
 };
