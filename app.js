@@ -87,51 +87,38 @@ function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', '#000', 'important');
-        b.style.setProperty('border', 'none', 'important');
         b.style.color = "#fff";
     });
     
     if (btn) {
         btn.classList.add("active");
         btn.style.setProperty('background-color', '#4CAF50', 'important');
-        btn.style.color = "#fff";
     }
 
-    if (window.PegasusCloud) window.PegasusCloud.push(true);
-
-    clearInterval(timer);
-    timer = null;
-    running = false;
-    phase = 0;
-    currentIdx = 0;
+    clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    // 1. WEATHER DETECTION LOGIC
-    const weatherElement = document.getElementById("weather-desc");
-    const weatherText = weatherElement ? weatherElement.innerText.toLowerCase() : "";
-    const isRainy = weatherText.includes("βροχή") || weatherText.includes("rain");
+    // --- CORRECTION: Use Unified Weather Logic ---
+    const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
 
-    // 2. FETCH PROGRAM (Passing the isRainy flag to data.js)
+    // --- CORRECTION: Apply Optimizer to Main List ---
     let rawBaseData = (typeof window.calculateDailyProgram !== 'undefined') ? 
-                      window.calculateDailyProgram(day, isRainy) : 
-                      ((window.program[day]) ? [...window.program[day]] : []);
+                      window.calculateDailyProgram(day, isRainy) : [];
 
     let mappedData = [];
     if (window.PegasusOptimizer) {
-        mappedData = PegasusOptimizer.apply(day, rawBaseData);
+        mappedData = window.PegasusOptimizer.apply(day, rawBaseData);
     } else {
         mappedData = rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
     }
 
+    // Sort: 0 sets go to bottom
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
 
     const list = document.getElementById("exList");
     if (!list) return;
-
-    list.innerHTML = ""; 
-    exercises = [];
-    remainingSets = [];
+    list.innerHTML = ""; exercises = []; remainingSets = [];
 
     mappedData.forEach((e, idx) => {
         const d = document.createElement("div");
@@ -139,25 +126,21 @@ function selectDay(btn, day) {
         d.dataset.total = e.adjustedSets;
         d.dataset.done = 0;
         d.dataset.index = idx;
-        d.setAttribute("draggable", "true");
-
-        if (e.isCompleted || e.adjustedSets === 0) {
-            d.style.setProperty('opacity', '0.2', 'important');
-            d.style.setProperty('filter', 'grayscale(100%)', 'important');
+        
+        if (e.adjustedSets === 0) {
             d.classList.add("exercise-skipped");
-            d.style.pointerEvents = "none"; 
+            d.style.opacity = "0.2";
+            d.style.pointerEvents = "none";
         }
 
         const cleanName = e.name.trim();
-        const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || localStorage.getItem(`weight_${cleanName}`) || "";
+        const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || "";
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">0/${e.adjustedSets}</div>
                 <div class="exercise-name">${e.isCompleted ? `${cleanName} 🎯` : cleanName}</div>
-                <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
-                       onclick="event.stopPropagation()" onchange="saveWeight('${safeName}', this.value)">
+                <input type="number" class="weight-input" data-name="${cleanName}" placeholder="kg" value="${savedWeight}" onclick="event.stopPropagation()">
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
         `;
@@ -166,9 +149,8 @@ function selectDay(btn, day) {
         remainingSets.push(parseInt(e.adjustedSets));
     });
 
-    if (typeof calculateTotalTime === "function") setTimeout(() => { calculateTotalTime(); }, 50); 
+    if (typeof calculateTotalTime === "function") calculateTotalTime();
     if (typeof showVideo === "function") showVideo(0);
-    if (typeof initDragDrop === "function") initDragDrop();
 }
 
 function reorderExercises() {
@@ -688,56 +670,42 @@ window.onload = () => {
 /* === PEGASUS PREVIEW ENGINE v18.8 (CLEAN MINIMAL EDITION) === */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
-    if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
+    if (!activeBtn) return alert("Επίλεξε ημέρα!");
 
-    // 1. CLEANING: Αφαίρεση του ήλιου από το κείμενο του κουμπιού
     const currentDay = activeBtn.textContent.trim().replace(" ☀️", "");
-    
-    const weatherElement = document.getElementById("weather-desc");
-    const weatherText = weatherElement ? weatherElement.innerText.toLowerCase() : "";
-    const isRainy = weatherText.includes("βροχή") || weatherText.includes("rain");
+    const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
 
-    // 2. DATA FETCH: Κλήση με το flag βροχής
-    const dayExercises = typeof window.calculateDailyProgram !== 'undefined' ? 
-                         window.calculateDailyProgram(currentDay, isRainy) : 
-                         (window.program[currentDay] || []);
+    // --- CORRECTION: Fetch AND Optimize for Preview ---
+    let rawData = typeof window.calculateDailyProgram !== 'undefined' ? 
+                  window.calculateDailyProgram(currentDay, isRainy) : [];
+    
+    // ΕΔΩ ΕΙΝΑΙ Η ΚΡΙΣΙΜΗ ΠΡΟΣΘΗΚΗ
+    const dayExercises = window.PegasusOptimizer ? 
+                         window.PegasusOptimizer.apply(currentDay, rawData) : rawData;
 
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
-    
     if (!panel || !content) return;
 
-    const exerciseCount = dayExercises ? dayExercises.length : 0;
-    document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()} [${exerciseCount} ΑΣΚΗΣΕΙΣ]`;
-    
+    // Φιλτράρουμε τις ασκήσεις με 0 σετ για καθαρή προεπισκόπηση
+    const activePreview = dayExercises.filter(ex => ex.adjustedSets > 0);
+
+    document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()} [${activePreview.length} ΑΣΚΗΣΕΙΣ]`;
     panel.style.display = 'block';
     content.innerHTML = ''; 
 
-    if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
-        window.MuscleProgressUI.render();
-    }
+    activePreview.forEach((ex) => {
+        const cleanName = ex.name.trim().replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+        let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) ? videoMap[cleanName] : cleanName.replace(/\s+/g, '').toLowerCase();
+        let imgFileName = (videoId === "cycling") ? videoId + ".jpg" : videoId + ".png";
 
-    if(dayExercises) {
-        dayExercises.forEach((ex) => {
-            // 3. SANITIZATION: Καθαρισμός ονόματος άσκησης από τυχόν emojis για το image mapping
-            const cleanName = ex.name.trim().replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-            
-            let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
-                          ? videoMap[cleanName] 
-                          : cleanName.replace(/\s+/g, '').toLowerCase();
-
-            // Καθορισμός επέκτασης (Ποδηλασία -> jpg, Ασκήσεις -> png)
-            let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
-            let imgFileName = videoId + extension;
-
-            content.innerHTML += `
-                <div class="preview-item">
-                    <img src="images/${imgFileName}" onerror="this.src='images/placeholder.jpg'">
-                    <p>${cleanName}</p>
-                </div>
-            `;
-        });
-    }
+        content.innerHTML += `
+            <div class="preview-item">
+                <img src="images/${imgFileName}" onerror="this.src='images/placeholder.jpg'">
+                <p>${cleanName} (${ex.adjustedSets} set)</p>
+            </div>
+        `;
+    });
 }
 
 /* === DATA & TRACKING LOGIC === */
