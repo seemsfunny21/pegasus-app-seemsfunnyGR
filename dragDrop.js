@@ -1,81 +1,102 @@
 /* ==========================================================================
-   PEGASUS DRAG & DROP ENGINE - v3.2 (UNIFIED ARCHITECTURE)
-   Protocol: Strict Modular Design - Universal Panel Support
+   PEGASUS UI MANAGER - v3.3 (UNIFIED DRAG & CLOSE)
+   Protocol: Strict Modular Design - Centralized Panel Management
    ========================================================================== */
 
-// --- ΜΕΡΟΣ 1: ΜΕΤΑΚΙΝΗΣΗ ΠΑΡΑΘΥΡΩΝ (PANELS) ---
-function initDraggablePanels() {
-    const movablePanels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'];
-    
-    movablePanels.forEach(panelId => {
-        const panel = document.getElementById(panelId);
-        if (!panel) return;
+const PegasusUI = {
+    // Η επίσημη λίστα των Tactical Overlays που επιτρέπεται να κλείνουν και να μετακινούνται
+    panels: ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'],
 
-        // 1. Επαναφορά θέσης από τη μνήμη
-        const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
-        if (savedPos) {
-            panel.style.transform = "none";
-            panel.style.margin = "0";
-            panel.style.position = "fixed";
-            panel.style.top = savedPos.top;
-            panel.style.left = savedPos.left;
-            panel.style.right = "auto"; 
-            panel.style.bottom = "auto";
-        }
+    init() {
+        this.initDraggablePanels();
+        this.initClickOutside();
+        console.log("✅ PEGASUS UI MANAGER: Unified Protocol Active");
+    },
 
-        // 2. Εντοπισμός Λαβής (Header): Ψάχνει για .panel-header ή h3
-        const header = panel.querySelector(".panel-header") || panel.querySelector("h3");
-        if (!header) return;
+    // --- ΜΗΧΑΝΙΣΜΟΣ ΜΕΤΑΚΙΝΗΣΗΣ ---
+    initDraggablePanels() {
+        this.panels.forEach(panelId => {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
 
-        header.style.cursor = "grab";
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            // 1. Επαναφορά θέσης
+            const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
+            if (savedPos) {
+                Object.assign(panel.style, {
+                    transform: "none", margin: "0", position: "fixed",
+                    top: savedPos.top, left: savedPos.left,
+                    right: "auto", bottom: "auto"
+                });
+            }
 
-        header.onmousedown = function(e) {
-            if (e.button !== 0) return; // Μόνο αριστερό κλικ
-            
-            e.preventDefault();
-            header.style.cursor = "grabbing";
+            // 2. Εντοπισμός Λαβής (Header)
+            const header = panel.querySelector(".panel-header") || panel.querySelector("h3");
+            if (!header) return;
+
+            header.style.cursor = "grab";
+            header.onmousedown = (e) => this.startDrag(e, panel, header);
+        });
+    },
+
+    startDrag(e, panel, header) {
+        if (e.button !== 0) return; // Μόνο αριστερό κλικ
+        e.preventDefault();
+        header.style.cursor = "grabbing";
+        
+        let pos3 = e.clientX, pos4 = e.clientY;
+        
+        // Z-Index Focus Management
+        document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
+        panel.style.zIndex = "1001";
+
+        const elementDrag = (e) => {
+            const pos1 = pos3 - e.clientX;
+            const pos2 = pos4 - e.clientY;
             pos3 = e.clientX;
             pos4 = e.clientY;
             
-            // Focus: Φέρνει το παράθυρο μπροστά
-            document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
-            panel.style.zIndex = "1001";
-
-            // Anti-Stretch Protocol: Απελευθέρωση όλων των CSS περιορισμών
+            // Anti-Stretch Protocol
             panel.style.right = "auto";
             panel.style.bottom = "auto";
-            panel.style.margin = "0";
-            panel.style.transform = "none";
-
-            document.onmouseup = closeDragElement;
-            document.onmousemove = elementDrag;
-        };
-
-        function elementDrag(e) {
-            e.preventDefault();
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            
             panel.style.top = (panel.offsetTop - pos2) + "px";
             panel.style.left = (panel.offsetLeft - pos1) + "px";
-        }
+        };
 
-        function closeDragElement() {
+        const closeDrag = () => {
             document.onmouseup = null;
             document.onmousemove = null;
             header.style.cursor = "grab";
-            
-            // Αποθήκευση θέσης
-            localStorage.setItem(`pegasus_pos_${panelId}`, JSON.stringify({
-                top: panel.style.top,
-                left: panel.style.left
+            localStorage.setItem(`pegasus_pos_${panel.id}`, JSON.stringify({
+                top: panel.style.top, left: panel.style.left
             }));
-        }
-    });
-}
+        };
+
+        document.onmouseup = closeDrag;
+        document.onmousemove = elementDrag;
+    },
+
+    // --- ΜΗΧΑΝΙΣΜΟΣ ΚΛΕΙΣΙΜΑΤΟΣ (CLICK OUTSIDE) ---
+    initClickOutside() {
+        window.addEventListener('mousedown', (e) => {
+            let closedAny = false;
+            
+            this.panels.forEach(id => {
+                const panel = document.getElementById(id);
+                // Αν το πάνελ είναι ανοιχτό...
+                if (panel && panel.style.display === 'block') {
+                    // ...και το κλικ είναι ΕΞΩ από αυτό ΚΑΙ όχι σε κουμπιά της Navbar
+                    if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button')) {
+                        panel.style.display = 'none';
+                        closedAny = true;
+                    }
+                }
+            });
+
+            // Αν έκλεισε κάτι, κάνουμε push για να σωθεί η κατάσταση στο Cloud
+            if (closedAny && window.PegasusCloud) window.PegasusCloud.push(true);
+        });
+    }
+};
 
 // --- ΜΕΡΟΣ 2: ΑΝΑΔΙΑΤΑΞΗ ΑΣΚΗΣΕΩΝ (EXERCISES) ---
 function initExerciseListDrag() {
@@ -120,7 +141,6 @@ function initExerciseListDrag() {
 
 // BOOT ENGINE
 window.addEventListener('load', () => {
-    initDraggablePanels();
+    PegasusUI.init();
     initExerciseListDrag();
-    console.log("✅ PEGASUS DRAG ENGINE v3.2: Unified & Active");
 });
