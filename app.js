@@ -699,7 +699,10 @@ function openExercisePreview() {
     
     if (!panel || !content) return;
 
-    document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()}`;
+    // Προσθήκη δυναμικού μετρητή ασκήσεων στον τίτλο
+    const exerciseCount = dayExercises ? dayExercises.length : 0;
+    document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()} [${exerciseCount} ΑΣΚΗΣΕΙΣ]`;
+    
     panel.style.display = 'block';
     content.innerHTML = ''; 
 
@@ -707,32 +710,33 @@ function openExercisePreview() {
         window.MuscleProgressUI.render();
     }
 
-/* === PEGASUS PREVIEW ENGINE v16.0 (WITH STEP BADGES) === */
-if(dayExercises) {
-    dayExercises.forEach((ex, index) => { // Προσθέτουμε το index εδώ
-        const cleanName = ex.name.trim();
-        let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
-                      ? videoMap[cleanName] 
-                      : cleanName.replace(/\s+/g, '').toLowerCase();
+    /* === PEGASUS PREVIEW ENGINE v16.0 (WITH STEP BADGES) === */
+    if(dayExercises) {
+        dayExercises.forEach((ex, index) => {
+            const cleanName = ex.name.trim();
+            let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
+                          ? videoMap[cleanName] 
+                          : cleanName.replace(/\s+/g, '').toLowerCase();
 
-        let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
-        let imgFileName = videoId + extension;
+            let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
+            let imgFileName = videoId + extension;
 
-        content.innerHTML += `
-            <div class="preview-item" style="position: relative;">
-                <div style="position: absolute; top: 12px; left: 12px; background: #4CAF50; color: #000; font-weight: 900; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 0 8px rgba(0,0,0,0.8); border: 1px solid #000;">
-                    ${index + 1}
+            content.innerHTML += `
+                <div class="preview-item">
+                    <div style="position: absolute; top: 12px; left: 12px; background: #4CAF50; color: #000; font-weight: 900; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 0 8px rgba(0,0,0,0.8); border: 1px solid #000;">
+                        ${index + 1}
+                    </div>
+                    
+                    <img src="images/${imgFileName}" 
+                         onerror="this.src='images/placeholder.jpg'">
+                    <p>${cleanName}</p>
                 </div>
-                
-                <img src="images/${imgFileName}" 
-                     onerror="this.src='images/placeholder.jpg'">
-                <p>${cleanName}</p>
-            </div>
-        `;
-    });
-}
+            `;
+        });
+    }
+} // <--- ΑΥΤΗ Η ΑΓΚΥΛΗ ΕΛΕΙΠΕ ΚΑΙ ΠΡΟΚΑΛΟΥΣΕ ΤΟ CRASH
 
-
+/* === DATA & TRACKING LOGIC === */
 window.logPegasusSet = function(exName) {
     let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
     if (!window.exercisesDB) return;
