@@ -67,3 +67,85 @@ function initDragDrop() {
         }
     });
 }
+
+/* ==========================================================================
+   UNIVERSAL FLOATING PANELS ENGINE (Moved from app.js & Patched)
+   Protocol: CSS Anchor Release (Zero-Stretching)
+   ========================================================================== */
+function initDraggablePanels() {
+    const movablePanels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'];
+    
+    movablePanels.forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+
+        // 1. Restore Position & Release Anchors on Load
+        const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
+        if (savedPos) {
+            panel.style.transform = "none";
+            panel.style.margin = "0";
+            panel.style.position = "fixed";
+            panel.style.top = savedPos.top;
+            panel.style.left = savedPos.left;
+            // Απεμπλοκή για να μην τεντώνει όταν φορτώνει
+            panel.style.right = "auto";
+            panel.style.bottom = "auto";
+        }
+
+        // 2. Identify Drag Handle
+        const header = panel.querySelector("h3") || panel.querySelector(".panel-header");
+        if (!header) return;
+
+        header.style.cursor = "grab";
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+        header.onmousedown = function(e) {
+            e.preventDefault();
+            header.style.cursor = "grabbing";
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            
+            // Z-Index Focus: Φέρνει το πάνελ που πιάνεις μπροστά από όλα
+            document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
+            panel.style.zIndex = "1001";
+
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        };
+
+        function elementDrag(e) {
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            
+            panel.style.transform = "none";
+            panel.style.margin = "0";
+            panel.style.position = "fixed";
+            
+            // ΚΡΙΣΙΜΗ ΕΠΙΛΥΣΗ (Stretching Fix): 
+            // Σπάμε τις άγκυρες του CSS (right/bottom) για να επιτρέψουμε ελεύθερη κίνηση
+            panel.style.right = "auto";
+            panel.style.bottom = "auto";
+            
+            panel.style.top = (panel.offsetTop - pos2) + "px";
+            panel.style.left = (panel.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            header.style.cursor = "grab";
+            
+            // 3. Save Position to LocalStorage
+            localStorage.setItem(`pegasus_pos_${panelId}`, JSON.stringify({
+                top: panel.style.top,
+                left: panel.style.left
+            }));
+        }
+    });
+}
+
+// Αυτόματη αρχικοποίηση όταν φορτώνει το DOM
+window.addEventListener('load', initDraggablePanels);
