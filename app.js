@@ -707,26 +707,29 @@ function openExercisePreview() {
         window.MuscleProgressUI.render();
     }
 
-    if(dayExercises) {
-        dayExercises.forEach(ex => {
-            const cleanName = ex.name.trim();
-            let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
-                          ? videoMap[cleanName] 
-                          : cleanName.replace(/\s+/g, '').toLowerCase();
+/* === PEGASUS PREVIEW ENGINE v16.0 (WITH STEP BADGES) === */
+if(dayExercises) {
+    dayExercises.forEach((ex, index) => { // Προσθέτουμε το index εδώ
+        const cleanName = ex.name.trim();
+        let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
+                      ? videoMap[cleanName] 
+                      : cleanName.replace(/\s+/g, '').toLowerCase();
 
-            let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
-            let imgFileName = videoId + extension;
+        let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
+        let imgFileName = videoId + extension;
 
-            // ΚΑΘΑΡΟ HTML ΧΩΡΙΣ INLINE STYLES
-            content.innerHTML += `
-                <div class="preview-item">
-                    <img src="images/${imgFileName}" 
-                         onerror="this.src='images/placeholder.jpg'">
-                    <p>${cleanName}</p>
+        content.innerHTML += `
+            <div class="preview-item" style="position: relative;">
+                <div style="position: absolute; top: 12px; left: 12px; background: #4CAF50; color: #000; font-weight: 900; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 0 8px rgba(0,0,0,0.8); border: 1px solid #000;">
+                    ${index + 1}
                 </div>
-            `;
-        });
-    }
+                
+                <img src="images/${imgFileName}" 
+                     onerror="this.src='images/placeholder.jpg'">
+                <p>${cleanName}</p>
+            </div>
+        `;
+    });
 }
 
 
