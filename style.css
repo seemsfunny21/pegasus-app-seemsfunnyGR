@@ -490,19 +490,20 @@ bottom: 0px;
 input:checked + .slider { background-color: #ff4b2b; }
 input:checked + .slider:before { transform: translateX(26px); }
 
-/* ================= PREVIEW PANEL - DYNAMIC GREEN EDITION (v15.0) ================= */
+/* ================= PREVIEW PANEL - COMPACT DYNAMIC GREEN (v15.2) ================= */
 #previewPanel {
     transform: none;
     position: fixed;
     left: auto;
     right: 20px;
-    top: 100px; /* Λίγο πιο ψηλά για να έχει χώρο να μεγαλώσει */
-    width: 700px; 
+    top: 120px;
+    /* ΜΕΙΩΣΗ ΠΛΑΤΟΥΣ για να μικρύνουν οι ασκήσεις */
+    width: 600px; 
     min-width: 320px;
     
-    /* ΔΥΝΑΜΙΚΟ ΥΨΟΣ: Μεγαλώνει ανάλογα με τις ασκήσεις */
+    /* ΑΥΤΟΜΑΤΟ ΥΨΟΣ: Μαζεύει την Τετάρτη, μεγαλώνει την Τρίτη */
     height: auto !important; 
-    max-height: 85vh; /* Δεν βγαίνει ποτέ εκτός οθόνης */
+    max-height: 85vh; 
     
     background: #0a0a0a;
     z-index: 10001;
@@ -510,53 +511,49 @@ input:checked + .slider:before { transform: translateX(26px); }
     border-radius: 15px;
     display: none;
     flex-direction: column;
-    box-shadow: 0 0 30px rgba(0,0,0,1), 0 0 15px rgba(76, 175, 80, 0.2);
-}
-
-/* ΠΡΑΣΙΝΕΣ ΜΠΑΡΕΣ ΠΡΟΟΔΟΥ (Override για τις πορτοκαλί) */
-#previewPanel .progress-fill, 
-#previewPanel .muscle-bar-fill,
-#previewPanel [style*="background: orange"],
-#previewPanel [style*="background: rgb(255, 165, 0)"] {
-    background: #4CAF50 !important;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-}
-
-/* ΠΡΑΣΙΝΑ SCROLLBARS (Για να μην είναι λευκά/γκρι) */
-#previewPanel::-webkit-scrollbar,
-#previewContent::-webkit-scrollbar {
-    width: 6px;
-}
-#previewPanel::-webkit-scrollbar-thumb,
-#previewContent::-webkit-scrollbar-thumb {
-    background: #4CAF50;
-    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
 }
 
 #previewContent {
     display: flex !important;
     flex-wrap: wrap !important;
     justify-content: flex-start !important;
-    gap: 12px;
-    padding: 20px;
-    
-    /* Η ΧΡΥΣΗ ΤΟΜΗ: */
-    height: auto !important; 
-    overflow-y: auto !important; /* Αν χωράει, το scrollbar εξαφανίζεται. Αν όχι, εμφανίζεται. */
-    max-height: calc(85vh - 100px); /* Αφαιρούμε το ύψος του header/footer */
+    gap: 10px;
+    padding: 15px;
+    height: auto !important;
+    overflow-y: auto !important;
 }
 
 .preview-item {
-    flex: 0 1 calc(25% - 10px); /* 4 Στήλες */
+    /* 4 Στήλες (25%) */
+    flex: 0 0 calc(25% - 8px); 
     background: #111;
-    border: 1px solid #333;
+    border: 1px solid #222;
     border-radius: 10px;
-    padding: 10px;
-    transition: 0.3s;
+    padding: 8px;
+    text-align: center;
+    box-sizing: border-box;
 }
 
-.preview-item:hover {
-    border-color: #4CAF50;
+.preview-item img {
+    width: 100%;
+    /* ΚΛΕΙΔΩΜΕΝΟ ΥΨΟΣ για να μην γίνονται τεράστιες */
+    height: 95px; 
+    border: 1px solid #4CAF50;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #000;
+}
+
+.preview-item p {
+    color: #4CAF50;
+    font-size: 10px;
+    margin-top: 6px;
+    text-transform: uppercase;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ================= UNIVERSAL PEGASUS GREEN OVERRIDE ================= */
