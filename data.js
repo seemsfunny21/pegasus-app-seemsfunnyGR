@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.5 (WEATHER-AWARE & HYBRID WEEKEND)
-   Protocol: Strict Data Analyst - Dynamic Rain Logic & Protected Keys
+   PEGASUS DATA ENGINE - v8.6 (FINAL CLEAN BUILD)
+   Protocol: Strict Data Analyst - Emoji-Free Strings & Weather Logic
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
@@ -71,7 +71,7 @@ const STRENGTH_EXERCISES = [
 window.exercisesDB = STRENGTH_EXERCISES;
 
 /**
- * 3. DYNAMIC PROGRAM GENERATOR (v8.5 - RAIN AWARE)
+ * 3. DYNAMIC PROGRAM GENERATOR (v8.6 - RAIN AWARE)
  */
 window.calculateDailyProgram = function(dayName, isRainy = false) {
     // A. Recovery Days
@@ -115,7 +115,7 @@ window.calculateDailyProgram = function(dayName, isRainy = false) {
     return program;
 };
 
-// Initial Export (Defaults to Sun mode)
+// Global Program Export
 window.program = {
     "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
     "Τρίτη": window.calculateDailyProgram("Τρίτη"),
@@ -128,6 +128,7 @@ window.program = {
 
 /**
  * 4. VIDEO MAPPING SYSTEM
+ * Clean keys for sanitized matching in app.js
  */
 window.videoMap = {
     "Seated Chest Press": "chestpress",
