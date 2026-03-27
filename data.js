@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.3 (STABILIZED BUILD)
-   Protocol: Strict Data Analyst - Emoji-Safe Naming & Unified Video Mapping
+   PEGASUS DATA ENGINE - v8.4 (RAINY DAY OPTIMIZED)
+   Protocol: Strict Data Analyst - Hybrid Weekend Logic & Emoji-Safe Mapping
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
@@ -10,6 +10,7 @@ window.MAX_DAILY_MINUTES = 60;
 
 /**
  * 1. PEGASUS STORE PROTOCOL
+ * Centralized handling of local storage keys
  */
 window.PegasusStore = {
     keys: {
@@ -18,6 +19,7 @@ window.PegasusStore = {
         protTotal: "pegasus_today_protein",
         library: "pegasus_food_library"
     },
+
     getFoodLog: function(dateStr) {
         const key = this.keys.foodPrefix + dateStr;
         try {
@@ -25,17 +27,22 @@ window.PegasusStore = {
             return data ? JSON.parse(data) : [];
         } catch (e) { return []; }
     },
+
     saveFoodLog: function(dateStr, logArray) {
         if (!Array.isArray(logArray)) return false;
         localStorage.setItem(this.keys.foodPrefix + dateStr, JSON.stringify(logArray));
         return true;
     },
+
     updateDailyTotals: function(kcal, prot) {
         localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1));
         localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1));
     }
 };
 
+/**
+ * 2. MASTER EXERCISE DATABASE
+ */
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Chest Flys", muscleGroup: "Στήθος", defaultDuration: 45 },
@@ -65,27 +72,37 @@ const STRENGTH_EXERCISES = [
 window.exercisesDB = STRENGTH_EXERCISES;
 
 /**
- * 2. DYNAMIC PROGRAM GENERATOR (CLEAN NAMES ONLY)
+ * 3. DYNAMIC PROGRAM GENERATOR
+ * Logic for automated daily schedules
  */
 window.calculateDailyProgram = function(dayName) {
-    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
+    // A. Recovery Days
+    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
+        return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
+    }
     
-    if (dayName === "Τετάρτη") return [
-        { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
-        { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
-        { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
-        { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
-    ];
+    // B. EMS Specialized Training
+    if (dayName === "Τετάρτη") {
+        return [
+            { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
+            { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
+            { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
+            { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
+        ];
+    }
 
     let currentMins = 0;
     const program = [];
 
+    // C. Dynamic Focus Allocation (Hybrid Weekend Support)
     const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
-                        (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : ["Κορμός"];
+                        (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : 
+                        (dayName === "Σάββατο" || dayName === "Κυριακή") ? ["Κορμός", "Πόδια"] : ["Κορμός"];
     
     focusGroups.forEach(group => {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
         groupEx.forEach(ex => {
+            // Allocate 7 mins per 4-set exercise block
             if (currentMins + 7 <= 60) {
                 program.push({ ...ex, sets: 4, duration: 45 });
                 currentMins += 7;
@@ -93,6 +110,7 @@ window.calculateDailyProgram = function(dayName) {
         });
     });
 
+    // D. Outdoor Activity (Appended as Optional/Extra)
     if (dayName === "Σάββατο" || dayName === "Κυριακή") {
         program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
     }
@@ -100,6 +118,7 @@ window.calculateDailyProgram = function(dayName) {
     return program;
 };
 
+// Global Program Export
 window.program = {
     "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
     "Τρίτη": window.calculateDailyProgram("Τρίτη"),
@@ -111,7 +130,8 @@ window.program = {
 };
 
 /**
- * 3. VIDEO MAPPING - MASTER KEYS
+ * 4. VIDEO MAPPING SYSTEM
+ * Clean keys for sanitized matching in app.js
  */
 window.videoMap = {
     "Seated Chest Press": "chestpress",
