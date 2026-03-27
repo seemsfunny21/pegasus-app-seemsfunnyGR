@@ -555,3 +555,32 @@ input:checked + .slider:before { transform: translateX(26px); }
 .preview-item:hover {
     border-color: #4CAF50;
 }
+
+/* ================= UNIVERSAL PEGASUS GREEN OVERRIDE ================= */
+/* Επιβολή πράσινου χρώματος σε ΟΛΕΣ τις μπάρες προόδου της εφαρμογής */
+.progress-fill, 
+.progress-bar, 
+.muscle-bar-fill, 
+.stat-fill,
+[style*="background-color: orange"],
+[style*="background: orange"],
+[style*="background-color: rgb(255, 165, 0)"] {
+    background: #4CAF50 !important;
+    background-color: #4CAF50 !important;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4) !important;
+}
+
+/* Επιβολή πράσινου περιγράμματος σε ΟΛΑ τα αναδυόμενα παράθυρα (Modals) */
+.pegasus-panel, 
+.planner-modal, 
+#emsModal,
+#cardioPanel {
+    border: 2px solid #4CAF50 !important;
+    border-radius: 15px !important;
+    box-shadow: 0 0 30px rgba(0,0,0,1) !important;
+}
+
+/* Ομοιόμορφα Scrollbars για όλο το σύστημα */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 10px; }
