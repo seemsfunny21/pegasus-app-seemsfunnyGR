@@ -1,23 +1,48 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.2 (FINAL UNIFIED BUILD)
-   Protocol: Strict Data Analyst - Protected Storage Keys & Global Exports
+   PEGASUS DATA ENGINE - CLEAN SWEEP v17.0
+   Protocol: Single Source of Truth | Logic: Global Protected Exports
    ========================================================================== */
 
-window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
-window.TARGET_SETS = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+/**
+ * 1. MASTER USER PROFILE
+ * Ορισμός βιομετρικών στοιχείων για υπολογισμούς ακριβείας (Metabolic/AI)
+ */
+window.USER_PROFILE = { 
+    weight: 74, 
+    height: 187, 
+    age: 38, 
+    gender: "male",
+    targetKcal: 2800,
+    targetProtein: 160
+};
+
+/**
+ * 2. MUSCLE TARGET PROTOCOL
+ * Εβδομαδιαίοι στόχοι σετ ανά μυϊκή ομάδα
+ */
+window.TARGET_SETS = { 
+    "Στήθος": 24, 
+    "Πλάτη": 24, 
+    "Πόδια": 24, 
+    "Χέρια": 16, 
+    "Ώμοι": 16, 
+    "Κορμός": 12 
+};
+
 window.REST_TIME = 60; 
 window.MAX_DAILY_MINUTES = 60;
 
 /**
- * 1. PEGASUS STORE PROTOCOL
- * Διαχωρισμός θερμίδων φαγητού (pegasus_diet_kcal) από προπόνηση (pegasus_today_kcal)
+ * 3. PEGASUS STORE PROTOCOL
+ * Διαχείριση κλειδιών LocalStorage για απόλυτο διαχωρισμό δεδομένων
  */
 window.PegasusStore = {
     keys: {
         foodPrefix: "food_log_",
         kcalTotal: "pegasus_diet_kcal", 
         protTotal: "pegasus_today_protein",
-        library: "pegasus_food_library"
+        library: "pegasus_food_library",
+        history: "pegasus_weekly_history"
     },
 
     getFoodLog: function(dateStr) {
@@ -32,14 +57,12 @@ window.PegasusStore = {
         if (!Array.isArray(logArray)) return false;
         localStorage.setItem(this.keys.foodPrefix + dateStr, JSON.stringify(logArray));
         return true;
-    },
-
-    updateDailyTotals: function(kcal, prot) {
-        localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1));
-        localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1));
     }
 };
 
+/**
+ * 4. MASTER EXERCISE DATABASE
+ */
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Chest Flys", muscleGroup: "Στήθος", defaultDuration: 45 },
@@ -69,55 +92,8 @@ const STRENGTH_EXERCISES = [
 window.exercisesDB = STRENGTH_EXERCISES;
 
 /**
- * 2. DYNAMIC PROGRAM GENERATOR
- */
-window.calculateDailyProgram = function(dayName) {
-    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
-    if (dayName === "Τετάρτη") return [
-        { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
-        { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
-        { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
-        { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
-    ];
-
-    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    let currentMins = 0;
-    const program = [];
-
-    // Ορισμός προτεραιοτήτων ανά ημέρα
-    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
-                        (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : ["Κορμός"];
-    
-    focusGroups.forEach(group => {
-        const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
-        groupEx.forEach(ex => {
-            // Έλεγχος ορίου χρόνου (7 λεπτά μέσος όρος ανά άσκηση 4 σετ με διαλείμματα)
-            if (currentMins + 7 <= 60) {
-                program.push({ ...ex, sets: 4, duration: 45 });
-                currentMins += 7;
-            }
-        });
-    });
-
-    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
-        program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
-    }
-
-    return program;
-};
-
-window.program = {
-    "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
-    "Τρίτη": window.calculateDailyProgram("Τρίτη"),
-    "Τετάρτη": window.calculateDailyProgram("Τετάρτη"),
-    "Πέμπτη": window.calculateDailyProgram("Πέμπτη"),
-    "Παρασκευή": window.calculateDailyProgram("Παρασκευή"),
-    "Σάββατο": window.calculateDailyProgram("Σάββατο"),
-    "Κυριακή": window.calculateDailyProgram("Κυριακή")
-};
-
-/**
- * 3. VIDEO MAPPING
+ * 5. VIDEO MAPPING ENGINE
+ * Αντιστοίχιση ονόματος άσκησης με τοπικό MP4 ή YouTube ID
  */
 window.videoMap = {
     "Seated Chest Press": "chestpress",
@@ -150,4 +126,57 @@ window.videoMap = {
     "EMS Bicep Curls (3kg)": "bicepcurls",
     "EMS Static Plank": "plank",
     "EMS Static Crunches": "abcrunches"
+};
+
+/**
+ * 6. DYNAMIC PROGRAM GENERATOR
+ */
+window.calculateDailyProgram = function(dayName) {
+    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
+        return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
+    }
+    
+    if (dayName === "Τετάρτη") {
+        return [
+            { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
+            { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
+            { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
+            { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
+        ];
+    }
+
+    const history = JSON.parse(localStorage.getItem(window.PegasusStore.keys.history)) || {};
+    let currentMins = 0;
+    const program = [];
+
+    // Ορισμός προτεραιοτήτων ανά ημέρα
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
+                        (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : ["Κορμός"];
+    
+    focusGroups.forEach(group => {
+        const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
+        groupEx.forEach(ex => {
+            if (currentMins + 7 <= 60) {
+                program.push({ ...ex, sets: 4, duration: 45 });
+                currentMins += 7;
+            }
+        });
+    });
+
+    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
+        program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
+    }
+
+    return program;
+};
+
+// Προ-φόρτωση προγράμματος
+window.program = {
+    "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
+    "Τρίτη": window.calculateDailyProgram("Τρίτη"),
+    "Τετάρτη": window.calculateDailyProgram("Τετάρτη"),
+    "Πέμπτη": window.calculateDailyProgram("Πέμπτη"),
+    "Παρασκευή": window.calculateDailyProgram("Παρασκευή"),
+    "Σάββατο": window.calculateDailyProgram("Σάββατο"),
+    "Κυριακή": window.calculateDailyProgram("Κυριακή")
 };

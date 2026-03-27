@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V3.0 (STRICT ANALYST EDITION)
-   Protocol: Memory-First Commit, Full Nutrition & Cardio Integration
+   PEGASUS REPORTING SYSTEM - CLEAN SWEEP v17.0
+   Protocol: Memory-First Commit | Logic: Unified Nutrition & Cardio Aggregator
    ========================================================================== */
 
 const PegasusReporting = {
@@ -9,100 +9,67 @@ const PegasusReporting = {
     historyKey: "pegasus_weekly_history",
 
     /**
-     * 1. SAVE WORKOUT (Manual or Auto)
+     * 1. WORKOUT COMMIT
+     * Καταγραφή ολοκληρωμένης προπόνησης και προετοιμασία αναφοράς
      */
-    saveWorkout: function(kcalVal, memoryData = null) {
-        console.log("PEGASUS: Workout save/sync triggered...");
-        this.prepareAndSaveReport(kcalVal, memoryData);
+    saveWorkout: function(kcalVal) {
+        if (window.PegasusLogger) window.PegasusLogger.log("Reporting: Workout commit initiated", "INFO");
+        this.prepareAndSaveReport(kcalVal);
     },
 
     /**
-     * 2. DATA COMMIT & PREPARATION
+     * 2. DATA AGGREGATION
+     * Συγκέντρωση όλων των παραμέτρων της ημέρας (Kcal, Πρωτεΐνη, Cardio, Sets)
      */
-    prepareAndSaveReport: function(kcal, sessionData = null) {
-        let dailyMax = {};
-        let weeklyHistory = JSON.parse(localStorage.getItem(this.historyKey)) || {
-            "Πλάτη": 0, "Στήθος": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0, "Ώμοι": 0, "Άλλο": 0
-        };
-
-        // Χρήση δεδομένων μνήμης (SessionData) για αποφυγή DOM Race Condition
-        // Fallback στο DOM αν δεν δοθούν δεδομένα μνήμης
-        const sourceData = sessionData || Array.from(document.querySelectorAll('.exercise'))
-            .map(node => ({
-                name: node.querySelector('.exercise-name').textContent.trim().replace(" ☀️", ""),
-                weight: parseFloat(node.querySelector('.weight-input').value) || 0,
-                done: parseInt(node.dataset.done || 0),
-                group: node.dataset.group
-            })).filter(ex => ex.done > 0);
-
-        if (sourceData.length > 0) {
-            sourceData.forEach(ex => {
-                if (!dailyMax[ex.name] || ex.weight > dailyMax[ex.name]) dailyMax[ex.name] = ex.weight;
-
-                let group = ex.group;
-                if (!group && window.exercisesDB) {
-                    const exDb = window.exercisesDB.find(db => db.name === ex.name);
-                    if (exDb) group = exDb.muscleGroup;
-                }
-                if (!group && typeof getMuscleGroup === "function") group = getMuscleGroup(ex.name);
-                if (!group) group = "Άλλο";
-
-                if (weeklyHistory[group] !== undefined) {
-                    weeklyHistory[group] += ex.done;
-                } else {
-                    weeklyHistory["Άλλο"] += (weeklyHistory["Άλλο"] || 0) + ex.done;
-                }
-            });
-
-            localStorage.setItem(this.historyKey, JSON.stringify(weeklyHistory));
-        }
-
-        // Σύνθεση Αναφοράς
-        let summary = Object.entries(dailyMax).map(([name, weight]) => `• ${name}: ${weight}kg`);
+    prepareAndSaveReport: function(kcalBurned) {
         const today = new Date();
         const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
-        
-        // Ανάκτηση δεδομένων από άλλα modules (Cardio & Food)
-        const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStr) || "[]");
-        const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStr) || "null");
-        
-        // Nutrition & Recovery Logic
-        const isRecovery = (today.getDay() === 1 || today.getDay() === 4);
-        const recovery = isRecovery ? 
-            { msg: "Recovery Day Active", nutrition: "Focus on hydration & stretching" } : 
-            { msg: "Training Day", nutrition: "High protein intake required" };
 
-        const pendingData = {
-            dateSent: dateStr,
-            templateParams: {
-                name: "Άγγελος",
-                workout_date: today.toLocaleDateString('el-GR'),
-                calories: kcal || localStorage.getItem("pegasus_today_kcal") || "0.0",
-                weights_summary: summary.join("\n") || "Workout data committed.",
-                food_summary: targetFood.map(f => `• ${f.name} (${f.kcal}kcal)`).join("\n") || "No food logged",
-                cardio_activity: cardioData ? `🚲 ${cardioData.km}km (${cardioData.route})` : "No cardio",
-                total_food_kcal: targetFood.reduce((sum, f) => sum + parseFloat(f.kcal || 0), 0),
-                recovery_status: recovery.msg || "Updated",
-                nutrition_advice: recovery.nutrition || "Maintain macro balance"
-            }
+        // Ανάκτηση εβδομαδιαίας προόδου
+        let weeklyHistory = JSON.parse(localStorage.getItem(this.historyKey)) || {
+            "Πλάτη": 0, "Στήθος": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0, "Ώμοι": 0
         };
 
-        localStorage.setItem(this.pendingReportKey, JSON.stringify(pendingData));
-        console.log("✅ PEGASUS: Data Committed & Manual Save Complete.");
+        // Ανάκτηση Διατροφής
+        const dietKcal = localStorage.getItem("pegasus_diet_kcal") || "0";
+        const dietProt = localStorage.getItem("pegasus_today_protein") || "0";
+
+        // Ανάκτηση Cardio
+        const cardioData = JSON.parse(localStorage.getItem(`cardio_log_${dateStr}`) || "null");
+        const cardioSummary = cardioData ? `${cardioData.route} (${cardioData.km}km)` : "None";
+
+        // Δόμηση Παραμέτρων για EmailJS
+        const templateParams = {
+            report_date: dateStr,
+            weight_current: localStorage.getItem("pegasus_weight") || "74",
+            diet_calories: dietKcal,
+            diet_protein: dietProt,
+            workout_burned: kcalBurned || "0",
+            cardio_activity: cardioSummary,
+            muscle_stats: JSON.stringify(weeklyHistory),
+            system_version: "v17.0 - Clean Sweep"
+        };
+
+        // Αποθήκευση στην "ουρά" προς αποστολή
+        const reportObj = {
+            dateSent: dateStr,
+            timestamp: Date.now(),
+            templateParams: templateParams
+        };
+
+        localStorage.setItem(this.pendingReportKey, JSON.stringify(reportObj));
         
-        // Σύγχρονη κλήση του CloudSync
-        if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-            window.PegasusCloud.push(true);
-        }
+        console.log("✅ PEGASUS: Daily Report Prepared & Queued.");
     },
 
     /**
-     * 3. ΕΛΕΓΧΟΣ & ΑΠΟΣΤΟΛΗ (EMAILJS)
+     * 3. DISPATCH PROTOCOL
+     * Αποστολή μέσω EmailJS (Service: service_4znxhn4 | Template: template_e1cqkme)
      */
     checkAndSendMorningReport: function(isManual = false) {
         const rawData = localStorage.getItem(this.pendingReportKey);
         if (!rawData) {
-            if(isManual) alert("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
+            if (isManual) alert("PEGASUS: Δεν υπάρχει αναφορά στην ουρά.");
             return;
         }
 
@@ -110,26 +77,31 @@ const PegasusReporting = {
         const today = new Date();
         const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
 
-        // Αποστολή αν είναι manual ή αν άλλαξε η μέρα
-        if (isManual || pending.dateSent !== dateStr) {
+        // Έλεγχος αν είναι πρωί (08:00) ή αν ζητήθηκε χειροκίνητα
+        const currentHour = today.getHours();
+        
+        if (isManual || (currentHour >= 8 && pending.dateSent !== dateStr)) {
             if (typeof emailjs !== 'undefined') {
                 emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
                     .then(() => {
-                        console.log("✅ PEGASUS: Report Sent Successfully.");
+                        if (window.PegasusLogger) window.PegasusLogger.log("Report Dispatch Successful", "INFO");
                         localStorage.removeItem(this.pendingReportKey);
-                        if(isManual) alert("Επιτυχία: Η αναφορά και ο συγχρονισμός ολοκληρώθηκαν!");
+                        if (isManual) alert("Η αναφορά στάλθηκε επιτυχώς!");
                     })
                     .catch(err => {
-                        console.error("❌ PEGASUS: Email Error", err);
-                        if(isManual) alert("Σφάλμα κατά την αποστολή.");
+                        console.error("❌ PEGASUS REPORTING ERROR:", err);
+                        if (window.PegasusLogger) window.PegasusLogger.log("EmailJS Dispatch Failure", "ERROR");
                     });
             } else {
-                console.warn("PEGASUS: EmailJS not loaded.");
+                console.warn("PEGASUS: EmailJS Library not detected.");
             }
-        } else {
-            console.log("PEGASUS: Report locked. Scheduled for tomorrow morning.");
         }
     }
 };
 
 window.PegasusReporting = PegasusReporting;
+
+// Αυτόματος έλεγχος κατά τη φόρτωση (Morning Sync)
+window.addEventListener('load', () => {
+    setTimeout(() => window.PegasusReporting.checkAndSendMorningReport(), 5000);
+});

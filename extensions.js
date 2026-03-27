@@ -1,128 +1,98 @@
 /* ==========================================================================
-   PEGASUS EXTENSIONS - ULTIMATE PLANNER & AGREEMENT LOG
+   PEGASUS EXTENSIONS - CLEAN SWEEP v17.0
+   Protocol: Ultimate Planner & Agreement Log | Logic: 30-Meal Sync
    ========================================================================== */
 
+/**
+ * MASTER MENU: Κουκί & Ρεβύθι (Ιωάννινα)
+ * Δεδομένα βασισμένα στο μενού ημέρας για γράμμωση και όγκο
+ */
 const KOUKI_MENU = [
     { name: "Κοτόπουλο με κάρυ & λαχανικά", kcal: 580, protein: 52, type: "meat" },
     { name: "Κοτόπουλο με χυλοπίτες", kcal: 680, protein: 48, type: "meat" },
     { name: "Κοτόπουλο λεμονάτο", kcal: 550, protein: 52, type: "meat" },
     { name: "Χοιρινό με δαμάσκηνα & βερίκοκα", kcal: 650, protein: 42, type: "meat" },
     { name: "Χοιρινό πρασοσέλινο", kcal: 610, protein: 40, type: "meat" },
-    { name: "Χοιρινό με σέλινο", kcal: 590, protein: 40, type: "meat" },
     { name: "Μοσχαράκι κοκκινιστό", kcal: 640, protein: 45, type: "meat" },
     { name: "Μοσχαράκι λεμονάτο", kcal: 620, protein: 45, type: "meat" },
-    { name: "Μοσχάρι γιουβέτσι", kcal: 720, protein: 46, type: "meat" },
-    { name: "Μπιφτέκια μοσχαρίσια σχάρας", kcal: 540, protein: 44, type: "meat" },
-    { name: "Σουτζουκάκια σμυρνέικα", kcal: 590, protein: 36, type: "meat" },
-    { name: "Γιουβαρλάκια αυγολέμονο", kcal: 490, protein: 30, type: "meat" },
-    { name: "Κεφτεδάκια με σάλτσα", kcal: 550, protein: 32, type: "meat" },
-    { name: "Ρεβύθια με κάρυ & γάλα καρύδας", kcal: 480, protein: 18, type: "legumes" },
-    { name: "Ρεβύθια λεμονάτα με δεντρολίβανο", kcal: 450, protein: 17, type: "legumes" },
-    { name: "Ρεβύθια με σπανάκι", kcal: 460, protein: 20, type: "legumes" },
-    { name: "Γίγαντες φούρνου", kcal: 480, protein: 19, type: "legumes" },
-    { name: "Παστίτσιο λαχανικών", kcal: 550, protein: 18, type: "veggies" },
-    { name: "Μελιτζάνες ιμάμ", kcal: 460, protein: 7, type: "veggies" },
-    { name: "Φασολάκια πράσινα", kcal: 350, protein: 8, type: "veggies" },
-    { name: "Γεμιστά με ρύζι & μυρωδικά", kcal: 470, protein: 8, type: "veggies" },
-    { name: "Μπριάμ", kcal: 380, protein: 7, type: "veggies" },
-    { name: "Σουπιές με σπανάκι", kcal: 420, protein: 38, type: "fish" },
-    { name: "Ψάρι φιλέτο (Γλώσσα) με λαχανικά", kcal: 400, protein: 42, type: "fish" },
-    { name: "Τσιπούρα ψητή", kcal: 420, protein: 45, type: "fish" },
-    { name: "Παστίτσιο", kcal: 750, protein: 35, type: "cheat" },
-    { name: "Μουσακάς", kcal: 800, protein: 30, type: "cheat" }
+    { name: "Μοσχάρι γιουβέτσι", kcal: 720, protein: 45, type: "meat" },
+    { name: "Ρεβύθια παραδοσιακά", kcal: 420, protein: 18, type: "legume" },
+    { name: "Φακές σούπα", kcal: 380, protein: 22, type: "legume" },
+    { name: "Μπιφτέκια κοτόπουλο", kcal: 520, protein: 55, type: "meat" }
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
-    const foodPanel = document.getElementById('foodPanel');
-    if (foodPanel) {
-        const planBtn = document.createElement('button');
-        planBtn.innerHTML = "ΠΡΟΤΑΣΕΙΣ";
-        planBtn.className = "planner-btn";
-        planBtn.onclick = showWeeklyPlanner;
-        foodPanel.appendChild(planBtn);
-    }
-});
+/**
+ * Άνοιγμα του Planner Modal
+ */
+window.openPegasusPlanner = function() {
+    const modal = document.getElementById('pegasusModal');
+    if (!modal) return;
 
-function showWeeklyPlanner() {
-    let history = [];
-    for (let i = 0; i < 7; i++) {
-        let d = new Date(); d.setDate(d.getDate() - i);
-        const dateStr = d.toLocaleDateString('el-GR');
-        const data = JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
-        data.forEach(item => history.push(item.name.toLowerCase()));
-    }
-
-    let available = KOUKI_MENU.filter(item => {
-        let menuItemName = item.name.toLowerCase();
-        return !history.some(h => h.includes(menuItemName) || menuItemName.includes(h));
-    });
-
-    if (available.length < 6) available = [...KOUKI_MENU];
-
-    available.sort(() => 0.5 - Math.random());
-    let picked = available.slice(0, 6);
-
-    let modal = document.getElementById('pegasusModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'pegasusModal';
-        modal.className = "planner-modal";
-        modal.onclick = (e) => { if (e.target.id === 'pegasusModal') window.closePlannerOnly(); };
-        document.body.appendChild(modal);
-    }
     modal.style.display = 'flex';
-
-let html = `
-        <div class="planner-content">
-            <div style="color:#4CAF50; font-weight:bold; font-size:18px; margin-bottom:15px; text-align:center; border-bottom:1px solid #222; padding-bottom:15px; letter-spacing:1px;">WEEKLY PLANNER</div>
-            <div style="padding-top:5px;">
+    modal.style.background = 'rgba(0,0,0,0.9)';
+    
+    let html = `
+        <div style="background:#0a0a0a; border:1px solid #4CAF50; width:90%; max-width:500px; padding:20px; border-radius:12px; max-height:80vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="color:#4CAF50; margin:0; font-size:18px; letter-spacing:1px;">🍱 KOUKI PLANNER</h2>
+                <button onclick="window.closePlannerOnly()" style="background:none; border:none; color:#666; font-size:20px; cursor:pointer;">✕</button>
+            </div>
+            
+            <div style="display:grid; gap:10px;">
     `;
 
-    picked.forEach(item => {
+    KOUKI_MENU.forEach(item => {
         html += `
-            <div class="planner-item">
-                <div style="flex:1;">
-                    <div style="color:#fff; font-size:11px; font-weight:bold;">${item.name}</div>
-                    <div style="color:#4CAF50; font-size:10px; margin-top:3px;">${item.protein}g P | ${item.kcal} kcal</div>
+            <div style="background:#111; border:1px solid #222; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="color:#eee; font-size:13px; font-weight:bold;">${item.name.toUpperCase()}</div>
+                    <div style="color:#4CAF50; font-size:11px; font-weight:bold; margin-top:4px;">${item.kcal} KCAL | ${item.protein}g PRO</div>
                 </div>
-                <button class="planner-add-btn" onclick="addFromPlanner('${item.name}', ${item.kcal}, ${item.protein})">+</button>
+                <button onclick="window.addFromPlanner('${item.name}', ${item.kcal}, ${item.protein})" 
+                        style="background:#4CAF50; color:#000; border:none; width:35px; height:35px; border-radius:6px; font-weight:900; cursor:pointer; font-size:18px;">+</button>
             </div>
         `;
     });
 
     html += `</div></div>`;
     modal.innerHTML = html;
-}
-
-window.closePlannerOnly = function() {
-    document.getElementById('pegasusModal').style.display = 'none';
 };
 
-// --- LOGIC ΓΙΑ ΤΗ ΣΥΜΦΩΝΙΑ ΤΩΝ 30 ΓΕΥΜΑΤΩΝ ---
-window.addFromPlanner = function(n, k, p) {
+/**
+ * Εκτέλεση Καταγραφής & Ενημέρωση Συμφωνίας
+ */
+window.addFromPlanner = function(name, kcal, protein) {
     if (window.addFoodItem) {
-        // 1. Καταγραφή στο Pegasus
-        window.addFoodItem(n, k, p);
+        // 1. Καταγραφή στον κεντρικό κινητήρα διατροφής
+        window.addFoodItem(name, kcal, protein);
         
-        // 2. Καταγραφή στη Συμφωνία
+        // 2. Ενημέρωση του Agreement Log (Συμφωνία 30 γευμάτων)
         const today = new Date().toLocaleDateString('el-GR');
         let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
         
-        agreementLog.push({ date: today, food: n });
+        agreementLog.push({ date: today, food: name });
         localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
         
-        // 3. Ενημέρωση χρήστη
+        // 3. Feedback Χρήστη
         const count = agreementLog.length;
-        alert(`ΚΑΤΑΓΡΑΦΗΚΕ!\nΓεύμα: ${count} από 30\nΑπομένουν: ${30 - count}`);
+        const remaining = Math.max(0, 30 - count);
+        
+        if (window.PegasusLogger) {
+            window.PegasusLogger.log(`Planner Add: ${name} (${count}/30)`, "INFO");
+        }
+
+        alert(`ΚΑΤΑΓΡΑΦΗΚΕ!\nΓεύμα: ${count} από 30\nΑπομένουν: ${remaining}`);
         
         window.closePlannerOnly();
+        
+        // Push στο Cloud αν είναι ενεργό
+        if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
+            window.PegasusCloud.push(true);
+        }
     }
 };
 
-// Αν θες να δεις όλη τη λίστα στην κονσόλα (F12) γράψε: showHistory()
-window.showHistory = function() {
-    const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
-    console.log("--- ΙΣΤΟΡΙΚΟ ΣΥΜΦΩΝΙΑΣ (ΚΟΥΚΙ & ΡΕΒΥΘΙ) ---");
-    console.table(log);
-    return `Σύνολο: ${log.length}/30`;
+window.closePlannerOnly = function() {
+    const modal = document.getElementById('pegasusModal');
+    if (modal) modal.style.display = 'none';
 };

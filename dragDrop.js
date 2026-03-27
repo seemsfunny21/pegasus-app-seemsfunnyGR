@@ -1,118 +1,121 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER - v3.3 (UNIFIED DRAG & CLOSE)
-   Protocol: Strict Modular Design - Centralized Panel Management
+   PEGASUS UI MANAGER - CLEAN SWEEP v17.0
+   Protocol: Unified Draggable Overlays | Logic: Centralized Panel Control
    ========================================================================== */
 
 const PegasusUI = {
-    // Η επίσημη λίστα των Tactical Overlays που επιτρέπεται να κλείνουν και να μετακινούνται
-    panels: ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'],
+    // Η επίσημη λίστα των Tactical Overlays του v17.0
+    panels: [
+        'foodPanel', 'calendarPanel', 'achievementsPanel', 
+        'settingsPanel', 'previewPanel', 'toolsPanel', 
+        'galleryPanel', 'cardioPanel', 'emsModal'
+    ],
 
     init() {
         this.initDraggablePanels();
         this.initClickOutside();
-        console.log("✅ PEGASUS UI MANAGER: Unified Protocol Active");
+        console.log("✅ PEGASUS UI MANAGER: Operational.");
     },
 
-    // --- ΜΗΧΑΝΙΣΜΟΣ ΜΕΤΑΚΙΝΗΣΗΣ ---
+    /**
+     * Διαχείριση Μετακίνησης Παραθύρων
+     */
     initDraggablePanels() {
         this.panels.forEach(panelId => {
             const panel = document.getElementById(panelId);
             if (!panel) return;
 
-            // 1. Επαναφορά θέσης
+            // 1. Ανάκτηση και επιβολή αποθηκευμένης θέσης
             const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
             if (savedPos) {
                 Object.assign(panel.style, {
-                    transform: "none", margin: "0", position: "fixed",
-                    top: savedPos.top, left: savedPos.left,
-                    right: "auto", bottom: "auto"
+                    transform: "none", 
+                    margin: "0", 
+                    position: "fixed",
+                    top: savedPos.top, 
+                    left: savedPos.left,
+                    right: "auto", 
+                    bottom: "auto"
                 });
             }
 
-            // 2. Εντοπισμός Λαβής (Header)
-            const header = panel.querySelector(".panel-header") || panel.querySelector("h3");
-            if (!header) return;
-
-            header.style.cursor = "grab";
-            header.onmousedown = (e) => this.startDrag(e, panel, header);
+            // 2. Event Listeners για το Dragging (Desktop & Mobile)
+            panel.addEventListener('mousedown', (e) => this.startDragging(e, panel));
+            panel.addEventListener('touchstart', (e) => this.startDragging(e.touches[0], panel), { passive: false });
         });
     },
 
-    startDrag(e, panel, header) {
-        if (e.button !== 0) return; // Μόνο αριστερό κλικ
-        e.preventDefault();
-        header.style.cursor = "grabbing";
-        
-        let pos3 = e.clientX, pos4 = e.clientY;
-        
-        // Z-Index Focus Management
-        document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
-        panel.style.zIndex = "1001";
+    startDragging(e, panel) {
+        // Αποτροπή dragging αν ο χρήστης αλληλεπιδρά με inputs ή buttons
+        if (['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
 
-        const elementDrag = (e) => {
-            const pos1 = pos3 - e.clientX;
-            const pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            
-            // Anti-Stretch Protocol
-            panel.style.right = "auto";
-            panel.style.bottom = "auto";
-            panel.style.top = (panel.offsetTop - pos2) + "px";
-            panel.style.left = (panel.offsetLeft - pos1) + "px";
+        const startX = e.clientX - panel.offsetLeft;
+        const startY = e.clientY - panel.offsetTop;
+
+        const mouseMoveHandler = (moveEvent) => {
+            const ev = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
+            panel.style.left = (ev.clientX - startX) + 'px';
+            panel.style.top = (ev.clientY - startY) + 'px';
         };
 
-        const closeDrag = () => {
-            document.onmouseup = null;
-            document.onmousemove = null;
-            header.style.cursor = "grab";
+        const mouseUpHandler = () => {
+            document.removeEventListener('mousemove', mouseMoveHandler);
+            document.removeEventListener('mouseup', mouseUpHandler);
+            document.removeEventListener('touchmove', mouseMoveHandler);
+            document.removeEventListener('touchend', mouseUpHandler);
+            
+            // Αποθήκευση νέας θέσης
             localStorage.setItem(`pegasus_pos_${panel.id}`, JSON.stringify({
-                top: panel.style.top, left: panel.style.left
+                top: panel.style.top,
+                left: panel.style.left
             }));
         };
 
-        document.onmouseup = closeDrag;
-        document.onmousemove = elementDrag;
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+        document.addEventListener('touchmove', mouseMoveHandler, { passive: false });
+        document.addEventListener('touchend', mouseUpHandler);
     },
 
-    // --- ΜΗΧΑΝΙΣΜΟΣ ΚΛΕΙΣΙΜΑΤΟΣ (CLICK OUTSIDE) ---
+    /**
+     * Πρωτόκολλο Click-Outside: Κλείσιμο παραθύρων με κλικ στο υπόβαθρο
+     */
     initClickOutside() {
-        window.addEventListener('mousedown', (e) => {
-            let closedAny = false;
-            
-            this.panels.forEach(id => {
-                const panel = document.getElementById(id);
-                // Αν το πάνελ είναι ανοιχτό...
-                if (panel && panel.style.display === 'block') {
-                    // ...και το κλικ είναι ΕΞΩ από αυτό ΚΑΙ όχι σε κουμπιά της Navbar
-                    if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button')) {
-                        panel.style.display = 'none';
-                        closedAny = true;
-                    }
-                }
-            });
+        document.addEventListener('click', (e) => {
+            // Αν το κλικ δεν είναι σε panel ή σε κουμπί της Navbar
+            if (!e.target.closest('.pegasus-panel') && !e.target.closest('.navbar button')) {
+                this.closeAllPanels();
+            }
+        });
+    },
 
-            // Αν έκλεισε κάτι, κάνουμε push για να σωθεί η κατάσταση στο Cloud
-            if (closedAny && window.PegasusCloud) window.PegasusCloud.push(true);
+    closeAllPanels() {
+        this.panels.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
         });
     }
 };
 
-// --- ΜΕΡΟΣ 2: ΑΝΑΔΙΑΤΑΞΗ ΑΣΚΗΣΕΩΝ (EXERCISES) ---
+/**
+ * Αναδιάταξη Λίστας Ασκήσεων (Drag & Drop Reordering)
+ */
 function initExerciseListDrag() {
-    const list = document.getElementById("exList");
-    if (!list) return;
-
-    const newList = list.cloneNode(true);
-    list.parentNode.replaceChild(newList, list);
+    const newList = document.getElementById("exList");
+    if (!newList) return;
 
     newList.addEventListener("dragstart", (e) => {
-        if (window.running === true) { e.preventDefault(); return; }
-        if (e.target.classList.contains("exercise")) e.target.classList.add("dragging");
+        // Απενεργοποίηση reordering αν η προπόνηση τρέχει
+        if (window.running === true) {
+            e.preventDefault();
+            return;
+        }
+        if (e.target.classList.contains("exercise")) {
+            e.target.classList.add("dragging");
+        }
     });
 
     newList.addEventListener("dragover", (e) => {
-        if (window.running === true) return;
         e.preventDefault();
         const draggingItem = document.querySelector(".dragging");
         if (!draggingItem) return;
@@ -122,24 +125,26 @@ function initExerciseListDrag() {
     });
 
     newList.addEventListener("dragend", (e) => {
-        if (window.running === true) return;
         if (e.target.classList.contains("exercise")) {
             e.target.classList.remove("dragging");
-            if (typeof exercises !== 'undefined') {
-                exercises = [...document.querySelectorAll(".exercise")];
-                remainingSets = exercises.map(el => parseInt(el.dataset.total) - parseInt(el.dataset.done));
+            
+            // Ενημέρωση της εσωτερικής μνήμης του Engine (app.js)
+            if (typeof window.exercises !== 'undefined') {
+                window.exercises = [...document.querySelectorAll(".exercise")];
             }
+            
+            // Αποθήκευση της νέας σειράς βάσει ημέρας
             const activeBtn = document.querySelector(".navbar button.active");
             if (activeBtn) {
                 const dayName = activeBtn.textContent.trim();
-                const names = [...document.querySelectorAll(".exercise-name")].map(el => el.textContent.replace(" ☀️", "").trim());
+                const names = [...document.querySelectorAll(".exercise-name")].map(el => el.textContent.replace(" 🎯", "").trim());
                 localStorage.setItem(`pegasus_order_${dayName}`, JSON.stringify(names));
             }
         }
     });
 }
 
-// BOOT ENGINE
+// Boot UI Engine
 window.addEventListener('load', () => {
     PegasusUI.init();
     initExerciseListDrag();
