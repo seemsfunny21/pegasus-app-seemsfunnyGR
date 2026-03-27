@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v8.4 (RAINY DAY OPTIMIZED)
-   Protocol: Strict Data Analyst - Hybrid Weekend Logic & Emoji-Safe Mapping
+   PEGASUS DATA ENGINE - v8.5 (WEATHER-AWARE & HYBRID WEEKEND)
+   Protocol: Strict Data Analyst - Dynamic Rain Logic & Protected Keys
    ========================================================================== */
 
 window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
@@ -10,7 +10,6 @@ window.MAX_DAILY_MINUTES = 60;
 
 /**
  * 1. PEGASUS STORE PROTOCOL
- * Centralized handling of local storage keys
  */
 window.PegasusStore = {
     keys: {
@@ -72,10 +71,9 @@ const STRENGTH_EXERCISES = [
 window.exercisesDB = STRENGTH_EXERCISES;
 
 /**
- * 3. DYNAMIC PROGRAM GENERATOR
- * Logic for automated daily schedules
+ * 3. DYNAMIC PROGRAM GENERATOR (v8.5 - RAIN AWARE)
  */
-window.calculateDailyProgram = function(dayName) {
+window.calculateDailyProgram = function(dayName, isRainy = false) {
     // A. Recovery Days
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
         return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
@@ -94,7 +92,7 @@ window.calculateDailyProgram = function(dayName) {
     let currentMins = 0;
     const program = [];
 
-    // C. Dynamic Focus Allocation (Hybrid Weekend Support)
+    // C. FOCUS ALLOCATION: Αν βρέχει το Σ/Κ, ενεργοποιούμε Full Gym Program (Κορμός/Πόδια)
     const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
                         (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : 
                         (dayName === "Σάββατο" || dayName === "Κυριακή") ? ["Κορμός", "Πόδια"] : ["Κορμός"];
@@ -102,7 +100,6 @@ window.calculateDailyProgram = function(dayName) {
     focusGroups.forEach(group => {
         const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
         groupEx.forEach(ex => {
-            // Allocate 7 mins per 4-set exercise block
             if (currentMins + 7 <= 60) {
                 program.push({ ...ex, sets: 4, duration: 45 });
                 currentMins += 7;
@@ -110,15 +107,15 @@ window.calculateDailyProgram = function(dayName) {
         });
     });
 
-    // D. Outdoor Activity (Appended as Optional/Extra)
-    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
+    // D. WEATHER GUARD: Η Ποδηλασία προστίθεται ΜΟΝΟ αν ΔΕΝ βρέχει
+    if ((dayName === "Σάββατο" || dayName === "Κυριακή") && !isRainy) {
         program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
     }
 
     return program;
 };
 
-// Global Program Export
+// Initial Export (Defaults to Sun mode)
 window.program = {
     "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
     "Τρίτη": window.calculateDailyProgram("Τρίτη"),
@@ -131,7 +128,6 @@ window.program = {
 
 /**
  * 4. VIDEO MAPPING SYSTEM
- * Clean keys for sanitized matching in app.js
  */
 window.videoMap = {
     "Seated Chest Press": "chestpress",
