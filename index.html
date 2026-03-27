@@ -287,13 +287,15 @@
         </div>
     </div>
 
-    <div id="previewPanel" class="pegasus-panel" style="display:none;">
-        <h3 id="previewTitle" style="text-align: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-top: 10px;">ΑΣΚΗΣΕΙΣ ΗΜΕΡΑΣ</h3>
-        <div id="previewContent" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; max-height: 60vh; overflow-y: auto;"></div>
-        <div style="text-align: center; padding: 15px;">
-            <button class="p-btn" onclick="document.getElementById('previewPanel').style.display='none'">ΚΛΕΙΣΙΜΟ</button>
-        </div>
+<div id="previewPanel" class="pegasus-panel" style="display:none;">
+    <div class="panel-header">
+        <h3 id="previewTitle" style="margin:0;">ΑΣΚΗΣΕΙΣ ΗΜΕΡΑΣ</h3>
     </div>
+    <div id="previewContent" style="display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; max-height: 60vh; overflow-y: auto;"></div>
+    <div style="text-align: center; padding: 15px;">
+        <button class="p-btn" onclick="document.getElementById('previewPanel').style.display='none'">ΚΛΕΙΣΙΜΟ</button>
+    </div>
+</div>
 
     <div id="phaseTimerBar" class="hidden-timer"><div id="phaseTimerFill"></div></div>
     
