@@ -265,17 +265,25 @@ function finishWorkout() {
 
 // 7. UI BRIDGE & INITIALIZATION
 window.onload = () => {
+    console.log("PEGASUS OS: Initializing Unified Bridge v18.2...");
+
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
+    
     if (typeof PegasusReporting !== 'undefined') {
         const lastSent = localStorage.getItem("pegasus_last_auto_report");
         const todayStr = new Date().toLocaleDateString('el-GR');
-        if (lastSent !== todayStr) { PegasusReporting.checkAndSendMorningReport(); localStorage.setItem("pegasus_last_auto_report", todayStr); }
+        if (lastSent !== todayStr) {
+            PegasusReporting.checkAndSendMorningReport();
+            localStorage.setItem("pegasus_last_auto_report", todayStr);
+        }
     }
+
     createNavbar();
 
+    // MASTER UI MAPPING - Ευθυγραμμισμένο με το Full Index.html
     const masterUI = {
         "btnStart": startPause,
-        "btnNext": () => { clearInterval(timer); currentIdx = getNextIndexCircuit(); phase = 0; if(running) runPhase(); else showVideo(currentIdx); },
+        "btnNext": skipToNextExercise,
         "btnWarmup": () => { phase = 0; currentIdx = 0; showVideo(null); },
         "btnCalendarUI": { id: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { id: "achievementsPanel", init: window.renderAchievements },
@@ -285,38 +293,63 @@ window.onload = () => {
         "btnPreviewUI": { id: "previewPanel", init: openExercisePreview },
         "btnEMSUI": { id: "emsModal" },
         "btnManualEmail": () => { if(window.PegasusReporting) window.PegasusReporting.sendManualReport(); },
+        
+        // ΔΙΟΡΘΩΣΗ IDs ΕΡΓΑΛΕΙΩΝ (Tools)
+        "btnMuteTools": () => { muted = !muted; const b = document.getElementById("btnMuteTools"); if(b) b.innerHTML = muted ? "Ήχος: OFF" : "Ήχος: ON"; },
+        "btnTurboTools": () => { TURBO_MODE = !TURBO_MODE; SPEED = TURBO_MODE ? 10 : 1; const b = document.getElementById("btnTurboTools"); if(b) b.innerHTML = TURBO_MODE ? "Turbo: ON" : "Turbo: OFF"; if(running) runPhase(); },
+        "btnExportData": () => { if(window.exportPegasusData) window.exportPegasusData(); },
+        "btnImportData": () => { document.getElementById('importFileTools').click(); },
+        "btnMasterVault": () => { document.getElementById('pinModal').style.display='flex'; },
+        "btnOpenGallery": { id: "galleryPanel", init: window.renderGallery },
+        
+        // ΕΣΩΤΕΡΙΚΑ ΚΟΥΜΠΙΑ (Modals)
         "btnSaveSettings": () => {
             localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput").value);
-            localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput").value);
-            localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput").value);
-            alert("PEGASUS: Ρυθμίσεις Σώθηκαν!"); location.reload();
+            localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput")?.value || 45);
+            localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput")?.value || 60);
+            alert("PEGASUS: Ρυθμίσεις Σώθηκαν!");
+            location.reload();
         },
         "btnSaveEMS": () => { if(window.saveEMSFinal) window.saveEMSFinal(); },
         "btnCloseEMS": () => { document.getElementById("emsModal").style.display = "none"; },
+        "btnSaveCardio": () => { if(window.saveCardioData) window.saveCardioData(); },
+        "btnCloseCardio": () => { document.getElementById("cardioPanel").style.display = "none"; },
         "btnVaultUnlock": () => { if(window.attemptVaultUnlock) window.attemptVaultUnlock(); },
         "btnVaultSkip": () => { document.getElementById("pinModal").style.display = "none"; },
         "btnPhotoUploadTrigger": () => document.getElementById("photoUpload").click(),
-        "btnClosePreview": () => { document.getElementById("previewPanel").style.display = "none"; },
-        "btnSaveCardio": () => { if(window.saveCardioData) window.saveCardioData(); },
-        "btnCloseCardio": () => { document.getElementById("cardioPanel").style.display = "none"; }
+        "btnClosePreview": () => { document.getElementById("previewPanel").style.display = "none"; }
     };
 
+    // ΕΚΤΕΛΕΣΗ EVENT BRIDGE
     Object.keys(masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                document.querySelectorAll('.pegasus-panel, #emsModal, #cardioPanel, #toolsPanel, #previewPanel').forEach(p => p.style.display = "none");
+                // Κλείνει τα πάντα εκτός από το Tools αν πατάμε εσωτερικό κουμπί
+                if (!btnId.includes("Save") && !btnId.includes("Close") && btnId !== "btnMuteTools" && btnId !== "btnTurboTools") {
+                    document.querySelectorAll('.pegasus-panel, #emsModal, #cardioPanel').forEach(p => p.style.display = "none");
+                }
+                
                 const target = masterUI[btnId];
-                if (typeof target === 'function') target();
-                else {
+                if (typeof target === 'function') {
+                    target();
+                    console.log(`PEGASUS: Logic Executed for ${btnId}`);
+                } else {
                     const el = document.getElementById(target.id);
-                    if (el) { el.style.display = "block"; if (target.init) target.init(); }
+                    if (el) {
+                        el.style.display = "block";
+                        if (target.init) target.init();
+                        console.log(`PEGASUS: Panel Opened for ${btnId}`);
+                    }
                 }
             };
+        } else {
+            console.warn(`PEGASUS AUDIT: Missing Element #${btnId}`);
         }
     });
 
+    // WEATHER & SEARCH LOGIC
     const rainToggle = document.getElementById("rainToggle");
     if (rainToggle) rainToggle.onchange = () => {
         const activeBtn = document.querySelector('.navbar button.active');
