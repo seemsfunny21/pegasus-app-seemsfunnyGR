@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS WEATHER ENGINE - v3.0 (UNIFIED & API SYNCED)
+   PEGASUS WEATHER ENGINE - v3.1 (UNIFIED & CLEAN UI)
    Protocol: Strict Analyst - Ioannina GR (39.667, 20.850)
-   Functions: API Fetch, UI Toggle Sync, Program Bridge
+   Functions: API Fetch, UI Toggle Sync, Program Bridge (No Visual Alerts)
    ========================================================================== */
 
 /**
@@ -26,7 +26,7 @@ function weatherCodeToEmoji(code) {
 }
 
 /**
- * 2. API FETCH & UI UPDATE
+ * 2. API FETCH & UI SYNC
  */
 async function fetchWeather() {
     const weatherEl = document.querySelector(".weather-text");
@@ -49,27 +49,26 @@ async function fetchWeather() {
             const icon = weatherCodeToEmoji(code);
             const rainy = isPrecipitation(code);
 
-            // Ενημέρωση κειμένου θερμοκρασίας
+            // Ενημέρωση κειμένου θερμοκρασίας στην οθόνη
             if (weatherEl) weatherEl.innerHTML = `${icon} ${temp}°C`;
 
-            // Αυτόματος συγχρονισμός του Rain Toggle
+            // Αυτόματος συγχρονισμός του κρυφού Rain Toggle για την προσαρμογή του Optimizer
             if (rainToggle) {
                 rainToggle.checked = rainy;
-                // Προαιρετικά: Trigger event αν χρειάζεται το app.js να ακούσει την αλλαγή
                 rainToggle.dispatchEvent(new Event('change'));
             }
 
-            // Ενημέρωση του Status Alert Panel
+            // --- PROTOCOL PATCH: Μόνιμη απόκρυψη του Indoor Alert Box ---
             if (statusBox) {
-                statusBox.style.display = rainy ? 'block' : 'none';
-                statusBox.innerHTML = rainy ? "⚠️ INDOOR PROTOCOL ACTIVE" : "";
+                statusBox.style.display = 'none';
+                statusBox.innerHTML = "";
             }
 
-            console.log(`[WEATHER] Ioannina: ${temp}°C, Precipitation: ${rainy}`);
+            console.log(`[WEATHER] Sync Complete. Temp: ${temp}°C, Rainy: ${rainy}. Visual Alert: Disabled.`);
         }
     } catch (err) {
         console.error("PEGASUS WEATHER ERROR:", err);
-        if (weatherEl) weatherEl.innerText = "⚠️ Error";
+        if (weatherEl) weatherEl.innerText = "Error";
     }
 }
 
