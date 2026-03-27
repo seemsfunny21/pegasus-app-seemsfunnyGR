@@ -144,3 +144,20 @@ window.addEventListener('load', () => {
     PegasusUI.init();
     initExerciseListDrag();
 });
+
+/* ===== PEGASUS UI WATCHER (DRAGDROP LAYER) ===== */
+document.addEventListener('click', function(e) {
+    // Αν πατηθεί το κουμπί Προθέρμανση στο Control Bar
+    if (e.target && e.target.id === 'btnWarmup') {
+        console.log("PEGASUS UI: Warmup Trigger Detected via DragDrop Layer");
+        
+        // 1. Ενημέρωση Label
+        const label = document.getElementById("phaseTimer");
+        if (label) label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Standby)";
+
+        // 2. Force Video Call
+        if (typeof showVideo === 'function') {
+            showVideo(null); 
+        }
+    }
+});
