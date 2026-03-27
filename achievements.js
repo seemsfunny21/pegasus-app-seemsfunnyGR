@@ -1,42 +1,25 @@
 /* ==========================================================================
-   Pegasus Achievements System - v17.2 (STRICT ANTI-CORRUPTION)
-   Protocol: Data Validation, Auto-Repair & Zero-Null Rendering
+   Pegasus Achievements System - ALL-GREEN STABLE VERSION
    ========================================================================== */
 
-// 1. GLOBAL STATE INITIALIZATION
-let userStats = { totalSets: 0, exerciseHistory: {} };
+const allExercises = [
+    "Seated Chest Press", "Pec Deck", "Pushups", 
+    "Lat Pulldown", "Low Seated Row", "Close Grip Pulldown", "Behind the Neck Pulldown", "Reverse Row",
+    "Preacher Curl", "Standing Bicep Curl", "Triceps Overhead Extension", "Triceps Press",
+    "Leg Extension", "Plank", "Lying Knee Raise", "Reverse Crunch", "Leg Raise Hip Lift",
+    "Stretching", "EMS Κοιλιακών", "EMS Πλάτης", "EMS Ποδιών", "Προθέρμανση"
+];
+
+let userStats = JSON.parse(localStorage.getItem('pegasus_stats')) || {
+    totalSets: 0,
+    exerciseHistory: {}
+};
 
 /**
- * Λειτουργία Ανάκτησης & Επιδιόρθωσης Δεδομένων
- */
-function getSanitizedStats() {
-    try {
-        let rawData = localStorage.getItem('pegasus_stats');
-        if (!rawData) return { totalSets: 0, exerciseHistory: {} };
-        
-        let parsed = JSON.parse(rawData);
-        
-        // Έλεγχος για NaN ή corrupt δεδομένα
-        if (isNaN(parsed.totalSets) || typeof parsed.exerciseHistory !== 'object' || parsed.exerciseHistory === null) {
-            console.error("PEGASUS: Corrupt Data Detected. Resetting stats to safe state.");
-            return { totalSets: 0, exerciseHistory: {} };
-        }
-        return parsed;
-    } catch (e) {
-        return { totalSets: 0, exerciseHistory: {} };
-    }
-}
-
-/**
- * Ενημέρωση προόδου - Καλείται από το app.js
+ * Ενημέρωση προόδου
  */
 window.updateAchievements = function(exerciseName) {
-    if (!exerciseName) return;
     const cleanName = exerciseName.trim();
-    
-    // Πάντα τράβηγμα των τελευταίων δεδομένων πριν την εγγραφή
-    userStats = getSanitizedStats();
-    
     userStats.totalSets++;
 
     if (!userStats.exerciseHistory[cleanName]) {
@@ -49,21 +32,17 @@ window.updateAchievements = function(exerciseName) {
 };
 
 /**
- * Σχεδίαση του UI - Protected & Fixed
+ * Σχεδίαση του UI - Διορθωμένο σε ΠΡΑΣΙΝΟ
  */
 window.renderAchievements = function() {
     const content = document.getElementById('achPanelContent');
     if (!content) return;
 
-    // Επιδιόρθωση πριν το render
-    const stats = getSanitizedStats();
-    
-    // Υπολογισμός Level με προστασία από NaN
-    const total = stats.totalSets || 0;
-    const currentLevel = Math.floor(total / 20) + 1;
-    const xpInLevel = total % 20;
+    const currentLevel = Math.floor(userStats.totalSets / 20) + 1;
+    const xpInLevel = userStats.totalSets % 20;
     const progressPercent = (xpInLevel / 20) * 100;
 
+    // Εδώ άλλαξα το #64B5F6 (Μπλε) σε #4CAF50 (Πράσινο)
     let html = `
         <div style="background:#111; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #4CAF50; text-align:center;">
             <div style="color:#4CAF50; font-size:12px; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">PEGASUS RANK</div>
@@ -75,16 +54,19 @@ window.renderAchievements = function() {
             <div style="font-size:11px; color:#888;">${xpInLevel} / 20 σετ για το επόμενο Level</div>
         </div>
 
-        <div style="background:#111; padding:10px; border-radius:5px; text-align:center; border: 1px solid #222; margin-bottom:15px;">
-            <span style="font-size:12px; color:#aaa;">Συνολικά Σετ:</span>
-            <span style="font-size:18px; color:#4CAF50; font-weight:bold; margin-left:10px;">${total}</span>
+        <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:15px;">
+            <div style="background:#111; padding:10px; border-radius:5px; text-align:center; border: 1px solid #222;">
+                <span style="font-size:12px; color:#aaa;">Συνολικά Σετ:</span>
+                <span style="font-size:18px; color:#4CAF50; font-weight:bold; margin-left:10px;">${userStats.totalSets}</span>
+            </div>
         </div>
 
         <div style="max-height:250px; overflow-y:auto; padding-right:5px;">
             <table style="width:100%; border-collapse:collapse; font-size:13px;">
     `;
 
-    const sortedExercises = Object.entries(stats.exerciseHistory).sort((a, b) => b[1] - a[1]);
+    const sortedExercises = Object.entries(userStats.exerciseHistory)
+        .sort((a, b) => b[1] - a[1]);
 
     if (sortedExercises.length === 0) {
         html += `<tr><td style="text-align:center; padding:20px; color:#666;">Ολοκλήρωσε το πρώτο σου σετ!</td></tr>`;
@@ -103,18 +85,19 @@ window.renderAchievements = function() {
     content.innerHTML = html;
 };
 
+/**
+ * Milestones & Popups
+ */
 function checkMilestones(name) {
-    const stats = getSanitizedStats();
-    const count = stats.exerciseHistory[name] || 0;
-    if (count > 0 && count % 50 === 0) showAchievementPopup(`Master of ${name}: ${count} Sets!`);
-    if (stats.totalSets > 0 && stats.totalSets % 100 === 0) showAchievementPopup(`Centurion: ${stats.totalSets} Total Sets!`);
+    const count = userStats.exerciseHistory[name];
+    if (count % 50 === 0) showAchievementPopup(`Master of ${name}: ${count} Sets!`);
+    if (userStats.totalSets % 100 === 0) showAchievementPopup(`Centurion: ${userStats.totalSets} Total Sets!`);
 }
 
 function showAchievementPopup(text) {
     const container = document.getElementById('achievement-container') || createAchievementContainer();
     const toast = document.createElement('div');
-    toast.className = 'achievement-toast'; 
-    toast.style.cssText = `background:#111; color:#4CAF50; border:1px solid #4CAF50; padding:15px; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.5); font-weight:bold; margin-bottom:10px;`;
+    toast.className = 'achievement-toast'; // Θα πάρει το στυλ από το CSS που φτιάξαμε πριν
     toast.innerText = `🏆 ${text}`;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
@@ -128,5 +111,4 @@ function createAchievementContainer() {
     return div;
 }
 
-// Initialization on load
-userStats = getSanitizedStats();
+// ΑΦΑΙΡΕΣΗ ΤΟΥ ΠΑΛΙΟΥ INLINE STYLE ΠΟΥ ΕΚΑΝΕ ΤΑ ΠΡΑΓΜΑΤΑ ΜΠΛΕ/ΧΡΥΣΑ
