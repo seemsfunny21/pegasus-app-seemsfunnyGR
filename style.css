@@ -539,8 +539,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     justify-content: flex-start !important;
     gap: 12px;
     padding: 20px;
-    /* Επιτρέπει στο content να ορίζει το ύψος του panel */
-    overflow-y: visible !important; 
+    
+    /* Η ΧΡΥΣΗ ΤΟΜΗ: */
+    height: auto !important; 
+    overflow-y: auto !important; /* Αν χωράει, το scrollbar εξαφανίζεται. Αν όχι, εμφανίζεται. */
+    max-height: calc(85vh - 100px); /* Αφαιρούμε το ύψος του header/footer */
 }
 
 .preview-item {
