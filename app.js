@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.8 - DRAGGABLE UI)
+   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V18.6 - WEATHER AWARE)
    Protocol: Native Metabolic Engine, Audio Unlocked, LIVE CLOUD SYNC
-   + PEGASUS PATCH: Persistent Movable Panels, Zero-Time Protocol
+   Update: Dynamic Rainy Day Protocol Integration
    ========================================================================== */
 
 var exercises = [];
@@ -82,7 +82,7 @@ const getMuscleGroup = (exName) => {
     return "Άλλο";
 };
 
-/* ===== SELECTDAY ===== */
+/* ===== SELECTDAY (WEATHER AWARE) ===== */
 function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
@@ -107,8 +107,14 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
-                      [...getFinalProgram(day, window.program)] : 
+    // 1. WEATHER DETECTION LOGIC
+    const weatherElement = document.getElementById("weather-desc");
+    const weatherText = weatherElement ? weatherElement.innerText.toLowerCase() : "";
+    const isRainy = weatherText.includes("βροχή") || weatherText.includes("rain");
+
+    // 2. FETCH PROGRAM (Passing the isRainy flag to data.js)
+    let rawBaseData = (typeof window.calculateDailyProgram !== 'undefined') ? 
+                      window.calculateDailyProgram(day, isRainy) : 
                       ((window.program[day]) ? [...window.program[day]] : []);
 
     let mappedData = [];
@@ -403,7 +409,6 @@ function showVideo(i) {
     const wInput = ex.querySelector(".weight-input");
     let name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
     
-    // ΑΦΑΙΡΕΣΗ EMOJIS (☀️ κλπ) από το όνομα πριν το mapping
     let cleanName = name.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
     
     const vid = document.getElementById("video");
@@ -423,7 +428,6 @@ function showVideo(i) {
     }
     
     if (typeof videoMap !== 'undefined') {
-        // Χρήση του cleanName για το mapping
         let mappedVal = videoMap[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
         
         if (cleanName.toLowerCase().includes("ems") && !videoMap[cleanName]) {
@@ -571,14 +575,11 @@ function finishWorkout() {
     }, 5000);
 }
 
-
-
 /* ==========================================================================
    PEGASUS UI INITIALIZATION - v16.9 (UNIFIED PANEL SYNC)
    Protocol: Strict Modular Sync - Closing all Tactical Overlays on Switch
    ========================================================================== */
 window.onload = () => {
-    // 1. Email & Reporting Initialization
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     
     if (typeof PegasusReporting !== 'undefined') {
@@ -592,14 +593,12 @@ window.onload = () => {
 
     createNavbar();
 
-    // 2. Core Engine Buttons
     const btnStart = document.getElementById("btnStart");
     if (btnStart) btnStart.onclick = startPause;
 
     const btnNext = document.getElementById("btnNext");
     if (btnNext) btnNext.onclick = skipToNextExercise;
 
-    // 3. UNIFIED PANEL HANDLER (The Fix for the "Workout Button" issue)
     const uiBtns = { 
         "btnCalendarUI": "calendarPanel", 
         "btnAchUI": "achievementsPanel", 
@@ -609,7 +608,7 @@ window.onload = () => {
         "btnPreviewUI": "previewPanel",
         "btnCardioUI": "cardioPanel",
         "btnGalleryUI": "galleryPanel",
-        "btnEMSUI": "emsModal" // Προσθήκη EMS για πλήρη συγχρονισμό
+        "btnEMSUI": "emsModal"
     };
 
     Object.keys(uiBtns).forEach(btnId => {
@@ -618,27 +617,23 @@ window.onload = () => {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 
-                // Πρωτόκολλο Καθαρισμού: Κλείνει ΟΛΑ τα Tactical Overlays
                 if (window.PegasusUI && window.PegasusUI.panels) {
                     window.PegasusUI.panels.forEach(id => {
                         const el = document.getElementById(id);
                         if (el) el.style.display = "none";
                     });
                 } else {
-                    // Fallback αν το dragdrop.js δεν έχει φορτώσει ακόμα
                     Object.values(uiBtns).forEach(id => {
                         const el = document.getElementById(id);
                         if (el) el.style.display = "none";
                     });
                 }
 
-                // Άνοιγμα του επιλεγμένου παραθύρου
                 const targetId = uiBtns[btnId];
                 const targetPanel = document.getElementById(targetId);
                 if (targetPanel) {
                     targetPanel.style.display = "block";
                     
-                    // Εκτέλεση Logic ανάλογα με το Panel
                     if (targetId === "previewPanel") openExercisePreview();
                     if (targetId === "calendarPanel" && window.renderCalendar) window.renderCalendar();
                     if (targetId === "achievementsPanel" && window.renderAchievements) window.renderAchievements();
@@ -649,7 +644,6 @@ window.onload = () => {
         }
     });
 
-    // 4. Global Event Listeners & Utils
     const mainVideo = document.getElementById("video");
     if (mainVideo) mainVideo.oncontextmenu = (e) => e.preventDefault();
 
@@ -682,7 +676,6 @@ window.onload = () => {
 
     if (typeof fetchWeather === "function") fetchWeather();
     
-    // Auto-select Today
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = greekDays[new Date().getDay()];
     setTimeout(() => { 
@@ -698,7 +691,15 @@ function openExercisePreview() {
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
     const currentDay = activeBtn.textContent.trim().replace(" ☀️", "");
-    const dayExercises = typeof window.program !== 'undefined' ? window.program[currentDay] : [];
+    
+    const weatherElement = document.getElementById("weather-desc");
+    const weatherText = weatherElement ? weatherElement.innerText.toLowerCase() : "";
+    const isRainy = weatherText.includes("βροχή") || weatherText.includes("rain");
+
+    const dayExercises = typeof window.calculateDailyProgram !== 'undefined' ? 
+                         window.calculateDailyProgram(currentDay, isRainy) : 
+                         (window.program[currentDay] || []);
+
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
     
