@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - CLEAN SWEEP v17.0
-   Protocol: Dual-Mode Sync & DB Interceptor | Logic: JSONbin.io Integration
+   PEGASUS CLOUD VAULT - CORE SYNC (v13.9.3 - DB LEVEL INTERCEPTOR)
+   Protocol: Strict Data Analyst - Dual Mode Architecture
    ========================================================================== */
 
 const PegasusCloud = {
@@ -16,7 +16,7 @@ const PegasusCloud = {
 
     getTodayKey: function() {
         const d = new Date();
-        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
     safeParse: function(key, fallback) {
@@ -26,9 +26,6 @@ const PegasusCloud = {
         } catch (e) { return fallback; }
     },
 
-    /**
-     * Ξεκλείδωμα Vault (PIN: 2375)
-     */
     unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
@@ -39,7 +36,6 @@ const PegasusCloud = {
             
             this.pull(true);
             
-            // Αυτόματος συγχρονισμός ανά 30 δευτερόλεπτα
             if (!this.syncInterval) {
                 this.syncInterval = setInterval(() => {
                     if (this.isUnlocked) this.pull(true);
@@ -50,63 +46,77 @@ const PegasusCloud = {
         return false;
     },
 
-    /**
-     * Λήψη δεδομένων από το Cloud (Pull)
-     */
     pull: async function(silent = false) {
         if (!this.isUnlocked) return;
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`, {
+            const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
                 headers: { 'X-Master-Key': this.userKey, 'X-Bin-Meta': 'false' }
             });
-            const cloud = await res.json();
+            const cloudData = await res.json();
+            const cloud = cloudData.record || cloudData;
             
+            const dateStr = this.getTodayKey();
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
-                // Μαζική ενημέρωση LocalStorage βάσει Cloud Snapshot
+                let requiresUIReload = false;
+
+                if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
                 if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
-                if (cloud.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
-                if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
-                if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
+
+                if (cloud.weekly_history) {
+                    localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
+                    requiresUIReload = true;
+                }
                 
-                // Συγχρονισμός Food Logs
+                if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
+                if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
+                if (cloud.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(cloud.car_dates));
+                if (cloud.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(cloud.car_service));
+                
+                if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
                 if (cloud.all_food_logs) {
                     Object.keys(cloud.all_food_logs).forEach(k => {
                         localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
                     });
                 }
 
-                // Συγχρονισμός Cardio & History
+                if (cloud.last_update_date === dateStr) {
+                    localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
+                    localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
+                    requiresUIReload = true;
+                }
+
                 if (cloud.cardio_logs) {
                     Object.keys(cloud.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(cloud.cardio_logs[k])));
+                }
+                if (cloud.history_logs) {
+                    Object.keys(cloud.history_logs).forEach(k => {
+                        let val = cloud.history_logs[k];
+                        localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
+                    });
                 }
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
-                // Trigger UI Updates
-                if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+                if (requiresUIReload && typeof window.updateFoodUI === "function") window.updateFoodUI();
+                if (typeof window.updateSuppUI === "function") window.updateSuppUI();
                 if (window.MuscleProgressUI) window.MuscleProgressUI.render();
-                if (window.renderAchievements) window.renderAchievements();
             }
             
             this.hasSuccessfullyPulled = true; 
             
         } catch (e) {
             this.hasSuccessfullyPulled = false; 
-            if (window.PegasusLogger) window.PegasusLogger.log("Cloud Pull Error: " + e.message, "SYNC_ERROR");
+            console.error("PEGASUS Cloud Pull Error:", e);
         }
     },
 
-    /**
-     * Αποστολή δεδομένων στο Cloud (Push)
-     */
     push: async function(silent = true) {
         if (!this.isUnlocked) return;
         
-        // Guard: Αποτροπή υπερεγγραφής αν δεν έχει προηγηθεί επιτυχές Pull
         if (!this.hasSuccessfullyPulled) {
-            console.error("PEGASUS GUARD: Push aborted to prevent data overwrite.");
+            console.error("PEGASUS GUARD: Το Push ακυρώθηκε. Αποτροπή υπερεγγραφής του Cloud.");
             return;
         }
 
@@ -114,13 +124,15 @@ const PegasusCloud = {
         const syncTimestamp = Date.now();
         
         const cardioLogs = {};
+        const historyLogs = {};
         const allFoodLogs = {};
         
-        // Συλλογή όλων των δυναμικών εγγραφών
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
             try {
                 if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
+                if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
+                if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
                 if (key.startsWith('food_log_')) allFoodLogs[key] = JSON.parse(localStorage.getItem(key));
             } catch(e) {}
         }
@@ -128,18 +140,24 @@ const PegasusCloud = {
         const payload = {
             last_update_date: dateStr, 
             last_update_ts: syncTimestamp, 
-            kcal: localStorage.getItem("pegasus_diet_kcal") || "0", 
+            kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
             protein: localStorage.getItem("pegasus_today_protein") || "0", 
             weekly_history: this.safeParse("pegasus_weekly_history", {}), 
             food_library: this.safeParse("pegasus_food_library", []), 
+            muscle_targets: this.safeParse("pegasus_muscle_targets", {}),
             peg_stats: this.safeParse("pegasus_stats", {}),
             supp_inventory: this.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
+            peg_contacts: this.safeParse("pegasus_contacts", []),
+            car_dates: this.safeParse("pegasus_car_dates", {}),
+            car_service: this.safeParse("pegasus_car_service", []),
+            today_food_log: this.safeParse(`food_log_${dateStr}`, []),
             all_food_logs: allFoodLogs,
-            cardio_logs: cardioLogs
+            cardio_logs: cardioLogs,
+            history_logs: historyLogs
         };
 
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}`, {
+            const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': this.userKey },
                 body: JSON.stringify(payload)
@@ -147,19 +165,46 @@ const PegasusCloud = {
             
             if (res.ok) {
                 localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-                if (!silent) console.log("✅ PEGASUS Cloud Sync: Success");
+                if (!silent) console.log("✅ PEGASUS Cloud Sync: Push Success");
             }
         } catch (e) {
-            console.error("❌ PEGASUS Cloud Sync: Failed", e);
+            console.error("❌ PEGASUS Cloud Sync: Push Failed", e);
         }
     }
 };
 
 window.PegasusCloud = PegasusCloud;
 
-/**
- * DB LEVEL INTERCEPTOR: Αυτόματη παρακολούθηση συμπληρωμάτων
- */
+window.addEventListener('load', () => {
+    const savedPin = localStorage.getItem("pegasus_vault_pin");
+    if (savedPin) {
+        window.PegasusCloud.unlock(savedPin);
+        const vaultBtn = document.getElementById("btnMasterVault");
+        if (vaultBtn) vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+    }
+});
+
+/* ==========================================================================
+   DATA INTERCEPTOR (DESKTOP) - ΑΠΟΛΥΤΗ ΥΠΟΚΛΟΠΗ ΣΤΗ ΒΑΣΗ ΔΕΔΟΜΕΝΩΝ
+   ========================================================================== */
+window.consumeSupp = function(type, amount) {
+    let s = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 });
+    s[type] = Math.max(0, s[type] - amount);
+    
+    if (window.originalSetItem) {
+        window.originalSetItem.call(localStorage, 'pegasus_supp_inventory', JSON.stringify(s));
+    } else {
+        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+    }
+    
+    if (typeof updateSuppUI === "function") updateSuppUI();
+    
+    // Αναγκαστικό Push στο Cloud μετά από 1 δευτερόλεπτο
+    setTimeout(() => {
+        if (window.PegasusCloud) window.PegasusCloud.push();
+    }, 1000);
+};
+
 if (!window.originalSetItem) {
     window.originalSetItem = localStorage.setItem;
     localStorage.setItem = function(key, value) {
@@ -168,8 +213,10 @@ if (!window.originalSetItem) {
             try { oldArr = JSON.parse(localStorage.getItem(key) || "[]"); } catch(e) {}
         }
         
+        // 1. Κανονική αποθήκευση
         window.originalSetItem.apply(this, arguments);
 
+        // 2. Έλεγχος για Πρωτεΐνη/Κρεατίνη
         if (key.startsWith("food_log_")) {
             try {
                 let newArr = JSON.parse(value || "[]");
@@ -177,28 +224,17 @@ if (!window.originalSetItem) {
                     let addedItem = newArr[0]; 
                     if (addedItem && addedItem.name) {
                         let fname = addedItem.name.toLowerCase();
-                        let inv = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 });
-                        
                         if (fname.includes("πρωτε") || fname.includes("whey")) {
-                            inv.prot = Math.max(0, inv.prot - 30);
-                            console.log("⚡ INTERCEPTOR: -30g Protein");
+                            window.consumeSupp('prot', 30);
+                            console.log("✅ DB INTERCEPTOR: -30g Πρωτεΐνη");
                         }
                         if (fname.includes("κρεατ") || fname.includes("creatine")) {
-                            inv.crea = Math.max(0, inv.crea - 5);
-                            console.log("⚡ INTERCEPTOR: -5g Creatine");
+                            window.consumeSupp('crea', 5);
+                            console.log("✅ DB INTERCEPTOR: -5g Κρεατίνη");
                         }
-                        
-                        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
-                        setTimeout(() => window.PegasusCloud.push(true), 1000);
                     }
                 }
-            } catch(e) {}
+            } catch(e) { console.error("Interceptor Error", e); }
         }
     };
 }
-
-// Auto-Login
-window.addEventListener('load', () => {
-    const savedPin = localStorage.getItem("pegasus_vault_pin");
-    if (savedPin) window.PegasusCloud.unlock(savedPin);
-});

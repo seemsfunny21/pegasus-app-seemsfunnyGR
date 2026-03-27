@@ -1,6 +1,5 @@
 /* ==========================================================================
-   Pegasus Achievements System - CLEAN SWEEP v17.0
-   Protocol: Strict Green (#4CAF50) | Logic: volume-based leveling
+   Pegasus Achievements System - ALL-GREEN STABLE VERSION
    ========================================================================== */
 
 const allExercises = [
@@ -17,10 +16,9 @@ let userStats = JSON.parse(localStorage.getItem('pegasus_stats')) || {
 };
 
 /**
- * Ενημέρωση προόδου και Milestones
+ * Ενημέρωση προόδου
  */
 window.updateAchievements = function(exerciseName) {
-    if (!exerciseName) return;
     const cleanName = exerciseName.trim();
     userStats.totalSets++;
 
@@ -34,7 +32,7 @@ window.updateAchievements = function(exerciseName) {
 };
 
 /**
- * Σχεδίαση του UI - Επιβολή Strict Green Protocol
+ * Σχεδίαση του UI - Διορθωμένο σε ΠΡΑΣΙΝΟ
  */
 window.renderAchievements = function() {
     const content = document.getElementById('achPanelContent');
@@ -44,37 +42,40 @@ window.renderAchievements = function() {
     const xpInLevel = userStats.totalSets % 20;
     const progressPercent = (xpInLevel / 20) * 100;
 
+    // Εδώ άλλαξα το #64B5F6 (Μπλε) σε #4CAF50 (Πράσινο)
     let html = `
-        <div style="background:#0a0a0a; padding:15px; border-radius:12px; margin-bottom:15px; border: 1px solid #4CAF50; text-align:center; box-shadow: 0 0 15px rgba(74, 175, 80, 0.1);">
-            <div style="color:#4CAF50; font-size:10px; font-weight:900; letter-spacing:2px; margin-bottom:5px; text-transform:uppercase;">PEGASUS RANK</div>
-            <div style="font-size:32px; color:#fff; font-weight:900; margin-bottom:10px;">LEVEL ${currentLevel}</div>
+        <div style="background:#111; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #4CAF50; text-align:center;">
+            <div style="color:#4CAF50; font-size:12px; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">PEGASUS RANK</div>
+            <div style="font-size:28px; color:#fff; font-weight:bold; margin-bottom:10px;">LEVEL ${currentLevel}</div>
             
-            <div style="background:#000; height:8px; border-radius:10px; overflow:hidden; border: 1px solid #222; margin-bottom:8px; position:relative;">
-                <div style="background:#4CAF50; width:${progressPercent}%; height:100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px #4CAF50;"></div>
+            <div style="background:#000; height:8px; border-radius:4px; overflow:hidden; border: 1px solid #222; margin-bottom:5px;">
+                <div style="background:#4CAF50; width:${progressPercent}%; height:100%; transition: width 0.5s ease;"></div>
             </div>
-            <div style="font-size:10px; color:#888; font-weight:bold; letter-spacing:1px;">${xpInLevel} / 20 ΣΕΤ ΓΙΑ ΤΟ ΕΠΟΜΕΝΟ LEVEL</div>
+            <div style="font-size:11px; color:#888;">${xpInLevel} / 20 σετ για το επόμενο Level</div>
         </div>
 
-        <div style="background:#111; padding:12px; border-radius:8px; text-align:center; border: 1px solid #222; margin-bottom:15px;">
-            <span style="font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:1px;">Συνολική Ένταση:</span>
-            <span style="font-size:20px; color:#4CAF50; font-weight:900; margin-left:10px;">${userStats.totalSets} <small style="font-size:10px; color:#666;">ΣΕΤ</small></span>
+        <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:15px;">
+            <div style="background:#111; padding:10px; border-radius:5px; text-align:center; border: 1px solid #222;">
+                <span style="font-size:12px; color:#aaa;">Συνολικά Σετ:</span>
+                <span style="font-size:18px; color:#4CAF50; font-weight:bold; margin-left:10px;">${userStats.totalSets}</span>
+            </div>
         </div>
 
-        <div style="max-height:280px; overflow-y:auto; padding-right:5px; scrollbar-width: thin; scrollbar-color: #4CAF50 #111;">
-            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <div style="max-height:250px; overflow-y:auto; padding-right:5px;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
     `;
 
     const sortedExercises = Object.entries(userStats.exerciseHistory)
         .sort((a, b) => b[1] - a[1]);
 
     if (sortedExercises.length === 0) {
-        html += `<tr><td style="text-align:center; padding:40px; color:#444; font-weight:bold; letter-spacing:1px;">ΑΝΑΜΟΝΗ ΓΙΑ ΔΕΔΟΜΕΝΑ...</td></tr>`;
+        html += `<tr><td style="text-align:center; padding:20px; color:#666;">Ολοκλήρωσε το πρώτο σου σετ!</td></tr>`;
     } else {
         sortedExercises.forEach(([name, count]) => {
             html += `
-                <tr style="border-bottom:1px solid #1a1a1a;">
-                    <td style="padding:10px 0; color:#eee; font-weight:600; text-transform:uppercase; font-size:11px;">${name}</td>
-                    <td style="padding:10px 0; text-align:right; color:#4CAF50; font-weight:900; font-size:14px;">${count} <span style="font-size:9px; color:#666; font-weight:normal;">SET</span></td>
+                <tr style="border-bottom:1px solid #222;">
+                    <td style="padding:10px 0; color:#eee;">${name}</td>
+                    <td style="padding:10px 0; text-align:right; color:#4CAF50; font-weight:bold;">${count} <small style="color:#666">σετ</small></td>
                 </tr>
             `;
         });
@@ -85,47 +86,29 @@ window.renderAchievements = function() {
 };
 
 /**
- * Milestones Logic
+ * Milestones & Popups
  */
 function checkMilestones(name) {
     const count = userStats.exerciseHistory[name];
-    if (count % 50 === 0) showAchievementPopup(`MASTER OF ${name.toUpperCase()}: ${count} SETS!`);
-    if (userStats.totalSets % 100 === 0) showAchievementPopup(`CENTURION: ${userStats.totalSets} TOTAL SETS!`);
+    if (count % 50 === 0) showAchievementPopup(`Master of ${name}: ${count} Sets!`);
+    if (userStats.totalSets % 100 === 0) showAchievementPopup(`Centurion: ${userStats.totalSets} Total Sets!`);
 }
 
-/**
- * Unified Toast Notification
- */
 function showAchievementPopup(text) {
     const container = document.getElementById('achievement-container') || createAchievementContainer();
     const toast = document.createElement('div');
-    toast.style.cssText = `
-        background: #000; 
-        color: #4CAF50; 
-        border: 1px solid #4CAF50; 
-        padding: 15px 20px; 
-        border-radius: 8px; 
-        font-weight: 900; 
-        font-size: 12px; 
-        box-shadow: 0 0 20px rgba(74, 175, 80, 0.3); 
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-    `;
-    toast.innerHTML = `<span style="margin-right:10px;">🏆</span> ${text}`;
+    toast.className = 'achievement-toast'; // Θα πάρει το στυλ από το CSS που φτιάξαμε πριν
+    toast.innerText = `🏆 ${text}`;
     container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateX(100px)";
-        toast.style.transition = "0.4s";
-        setTimeout(() => toast.remove(), 400);
-    }, 4000);
+    setTimeout(() => toast.remove(), 4000);
 }
 
 function createAchievementContainer() {
     const div = document.createElement('div');
     div.id = 'achievement-container';
-    div.style.cssText = `position: fixed; bottom: 30px; right: 30px; z-index: 20000; display: flex; flex-direction: column; gap: 10px;`;
+    div.style.cssText = `position: fixed; bottom: 20px; right: 20px; z-index: 10002; display: flex; flex-direction: column; gap: 10px;`;
     document.body.appendChild(div);
     return div;
 }
+
+// ΑΦΑΙΡΕΣΗ ΤΟΥ ΠΑΛΙΟΥ INLINE STYLE ΠΟΥ ΕΚΑΝΕ ΤΑ ΠΡΑΓΜΑΤΑ ΜΠΛΕ/ΧΡΥΣΑ

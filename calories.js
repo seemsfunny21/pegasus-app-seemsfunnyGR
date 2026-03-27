@@ -1,72 +1,59 @@
 /* ==========================================================================
-   PEGASUS CALORIE MODULE - CLEAN SWEEP v17.0
-   Protocol: Metabolic Integration | Role: UI Display & Diet Commit
+   PEGASUS CALORIE MODULE - FINAL GREEN VERSION
    ========================================================================== */
+var currentKcal = 0;
 
-/**
- * Ενημέρωση της εμφάνισης των θερμίδων στο UI
- * Καλούμενο από το MetabolicEngine για συγχρονισμό
- */
-window.renderKcal = function() {
+function trackSetCalories(weight, durationSeconds) {
+    let w = parseFloat(weight);
+    // ΔΙΟΡΘΩΣΗ: Ανάκτηση δυναμικού βάρους ή fallback στα 74kg του προφίλ.
+    if (!w || w <= 0) w = parseFloat(localStorage.getItem("pegasus_weight")) || 74; 
+    
+    let d = parseFloat(durationSeconds);
+    if (!d || d <= 0) d = 45;
+
+    const MET = 5.0; 
+    const durationMins = d / 60;
+    
+    const kcalEarned = (MET * 3.5 * w / 200) * durationMins;
+    
+    currentKcal += kcalEarned;
+    renderKcal();
+}
+
+function renderKcal() {
     const valSpan = document.querySelector("#kcalBtn .kcal-value");
     const kcalBtn = document.getElementById("kcalBtn");
-    
-    // Ανάκτηση της τρέχουσας τιμής από το δίσκο (Source of Truth)
-    const currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
     
     if (valSpan) {
         valSpan.textContent = currentKcal.toFixed(1);
     }
     
-    // Εφέ παλμού κατά την ενημέρωση
     if (kcalBtn) {
         kcalBtn.classList.remove("pulse-active");
-        void kcalBtn.offsetWidth; // Trigger reflow
+        void kcalBtn.offsetWidth; 
         kcalBtn.classList.add("pulse-active");
     }
-};
+}
 
-/**
- * Οριστικοποίηση θερμίδων προπόνησης στο Food Log
- * Μετατρέπει τις καμμένες θερμίδες σε αρνητική εγγραφή διατροφής
- */
-window.finalizeWorkoutCalories = function() {
-    const totalBurned = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-    
-    if (totalBurned > 0 && window.addFoodItem) {
-        const today = new Date().toLocaleDateString('el-GR');
-        
-        // Καταγραφή στο Food Engine ως αρνητικό πρόσημο
-        window.addFoodItem(
-            "🔥 ΠΡΟΠΟΝΗΣΗ PEGASUS", 
-            -Math.round(totalBurned), 
-            0 // Protein credit
-        );
-
-        // Ενημέρωση του Reporting System
+// ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Αποθήκευση της προπόνησης στο Food Log
+function finalizeWorkoutCalories() {
+    if (currentKcal > 0 && window.addFoodEntry) {
+        window.addFoodEntry({
+            name: "🔥 Προπόνηση Pegasus",
+            kcal: -Math.round(currentKcal), // Αρνητικό πρόσημο γιατί είναι κάψιμο
+            note: "Αυτοματοποιημένη εγγραφή",
+            date: new Date().toLocaleDateString('el-GR')
+        });
+        // STRICT SYNC: Ενημέρωση του Reporting System για την προπόνηση
         if (window.PegasusReporting) {
-            window.PegasusReporting.saveWorkout(totalBurned.toFixed(1));
+            PegasusReporting.saveWorkout(currentKcal.toFixed(1), "Δες το Log για λεπτομέρειες");
         }
-
-        // Μηδενισμός μετά την καταγραφή
-        window.resetKcal();
-        
-        if (window.PegasusLogger) {
-            window.PegasusLogger.log(`Workout Calories Committed: ${totalBurned} kcal`, "INFO");
-        }
+        resetKcal();
     }
-};
+}
 
-/**
- * Καθαρισμός μετρητή θερμίδων
- */
-window.resetKcal = function() {
-    localStorage.setItem("pegasus_today_kcal", "0");
+function resetKcal() {
+    currentKcal = 0;
     const valSpan = document.querySelector("#kcalBtn .kcal-value");
     if (valSpan) valSpan.textContent = "0.0";
-};
-
-// Εξασφάλιση ότι το UI ενημερώνεται κατά τη φόρτωση
-window.addEventListener('load', () => {
-    window.renderKcal();
-});
+}

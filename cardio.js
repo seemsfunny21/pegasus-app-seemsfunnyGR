@@ -1,37 +1,22 @@
 /* ==========================================================================
-   PEGASUS CARDIO ENGINE - CLEAN SWEEP v17.0
-   Protocol: Strict Activity Logging | Logic: Global Scope Integration
+   PEGASUS CARDIO ENGINE - v5.1 (GLOBAL SCOPE EXPORT)
+   Protocol: Strict Data Analyst - Tracking & Storage
    ========================================================================== */
 
 window.PegasusCardio = {
-    /**
-     * Αρχικοποίηση Listeners
-     */
     init: function() {
         const btn = document.getElementById("totalWorkoutsDisplay");
         if (btn) {
             btn.onclick = () => this.open();
+            console.log("PEGASUS: Cardio Engine Listener Active.");
         }
-        console.log("✅ PEGASUS: Cardio Engine Active.");
     },
 
-    /**
-     * Άνοιγμα του Cardio Panel
-     */
     open: function() {
         const panel = document.getElementById("cardioPanel");
         if (panel) {
-            // Πρωτόκολλο Clean Sweep: Κλείσιμο άλλων panels
-            if (window.PegasusUI && window.PegasusUI.panels) {
-                window.PegasusUI.panels.forEach(p => {
-                    const el = document.getElementById(p);
-                    if (el) el.style.display = "none";
-                });
-            }
-            
             panel.style.display = "block";
-            
-            // Αυτόματη συμπλήρωση σημερινής ημερομηνίας (ISO format για το input)
+            // Αυτόματη συμπλήρωση σημερινής ημερομηνίας
             const today = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById("cDate");
             if (dateInput) dateInput.value = today;
@@ -43,22 +28,18 @@ window.PegasusCardio = {
         if (panel) panel.style.display = "none";
     },
 
-    /**
-     * Αποθήκευση Δεδομένων Δραστηριότητας
-     */
     save: function() {
-        const route = document.getElementById("cRoute")?.value;
-        const km = document.getElementById("cKm")?.value;
-        const time = document.getElementById("cTime")?.value;
-        const kcal = document.getElementById("cKcal")?.value;
-        const rawDate = document.getElementById("cDate")?.value;
+        const route = document.getElementById("cRoute").value;
+        const km = document.getElementById("cKm").value;
+        const time = document.getElementById("cTime").value;
+        const kcal = document.getElementById("cKcal").value;
+        const rawDate = document.getElementById("cDate").value;
 
         if (!route || !km) {
-            alert("PEGASUS STRICT: Συμπλήρωσε Διαδρομή και Χιλιόμετρα!");
+            alert("Συμπλήρωσε Διαδρομή και Χιλιόμετρα!");
             return;
         }
 
-        // Μετατροπή ημερομηνίας σε Key μορφή (DD/MM/YYYY)
         const d = new Date(rawDate);
         const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 
@@ -71,37 +52,36 @@ window.PegasusCardio = {
             timestamp: Date.now()
         };
 
-        // Αποθήκευση στο LocalStorage
+        // Αποθήκευση στο LocalStorage με το πρότυπο κλειδί του Reporting
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-        // Ενημέρωση Cloud Sync (αν είναι ξεκλείδωτο)
-        if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
+        // Ενημέρωση Cloud αν είναι ξεκλείδωτο
+        if (window.PegasusCloud && window.PegasusCloud.hasSuccessfullyPulled) {
             window.PegasusCloud.push(true);
         }
 
-        if (window.PegasusLogger) {
-            window.PegasusLogger.log(`Cardio Log Saved: ${route} (${km}km)`, "INFO");
-        }
-
-        alert(`Η διαδρομή "${route}" καταγράφηκε επιτυχώς!`);
-        this.resetForm();
+        alert(`Η διαδρομή "${route}" αποθηκεύτηκε επιτυχώς!`);
         this.close();
+        
+        // Καθαρισμός φόρμας για την επόμενη χρήση
+        this.resetForm();
     },
 
     resetForm: function() {
-        ["cRoute", "cKm", "cTime", "cKcal"].forEach(id => {
+        const fields = ["cRoute", "cKm", "cTime", "cKcal"];
+        fields.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
     }
 };
 
-/**
- * Global Handlers για το UI
- */
+// Global Handlers για σύνδεση με το UI (index.html)
 window.saveCardioData = () => window.PegasusCardio.save();
 
-// Boot Sequence
+// Εκκίνηση κατά το φόρτωμα της σελίδας
 window.addEventListener("load", () => {
-    window.PegasusCardio.init();
+    if (window.PegasusCardio) {
+        window.PegasusCardio.init();
+    }
 });

@@ -1,60 +1,63 @@
 /* ==========================================================================
-   PEGASUS WEATHER BRIDGE - CLEAN SWEEP v17.0
-   Protocol: Geo-Targeted Sync (Ioannina) | Logic: Real-time API Fetch
+   PEGASUS WEATHER COMPONENT - v2.0 (STRICT INDOOR PROTOCOL)
+   Protocol: Complete Precipitation Recognition (Rain + Snow)
    ========================================================================== */
 
-const PegasusWeather = {
-    apiKey: "7662c64077651c6c6411516e6d1e1f1c", // Standard OpenWeather API Format
-    city: "Ioannina,GR",
-    units: "metric",
-    cacheKey: "pegasus_weather_cache",
-    cacheTTL: 3600000, // 1 Hour Cache Persistence
+/**
+ * Μετατροπή κωδικού καιρού σε Emoji (Ακριβής χαρτογράφηση WMO)
+ */
+function weatherCodeToEmoji(code) {
+    if (code === 0) return "☀️"; // Καθαρός
+    if (code <= 3) return "🌤️";  // Λίγα σύννεφα
+    if (code === 45 || code === 48) return "🌥️"; // Συννεφιά/Ομίχλη
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return "🌧️"; // Βροχή / Μπόρες
+    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return "🌨️"; // Χιόνι
+    if (code >= 95) return "⛈️"; // Καταιγίδα
+    return "🌫️";
+}
 
-    /**
-     * Κύρια συνάρτηση λήψης δεδομένων
-     */
-    async fetchCurrent() {
-        // 1. Έλεγχος Cache για εξοικονόμηση API calls
-        const cached = JSON.parse(localStorage.getItem(this.cacheKey));
-        if (cached && (Date.now() - cached.timestamp < this.cacheTTL)) {
-            console.log("✅ PEGASUS: Weather loaded from Cache.");
-            return cached.data;
-        }
+/**
+ * Κύρια συνάρτηση - Ενημερώνει το UI με τον καιρό (Ιωάννινα)
+ */
+async function fetchWeather() {
+    const weatherEl = document.querySelector(".weather-text");
+    if (!weatherEl) return;
 
-        try {
-            const response = await fetch(
-                `https://api.openweathermap.org/data/2.5/weather?q=${this.city}&units=${this.units}&appid=${this.apiKey}`
-            );
+    weatherEl.innerHTML = "...°C";
+
+    try {
+        const url = "https://api.open-meteo.com/v1/forecast?latitude=39.667&longitude=20.850&current_weather=true&temperature_unit=celsius&timezone=Europe/Athens";
+        
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Service Unavailable");
+        
+        const data = await res.json();
+
+        if (data?.current_weather?.temperature !== undefined) {
+            const temp = Math.round(data.current_weather.temperature);
+            const code = data.current_weather.weathercode;
+            const icon = weatherCodeToEmoji(code);
             
-            if (!response.ok) throw new Error("Weather API Unreachable");
+            weatherEl.innerHTML = `${icon} ${temp}°C`;
 
-            const data = await response.json();
-            
-            const weatherResult = {
-                temp: Math.round(data.main.temp),
-                condition: data.weather[0].main, // π.χ. Rain, Clear, Clouds
-                description: data.weather[0].description,
-                humidity: data.main.humidity,
-                timestamp: Date.now()
-            };
-
-            // Αποθήκευση στην Cache
-            localStorage.setItem(this.cacheKey, JSON.stringify({
-                timestamp: Date.now(),
-                data: weatherResult
-            }));
-
-            if (window.PegasusLogger) {
-                window.PegasusLogger.log(`Weather Sync: ${weatherResult.temp}°C in Ioannina`, "INFO");
+            // PEGASUS AUTO-SYNC: Αυτόματη ενημέρωση του διακόπτη (Βροχή & Χιόνι)
+            const rainToggle = document.getElementById('rainToggle');
+            if (rainToggle) {
+                const isPrecipitation = (
+                    (code >= 51 && code <= 67) || // Βροχή
+                    (code >= 71 && code <= 77) || // Χιόνι
+                    (code >= 80 && code <= 82) || // Μπόρες βροχής
+                    (code >= 85 && code <= 86) || // Μπόρες χιονιού
+                    code >= 95                    // Καταιγίδα
+                );
+                rainToggle.checked = isPrecipitation;
             }
 
-            return weatherResult;
-        } catch (error) {
-            console.error("❌ PEGASUS WEATHER ERROR:", error);
-            // Fallback σε ασφαλή δεδομένα (Indoor Protocol) αν αποτύχει το API
-            return { temp: 20, condition: "Offline", description: "API Error" };
+        } else {
+            weatherEl.innerText = "Ν/Α";
         }
+    } catch (err) {
+        console.error("Weather Error:", err);
+        weatherEl.innerText = "⚠️ Error";
     }
-};
-
-window.PegasusWeather = PegasusWeather;
+}

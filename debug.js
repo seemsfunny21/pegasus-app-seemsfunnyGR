@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS HEALTH & DEBUG SYSTEM - CLEAN SWEEP v17.0
-   Protocol: Strict Monitor & Logic Audit | Logic: Persistent Error Logging
+   PEGASUS HEALTH & DEBUG SYSTEM - v3.1 (STRICT MONITOR + PERSISTENT LOG)
+   Protocol: Strict Data Analyst - Full Error Logging & Sync Guard Monitoring
    ========================================================================== */
 
 const MAX_LOG_ENTRIES = 50;
@@ -8,7 +8,7 @@ const LOG_KEY = "pegasus_error_log";
 
 /**
  * 1. PERSISTENT LOGGER
- * Καταγραφή συμβάντων με διατήρηση στο LocalStorage
+ * Καταγράφει σφάλματα που παραμένουν στο LocalStorage και μετά το refresh.
  */
 window.PegasusLogger = {
     log: function(message, type = "ERROR") {
@@ -18,17 +18,14 @@ window.PegasusLogger = {
                 timestamp: new Date().toLocaleString('el-GR'),
                 type: type,
                 msg: message,
-                version: "17.0"
+                device: (window.innerWidth <= 800 || /Android|webOS|iPhone|iPad/i.test(navigator.userAgent)) ? "Mobile" : "Desktop"
             };
             
-            logs.unshift(entry); 
-            if (logs.length > MAX_LOG_ENTRIES) logs.pop(); 
+            logs.unshift(entry); // Προσθήκη στην αρχή (νεότερο πρώτο)
+            if (logs.length > MAX_LOG_ENTRIES) logs.pop(); // Διατήρηση τελευταίων 50
             
             localStorage.setItem(LOG_KEY, JSON.stringify(logs));
-            
-            // Console Output με Strict Green Protocol για INFO
-            const color = type === "ERROR" ? "#ff4444" : "#4CAF50";
-            console.log(`%c[PEGASUS ${type}]: ${message}`, `color: ${color}; font-weight: bold;`);
+            console.log(`%c[PEGASUS ${type}]: ${message}`, "color: #ff4444; font-weight: bold;");
         } catch (e) {
             console.error("Logger Internal Failure:", e);
         }
@@ -40,81 +37,107 @@ window.PegasusLogger = {
 
     clearLogs: function() {
         localStorage.removeItem(LOG_KEY);
-        console.log("✅ PEGASUS: Logs cleared.");
+        console.log("PEGASUS: Error logs cleared.");
     }
 };
 
 /**
- * 2. CALORIE LOGIC AUDIT
- * Επαλήθευση Mifflin-St Jeor βάσει Master Profile (74kg / 1.87m / 38y)
+ * 2. CALORIE LOGIC VALIDATION
+ * Protocol: Mifflin-St Jeor Validation for 74kg / 1.87m / 38y Male
  */
 window.verifyCalorieLogic = () => {
-    const profile = window.USER_PROFILE || { weight: 74, height: 187, age: 38, gender: 'male' };
+    const stats = { age: 38, height: 187, weight: 74, gender: 'male' };
     
-    // Υπολογισμός BMR (Base Metabolic Rate)
-    const bmr = (10 * profile.weight) + (6.25 * profile.height) - (5 * profile.age) + 5;
+    // Mifflin-St Jeor Formula
+    const bmr = (10 * stats.weight) + (6.25 * stats.height) - (5 * stats.age) + 5;
     const tdee = Math.round(bmr * 1.55); // Moderate activity factor
-    const target = profile.targetKcal || 2800; 
+    const target = 2800; // Pegasus Target for Bulk/Volume
 
-    console.log(`%c--- PEGASUS CALORIE AUDIT ---`, 'color: #4CAF50; font-weight: bold;');
+    console.log(`%c--- CALORIE AUDIT (STRICT) ---`, 'color: #ff9800; font-weight: bold;');
     
-    const currentWeight = parseFloat(localStorage.getItem("pegasus_weight")) || profile.weight;
+    const currentWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 0;
     
     console.table({
-        "BMR (Base)": { Value: `${bmr} kcal`, Status: "NOMINAL" },
-        "TDEE (Maintenance)": { Value: `${tdee} kcal`, Status: "NOMINAL" },
-        "Pegasus Target": { Value: `${target} kcal`, Status: target > tdee ? "SURPLUS (BULK)" : "DEFICIT" },
-        "Profile Sync": { Value: `${currentWeight} kg`, Status: currentWeight === profile.weight ? "MATCH" : "MISMATCH" }
+        "0": { Parameter: "BMR (Base)", Value: `${bmr} kcal`, Status: "NOMINAL" },
+        "1": { Parameter: "TDEE (Maintenance)", Value: `${tdee} kcal`, Status: "NOMINAL" },
+        "2": { Parameter: "Pegasus Target", Value: `${target} kcal`, Status: target > tdee ? "SURPLUS (BULK)" : "DEFICIT" },
+        "3": { Parameter: "User Weight", Value: `${currentWeight} kg`, Status: currentWeight === stats.weight ? "MATCH" : "MISMATCH" }
     });
 
-    if (currentWeight !== profile.weight) {
-        window.PegasusLogger.log(`Weight Mismatch: Local (${currentWeight}kg) vs Master (${profile.weight}kg)`, "WARNING");
+    if (currentWeight !== stats.weight && currentWeight !== 0) {
+        window.PegasusLogger.log(`Calorie Logic: Local weight (${currentWeight}kg) mismatch with Master Profile.`, "WARNING");
         return false;
     }
     return true;
 };
 
 /**
- * 3. CORE HEALTH CHECK
- * Αυτόματος έλεγχος ζωτικών λειτουργιών UI και Δεδομένων
+ * 3. ASYNC CACHE AUDIT ENGINE
+ */
+window.verifyPegasusCache = async () => {
+    const CACHE_NAME = 'pegasus-media-vault-v1';
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        const keys = await cache.keys();
+        if (keys.length === 0) return false;
+        return true;
+    } catch (err) { return false; }
+};
+
+/**
+ * 4. CORE HEALTH CHECK
+ * Εκτελείται αυτόματα στην εκκίνηση και χειροκίνητα στην κονσόλα: pegasusHealthCheck()
  */
 window.pegasusHealthCheck = async function() {
-    console.log("%c--- PEGASUS OS HEALTH CHECK ---", "color: #4CAF50; font-weight: bold;");
+    console.log("%c--- PEGASUS HEALTH CHECK START ---", "color: #4CAF50; font-weight: bold;");
     let errors = [];
+    let warnings = [];
 
-    // Έλεγχος Engine Components
-    if (typeof window.calculateDailyProgram !== 'function') errors.push("Engine: data.js not responding.");
-    if (typeof window.PegasusCloud === 'undefined') errors.push("Sync: cloudSync.js missing.");
+    // Check Variables (Path sensitive)
+    const isMobile = window.location.pathname.includes("mobile.html");
     
-    // Έλεγχος DOM (Essential Elements)
-    const essential = ["btnStart", "exList", "totalProgress", "navbar"];
+    // Έλεγχος αν υπάρχουν τα βασικά αντικείμενα δεδομένων
+    if (typeof window.calculateDailyProgram !== 'function') errors.push("Critical: Dynamic Engine (data.js) not found.");
+    
+    // Check Sync Status
+    const lastPush = localStorage.getItem("pegasus_last_push");
+    if (!lastPush) warnings.push("Sync: No successful push recorded in this browser.");
+
+    // Check DOM Elements
+    const essential = isMobile ? ["sync-indicator"] : ["btnStart", "exList", "totalProgress"];
     essential.forEach(id => {
-        if (!document.getElementById(id)) errors.push(`UI: Element '${id}' missing from DOM.`);
+        if (!document.getElementById(id)) errors.push(`UI: Element ID '${id}' missing.`);
     });
 
-    // Έλεγχος Υγείας Θερμίδων
+    // Check Cache
+    const cacheStatus = await window.verifyPegasusCache();
+    if (!cacheStatus) warnings.push("Cache: Offline Vault not fully initialized.");
+
+    // Check Calories
     window.verifyCalorieLogic();
 
-    // Τελική Αναφορά
-    if (errors.length === 0) {
-        console.log("%c✅ SYSTEM NOMINAL: All modules operational.", "color: #4CAF50; font-weight: bold;");
+    // Final Report & Logging
+    if (errors.length === 0 && warnings.length === 0) {
+        console.log("%c✅ Pegasus System Healthy: All systems nominal.", "color: #4CAF50; font-weight: bold; font-size: 12px;");
     } else {
         errors.forEach(err => {
             console.error("❌ " + err);
             window.PegasusLogger.log(err, "HEALTH_CRITICAL");
         });
+        warnings.forEach(wrn => console.warn("⚠️ " + wrn));
     }
-    console.log("%c-------------------------------", "color: #4CAF50; font-weight: bold;");
+    console.log("%c--- CHECK COMPLETE ---", "color: #4CAF50; font-weight: bold;");
 };
 
-/**
- * 4. GLOBAL RUNTIME CATCHER
- */
+// 5. GLOBAL RUNTIME ERROR CATCHER
 window.onerror = function(message, source, lineno, colno, error) {
     const fileName = source ? source.split('/').pop() : "unknown";
-    window.PegasusLogger.log(`Runtime: ${message} at ${fileName}:${lineno}`, "RUNTIME_ERROR");
+    const cleanMsg = `Runtime: ${message} at ${fileName}:${lineno}`;
+    window.PegasusLogger.log(cleanMsg, "RUNTIME_ERROR");
     return false;
 };
 
-// Εκτέλεση Health Check μετά τη φόρτωση
-setTimeout(() => window.pegasusHealthCheck(), 3000);
+// Αυτόματη εκτέλεση μετά από 3 δευτερόλεπτα για να προλάβουν να φορτώσουν όλα τα scripts
+setTimeout(() => {
+    window.pegasusHealthCheck();
+}, 3000);

@@ -1,87 +1,52 @@
 /* ==========================================================================
-   PEGASUS WEATHER HANDLER - CLEAN SWEEP v17.0
-   Protocol: Decision Logic (Ioannina) | Logic: Auto-Switch Training Mode
+   PEGASUS WEATHER LOGIC & FALLBACK SYSTEM - v8.5 (PURE DYNAMIC)
+   Protocol: Strict Analyst - No Static Data Allowed
    ========================================================================== */
 
-window.WeatherHandler = {
-    /**
-     * Κριτήρια Αποδοχής Εξωτερικής Προπόνησης
-     */
-    constraints: {
-        minTemp: 12,        // Ελάχιστη θερμοκρασία για ποδήλατο
-        badConditions: ["Rain", "Snow", "Thunderstorm", "Drizzle"]
-    },
-
-    /**
-     * Λήψη Τελικού Προγράμματος βάσει Συνθηκών
-     */
-    async getAdaptedProgram(dayName) {
-        if (window.PegasusLogger) window.PegasusLogger.log(`Analyzing conditions for ${dayName}...`, "INFO");
-
-        // 1. Ανάκτηση καιρού από τη γέφυρα
-        const weather = await window.PegasusWeather.fetchCurrent();
-        const baseProgram = window.calculateDailyProgram(dayName);
-        
-        // 2. Έλεγχος αν το πρόγραμμα περιλαμβάνει Outdoor δραστηριότητα
-        const hasOutdoor = baseProgram.some(ex => ex.name.includes("Ποδηλασία"));
-
-        if (hasOutdoor) {
-            const isTooCold = weather.temp < this.constraints.minTemp;
-            const isRaining = this.constraints.badConditions.includes(weather.condition);
-
-            if (isTooCold || isRaining) {
-                if (window.PegasusLogger) {
-                    window.PegasusLogger.log(`Outdoor Aborted: ${weather.temp}°C, ${weather.condition}. Switching to Indoor Protocol.`, "WARNING");
-                }
-                return this.switchToIndoor(baseProgram);
-            }
-        }
-
-        return baseProgram;
-    },
-
-    /**
-     * Indoor Protocol: Αντικατάσταση Ποδηλασίας με EMS ή Stretching
-     */
-    switchToIndoor(program) {
-        return program.map(ex => {
-            if (ex.name.includes("Ποδηλασία")) {
-                // Αν ο καιρός στα Γιάννενα είναι απαγορευτικός, επιβάλλεται EMS Session
-                return { 
-                    name: "EMS Indoor Replacement", 
-                    muscleGroup: "Πόδια", 
-                    sets: 4, 
-                    duration: 300,
-                    note: "Weather Replacement" 
-                };
-            }
-            return ex;
-        });
-    },
-
-    /**
-     * Ενημέρωση του UI με τις καιρικές συνθήκες
-     */
-    updateWeatherUI: async function() {
-        const weather = await window.PegasusWeather.fetchCurrent();
-        const display = document.getElementById('weatherDisplay');
-        if (display) {
-            display.innerHTML = `
-                <span style="color:#4CAF50; font-weight:900;">${weather.temp}°C</span> 
-                <span style="color:#666; font-size:10px; margin-left:5px;">${weather.condition.toUpperCase()} (IOANNINA)</span>
-            `;
-        }
-    }
-};
+function isRaining() {
+    const rainToggle = document.getElementById('rainToggle');
+    return rainToggle ? rainToggle.checked : false;
+}
 
 /**
- * Global Hook: Χρησιμοποιείται από το app.js κατά την επιλογή ημέρας
+ * Επιστρέφει 100% Δυναμικό Πρόγραμμα και προσαρμόζεται στον καιρό.
  */
-window.getFinalProgram = async (day) => {
-    return await window.WeatherHandler.getAdaptedProgram(day);
+window.getFinalProgram = function(day) {
+    const rain = isRaining();
+    
+    // 1. DATA GUARD: Απευθείας κλήση του δυναμικού υπολογιστή από το data.js
+    let dailyData = [];
+    if (typeof window.calculateDailyProgram === 'function') {
+        dailyData = window.calculateDailyProgram(day);
+    } else {
+        console.warn("PEGASUS: Dynamic engine offline. Using emergency fallback.");
+        // ΔΙΟΡΘΩΣΗ: Αλλαγή από "Recovery" σε "Κορμός" για αποφυγή ορφανών δεδομένων στο reporting
+        return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
+    }
+
+    // 2. WEATHER LOGIC: Αν βρέχει, αφαιρούμε τις εξωτερικές δραστηριότητες (Ποδηλασία)
+    if (rain) {
+        dailyData = dailyData.filter(ex => !ex.name.includes("Ποδηλασία"));
+        
+        // Αν η μέρα μείνει άδεια λόγω βροχής (π.χ. Σάββατο που είχε μόνο ποδήλατο), 
+        // εισάγουμε μια δυναμική εναλλακτική προπόνηση εσωτερικού χώρου με σωστά Muscle Groups.
+        if (dailyData.length === 0) {
+            dailyData = [
+                { name: "Pushups", sets: 4, duration: 45, muscleGroup: "Στήθος" },
+                { name: "Plank", sets: 4, duration: 45, muscleGroup: "Κορμός" },
+                { name: "Reverse Crunch", sets: 4, duration: 45, muscleGroup: "Κορμός" }
+            ];
+        }
+    }
+
+    return dailyData;
 };
 
-// Initial Sync
-window.addEventListener('load', () => {
-    setTimeout(() => window.WeatherHandler.updateWeatherUI(), 2000);
-});
+window.updateWeatherUI = function() {
+    const statusBox = document.getElementById('weather-status-alert');
+    if (statusBox) {
+        const rain = isRaining();
+        statusBox.style.display = rain ? 'block' : 'none';
+        statusBox.innerHTML = rain ? "⚠️ INDOOR PROTOCOL ACTIVE" : "";
+    }
+};

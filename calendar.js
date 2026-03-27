@@ -1,43 +1,36 @@
 /* ==========================================================================
-   PEGASUS CALENDAR SYSTEM - CLEAN SWEEP v17.0
-   Protocol: Strict Recovery Monitoring | Logic: Integrated Diet Sync
+   PEGASUS CALENDAR SYSTEM - STRICT VERSION (FINAL)
    ========================================================================== */
 
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 
-/**
- * Κύρια συνάρτηση σχεδίασης ημερολογίου
- */
 window.renderCalendar = function() {
     const el = document.getElementById("calendarContent");
     if (!el) return;
 
-    // Ανάκτηση δεδομένων από το LocalStorage
-    const workoutData = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
+    // Λήψη δεδομένων προπόνησης από το LocalStorage
+    const data = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
     const now = new Date();
+    // Σημερινή ημερομηνία χωρίς ώρες για σύγκριση
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
     let html = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; color:#4CAF50; background:#0a0a0a; padding:10px; border-radius:8px; border:1px solid #222;">
-        <span id="prevMonth" style="cursor:pointer; padding:5px 15px; font-weight:900; font-size:18px;">&larr;</span>
-        <span style="text-transform: uppercase; font-weight:900; letter-spacing:2px; font-size:14px;">
-            ${new Date(currentYear, currentMonth).toLocaleString("el-GR", { month: "long" })} ${currentYear}
-        </span>
-        <span id="nextMonth" style="cursor:pointer; padding:5px 15px; font-weight:900; font-size:18px;">&rarr;</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:#4CAF50;background:#111;padding:8px;border-radius:5px;border:1px solid #333;">
+        <span id="prevMonth" style="cursor:pointer;padding:0 10px; font-weight:bold;">&#8592;</span>
+        <span style="text-transform: capitalize; font-weight:bold;">${new Date(currentYear, currentMonth).toLocaleString("el-GR", { month: "long" })} ${currentYear}</span>
+        <span id="nextMonth" style="cursor:pointer;padding:0 10px; font-weight:bold;">&#8594;</span>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:6px;">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
     `;
 
-    const weekHeaders = ["Κ", "Δ", "Τ", "Τ", "Π", "Π", "Σ"];
-    weekHeaders.forEach(d => {
-        html += `<div style="text-align:center; color:#4CAF50; font-size:11px; font-weight:900; opacity:0.5; padding-bottom:5px;">${d}</div>`;
-    });
+    const weekHeaders = ["Κ","Δ","Τ","Τ","Π","Π","Σ"];
+    weekHeaders.forEach(d => html += `<div style="text-align:center;opacity:.6;color:#4CAF50;font-size:12px;font-weight:bold;">${d}</div>`);
 
-    // Padding για τις κενές ημέρες στην αρχή του μήνα
+    // Κενά για τις μέρες πριν την 1η του μηνός
     for (let i = 0; i < firstDayOfMonth; i++) html += `<div></div>`;
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -48,86 +41,86 @@ window.renderCalendar = function() {
         const workoutKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const foodDateString = `${String(day).padStart(2, '0')}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
         
-        let bg = "#111";
-        let border = "1px solid #222";
+        let bg = "#1a1a1a";
+        let border = "1px solid #333";
         let color = "#fff";
-        let glow = "none";
 
-        // Λογική Strict Recovery (Δευτέρα=1, Πέμπτη=4)
+        // ΛΟΓΙΚΗ STRICT: 
+        // Δευτέρα (1) & Πέμπτη (4) = Recovery Days (Μπλε)
         const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4);
 
         if (isRecoveryDay) {
-            bg = "#0d1a2b"; 
-            border = "1px solid #2196F3";
-            color = "#2196F3";
+            bg = "#1e3a5f"; 
+            border = "1px solid #64B5F6";
         } 
-        
-        if (workoutData[workoutKey]) {
-            // Ολοκληρωμένη προπόνηση: PEGASUS GREEN
+        else if (data[workoutKey]) {
+            // ΕΓΙΝΕ ΠΡΟΠΟΝΗΣΗ: ΠΡΑΣΙΝΟ
             bg = "#4CAF50";
             border = "1px solid #4CAF50";
             color = "#000";
-            glow = "0 0 10px rgba(74, 175, 80, 0.4)";
-        } else if (loopDateTime < todayStart && !isRecoveryDay) {
-            // Παρελθόν χωρίς προπόνηση: RED ALERT
-            bg = "#2b0d0d";
-            border = "1px solid #f44336";
-            color = "#f44336";
+        } 
+        else if (loopDateTime < todayStart) {
+            // ΠΑΡΕΛΘΟΝ & ΟΧΙ ΠΡΟΠΟΝΗΣΗ (Και όχι Recovery): ΚΟΚΚΙΝΟ
+            bg = "#b71c1c";
+            border = "1px solid #ff5252";
         }
 
-        // Highlight Σήμερα
+        // Highlight Σήμερα (Χρυσό περίγραμμα)
         if (loopDateTime === todayStart) {
             border = "2px solid #FFD700";
         }
 
-        html += `
-            <div style="background:${bg}; border:${border}; color:${color}; padding:10px 0; text-align:center; border-radius:6px; font-size:12px; cursor:pointer; font-weight:900; box-shadow:${glow}; transition:transform 0.2s;" 
-                 onclick="window.viewFoodFromCalendar('${foodDateString}')"
-                 onmouseover="this.style.transform='scale(1.1)'"
-                 onmouseout="this.style.transform='scale(1)'">
-                ${day}
-            </div>`;
+        html += `<div style="background:${bg};border:${border};color:${color};padding:8px 0;text-align:center;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;" 
+                    onclick="window.viewFoodFromCalendar('${foodDateString}')">
+                    ${day}
+                 </div>`;
     }
 
     html += `</div>`;
     el.innerHTML = html;
 
-    // Event Listeners πλοήγησης
+    // Listeners για την πλοήγηση
     document.getElementById("prevMonth").onclick = (e) => { 
-        e.stopPropagation(); 
-        currentMonth--; 
+        e.stopPropagation(); currentMonth--; 
         if(currentMonth < 0){ currentMonth = 11; currentYear--; } 
-        window.renderCalendar(); 
+        renderCalendar(); 
     };
     document.getElementById("nextMonth").onclick = (e) => { 
-        e.stopPropagation(); 
-        currentMonth++; 
+        e.stopPropagation(); currentMonth++; 
         if(currentMonth > 11){ currentMonth = 0; currentYear++; } 
-        window.renderCalendar(); 
+        renderCalendar(); 
     };
 };
 
-/**
- * Σύνδεση με το Diet Panel (Strict Sync)
- */
+/* --- ΣΥΝΔΕΣΗ ΗΜΕΡΟΛΟΓΙΟΥ ΜΕ DIET PANEL (STRICT SYNC) --- */
 window.viewFoodFromCalendar = function(dateStr) {
     const parts = dateStr.split('/');
     const selectedDate = new Date(parts[2], parts[1] - 1, parts[0]);
     
-    // Ενημέρωση της παγκόσμιας μεταβλητής ημερομηνίας
+    // Ενημέρωση της global μεταβλητής ημερομηνίας για το food.js
     window.currentFoodDate = selectedDate;
     
-    // Πρωτόκολλο Clean Sweep: Κλείσιμο όλων των panels πριν το άνοιγμα του Food
-    if (window.PegasusUI && window.PegasusUI.panels) {
-        window.PegasusUI.panels.forEach(p => {
-            const el = document.getElementById(p);
-            if (el) el.style.display = "none";
-        });
-    }
-
+    // Κλείσιμο όλων των panels και άνοιγμα του Food
+    document.querySelectorAll(".pegasus-panel").forEach(p => p.style.display = "none");
+    
     const foodPanel = document.getElementById("foodPanel");
     if (foodPanel) {
         foodPanel.style.display = "block";
-        if (window.updateFoodUI) window.updateFoodUI();
+        
+        // Σημαντικό: Καλούμε το render του φαγητού για τη συγκεκριμένη μέρα
+        if (window.renderFood) {
+            window.renderFood();
+        } else if (window.updateFoodUI) {
+            window.updateFoodUI();
+        }
+        
+        // UI Fix για το κουμπί προσθήκης (διασφάλιση Pegasus Green)
+        setTimeout(() => {
+            const crossBtn = document.getElementById("btnAddFood");
+            if (crossBtn) {
+                crossBtn.style.setProperty('color', '#4CAF50', 'important');
+                crossBtn.style.setProperty('border-color', '#4CAF50', 'important');
+            }
+        }, 10);
     }
 };
