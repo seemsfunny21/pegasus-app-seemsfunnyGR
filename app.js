@@ -685,17 +685,19 @@ window.onload = () => {
     }, 300);
 };
 
-/* === PEGASUS PREVIEW ENGINE v16.9 (CLEAN MINIMAL EDITION) === */
+/* === PEGASUS PREVIEW ENGINE v18.8 (CLEAN MINIMAL EDITION) === */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
+    // 1. CLEANING: Αφαίρεση του ήλιου από το κείμενο του κουμπιού
     const currentDay = activeBtn.textContent.trim().replace(" ☀️", "");
     
     const weatherElement = document.getElementById("weather-desc");
     const weatherText = weatherElement ? weatherElement.innerText.toLowerCase() : "";
     const isRainy = weatherText.includes("βροχή") || weatherText.includes("rain");
 
+    // 2. DATA FETCH: Κλήση με το flag βροχής
     const dayExercises = typeof window.calculateDailyProgram !== 'undefined' ? 
                          window.calculateDailyProgram(currentDay, isRainy) : 
                          (window.program[currentDay] || []);
@@ -717,11 +719,14 @@ function openExercisePreview() {
 
     if(dayExercises) {
         dayExercises.forEach((ex) => {
-            const cleanName = ex.name.trim();
+            // 3. SANITIZATION: Καθαρισμός ονόματος άσκησης από τυχόν emojis για το image mapping
+            const cleanName = ex.name.trim().replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+            
             let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
                           ? videoMap[cleanName] 
                           : cleanName.replace(/\s+/g, '').toLowerCase();
 
+            // Καθορισμός επέκτασης (Ποδηλασία -> jpg, Ασκήσεις -> png)
             let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
             let imgFileName = videoId + extension;
 
