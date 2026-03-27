@@ -638,6 +638,17 @@ window.onload = () => {
             if (b.textContent === todayName) selectDay(b, todayName); 
         }); 
     }, 300);
+   /* ===== WEATHER TOGGLE MONITOR ===== */
+const rainToggle = document.getElementById("rainToggle");
+if (rainToggle) {
+    rainToggle.addEventListener('change', () => {
+        const activeBtn = document.querySelector('.navbar button.active');
+        if (activeBtn) {
+            selectDay(activeBtn, activeBtn.textContent);
+            console.log("PEGASUS WEATHER: Day re-calculated for rainy/sunny conditions.");
+        }
+    });
+}
 };
 
 /* === PEGASUS PREVIEW ENGINE (OPTIMIZER INTEGRATED) === */
