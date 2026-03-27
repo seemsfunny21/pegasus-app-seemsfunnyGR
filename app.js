@@ -395,13 +395,16 @@ function skipToNextExercise() {
     } else finishWorkout(); 
 }
 
-/* ===== PEGASUS DUAL VIDEO ENGINE ===== */
+/* === PEGASUS DUAL VIDEO ENGINE v18.2 (EMOJI-SAFE) === */
 function showVideo(i) {
     if (!exercises || !exercises[i]) return;
     
     const ex = exercises[i];
     const wInput = ex.querySelector(".weight-input");
     let name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
+    
+    // ΑΦΑΙΡΕΣΗ EMOJIS (☀️ κλπ) από το όνομα πριν το mapping
+    let cleanName = name.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
     
     const vid = document.getElementById("video");
     if (!vid) return;
@@ -413,15 +416,17 @@ function showVideo(i) {
         ytFrame.style.width = "100%";
         ytFrame.style.height = "100%";
         ytFrame.style.border = "none";
-        ytFrame.style.borderRadius = vid.style.borderRadius || "8px";
+        ytFrame.style.borderRadius = "8px";
         ytFrame.style.display = "none";
         ytFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture");
         vid.parentNode.insertBefore(ytFrame, vid.nextSibling);
     }
     
     if (typeof videoMap !== 'undefined') {
-        let mappedVal = videoMap[name] || name.replace(/\s+/g, '');
-        if (name.toLowerCase().includes("ems") && !videoMap[name]) {
+        // Χρήση του cleanName για το mapping
+        let mappedVal = videoMap[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
+        
+        if (cleanName.toLowerCase().includes("ems") && !videoMap[cleanName]) {
             mappedVal = "ems";
         }
 
@@ -436,9 +441,8 @@ function showVideo(i) {
             ytFrame.src = "";
             vid.style.display = "block";
             vid.src = `videos/${mappedVal}.mp4`;
-            vid.style.opacity = "1";
             vid.play().catch(err => {
-                console.warn(`PEGASUS: Video ${mappedVal}.mp4 not found in /videos/`);
+                console.warn(`PEGASUS: Video ${mappedVal}.mp4 not found for ${cleanName}`);
             });
         }
     }
