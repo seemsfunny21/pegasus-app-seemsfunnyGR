@@ -583,7 +583,7 @@ window.onload = () => {
     }
 
     createNavbar();
-    initDraggablePanels(); // Ενεργοποίηση Draggable Windows
+  
     
     const btnStart = document.getElementById("btnStart");
     if (btnStart) btnStart.onclick = startPause;
