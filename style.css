@@ -492,43 +492,33 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 /* ================= PREVIEW PANEL - COMPACT TACTICAL (v16.0) ================= */
 #previewPanel {
-    transform: none;
-    position: fixed;
-    left: auto;
-    right: 20px;
-    top: 120px;
-    width: 600px !important; 
+    /* ... τα υπόλοιπα ίδια ... */
+    width: 660px !important;  /* ΑΥΞΗΣΗ: Από 600px σε 660px για να "αναπνέει" το grid */
     min-width: 320px;
-    height: auto !important; 
-    max-height: 85vh; 
-    background: #0a0a0a;
-    z-index: 10001;
-    border: 2px solid #4CAF50;
-    border-radius: 15px;
-    display: none;
-    flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+    height: auto !important;
+    max-height: 85vh;
+    /* ... */
 }
 
 #previewContent {
     display: flex !important;
     flex-wrap: wrap !important;
-    justify-content: flex-start !important;
-    gap: 10px;
+    justify-content: flex-start !important; /* Στοίχιση αριστερά */
+    gap: 10px; 
     padding: 15px;
-    height: auto !important;
-    overflow-y: auto !important;
+    box-sizing: border-box;
 }
 
 .preview-item {
-    flex: 0 0 calc(25% - 8px); 
+    /* ΠΙΟ ΕΠΙΘΕΤΙΚΟ CALC: 25% μείον 12px για να είμαστε σίγουροι */
+    flex: 0 0 calc(25% - 10px) !important; 
+    max-width: calc(25% - 10px);
     background: #111;
     border: 1px solid #222;
     border-radius: 10px;
     padding: 8px;
     text-align: center;
     box-sizing: border-box;
-    position: relative; /* Απαραίτητο για το Badge αρίθμησης */
 }
 
 .preview-item img {
