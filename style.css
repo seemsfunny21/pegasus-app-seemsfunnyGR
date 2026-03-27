@@ -489,3 +489,21 @@ bottom: 0px;
 
 input:checked + .slider { background-color: #ff4b2b; }
 input:checked + .slider:before { transform: translateX(26px); }
+
+/* ================= PREVIEW PANEL PATCH (FIX STRETCHING) ================= */
+#previewPanel {
+    /* Ακύρωση του γενικού κεντραρίσματος για να υπακούει στο Drag & Drop */
+    transform: none !important;
+    
+    /* Αρχική θέση: Τέρμα δεξιά */
+    left: auto !important;
+    right: 20px !important;
+    top: 150px !important;
+    
+    /* Διασφάλιση σταθερού μεγέθους */
+    width: 350px; 
+    min-width: 300px;
+}
+
+/* Μόλις το πιάσει το script, το dragDrop.js θα αλλάξει το right σε auto 
+   και θα επιτρέψει την ελεύθερη κίνηση χωρίς αντίσταση */
