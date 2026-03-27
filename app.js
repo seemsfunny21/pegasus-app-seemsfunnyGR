@@ -567,69 +567,7 @@ function finishWorkout() {
     }, 5000);
 }
 
-/* ===== DRAGGABLE UI ENGINE (STATE PERSISTENCE) ===== */
-function initDraggablePanels() {
-    const movablePanels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'];
-    
-    movablePanels.forEach(panelId => {
-        const panel = document.getElementById(panelId);
-        if (!panel) return;
 
-        // 1. Restore Position
-        const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
-        if (savedPos) {
-            panel.style.transform = "none";
-            panel.style.margin = "0";
-            panel.style.position = "fixed";
-            panel.style.top = savedPos.top;
-            panel.style.left = savedPos.left;
-        }
-
-        // 2. Identify Drag Handle (Header elements to avoid blocking inputs)
-        const header = panel.querySelector("h3") || panel.querySelector(".panel-header");
-        if (!header) return;
-
-        header.style.cursor = "grab";
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-        header.onmousedown = function(e) {
-            e.preventDefault();
-            header.style.cursor = "grabbing";
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            document.onmousemove = elementDrag;
-        };
-
-        function elementDrag(e) {
-            e.preventDefault();
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            
-            // Clear centering rules that conflict with Left/Top coordinates
-            panel.style.transform = "none";
-            panel.style.margin = "0";
-            panel.style.position = "fixed";
-            
-            panel.style.top = (panel.offsetTop - pos2) + "px";
-            panel.style.left = (panel.offsetLeft - pos1) + "px";
-        }
-
-        function closeDragElement() {
-            document.onmouseup = null;
-            document.onmousemove = null;
-            header.style.cursor = "grab";
-            
-            // 3. Save Position to LocalStorage
-            localStorage.setItem(`pegasus_pos_${panelId}`, JSON.stringify({
-                top: panel.style.top,
-                left: panel.style.left
-            }));
-        }
-    });
-}
 
 /* ===== INITIALIZATION ===== */
 window.onload = () => {
