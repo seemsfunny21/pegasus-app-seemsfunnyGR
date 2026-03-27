@@ -186,7 +186,6 @@ function startPause() {
 function runPhase() {
     if (!running) return;
     
-    // ΠΡΩΤΟΚΟΛΛΟ ΑΣΦΑΛΕΙΑΣ: Καθαρισμός προηγούμενου timer πριν την έναρξη νέου
     if (timer) {
         clearInterval(timer);
         timer = null;
@@ -197,7 +196,6 @@ function runPhase() {
         return;
     }
 
-    // Δυναμική ανάκτηση χρόνων με ασφαλή fallbacks
     const exTime = parseInt(localStorage.getItem("pegasus_ex_time")) || 45;
     const restTime = parseInt(localStorage.getItem("pegasus_rest_time")) || 60;
     const prepTime = 10;
@@ -216,30 +214,35 @@ function runPhase() {
     e.style.borderColor = "#4CAF50";
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
-    // Καθορισμός χρόνου φάσης
+    // 1. ΠΡΩΤΟΚΟΛΛΟ UI SYNC (ΚΡΙΣΙΜΟ ΓΙΑ ΤΟ VIDEO)
     let t = (phase === 0) ? prepTime : (phase === 1 ? exTime : restTime);
-    let currentPhaseName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
+    let currentPhaseName = (phase === 0) ? "ΠΡΟΘΕΡΜΑΝΣΗ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
 
-    if (phase !== 2) showVideo(currentIdx);
+    const label = document.getElementById("phaseTimer");
+    if (label) {
+        label.textContent = `${currentPhaseName} (${Math.max(0, Math.ceil(t))})`;
+        label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
+    }
+
+    // 2. ΚΛΗΣΗ VIDEO (Τώρα το label έχει ήδη τη λέξη "ΠΡΟΘΕΡΜΑΝΣΗ")
+    if (phase !== 2) {
+        showVideo(currentIdx);
+    }
 
     timer = setInterval(() => {
         t -= 1;
         
-        // Συγχρονισμός με τη συνολική μπάρα προόδου
         if (remainingSeconds > 0) {
             remainingSeconds -= 1;
             updateTotalBar();
         }
 
-        // Metabolic Tracking (μόνο κατά την άσκηση)
         if (window.MetabolicEngine && phase === 1) {
             window.MetabolicEngine.updateTracking(1, exName);
         }
 
-        const label = document.getElementById("phaseTimer");
         if (label) {
             label.textContent = `${currentPhaseName} (${Math.max(0, Math.ceil(t))})`;
-            label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
         }
 
         if (t <= 0) {
@@ -251,7 +254,6 @@ function runPhase() {
                 phase = 1;
                 runPhase();
             } else if (phase === 1) {
-                // Ολοκλήρωση σετ
                 let done = parseInt(e.dataset.done) || 0;
                 let total = parseInt(e.dataset.total) || 0;
                 done++;
@@ -266,7 +268,6 @@ function runPhase() {
                 phase = 2;
                 runPhase();
             } else if (phase === 2) {
-                // Μετάβαση στην επόμενη άσκηση/σετ
                 let nextIdx = getNextIndexCircuit();
                 if (nextIdx !== -1) {
                     currentIdx = nextIdx;
