@@ -465,47 +465,7 @@ function saveWeight(name, val) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 }
 
-function skipToNextExercise() {
-    if (exercises.length === 0) return;
-    
-    // Διακοπή τρέχοντος χρονομέτρου
-    clearInterval(timer);
 
-    // Αν ο χρήστης κάνει skip ενώ η άσκηση "τρέχει", θεωρούμε το σετ ως ολοκληρωμένο (Pegasus Logic)
-    if ((phase === 1 || phase === 2) && running) {
-        const currentExNode = exercises[currentIdx];
-        const exName = currentExNode.querySelector(".weight-input").getAttribute("data-name");
-        
-        let done = parseInt(currentExNode.dataset.done) || 0;
-        done++;
-        currentExNode.dataset.done = done;
-        remainingSets[currentIdx]--;
-        
-        currentExNode.querySelector(".set-counter").textContent = `${done}/${currentExNode.dataset.total}`;
-        
-        // Καταγραφή στο ιστορικό προόδου
-        if (window.logPegasusSet) window.logPegasusSet(exName);
-    }
-
-    // [PUSH TRIGGER] Συγχρονισμός κατά την παράκαμψη
-    if (window.PegasusCloud) window.PegasusCloud.push(true);
-
-    // Εύρεση επόμενης διαθέσιμης άσκησης στο κύκλωμα
-    let nextIdx = getNextIndexCircuit();
-    if (nextIdx !== -1) {
-        currentIdx = nextIdx; 
-        phase = 0; // Επαναφορά στην Προετοιμασία για τη νέα άσκηση
-        
-        if (running) {
-            runPhase(); 
-        } else {
-            showVideo(currentIdx);
-        }
-    } else {
-        // Αν δεν υπάρχουν άλλες ασκήσεις, τερματισμός
-        finishWorkout();
-    }
-}
 
 /* ===== 7. VIDEO & UI UTILS (ASSET ALIGNED v10.1.7) ===== */
 function showVideo(i) {
