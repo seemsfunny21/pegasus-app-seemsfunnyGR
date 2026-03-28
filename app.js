@@ -715,6 +715,23 @@ window.updateTotalWorkoutCount = function() {
    ========================================================================== */
 
 window.onload = () => {
+   // --- 0. PEGASUS SATURDAY RESET PROTOCOL (v10.2.2) ---
+    const today = new Date();
+    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const dayName = greekDays[today.getDay()];
+
+    if (dayName === "Σάββατο") {
+        const lastReset = localStorage.getItem('pegasus_last_reset');
+        const todayDate = today.toISOString().split('T')[0];
+        
+        if (lastReset !== todayDate) {
+            console.log("🚀 PEGASUS: New Weekly Cycle Starting! Resetting History...");
+            const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+            localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
+            localStorage.setItem('pegasus_last_reset', todayDate);
+            localStorage.setItem('pegasus_cardio_offset_sets', "0");
+        }
+    }
     // --- 1. INITIALIZATION ---
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     
