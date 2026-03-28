@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS METABOLIC ENGINE - v5.7 (STRICT SHADOW MODE)
-   Protocol: Silent Set Deduction & Calorie Offset Sync
+   PEGASUS METABOLIC ENGINE - v5.8 (ADDITIVE SYNC MODE)
+   Protocol: Cumulative Set Deduction & Calorie Offset Sync
    ========================================================================== */
 
 window.PegasusCardio = {
@@ -44,22 +44,28 @@ window.PegasusCardio = {
         // 1. ΥΠΟΛΟΓΙΣΜΟΣ CREDIT (0.6 σετ ανά χιλιόμετρο)
         const setCredit = parseFloat((km * 0.6).toFixed(1));
 
-        // 2. ΑΠΟΘΗΚΕΥΣΗ ΓΙΑ ΤΟ APP.JS (Deduction Signal)
-        localStorage.setItem("pegasus_cardio_offset_sets", setCredit);
-        localStorage.setItem("pegasus_cardio_offset", burnedKcal);
+        // 2. [ADDITIVE LOGIC] Ανάκτηση παλιών τιμών για σωρευτική αποθήκευση
+        const currentSets = parseFloat(localStorage.getItem("pegasus_cardio_offset_sets")) || 0;
+        const currentKcal = parseFloat(localStorage.getItem("pegasus_cardio_offset")) || 0;
 
-        // 3. ΕΝΗΜΕΡΩΣΗ ΕΒΔΟΜΑΔΙΑΙΑΣ ΠΡΟΟΔΟΥ (Για τις μπάρες)
+        const totalSets = parseFloat((currentSets + setCredit).toFixed(1));
+        const totalKcal = parseFloat((currentKcal + burnedKcal).toFixed(1));
+
+        localStorage.setItem("pegasus_cardio_offset_sets", totalSets);
+        localStorage.setItem("pegasus_cardio_offset", totalKcal);
+
+        // 3. ΕΝΗΜΕΡΩΣΗ ΕΒΔΟΜΑΔΙΑΙΑΣ ΠΡΟΟΔΟΥ (Σωρευτικά για τις μπάρες)
         let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { 
             "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
         };
         history["Πόδια"] = parseFloat(((parseFloat(history["Πόδια"]) || 0) + setCredit).toFixed(1));
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
 
-        // 4. LOGGING
+        // 4. LOGGING (Διατήρηση ιστορικού ανά διαδρομή)
         const entry = { route, km, kcal: burnedKcal, date: dateKey, timestamp: Date.now() };
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-        // 5. UI REFRESH (Bars & List Re-calculation)
+        // 5. UI REFRESH
         if (window.MuscleProgressUI) {
             window.MuscleProgressUI.lastDataHash = null;
             window.MuscleProgressUI.render();
@@ -74,7 +80,7 @@ window.PegasusCardio = {
             window.PegasusCloud.push(true);
         }
 
-        alert(`METABOLIC SYNC: -${setCredit} σετ από Πόδια | +${burnedKcal} kcal Offset.`);
+        alert(`METABOLIC ADD: +${setCredit} σετ (Σύνολο: ${totalSets}) | +${burnedKcal} kcal.`);
         this.close();
         this.resetForm();
     }
