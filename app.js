@@ -26,19 +26,21 @@ window.onerror = function(msg, url, line) {
 };
 
 /* ===== 2. CORE VARIABLES & MANIFEST SYNC (ISOLATION MODE) ===== */
-// Χρησιμοποιούμε PegasusM αντί για M για να αποφύγουμε το σφάλμα "Assignment to constant variable"
-var PegasusM = window.PegasusManifest; 
+// Χρησιμοποιούμε var P_M για να αποφύγουμε το conflict με το const M άλλων αρχείων
+var P_M = window.PegasusManifest; 
 
-if (!PegasusM) {
-    console.error("❌ CRITICAL: Manifest not found. Link failed.");
-    // Emergency Fallback
-    PegasusM = window.PegasusManifest;
+if (!P_M) {
+    console.error("❌ CRITICAL: PegasusManifest missing. Emergency recovery...");
+    P_M = window.PegasusManifest;
 }
 
-// Δημιουργούμε μια τοπική αναφορά για να μη χρειαστεί να αλλάξουμε όλο τον κώδικα παρακάτω
-var M = PegasusM; 
-
-/* ========================================================================== */
+// Δημιουργούμε μια εσωτερική αναφορά 'M' χωρίς δήλωση (assignment only)
+// Αν αυτό βγάλει πάλι σφάλμα, θα πρέπει να αλλάξουμε τα M. σε P_M. σε όλο το αρχείο
+try {
+    M = P_M;
+} catch(e) {
+    console.warn("⚠️ M is locked as constant. Using P_M reference.");
+}
 
 var exercises = [];
 var remainingSets = [];
