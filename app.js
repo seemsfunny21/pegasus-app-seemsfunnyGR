@@ -688,40 +688,48 @@ window.onload = () => {
     window.updateTotalWorkoutCount();
 
     // 3. MASTER UI MAPPING (Event Delegation)
-    const masterUI = { 
-        "btnStart": startPause,
-        "btnNext": skipToNextExercise,
-        "btnWarmup": () => { 
-            const vid = document.getElementById("video");
-            const label = document.getElementById("phaseTimer");
-            if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
-                vid.pause(); vid.loop = false;
-                if (exercises.length > 0) {
-                    label.textContent = exercises[currentIdx].querySelector(".weight-input").getAttribute("data-name");
-                    showVideo(currentIdx); 
-                }
-            } else {
-                vid.style.display = "block"; vid.src = "videos/warmup.mp4"; vid.loop = true; vid.play();
-                if (label) { 
-                    label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)"; 
-                    label.style.color = "#64B5F6"; 
-                }
+/* === PEGASUS UI BRIDGE (BLOCK 3) - ALIGNED & STABLE === */
+const masterUI = { 
+    "btnStart": startPause,
+    "btnNext": skipToNextExercise,
+    "btnWarmup": () => { 
+        const vid = document.getElementById("video");
+        const label = document.getElementById("phaseTimer");
+        if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
+            vid.pause(); vid.loop = false;
+            if (exercises.length > 0) {
+                label.textContent = exercises[currentIdx].querySelector(".weight-input").getAttribute("data-name");
+                showVideo(currentIdx); 
             }
-        },
-        "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
-        "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
-        "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
-        "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
-        "btnToolsUI": { panel: "toolsPanel" },
-        "btnPreviewUI": { panel: "previewPanel", init: openExercisePreview },
-        "btnSaveSettings": () => { 
-            const weightVal = document.getElementById("userWeightInput")?.value || 74;
-            localStorage.setItem(P_M?.user.weight || "pegasus_weight", weightVal);
-            if (window.PegasusCloud) window.PegasusCloud.push(true);
-            console.log("PEGASUS SETTINGS: Data saved & synced.");
-            location.reload();
+        } else {
+            vid.style.display = "block"; vid.src = "videos/warmup.mp4"; vid.loop = true; vid.play();
+            if (label) { 
+                label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)"; 
+                label.style.color = "#64B5F6"; 
+            }
         }
-    };
+    },
+    // ΔΙΟΡΘΩΣΗ: IDs ευθυγραμμισμένα με index.html & dragDrop.js
+    "btnCalendar": { panel: "calendarPanel", init: window.renderCalendar },
+    "btnAchievements": { panel: "achievementsPanel", init: window.renderAchievements },
+    "btnSettings": { panel: "settingsPanel", init: window.initSettingsUI },
+    "btnFood": { panel: "foodPanel", init: window.updateFoodUI },
+    "btnTools": { panel: "toolsPanel", init: null },
+    "btnPreview": { panel: "previewPanel", init: openExercisePreview },
+    "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
+    "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
+    
+    // 🔥 ΠΡΟΣΘΗΚΗ EMS (v10.1 Patch)
+    "btnEMS": { panel: "emsModal", init: window.logEMSData },
+
+    "btnSaveSettings": () => { 
+        const weightVal = document.getElementById("userWeightInput")?.value || 74;
+        localStorage.setItem(P_M?.user.weight || "pegasus_weight", weightVal);
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
+        console.log("PEGASUS SETTINGS: Data saved & synced.");
+        location.reload();
+    }
+};
 
     Object.keys(masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
