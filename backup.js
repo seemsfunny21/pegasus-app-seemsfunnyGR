@@ -1,7 +1,69 @@
 /* ==========================================================================
-   PEGASUS BACKUP & RESTORE - CRASH-PROOF (V7.8)
+   PEGASUS BACKUP & RESTORE - FINAL FORENSIC (V8.5)
+   Protocol: Crash-Proof Isolation & Data Consolidation
    ========================================================================== */
 
+window.exportPegasusData = async function() {
+    const data = { localStorage: {}, indexedDB: [] };
+    let consolidatedWorkouts = {};
+
+    // 1. ΣΑΡΩΣΗ & ΕΝΟΠΟΙΗΣΗ (Forensic Scan)
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const val = localStorage.getItem(key);
+
+        // Ανίχνευση παλαιών κλειδιών ιστορικού και μετατροπή σε format YYYY-MM-DD
+        if (key.startsWith("pegasus_history_") || key.startsWith("pegasus_day_status_")) {
+            const dateMatch = key.match(/\d{4}-\d{2}-\d{2}/);
+            if (dateMatch) consolidatedWorkouts[dateMatch[0]] = true;
+        }
+
+        // Επιλογή έγκυρων κλειδιών Pegasus
+        if (key.startsWith("pegasus_") || key.startsWith("weight_") || key.startsWith("food_") || key.startsWith("cardio_") || key.includes("ANGELOS")) {
+            data.localStorage[key] = val;
+        }
+    }
+
+    // 2. ΔΙΟΡΘΩΣΗ ΚΕΝΤΡΙΚΟΥ ΙΣΤΟΡΙΚΟΥ
+    const existingHistory = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
+    const finalHistory = { ...existingHistory, ...consolidatedWorkouts };
+    data.localStorage["pegasus_workouts_done"] = JSON.stringify(finalHistory);
+    data.localStorage["pegasus_total_workouts"] = Object.keys(finalHistory).length.toString();
+
+    // 3. ΕΞΑΓΩΓΗ INDEXEDDB (Φωτογραφίες)
+    const dbRequest = indexedDB.open("PegasusLevels", 1);
+    dbRequest.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("photos")) {
+            db.close();
+            finalizeExport(data);
+            return;
+        }
+        const tx = db.transaction("photos", "readonly");
+        tx.objectStore("photos").getAll().onsuccess = (ev) => {
+            data.indexedDB = ev.target.result;
+            db.close();
+            finalizeExport(data);
+        };
+    };
+    dbRequest.onerror = () => finalizeExport(data);
+};
+
+function finalizeExport(data) {
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `PEGASUS_FULL_BACKUP_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    console.log("✅ PEGASUS: Forensic Backup Created.");
+}
+
+/* ==========================================================================
+   RESTORE ENGINE (CRASH-PROOF)
+   ========================================================================== */
 window.importPegasusData = function(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -9,26 +71,28 @@ window.importPegasusData = function(event) {
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
-            // 1. Safe Parse
             const imported = JSON.parse(e.target.result);
-            if (!confirm("🚨 PEGASUS EMERGENCY RESTORE: Συνέχεια;")) return;
+            if (!confirm("🚨 PEGASUS EMERGENCY RESTORE: Θα διαγραφούν τα τρέχοντα δεδομένα για την επαναφορά. Συνέχεια;")) return;
 
-            console.log("%c[RECOVERY] Starting Isolated Restore...", "color: #4CAF50");
+            console.log("%c[RECOVERY] Starting Isolated Restore Protocol...", "color: #4CAF50; font-weight: bold;");
 
-            // 2. Kill all potential blocking processes
+            // 1. ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ ΣΥΝΔΕΣΕΩΝ
             if (window.GalleryEngine && window.GalleryEngine.db) {
                 window.GalleryEngine.db.close();
             }
 
-            // 3. Clear and Inject LS (The Core Data)
+            // 2. ΚΑΘΑΡΙΣΜΟΣ & ΕΝΕΣΗ LOCALSTORAGE
             localStorage.clear();
             Object.keys(imported.localStorage).forEach(k => {
                 localStorage.setItem(k, imported.localStorage[k]);
             });
-            console.log("%c[RECOVERY] LocalStorage Restored.", "color: #4CAF50");
 
-            // 4. Force Delete & Rebuild IndexedDB
-            // Χρησιμοποιούμε setTimeout για να δώσουμε χρόνο στον browser να κλείσει τα locks
+            // Δικλείδα ασφαλείας για το βάρος αν λείπει
+            if (!localStorage.getItem("pegasus_weight")) localStorage.setItem("pegasus_weight", "74");
+
+            console.log("%c[RECOVERY] LocalStorage Injected Successfully.", "color: #4CAF50");
+
+            // 3. ΑΝΑΔΟΜΗΣΗ INDEXEDDB (Με καθυστέρηση για αποδέσμευση locks)
             setTimeout(() => {
                 const delReq = indexedDB.deleteDatabase("PegasusLevels");
                 
@@ -54,10 +118,10 @@ window.importPegasusData = function(event) {
                 };
 
                 delReq.onblocked = () => {
-                    console.error("DB Blocked - Reloading to force close connections...");
+                    alert("Η βάση δεδομένων είναι μπλοκαρισμένη. Κλείσε άλλα tabs και δοκίμασε ξανά.");
                     location.reload();
                 };
-            }, 500);
+            }, 600);
 
         } catch (err) {
             alert("FATAL RESTORE ERROR: " + err.message);
@@ -67,7 +131,7 @@ window.importPegasusData = function(event) {
 };
 
 function finalizeRecovery() {
-    alert("✅ Η ΑΝΑΚΤΗΣΗ ΠΕΤΥΧΕ!\n\nΑν μετά το reload δεις πάλι σφάλματα, φταίει το αρχείο data.js που λείπει.");
+    alert("✅ Η ΑΝΑΚΤΗΣΗ ΠΕΤΥΧΕ!\n\nΌλες οι προπονήσεις και οι φωτογραφίες επανήλθαν.");
     window.location.reload();
 }
 
