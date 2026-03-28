@@ -1,12 +1,13 @@
 /* ==========================================================================
-   PEGASUS METABOLIC ENGINE - v5.3 (STRICT DATA ANALYST)
-   Protocol: Dynamic Set Credit & Calorie Offset Sync
+   PEGASUS METABOLIC ENGINE - v5.4 (STRICT SYNTAX & SHADOW TRACKING)
+   Protocol: Dynamic Set Credit & Calorie Offset Sync (Zero-Ghost UI)
    ========================================================================== */
 
 window.PegasusCardio = {
     init: function() {
         const btn = document.getElementById("totalWorkoutsDisplay");
         if (btn) { btn.onclick = () => this.open(); }
+        console.log("PEGASUS: Cardio Engine Listener Active.");
     },
 
     open: function() {
@@ -25,7 +26,7 @@ window.PegasusCardio = {
         });
     },
 
-save: function() {
+    save: function() {
         const route = document.getElementById("cRoute").value;
         const km = parseFloat(document.getElementById("cKm").value) || 0;
         const burnedKcal = parseFloat(document.getElementById("cKcal").value) || 0;
@@ -39,8 +40,7 @@ save: function() {
         const d = new Date(rawDate);
         const dateKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 
-        // 1. === SYSTEM A: SILENT PROGRESS UPDATE ===
-        // Ενημερώνουμε απευθείας το localStorage χωρίς να καλούμε την logPegasusSet
+        // 1. === SYSTEM A: SILENT PROGRESS UPDATE (SHADOW) ===
         let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { 
             "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
         };
@@ -49,28 +49,19 @@ save: function() {
         history["Πόδια"] = parseFloat(((parseFloat(history["Πόδια"]) || 0) + setCredit).toFixed(1));
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
 
-        // 2. === SYSTEM B: CALORIE OFFSET ===
-        let baseGoal = parseFloat(localStorage.getItem("pegasus_goal_kcal")) || 2800;
+        // 2. === SYSTEM B: CALORIE OFFSET (DIET SYNC) ===
         localStorage.setItem("pegasus_cardio_offset", burnedKcal);
         
-        // Update UI target manually if open
-        const goalDisplay = document.getElementById("kcalStatus");
-        if (goalDisplay) {
-            let currentKcal = localStorage.getItem("pegasus_today_kcal") || 0;
-            goalDisplay.textContent = `${Math.round(currentKcal)} / ${Math.round(baseGoal + burnedKcal)} kcal`;
-        }
-
-        // 3. LOGGING & SILENT REFRESH
+        // 3. LOGGING
         const entry = { route, km, kcal: burnedKcal, date: dateKey, timestamp: Date.now() };
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-        // Ενημερώνουμε ΜΟΝΟ τις μπάρες στην προεπισκόπηση
+        // 4. UI REFRESH (ONLY PROGRESS BARS)
         if (window.MuscleProgressUI) {
             window.MuscleProgressUI.lastDataHash = null;
             window.MuscleProgressUI.render();
         }
 
-        // ΔΕΝ ΚΑΛΟΥΜΕ selectDay() ή logPegasusSet() εδώ για να μην επηρεαστεί η λίστα ασκήσεων
         if (window.PegasusCloud && window.PegasusCloud.hasSuccessfullyPulled) {
             window.PegasusCloud.push(true);
         }
@@ -78,13 +69,19 @@ save: function() {
         alert(`METABOLIC SYNC: +${setCredit} units Πόδια | +${burnedKcal} kcal Offset.`);
         this.close();
         this.resetForm();
-        
-        // Καθαρισμός του UI Ghost: Επιβάλλουμε επαναφόρτωση της ημέρας για να φύγουν τα παράσιτα
+
+        // 5. GHOST REMOVAL: Επιβολή καθαρισμού λίστας ασκήσεων
         const activeBtn = document.querySelector(".navbar button.active");
-        if (activeBtn && typeof selectDay === "function") {
-            selectDay(activeBtn, activeBtn.textContent.trim());
+        if (activeBtn && typeof window.selectDay === "function") {
+            window.selectDay(activeBtn, activeBtn.textContent.trim());
         }
     }
+}; // <-- ΑΥΤΗ Η ΑΓΚΥΛΗ ΕΛΕΙΠΕ ΚΑΙ ΕΒΓΑΖΕ ΤΟ ERROR ΣΤΗ ΓΡΑΜΜΗ 89
 
+// Global Handlers
 window.saveCardioData = () => window.PegasusCardio.save();
-window.addEventListener("load", () => { if (window.PegasusCardio) window.PegasusCardio.init(); });
+
+// Initialization
+window.addEventListener("load", () => { 
+    if (window.PegasusCardio) window.PegasusCardio.init(); 
+});
