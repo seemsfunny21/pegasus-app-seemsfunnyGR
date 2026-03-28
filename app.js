@@ -411,65 +411,52 @@ function skipToNextExercise() {
 /* ===== PEGASUS DUAL VIDEO ENGINE - WARMUP FIXED v2.6 ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
-    let ytFrame = document.getElementById("yt-video");
     if (!vid) return;
 
-    // 1. Διασφάλιση YouTube Iframe
-    if (!ytFrame) {
-        ytFrame = document.createElement("iframe");
-        ytFrame.id = "yt-video";
-        ytFrame.style.width = "100%";
-        ytFrame.style.height = "100%";
-        ytFrame.style.border = "none";
-        ytFrame.style.borderRadius = vid.style.borderRadius || "8px";
-        ytFrame.style.display = "none";
-        ytFrame.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture");
-        vid.parentNode.insertBefore(ytFrame, vid.nextSibling);
-    }
+    // 1. Καθαρισμός YouTube Iframe αν υπάρχει ακόμα στο DOM (Cleanup Protocol)
+    const ytFrame = document.getElementById("yt-video");
+    if (ytFrame) ytFrame.remove();
 
     let name = "";
+    const label = document.getElementById("phaseTimer");
+    const phaseLabel = label ? label.textContent : "";
     
-    // 2. ΕΙΔΙΚΟΣ ΕΛΕΓΧΟΣ ΓΙΑ ΠΡΟΘΕΡΜΑΝΣΗ
-    // Αν το i είναι null ή αν η φάση είναι 0 (Προετοιμασία/Προθέρμανση)
-    const phaseLabel = document.getElementById("phaseTimer") ? document.getElementById("phaseTimer").textContent : "";
-    
-    if (i === null || i === undefined || i === -1 || phaseLabel.includes("ΠΡΟΘΕΡΜΑΝΣΗ")) {
+    // 2. [STRICT PRIORITY LOGIC]
+    // Manual Προθέρμανση ή κενό index
+    if (phaseLabel.includes("Manual") || i === null || i === undefined || i === -1) {
         name = "Προθέρμανση"; 
-    } else {
-        // Κανονικός έλεγχος για ασκήσεις
+    } 
+    // Ροή Προπόνησης (ΑΣΚΗΣΗ / ΔΙΑΛΕΙΜΜΑ)
+    else {
         if (!exercises || !exercises[i]) return;
         const ex = exercises[i];
         const wInput = ex.querySelector(".weight-input");
         name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
     }
 
-    // 3. Mapping & Execution
+    // 3. Mapping & Forced Execution (Local MP4 Only)
     if (typeof videoMap !== 'undefined') {
-        let mappedVal = videoMap[name] || name.replace(/\s+/g, '');
+        let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
         
         // Handling EMS naming logic
         if (name.toLowerCase().includes("ems") && !videoMap[name]) {
             mappedVal = "ems";
         }
 
-        if (mappedVal.startsWith("yt:")) {
-            const ytId = mappedVal.split("yt:")[1];
-            vid.style.display = "none";
+        const newSrc = `videos/${mappedVal}.mp4`;
+        
+        // [ANTI-STICKY PROTOCOL]
+        // Αλλάζουμε το source μόνο αν είναι διαφορετικό από το τρέχον
+        if (vid.getAttribute('src') !== newSrc) {
             vid.pause();
-            ytFrame.style.display = "block";
-            ytFrame.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0`;
-        } else {
-            ytFrame.style.display = "none";
-            ytFrame.src = "";
-            vid.style.display = "block";
-            vid.src = `videos/${mappedVal}.mp4`;
-            vid.style.opacity = "1";
+            vid.src = newSrc;
+            vid.load(); // Force reload του buffer
             vid.play().catch(err => {
-                console.warn(`PEGASUS: Video ${mappedVal}.mp4 not found. Fallback to warmup.`);
-                if (mappedVal !== "warmup") {
-                    vid.src = "videos/warmup.mp4";
-                    vid.play();
-                }
+                // Fallback αν το αρχείο λείπει (π.χ. 404)
+                console.warn(`PEGASUS: Asset ${mappedVal}.mp4 missing. Falling back to warmup.`);
+                vid.src = "videos/warmup.mp4";
+                vid.load();
+                vid.play();
             });
         }
     }
