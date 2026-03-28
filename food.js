@@ -76,8 +76,15 @@ window.getStrictDateStr = function() {
 };
 
 function getDailyCardioBurn(dateStr) {
-    const cardioData = JSON.parse(localStorage.getItem(`cardio_log_${dateStr}`) || "null");
-    return cardioData ? parseInt(cardioData.kcal, 10) || 0 : 0;
+    // 1. Έλεγχος για το direct offset (από το νέο cardio.js)
+    const directOffset = parseFloat(localStorage.getItem("pegasus_cardio_offset")) || 0;
+    
+    // 2. Έλεγχος στο ιστορικό για τη συγκεκριμένη ημερομηνία
+    const cardioLog = JSON.parse(localStorage.getItem(`cardio_log_${dateStr}`) || "null");
+    const logKcal = cardioLog ? parseFloat(cardioLog.kcal) || 0 : 0;
+
+    // Επιστρέφουμε το μεγαλύτερο από τα δύο (για αποφυγή desync)
+    return Math.max(directOffset, logKcal);
 }
 
 function getDynamicBMR() {
