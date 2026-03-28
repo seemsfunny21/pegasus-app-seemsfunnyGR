@@ -7,6 +7,7 @@
 // 0. GLOBAL SCOPE BRIDGE (Surgical Fix for TypeError)
 // Χρησιμοποιούμε το P_M ως την επίσημη τοπική αναφορά
 var P_M = window.PegasusManifest; 
+window.masterUI = {}; // Δημιουργία κενού Global Bridge
 
 // Ελέγχουμε αν η M είναι ήδη δεσμευμένη (π.χ. ως const στο manifest.js)
 if (typeof M === 'undefined') {
@@ -689,7 +690,7 @@ window.onload = () => {
 
     // 3. MASTER UI MAPPING (Event Delegation)
 /* === PEGASUS UI BRIDGE (BLOCK 3) - ALIGNED & STABLE === */
-const masterUI = { 
+window.masterUI = {
     "btnStart": startPause,
     "btnNext": skipToNextExercise,
     "btnWarmup": () => { 
