@@ -32,30 +32,30 @@ render() {
         const container = document.getElementById('previewContent') || document.querySelector('.daily-program-container');
         if (!container) return;
 
+        const stats = this.calculateStats();
+        
+        // Data Check: Μην ξαναφτιάχνεις το UI αν δεν έχει αλλάξει τίποτα
+        const currentDataHash = JSON.stringify(stats);
+        if (this.lastDataHash === currentDataHash) return; 
+        this.lastDataHash = currentDataHash;
+
         const oldWrapper = document.getElementById('temp-progress-wrapper');
         if (oldWrapper) oldWrapper.remove();
 
-        const stats = this.calculateStats();
-        
-        // ΟΡΘΟΔΟΞΟ ΠΡΑΣΙΝΟ PEGASUS ΓΙΑ ΟΛΕΣ ΤΙΣ ΜΠΑΡΕΣ
         const pegasusGreen = "#4CAF50";
-        
         let htmlString = `<div id="muscle-progress-section" style="width: 100%; background: #070707; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #4CAF50; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
             <h3 style="color:#4CAF50; text-align:center; font-size:12px; margin-bottom:15px; text-transform:uppercase; margin-top:0; letter-spacing:1px;">Weekly Muscle Coverage</h3>`;
         
         stats.forEach(s => {
             const isDone = s.percent >= 100;
-            // ΕΔΩ ΗΤΑΝ ΤΟ ΠΟΡΤΟΚΑΛΙ - ΤΩΡΑ ΕΙΝΑΙ ΠΑΝΤΑ ΠΡΑΣΙΝΟ
-            const color = pegasusGreen; 
             const diff = s.target - s.done;
-
             htmlString += `<div style="margin-bottom: 12px; width: 100%;">
                 <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#aaa; font-weight:bold;">
                     <span>${s.name.toUpperCase()}</span>
-                    <span>${s.done}/${s.target} <span style="color:${color};">${isDone ? "COMPLETE" : `NEED ${diff}`}</span></span>
+                    <span>${s.done}/${s.target} <span style="color:${pegasusGreen};">${isDone ? "🎯 OPTIMIZED" : `NEED ${diff}`}</span></span>
                 </div>
                 <div style="width:100%; height:6px; background:#111; border-radius:3px; overflow:hidden; border:1px solid #222;">
-                    <div style="width:${s.percent}%; height:100%; background:${color}; box-shadow: 0 0 8px ${color}66; transition: width 0.8s ease-in-out;"></div>
+                    <div style="width:${s.percent}%; height:100%; background:${pegasusGreen}; box-shadow: 0 0 8px ${pegasusGreen}66; transition: width 0.8s ease-in-out;"></div>
                 </div>
             </div>`;
         });
@@ -66,7 +66,7 @@ render() {
         tempDiv.style.width = "100%";
         tempDiv.innerHTML = htmlString;
         container.prepend(tempDiv);
-    },
+    }
 
     checkWeeklyReset() {
         const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
