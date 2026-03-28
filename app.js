@@ -157,6 +157,7 @@ function selectDay(btn, day) {
 function startPause() {
     if (exercises.length === 0) return;
 
+    // 1. SKIP SKIPPED EXERCISES (Το δικό σου logic - Διατήρηση 100%)
     if (!running && exercises[currentIdx].classList.contains("exercise-skipped")) {
         let firstAvailable = -1;
         for (let i = 0; i < exercises.length; i++) {
@@ -175,12 +176,24 @@ function startPause() {
         }
     }
 
+    // 2. WARMUP BYPASS (Η νέα διόρθωση)
+    // Αν πατάς Έναρξη και είμαστε στην αρχή (Phase 0), πήγαινε κατευθείαν στην ΑΣΚΗΣΗ (Phase 1)
+    if (!running && phase === 0) {
+        phase = 1; 
+        console.log("PEGASUS: Bypassing Warmup Phase for direct start.");
+    }
+
+    // 3. TOGGLE EXECUTION
     running = !running;
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
     
-    if (running) runPhase();
-    else { clearInterval(timer); timer = null; }
+    if (running) {
+        runPhase();
+    } else { 
+        clearInterval(timer); 
+        timer = null; 
+    }
 }
 
 function runPhase() {
