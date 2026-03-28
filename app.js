@@ -4,16 +4,16 @@
    Status: BLOCK 1 OPERATIONAL | Surgical Fix for Constant Assignment
    ========================================================================== */
 
-// 0. GLOBAL SCOPE BRIDGE (Surgical Fix for TypeError)
-// Χρησιμοποιούμε το P_M ως την επίσημη τοπική αναφορά
+// 0. GLOBAL SCOPE BRIDGE
 var P_M = window.PegasusManifest; 
-window.masterUI = {}; // Δημιουργία κενού Global Bridge
 
-// Ελέγχουμε αν η M είναι ήδη δεσμευμένη (π.χ. ως const στο manifest.js)
+// ✅ ΚΡΑΤΑΜΕ ΑΥΤΟ: Δημιουργία του Global Bridge μία φορά στην αρχή
+window.masterUI = window.masterUI || {}; 
+
+// Ελέγχουμε αν η M είναι ήδη δεσμευμένη
 if (typeof M === 'undefined') {
     window.M = P_M;
 } else {
-    // Αν η M υπάρχει ήδη, δεν την πειράζουμε για να αποφύγουμε το Crash
     console.log("🛡️ PEGASUS BRIDGE: M is already linked globally.");
 }
 
@@ -680,73 +680,83 @@ window.updateTotalWorkoutCount = function() {
     if (display) display.textContent = `Προπονήσεις: ${count}`;
 };
 
+/* ==========================================================================
+   PEGASUS OS - CORE BOOT SEQUENCE (v10.1 STABLE)
+   Protocol: Console-Validated Global Bridge & Unified UI Mapping
+   ========================================================================== */
+
 window.onload = () => {
-    // 1. EmailJS Initialization
+    // --- 1. INITIALIZATION ---
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     
-    // 2. UI Construction
     createNavbar();
-    window.updateTotalWorkoutCount();
+    if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
 
-    // 3. MASTER UI MAPPING (Event Delegation)
-/* === PEGASUS UI BRIDGE (BLOCK 3) - ALIGNED & STABLE === */
-window.masterUI = {
-    "btnStart": startPause,
-    "btnNext": skipToNextExercise,
-    "btnWarmup": () => { 
-        const vid = document.getElementById("video");
-        const label = document.getElementById("phaseTimer");
-        if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
-            vid.pause(); vid.loop = false;
-            if (exercises.length > 0) {
-                label.textContent = exercises[currentIdx].querySelector(".weight-input").getAttribute("data-name");
-                showVideo(currentIdx); 
+    // --- 2. MASTER UI MAPPING (The Command Center) ---
+    // Ανάθεση τιμών στο ήδη υπάρχον global αντικείμενο
+    window.masterUI = {
+        "btnStart": startPause,
+        "btnNext": skipToNextExercise,
+        "btnWarmup": () => { 
+            const vid = document.getElementById("video");
+            const label = document.getElementById("phaseTimer");
+            if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
+                vid.pause(); vid.loop = false;
+                if (exercises.length > 0) {
+                    label.textContent = exercises[currentIdx].querySelector(".weight-input").getAttribute("data-name");
+                    showVideo(currentIdx); 
+                }
+            } else {
+                vid.style.display = "block"; vid.src = "videos/warmup.mp4"; vid.loop = true; vid.play();
+                if (label) { 
+                    label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)"; 
+                    label.style.color = "#64B5F6"; 
+                }
             }
-        } else {
-            vid.style.display = "block"; vid.src = "videos/warmup.mp4"; vid.loop = true; vid.play();
-            if (label) { 
-                label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)"; 
-                label.style.color = "#64B5F6"; 
-            }
+        },
+        // Εναρμόνιση με τα IDs του index.html & τα logs της κονσόλας
+        "btnCalendar": { panel: "calendarPanel", init: window.renderCalendar },
+        "btnAchievements": { panel: "achievementsPanel", init: window.renderAchievements },
+        "btnSettings": { panel: "settingsPanel", init: window.initSettingsUI },
+        "btnFood": { panel: "foodPanel", init: window.updateFoodUI },
+        "btnTools": { panel: "toolsPanel", init: null },
+        
+        // ΔΙΟΡΘΩΣΗ: Χρήση btnPreviewUI επειδή αυτό καταγράφει ο Tracer στην κονσόλα
+        "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
+        
+        "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
+        "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
+        
+        // 🔥 EMS INTEGRATION
+        "btnEMS": { panel: "emsModal", init: window.logEMSData },
+
+        "btnSaveSettings": () => { 
+            const weightVal = document.getElementById("userWeightInput")?.value || 74;
+            localStorage.setItem(window.PegasusManifest?.user.weight || "pegasus_weight", weightVal);
+            if (window.PegasusCloud) window.PegasusCloud.push(true);
+            console.log("PEGASUS SETTINGS: Data saved & synced.");
+            location.reload();
         }
-    },
-    // ΔΙΟΡΘΩΣΗ: IDs ευθυγραμμισμένα με index.html & dragDrop.js
-    "btnCalendar": { panel: "calendarPanel", init: window.renderCalendar },
-    "btnAchievements": { panel: "achievementsPanel", init: window.renderAchievements },
-    "btnSettings": { panel: "settingsPanel", init: window.initSettingsUI },
-    "btnFood": { panel: "foodPanel", init: window.updateFoodUI },
-    "btnTools": { panel: "toolsPanel", init: null },
-    "btnPreview": { panel: "previewPanel", init: openExercisePreview },
-    "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
-    "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
-    
-    // 🔥 ΠΡΟΣΘΗΚΗ EMS (v10.1 Patch)
-    "btnEMS": { panel: "emsModal", init: window.logEMSData },
+    };
 
-    "btnSaveSettings": () => { 
-        const weightVal = document.getElementById("userWeightInput")?.value || 74;
-        localStorage.setItem(P_M?.user.weight || "pegasus_weight", weightVal);
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
-        console.log("PEGASUS SETTINGS: Data saved & synced.");
-        location.reload();
-    }
-};
-
-    Object.keys(masterUI).forEach(btnId => {
+    // --- 3. EVENT DELEGATION ENGINE ---
+    Object.keys(window.masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                const target = masterUI[btnId];
+                const target = window.masterUI[btnId];
                 
-                // Αυτόματο κλείσιμο άλλων panels
-                if (!btnId.includes("Save") && !btnId.includes("Start")) {
+                console.log(`[UI BRIDGE] Triggering: ${btnId}`);
+
+                // Αυτόματο κλείσιμο άλλων panels (εκτός από τα control buttons)
+                if (!btnId.includes("Save") && !btnId.includes("Start") && !btnId.includes("Next")) {
                     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
 
                 if (typeof target === 'function') {
                     target();
-                } else if (target.panel) {
+                } else if (target && target.panel) {
                     const el = document.getElementById(target.panel);
                     if (el) { 
                         el.style.display = "block"; 
@@ -757,14 +767,22 @@ window.masterUI = {
         }
     });
 
-    // 4. AUTO-SELECT TODAY PROTOCOL
+    // --- 4. AUTO-SELECT TODAY PROTOCOL ---
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const today = greekDays[new Date().getDay()];
+    
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
-            if (b.textContent.trim().split(' ')[0] === today) selectDay(b, b.textContent);
+            if (b.textContent.trim().split(' ')[0] === today) {
+                if (typeof selectDay === "function") selectDay(b, b.textContent);
+            }
         }); 
     }, 400);
+
+    // Τελικός έλεγχος σύνδεσης UI Manager (dragDrop.js)
+    if (window.PegasusUI && typeof window.PegasusUI.init === "function") {
+        window.PegasusUI.init();
+    }
 };
 
 /* ===== 11. DEBUG BRIDGE (FIXED & FULL ACCESS) ===== */
