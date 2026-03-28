@@ -728,15 +728,42 @@ function openExercisePreview() {
 
 /* === DATA & TRACKING LOGIC === */
 window.logPegasusSet = function(exName) {
-    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-    if (!window.exercisesDB) return;
-    const exercise = window.exercisesDB.find(ex => ex.name.trim() === exName.trim());
-    if (exercise && exercise.muscleGroup) {
-        const value = (exercise.name.includes("Ποδηλασία")) ? 18 : 1;
-        history[exercise.muscleGroup] = (history[exercise.muscleGroup] || 0) + value;
+    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { 
+        "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
+    };
+
+    // 1. ΑΝΑΓΝΩΡΙΣΗ ΜΥΪΚΗΣ ΟΜΑΔΑΣ (Database check)
+    let exercise = null;
+    if (window.exercisesDB) {
+        exercise = window.exercisesDB.find(ex => ex.name.trim() === exName.trim());
+    }
+
+    let targetMuscle = exercise ? exercise.muscleGroup : null;
+    let value = 1; // Default: 1 σετ
+
+    // 2. FORCE CREDIT PROTOCOL (Override για Ποδηλασία & EMS Ποδιών)
+    const cleanName = exName.trim().toUpperCase();
+    
+    if (cleanName.includes("ΠΟΔΗΛΑΣΙΑ") || cleanName.includes("CYCLING")) {
+        targetMuscle = "Πόδια";
+        value = 18; // Πλήρης πίστωση προπόνησης
+    } else if (cleanName.includes("EMS ΠΟΔΙΩΝ")) {
+        targetMuscle = "Πόδια";
+        value = 6;  // Πίστωση EMS sets (βάσει πρωτοκόλλου EMS)
+    }
+
+    // 3. ΕΝΗΜΕΡΩΣΗ ΜΝΗΜΗΣ
+    if (targetMuscle && history.hasOwnProperty(targetMuscle)) {
+        history[targetMuscle] = (history[targetMuscle] || 0) + value;
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+        
+        console.log(`[PEGASUS AUDIT]: Credited ${value} to ${targetMuscle} from ${exName}`);
+
+        // 4. UI SYNC & CLOUD PUSH
         if (window.MuscleProgressUI) window.MuscleProgressUI.render();
         if (window.PegasusCloud) window.PegasusCloud.push(true);
+    } else {
+        console.warn(`[PEGASUS]: Exercise ${exName} could not be mapped to a muscle group.`);
     }
 };
 
