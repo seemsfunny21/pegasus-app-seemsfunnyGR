@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CARDIO ENGINE - v5.1 (GLOBAL SCOPE EXPORT)
-   Protocol: Strict Data Analyst - Tracking & Storage
+   PEGASUS CARDIO ENGINE - v5.2 (STRICT DATA SYNC)
+   Protocol: Force Credit Logic & UI Auto-Refresh
    ========================================================================== */
 
 window.PegasusCardio = {
@@ -16,7 +16,6 @@ window.PegasusCardio = {
         const panel = document.getElementById("cardioPanel");
         if (panel) {
             panel.style.display = "block";
-            // Αυτόματη συμπλήρωση σημερινής ημερομηνίας
             const today = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById("cDate");
             if (dateInput) dateInput.value = today;
@@ -28,7 +27,15 @@ window.PegasusCardio = {
         if (panel) panel.style.display = "none";
     },
 
-save: function() {
+    resetForm: function() {
+        const fields = ["cRoute", "cKm", "cTime", "cKcal"];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+        });
+    },
+
+    save: function() {
         const route = document.getElementById("cRoute").value;
         const km = parseFloat(document.getElementById("cKm").value) || 0;
         const time = document.getElementById("cTime").value;
@@ -60,9 +67,10 @@ save: function() {
             "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
         };
 
-        // Αν η διαδρομή περιέχει "Ποδηλασία", δώσε 18 μονάδες (75% κάλυψη)
         const upperRoute = route.toUpperCase();
-        const credit = (upperRoute.includes("ΠΟΔΗΛΑΣΙΑ") || upperRoute.includes("CYCLING")) ? 18 : Math.max(1, Math.floor(km / 2));
+        // Αν η διαδρομή περιέχει "Ποδηλασία" ή "30KM" ή "CYCLING"
+        const isCycling = upperRoute.includes("ΠΟΔΗΛΑΣΙΑ") || upperRoute.includes("CYCLING") || upperRoute.includes("30KM");
+        const credit = isCycling ? 18 : Math.max(1, Math.floor(km / 2));
         
         history["Πόδια"] = (history["Πόδια"] || 0) + credit;
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
@@ -81,12 +89,13 @@ save: function() {
         alert(`Η διαδρομή "${route}" αποθηκεύτηκε! Πιστώθηκαν ${credit} μονάδες στα Πόδια.`);
         this.close();
         this.resetForm();
-    },
+    }
+};
 
-// Global Handlers για σύνδεση με το UI (index.html)
+// Global Handlers
 window.saveCardioData = () => window.PegasusCardio.save();
 
-// Εκκίνηση κατά το φόρτωμα της σελίδας
+// Initialization
 window.addEventListener("load", () => {
     if (window.PegasusCardio) {
         window.PegasusCardio.init();
