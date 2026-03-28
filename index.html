@@ -99,7 +99,7 @@
             <button id="btnToolsUI" class="p-btn">⚙️ ΕΡΓΑΛΕΙΑ</button>
         </div>
 
-        <div id="toolsPanel" class="pegasus-panel" style="width: fit-content; min-width: 270px; padding: 20px 8px; text-align: center; margin: 0 auto;">
+<div id="toolsPanel" class="pegasus-panel" style="width: fit-content; min-width: 270px; padding: 20px 8px; text-align: center; margin: 0 auto;">
             <h3 style="text-align: center; margin-bottom: 15px;">ΕΡΓΑΛΕΙΑ PEGASUS</h3>
             
             <div class="setting-item" style="border-top: 1px solid #333; padding-top: 15px; margin-bottom: 15px; text-align: center;">
@@ -107,42 +107,23 @@
                 <input type="text" id="partnerNameInput" list="partnerList" placeholder="Όνομα συνεργάτη..." 
                        style="width: 100%; background: #111; color: #4CAF50; border: 1px solid #4CAF50; padding: 8px; margin-bottom: 8px; border-radius: 4px; font-family: inherit; box-sizing: border-box; text-align: center;">
                 <datalist id="partnerList"></datalist>
-                <button id="btnPartnerMode" class="p-btn" onclick="togglePartnerMode()" style="width:100%">ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ</button>
+                <button id="btnPartnerMode" class="p-btn" style="width:100%">ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ</button>
             </div>
 
             <div class="settings-grid" style="display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;">
-                <div class="setting-item" style="width: 100%; text-align: center;">
-                    <p style="text-align: center; margin-bottom: 6px; color: #ccc;">Ήχος:</p>
-                    <button id="btnMuteTools" class="p-btn" style="width:100%">Ήχος: ΕΝΕΡΓΟΣ</button>
-                </div>
+                <button id="btnMuteTools" class="p-btn" style="width:100%">Ήχος: ΕΝΕΡΓΟΣ</button>
+                <button id="btnTurboTools" class="p-btn" style="width:100%">Turbo: ΑΝΕΝΕΡΓΟ</button>
                 
-                <div class="setting-item" style="width: 100%; text-align: center;">
-                    <p style="text-align: center; margin-bottom: 6px; color: #ccc;">Λειτουργία Turbo:</p>
-                  <button id="btnTurboTools" class="p-btn" style="width:100%">Turbo: ΑΝΕΝΕΡΓΟ</button>
-                </div>
-                
-                <div class="setting-item" style="width: 100%; text-align: center;">
-                    <p style="text-align: center; margin-bottom: 6px; color: #ccc;">Αντίγραφο Ασφαλείας:</p>
-                  <button id="btnExportData" class="p-btn" style="width:100%">Αποθήκευση Αρχείου</button>
-                </div>
-                
-                <div class="setting-item" style="width: 100%; text-align: center; padding-bottom: 10px; border-bottom: 1px solid #333;">
-                    <p style="text-align: center; margin-bottom: 6px; color: #ccc;">Επαναφορά:</p>
-                    <button onclick="document.getElementById('importFileTools').click()" class="p-btn" style="width:100%">Φόρτωση Αρχείου</button>
-                    <input type="file" id="importFileTools" style="display:none" onchange="window.importPegasusData(event)">
-                </div>
+                <button id="btnExportData" class="p-btn" style="width:100%">Αποθήκευση Αρχείου</button>
+                <button id="btnImportData" class="p-btn" style="width:100%">Φόρτωση Αρχείου</button>
+                <input type="file" id="importFileTools" style="display:none">
                 
                 <button id="btnMasterVault" class="p-btn" style="width:100%; border-color:#00bcd4; color:#00bcd4; font-weight:bold;">🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ</button>
-                    🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ
-                </button>
-
                 <button id="btnOpenGallery" class="p-btn" style="width:100%;">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
-               <button id="btnEMS" class="p-btn" style="width:100%;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</button>
+                <button id="btnEMS" class="p-btn" style="width:100%;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</button>
             </div>
         </div>
-    </div>
-    
-    <div id="galleryPanel" class="pegasus-panel" style="width: 550px; height: 750px; display: none; z-index: 9999;">
+    </div> <div id="galleryPanel" class="pegasus-panel" style="width: 550px; height: 750px; display: none; z-index: 9999;">
         <h3 style="text-align: center;">ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</h3>
         <div class="upload-zone" onclick="document.getElementById('photoUpload').click()">
             <p>➕ ΑΝΕΒΑΣΕ ΦΩΤΟΓΡΑΦΙΑ (JPG/PNG)</p>
