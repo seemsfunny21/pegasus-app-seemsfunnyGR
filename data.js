@@ -1,10 +1,8 @@
 /* ==========================================================================
-    PEGASUS DATA ENGINE - v10.1.4 (RECOVERY BUILD)
-    Protocol: Restore Original Exercise Names & Asset Mapping
-    Strict Alignment with v8.2 Database
+    PEGASUS DATA ENGINE - v10.1.5 (FINAL ASSET ALIGNMENT)
+    Protocol: Fix 404 Video Errors & Clean Mapping
    ========================================================================== */
 
-// 1. ORIGINAL EXERCISES DATABASE (v8.2 Mapping)
 window.exercisesDB = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος" },
     { name: "Chest Flys", muscleGroup: "Στήθος" },
@@ -30,10 +28,10 @@ window.exercisesDB = [
     { name: "Glute Kickbacks", muscleGroup: "Πόδια" },
     { name: "Leg Extensions", muscleGroup: "Πόδια" },
     { name: "Ποδηλασία 30km", muscleGroup: "Πόδια" },
-    { name: "EMS Training", muscleGroup: "Πλάτη" }
+    { name: "EMS Training", muscleGroup: "Πλάτη" },
+    { name: "Stretching", muscleGroup: "Κορμός" }
 ];
 
-// 2. WEEKLY PROGRAM (RESTORED FROM v8.2 LOGIC)
 window.program = {
     "Δευτέρα": [{ name: "Stretching", sets: 1, muscleGroup: "Κορμός" }],
     "Τρίτη": [
@@ -56,15 +54,10 @@ window.program = {
         { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι" },
         { name: "Seated Chest Press", sets: 4, muscleGroup: "Στήθος" }
     ],
-    "Σάββατο": [
-        { name: "Ποδηλασία 30km", sets: 1, muscleGroup: "Πόδια" }
-    ],
-    "Κυριακή": [
-        { name: "Ποδηλασία 30km", sets: 1, muscleGroup: "Πόδια" }
-    ]
+    "Σάββατο": [{ name: "Ποδηλασία 30km", sets: 1, muscleGroup: "Πόδια" }],
+    "Κυριακή": [{ name: "Ποδηλασία 30km", sets: 1, muscleGroup: "Πόδια" }]
 };
 
-// 3. VIDEO MAPPING (STRICT SYNC WITH FILENAMES)
 window.videoMap = {
     "Seated Chest Press": "chestpress",
     "Chest Flys": "chestflys",
@@ -89,10 +82,10 @@ window.videoMap = {
     "Situps": "situps",
     "Glute Kickbacks": "glutekickbacks",
     "Leg Extensions": "legextensions",
-    "Ποδηλασία 30km": "cycling",
+    "Ποδηλασία 30km": "cycling", 
     "Stretching": "stretching",
     "Προθέρμανση": "warmup",
     "EMS Training": "ems"
 };
 
-console.log("✅ PEGASUS DATA ENGINE: Original Exercises Restored & Mapped.");
+console.log("✅ PEGASUS DATA ENGINE: Asset Mapping Corrected (v10.1.5).");
