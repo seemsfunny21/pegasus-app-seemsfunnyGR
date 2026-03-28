@@ -413,7 +413,11 @@ function showVideo(i) {
     const vid = document.getElementById("video");
     if (!vid) return;
 
-    // 1. Καθαρισμός YouTube Iframe αν υπάρχει ακόμα στο DOM (Cleanup Protocol)
+    // [VISIBILITY PROTOCOL] - Εξασφαλίζουμε ότι το βίντεο είναι ορατό
+    vid.style.display = "block";
+    vid.style.opacity = "1";
+
+    // 1. Καθαρισμός YouTube Iframe (Cleanup Protocol)
     const ytFrame = document.getElementById("yt-video");
     if (ytFrame) ytFrame.remove();
 
@@ -422,11 +426,9 @@ function showVideo(i) {
     const phaseLabel = label ? label.textContent : "";
     
     // 2. [STRICT PRIORITY LOGIC]
-    // Manual Προθέρμανση ή κενό index
     if (phaseLabel.includes("Manual") || i === null || i === undefined || i === -1) {
         name = "Προθέρμανση"; 
     } 
-    // Ροή Προπόνησης (ΑΣΚΗΣΗ / ΔΙΑΛΕΙΜΜΑ)
     else {
         if (!exercises || !exercises[i]) return;
         const ex = exercises[i];
@@ -434,11 +436,10 @@ function showVideo(i) {
         name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
     }
 
-    // 3. Mapping & Forced Execution (Local MP4 Only)
+    // 3. Mapping & Forced Execution
     if (typeof videoMap !== 'undefined') {
         let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
         
-        // Handling EMS naming logic
         if (name.toLowerCase().includes("ems") && !videoMap[name]) {
             mappedVal = "ems";
         }
@@ -446,13 +447,11 @@ function showVideo(i) {
         const newSrc = `videos/${mappedVal}.mp4`;
         
         // [ANTI-STICKY PROTOCOL]
-        // Αλλάζουμε το source μόνο αν είναι διαφορετικό από το τρέχον
         if (vid.getAttribute('src') !== newSrc) {
             vid.pause();
             vid.src = newSrc;
-            vid.load(); // Force reload του buffer
+            vid.load(); 
             vid.play().catch(err => {
-                // Fallback αν το αρχείο λείπει (π.χ. 404)
                 console.warn(`PEGASUS: Asset ${mappedVal}.mp4 missing. Falling back to warmup.`);
                 vid.src = "videos/warmup.mp4";
                 vid.load();
@@ -619,25 +618,24 @@ window.onload = () => {
             const vid = document.getElementById("video");
             const label = document.getElementById("phaseTimer");
             
-            // 1. ΕΛΕΓΧΟΣ: Αν παίζει ήδη η προθέρμανση, την κλείνουμε (Toggle OFF)
             if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
+                // Toggle OFF: Κλείνουμε μόνο τον ήχο/κίνηση, αλλά κρατάμε το display BLOCK
                 vid.pause();
-                vid.style.display = "none";
                 vid.loop = false;
                 
-                // Επαναφορά στην πρώτη άσκηση της λίστας
                 if (exercises.length > 0) {
                     const firstEx = exercises[currentIdx];
                     const wInput = firstEx ? firstEx.querySelector(".weight-input") : null;
                     const exName = wInput ? wInput.getAttribute("data-name") : "PEGASUS READY";
                     if (label) label.textContent = exName;
+                    
+                    // ΕΠΑΝΑΦΟΡΑ: Δείχνουμε το βίντεο της άσκησης αμέσως
+                    vid.style.display = "block"; 
                     showVideo(currentIdx); 
-                } else {
-                    if (label) label.textContent = "PEGASUS OS";
                 }
-                console.log("PEGASUS: Warmup OFF -> Ready to Start");
+                console.log("PEGASUS: Warmup OFF -> Video Container Ready");
             } else {
-                // 2. ΕΝΕΡΓΟΠΟΙΗΣΗ: Παίζει το βίντεο μόνιμα μέχρι το επόμενο κλικ (Toggle ON)
+                // Toggle ON
                 vid.style.display = "block";
                 vid.src = "videos/warmup.mp4";
                 vid.loop = true; 
@@ -646,7 +644,6 @@ window.onload = () => {
                     label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)";
                     label.style.color = "#64B5F6";
                 }
-                console.log("PEGASUS: Warmup ON (Loop Active)");
             }
         },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
