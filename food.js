@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - FINAL UNIFIED SYNC (V8.3 - MIDNIGHT ROLLOVER FIXED)
+   PEGASUS FOOD ENGINE - v8.4 (METABOLIC SYNC & MIDNIGHT RESET)
    STRICT DATA ANALYST PROTOCOL - DESKTOP EDITION (PEGASUS STORE INTEGRATION)
    ========================================================================== */
 
@@ -62,11 +62,15 @@ function changeFoodDate(days) {
 window.getStrictDateStr = function() {
     // MIDNIGHT ROLLOVER GUARD: Έλεγχος αν άλλαξε η μέρα στο σύστημα
     const currentSystemDate = new Date().toDateString();
-if (window.lastKnownSystemDate !== currentSystemDate) {
+    if (window.lastKnownSystemDate !== currentSystemDate) {
         if (window.currentFoodDate && window.currentFoodDate.toDateString() === window.lastKnownSystemDate) {
             window.currentFoodDate = new Date();
-            localStorage.setItem("pegasus_cardio_offset", "0"); // RESET OFFSET
-            console.log("PEGASUS GUARD: Midnight Rollover & Cardio Offset Reset.");
+            
+            // 🔥 METABOLIC RESET: Καθαρισμός των offsets για τη νέα ημέρα
+            localStorage.setItem("pegasus_cardio_offset", "0");
+            localStorage.setItem("pegasus_cardio_offset_sets", "0");
+            
+            console.log("PEGASUS GUARD: Midnight Rollover & Metabolic Offsets Reset.");
         }
         window.lastKnownSystemDate = currentSystemDate;
     }
@@ -120,19 +124,17 @@ window.updateFoodUI = function() {
     const display = document.getElementById('currentFoodDateDisplay');
     if (display) display.textContent = dateStr;
 
-    // DATA ISOLATION: Ανάκτηση μέσω PegasusStore (v8.9 Logic)
+    // DATA ISOLATION
     const foodLog = window.PegasusStore ? window.PegasusStore.getFoodLog(dateStr) : JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
     const listContainer = document.getElementById('todayFoodList');
     if (!listContainer) return;
     
     listContainer.innerHTML = "";
     
-    // 🔥 ZERO-BUG CALCULATION: Πλήρης ανακαταμέτρηση από το Raw Log
     let totalKcal = 0;
     let totalProtein = 0;
 
     foodLog.forEach((item, index) => {
-        // Μετατροπή σε αριθμό με διασφάλιση (Fallback σε 0 αν είναι null/NaN)
         const kcalVal = parseFloat(item.kcal) || 0;
         const protVal = parseFloat(item.protein) || 0;
         
@@ -152,7 +154,6 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    // 🔥 SYNC FIX: Ενημέρωση ΟΛΩΝ των πιθανών κλειδιών για να μην υπάρχει Desync
     const finalKcal = totalKcal.toFixed(1);
     const finalProt = totalProtein.toFixed(1);
 
@@ -160,23 +161,20 @@ window.updateFoodUI = function() {
         window.PegasusStore.updateDailyTotals(totalKcal, totalProtein);
     } else {
         localStorage.setItem("pegasus_diet_kcal", finalKcal);
-        localStorage.setItem("pegasus_today_kcal", finalKcal); // Key alignment patch
+        localStorage.setItem("pegasus_today_kcal", finalKcal);
         localStorage.setItem("pegasus_today_protein", finalProt);
     }
 
-    // UI REFRESH - DOM UPDATES
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = Math.round(totalKcal);
     
     const proteinNum = document.getElementById('todayTotalProtein'); 
     if (proteinNum) proteinNum.textContent = Math.round(totalProtein);
     
-    // Ενημέρωση Progress Bars (Dashboard Sync)
     if (typeof window.updateProgressBars === "function") {
         window.updateProgressBars(totalKcal, totalProtein);
     }
 
-    // Διατήρηση περιφερειακών λειτουργιών (Maximalist Retention)
     if (typeof window.filterLibrary === "function") window.filterLibrary(); 
     if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
 
@@ -185,8 +183,6 @@ window.updateFoodUI = function() {
 
 window.addFoodItem = function(name, kcal, protein) {
     const dateStr = window.getStrictDateStr();
-    
-    // DATA ISOLATION: Ανάκτηση και αποθήκευση μέσω PegasusStore
     let foodLog = window.PegasusStore ? window.PegasusStore.getFoodLog(dateStr) : JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
     
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
@@ -207,8 +203,6 @@ window.addFoodItem = function(name, kcal, protein) {
 
 window.deleteFoodItem = function(index) {
     const dateStr = window.getStrictDateStr();
-    
-    // DATA ISOLATION: Διαγραφή μέσω PegasusStore
     let foodLog = window.PegasusStore ? window.PegasusStore.getFoodLog(dateStr) : JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
     
     foodLog.splice(index, 1);
