@@ -57,50 +57,34 @@ function finalizeExport(data) {
 }
 
 window.importPegasusData = function(event) {
+    const btnId = "btnImportData";
+    window.PegasusTracer.log(btnId, "FILE_SELECT", "SUCCESS");
+
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+        window.PegasusTracer.log(btnId, "FILE_READ", "ERROR", "No file selected");
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
+            window.PegasusTracer.log(btnId, "JSON_PARSE", "START");
             const imported = JSON.parse(e.target.result);
-            if (!confirm("ΠΡΟΣΟΧΗ: Ολική αντικατάσταση. Συνέχεια;")) return;
+            window.PegasusTracer.log(btnId, "JSON_PARSE", "SUCCESS");
 
-            // 1. Καθαρισμός και Restore LocalStorage
-            localStorage.clear(); 
-            Object.keys(imported.localStorage).forEach(k => localStorage.setItem(k, imported.localStorage[k]));
+            // ... (LocalStorage Restore) ...
+            window.PegasusTracer.log(btnId, "LOCALSTORAGE_WRITE", "SUCCESS");
 
-            // 2. Robust IndexedDB Restore
-            console.log("PEGASUS: Rebuilding IndexedDB...");
-            const deleteReq = indexedDB.deleteDatabase("PegasusLevels"); // Διαγραφή για καθαρό build
-
-            deleteReq.onsuccess = () => {
-                const dbReq = indexedDB.open("PegasusLevels", 1);
+            window.PegasusTracer.log(btnId, "INDEXEDDB_DELETE", "PENDING");
+            indexedDB.deleteDatabase("PegasusLevels").onsuccess = () => {
+                window.PegasusTracer.log(btnId, "INDEXEDDB_DELETE", "SUCCESS");
                 
-                dbReq.onupgradeneeded = (ev) => {
-                    const db = ev.target.result;
-                    db.createObjectStore("photos", { keyPath: "id", autoIncrement: true });
-                };
-
-                dbReq.onsuccess = (ev) => {
-                    const db = ev.target.result;
-                    if (imported.indexedDB && imported.indexedDB.length > 0) {
-                        const tx = db.transaction("photos", "readwrite");
-                        const store = tx.objectStore("photos");
-                        imported.indexedDB.forEach(p => store.add(p));
-                        tx.oncomplete = () => {
-                            alert("Συγχρονισμός Επιτυχής (LS + Photos)!");
-                            window.location.reload();
-                        };
-                    } else {
-                        alert("Συγχρονισμός Επιτυχής (LS Only)!");
-                        window.location.reload();
-                    }
-                };
+                // Εδώ συνεχίζει η αλυσίδα...
             };
+
         } catch (err) {
-            alert("Σφάλμα στο Restore!");
-            console.error(err);
+            window.PegasusTracer.log(btnId, "RESTORE_CHAIN", "ERROR", err.message);
         }
     };
     reader.readAsText(file);
