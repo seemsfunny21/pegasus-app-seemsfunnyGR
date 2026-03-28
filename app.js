@@ -537,10 +537,9 @@ function finishWorkout() {
 }
 
 
-
 /* ==========================================================================
-   PEGASUS UI INITIALIZATION - v16.9 (UNIFIED PANEL SYNC)
-   Protocol: Strict Modular Sync - Closing all Tactical Overlays on Switch
+   PEGASUS UI INITIALIZATION - v19.1 (MODULAR MASTER SYNC)
+   Protocol: Strict Modular Sync - Domain Isolation
    ========================================================================== */
 window.onload = () => {
     // 1. Email & Reporting Initialization
@@ -557,58 +556,56 @@ window.onload = () => {
 
     createNavbar();
 
-    // 2. Core Engine Buttons
-    const btnStart = document.getElementById("btnStart");
-    if (btnStart) btnStart.onclick = startPause;
-
-    const btnNext = document.getElementById("btnNext");
-    if (btnNext) btnNext.onclick = skipToNextExercise;
-
-    // 3. UNIFIED PANEL HANDLER (The Fix for the "Workout Button" issue)
-    const uiBtns = { 
-        "btnCalendarUI": "calendarPanel", 
-        "btnAchUI": "achievementsPanel", 
-        "btnSettingsUI": "settingsPanel", 
-        "btnFoodUI": "foodPanel", 
-        "btnToolsUI": "toolsPanel", 
-        "btnPreviewUI": "previewPanel",
-        "btnCardioUI": "cardioPanel",
-        "btnGalleryUI": "galleryPanel",
-        "btnEMSUI": "emsModal" // Προσθήκη EMS για πλήρη συγχρονισμό
+    // 2. MASTER UI MAPPING (The Brain of the Interface)
+    const masterUI = { 
+        "btnStart": startPause,
+        "btnNext": skipToNextExercise,
+        "btnWarmup": () => { phase = 0; currentIdx = 0; showVideo(null); },
+        "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
+        "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
+        "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
+        "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
+        "btnToolsUI": { panel: "toolsPanel" },
+        "btnPreviewUI": { panel: "previewPanel", init: openExercisePreview },
+        "btnEMS": () => { if(window.logEMSData) window.logEMSData(); },
+        "btnSaveEMS": () => { if(window.saveEMSFinal) window.saveEMSFinal(); },
+        "btnCloseEMS": () => { if(window.closeEMSModal) window.closeEMSModal(); },
+        "btnClosePreview": () => { document.getElementById('previewPanel').style.display='none'; },
+        "btnManualEmail": () => { if(window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true); },
+        "btnSaveSettings": () => { 
+            if(window.savePegasusSettingsGlobal) {
+                window.savePegasusSettingsGlobal(); 
+            } else {
+                // Emergency Fallback
+                localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput")?.value || 74);
+                alert("PEGASUS: Βασική Αποθήκευση (Settings JS missing)!"); 
+                location.reload();
+            }
+        }
     };
 
-    Object.keys(uiBtns).forEach(btnId => {
+    // 3. EVENT DELEGATION ENGINE
+    Object.keys(masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 
-                // Πρωτόκολλο Καθαρισμού: Κλείνει ΟΛΑ τα Tactical Overlays
-                if (window.PegasusUI && window.PegasusUI.panels) {
-                    window.PegasusUI.panels.forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) el.style.display = "none";
-                    });
-                } else {
-                    // Fallback αν το dragdrop.js δεν έχει φορτώσει ακόμα
-                    Object.values(uiBtns).forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el) el.style.display = "none";
-                    });
+                // Πρωτόκολλο Καθαρισμού: Κλείνει τα Panels εκτός αν είναι κουμπιά εσωτερικής ενέργειας (Save/Close/Mute)
+                const isActionBtn = btnId.includes("Save") || btnId.includes("Close") || btnId.includes("btnStart") || btnId.includes("btnNext");
+                if (!isActionBtn) {
+                    document.querySelectorAll('.pegasus-panel, #emsModal, #cardioPanel').forEach(p => p.style.display = "none");
                 }
 
-                // Άνοιγμα του επιλεγμένου παραθύρου
-                const targetId = uiBtns[btnId];
-                const targetPanel = document.getElementById(targetId);
-                if (targetPanel) {
-                    targetPanel.style.display = "block";
-                    
-                    // Εκτέλεση Logic ανάλογα με το Panel
-                    if (targetId === "previewPanel") openExercisePreview();
-                    if (targetId === "calendarPanel" && window.renderCalendar) window.renderCalendar();
-                    if (targetId === "achievementsPanel" && window.renderAchievements) window.renderAchievements();
-                    if (targetId === "foodPanel" && window.renderFood) window.renderFood();
-                    if (targetId === "galleryPanel" && window.renderGallery) window.renderGallery();
+                const target = masterUI[btnId];
+                if (typeof target === 'function') {
+                    target();
+                } else if (target.panel) {
+                    const el = document.getElementById(target.panel);
+                    if (el) {
+                        el.style.display = "block";
+                        if (target.init) target.init();
+                    }
                 }
             };
         }
@@ -636,18 +633,17 @@ window.onload = () => {
         }; 
     }
 
-    const weightInp = document.getElementById("userWeightInput");
-    if (weightInp) {
-        weightInp.value = userWeight;
-        weightInp.onchange = (e) => { 
-            userWeight = parseFloat(e.target.value) || 74; 
-            localStorage.setItem("pegasus_weight", userWeight); 
+    const rainToggle = document.getElementById("rainToggle");
+    if (rainToggle) {
+        rainToggle.onchange = () => {
+            const activeBtn = document.querySelector('.navbar button.active');
+            if (activeBtn) selectDay(activeBtn, activeBtn.textContent);
         };
     }
 
     if (typeof fetchWeather === "function") fetchWeather();
     
-    // Auto-select Today
+    // Auto-select Today Logic
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = greekDays[new Date().getDay()];
     setTimeout(() => { 
