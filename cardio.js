@@ -28,14 +28,14 @@ window.PegasusCardio = {
         if (panel) panel.style.display = "none";
     },
 
-    save: function() {
+save: function() {
         const route = document.getElementById("cRoute").value;
-        const km = document.getElementById("cKm").value;
+        const km = parseFloat(document.getElementById("cKm").value) || 0;
         const time = document.getElementById("cTime").value;
         const kcal = document.getElementById("cKcal").value;
         const rawDate = document.getElementById("cDate").value;
 
-        if (!route || !km) {
+        if (!route || km <= 0) {
             alert("Συμπλήρωσε Διαδρομή και Χιλιόμετρα!");
             return;
         }
@@ -52,29 +52,36 @@ window.PegasusCardio = {
             timestamp: Date.now()
         };
 
-        // Αποθήκευση στο LocalStorage με το πρότυπο κλειδί του Reporting
+        // 1. Αποθήκευση Ιστορικού
         localStorage.setItem(`cardio_log_${dateKey}`, JSON.stringify(entry));
 
-        // Ενημέρωση Cloud αν είναι ξεκλείδωτο
+        // 2. === PEGASUS FORCE CREDIT: ΕΝΗΜΕΡΩΣΗ ΜΠΑΡΑΣ ΠΟΔΙΩΝ ===
+        let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || { 
+            "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
+        };
+
+        // Αν η διαδρομή περιέχει "Ποδηλασία", δώσε 18 μονάδες (75% κάλυψη)
+        const upperRoute = route.toUpperCase();
+        const credit = (upperRoute.includes("ΠΟΔΗΛΑΣΙΑ") || upperRoute.includes("CYCLING")) ? 18 : Math.max(1, Math.floor(km / 2));
+        
+        history["Πόδια"] = (history["Πόδια"] || 0) + credit;
+        localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+
+        // 3. Άμεσο Refresh του UI αν είναι ανοιχτό το Preview
+        if (window.MuscleProgressUI) {
+            window.MuscleProgressUI.lastDataHash = null; // Force Render
+            window.MuscleProgressUI.render();
+        }
+
+        // 4. Ενημέρωση Cloud
         if (window.PegasusCloud && window.PegasusCloud.hasSuccessfullyPulled) {
             window.PegasusCloud.push(true);
         }
 
-        alert(`Η διαδρομή "${route}" αποθηκεύτηκε επιτυχώς!`);
+        alert(`Η διαδρομή "${route}" αποθηκεύτηκε! Πιστώθηκαν ${credit} μονάδες στα Πόδια.`);
         this.close();
-        
-        // Καθαρισμός φόρμας για την επόμενη χρήση
         this.resetForm();
     },
-
-    resetForm: function() {
-        const fields = ["cRoute", "cKm", "cTime", "cKcal"];
-        fields.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = "";
-        });
-    }
-};
 
 // Global Handlers για σύνδεση με το UI (index.html)
 window.saveCardioData = () => window.PegasusCardio.save();
