@@ -575,7 +575,35 @@ async function saveCardio() { const km = parseFloat(document.getElementById('cdK
 
 // --- MODULE: DIET & LIBRARY ---
 async function addFood() { const n = document.getElementById("fName").value || "Γεύμα"; const k = parseFloat(document.getElementById("fKcal").value) || 0; const p = parseFloat(document.getElementById("fProt").value) || 0; if(n.toLowerCase().includes("πρωτεΐνη")) consumeSupp('prot', 30, false); const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; let log = PegasusStore.getFoodLog(dateStr); log.unshift({name:n, kcal:k, protein:p}); PegasusStore.saveFoodLog(dateStr, log); let tk = parseFloat(localStorage.getItem(PegasusStore.keys.kcalTotal)) || 0; let tp = parseFloat(localStorage.getItem(PegasusStore.keys.protTotal)) || 0; PegasusStore.updateDailyTotals(tk + k, tp + p); document.getElementById("fName").value = ""; document.getElementById("fKcal").value = ""; document.getElementById("fProt").value = ""; updateDietUI(); await PegasusCloud.push(); }
-function updateDietUI() { const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; let log = PegasusStore.getFoodLog(dateStr); const tk = localStorage.getItem(PegasusStore.keys.kcalTotal) || "0"; const tp = localStorage.getItem(PegasusStore.keys.protTotal) || "0"; document.getElementById("txtKcal").textContent = `${Math.round(tk)}/2800`; document.getElementById("txtProt").textContent = `${Math.round(tp)}/160g`; document.getElementById("foodHistoryList").innerHTML = log.map((i, idx) => `<div class="log-item"><button class="btn-del" onclick="deleteFood(${idx})">✕</button><strong>${i.name}</strong><br><small>${i.kcal} kcal | ${i.protein}g P</small></div>`).join(''); }
+function updateDietUI() {
+    const d = new Date();
+    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    let log = PegasusStore.getFoodLog(dateStr);
+    
+    // ΠΡΩΤΟΚΟΛΛΟ STRICT RE-AUDIT: Μηδενισμός και πλήρης ανακαταμέτρηση
+    let totalKcal = 0;
+    let totalProt = 0;
+
+    log.forEach(item => {
+        totalKcal += parseFloat(item.kcal || 0);
+        totalProt += parseFloat(item.protein || 0);
+    });
+
+    // Ενημέρωση των κεντρικών κλειδιών για να διορθωθεί η μνήμη
+    localStorage.setItem(PegasusStore.keys.kcalTotal, totalKcal.toFixed(1));
+    localStorage.setItem(PegasusStore.keys.protTotal, totalProt.toFixed(1));
+
+    document.getElementById("txtKcal").textContent = `${Math.round(totalKcal)}/2800`;
+    document.getElementById("txtProt").textContent = `${Math.round(totalProt)}/160g`;
+    
+    document.getElementById("foodHistoryList").innerHTML = log.map((i, idx) => `
+        <div class="log-item">
+            <button class="btn-del" onclick="deleteFood(${idx})">✕</button>
+            <strong>${i.name}</strong><br>
+            <small>${i.kcal} kcal | ${i.protein}g P</small>
+        </div>
+    `).join('');
+}
 async function deleteFood(idx) { const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; let log = PegasusStore.getFoodLog(dateStr); const item = log[idx]; if (item) { let tk = parseFloat(localStorage.getItem(PegasusStore.keys.kcalTotal)) || 0; let tp = parseFloat(localStorage.getItem(PegasusStore.keys.protTotal)) || 0; PegasusStore.updateDailyTotals(Math.max(0, tk - item.kcal), Math.max(0, tp - item.protein)); } log.splice(idx, 1); PegasusStore.saveFoodLog(dateStr, log); updateDietUI(); await PegasusCloud.push(); }
 function renderLibrary() { const lib = PegasusCloud.safeParse(PegasusStore.keys.library, []); const term = document.getElementById('libSearch').value.toLowerCase(); document.getElementById('libraryContainer').innerHTML = lib.filter(i => i.name.toLowerCase().includes(term)).map(i => `<div class="mini-card" onclick="quickAdd('${i.name}', ${i.kcal}, ${i.protein})"><span class="mini-label">+ ΠΡΟΣΘΗΚΗ</span><div class="mini-val">${i.name}</div></div>`).join(''); }
 function quickAdd(n, k, p) { document.getElementById("fName").value = n; document.getElementById("fKcal").value = k; document.getElementById("fProt").value = p; addFood(); openView('diet'); }
