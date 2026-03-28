@@ -533,15 +533,21 @@ function finishWorkout() {
     const now = new Date();
     
     if (activeBtn) {
-        const dayName = activeBtn.textContent.trim();
+        // [SYNC PATCH] Καθαρισμός από emojis καιρού για σωστό index matching
+        const dayName = activeBtn.textContent.trim().split(' ')[0]; 
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const currentDayIdx = now.getDay();
         const targetDayIdx = greekDays.indexOf(dayName);
-        let diff = targetDayIdx - currentDayIdx;
-        const targetDate = new Date();
-        targetDate.setDate(now.getDate() + diff);
-        workoutKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
-    } else {
+        
+        if (targetDayIdx !== -1) {
+            let diff = targetDayIdx - currentDayIdx;
+            const targetDate = new Date();
+            targetDate.setDate(now.getDate() + diff);
+            workoutKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+        }
+    } 
+    
+    if (!workoutKey) {
         workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     }
 
@@ -549,15 +555,19 @@ function finishWorkout() {
     data[workoutKey] = true;
     localStorage.setItem("pegasus_workouts_done", JSON.stringify(data));
 
+    // [METABOLIC RESET] Καθαρισμός των Cardio Offsets μετά την ολοκλήρωση
+    localStorage.setItem("pegasus_cardio_offset", "0");
+    localStorage.setItem("pegasus_cardio_offset_sets", "0");
+
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     if (window.renderCalendar) window.renderCalendar();
-
-    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push(true);
 
     setTimeout(() => {
         if (window.PegasusReporting) {
             const currentKcal = localStorage.getItem("pegasus_today_kcal") || "0";
             window.PegasusReporting.prepareAndSaveReport(currentKcal);
+            // Μηδενισμός θερμίδων για το επόμενο report
             localStorage.setItem("pegasus_today_kcal", "0.0");
         }
         location.reload(); 
@@ -601,7 +611,8 @@ window.onload = () => {
                     if (label) label.textContent = exName;
                     showVideo(currentIdx); 
                 } else {
-                    if (label) label.textContent = "Επίλεξε Ημέρα";
+                    // [CLEANUP] Αλλαγή από "Επίλεξε Ημέρα" σε όνομα συστήματος
+                    if (label) label.textContent = "PEGASUS OS";
                 }
                 console.log("PEGASUS: Warmup OFF -> Back to Exercise");
             } else {
@@ -697,12 +708,19 @@ window.onload = () => {
 
     if (typeof fetchWeather === "function") fetchWeather();
     
-    // 5. AUTO-SELECT TODAY
+    // 5. AUTO-SELECT TODAY & LABEL CLEANUP
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = greekDays[new Date().getDay()];
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
-            if (b.textContent === todayName) selectDay(b, todayName); 
+            // Έλεγχος με trim και split για να πιάνει την ημέρα ακόμα και με emoji καιρού
+            const btnText = b.textContent.trim().split(' ')[0];
+            if (btnText === todayName) {
+                selectDay(b, b.textContent);
+                // [CLEANUP] Εξαφάνιση του "Επιλέξτε Ημέρα" κατά την αυτόματη φόρτωση
+                const label = document.getElementById("phaseTimer");
+                if (label) label.textContent = ""; 
+            }
         }); 
     }, 300);
 };
