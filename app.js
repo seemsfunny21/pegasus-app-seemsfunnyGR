@@ -124,27 +124,33 @@ function selectDay(btn, day) {
     if (!list) return;
     list.innerHTML = ""; exercises = []; remainingSets = [];
 
-    mappedData.forEach((e, idx) => {
-        // Αποφεύγουμε να εμφανίσουμε την ίδια την Ποδηλασία στη λίστα
+mappedData.forEach((e, idx) => {
+        // [AUDIT PATCH v21.2] ΠΙΝΕΛΙΑ ΑΣΦΑΛΕΙΑΣ
+        // 1. Αγνοούμε εγγραφές χωρίς όνομα, παράσιτα "αα" ή "undefined"
+        if (!e.name || e.name === "αα" || e.name.includes("undefined")) return;
+
+        // 2. Απόκρυψη Ποδηλασίας από τη λίστα (Shadow Tracking)
         if (e.name.includes("Ποδηλασία")) return; 
 
         let finalSets = parseFloat(e.adjustedSets);
         
-        // --- THE DEDUCTION LOGIC ---
-        // Αν η άσκηση ανήκει στα Πόδια, αφαιρούμε το Cardio Credit
+        // 3. DEDUCTION LOGIC: Αφαίρεση Cardio Credit από τα Πόδια
         if (e.muscleGroup === "Πόδια" && cardioCredit > 0 && finalSets > 0) {
             let deduction = Math.min(finalSets, cardioCredit);
             finalSets = parseFloat((finalSets - deduction).toFixed(1));
-            cardioCredit -= deduction; // Μειώνουμε το διαθέσιμο credit για την επόμενη άσκηση ποδιών
+            cardioCredit = parseFloat((cardioCredit - deduction).toFixed(1));
         }
 
         const d = document.createElement("div");
         d.className = "exercise"; 
         d.dataset.total = finalSets; d.dataset.done = 0; d.dataset.index = idx;
 
+        // 4. VISUAL FEEDBACK: Αν τα σετ μηδενίστηκαν, η άσκηση γίνεται γκρι (Κερδισμένη)
         if (finalSets <= 0) {
             d.classList.add("exercise-skipped");
-            d.style.opacity = "0.2"; d.style.filter = "grayscale(100%)"; d.style.pointerEvents = "none";
+            d.style.opacity = "0.2"; 
+            d.style.filter = "grayscale(100%)"; 
+            d.style.pointerEvents = "none";
         }
 
         const cleanName = e.name.trim();
@@ -155,14 +161,17 @@ function selectDay(btn, day) {
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">0/${finalSets}</div>
                 <div class="exercise-name">${e.isCompleted ? `${cleanName} 🎯` : cleanName}</div>
-              <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
-               onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
+                <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
+                       onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
         `;
+
         list.appendChild(d);
         exercises.push(d);
-       remainingSets.push(finalSets);
+        
+        // 5. ENGINE SYNC: Ενημέρωση του χρονοδιακόπτη με τα μειωμένα σετ
+        remainingSets.push(finalSets);
     });
 
     if (typeof calculateTotalTime === "function") calculateTotalTime();
