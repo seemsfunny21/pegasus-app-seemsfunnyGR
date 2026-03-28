@@ -124,7 +124,7 @@ function selectDay(btn, day) {
         return; 
     }
 
-    // [PUSH TRIGGER] Συγχρονισμός πριν από κάθε αλλαγή ημέρας για ασφάλεια δεδομένων
+    // [PUSH TRIGGER] Συγχρονισμός πριν από κάθε αλλαγή ημέρας
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 
     // UI: Ενημέρωση Navbar Buttons
@@ -146,12 +146,12 @@ function selectDay(btn, day) {
 
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
-    // Base Data Fetching: Δυναμικός υπολογισμός προγράμματος
+    // Base Data Fetching
     let rawBaseData = (typeof window.calculateDailyProgram !== 'undefined') ? 
                       window.calculateDailyProgram(day, isRainy) : 
                       ((window.program[day]) ? [...window.program[day]] : []);
 
-    // FRIDAY SPILLOVER LOGIC: Αν Παρασκευή & ΟΧΙ βροχή -> Πρόσθεσε Κυριακή (εκτός Ποδηλασίας)
+    // FRIDAY SPILLOVER LOGIC: Αν Παρασκευή & ΟΧΙ βροχή -> Πρόσθεσε Κυριακή
     if (day === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
         const bonus = window.program["Κυριακή"]
             .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
@@ -160,22 +160,21 @@ function selectDay(btn, day) {
         console.log("PEGASUS: Sunday Exercises Added to Friday (No Rain detected).");
     }
 
-    // Optimizer Integration: Προσαρμογή σετ βάσει εβδομαδιαίας προόδου
+    // Optimizer Integration
     let mappedData = window.PegasusOptimizer ? window.PegasusOptimizer.apply(day, rawBaseData) : 
                      rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
 
-    // Cardio Deduction Logic: Αφαίρεση σετ ποδιών βάσει χιλιομέτρων
+    // Cardio Deduction Logic
     let cardioKey = window.PegasusManifest?.workout.cardio_offset || "pegasus_cardio_offset_sets";
     let cardioCredit = parseFloat(localStorage.getItem(cardioKey)) || 0;
     
-    // Ταξινόμηση: Οι ασκήσεις με 0 σετ μεταφέρονται στο τέλος
+    // Ταξινόμηση
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
 
     const list = document.getElementById("exList");
     if (!list) return;
     list.innerHTML = ""; 
     
-    // Καθαρισμός πινάκων ελέγχου
     exercises = []; 
     remainingSets = []; 
 
@@ -185,7 +184,6 @@ function selectDay(btn, day) {
         let finalSets = parseFloat(e.adjustedSets);
         const muscle = (window.exercisesDB?.find(ex => ex.name.trim() === e.name.trim()))?.muscleGroup || "Άλλο";
 
-        // Deduction logic for Legs based on Cardio Credit
         if (muscle === "Πόδια" && cardioCredit > 0 && finalSets > 0) {
             let deduction = Math.min(finalSets, cardioCredit);
             finalSets = parseFloat((finalSets - deduction).toFixed(1));
@@ -207,7 +205,7 @@ function selectDay(btn, day) {
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || "";
 
-d.innerHTML = `
+        d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">0/${finalSets}</div>
                 <div class="exercise-name">${cleanName}</div>
@@ -218,16 +216,15 @@ d.innerHTML = `
         `;
         list.appendChild(d);
         exercises.push(d);
+        remainingSets.push(finalSets);
     });
-
-    // 🔥 ΔΙΟΡΘΩΣΗ v10.1.2: Υποχρεωτική αρχικοποίηση του πίνακα remainingSets
-    // Χωρίς αυτό, το "Επόμενο" (btnNext) δεν ξέρει αν υπάρχουν υπόλοιπα σετ.
-    remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
 
     if (typeof calculateTotalTime === "function") calculateTotalTime();
     
-    // Εμφάνιση του πρώτου βίντεο
-    if (typeof showVideo === "function") showVideo(0);
+    // 🔥 ΔΙΟΡΘΩΣΗ v10.1.7: Delay 100ms για να προλάβει το DOM να αναγνωρίσει τα .weight-input
+    setTimeout(() => {
+        if (typeof showVideo === "function") showVideo(0);
+    }, 100);
     
     console.log(`PEGASUS: Day ${day} loaded. Circuit ready with ${exercises.length} exercises.`);
 }
