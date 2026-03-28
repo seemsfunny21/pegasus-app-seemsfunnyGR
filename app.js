@@ -83,6 +83,7 @@ const getMuscleGroup = (exName) => {
 };
 
 /* ===== SELECTDAY (v21.1 - CARDIO CREDIT INTEGRATED) ===== */
+/* ===== SELECTDAY (v21.3 - GHOST & DEDUCTION FILTER) ===== */
 function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
@@ -112,10 +113,7 @@ function selectDay(btn, day) {
         mappedData = rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
     }
 
-    // === PEGASUS CARDIO CREDIT CALCULATION ===
-    // Διαβάζουμε το σημερινό offset από το cardio.js (π.χ. 0.6 ή 3.0 σετ)
-    // Προσοχή: Χρησιμοποιούμε μόνο το credit για Πόδια.
-    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    // === PEGASUS CARDIO CREDIT ===
     let cardioCredit = parseFloat(localStorage.getItem("pegasus_cardio_offset_sets")) || 0;
 
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
@@ -124,17 +122,15 @@ function selectDay(btn, day) {
     if (!list) return;
     list.innerHTML = ""; exercises = []; remainingSets = [];
 
-mappedData.forEach((e, idx) => {
-        // [AUDIT PATCH v21.2] ΠΙΝΕΛΙΑ ΑΣΦΑΛΕΙΑΣ
-        // 1. Αγνοούμε εγγραφές χωρίς όνομα, παράσιτα "αα" ή "undefined"
-        if (!e.name || e.name === "αα" || e.name.includes("undefined")) return;
-
-        // 2. Απόκρυψη Ποδηλασίας από τη λίστα (Shadow Tracking)
-        if (e.name.includes("Ποδηλασία")) return; 
+    mappedData.forEach((e, idx) => {
+        // [HARD FILTER] Αποκλεισμός φαντασμάτων και αερόβιας από τη λίστα
+        if (!e.name || e.name === "αα" || e.name.includes("undefined") || e.name.includes("Ποδηλασία") || e.adjustedSets < 1) {
+            return; 
+        }
 
         let finalSets = parseFloat(e.adjustedSets);
         
-        // 3. DEDUCTION LOGIC: Αφαίρεση Cardio Credit από τα Πόδια
+        // Deduction Logic
         if (e.muscleGroup === "Πόδια" && cardioCredit > 0 && finalSets > 0) {
             let deduction = Math.min(finalSets, cardioCredit);
             finalSets = parseFloat((finalSets - deduction).toFixed(1));
@@ -145,12 +141,9 @@ mappedData.forEach((e, idx) => {
         d.className = "exercise"; 
         d.dataset.total = finalSets; d.dataset.done = 0; d.dataset.index = idx;
 
-        // 4. VISUAL FEEDBACK: Αν τα σετ μηδενίστηκαν, η άσκηση γίνεται γκρι (Κερδισμένη)
         if (finalSets <= 0) {
             d.classList.add("exercise-skipped");
-            d.style.opacity = "0.2"; 
-            d.style.filter = "grayscale(100%)"; 
-            d.style.pointerEvents = "none";
+            d.style.opacity = "0.2"; d.style.filter = "grayscale(100%)"; d.style.pointerEvents = "none";
         }
 
         const cleanName = e.name.trim();
@@ -166,11 +159,8 @@ mappedData.forEach((e, idx) => {
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
         `;
-
         list.appendChild(d);
         exercises.push(d);
-        
-        // 5. ENGINE SYNC: Ενημέρωση του χρονοδιακόπτη με τα μειωμένα σετ
         remainingSets.push(finalSets);
     });
 
