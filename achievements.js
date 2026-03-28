@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Pegasus Achievements System - ALL-GREEN STABLE VERSION
+   Pegasus Achievements System - v18.6 MAXIMALIST (ANTI-CORRUPTION)
+   Protocol: Strict Data Analyst - Zero NaN Tolerance
    ========================================================================== */
 
 const allExercises = [
@@ -10,16 +11,28 @@ const allExercises = [
     "Stretching", "EMS Κοιλιακών", "EMS Πλάτης", "EMS Ποδιών", "Προθέρμανση"
 ];
 
-let userStats = JSON.parse(localStorage.getItem('pegasus_stats')) || {
-    totalSets: 0,
-    exerciseHistory: {}
-};
+// 🔥 ANTI-NaN INITIALIZATION
+let rawStats = localStorage.getItem('pegasus_stats');
+let userStats = { totalSets: 0, exerciseHistory: {} };
+
+try {
+    if (rawStats) {
+        let parsed = JSON.parse(rawStats);
+        // Έλεγχος αν τα δεδομένα είναι έγκυροι αριθμοί
+        userStats.totalSets = isNaN(parseInt(parsed.totalSets)) ? 0 : parseInt(parsed.totalSets);
+        userStats.exerciseHistory = (parsed.exerciseHistory && typeof parsed.exerciseHistory === 'object') ? parsed.exerciseHistory : {};
+    }
+} catch (e) {
+    console.error("PEGASUS: Corrupt stats detected. Resetting to 0.");
+}
 
 /**
- * Ενημέρωση προόδου
+ * Ενημέρωση προόδου (Global Bridge)
  */
 window.updateAchievements = function(exerciseName) {
+    if (!exerciseName) return;
     const cleanName = exerciseName.trim();
+    
     userStats.totalSets++;
 
     if (!userStats.exerciseHistory[cleanName]) {
@@ -32,17 +45,18 @@ window.updateAchievements = function(exerciseName) {
 };
 
 /**
- * Σχεδίαση του UI - Διορθωμένο σε ΠΡΑΣΙΝΟ
+ * Σχεδίαση του UI - PEGASUS GREEN
  */
 window.renderAchievements = function() {
     const content = document.getElementById('achPanelContent');
     if (!content) return;
 
-    const currentLevel = Math.floor(userStats.totalSets / 20) + 1;
-    const xpInLevel = userStats.totalSets % 20;
+    // 🔥 SAFE CALCULATION (Fallback σε Level 1 αν υπάρξει σφάλμα)
+    const sets = parseInt(userStats.totalSets) || 0;
+    const currentLevel = Math.floor(sets / 20) + 1;
+    const xpInLevel = sets % 20;
     const progressPercent = (xpInLevel / 20) * 100;
 
-    // Εδώ άλλαξα το #64B5F6 (Μπλε) σε #4CAF50 (Πράσινο)
     let html = `
         <div style="background:#111; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #4CAF50; text-align:center;">
             <div style="color:#4CAF50; font-size:12px; font-weight:bold; letter-spacing:1px; margin-bottom:5px;">PEGASUS RANK</div>
@@ -57,7 +71,7 @@ window.renderAchievements = function() {
         <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:15px;">
             <div style="background:#111; padding:10px; border-radius:5px; text-align:center; border: 1px solid #222;">
                 <span style="font-size:12px; color:#aaa;">Συνολικά Σετ:</span>
-                <span style="font-size:18px; color:#4CAF50; font-weight:bold; margin-left:10px;">${userStats.totalSets}</span>
+                <span style="font-size:18px; color:#4CAF50; font-weight:bold; margin-left:10px;">${sets}</span>
             </div>
         </div>
 
@@ -97,7 +111,7 @@ function checkMilestones(name) {
 function showAchievementPopup(text) {
     const container = document.getElementById('achievement-container') || createAchievementContainer();
     const toast = document.createElement('div');
-    toast.className = 'achievement-toast'; // Θα πάρει το στυλ από το CSS που φτιάξαμε πριν
+    toast.className = 'achievement-toast';
     toast.innerText = `🏆 ${text}`;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
@@ -110,5 +124,3 @@ function createAchievementContainer() {
     document.body.appendChild(div);
     return div;
 }
-
-// ΑΦΑΙΡΕΣΗ ΤΟΥ ΠΑΛΙΟΥ INLINE STYLE ΠΟΥ ΕΚΑΝΕ ΤΑ ΠΡΑΓΜΑΤΑ ΜΠΛΕ/ΧΡΥΣΑ
