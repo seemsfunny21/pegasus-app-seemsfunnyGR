@@ -82,7 +82,7 @@ const getMuscleGroup = (exName) => {
     return "Άλλο";
 };
 
-/* ===== SELECTDAY (WEATHER & OPTIMIZER INTEGRATED) ===== */
+/* ===== SELECTDAY (v21.1 - CARDIO CREDIT INTEGRATED) ===== */
 function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
@@ -99,21 +99,24 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    // 1. WEATHER DETECTION (Από το νέο weather.js)
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
 
-    // 2. FETCH DATA
     let rawBaseData = (typeof window.calculateDailyProgram !== 'undefined') ? 
                       window.calculateDailyProgram(day, isRainy) : 
                       ((window.program[day]) ? [...window.program[day]] : []);
 
-    // 3. APPLY OPTIMIZER (The 45m Master)
     let mappedData = [];
     if (window.PegasusOptimizer) {
         mappedData = window.PegasusOptimizer.apply(day, rawBaseData);
     } else {
         mappedData = rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
     }
+
+    // === PEGASUS CARDIO CREDIT CALCULATION ===
+    // Διαβάζουμε το σημερινό offset από το cardio.js (π.χ. 0.6 ή 3.0 σετ)
+    // Προσοχή: Χρησιμοποιούμε μόνο το credit για Πόδια.
+    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    let cardioCredit = parseFloat(localStorage.getItem("pegasus_cardio_offset_sets")) || 0;
 
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
 
@@ -122,11 +125,24 @@ function selectDay(btn, day) {
     list.innerHTML = ""; exercises = []; remainingSets = [];
 
     mappedData.forEach((e, idx) => {
+        // Αποφεύγουμε να εμφανίσουμε την ίδια την Ποδηλασία στη λίστα
+        if (e.name.includes("Ποδηλασία")) return; 
+
+        let finalSets = parseFloat(e.adjustedSets);
+        
+        // --- THE DEDUCTION LOGIC ---
+        // Αν η άσκηση ανήκει στα Πόδια, αφαιρούμε το Cardio Credit
+        if (e.muscleGroup === "Πόδια" && cardioCredit > 0 && finalSets > 0) {
+            let deduction = Math.min(finalSets, cardioCredit);
+            finalSets = parseFloat((finalSets - deduction).toFixed(1));
+            cardioCredit -= deduction; // Μειώνουμε το διαθέσιμο credit για την επόμενη άσκηση ποδιών
+        }
+
         const d = document.createElement("div");
         d.className = "exercise"; 
-        d.dataset.total = e.adjustedSets; d.dataset.done = 0; d.dataset.index = idx;
+        d.dataset.total = finalSets; d.dataset.done = 0; d.dataset.index = idx;
 
-        if (e.adjustedSets === 0) {
+        if (finalSets <= 0) {
             d.classList.add("exercise-skipped");
             d.style.opacity = "0.2"; d.style.filter = "grayscale(100%)"; d.style.pointerEvents = "none";
         }
@@ -137,16 +153,16 @@ function selectDay(btn, day) {
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
-                <div class="set-counter">0/${e.adjustedSets}</div>
+                <div class="set-counter">0/${finalSets}</div>
                 <div class="exercise-name">${e.isCompleted ? `${cleanName} 🎯` : cleanName}</div>
               <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
-       onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
+               onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
         `;
         list.appendChild(d);
         exercises.push(d);
-        remainingSets.push(parseInt(e.adjustedSets));
+        remainingSets.push(finalSets);
     });
 
     if (typeof calculateTotalTime === "function") calculateTotalTime();
