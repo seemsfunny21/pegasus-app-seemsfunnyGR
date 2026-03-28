@@ -787,9 +787,13 @@ window.onload = () => {
                 console.log(`[UI BRIDGE] Triggering: ${btnId}`);
 
                 // Αυτόματο κλείσιμο άλλων panels (εκτός από τα control buttons)
-                if (!btnId.includes("Save") && !btnId.includes("Start") && !btnId.includes("Next")) {
-                    document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
-                }
+
+if (!btnId.includes("Save") && !btnId.includes("Start") && !btnId.includes("Next")) {
+    // Κλείνει όλα τα Panels, τα Modals ΚΑΙ την κεντρική λίστα ασκήσεων
+    document.querySelectorAll('.pegasus-panel, #emsModal, #workout-container, #exList').forEach(p => {
+        p.style.display = "none";
+    });
+}
 
                 if (typeof target === 'function') {
                     target();
