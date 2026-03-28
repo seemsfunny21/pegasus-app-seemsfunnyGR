@@ -309,6 +309,148 @@ function runPhase() {
     }, 1000 / SPEED);
 }
 
+/* ===== 5. WORKOUT ENGINE CORE (RE-ESTABLISHED v10.2.5) ===== */
+function startPause() {
+    if (exercises.length === 0) return;
+    const vid = document.getElementById("video");
+    
+    if (vid && vid.src.includes("warmup")) { 
+        vid.loop = false; 
+        vid.pause(); 
+    }
+
+    if (!running && exercises[currentIdx].classList.contains("exercise-skipped")) {
+        let firstAvailable = exercises.findIndex(ex => !ex.classList.contains("exercise-skipped") && remainingSets[exercises.indexOf(ex)] > 0);
+        if (firstAvailable !== -1) { 
+            currentIdx = firstAvailable; 
+            showVideo(currentIdx); 
+        } else {
+            return;
+        }
+    }
+
+    running = !running;
+    const sBtn = document.getElementById("btnStart");
+    if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
+    
+    if (running) {
+        runPhase(); 
+    } else {
+        clearInterval(timer);
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
+    }
+}
+
+function runPhase() {
+    if (!running) return;
+    if (timer) clearInterval(timer);
+
+    if (remainingSets.every(s => s <= 0)) { 
+        finishWorkout(); 
+        return; 
+    }
+
+    const e = exercises[currentIdx];
+    if (!e) return;
+    const exName = e.querySelector(".weight-input").getAttribute("data-name");
+
+    exercises.forEach(ex => { 
+        ex.style.borderColor = "#222"; 
+        ex.style.background = "transparent"; 
+    });
+    e.style.borderColor = "#4CAF50"; 
+    e.style.background = "rgba(76, 175, 80, 0.1)";
+
+    let t = (phase === 0) ? 10 : (phase === 1 ? workoutPhases[1].d : workoutPhases[2].d);
+    let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
+
+    const label = document.getElementById("phaseTimer");
+    if (label) {
+        label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
+        label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
+    }
+
+    if (phase !== 2) showVideo(currentIdx);
+
+    timer = setInterval(() => {
+        t -= 1;
+        if (remainingSeconds > 0) { 
+            remainingSeconds -= 1; 
+            updateTotalBar(); 
+        }
+
+        if (phase === 1 || phase === 2) {
+            let currentKcal = parseFloat(localStorage.getItem(window.M?.nutrition.today_kcal || "pegasus_today_kcal")) || 0;
+            let burnRate = (phase === 1) ? (userWeight * 0.00017) : (userWeight * 0.00008); 
+            localStorage.setItem(window.M?.nutrition.today_kcal || "pegasus_today_kcal", (currentKcal + burnRate).toFixed(4));
+        }
+
+        if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
+
+        if (t <= 0) {
+            clearInterval(timer); 
+            playBeep();
+            
+            if (phase === 0) { 
+                phase = 1; 
+                runPhase(); 
+            } else if (phase === 1) {
+                let done = parseInt(e.dataset.done) || 0;
+                done++;
+                e.dataset.done = done;
+                remainingSets[currentIdx] = parseFloat(e.dataset.total) - done;
+                e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
+                
+                if (window.updateAchievements) window.updateAchievements(exName);
+                if (window.logPegasusSet) window.logPegasusSet(exName);
+                if (window.PegasusCloud) window.PegasusCloud.push(true);
+
+                phase = 2; 
+                runPhase();
+            } else {
+                let next = getNextIndexCircuit();
+                if (next !== -1) { 
+                    currentIdx = next; 
+                    phase = 0; 
+                    runPhase(); 
+                } else {
+                    finishWorkout();
+                }
+            }
+        }
+    }, 1000 / SPEED);
+}
+
+function skipToNextExercise() {
+    if (exercises.length === 0) return;
+    clearInterval(timer);
+
+    if ((phase === 1 || phase === 2) && running) {
+        const currentExNode = exercises[currentIdx];
+        const exName = currentExNode.querySelector(".weight-input").getAttribute("data-name");
+        
+        let done = parseInt(currentExNode.dataset.done) || 0;
+        done++;
+        currentExNode.dataset.done = done;
+        remainingSets[currentIdx]--;
+        
+        currentExNode.querySelector(".set-counter").textContent = `${done}/${currentExNode.dataset.total}`;
+        if (window.logPegasusSet) window.logPegasusSet(exName);
+    }
+
+    if (window.PegasusCloud) window.PegasusCloud.push(true);
+
+    let nextIdx = getNextIndexCircuit();
+    if (nextIdx !== -1) {
+        currentIdx = nextIdx; 
+        phase = 0; 
+        if (running) runPhase(); 
+        else showVideo(currentIdx);
+    } else {
+        finishWorkout();
+    }
+}
+
 /* ===== 6. SAVE & SKIP (DATA PERSISTENCE) ===== */
 function saveWeight(name, val) {
     const cleanName = name.trim();
