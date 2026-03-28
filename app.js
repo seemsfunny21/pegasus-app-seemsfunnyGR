@@ -1,4 +1,30 @@
 /* ==========================================================================
+   PEGASUS ISSUE LOGGER - v1.0 (DIAGNOSTIC MODE)
+   ========================================================================== */
+window.pegasusLogs = JSON.parse(localStorage.getItem("pegasus_system_logs") || "[]");
+
+// Υποκλοπή Console Errors & Warnings
+const originalError = console.error;
+const originalWarn = console.warn;
+
+console.error = function(...args) {
+    window.pegasusLogs.push({ type: "ERROR", time: new Date().toLocaleTimeString(), msg: args.join(" ") });
+    localStorage.setItem("pegasus_system_logs", JSON.stringify(window.pegasusLogs.slice(-50))); // Κρατάμε τα τελευταία 50
+    originalError.apply(console, args);
+};
+
+console.warn = function(...args) {
+    window.pegasusLogs.push({ type: "WARNING", time: new Date().toLocaleTimeString(), msg: args.join(" ") });
+    localStorage.setItem("pegasus_system_logs", JSON.stringify(window.pegasusLogs.slice(-50)));
+    originalWarn.apply(console, args);
+};
+
+// Global Catch για σφάλματα που "σκάνε" ξαφνικά
+window.onerror = function(msg, url, line) {
+    console.error(`Runtime Error: ${msg} at ${url}:${line}`);
+};
+
+/* ==========================================================================
    PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.8 - DRAGGABLE UI)
    Protocol: Native Metabolic Engine, Audio Unlocked, LIVE CLOUD SYNC
    + PEGASUS PATCH: Persistent Movable Panels, Zero-Time Protocol
