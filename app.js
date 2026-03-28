@@ -550,10 +550,6 @@ function finishWorkout() {
 }
 
 
-/* ==========================================================================
-   PEGASUS UI INITIALIZATION - v19.1 (MODULAR MASTER SYNC)
-   Protocol: Strict Modular Sync - Domain Isolation
-   ========================================================================== */
 window.onload = () => {
     // 1. Email & Reporting Initialization
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
@@ -573,53 +569,33 @@ window.onload = () => {
     const masterUI = { 
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-"btnWarmup": () => { 
+        "btnWarmup": () => { 
             const vid = document.getElementById("video");
             const label = document.getElementById("phaseTimer");
             
-            // 1. Έλεγχος αν η προθέρμανση είναι ήδη ON (Toggle OFF)
+            // Έλεγχος αν η προθέρμανση είναι ήδη ON (Toggle OFF)
             if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
                 vid.pause();
                 vid.style.display = "none";
                 
-                // Επαναφορά στην επιλεγμένη άσκηση αντί για το "Επίλεξε Ημέρα"
+                // Επαναφορά στην επιλεγμένη άσκηση
                 if (exercises.length > 0) {
                     const currentEx = exercises[currentIdx];
                     const wInput = currentEx ? currentEx.querySelector(".weight-input") : null;
                     const exName = wInput ? wInput.getAttribute("data-name") : "Άγνωστο";
                     if (label) label.textContent = exName;
-                    showVideo(currentIdx); // Επαναφορά του σωστού thumbnail/video
+                    showVideo(currentIdx); 
                 } else {
                     if (label) label.textContent = "Επίλεξε Ημέρα";
                 }
                 console.log("PEGASUS: Warmup OFF -> Back to Exercise");
             } else {
-                // 2. Ενεργοποίηση (Toggle ON)
+                // Ενεργοποίηση (Toggle ON)
                 phase = 0; 
                 currentIdx = 0; 
                 showVideo(null); 
                 if (label) label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual)";
                 console.log("PEGASUS: Warmup ON");
-            }
-        },
-
-       
-const masterUI = { 
-        "btnStart": startPause,
-        "btnNext": skipToNextExercise,
-        "btnWarmup": () => { 
-            const vid = document.getElementById("video");
-            const label = document.getElementById("phaseTimer");
-            if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
-                vid.pause(); vid.style.display = "none";
-                if (exercises.length > 0) {
-                    const exName = exercises[currentIdx]?.querySelector(".weight-input")?.getAttribute("data-name") || "Άγνωστο";
-                    if (label) label.textContent = exName;
-                    showVideo(currentIdx);
-                }
-            } else {
-                phase = 0; currentIdx = 0; showVideo(null); 
-                if (label) label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual)";
             }
         },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
@@ -653,13 +629,14 @@ const masterUI = {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 
-                // Πρωτόκολλο Καθαρισμού: Κλείνει τα Panels εκτός αν είναι κουμπιά εσωτερικής ενέργειας (Save/Close/Mute)
-                const isActionBtn = btnId.includes("Save") || btnId.includes("Close") || btnId.includes("btnStart") || btnId.includes("btnNext");
+                const target = masterUI[btnId];
+                
+                // Πρωτόκολλο Καθαρισμού: Κλείνει τα Panels εκτός αν είναι κουμπιά εσωτερικής ενέργειας
+                const isActionBtn = btnId.includes("Save") || btnId.includes("Close") || btnId.includes("btnStart") || btnId.includes("btnNext") || btnId === "btnWarmup";
                 if (!isActionBtn) {
                     document.querySelectorAll('.pegasus-panel, #emsModal, #cardioPanel').forEach(p => p.style.display = "none");
                 }
 
-                const target = masterUI[btnId];
                 if (typeof target === 'function') {
                     target();
                 } else if (target.panel) {
@@ -705,7 +682,7 @@ const masterUI = {
 
     if (typeof fetchWeather === "function") fetchWeather();
     
-    // Auto-select Today Logic
+    // 5. AUTO-SELECT TODAY
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayName = greekDays[new Date().getDay()];
     setTimeout(() => { 
@@ -714,7 +691,6 @@ const masterUI = {
         }); 
     }, 300);
 };
-
 /* === PEGASUS PREVIEW ENGINE (OPTIMIZER INTEGRATED) === */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
