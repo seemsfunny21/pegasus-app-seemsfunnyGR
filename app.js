@@ -536,7 +536,7 @@ window.openExercisePreview = function() {
         let img = (window.videoMap && window.videoMap[ex.name]) ? window.videoMap[ex.name] : ex.name.replace(/\s+/g, '').toLowerCase();
         content.innerHTML += `
             <div class="preview-item" style="display:inline-block; margin:10px; text-align:center;">
-                <img src="images/${img}image.png" onerror="this.src='images/placeholder.jpg'" style="width:140px; border:2px solid #4CAF50; border-radius:8px;">
+                <img src="images/${img}.png" onerror="this.src='images/placeholder.jpg'" style="width:140px; border:2px solid #4CAF50; border-radius:8px;">
                 <p style="color:#4CAF50; font-size:10px;">${ex.name} (${ex.adjustedSets || ex.sets} set)</p>
             </div>
         `;
