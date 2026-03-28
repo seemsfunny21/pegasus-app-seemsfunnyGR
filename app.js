@@ -225,13 +225,10 @@ function startPause() {
         }
     }
 
-    // 3. DIRECT START PROTOCOL (The Fix)
-    // Αν ξεκινάμε την προπόνηση, πηγαίνουμε κατευθείαν στην ΑΣΚΗΣΗ (Phase 1)
-    if (!running && (phase === 0)) {
-        phase = 1; 
-        console.log("PEGASUS: Bypassing Phase 0. Direct Start at Phase 1 (Exercise).");
-    }
-
+    // 3. BUFFER PROTOCOL: Διατηρούμε τη Phase 0 (Προετοιμασία 10s) 
+    // για να έχεις χρόνο να ετοιμαστείς πριν το 45άρι της άσκησης.
+    // Αφαιρέσαμε το bypass (phase = 1).
+    
     // 4. TOGGLE EXECUTION
     running = !running;
     const sBtn = document.getElementById("btnStart");
@@ -425,7 +422,9 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     const phaseLabel = label ? label.textContent : "";
     
-    // 2. [STRICT PRIORITY LOGIC]
+    // 2. [INTELLIGENT SELECTION LOGIC]
+    // Αν το label γράφει "Manual", δείχνουμε προθέρμανση.
+    // ΑΛΛΙΩΣ (ακόμα και στην Phase 0 / Προετοιμασία), δείχνουμε την ΑΣΚΗΣΗ.
     if (phaseLabel.includes("Manual") || i === null || i === undefined || i === -1) {
         name = "Προθέρμανση"; 
     } 
