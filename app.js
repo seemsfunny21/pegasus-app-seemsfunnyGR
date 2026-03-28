@@ -111,6 +111,13 @@ const getMuscleGroup = (exName) => {
 /* ===== SELECTDAY (v21.1 - CARDIO CREDIT INTEGRATED) ===== */
 /* ===== SELECTDAY (v21.3 - GHOST & DEDUCTION FILTER) ===== */
 function selectDay(btn, day) {
+   // PEGASUS SAFETY PATCH
+if (typeof window.program === 'undefined' || !window.program) {
+    console.error("❌ PEGASUS CRITICAL: window.program is missing! Check data.js");
+    const label = document.getElementById("phaseTimer");
+    if (label) label.textContent = "Σφάλμα: Λείπει το data.js";
+    return; 
+}
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', '#000', 'important');
