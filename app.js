@@ -206,7 +206,7 @@ function runPhase() {
     const wInput = e.querySelector(".weight-input");
     const exName = wInput ? wInput.getAttribute("data-name") : "Άγνωστο";
 
-    // UI Feedback
+    // UI Feedback - Διατήρηση 100%
     exercises.forEach(ex => { 
         ex.style.borderColor = "#222"; 
         ex.style.background = "transparent"; 
@@ -224,7 +224,7 @@ function runPhase() {
         label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
     }
 
-    // 2. ΚΛΗΣΗ VIDEO (Τώρα το label έχει ήδη τη λέξη "ΠΡΟΘΕΡΜΑΝΣΗ")
+    // 2. ΚΛΗΣΗ VIDEO
     if (phase !== 2) {
         showVideo(currentIdx);
     }
@@ -262,6 +262,13 @@ function runPhase() {
 
                 const counterDiv = e.querySelector(".set-counter");
                 if (counterDiv) counterDiv.textContent = `${done}/${total}`;
+                
+                // === [NEW] PEGASUS ACHIEVEMENT BRIDGE ===
+                if (window.updateAchievements) {
+                    console.log(`[BRIDGE] Logging set for: ${exName}`);
+                    window.updateAchievements(exName);
+                }
+                // =========================================
                 
                 if (window.logPegasusSet) window.logPegasusSet(exName);
                 
