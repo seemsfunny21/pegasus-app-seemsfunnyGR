@@ -1,45 +1,75 @@
 /* ==========================================================================
-    PEGASUS DATA ENGINE - v10.1.9 (FINAL SURGICAL ALIGNMENT)
-    Protocol: Matching GitHub Video Assets & Removing "One Arm" Exercises
+    PEGASUS DATA ENGINE - v10.2 (DYNAMIC & SATURDAY-CYCLE READY)
+    Protocol: Autopilot Mode - Manual Overrides Disabled
+    Single Source of Truth: exercisesDB
    ========================================================================== */
 
+// 1. DYNAMIC PROGRAM PLACEHOLDERS
+// Ο Optimizer θα αντικαταστήσει αυτά τα placeholders με πραγματικές ασκήσεις από το DB
 window.program = {
-    "Δευτέρα": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Lat Pulldowns", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Chest Flys", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Pushups", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Upright Rows", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Tricep Pulldowns", sets: 3, muscleGroup: "Χέρια" }
-    ],
-    "Τρίτη": [{ name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" }],
+    "Σάββατο": [{ name: "Cycling", sets: 1, muscleGroup: "Πόδια" }],
+    "Κυριακή": [{ name: "Cycling", sets: 1, muscleGroup: "Πόδια" }],
+    "Δευτέρα": [{ name: "Αποθεραπεία", sets: 0, muscleGroup: "None" }],
+    "Τρίτη": [
+        { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
+        { name: "Low Seated Row", sets: 5, muscleGroup: "Πλάτη" },
+        { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι" }
+    ], 
     "Τετάρτη": [
-        { name: "Bent Over Rows", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Lat Pulldowns Close", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Leg Extensions", sets: 3, muscleGroup: "Πόδια" },
-        { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός" },
-        { name: "Plank", sets: 3, muscleGroup: "Κορμός" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Preacher Bicep Curls", sets: 3, muscleGroup: "Χέρια" }
+        { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" },
+        { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός" }
     ],
-    "Πέμπτη": [{ name: "Stretching", sets: 1, muscleGroup: "Κορμός" }],
-    "Παρασκευή": [{ name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" }],
-    "Σάββατο": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Lat Pulldowns", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Upright Rows", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Reverse Seated Rows", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Tricep Pulldowns", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Leg Raise Hip Lift", sets: 3, muscleGroup: "Κορμός" }
-    ],
-    "Κυριακή": [{ name: "Cycling", sets: 1, muscleGroup: "Πόδια" }]
+    "Πέμπτη": [{ name: "Αποθεραπεία", sets: 0, muscleGroup: "None" }],
+    "Παρασκευή": [
+        { name: "Pushups", sets: 3, muscleGroup: "Στήθος" },
+        { name: "Lat Pulldowns", sets: 3, muscleGroup: "Πλάτη" }
+    ]
 };
 
-// --- ΑΥΣΤΗΡΗ ΑΝΤΙΣΤΟΙΧΙΣΗ ΜΕ ΤΑ FILENAMES ΤΩΝ ΦΩΤΟΓΡΑΦΙΩΝ ΣΟΥ ---
+// 2. MASTER EXERCISES DATABASE (The Brain)
+// Όλες οι ασκήσεις που έχεις ανεβάσει στο GitHub
+window.exercisesDB = [
+    // ΣΤΗΘΟΣ (Target: 24)
+    { name: "Chest Press", muscleGroup: "Στήθος" },
+    { name: "Chest Flys", muscleGroup: "Στήθος" },
+    { name: "Pushups", muscleGroup: "Στήθος" },
+    
+    // ΠΛΑΤΗ (Target: 24)
+    { name: "Low Seated Row", muscleGroup: "Πλάτη" },
+    { name: "Lat Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "Lat Pulldowns Close", muscleGroup: "Πλάτη" },
+    { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
+    { name: "Reverse Seated Rows", muscleGroup: "Πλάτη" },
+    { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "EMS Training", muscleGroup: "Πλάτη" },
+
+    // ΩΜΟΙ (Target: 16)
+    { name: "Upright Rows", muscleGroup: "Ώμοι" },
+    
+    // ΧΕΡΙΑ (Target: 16)
+    { name: "Bicep Curls", muscleGroup: "Χέρια" },
+    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια" },
+    { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
+
+    // ΚΟΡΜΟΣ (Target: 12)
+    { name: "Ab Crunches", muscleGroup: "Κορμός" },
+    { name: "Plank", muscleGroup: "Κορμός" },
+    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
+    { name: "Situps", muscleGroup: "Κορμός" },
+    { name: "Reverse Crunch", muscleGroup: "Κορμός" },
+    { name: "Lying Knee Raise", muscleGroup: "Κορμός" },
+
+    // ΠΟΔΙΑ (Target: 24 - Cardio Adjusted)
+    { name: "Leg Extensions", muscleGroup: "Πόδια" },
+    { name: "Glute Kickbacks", muscleGroup: "Πόδια" },
+    { name: "Cycling", muscleGroup: "Πόδια" },
+
+    // OTHER
+    { name: "Stretching", muscleGroup: "Κορμός" },
+    { name: "Warmup", muscleGroup: "None" }
+];
+
+// 3. ASSET MAPPING (v10.2)
 window.videoMap = {
     "Ab Crunches": "abcrunches",
     "Bent Over Rows": "bentoverrows",
@@ -68,31 +98,4 @@ window.videoMap = {
     "Warmup": "warmup"
 };
 
-window.exercisesDB = [
-    { name: "Ab Crunches", muscleGroup: "Κορμός" },
-    { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
-    { name: "Bicep Curls", muscleGroup: "Χέρια" },
-    { name: "Chest Flys", muscleGroup: "Στήθος" },
-    { name: "Chest Press", muscleGroup: "Στήθος" },
-    { name: "Cycling", muscleGroup: "Πόδια" },
-    { name: "EMS Training", muscleGroup: "Πλάτη" },
-    { name: "Glute Kickbacks", muscleGroup: "Πόδια" },
-    { name: "Lat Pulldowns", muscleGroup: "Πλάτη" },
-    { name: "Lat Pulldowns Close", muscleGroup: "Πλάτη" },
-    { name: "Leg Extensions", muscleGroup: "Πόδια" },
-    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
-    { name: "Low Seated Row", muscleGroup: "Πλάτη" },
-    { name: "Lying Knee Raise", muscleGroup: "Κορμός" },
-    { name: "Plank", muscleGroup: "Κορμός" },
-    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια" },
-    { name: "Pushups", muscleGroup: "Στήθος" },
-    { name: "Reverse Crunch", muscleGroup: "Κορμός" },
-    { name: "Reverse Seated Rows", muscleGroup: "Πλάτη" },
-    { name: "Situps", muscleGroup: "Κορμός" },
-    { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
-    { name: "Stretching", muscleGroup: "Κορμός" },
-    { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
-    { name: "Upright Rows", muscleGroup: "Ώμοι" }
-];
-
-console.log("✅ PEGASUS DATA ENGINE: Final v10.1.9 Surgical Alignment Active.");
+console.log("🚀 PEGASUS DATA ENGINE: v10.2 Dynamic Mapping Loaded.");
