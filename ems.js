@@ -1,12 +1,15 @@
 /* ==========================================================================
-   PEGASUS EMS MODULE - STRICT ANALYST EDITION (V3.2)
-   Unified Keys & Secure Async Sync
+   PEGASUS EMS MODULE - v4.1 FULL RESTORATION
+   Protocol: Strict Data Analyst - Zero Logic Loss
    ========================================================================== */
 
+/**
+ * 1. ΗΜΕΡΟΛΟΓΙΑΚΟΣ ΥΠΟΛΟΓΙΣΜΟΣ (Πλήρης Λογική v3.2)
+ */
 function getTargetWednesday() {
     const now = new Date();
     
-    // ΔΙΟΡΘΩΣΗ 1: Προσαρμογή στην Ελληνική εβδομάδα (Κυριακή = 7 αντί για 0)
+    // ΔΙΟΡΘΩΣΗ: Προσαρμογή στην Ελληνική εβδομάδα (Κυριακή = 7 αντί για 0)
     let currentDay = now.getDay(); 
     if (currentDay === 0) currentDay = 7; 
     
@@ -15,7 +18,7 @@ function getTargetWednesday() {
     const targetDate = new Date(now);
     targetDate.setDate(now.getDate() + diff);
     
-    // ΔΙΟΡΘΩΣΗ 2: Αποφυγή σφάλματος Timezone (UTC) του toISOString() 
+    // Αποφυγή σφάλματος Timezone (UTC)
     const year = targetDate.getFullYear();
     const month = String(targetDate.getMonth() + 1).padStart(2, '0');
     const day = String(targetDate.getDate()).padStart(2, '0');
@@ -23,27 +26,37 @@ function getTargetWednesday() {
     return `${year}-${month}-${day}`;
 }
 
+/**
+ * 2. ΕΚΚΙΝΗΣΗ UI (Πλήρης Λογική v3.2)
+ */
 window.logEMSData = function() {
+    console.log("PEGASUS: EMS Entry Triggered.");
+    
     const toolsPanel = document.getElementById('toolsPanel');
     if (toolsPanel) toolsPanel.style.display = 'none';
 
+    // Αν δεν υπάρχει το Modal στο HTML, το δημιουργεί δυναμικά (Safe Guard)
     const emsModal = document.getElementById('emsModal') || createEMSModal();
+    
     const dateInput = document.getElementById('emsDate');
     const avgInput = document.getElementById('emsAvg');
     const kcalInput = document.getElementById('emsKcal');
 
-    dateInput.value = getTargetWednesday();
-    avgInput.value = ""; 
-    kcalInput.value = ""; 
+    if (dateInput) dateInput.value = getTargetWednesday();
+    if (avgInput) avgInput.value = ""; 
+    if (kcalInput) kcalInput.value = ""; 
 
     emsModal.style.display = 'block';
-    setTimeout(() => avgInput.focus(), 100);
+    setTimeout(() => { if(avgInput) avgInput.focus(); }, 100);
 };
 
+/**
+ * 3. ΑΠΟΘΗΚΕΥΣΗ ΚΑΙ ΣΥΓΧΡΟΝΙΣΜΟΣ (Πλήρης Λογική v3.2)
+ */
 window.saveEMSFinal = async function() {
-    const date = document.getElementById('emsDate').value;
-    const avg = document.getElementById('emsAvg').value;
-    const kcal = document.getElementById('emsKcal').value;
+    const date = document.getElementById('emsDate')?.value;
+    const avg = document.getElementById('emsAvg')?.value;
+    const kcal = document.getElementById('emsKcal')?.value;
 
     if (!date || isNaN(parseFloat(avg)) || isNaN(parseFloat(kcal))) {
         alert("ΑΠΟΤΥΧΙΑ: Εισάγετε έγκυρα αριθμητικά δεδομένα.");
@@ -54,6 +67,7 @@ window.saveEMSFinal = async function() {
     const historyKey = `pegasus_history_${date}`;
     const weeklyKey = 'pegasus_weekly_history';
     
+    // Πίστωση Σετ στις Μυϊκές Ομάδες
     let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
     };
@@ -63,10 +77,12 @@ window.saveEMSFinal = async function() {
     });
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    let todayKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-    todayKcal += parseFloat(kcal);
-    localStorage.setItem("pegasus_today_kcal", todayKcal.toFixed(1));
+    // Ενημέρωση Θερμίδων Διατροφής (pegasus_diet_kcal για συγχρονισμό με data.js)
+    let dietKcalKey = "pegasus_diet_kcal";
+    let currentDietKcal = parseFloat(localStorage.getItem(dietKcalKey)) || 0;
+    localStorage.setItem(dietKcalKey, (currentDietKcal + parseFloat(kcal)).toFixed(1));
 
+    // Καταγραφή στο Ιστορικό Ημέρας
     const emsEntry = {
         id: "ems_" + timestamp,
         date: date,
@@ -82,8 +98,9 @@ window.saveEMSFinal = async function() {
         localStorage.setItem(historyKey, JSON.stringify(dayHistory));
         localStorage.setItem(`pegasus_day_status_${date}`, 'COMPLETED');
 
-        // ΚΡΙΣΙΜΟ: Υποχρεωτική αναμονή (await) για να μην κοπεί η σύνδεση
+        // Υποχρεωτική αναμονή για Cloud Sync
         if (window.PegasusCloud) {
+            console.log("PEGASUS: Triggering Cloud Push...");
             await window.PegasusCloud.push(true);
         }
         
@@ -91,20 +108,48 @@ window.saveEMSFinal = async function() {
         window.location.reload();
     } catch (e) {
         console.error("Storage Error:", e);
+        alert("Σφάλμα κατά την αποθήκευση.");
     }
 };
 
+/**
+ * 4. UI HELPER: CLOSE MODAL
+ */
+window.closeEMSModal = function() {
+    const modal = document.getElementById('emsModal');
+    if (modal) modal.style.display = 'none';
+};
+
+/**
+ * 5. DYNAMIC MODAL CREATOR (Πλήρης Λογική v3.2)
+ * Διασφαλίζει ότι το UI θα υπάρχει ακόμα και αν λείπει από το HTML
+ */
 function createEMSModal() {
+    if (document.getElementById('emsModal')) return document.getElementById('emsModal');
+    
     const div = document.createElement('div');
     div.id = 'emsModal';
     div.className = 'pegasus-panel';
-    div.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#0a0a0a; border:1px solid #4CAF50; padding:25px; border-radius:15px; z-index:10005; width:300px; text-align:center;";
+    div.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#0a0a0a; border:2px solid #4CAF50; padding:25px; border-radius:15px; z-index:99999; width:320px; text-align:center; box-shadow: 0 0 30px rgba(0,0,0,1); color:white;";
+    
     div.innerHTML = `
-        <h2 style="color:#4CAF50; margin-bottom:15px;">⚡ EMS LOG</h2>
-        <input type="date" id="emsDate" style="width:100%; margin-bottom:10px; background:#111; color:#fff; border:1px solid #333; padding:8px;">
-        <input type="number" id="emsAvg" placeholder="Ένταση %" style="width:100%; margin-bottom:10px; background:#111; color:#fff; border:1px solid #333; padding:8px;">
-        <input type="number" id="emsKcal" placeholder="Θερμίδες" style="width:100%; margin-bottom:15px; background:#111; color:#fff; border:1px solid #333; padding:8px;">
-        <button onclick="saveEMSFinal()" style="width:100%; background:#4CAF50; color:#000; border:none; padding:12px; font-weight:bold; border-radius:5px; cursor:pointer;">ΚΑΤΑΓΡΑΦΗ</button>
+        <h3 style="color:#4CAF50; margin-top:0;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</h3>
+        <div style="margin-top:15px;">
+            <label style="color:#888; font-size:11px; display:block; margin-bottom:5px;">ΗΜΕΡΟΜΗΝΙΑ:</label>
+            <input type="date" id="emsDate" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing:border-box; text-align:center;">
+        </div>
+        <div style="margin-top:15px;">
+            <label style="color:#888; font-size:11px; display:block; margin-bottom:5px;">ΜΕΣΗ ΕΝΤΑΣΗ (%):</label>
+            <input type="number" id="emsAvg" step="0.1" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing:border-box; text-align:center;">
+        </div>
+        <div style="margin-top:15px;">
+            <label style="color:#888; font-size:11px; display:block; margin-bottom:5px;">ΘΕΡΜΙΔΕΣ (KCAL):</label>
+            <input type="number" id="emsKcal" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing:border-box; text-align:center; margin-bottom:20px;">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="saveEMSFinal()" style="flex:1; background:#4CAF50; color:black; border:none; padding:12px; border-radius:5px; cursor:pointer; font-weight:bold;">ΣΩΣΕ</button>
+            <button onclick="closeEMSModal()" style="flex:1; background:#333; color:white; border:none; padding:12px; border-radius:5px; cursor:pointer;">ΑΚΥΡΟ</button>
+        </div>
     `;
     document.body.appendChild(div);
     return div;
