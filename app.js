@@ -25,12 +25,20 @@ window.onerror = function(msg, url, line) {
     console.error(`Runtime Error: ${msg} at ${url}:${line}`);
 };
 
-/* ===== 2. CORE VARIABLES & MANIFEST SYNC ===== */
-M = window.PegasusManifest; 
+/* ===== 2. CORE VARIABLES & MANIFEST SYNC (ISOLATION MODE) ===== */
+// Χρησιμοποιούμε PegasusM αντί για M για να αποφύγουμε το σφάλμα "Assignment to constant variable"
+var PegasusM = window.PegasusManifest; 
 
-if (!M) {
+if (!PegasusM) {
     console.error("❌ CRITICAL: Manifest not found. Link failed.");
+    // Emergency Fallback
+    PegasusM = window.PegasusManifest;
 }
+
+// Δημιουργούμε μια τοπική αναφορά για να μη χρειαστεί να αλλάξουμε όλο τον κώδικα παρακάτω
+var M = PegasusM; 
+
+/* ========================================================================== */
 
 var exercises = [];
 var remainingSets = [];
