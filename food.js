@@ -113,47 +113,67 @@ window.updateFoodUI = function() {
     const display = document.getElementById('currentFoodDateDisplay');
     if (display) display.textContent = dateStr;
 
-    // DATA ISOLATION: Ανάκτηση μέσω PegasusStore
+    // DATA ISOLATION: Ανάκτηση μέσω PegasusStore (v8.9 Logic)
     const foodLog = window.PegasusStore ? window.PegasusStore.getFoodLog(dateStr) : JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
     const listContainer = document.getElementById('todayFoodList');
     if (!listContainer) return;
     
     listContainer.innerHTML = "";
-    let totalKcal = 0, totalProtein = 0;
+    
+    // 🔥 ZERO-BUG CALCULATION: Πλήρης ανακαταμέτρηση από το Raw Log
+    let totalKcal = 0;
+    let totalProtein = 0;
 
     foodLog.forEach((item, index) => {
-        totalKcal += parseFloat(item.kcal || 0);
-        totalProtein += parseFloat(item.protein || 0);
+        // Μετατροπή σε αριθμό με διασφάλιση (Fallback σε 0 αν είναι null/NaN)
+        const kcalVal = parseFloat(item.kcal) || 0;
+        const protVal = parseFloat(item.protein) || 0;
+        
+        totalKcal += kcalVal;
+        totalProtein += protVal;
+
         const div = document.createElement('div');
         div.className = 'food-item';
         div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border-left:3px solid #4CAF50; border-radius:4px;";
         div.innerHTML = `
             <div style="display: flex; flex-direction: column; flex: 1;">
                 <span style="font-weight: bold; color: #eee; font-size: 14px;">${item.name}</span>
-                <span style="font-size: 11px; color: #4CAF50;">${item.kcal} kcal | ${item.protein || 0}g P</span>
+                <span style="font-size: 11px; color: #4CAF50;">${kcalVal} kcal | ${protVal}g P</span>
             </div>
             <button class="delete-btn" onclick="deleteFoodItem(${index})">✕</button>
         `;
         listContainer.appendChild(div);
     });
 
-    // DATA ISOLATION: Αποθήκευση συνόλων μέσω PegasusStore
+    // 🔥 SYNC FIX: Ενημέρωση ΟΛΩΝ των πιθανών κλειδιών για να μην υπάρχει Desync
+    const finalKcal = totalKcal.toFixed(1);
+    const finalProt = totalProtein.toFixed(1);
+
     if (window.PegasusStore) {
         window.PegasusStore.updateDailyTotals(totalKcal, totalProtein);
     } else {
-        localStorage.setItem("pegasus_today_kcal", Math.round(totalKcal).toString());
-        localStorage.setItem("pegasus_today_protein", Math.round(totalProtein).toString());
+        localStorage.setItem("pegasus_diet_kcal", finalKcal);
+        localStorage.setItem("pegasus_today_kcal", finalKcal); // Key alignment patch
+        localStorage.setItem("pegasus_today_protein", finalProt);
     }
 
+    // UI REFRESH - DOM UPDATES
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = Math.round(totalKcal);
     
     const proteinNum = document.getElementById('todayTotalProtein'); 
     if (proteinNum) proteinNum.textContent = Math.round(totalProtein);
     
-    if (typeof window.updateProgressBars === "function") updateProgressBars(totalKcal, totalProtein);
+    // Ενημέρωση Progress Bars (Dashboard Sync)
+    if (typeof window.updateProgressBars === "function") {
+        window.updateProgressBars(totalKcal, totalProtein);
+    }
+
+    // Διατήρηση περιφερειακών λειτουργιών (Maximalist Retention)
     if (typeof window.filterLibrary === "function") window.filterLibrary(); 
     if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
+
+    console.log(`[PEGASUS AUDIT]: Date: ${dateStr} | Total: ${totalKcal} kcal | Items: ${foodLog.length}`);
 };
 
 window.addFoodItem = function(name, kcal, protein) {
