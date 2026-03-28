@@ -198,7 +198,15 @@ function selectDay(btn, day) {
 function startPause() {
     if (exercises.length === 0) return;
 
-    // 1. SKIP SKIPPED EXERCISES (Το δικό σου logic - Διατήρηση 100%)
+    const vid = document.getElementById("video");
+
+    // 1. CLEANUP: Αν παίζει η χειροκίνητη προθέρμανση, την τερματίζουμε αμέσως
+    if (vid && vid.src.includes("warmup")) {
+        vid.loop = false;
+        vid.pause();
+    }
+
+    // 2. SKIP SKIPPED EXERCISES
     if (!running && exercises[currentIdx].classList.contains("exercise-skipped")) {
         let firstAvailable = -1;
         for (let i = 0; i < exercises.length; i++) {
@@ -217,14 +225,14 @@ function startPause() {
         }
     }
 
-    // 2. WARMUP BYPASS (Η νέα διόρθωση)
-    // Αν πατάς Έναρξη και είμαστε στην αρχή (Phase 0), πήγαινε κατευθείαν στην ΑΣΚΗΣΗ (Phase 1)
-    if (!running && phase === 0) {
+    // 3. DIRECT START PROTOCOL (The Fix)
+    // Αν ξεκινάμε την προπόνηση, πηγαίνουμε κατευθείαν στην ΑΣΚΗΣΗ (Phase 1)
+    if (!running && (phase === 0)) {
         phase = 1; 
-        console.log("PEGASUS: Bypassing Warmup Phase for direct start.");
+        console.log("PEGASUS: Bypassing Phase 0. Direct Start at Phase 1 (Exercise).");
     }
 
-    // 3. TOGGLE EXECUTION
+    // 4. TOGGLE EXECUTION
     running = !running;
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
@@ -620,34 +628,38 @@ window.onload = () => {
     const masterUI = { 
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-        "btnWarmup": () => { 
+"btnWarmup": () => { 
             const vid = document.getElementById("video");
             const label = document.getElementById("phaseTimer");
             
-            // Έλεγχος αν η προθέρμανση είναι ήδη ON (Toggle OFF)
+            // 1. ΕΛΕΓΧΟΣ: Αν παίζει ήδη η προθέρμανση, την κλείνουμε (Toggle OFF)
             if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
                 vid.pause();
                 vid.style.display = "none";
+                vid.loop = false;
                 
-                // Επαναφορά στην επιλεγμένη άσκηση
+                // Επαναφορά στην πρώτη άσκηση της λίστας
                 if (exercises.length > 0) {
-                    const currentEx = exercises[currentIdx];
-                    const wInput = currentEx ? currentEx.querySelector(".weight-input") : null;
-                    const exName = wInput ? wInput.getAttribute("data-name") : "Άγνωστο";
+                    const firstEx = exercises[currentIdx];
+                    const wInput = firstEx ? firstEx.querySelector(".weight-input") : null;
+                    const exName = wInput ? wInput.getAttribute("data-name") : "PEGASUS READY";
                     if (label) label.textContent = exName;
                     showVideo(currentIdx); 
                 } else {
-                    // [CLEANUP] Αλλαγή από "Επίλεξε Ημέρα" σε όνομα συστήματος
                     if (label) label.textContent = "PEGASUS OS";
                 }
-                console.log("PEGASUS: Warmup OFF -> Back to Exercise");
+                console.log("PEGASUS: Warmup OFF -> Ready to Start");
             } else {
-                // Ενεργοποίηση (Toggle ON)
-                phase = 0; 
-                currentIdx = 0; 
-                showVideo(null); 
-                if (label) label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual)";
-                console.log("PEGASUS: Warmup ON");
+                // 2. ΕΝΕΡΓΟΠΟΙΗΣΗ: Παίζει το βίντεο μόνιμα μέχρι το επόμενο κλικ (Toggle ON)
+                vid.style.display = "block";
+                vid.src = "videos/warmup.mp4";
+                vid.loop = true; 
+                vid.play();
+                if (label) {
+                    label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)";
+                    label.style.color = "#64B5F6";
+                }
+                console.log("PEGASUS: Warmup ON (Loop Active)");
             }
         },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
