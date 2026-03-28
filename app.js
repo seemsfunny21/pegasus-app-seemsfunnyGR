@@ -1,23 +1,26 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v9.7 (SURGICAL ALIGNMENT EDITION)
-   Protocol: Zero-Conflict Global Scope & GitHub Asset Sync
-   Status: Operational | 404 Prevention Active
+   PEGASUS WORKOUT ENGINE - v9.8 (STRICT SCOPE & ASSET ALIGNMENT)
+   Protocol: Zero-Conflict Variable Bridge & GitHub Asset Sync
+   Status: Operational | TypeError: Constant Assignment Fixed
    ========================================================================== */
 
-// 0. GLOBAL SCOPE BRIDGE (Surgical Fix for SyntaxError)
+// 0. GLOBAL SCOPE BRIDGE (Surgical Fix for TypeError)
+// Χρησιμοποιούμε το P_M ως την επίσημη τοπική αναφορά
 var P_M = window.PegasusManifest; 
 
-// Χρησιμοποιούμε το window.M για να αποφύγουμε το "Identifier has already been declared"
+// Έλεγχος αν η M είναι ήδη δεσμευμένη. Αν όχι, την ορίζουμε στο window.
 if (typeof M === 'undefined') {
     window.M = P_M;
 } else {
-    M = P_M; // Απλή ανάθεση αν υπάρχει ήδη χωρίς δήλωση var/const
+    // Αν η M υπάρχει ήδη (π.χ. ως const), δεν προσπαθούμε να την αλλάξουμε (M = P_M)
+    // για να αποφύγουμε το TypeError. Απλώς ενημερώνουμε την κονσόλα.
+    console.log("🛡️ PEGASUS BRIDGE: M is already linked globally.");
 }
 
 if (!P_M) {
     console.warn("⚠️ Manifest not found. Initializing Emergency Link...");
     P_M = window.PegasusManifest;
-    window.M = P_M;
+    if (typeof M === 'undefined') window.M = P_M;
 }
 
 /* ===== 1. ISSUE LOGGER (DIAGNOSTIC MODE) ===== */
@@ -428,7 +431,6 @@ function openExercisePreview() {
         let img = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
         let ext = (img === "cycling") ? ".jpg" : ".png";
 
-        // ΠΡΟΣΟΧΗ: Αφαίρεσα τη λέξη "image" από το src για να βρει το chestpress.png
         content.innerHTML += `
             <div class="preview-item">
                 <img src="images/${img}${ext}" onerror="this.src='images/placeholder.jpg'">
