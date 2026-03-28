@@ -602,6 +602,8 @@ window.onload = () => {
                 console.log("PEGASUS: Warmup ON");
             }
         },
+
+       
 const masterUI = { 
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
