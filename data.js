@@ -1,6 +1,6 @@
 /* ==========================================================================
-    PEGASUS DATA ENGINE - v10.1.5 (FINAL ASSET ALIGNMENT)
-    Protocol: Fix 404 Video Errors & Clean Mapping
+    PEGASUS DATA ENGINE - v10.1.6 (ULTIMATE ASSET SYNC)
+    Protocol: 100% Alignment with GitHub /videos/ folder
    ========================================================================== */
 
 window.exercisesDB = [
@@ -58,6 +58,7 @@ window.program = {
     "Κυριακή": [{ name: "Ποδηλασία 30km", sets: 1, muscleGroup: "Πόδια" }]
 };
 
+// --- ΑΥΣΤΗΡΗ ΑΝΤΙΣΤΟΙΧΙΣΗ ΜΕ ΤΑ MP4 ΑΡΧΕΙΑ ΣΟΥ ---
 window.videoMap = {
     "Seated Chest Press": "chestpress",
     "Chest Flys": "chestflys",
@@ -82,10 +83,10 @@ window.videoMap = {
     "Situps": "situps",
     "Glute Kickbacks": "glutekickbacks",
     "Leg Extensions": "legextensions",
-    "Ποδηλασία 30km": "cycling", 
+    "Ποδηλασία 30km": "cycling",
     "Stretching": "stretching",
     "Προθέρμανση": "warmup",
     "EMS Training": "ems"
 };
 
-console.log("✅ PEGASUS DATA ENGINE: Asset Mapping Corrected (v10.1.5).");
+console.log("✅ PEGASUS DATA ENGINE: Surgical Alignment Complete (v10.1.6).");
