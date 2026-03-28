@@ -1,4 +1,55 @@
 /* ==========================================================================
+   PEGASUS COMMAND TRACER - v1.0 (ANTI-SILENT FAIL PROTOCOL)
+   ========================================================================== */
+
+window.PegasusTracer = {
+    logs: JSON.parse(localStorage.getItem("pegasus_command_trace") || "[]"),
+
+    // Καταγραφή ενέργειας
+    log: function(btnId, step, status, details = "") {
+        const entry = {
+            timestamp: new Date().toLocaleTimeString(),
+            button: btnId,
+            step: step,        // π.χ. "Trigger", "Auth Check", "DB Open", "Finalize"
+            status: status,    // "START", "PENDING", "SUCCESS", "ERROR"
+            details: details
+        };
+        
+        this.logs.push(entry);
+        // Κρατάμε μόνο τα τελευταία 100 βήματα για οικονομία χώρου
+        if (this.logs.length > 100) this.logs.shift();
+        
+        localStorage.setItem("pegasus_command_trace", JSON.stringify(this.logs));
+        
+        // Output στην κονσόλα με χρώμα για άμεση διάγνωση
+        const color = status === "ERROR" ? "#FF5252" : (status === "SUCCESS" ? "#4CAF50" : "#FFC107");
+        console.log(`%c[TRACER] ${btnId} > ${step} > ${status}`, `color: ${color}; font-weight: bold;`, details);
+    },
+
+    // Εμφάνιση της διαδρομής του τελευταίου κουμπιού που πατήθηκε
+    printLastTrace: function() {
+        console.table(this.logs.slice(-10));
+    },
+
+    clear: function() {
+        this.logs = [];
+        localStorage.removeItem("pegasus_command_trace");
+        console.log("PEGASUS: Trace Log Cleared.");
+    }
+};
+
+/* ==========================================================================
+   INTERCEPTION BRIDGE: Σύνδεση με το app.js
+   ========================================================================== */
+// Αυτό το κομμάτι "τυλίγει" τα υπάρχοντα κουμπιά για να ξέρουμε πότε πατήθηκαν
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (btn && btn.id) {
+        window.PegasusTracer.log(btn.id, "DOM_CLICK", "START", `Button Text: ${btn.textContent}`);
+    }
+}, true);
+
+/* ==========================================================================
    PEGASUS HEALTH & DEBUG SYSTEM - v3.1 (STRICT MONITOR + PERSISTENT LOG)
    Protocol: Strict Data Analyst - Full Error Logging & Sync Guard Monitoring
    ========================================================================== */
