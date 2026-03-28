@@ -62,11 +62,11 @@ function changeFoodDate(days) {
 window.getStrictDateStr = function() {
     // MIDNIGHT ROLLOVER GUARD: Έλεγχος αν άλλαξε η μέρα στο σύστημα
     const currentSystemDate = new Date().toDateString();
-    if (window.lastKnownSystemDate !== currentSystemDate) {
-        // Εάν ο χρήστης βρισκόταν στη "Σημερινή" μέρα, ενημερώνουμε το currentFoodDate
+if (window.lastKnownSystemDate !== currentSystemDate) {
         if (window.currentFoodDate && window.currentFoodDate.toDateString() === window.lastKnownSystemDate) {
             window.currentFoodDate = new Date();
-            console.log("PEGASUS GUARD: Midnight Rollover Detected. Auto-updated date to Today.");
+            localStorage.setItem("pegasus_cardio_offset", "0"); // RESET OFFSET
+            console.log("PEGASUS GUARD: Midnight Rollover & Cardio Offset Reset.");
         }
         window.lastKnownSystemDate = currentSystemDate;
     }
