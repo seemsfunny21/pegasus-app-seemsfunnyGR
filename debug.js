@@ -144,30 +144,27 @@ window.pegasusHealthCheck = async function() {
     let errors = [];
     let warnings = [];
 
-    // Check Variables (Path sensitive)
     const isMobile = window.location.pathname.includes("mobile.html");
     
-    // Έλεγχος αν υπάρχουν τα βασικά αντικείμενα δεδομένων
-    if (typeof window.calculateDailyProgram !== 'function') errors.push("Critical: Dynamic Engine (data.js) not found.");
+    // ΕΛΕΓΧΟΣ ΔΕΔΟΜΕΝΩΝ (DATA ENGINE)
+    // Ελέγχουμε αν υπάρχει το window.program (το νέο format του data.js)
+    if (typeof window.program === 'undefined') {
+        errors.push("Critical: Dynamic Engine (data.js) not found or window.program undefined.");
+    }
     
-    // Check Sync Status
     const lastPush = localStorage.getItem("pegasus_last_push");
     if (!lastPush) warnings.push("Sync: No successful push recorded in this browser.");
 
-    // Check DOM Elements
     const essential = isMobile ? ["sync-indicator"] : ["btnStart", "exList", "totalProgress"];
     essential.forEach(id => {
         if (!document.getElementById(id)) errors.push(`UI: Element ID '${id}' missing.`);
     });
 
-    // Check Cache
     const cacheStatus = await window.verifyPegasusCache();
     if (!cacheStatus) warnings.push("Cache: Offline Vault not fully initialized.");
 
-    // Check Calories
     window.verifyCalorieLogic();
 
-    // Final Report & Logging
     if (errors.length === 0 && warnings.length === 0) {
         console.log("%c✅ Pegasus System Healthy: All systems nominal.", "color: #4CAF50; font-weight: bold; font-size: 12px;");
     } else {
@@ -188,7 +185,7 @@ window.onerror = function(message, source, lineno, colno, error) {
     return false;
 };
 
-// Αυτόματη εκτέλεση μετά από 3 δευτερόλεπτα για να προλάβουν να φορτώσουν όλα τα scripts
+// ΑΥΞΗΣΗ ΚΑΘΥΣΤΕΡΗΣΗΣ ΣΕ 5 ΔΕΥΤΕΡΟΛΕΠΤΑ (Για απόλυτο συγχρονισμό)
 setTimeout(() => {
     window.pegasusHealthCheck();
-}, 3000);
+}, 5000);
