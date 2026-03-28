@@ -162,7 +162,7 @@ function selectDay(btn, day) {
         `;
         list.appendChild(d);
         exercises.push(d);
-        remainingSets.push(finalSets);
+       remainingSets.push(finalSets);
     });
 
     if (typeof calculateTotalTime === "function") calculateTotalTime();
