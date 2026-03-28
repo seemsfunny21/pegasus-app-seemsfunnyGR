@@ -26,11 +26,10 @@ window.onerror = function(msg, url, line) {
 };
 
 /* ===== 2. CORE VARIABLES & MANIFEST SYNC ===== */
-var M = window.PegasusManifest; 
+M = window.PegasusManifest; 
 
 if (!M) {
-    console.warn("⚠️ Manifest not found, retrying link...");
-    M = window.PegasusManifest;
+    console.error("❌ CRITICAL: Manifest not found. Link failed.");
 }
 
 var exercises = [];
