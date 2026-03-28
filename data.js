@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC ENGINE - DATA RECOVERY (V8.2)
-   Protocol: Full Week Mapping & Asset Alignment
+    PEGASUS DYNAMIC ENGINE - DATA RECOVERY (V10.1)
+    Protocol: Full Week Mapping & Asset Alignment
+    Strict Sync with GitHub /images/ and /videos/
    ========================================================================== */
 
 window.program = {
@@ -48,16 +49,17 @@ window.program = {
     ]
 };
 
+/* ===== SURGICAL VIDEO MAPPING (Direct GitHub Match) ===== */
 window.videoMap = {
-    "Low Seated Row": "lowseatedrow",
-    "Close Grip Pulldown": "closegrippulldown",
+    "Low Seated Row": "lowrowsseated",
+    "Close Grip Pulldown": "latpulldownsclose",
     "Chest Press": "chestpress",
-    "Incline Chest Press": "inclinechestpress",
-    "Shoulder Press": "shoulderpress",
-    "Lateral Raises": "lateralraises",
+    "Incline Chest Press": "chestpress",
+    "Shoulder Press": "uprightrows",
+    "Lateral Raises": "uprightrows", // Συγχρονισμός με το υπάρχον asset
     "Bicep Curls": "bicepcurls",
-    "Tricep Extensions": "tricepextensions",
-    "EMS Training": "ems",
+    "Tricep Extensions": "triceppulldowns",
+    "EMS Training": "emsimage",
     "Ποδηλασία (Cycling)": "cycling",
     "Προθέρμανση": "warmup"
 };
@@ -75,4 +77,4 @@ window.exercisesDB = [
     { name: "EMS Training", muscleGroup: "Πλάτη" }
 ];
 
-console.log("✅ PEGASUS DATA ENGINE: Operational.");
+console.log("✅ PEGASUS DATA ENGINE: Operational & Asset Aligned.");
