@@ -573,21 +573,51 @@ window.onload = () => {
     const masterUI = { 
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-       "btnWarmup": () => { 
+"btnWarmup": () => { 
             const vid = document.getElementById("video");
-            // Αν το βίντεο δείχνει ήδη προθέρμανση, κλείστο (Toggle OFF)
-            if (vid.src.includes("warmup") && vid.style.display !== "none") {
+            const label = document.getElementById("phaseTimer");
+            
+            // 1. Έλεγχος αν η προθέρμανση είναι ήδη ON (Toggle OFF)
+            if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
                 vid.pause();
                 vid.style.display = "none";
-                document.getElementById("phaseTimer").textContent = "Επίλεξε Ημέρα";
-                console.log("PEGASUS: Warmup Toggled OFF");
+                
+                // Επαναφορά στην επιλεγμένη άσκηση αντί για το "Επίλεξε Ημέρα"
+                if (exercises.length > 0) {
+                    const currentEx = exercises[currentIdx];
+                    const wInput = currentEx ? currentEx.querySelector(".weight-input") : null;
+                    const exName = wInput ? wInput.getAttribute("data-name") : "Άγνωστο";
+                    if (label) label.textContent = exName;
+                    showVideo(currentIdx); // Επαναφορά του σωστού thumbnail/video
+                } else {
+                    if (label) label.textContent = "Επίλεξε Ημέρα";
+                }
+                console.log("PEGASUS: Warmup OFF -> Back to Exercise");
             } else {
-                // Ενεργοποίηση Προθέρμανσης (Toggle ON)
+                // 2. Ενεργοποίηση (Toggle ON)
                 phase = 0; 
                 currentIdx = 0; 
                 showVideo(null); 
-                document.getElementById("phaseTimer").textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual)";
-                console.log("PEGASUS: Warmup Toggled ON");
+                if (label) label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual)";
+                console.log("PEGASUS: Warmup ON");
+            }
+        },
+const masterUI = { 
+        "btnStart": startPause,
+        "btnNext": skipToNextExercise,
+        "btnWarmup": () => { 
+            const vid = document.getElementById("video");
+            const label = document.getElementById("phaseTimer");
+            if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
+                vid.pause(); vid.style.display = "none";
+                if (exercises.length > 0) {
+                    const exName = exercises[currentIdx]?.querySelector(".weight-input")?.getAttribute("data-name") || "Άγνωστο";
+                    if (label) label.textContent = exName;
+                    showVideo(currentIdx);
+                }
+            } else {
+                phase = 0; currentIdx = 0; showVideo(null); 
+                if (label) label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual)";
             }
         },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
@@ -601,13 +631,14 @@ window.onload = () => {
         "btnCloseEMS": () => { if(window.closeEMSModal) window.closeEMSModal(); },
         "btnClosePreview": () => { document.getElementById('previewPanel').style.display='none'; },
         "btnManualEmail": () => { if(window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true); },
+        "btnExportData": () => { if(window.exportPegasusData) window.exportPegasusData(); },
+        "btnImportData": () => { document.getElementById('importFileTools').click(); },
+        "btnMasterVault": () => { document.getElementById('pinModal').style.display='flex'; },
         "btnSaveSettings": () => { 
-            if(window.savePegasusSettingsGlobal) {
-                window.savePegasusSettingsGlobal(); 
+            if (window.savePegasusSettingsGlobal) {
+                window.savePegasusSettingsGlobal();
             } else {
-                // Emergency Fallback
-                localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput")?.value || 74);
-                alert("PEGASUS: Βασική Αποθήκευση (Settings JS missing)!"); 
+                localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput").value);
                 location.reload();
             }
         }
