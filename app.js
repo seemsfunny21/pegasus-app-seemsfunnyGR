@@ -758,10 +758,23 @@ window.onload = () => {
     }, 400);
 };
 
-/* ===== 11. DEBUG BRIDGE (LIVE CONSOLE ACCESS) ===== */
+/* ===== 11. DEBUG BRIDGE (FIXED & FULL ACCESS) ===== */
 window.PegasusDebug = {
+    // Κατάσταση Engine: PegasusDebug.state()
     state: () => ({ exercises, remainingSets, currentIdx, running, phase }),
+    
+    // Έλεγχος Manifest: PegasusDebug.manifest()
     manifest: () => P_M,
+    
+    // Έλεγχος Assets: PegasusDebug.testImage('uprightrows')
+    testImage: (name) => {
+        const testImg = new Image();
+        testImg.onload = () => console.log(`%c ✅ ASSET FOUND: ${name}.png`, "color: #4CAF50; font-weight: bold;");
+        testImg.onerror = () => console.error(`%c ❌ ASSET 404: ${name}.png is missing from GitHub!`, "color: #ff4444;");
+        testImg.src = `images/${name}.png`;
+    },
+    
+    // Πρόσφατα Logs: PegasusDebug.logs()
     logs: () => window.pegasusLogs
 };
 
