@@ -207,10 +207,10 @@ function selectDay(btn, day) {
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || "";
 
-        d.innerHTML = `
+d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">0/${finalSets}</div>
-                <div class="exercise-name">${cleanName}${e.isSpillover ? " ☀️" : ""}</div>
+                <div class="exercise-name">${cleanName}</div>
                 <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
                        onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
             </div>
