@@ -1,80 +1,98 @@
 /* ==========================================================================
-    PEGASUS DYNAMIC ENGINE - DATA RECOVERY (V10.1)
-    Protocol: Full Week Mapping & Asset Alignment
-    Strict Sync with GitHub /images/ and /videos/
+    PEGASUS DATA ENGINE - v10.1.4 (RECOVERY BUILD)
+    Protocol: Restore Original Exercise Names & Asset Mapping
+    Strict Alignment with v8.2 Database
    ========================================================================== */
 
-window.program = {
-    "Δευτέρα": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Close Grip Pulldown", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Incline Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Shoulder Press", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Lateral Raises", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Tricep Extensions", sets: 3, muscleGroup: "Χέρια" }
-    ],
-    "Τρίτη": [
-        { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" }
-    ],
-    "Τετάρτη": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Close Grip Pulldown", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Incline Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Shoulder Press", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Lateral Raises", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Tricep Extensions", sets: 3, muscleGroup: "Χέρια" }
-    ],
-    "Πέμπτη": [
-        { name: "Αποθεραπεία", sets: 0, muscleGroup: "None" }
-    ],
-    "Παρασκευή": [
-        { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" }
-    ],
-    "Σάββατο": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Close Grip Pulldown", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Incline Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Shoulder Press", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Lateral Raises", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Tricep Extensions", sets: 3, muscleGroup: "Χέρια" }
-    ],
-    "Κυριακή": [
-        { name: "Ποδηλασία (Cycling)", sets: 1, muscleGroup: "Πόδια" }
-    ]
-};
-
-/* ===== SURGICAL VIDEO MAPPING (Direct GitHub Match) ===== */
-window.videoMap = {
-    "Low Seated Row": "lowrowsseated",
-    "Close Grip Pulldown": "latpulldownsclose",
-    "Chest Press": "chestpress",
-    "Incline Chest Press": "chestpress",
-    "Shoulder Press": "uprightrows",
-    "Lateral Raises": "uprightrows", // Συγχρονισμός με το υπάρχον asset
-    "Bicep Curls": "bicepcurls",
-    "Tricep Extensions": "triceppulldowns",
-    "EMS Training": "emsimage",
-    "Ποδηλασία (Cycling)": "cycling",
-    "Προθέρμανση": "warmup"
-};
-
+// 1. ORIGINAL EXERCISES DATABASE (v8.2 Mapping)
 window.exercisesDB = [
-    { name: "Low Seated Row", muscleGroup: "Πλάτη" },
+    { name: "Seated Chest Press", muscleGroup: "Στήθος" },
+    { name: "Chest Flys", muscleGroup: "Στήθος" },
+    { name: "Pushups", muscleGroup: "Στήθος" },
+    { name: "Lat Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Close Grip Pulldown", muscleGroup: "Πλάτη" },
-    { name: "Chest Press", muscleGroup: "Στήθος" },
-    { name: "Incline Chest Press", muscleGroup: "Στήθος" },
-    { name: "Shoulder Press", muscleGroup: "Ώμοι" },
-    { name: "Lateral Raises", muscleGroup: "Ώμοι" },
+    { name: "Low Seated Row Wide", muscleGroup: "Πλάτη" },
+    { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "One Arm Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "One Arm Rows", muscleGroup: "Πλάτη" },
+    { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
+    { name: "Reverse Seated Rows", muscleGroup: "Πλάτη" },
+    { name: "Upright Rows", muscleGroup: "Ώμοι" },
     { name: "Bicep Curls", muscleGroup: "Χέρια" },
-    { name: "Tricep Extensions", muscleGroup: "Χέρια" },
-    { name: "Ποδηλασία (Cycling)", muscleGroup: "Πόδια" },
+    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια" },
+    { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
+    { name: "Ab Crunches Cable", muscleGroup: "Κορμός" },
+    { name: "Plank", muscleGroup: "Κορμός" },
+    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
+    { name: "Reverse Crunch", muscleGroup: "Κορμός" },
+    { name: "Lying Knee Raise", muscleGroup: "Κορμός" },
+    { name: "Situps", muscleGroup: "Κορμός" },
+    { name: "Glute Kickbacks", muscleGroup: "Πόδια" },
+    { name: "Leg Extensions", muscleGroup: "Πόδια" },
+    { name: "Ποδηλασία 30km", muscleGroup: "Πόδια" },
     { name: "EMS Training", muscleGroup: "Πλάτη" }
 ];
 
-console.log("✅ PEGASUS DATA ENGINE: Operational & Asset Aligned.");
+// 2. WEEKLY PROGRAM (RESTORED FROM v8.2 LOGIC)
+window.program = {
+    "Δευτέρα": [{ name: "Stretching", sets: 1, muscleGroup: "Κορμός" }],
+    "Τρίτη": [
+        { name: "Seated Chest Press", sets: 4, muscleGroup: "Στήθος" },
+        { name: "Chest Flys", sets: 4, muscleGroup: "Στήθος" },
+        { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι" },
+        { name: "Lat Pulldowns", sets: 4, muscleGroup: "Πλάτη" },
+        { name: "Low Seated Row Wide", sets: 4, muscleGroup: "Πλάτη" }
+    ],
+    "Τετάρτη": [
+        { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" },
+        { name: "Bicep Curls", sets: 4, muscleGroup: "Χέρια" },
+        { name: "Tricep Pulldowns", sets: 4, muscleGroup: "Χέρια" }
+    ],
+    "Πέμπτη": [{ name: "Stretching", sets: 1, muscleGroup: "Κορμός" }],
+    "Παρασκευή": [
+        { name: "Lat Pulldowns", sets: 4, muscleGroup: "Πλάτη" },
+        { name: "Bent Over Rows", sets: 4, muscleGroup: "Πλάτη" },
+        { name: "Bicep Curls", sets: 4, muscleGroup: "Χέρια" },
+        { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι" },
+        { name: "Seated Chest Press", sets: 4, muscleGroup: "Στήθος" }
+    ],
+    "Σάββατο": [
+        { name: "Ποδηλασία 30km", sets: 1, muscleGroup: "Πόδια" }
+    ],
+    "Κυριακή": [
+        { name: "Ποδηλασία 30km", sets: 1, muscleGroup: "Πόδια" }
+    ]
+};
+
+// 3. VIDEO MAPPING (STRICT SYNC WITH FILENAMES)
+window.videoMap = {
+    "Seated Chest Press": "chestpress",
+    "Chest Flys": "chestflys",
+    "Pushups": "pushups",
+    "Lat Pulldowns": "latpulldowns",
+    "Close Grip Pulldown": "latpulldownsclose",
+    "Low Seated Row Wide": "lowrowsseated",
+    "Straight Arm Pulldowns": "straightarmpulldowns",
+    "One Arm Pulldowns": "onearmpulldowns",
+    "One Arm Rows": "onearmrows",
+    "Bent Over Rows": "bentoverrows",
+    "Reverse Seated Rows": "reverseseatedrows",
+    "Upright Rows": "uprightrows",
+    "Bicep Curls": "bicepcurls",
+    "Preacher Bicep Curls": "preacherbicepcurls",
+    "Tricep Pulldowns": "triceppulldowns",
+    "Ab Crunches Cable": "abcrunches",
+    "Plank": "plank",
+    "Leg Raise Hip Lift": "legraisehiplift",
+    "Reverse Crunch": "reversecrunch",
+    "Lying Knee Raise": "lyingkneeraise",
+    "Situps": "situps",
+    "Glute Kickbacks": "glutekickbacks",
+    "Leg Extensions": "legextensions",
+    "Ποδηλασία 30km": "cycling",
+    "Stretching": "stretching",
+    "Προθέρμανση": "warmup",
+    "EMS Training": "ems"
+};
+
+console.log("✅ PEGASUS DATA ENGINE: Original Exercises Restored & Mapped.");
