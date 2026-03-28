@@ -692,6 +692,7 @@ window.onload = () => {
     }, 300);
 };
 /* === PEGASUS PREVIEW ENGINE (OPTIMIZER INTEGRATED) === */
+/* === PEGASUS PREVIEW ENGINE (FINAL SYNC v2.2) === */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -709,9 +710,22 @@ function openExercisePreview() {
     const content = document.getElementById('previewContent');
     if (!panel || !content) return;
 
+    // 1. Εμφάνιση Πάνελ
     panel.style.display = 'block';
+
+    // 2. ΚΑΘΑΡΙΣΜΟΣ ΠΕΡΙΕΧΟΜΕΝΟΥ
+    // Καθαρίζουμε το UI πριν χτίσουμε το νέο περιεχόμενο
     content.innerHTML = ''; 
 
+    // 3. FORCE RENDER MUSCLE BARS
+    // Καλούμε το render χειροκίνητα ΕΔΩ για να μπουν στην κορυφή του 'content'
+    if (window.MuscleProgressUI) {
+        // Μηδενίζουμε το hash για να αναγκάσουμε το UI να κάνει render αμέσως
+        window.MuscleProgressUI.lastDataHash = null; 
+        window.MuscleProgressUI.render();
+    }
+
+    // 4. ΠΡΟΣΘΗΚΗ ΑΣΚΗΣΕΩΝ
     dayExercises.filter(ex => ex.adjustedSets > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
         let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) ? videoMap[cleanName] : cleanName.replace(/\s+/g, '').toLowerCase();
