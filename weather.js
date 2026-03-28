@@ -93,9 +93,19 @@ window.getFinalProgram = function(day) {
 };
 
 /**
- * 5. PEGASUS BRIDGE: Σύνδεση με το Global Scope του App
+ /**
+ * 5. PEGASUS GLOBAL BRIDGE
+ * Επιτρέπει στο app.js να καλέσει τον καιρό κατά το window.onload
  */
 window.updateWeatherUI = function() {
-    console.log("PEGASUS WEATHER: Initializing Fetch...");
     fetchWeather();
 };
+
+// Αυτόματη εκτέλεση αν το αρχείο φορτωθεί μόνο του (Fallback)
+if (document.readyState === 'complete') {
+    window.updateWeatherUI();
+} else {
+    window.addEventListener('load', window.updateWeatherUI);
+}
+
+console.log("✅ PEGASUS WEATHER ENGINE: v3.2 Unified Protocol Active.");
