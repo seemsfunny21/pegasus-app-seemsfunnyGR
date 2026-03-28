@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v8.4 (METABOLIC SYNC & MIDNIGHT RESET)
+   PEGASUS FOOD ENGINE - v8.5 (FINAL TRIPLE SYNC & MIDNIGHT RESET)
    STRICT DATA ANALYST PROTOCOL - DESKTOP EDITION (PEGASUS STORE INTEGRATION)
    ========================================================================== */
 
@@ -154,22 +154,25 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    const finalKcal = totalKcal.toFixed(1);
-    const finalProt = totalProtein.toFixed(1);
+    // 🔥 SYNC FIX v8.5: TRIPLE KEY ALIGNMENT (Για να ενημερώνεται η αρχική οθόνη)
+    const finalKcal = totalKcal.toFixed(0);
+    const finalProt = totalProtein.toFixed(0);
 
     if (window.PegasusStore) {
         window.PegasusStore.updateDailyTotals(totalKcal, totalProtein);
-    } else {
-        localStorage.setItem("pegasus_diet_kcal", finalKcal);
-        localStorage.setItem("pegasus_today_kcal", finalKcal);
-        localStorage.setItem("pegasus_today_protein", finalProt);
-    }
+    } 
+    
+    // Ενημέρωση όλων των πιθανών κλειδιών μνήμης για το Dashboard
+    localStorage.setItem("pegasus_diet_kcal", finalKcal);
+    localStorage.setItem("pegasus_today_kcal", finalKcal);
+    localStorage.setItem("pegasus_today_protein", finalProt);
 
+    // ΑΜΕΣΗ ΕΝΗΜΕΡΩΣΗ ΤΟΥ UI
     const kcalNum = document.getElementById('todayTotalKcal');
-    if (kcalNum) kcalNum.textContent = Math.round(totalKcal);
+    if (kcalNum) kcalNum.textContent = finalKcal;
     
     const proteinNum = document.getElementById('todayTotalProtein'); 
-    if (proteinNum) proteinNum.textContent = Math.round(totalProtein);
+    if (proteinNum) proteinNum.textContent = finalProt;
     
     if (typeof window.updateProgressBars === "function") {
         window.updateProgressBars(totalKcal, totalProtein);
