@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS METABOLIC ENGINE - v5.6 (STRICT SHADOW MODE)
-   Protocol: Silent Set Deduction & Calorie Offset Sync (86 Lines)
+   PEGASUS METABOLIC ENGINE - v5.7 (STRICT SHADOW MODE)
+   Protocol: Silent Set Deduction & Calorie Offset Sync
    ========================================================================== */
 
 window.PegasusCardio = {
