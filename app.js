@@ -670,31 +670,31 @@ window.updateTotalWorkoutCount = function() {
    ========================================================================== */
 
 window.onload = () => {
-   // --- 0. PEGASUS SATURDAY RESET PROTOCOL (v10.2.2) ---
-    const today = new Date();
+    // --- 0. GLOBAL CONSTANTS (Declared ONCE) ---
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const dayName = greekDays[today.getDay()];
+    const todayObj = new Date();
+    const todayName = greekDays[todayObj.getDay()];
 
-    if (dayName === "Σάββατο") {
+    // --- 1. PEGASUS SATURDAY RESET PROTOCOL ---
+    if (todayName === "Σάββατο") {
         const lastReset = localStorage.getItem('pegasus_last_reset');
-        const todayDate = today.toISOString().split('T')[0];
+        const todayDateStr = todayObj.toISOString().split('T')[0];
         
-        if (lastReset !== todayDate) {
+        if (lastReset !== todayDateStr) {
             console.log("🚀 PEGASUS: New Weekly Cycle Starting! Resetting History...");
             const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
-            localStorage.setItem('pegasus_last_reset', todayDate);
+            localStorage.setItem('pegasus_last_reset', todayDateStr);
             localStorage.setItem('pegasus_cardio_offset_sets', "0");
         }
     }
-    // --- 1. INITIALIZATION ---
+
+    // --- 2. INITIALIZATION ---
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
-    
     createNavbar();
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
 
-// --- 2. MASTER UI MAPPING (The Command Center) ---
-    // Εναρμόνιση 100% με τα IDs του index.html και προσθήκη του Manual Email
+    // --- 3. MASTER UI MAPPING (Command Center) ---
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -715,90 +715,64 @@ window.onload = () => {
                 }
             }
         },
-        
-        // IDs Navbar με κατάληξη "UI" (Συγχρονισμός με HTML)
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
         "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
         "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
-        
-        // IDs Tools/Modals
         "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
         "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
-
-        // 🔥 ΠΡΟΣΘΗΚΗ: Σύνδεση του Manual Email Button
         "btnManualEmail": () => {
-            if (window.PegasusReporting) {
-                window.PegasusReporting.checkAndSendMorningReport(true);
-            } else {
-                alert("Reporting Engine Offline");
-            }
+            if (window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true);
+            else alert("Reporting Engine Offline");
         },
-
         "btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
             const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
             localStorage.setItem(weightKey, weightVal);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
-            console.log("PEGASUS SETTINGS: Data saved & synced.");
             location.reload();
         }
     };
 
-    // --- 3. EVENT DELEGATION ENGINE ---
+    // --- 4. EVENT DELEGATION ---
     Object.keys(window.masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const target = window.masterUI[btnId];
-                
-                console.log(`[UI BRIDGE] Triggering: ${btnId}`);
-
                 if (!btnId.includes("Save") && !btnId.includes("Start")) {
                     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
-
-                if (typeof target === 'function') {
-                    target();
-                } else if (target && target.panel) {
+                if (typeof target === 'function') target();
+                else if (target && target.panel) {
                     const el = document.getElementById(target.panel);
-                    if (el) { 
-                        el.style.display = "block"; 
-                        if (target.init) target.init(); 
-                    }
+                    if (el) { el.style.display = "block"; if (target.init) target.init(); }
                 }
             };
         }
     });
 
-    // --- 4. AUTO-SELECT TODAY PROTOCOL ---
-    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const today = greekDays[new Date().getDay()];
-    
+    // --- 5. AUTO-SELECT TODAY ---
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
-            if (b.textContent.trim().split(' ')[0] === today) {
+            if (b.textContent.trim().split(' ')[0] === todayName) {
                 if (typeof selectDay === "function") {
-selectDay(b, b.textContent);
-setTimeout(() => {
-    remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
-    currentIdx = 0;
-    console.log("PEGASUS: Circuit Auto-Initialized for Today.");
-}, 150); // Δίνουμε χρόνο στη selectDay να χτίσει το DOM
-                    console.log("PEGASUS: Circuit Auto-Initialized for Today.");
+                    selectDay(b, b.textContent);
+                    setTimeout(() => {
+                        remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
+                        currentIdx = 0;
+                        console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
+                    }, 150);
                 }
             }
         }); 
     }, 400);
 
-    // Τελικός έλεγχος σύνδεσης UI Manager (dragDrop.js)
-    if (window.PegasusUI && typeof window.PegasusUI.init === "function") {
-        window.PegasusUI.init();
-    }
+    if (window.PegasusUI && typeof window.PegasusUI.init === "function") window.PegasusUI.init();
 };
 
 /* ===== 11. DEBUG BRIDGE (FIXED & FULL ACCESS) ===== */
