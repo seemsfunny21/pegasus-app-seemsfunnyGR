@@ -1,21 +1,21 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.6 (STRICT DATA INTEGRITY)
-   Protocol: Background Automation Reset Enabled & Hash Guard
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.7 (ZERO-LATENCY EDITION)
+   Protocol: Strict Data Analyst - Instant Render & Force Hash Bypass
    ========================================================================== */
 
 window.MuscleProgressUI = {
-    // 1. DATA PERSISTENCE VARS
     lastDataHash: null,
 
     init() {
         this.checkWeeklyReset();
-        this.render();
+        // 1. Άμεση εκτέλεση κατά το initialization
+        this.render(true); 
         
-        // Auto-refresh UI & Reset Check κάθε 3 δευτερόλεπτα
+        // 2. Μείωση κύκλου στα 2 δευτερόλεπτα για πιο "ζωντανό" UI
         setInterval(() => {
             this.checkWeeklyReset();
             this.render();
-        }, 3000);
+        }, 2000);
     },
 
     calculateStats() {
@@ -31,15 +31,15 @@ window.MuscleProgressUI = {
         });
     },
 
-    render() {
+    render(force = false) {
         const container = document.getElementById('previewContent') || document.querySelector('.daily-program-container');
         if (!container) return;
 
         const stats = this.calculateStats();
-        
-        // Data Check: Μην ξαναφτιάχνεις το UI αν δεν έχει αλλάξει τίποτα (Efficiency)
         const currentDataHash = JSON.stringify(stats);
-        if (this.lastDataHash === currentDataHash) return; 
+
+        // 3. Παράκαμψη ελέγχου αν ζητηθεί Force Render (από app.js ή init)
+        if (!force && this.lastDataHash === currentDataHash) return; 
         this.lastDataHash = currentDataHash;
 
         const oldWrapper = document.getElementById('temp-progress-wrapper');
@@ -80,8 +80,8 @@ window.MuscleProgressUI = {
             const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
             localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
-            console.log("PEGASUS SYSTEM: Weekly Reset Executed for " + todayStr);
-            this.render();
+            console.log("PEGASUS SYSTEM: Weekly Reset Executed.");
+            this.render(true);
         }
     }
 };
