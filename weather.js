@@ -91,3 +91,11 @@ window.getFinalProgram = function(day) {
     }
     return [];
 };
+
+/**
+ * 5. PEGASUS BRIDGE: Σύνδεση με το Global Scope του App
+ */
+window.updateWeatherUI = function() {
+    console.log("PEGASUS WEATHER: Initializing Fetch...");
+    fetchWeather();
+};
