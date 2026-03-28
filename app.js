@@ -560,7 +560,23 @@ window.onload = () => {
     const masterUI = { 
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-        "btnWarmup": () => { phase = 0; currentIdx = 0; showVideo(null); },
+       "btnWarmup": () => { 
+            const vid = document.getElementById("video");
+            // Αν το βίντεο δείχνει ήδη προθέρμανση, κλείστο (Toggle OFF)
+            if (vid.src.includes("warmup") && vid.style.display !== "none") {
+                vid.pause();
+                vid.style.display = "none";
+                document.getElementById("phaseTimer").textContent = "Επίλεξε Ημέρα";
+                console.log("PEGASUS: Warmup Toggled OFF");
+            } else {
+                // Ενεργοποίηση Προθέρμανσης (Toggle ON)
+                phase = 0; 
+                currentIdx = 0; 
+                showVideo(null); 
+                document.getElementById("phaseTimer").textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual)";
+                console.log("PEGASUS: Warmup Toggled ON");
+            }
+        },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
