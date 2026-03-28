@@ -694,6 +694,8 @@ window.onload = () => {
 
     // --- 2. MASTER UI MAPPING (The Command Center) ---
     // Ανάθεση τιμών στο ήδη υπάρχον global αντικείμενο
+  // --- 2. MASTER UI MAPPING (The Command Center) ---
+    // Εναρμόνιση 100% με τα IDs του index.html βάσει των logs της κονσόλας
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -714,25 +716,24 @@ window.onload = () => {
                 }
             }
         },
-        // Εναρμόνιση με τα IDs του index.html & τα logs της κονσόλας
-        "btnCalendar": { panel: "calendarPanel", init: window.renderCalendar },
-        "btnAchievements": { panel: "achievementsPanel", init: window.renderAchievements },
-        "btnSettings": { panel: "settingsPanel", init: window.initSettingsUI },
-        "btnFood": { panel: "foodPanel", init: window.updateFoodUI },
-        "btnTools": { panel: "toolsPanel", init: null },
         
-        // ΔΙΟΡΘΩΣΗ: Χρήση btnPreviewUI επειδή αυτό καταγράφει ο Tracer στην κονσόλα
+        // ΔΙΟΡΘΩΣΗ: Προσθήκη "UI" στα κλειδιά για να ταυτίζονται με το HTML
+        "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
+        "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
+        "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
+        "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
+        "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
         
+        // IDs που συνήθως δεν έχουν UI στο τέλος (επιβεβαιωμένα από τα logs)
         "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
         "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
-        
-        // 🔥 EMS INTEGRATION
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
 
         "btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
-            localStorage.setItem(window.PegasusManifest?.user.weight || "pegasus_weight", weightVal);
+            const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
+            localStorage.setItem(weightKey, weightVal);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
             console.log("PEGASUS SETTINGS: Data saved & synced.");
             location.reload();
