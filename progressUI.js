@@ -1,9 +1,12 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.4 (STRICT RESET EDITION)
-   Protocol: Background Automation Reset Enabled
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.6 (STRICT DATA INTEGRITY)
+   Protocol: Background Automation Reset Enabled & Hash Guard
    ========================================================================== */
 
 window.MuscleProgressUI = {
+    // 1. DATA PERSISTENCE VARS
+    lastDataHash: null,
+
     init() {
         this.checkWeeklyReset();
         this.render();
@@ -28,13 +31,13 @@ window.MuscleProgressUI = {
         });
     },
 
-render() {
+    render() {
         const container = document.getElementById('previewContent') || document.querySelector('.daily-program-container');
         if (!container) return;
 
         const stats = this.calculateStats();
         
-        // Data Check: Μην ξαναφτιάχνεις το UI αν δεν έχει αλλάξει τίποτα
+        // Data Check: Μην ξαναφτιάχνεις το UI αν δεν έχει αλλάξει τίποτα (Efficiency)
         const currentDataHash = JSON.stringify(stats);
         if (this.lastDataHash === currentDataHash) return; 
         this.lastDataHash = currentDataHash;
@@ -66,29 +69,23 @@ render() {
         tempDiv.style.width = "100%";
         tempDiv.innerHTML = htmlString;
         container.prepend(tempDiv);
-    }
+    },
 
     checkWeeklyReset() {
         const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
         const now = new Date();
-        const todayStr = now.toDateString(); // π.χ. "Mon Mar 23 2026"
+        const todayStr = now.toDateString();
 
-        // Έλεγχος: Αν είναι Δευτέρα (getDay === 1) και δεν έχει γίνει reset σήμερα
         if (now.getDay() === 1 && lastResetDate !== todayStr) {
-            const emptyHistory = {
-                "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
-            };
+            const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
             localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
-            
             console.log("PEGASUS SYSTEM: Weekly Reset Executed for " + todayStr);
-            
-            // Επιβολή άμεσης επανασχεδίασης
             this.render();
         }
     }
 };
 
 window.addEventListener('load', () => {
-    MuscleProgressUI.init();
+    if (window.MuscleProgressUI) window.MuscleProgressUI.init();
 });
