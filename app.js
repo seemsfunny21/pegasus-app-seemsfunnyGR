@@ -811,10 +811,12 @@ window.onload = () => {
         document.querySelectorAll(".navbar button").forEach(b => { 
             if (b.textContent.trim().split(' ')[0] === today) {
                 if (typeof selectDay === "function") {
-                    selectDay(b, b.textContent);
-                    // 🔥 ΔΙΟΡΘΩΣΗ v10.1.2: Αρχικοποίηση Circuit αμέσως μετά την επιλογή ημέρας
-                    remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
-                    currentIdx = 0;
+selectDay(b, b.textContent);
+setTimeout(() => {
+    remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
+    currentIdx = 0;
+    console.log("PEGASUS: Circuit Auto-Initialized for Today.");
+}, 150); // Δίνουμε χρόνο στη selectDay να χτίσει το DOM
                     console.log("PEGASUS: Circuit Auto-Initialized for Today.");
                 }
             }
