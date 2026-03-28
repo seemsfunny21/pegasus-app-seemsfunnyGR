@@ -42,6 +42,9 @@ window.PegasusStore = {
 /**
  * 2. MASTER EXERCISE DATABASE (v8.9 Filtered)
  */
+/**
+ * 2. MASTER EXERCISE DATABASE (v9.0 - Full Alignment)
+ */
 const STRENGTH_EXERCISES = [
     { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
     { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
@@ -64,7 +67,15 @@ const STRENGTH_EXERCISES = [
     { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Situps", muscleGroup: "Κορμός", defaultDuration: 45 },
     { name: "Glute Kickbacks", muscleGroup: "Πόδια", defaultDuration: 45 },
-    { name: "Leg Extensions", muscleGroup: "Πόδια", defaultDuration: 45 }
+    { name: "Leg Extensions", muscleGroup: "Πόδια", defaultDuration: 45 },
+    
+    // Προσθήκη missing entries για σωστό Muscle Tracking
+    { name: "Ποδηλασία 30km", muscleGroup: "Πόδια", defaultDuration: 0 },
+    { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", defaultDuration: 300 },
+    { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", defaultDuration: 300 },
+    { name: "EMS Static Plank", muscleGroup: "Κορμός", defaultDuration: 450 },
+    { name: "EMS Static Crunches", muscleGroup: "Κορμός", defaultDuration: 450 },
+    { name: "Stretching", muscleGroup: "Κορμός", defaultDuration: 338 }
 ];
 
 window.exercisesDB = STRENGTH_EXERCISES;
