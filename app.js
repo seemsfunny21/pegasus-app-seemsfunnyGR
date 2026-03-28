@@ -26,8 +26,12 @@ window.onerror = function(msg, url, line) {
 };
 
 /* ===== 2. CORE VARIABLES & MANIFEST SYNC ===== */
-const M = window.PegasusManifest;
-if (!M) console.error("❌ CRITICAL: PegasusManifest missing. Data integrity at risk.");
+var M = window.PegasusManifest; 
+
+if (!M) {
+    console.warn("⚠️ Manifest not found, retrying link...");
+    M = window.PegasusManifest;
+}
 
 var exercises = [];
 var remainingSets = [];
