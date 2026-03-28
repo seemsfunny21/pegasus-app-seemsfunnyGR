@@ -117,15 +117,17 @@ function createNavbar() {
     });
 }
 
+/* === PEGASUS ENGINE: SELECTDAY PROTOCOL (v10.1.2 STABLE) === */
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) {
         console.error("❌ PEGASUS CRITICAL: window.program is missing! Check data.js");
         return; 
     }
 
-    // [PUSH TRIGGER] Συγχρονισμός πριν από κάθε αλλαγή ημέρας
+    // [PUSH TRIGGER] Συγχρονισμός πριν από κάθε αλλαγή ημέρας για ασφάλεια δεδομένων
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 
+    // UI: Ενημέρωση Navbar Buttons
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', '#000', 'important');
@@ -137,14 +139,14 @@ function selectDay(btn, day) {
         btn.style.setProperty('background-color', '#4CAF50', 'important');
     }
 
-    // Engine Reset
+    // Engine Reset: Καθαρισμός προηγούμενης κατάστασης
     clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
-    // Base Data Fetching
+    // Base Data Fetching: Δυναμικός υπολογισμός προγράμματος
     let rawBaseData = (typeof window.calculateDailyProgram !== 'undefined') ? 
                       window.calculateDailyProgram(day, isRainy) : 
                       ((window.program[day]) ? [...window.program[day]] : []);
@@ -158,22 +160,27 @@ function selectDay(btn, day) {
         console.log("PEGASUS: Sunday Exercises Added to Friday (No Rain detected).");
     }
 
-    // Optimizer Integration
+    // Optimizer Integration: Προσαρμογή σετ βάσει εβδομαδιαίας προόδου
     let mappedData = window.PegasusOptimizer ? window.PegasusOptimizer.apply(day, rawBaseData) : 
                      rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
 
-    // Cardio Deduction Logic (Manifest Keys)
-    let cardioCredit = parseFloat(localStorage.getItem(P_M?.workout.cardio_offset || "pegasus_cardio_offset_sets")) || 0;
+    // Cardio Deduction Logic: Αφαίρεση σετ ποδιών βάσει χιλιομέτρων
+    let cardioKey = window.PegasusManifest?.workout.cardio_offset || "pegasus_cardio_offset_sets";
+    let cardioCredit = parseFloat(localStorage.getItem(cardioKey)) || 0;
     
-    // Sort: Skip exercises with 0 sets to the bottom
+    // Ταξινόμηση: Οι ασκήσεις με 0 σετ μεταφέρονται στο τέλος
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
 
     const list = document.getElementById("exList");
     if (!list) return;
-    list.innerHTML = ""; exercises = []; remainingSets = [];
+    list.innerHTML = ""; 
+    
+    // Καθαρισμός πινάκων ελέγχου
+    exercises = []; 
+    remainingSets = []; 
 
     mappedData.forEach((e, idx) => {
-        if (!e.name || e.name === "αα" || e.adjustedSets < 1) return;
+        if (!e.name || e.name === "αα" || e.adjustedSets < 0.1) return;
 
         let finalSets = parseFloat(e.adjustedSets);
         const muscle = (window.exercisesDB?.find(ex => ex.name.trim() === e.name.trim()))?.muscleGroup || "Άλλο";
@@ -211,11 +218,18 @@ function selectDay(btn, day) {
         `;
         list.appendChild(d);
         exercises.push(d);
-        remainingSets.push(finalSets);
     });
 
+    // 🔥 ΔΙΟΡΘΩΣΗ v10.1.2: Υποχρεωτική αρχικοποίηση του πίνακα remainingSets
+    // Χωρίς αυτό, το "Επόμενο" (btnNext) δεν ξέρει αν υπάρχουν υπόλοιπα σετ.
+    remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
+
     if (typeof calculateTotalTime === "function") calculateTotalTime();
-    showVideo(0);
+    
+    // Εμφάνιση του πρώτου βίντεο
+    if (typeof showVideo === "function") showVideo(0);
+    
+    console.log(`PEGASUS: Day ${day} loaded. Circuit ready with ${exercises.length} exercises.`);
 }
 
 /* ===== 5. WORKOUT ENGINE (METABOLIC & CLOUD INTEGRATED) ===== */
@@ -692,10 +706,8 @@ window.onload = () => {
     createNavbar();
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
 
-    // --- 2. MASTER UI MAPPING (The Command Center) ---
-    // Ανάθεση τιμών στο ήδη υπάρχον global αντικείμενο
-  // --- 2. MASTER UI MAPPING (The Command Center) ---
-    // Εναρμόνιση 100% με τα IDs του index.html βάσει των logs της κονσόλας
+// --- 2. MASTER UI MAPPING (The Command Center) ---
+    // Εναρμόνιση 100% με τα IDs του index.html και προσθήκη του Manual Email
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -717,7 +729,7 @@ window.onload = () => {
             }
         },
         
-        // ΔΙΟΡΘΩΣΗ: Προσθήκη "UI" στα κλειδιά για να ταυτίζονται με το HTML
+        // IDs Navbar με κατάληξη "UI" (Συγχρονισμός με HTML)
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
@@ -725,10 +737,19 @@ window.onload = () => {
         "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
         
-        // IDs που συνήθως δεν έχουν UI στο τέλος (επιβεβαιωμένα από τα logs)
+        // IDs Tools/Modals
         "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
         "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
+
+        // 🔥 ΠΡΟΣΘΗΚΗ: Σύνδεση του Manual Email Button
+        "btnManualEmail": () => {
+            if (window.PegasusReporting) {
+                window.PegasusReporting.checkAndSendMorningReport(true);
+            } else {
+                alert("Reporting Engine Offline");
+            }
+        },
 
         "btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
@@ -775,7 +796,13 @@ window.onload = () => {
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
             if (b.textContent.trim().split(' ')[0] === today) {
-                if (typeof selectDay === "function") selectDay(b, b.textContent);
+                if (typeof selectDay === "function") {
+                    selectDay(b, b.textContent);
+                    // 🔥 ΔΙΟΡΘΩΣΗ v10.1.2: Αρχικοποίηση Circuit αμέσως μετά την επιλογή ημέρας
+                    remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
+                    currentIdx = 0;
+                    console.log("PEGASUS: Circuit Auto-Initialized for Today.");
+                }
             }
         }); 
     }, 400);
