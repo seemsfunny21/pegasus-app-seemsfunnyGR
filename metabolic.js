@@ -1,10 +1,10 @@
 /* =============================================================
-   PEGASUS METABOLIC ENGINE - v7.0 (MAXIMALIST CALENDAR EDITION)
-   Protocol: Fail-Safe Precision + Automatic Calendar Green-Light
+   PEGASUS METABOLIC ENGINE - v7.1 (FINAL CORRECTED)
+   Protocol: Fail-Safe Precision + Unified Calendar/Cloud Bridge
    ============================================================= */
 
 const MetabolicEngine = {
-    // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 1: Δυναμική ανάκτηση βάρους
+    // Δυναμική ανάκτηση βάρους (Default 74kg βάσει προφίλ)
     get weight() {
         return parseFloat(localStorage.getItem("pegasus_weight")) || 74;
     },
@@ -36,17 +36,18 @@ const MetabolicEngine = {
             doneWorkouts[workoutKey] = true;
             localStorage.setItem("pegasus_workouts_done", JSON.stringify(doneWorkouts));
             
-            // Trigger visual refresh αν υπάρχουν οι συναρτήσεις στο PC
+            // Trigger visual refresh για το πρασίνισμα
             if (window.renderCalendar) window.renderCalendar();
             if (window.PegasusCalendar && window.PegasusCalendar.render) window.PegasusCalendar.render();
             
-            console.log("🎯 PEGASUS: Calendar key marked as DONE for " + workoutKey);
+            console.log("🎯 PEGASUS: Calendar marked as DONE for " + workoutKey);
         }
     },
 
     updateTracking: function(durationSeconds, exerciseName) {
         let liftedWeight = 0;
 
+        // UI INTERCEPTOR: Λήψη κιλών από το ενεργό DOM
         try {
             if (typeof window.exercises !== 'undefined' && typeof window.currentIdx !== 'undefined') {
                 const currentExNode = window.exercises[window.currentIdx];
@@ -56,9 +57,10 @@ const MetabolicEngine = {
                 }
             }
         } catch (e) {
-            console.warn("METABOLIC: UI Node not active, switching to storage backup.");
+            console.warn("METABOLIC: UI Node not active.");
         }
 
+        // FAIL-SAFE: Backup από LocalStorage
         if (liftedWeight === 0) {
             liftedWeight = parseFloat(localStorage.getItem(`weight_ANGELOS_${exerciseName}`)) || 0;
         }
@@ -66,6 +68,7 @@ const MetabolicEngine = {
         const activeMET = this.getDynamicMET(exerciseName, liftedWeight);
         const durationMins = durationSeconds / 60;
         
+        // Φόρμουλα: (MET * 3.5 * Weight) / 200
         const kcalPerMin = (activeMET * 3.5 * this.weight) / 200;
         const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(4)); 
 
@@ -75,21 +78,26 @@ const MetabolicEngine = {
         let currentDiskKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
         const displayTotal = currentDiskKcal + this.pendingKcal;
 
+        // Real-time UI Update
         const kcalDisplay = document.querySelector(".kcal-value");
         if (kcalDisplay) kcalDisplay.textContent = displayTotal.toFixed(1);
 
-        // Εγγραφή στο LocalStorage κάθε 5 ticks
+        // Batch Writing (κάθε 5 ticks / ~5 δευτερόλεπτα)
         if (this.tickCount >= 5) {
             localStorage.setItem("pegasus_today_kcal", displayTotal.toFixed(2));
             
-            // 🔥 ΑΥΤΟΜΑΤΟ ΠΡΑΣΙΝΙΣΜΑ: Εφόσον παράγονται θερμίδες, η προπόνηση θεωρείται ενεργή
+            // Αυτόματο πρασίνισμα ημερολογίου
             this.flagWorkoutAsDone();
             
             this.pendingKcal = 0;
             this.tickCount = 0;
 
-            // Προαιρετικό Sync αν είμαστε online
-            if (window.PegasusCloud && isUnlocked) window.PegasusCloud.push(true);
+            // Cloud Synchronization Bridge
+            // Έλεγχος αν το σύστημα είναι ξεκλείδωτο (Vault PIN)
+            const isSystemUnlocked = window.isUnlocked || (window.PegasusCloud && window.PegasusCloud.isUnlocked);
+            if (window.PegasusCloud && isSystemUnlocked) {
+                window.PegasusCloud.push(true);
+            }
         }
         
         return addedKcal;
