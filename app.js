@@ -1,50 +1,11 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.1 (PRECISION BLOCK 1)
+   PEGASUS WORKOUT ENGINE - v10.2 (RESTORATION BLOCK)
    Protocol: Zero-Conflict Variable Bridge & Manifest Alignment
-   Status: BLOCK 1 OPERATIONAL | Surgical Fix for Constant Assignment
    ========================================================================== */
-
-// 0. GLOBAL SCOPE BRIDGE
 var P_M = window.PegasusManifest; 
+if (typeof M === 'undefined') { window.M = P_M; }
 
-// ✅ ΚΡΑΤΑΜΕ ΑΥΤΟ: Δημιουργία του Global Bridge μία φορά στην αρχή
-window.masterUI = window.masterUI || {}; 
-
-// Ελέγχουμε αν η M είναι ήδη δεσμευμένη
-if (typeof M === 'undefined') {
-    window.M = P_M;
-} else {
-    console.log("🛡️ PEGASUS BRIDGE: M is already linked globally.");
-}
-
-if (!P_M) {
-    console.warn("⚠️ Manifest not found. Initializing Emergency Link...");
-    P_M = window.PegasusManifest;
-    if (typeof M === 'undefined') window.M = P_M;
-}
-
-/* ===== 1. ISSUE LOGGER (DIAGNOSTIC MODE) ===== */
-window.pegasusLogs = JSON.parse(localStorage.getItem(P_M?.system.logs || "pegasus_system_logs") || "[]");
-const originalError = console.error;
-const originalWarn = console.warn;
-
-console.error = function(...args) {
-    window.pegasusLogs.push({ type: "ERROR", time: new Date().toLocaleTimeString(), msg: args.join(" ") });
-    localStorage.setItem(P_M?.system.logs || "pegasus_system_logs", JSON.stringify(window.pegasusLogs.slice(-50)));
-    originalError.apply(console, args);
-};
-
-console.warn = function(...args) {
-    window.pegasusLogs.push({ type: "WARNING", time: new Date().toLocaleTimeString(), msg: args.join(" ") });
-    localStorage.setItem(P_M?.system.logs || "pegasus_system_logs", JSON.stringify(window.pegasusLogs.slice(-50)));
-    originalWarn.apply(console, args);
-};
-
-window.onerror = function(msg, url, line) {
-    console.error(`Runtime Error: ${msg} at ${url}:${line}`);
-};
-
-/* ===== 2. CORE VARIABLES (MANIFEST ALIGNED) ===== */
+// CORE ENGINE VARIABLES
 var exercises = [];
 var remainingSets = [];
 var currentIdx = 0;
@@ -54,20 +15,19 @@ var timer = null;
 var totalSeconds = 0;
 var remainingSeconds = 0;
 
-// Χρήση P_M για τις ρυθμίσεις συστήματος
-var muted = localStorage.getItem(P_M?.system.mute || "pegasus_mute_state") === "true";
-var TURBO_MODE = localStorage.getItem(P_M?.system.turbo || "pegasus_turbo_state") === "true";
+var muted = localStorage.getItem(window.M?.system.mute || "pegasus_mute_state") === "true";
+var TURBO_MODE = localStorage.getItem(window.M?.system.turbo || "pegasus_turbo_state") === "true";
 var SPEED = TURBO_MODE ? 10 : 1;
 
-/* === DYNAMIC PARAMETERS (MANIFEST STRICT) === */
 var workoutPhases = [
     { n: "Προετοιμασία", d: 10 }, 
-    { n: "Άσκηση", d: parseInt(localStorage.getItem(P_M?.user.ex_time || "pegasus_ex_time")) || 45 },      
-    { n: "Διάλειμμα", d: parseInt(localStorage.getItem(P_M?.user.rest_time || "pegasus_rest_time")) || 60 }      
+    { n: "Άσκηση", d: parseInt(localStorage.getItem(window.M?.user.ex_time || "pegasus_ex_time")) || 45 },      
+    { n: "Διάλειμμα", d: parseInt(localStorage.getItem(window.M?.user.rest_time || "pegasus_rest_time")) || 60 }      
 ];
 
-// Το βάρος χρήστη αντλείται αποκλειστικά από το Manifest Key
-var userWeight = parseFloat(localStorage.getItem(P_M?.user.weight || "pegasus_weight")) || 74;
+var userWeight = parseFloat(localStorage.getItem(window.M?.user.weight || "pegasus_weight")) || 74;
+
+// [Κράτησε όλο το υπόλοιπο app.js σου ακριβώς όπως είναι, απλώς αντικατάστησε το πάνω μέρος]
 
 /* ===== 3. AUDIO SYSTEM (INTERACTION SYNC) ===== */
 let sysAudio = new Audio('videos/beep.mp3');
