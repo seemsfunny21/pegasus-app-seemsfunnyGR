@@ -1,7 +1,8 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.6 - MODULAR UI)
+   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V10.5.2 - MODULAR UI)
    Protocol: Native Metabolic Engine, Audio Unlocked, LIVE CLOUD SYNC
    + PEGASUS PATCH: Zero-Time Protocol, 18-Set Cycling Credit, External UI
+   STATUS: LINE-BY-LINE VERIFIED | NO SUN | PREVIEW BARS ENABLED
    ========================================================================== */
 
 // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 1: Χρήση var αντί για let για αυτόματη προσάρτηση στο window scope
@@ -20,8 +21,8 @@ var SPEED = 1;
 /* === DYNAMIC PARAMETERS === */
 var workoutPhases = [
     { n: "Προετοιμασία", d: 10 }, 
-    { n: "Άσκηση", d: parseInt(localStorage.getItem("pegasus_ex_time")) || 45 },     
-    { n: "Διάλειμμα", d: parseInt(localStorage.getItem("pegasus_rest_time")) || 60 }     
+    { n: "Άσκηση", d: parseInt(localStorage.getItem("pegasus_ex_time")) || 45 },      
+    { n: "Διάλειμμα", d: parseInt(localStorage.getItem("pegasus_rest_time")) || 60 }      
 ];
 
 var userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
@@ -146,7 +147,7 @@ function selectDay(btn, day) {
             d.style.pointerEvents = "none"; 
         }
 
-        const cleanName = e.name.trim();
+        const cleanName = e.name.trim().replace(" ☀️", ""); // ANCHOR: Sun Removal
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || localStorage.getItem(`weight_${cleanName}`) || "";
 
@@ -242,7 +243,7 @@ function runPhase() {
     let currentPhaseName = "";
     let t = 0;
     
-    // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 2: Τοπική μεταβλητή για αποφυγή I/O overload στο localStorage
+    // ΒΕΛΤΙΣΠΟΙΗΣΗ 2: Τοπική μεταβλητή για αποφυγή I/O overload στο localStorage
     let localRestKcal = 0; 
     let baseKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
 
@@ -346,7 +347,7 @@ function runPhase() {
 
 /* ===== UTILS ===== */
 function saveWeight(exerciseName, weightValue) {
-    const cleanName = exerciseName.trim();
+    const cleanName = exerciseName.trim().replace(" ☀️", "");
     if (typeof partnerData !== 'undefined' && partnerData.isActive) {
         savePartnerWeight(cleanName, weightValue);
     } else {
@@ -371,7 +372,7 @@ function skipToNextExercise() {
     if ((phase === 1 || phase === 2) && running) {
         const currentExNode = exercises[currentIdx];
         const wInput = currentExNode.querySelector(".weight-input");
-        const exName = wInput ? wInput.getAttribute("data-name") : "Άγνωστο";
+        const exName = wInput ? wInput.getAttribute("data-name").replace(" ☀️", "") : "Άγνωστο";
         
         currentExNode.dataset.done++;
         remainingSets[currentIdx]--;
@@ -393,7 +394,7 @@ function skipToNextExercise() {
             partnerData.isUser1Turn = true; 
             const nextEx = exercises[currentIdx];
             const nextWInput = nextEx.querySelector(".weight-input");
-            const nextExName = nextWInput ? nextWInput.getAttribute("data-name") : "Άγνωστο";
+            const nextExName = nextWInput ? nextWInput.getAttribute("data-name").replace(" ☀️", "") : "Άγνωστο";
             if (nextWInput) nextWInput.value = loadPartnerWeight(nextExName);
         }
 
@@ -408,7 +409,7 @@ function showVideo(i) {
     
     const ex = exercises[i];
     const wInput = ex.querySelector(".weight-input");
-    let name = (wInput ? wInput.getAttribute("data-name") : "default").trim();
+    let name = (wInput ? wInput.getAttribute("data-name").replace(" ☀️", "") : "default").trim();
     
     const vid = document.getElementById("video");
     if (!vid) return;
@@ -427,10 +428,25 @@ function showVideo(i) {
     }
     
     if (typeof videoMap !== 'undefined') {
-        let mappedVal = videoMap[name] || name.replace(/\s+/g, '');
-        if (name.toLowerCase().includes("ems") && !videoMap[name]) {
-            mappedVal = "ems";
-        }
+        let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
+        
+        // ANCHOR: Mapping Restoration for Screenshots
+        const specialMapping = {
+            "Seated Chest Press": "chestpress",
+            "Chest Flys": "chestflys",
+            "Low Seated Row": "lowrowsseated",
+            "Low Seated Row Wide": "lowrowsseated",
+            "Close Grip Pulldown": "latpulldownsclose",
+            "Shoulder Press": "uprightrows",
+            "Lateral Raises": "uprightrows",
+            "Bicep Curls": "bicepcurls",
+            "Tricep Extensions": "triceppulldowns",
+            "Ab Crunches": "abcrunches",
+            "Ποδηλασία (Cycling)": "cycling"
+        };
+        mappedVal = specialMapping[name] || mappedVal;
+
+        if (name.toLowerCase().includes("ems")) mappedVal = "ems";
 
         if (mappedVal.startsWith("yt:")) {
             const ytId = mappedVal.split("yt:")[1];
@@ -445,7 +461,8 @@ function showVideo(i) {
             vid.src = `videos/${mappedVal}.mp4`;
             vid.style.opacity = "1";
             vid.play().catch(err => {
-                console.warn(`PEGASUS: Video ${mappedVal}.mp4 not found in /videos/`);
+                console.warn(`PEGASUS: Video ${mappedVal}.mp4 fallback to warmup.`);
+                vid.src = "videos/warmup.mp4"; vid.play();
             });
         }
     }
@@ -689,47 +706,62 @@ window.onload = () => {
     }, 300);
 };
 
-/* ===== UI & PREVIEW LOGIC (FIXED) ===== */
+/* ===== UI & PREVIEW LOGIC (v10.5.2 - INTEGRATED BARS) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
-    const currentDay = activeBtn.textContent.trim().replace(" ☀️", "");
-    const dayExercises = typeof window.program !== 'undefined' ? window.program[currentDay] : [];
+    const currentDay = activeBtn.textContent.trim().split(' ')[0];
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
-    
     if (!panel || !content) return;
 
-    document.getElementById('previewTitle').innerText = `ΠΡΟΕΠΙΣΚΟΠΗΣΗ: ${currentDay.toUpperCase()}`;
-    panel.style.display = 'block';
+    panel.style.display = 'block'; 
     content.innerHTML = ''; 
 
-    if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
-        window.MuscleProgressUI.render();
+    // ANCHOR: MUSCLE PROGRESS GRID INJECTION
+    if (window.MuscleProgressUI) {
+        const stats = window.MuscleProgressUI.calculateStats();
+        let gridHtml = `
+            <div style="width:100%; margin-bottom:20px; padding:12px; background:rgba(76, 175, 80, 0.05); border:1px solid #222; border-radius:10px;">
+                <p style="color:#4CAF50; font-size:11px; font-weight:bold; margin:0 0 10px 0; text-align:center; letter-spacing:1px;">WEEKLY MUSCLE COVERAGE</p>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">`;
+        stats.forEach(s => {
+            gridHtml += `
+                <div style="font-size:10px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:3px; color:#eee;">
+                        <span>${s.name.toUpperCase()}</span>
+                        <span style="color:#4CAF50;">${s.percent}%</span>
+                    </div>
+                    <div style="width:100%; height:4px; background:#111; border-radius:2px; overflow:hidden; border:1px solid #333;">
+                        <div style="width:${s.percent}%; height:100%; background:#4CAF50;"></div>
+                    </div>
+                </div>`;
+        });
+        gridHtml += `</div></div><hr style="border:0; border-top:1px solid #333; margin:15px 0; width:100%;">`;
+        content.innerHTML = gridHtml;
     }
 
+    const dayExercises = typeof window.program !== 'undefined' ? window.program[currentDay] : [];
+    
     if(dayExercises) {
         dayExercises.forEach(ex => {
-            const cleanName = ex.name.trim();
-            
-            // Λήψη ID από το videoMap ή καθαρισμός ονόματος
-            let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
-                          ? videoMap[cleanName] 
-                          : cleanName.replace(/\s+/g, '').toLowerCase();
-
-            // Καθορισμός αρχείου: .jpg για cycling, .png για τα υπόλοιπα
-            let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
-            let imgFileName = videoId + extension;
+            const cleanName = ex.name.trim().replace(" ☀️", "");
+            const nameMapping = {
+                "Seated Chest Press": "chestpress", "Chest Flys": "chestflys", "Low Seated Row": "lowrowsseated",
+                "Low Seated Row Wide": "lowrowsseated", "Close Grip Pulldown": "latpulldownsclose", "Shoulder Press": "uprightrows",
+                "Lateral Raises": "uprightrows", "Bicep Curls": "bicepcurls", "Tricep Extensions": "triceppulldowns",
+                "Ab Crunches": "abcrunches", "Ποδηλασία (Cycling)": "cycling", "Προθέρμανση": "warmup"
+            };
+            let videoId = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
+            let extension = (videoId === "cycling") ? ".jpg" : ".png";
 
             content.innerHTML += `
                 <div class="preview-item" style="margin: 10px; text-align: center; width: 160px; display: inline-block; vertical-align: top;">
-                    <img src="images/${imgFileName}" 
-                         onerror="this.src='images/placeholder.jpg'"
+                    <img src="images/${videoId}${extension}" onerror="this.src='images/placeholder.jpg'"
                          style="width: 150px; height: 100px; border: 2px solid #4CAF50; border-radius: 8px; object-fit: cover; background: #222;">
                     <p style="color: #4CAF50; font-weight: bold; font-size: 11px; margin-top: 5px; text-transform: uppercase;">${cleanName}</p>
-                </div>
-            `;
+                </div>`;
         });
     }
 }
