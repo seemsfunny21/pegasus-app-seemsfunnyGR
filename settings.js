@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS SETTINGS ENGINE - v4.3 (STRICT AUDIT & AUTO-FILL)
+   PEGASUS SETTINGS ENGINE - v4.1 MODULAR (STRICT AUDIT)
    Protocol: Strict Data Analyst - Zero Logic Loss - Cross-File Sync
    ========================================================================== */
 
@@ -13,25 +13,24 @@ const DEFAULT_SETTINGS = {
  * 1. GLOBAL ACCESSOR (Safe Load)
  */
 window.getPegasusSettings = function() {
-    const d = { weight: 74, height: 187, age: 38, goalKcal: 2800, goalProtein: 160 };
-    return {
-        weight: parseFloat(localStorage.getItem("pegasus_weight")) || d.weight,
-        height: parseFloat(localStorage.getItem("pegasus_height")) || d.height,
-        age: parseInt(localStorage.getItem("pegasus_age")) || d.age,
-        goalKcal: parseInt(localStorage.getItem("pegasus_goal_kcal")) || d.goalKcal,
-        goalProtein: parseInt(localStorage.getItem("pegasus_goal_protein")) || d.goalProtein,
-        muscleTargets: JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }
-    };
-};
-
-window.initSettingsUI = function() {
-    const s = window.getPegasusSettings();
-    const fields = { "userWeightInput": s.weight, "userHeightInput": s.height, "userAgeInput": s.age, "goalKcalInput": s.goalKcal, "goalProteinInput": s.goalProtein };
-    for (let id in fields) { if (document.getElementById(id)) document.getElementById(id).value = fields[id]; }
+    try {
+        const storedTargets = localStorage.getItem("pegasus_muscle_targets");
+        return {
+            weight: parseFloat(localStorage.getItem("pegasus_weight")) || DEFAULT_SETTINGS.weight,
+            height: parseFloat(localStorage.getItem("pegasus_height")) || DEFAULT_SETTINGS.height,
+            age: parseInt(localStorage.getItem("pegasus_age")) || DEFAULT_SETTINGS.age,
+            gender: localStorage.getItem("pegasus_gender") || DEFAULT_SETTINGS.gender,
+            goalKcal: parseInt(localStorage.getItem("pegasus_goal_kcal")) || DEFAULT_SETTINGS.goalKcal,
+            goalProtein: parseInt(localStorage.getItem("pegasus_goal_protein")) || DEFAULT_SETTINGS.goalProtein,
+            exTime: parseInt(localStorage.getItem("pegasus_ex_time")) || DEFAULT_SETTINGS.exTime,
+            restTime: parseInt(localStorage.getItem("pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
+            muscleTargets: storedTargets ? JSON.parse(storedTargets) : DEFAULT_SETTINGS.muscleTargets
+        };
+    } catch (e) { return DEFAULT_SETTINGS; }
 };
 
 /**
- * 2. LIVE BMR CALCULATOR
+ * 2. LIVE BMR CALCULATOR (Mifflin-St Jeor)
  */
 window.calculateBMR = function() {
     const w = parseFloat(document.getElementById("userWeightInput")?.value);
@@ -48,36 +47,68 @@ window.calculateBMR = function() {
 };
 
 /**
- * 3. UI INITIALIZER (Γεμίζει τα κουτάκια)
+ * 3. MASTER SAVE LOGIC (Called by app.js listener)
+ */
+window.savePegasusSettingsGlobal = function() {
+    try {
+        console.log("PEGASUS: Executing Tactical Settings Save...");
+
+        const w = document.getElementById("userWeightInput")?.value;
+        const h = document.getElementById("userHeightInput")?.value;
+        const a = document.getElementById("userAgeInput")?.value;
+        const g = document.getElementById("userGenderInput")?.value;
+        const goalK = document.getElementById("goalKcalInput")?.value;
+        const goalP = document.getElementById("goalProteinInput")?.value;
+        const ex = document.getElementById("exerciseTimeInput")?.value;
+        const rs = document.getElementById("restTimeInput")?.value;
+
+        localStorage.setItem("pegasus_weight", w || DEFAULT_SETTINGS.weight);
+        localStorage.setItem("pegasus_height", h || DEFAULT_SETTINGS.height);
+        localStorage.setItem("pegasus_age", a || DEFAULT_SETTINGS.age);
+        localStorage.setItem("pegasus_gender", g || DEFAULT_SETTINGS.gender);
+        localStorage.setItem("pegasus_goal_kcal", goalK || DEFAULT_SETTINGS.goalKcal);
+        localStorage.setItem("pegasus_goal_protein", goalP || DEFAULT_SETTINGS.goalProtein);
+        localStorage.setItem("pegasus_ex_time", ex || DEFAULT_SETTINGS.exTime);
+        localStorage.setItem("pegasus_rest_time", rs || DEFAULT_SETTINGS.restTime);
+
+        // Muscle Targets Audit
+        const targets = {};
+        ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
+            const el = document.getElementById(`target${m}Input`);
+            let val = el ? parseInt(el.value) : NaN;
+            targets[m] = isNaN(val) ? (DEFAULT_SETTINGS.muscleTargets[m] || 14) : val;
+        });
+        localStorage.setItem("pegasus_muscle_targets", JSON.stringify(targets));
+
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
+
+        alert("PEGASUS SYNC: Οι ρυθμίσεις αποθηκεύτηκαν.");
+        window.location.reload();
+    } catch (err) {
+        console.error("CRITICAL ERROR IN SAVE:", err);
+    }
+};
+
+/**
+ * 4. UI INITIALIZER
  */
 window.initSettingsUI = function() {
-    console.log("⚙️ PEGASUS: Forcing Settings UI Auto-Fill...");
     const s = window.getPegasusSettings();
-    
     const fields = {
-        "userWeightInput": s.weight, 
-        "userHeightInput": s.height,
-        "userAgeInput": s.age, 
-        "userGenderInput": s.gender,
-        "goalKcalInput": s.goalKcal, 
-        "goalProteinInput": s.goalProtein,
-        "exerciseTimeInput": s.exTime, 
-        "restTimeInput": s.restTime
+        "userWeightInput": s.weight, "userHeightInput": s.height,
+        "userAgeInput": s.age, "userGenderInput": s.gender,
+        "goalKcalInput": s.goalKcal, "goalProteinInput": s.goalProtein,
+        "exerciseTimeInput": s.exTime, "restTimeInput": s.restTime
     };
 
-    // Γέμισμα βασικών πεδίων
     for (let id in fields) {
         const el = document.getElementById(id);
-        if (el) {
-            el.value = fields[id];
-            console.log(`Setting ${id} -> ${fields[id]}`);
-        }
+        if (el) el.value = fields[id];
     }
 
-    // Γέμισμα Muscle Targets
-    ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
+    Object.keys(s.muscleTargets).forEach(m => {
         const el = document.getElementById(`target${m}Input`);
-        if (el) el.value = s.muscleTargets[m] || DEFAULT_SETTINGS.muscleTargets[m];
+        if (el) el.value = s.muscleTargets[m];
     });
 
     // Re-bind BMR Live Events
@@ -85,36 +116,4 @@ window.initSettingsUI = function() {
         const el = document.getElementById(id);
         if (el) el.oninput = window.calculateBMR;
     });
-};
-
-/**
- * 4. MASTER SAVE LOGIC
- */
-window.savePegasusSettingsGlobal = function() {
-    try {
-        console.log("PEGASUS: Executing Tactical Settings Save...");
-
-        localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput").value);
-        localStorage.setItem("pegasus_height", document.getElementById("userHeightInput").value);
-        localStorage.setItem("pegasus_age", document.getElementById("userAgeInput").value);
-        localStorage.setItem("pegasus_gender", document.getElementById("userGenderInput").value);
-        localStorage.setItem("pegasus_goal_kcal", document.getElementById("goalKcalInput").value);
-        localStorage.setItem("pegasus_goal_protein", document.getElementById("goalProteinInput").value);
-        localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput").value);
-        localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput").value);
-
-        const targets = {};
-        ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
-            const el = document.getElementById(`target${m}Input`);
-            targets[m] = el ? parseInt(el.value) : DEFAULT_SETTINGS.muscleTargets[m];
-        });
-        localStorage.setItem("pegasus_muscle_targets", JSON.stringify(targets));
-
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
-
-        alert("✅ Ρυθμίσεις Αποθηκεύτηκαν!");
-        location.reload();
-    } catch (err) {
-        console.error("CRITICAL ERROR IN SAVE:", err);
-    }
 };

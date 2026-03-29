@@ -65,7 +65,7 @@ window.exercisesDB = [
     { name: "Cycling", muscleGroup: "Πόδια" },
 
     // OTHER
-    { name: "Stretching", muscleGroup: "None" },
+    { name: "Stretching", muscleGroup: "Κορμός" },
     { name: "Warmup", muscleGroup: "None" }
 ];
 

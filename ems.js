@@ -1,24 +1,20 @@
 /* ==========================================================================
-   PEGASUS EMS MODULE - v4.1 FULL RESTORATION
-   Protocol: Strict Data Analyst - Zero Logic Loss
+   PEGASUS EMS MODULE - v10.1 STABLE (SURGICAL FIX)
+   Protocol: Strict Data Analyst - Zero Logic Loss - Manifest Aligned
    ========================================================================== */
 
 /**
- * 1. ΗΜΕΡΟΛΟΓΙΑΚΟΣ ΥΠΟΛΟΓΙΣΜΟΣ (Πλήρης Λογική v3.2)
+ * 1. ΗΜΕΡΟΛΟΓΙΑΚΟΣ ΥΠΟΛΟΓΙΣΜΟΣ
  */
 function getTargetWednesday() {
     const now = new Date();
-    
-    // ΔΙΟΡΘΩΣΗ: Προσαρμογή στην Ελληνική εβδομάδα (Κυριακή = 7 αντί για 0)
     let currentDay = now.getDay(); 
     if (currentDay === 0) currentDay = 7; 
     
-    // Υπολογισμός διαφοράς για την Τετάρτη (Ημέρα 3) της τρέχουσας εβδομάδας
     const diff = 3 - currentDay;
     const targetDate = new Date(now);
     targetDate.setDate(now.getDate() + diff);
     
-    // Αποφυγή σφάλματος Timezone (UTC)
     const year = targetDate.getFullYear();
     const month = String(targetDate.getMonth() + 1).padStart(2, '0');
     const day = String(targetDate.getDate()).padStart(2, '0');
@@ -27,7 +23,7 @@ function getTargetWednesday() {
 }
 
 /**
- * 2. ΕΚΚΙΝΗΣΗ UI (Πλήρης Λογική v3.2)
+ * 2. ΕΚΚΙΝΗΣΗ UI
  */
 window.logEMSData = function() {
     console.log("PEGASUS: EMS Entry Triggered.");
@@ -35,7 +31,6 @@ window.logEMSData = function() {
     const toolsPanel = document.getElementById('toolsPanel');
     if (toolsPanel) toolsPanel.style.display = 'none';
 
-    // Αν δεν υπάρχει το Modal στο HTML, το δημιουργεί δυναμικά (Safe Guard)
     const emsModal = document.getElementById('emsModal') || createEMSModal();
     
     const dateInput = document.getElementById('emsDate');
@@ -51,7 +46,7 @@ window.logEMSData = function() {
 };
 
 /**
- * 3. ΑΠΟΘΗΚΕΥΣΗ ΚΑΙ ΣΥΓΧΡΟΝΙΣΜΟΣ (Πλήρης Λογική v3.2)
+ * 3. ΑΠΟΘΗΚΕΥΣΗ ΚΑΙ ΣΥΓΧΡΟΝΙΣΜΟΣ (FIXED)
  */
 window.saveEMSFinal = async function() {
     const date = document.getElementById('emsDate')?.value;
@@ -65,9 +60,11 @@ window.saveEMSFinal = async function() {
 
     const timestamp = Date.now();
     const historyKey = `pegasus_history_${date}`;
-    const weeklyKey = 'pegasus_weekly_history';
+    // Χρήση Manifest Keys
+    const weeklyKey = window.PegasusManifest?.workout?.weekly_history || 'pegasus_weekly_history';
+    const dietKcalKey = window.PegasusManifest?.nutrition?.today_kcal || 'pegasus_today_kcal';
     
-    // Πίστωση Σετ στις Μυϊκές Ομάδες
+    // 1. Πίστωση Σετ στις Μυϊκές Ομάδες
     let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
     };
@@ -77,12 +74,11 @@ window.saveEMSFinal = async function() {
     });
     localStorage.setItem(weeklyKey, JSON.stringify(weeklyStats));
 
-    // Ενημέρωση Θερμίδων Διατροφής (pegasus_diet_kcal για συγχρονισμό με data.js)
-    let dietKcalKey = "pegasus_diet_kcal";
+    // 2. Ενημέρωση Θερμίδων (Συγχρονισμός με Food Panel)
     let currentDietKcal = parseFloat(localStorage.getItem(dietKcalKey)) || 0;
     localStorage.setItem(dietKcalKey, (currentDietKcal + parseFloat(kcal)).toFixed(1));
 
-    // Καταγραφή στο Ιστορικό Ημέρας
+    // 3. Καταγραφή στο Ιστορικό Ημέρας
     const emsEntry = {
         id: "ems_" + timestamp,
         date: date,
@@ -98,9 +94,7 @@ window.saveEMSFinal = async function() {
         localStorage.setItem(historyKey, JSON.stringify(dayHistory));
         localStorage.setItem(`pegasus_day_status_${date}`, 'COMPLETED');
 
-        // Υποχρεωτική αναμονή για Cloud Sync
         if (window.PegasusCloud) {
-            console.log("PEGASUS: Triggering Cloud Push...");
             await window.PegasusCloud.push(true);
         }
         
@@ -112,25 +106,19 @@ window.saveEMSFinal = async function() {
     }
 };
 
-/**
- * 4. UI HELPER: CLOSE MODAL
- */
 window.closeEMSModal = function() {
     const modal = document.getElementById('emsModal');
     if (modal) modal.style.display = 'none';
 };
 
-/**
- * 5. DYNAMIC MODAL CREATOR (Πλήρης Λογική v3.2)
- * Διασφαλίζει ότι το UI θα υπάρχει ακόμα και αν λείπει από το HTML
- */
 function createEMSModal() {
-    if (document.getElementById('emsModal')) return document.getElementById('emsModal');
+    let div = document.getElementById('emsModal');
+    if (div) return div;
     
-    const div = document.createElement('div');
+    div = document.createElement('div');
     div.id = 'emsModal';
     div.className = 'pegasus-panel';
-    div.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#0a0a0a; border:2px solid #4CAF50; padding:25px; border-radius:15px; z-index:99999; width:320px; text-align:center; box-shadow: 0 0 30px rgba(0,0,0,1); color:white;";
+    div.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#0a0a0a; border:2px solid #4CAF50; padding:25px; border-radius:15px; z-index:99999; width:320px; text-align:center; box-shadow: 0 0 30px rgba(0,0,0,1); color:white; display:none;";
     
     div.innerHTML = `
         <h3 style="color:#4CAF50; margin-top:0;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</h3>
