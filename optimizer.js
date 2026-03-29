@@ -95,12 +95,12 @@ window.PegasusOptimizer = {
         return { ...ex, adjustedSets: finalSets, isCompleted: remaining <= 0, muscleGroup: group };
     },
 
-    getGroup: function(name) {
-        const cleanName = name.trim().replace(" ☀️", "");
-        if (window.exercisesDB) {
-            const match = window.exercisesDB.find(ex => ex.name.trim() === cleanName);
-            if (match) return match.muscleGroup;
-        }
+getGroup: function(name) {
+    const cleanName = name.trim(); // Αφαιρέθηκε το .replace(" ☀️", "")
+    if (window.exercisesDB) {
+        const match = window.exercisesDB.find(ex => ex.name.trim() === cleanName);
+        if (match) return match.muscleGroup;
+    }
         
         const n = cleanName.toLowerCase();
         if (n.includes("στήθος") || n.includes("chest") || n.includes("pushups")) return "Στήθος";
