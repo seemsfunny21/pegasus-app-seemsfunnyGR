@@ -596,6 +596,7 @@ window.toggleSkipExercise = function(idx) {
 };
 
 /* ===== 8. FINISH & REPORTING (MANIFEST COMPLIANT) ===== */
+/* ===== 8. FINISH & REPORTING (STRICT LOCAL-FIRST v10.6.2) ===== */
 function finishWorkout() {
     // Αποτροπή διπλοεκτέλεσης αν δεν υπάρχει ενεργή προπόνηση
     if (!running && !timer && phase === 0) return; 
@@ -605,41 +606,51 @@ function finishWorkout() {
 
     const label = document.getElementById("phaseTimer");
     if (label) { 
-        label.textContent = "ΟΛΟΚΛΗΡΩΣΗ & ΣΥΓΧΡΟΝΙΣΜΟΣ..."; 
+        label.textContent = "ΟΛΟΚΛΗΡΩΣΗ & ΤΟΠΙΚΗ ΑΠΟΘΗΚΕΥΣΗ..."; 
         label.style.color = "#4CAF50"; 
     }
 
     const now = new Date();
-    // Format: YYYY-MM-DD για συμβατότητα με το Calendar
     const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    // Ενημέρωση ολοκληρωμένων προπονήσεων στο Manifest Key
-    let data = JSON.parse(localStorage.getItem(P_M?.workout.done || "pegasus_workouts_done") || "{}");
+    // 1. ΤΟΠΙΚΗ ΚΑΤΑΧΩΡΗΣΗ (Ασφάλεια Δεδομένων)
+    let doneKey = P_M?.workout.done || "pegasus_workouts_done";
+    let data = JSON.parse(localStorage.getItem(doneKey) || "{}");
     data[workoutKey] = true;
-    localStorage.setItem(P_M?.workout.done || "pegasus_workouts_done", JSON.stringify(data));
+    localStorage.setItem(doneKey, JSON.stringify(data));
     
-    // Μηδενισμός Cardio Offsets (Burn-after-use protocol)
+    // 2. ΜΗΔΕΝΙΣΜΟΣ CARDIO OFFSETS
     localStorage.setItem(P_M?.workout.cardio_offset || "pegasus_cardio_offset_sets", "0");
 
-    // UI & Cloud Update
+    // 3. UI UPDATE (Total Count)
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
-    if (window.PegasusCloud) window.PegasusCloud.push(true);
 
-    console.log(`[PEGASUS FINISH]: Workout ${workoutKey} saved. Preparing report...`);
+    // 4. ΑΠΟΠΕΙΡΑ CLOUD SYNC (Silent Fail Protocol)
+    if (window.PegasusCloud) {
+        try {
+            window.PegasusCloud.push(true);
+            console.log(`[PEGASUS FINISH]: Workout ${workoutKey} synced with Cloud.`);
+        } catch(e) {
+            console.warn("PEGASUS CLOUD: Sync deferred due to network/CORS error. Data saved locally.");
+        }
+    }
 
+    // 5. REPORTING SEQUENCE
     setTimeout(() => {
         if (window.PegasusReporting) {
-            // Ανάκτηση τελικών θερμίδων από το Metabolic Engine
-            const currentKcal = localStorage.getItem(P_M?.nutrition.today_kcal || "pegasus_today_kcal") || "0";
+            // Ανάκτηση τελικών θερμίδων
+            const kcalKey = P_M?.nutrition.today_kcal || "pegasus_today_kcal";
+            const currentKcal = localStorage.getItem(kcalKey) || "0";
+            
             window.PegasusReporting.prepareAndSaveReport(currentKcal);
             
-            // Καθαρισμός ημερήσιων θερμίδων για την επόμενη ημέρα
-            localStorage.setItem(P_M?.nutrition.today_kcal || "pegasus_today_kcal", "0.0");
+            // Καθαρισμός ημερήσιων θερμίδων
+            localStorage.setItem(kcalKey, "0.0");
         }
         
-        // Ολική επαναφορά συστήματος
+        console.log("PEGASUS OS: Session Terminated. Reloading...");
         location.reload(); 
-    }, 5000);
+    }, 4000); // Μειωμένο delay για ταχύτερη απόκριση
 }
 
 /* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.5) ===== */
