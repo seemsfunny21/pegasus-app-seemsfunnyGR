@@ -351,31 +351,51 @@ const PegasusCloud = {
             updateDietUI(); updateSuppUI(); loadSpecs(); 
         }
     },
-    push: async () => {
+push: async () => {
         if (!isUnlocked || !PegasusCloud.hasSuccessfullyPulled) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
+        
+        // --- DATA MINING FOR DIET LOGS ---
+        // Συλλέγουμε όλα τα κλειδιά που ξεκινούν με food_log_ για να τα στείλουμε στο Cloud
+        const allFoodLogs = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (key.startsWith("food_log_")) {
+                allFoodLogs[key] = JSON.parse(localStorage.getItem(key));
+            }
+        }
+
         const payload = {
-            kcal: localStorage.getItem(PegasusStore.keys.kcalTotal) || "0",
-            protein: localStorage.getItem(PegasusStore.keys.protTotal) || "0",
-            supp_inventory: PegasusCloud.safeParse("pegasus_supp_inventory", {}),
+            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
+            protein: localStorage.getItem("pegasus_today_protein") || "0",
+            supp_inventory: PegasusCloud.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
             weekly_history: PegasusCloud.safeParse("pegasus_weekly_history", {}),
             car_identity: PegasusCloud.safeParse("peg_car_identity", {}),
             car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}),
             car_service: PegasusCloud.safeParse("pegasus_car_service", []),
-            food_library: PegasusCloud.safeParse(PegasusStore.keys.library, []),
-            peg_contacts: PegasusCloud.safeParse(PegasusStore.keys.contacts, []),
-            workouts_done: PegasusCloud.safeParse("pegasus_workouts_done", {})
+            food_library: PegasusCloud.safeParse("pegasus_food_library", []),
+            peg_contacts: PegasusCloud.safeParse("pegasus_contacts", []),
+            workouts_done: PegasusCloud.safeParse("pegasus_workouts_done", {}),
+            all_food_logs: allFoodLogs // 🔥 CRITICAL FIX: Ενοποίηση ιστορικού διατροφής
         };
+
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key, 'X-Bin-Versioning': 'false' },
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-Master-Key': PEGASUS.key, 
+                    'X-Bin-Versioning': 'false' 
+                },
                 body: JSON.stringify(payload)
             });
             setSyncStatus('online');
-        } catch(e) { setSyncStatus('offline'); }
+            console.log("🚀 PEGASUS: Cloud Sync Success (Full Payload)");
+        } catch(e) { 
+            setSyncStatus('offline'); 
+            console.error("❌ SYNC ERROR:", e);
+        }
     }
-};
 
 function openView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
