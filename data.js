@@ -11,7 +11,7 @@ window.program = {
     "Κυριακή": [{ name: "Cycling", sets: 1, muscleGroup: "Πόδια" }],
     "Δευτέρα": [{ name: "Αποθεραπεία", sets: 0, muscleGroup: "None" }],
     "Τρίτη": [
-        { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
+        { name: "Seated Chest Press", sets: 5, muscleGroup: "Στήθος" },
         { name: "Low Seated Row", sets: 5, muscleGroup: "Πλάτη" },
         { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι" }
     ], 
