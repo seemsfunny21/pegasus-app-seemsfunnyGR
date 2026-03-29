@@ -1,32 +1,27 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER - v3.6 (DYNAMIC DRAG & BRIDGE)
+   PEGASUS UI MANAGER - v3.7 (WARMUP & VIDEO RECOVERY)
    Protocol: Strict Modular Design - Centralized Event Delegation
-   Features: Mutation-Aware Dragging, Turbo, Mute, Partner, Settings, Warmup
-   Status: LINE-BY-LINE VERIFIED | PERSISTENCE READY
+   Features: Video State Reset, Mutation-Aware Dragging, Turbo, Mute
+   Status: LINE-BY-LINE VERIFIED | FIX: WARMUP STICKY STATE
    ========================================================================== */
 
 const PegasusUI = {
     panels: ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'],
-    warmupState: 0, // 0: Video, 1: First Exercise
+    warmupState: 0, // 0: Idle, 1: Warmup Playing
 
     init() {
         this.initDraggablePanels();
         this.initClickOutside();
         this.initButtonBridge(); 
-        console.log("✅ PEGASUS UI MANAGER: Unified Protocol v3.6 Active");
+        console.log("✅ PEGASUS UI MANAGER: Unified Protocol v3.7 Active");
     },
 
-    // --- ΜΗΧΑΝΙΣΜΟΣ ΣΥΝΔΕΣΗΣ ΚΟΥΜΠΙΩΝ (BRIDGE) ---
     initButtonBridge() {
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('button');
             if (!btn || !btn.id) return;
 
             const targetId = btn.id;
-
-            if (window.PegasusTracer) {
-                window.PegasusTracer.log(targetId, "UI_BRIDGE_CLICK", "START");
-            }
 
             switch(targetId) {
                 case 'btnTurboTools':
@@ -43,15 +38,11 @@ const PegasusUI = {
                     break;
 
                 case 'btnPartnerMode':
-                    if (typeof window.togglePartnerMode === 'function') {
-                        window.togglePartnerMode();
-                    }
+                    if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode();
                     break;
 
                 case 'btnSettingsUI':
-                    if (typeof window.initSettingsUI === 'function') {
-                        window.initSettingsUI();
-                    }
+                    if (typeof window.initSettingsUI === 'function') window.initSettingsUI();
                     break;
 
                 case 'btnWarmup':
@@ -95,17 +86,43 @@ const PegasusUI = {
         }
     },
 
+    /**
+     * SURGICAL FIX: Εναλλαγή Προθέρμανσης χωρίς "πάγωμα"
+     */
     handleWarmupToggle() {
         const vid = document.getElementById("video");
         const label = document.getElementById("phaseTimer");
+        
+        if (!vid) return;
+
         if (this.warmupState === 0) {
-            if (vid) { vid.src = "videos/warmup.mp4"; vid.play(); }
+            // ΠΡΩΤΟ ΠΑΤΗΜΑ: Έναρξη Warmup
+            vid.pause();
+            vid.src = "videos/warmup.mp4";
+            vid.load(); // Επιβολή φόρτωσης για αποφυγή παγώματος
+            
+            const playPromise = vid.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("Auto-play prevented"));
+            }
+
             if (label) label.textContent = "Προθέρμανση...";
             this.warmupState = 1;
+            console.log("🏃 PEGASUS: Warmup Started");
         } else {
-            if (typeof window.showVideo === "function") window.showVideo(0);
-            if (label) label.textContent = "Έτοιμος για έναρξη";
+            // ΔΕΥΤΕΡΟ ΠΑΤΗΜΑ: Επιστροφή στην Προπόνηση
+            vid.pause();
             this.warmupState = 0;
+            
+            // Κλήση της showVideo(0) από το app.js για να φορτώσει την 1η άσκηση
+            if (typeof window.showVideo === "function") {
+                window.showVideo(0);
+                if (label) label.textContent = "Έτοιμος για έναρξη";
+            } else {
+                console.warn("showVideo not found, forcing reload");
+                location.reload();
+            }
+            console.log("🔄 PEGASUS: Returning to Exercise 1");
         }
     },
 
@@ -138,8 +155,7 @@ const PegasusUI = {
         const elementDrag = (e) => {
             const pos1 = pos3 - e.clientX;
             const pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
+            pos3 = e.clientX; pos4 = e.clientY;
             panel.style.top = (panel.offsetTop - pos2) + "px";
             panel.style.left = (panel.offsetLeft - pos1) + "px";
         };
@@ -166,14 +182,10 @@ const PegasusUI = {
     }
 };
 
-/**
- * EXERCISE LIST DRAG - v3.6 (THE MUTATION PATCH)
- */
 function initExerciseListDrag() {
     const list = document.getElementById("exList");
     if (!list) return;
 
-    // Εξασφάλιση Draggable status σε κάθε αλλαγή του Optimizer
     const applyDraggable = () => {
         list.querySelectorAll(".exercise").forEach(el => el.setAttribute("draggable", "true"));
     };
@@ -201,10 +213,8 @@ function initExerciseListDrag() {
         }
     });
 
-    // MUTATION OBSERVER: Αν ο Optimizer ξαναγράψει το HTML, ξανακάνουμε τις ασκήσεις Draggable
     const observer = new MutationObserver(() => applyDraggable());
     observer.observe(list, { childList: true });
-    
     applyDraggable();
 }
 
