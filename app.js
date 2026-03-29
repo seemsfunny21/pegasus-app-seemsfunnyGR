@@ -467,68 +467,57 @@ function saveWeight(name, val) {
 
 
 
-/* ===== 7. VIDEO & UI UTILS (ASSET ALIGNED v10.1.7) ===== */
+/* ===== 7. VIDEO & UI UTILS (STRICT ASSET ALIGNMENT v10.6) ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
     if (!vid) return;
 
-    // 🛡️ ΠΡΟΣΤΑΣΙΑ: Έλεγχος αν το index i είναι έγκυρο και αν το UI είναι έτοιμο
-    if (typeof exercises === 'undefined' || !exercises || i === null || i === undefined || i === -1 || !exercises[i]) {
-        console.warn("PEGASUS: UI Bridge not ready or index out of bounds. Playing Warmup.");
+    // ΠΡΟΣΤΑΣΙΑ: Αν δεν υπάρχει άσκηση ή το index είναι λάθος, παίζει Warmup
+    if (typeof exercises === 'undefined' || !exercises[i]) {
         vid.src = "videos/warmup.mp4";
-        vid.style.display = "block";
-        vid.style.opacity = "1";
+        vid.load();
+        vid.play().catch(e => {});
         return;
     }
 
     const weightInput = exercises[i].querySelector(".weight-input");
-    if (!weightInput) return; // Fail-safe αν το DOM δεν έχει προλάβει να κάνει render
+    if (!weightInput) return;
 
     const name = weightInput.getAttribute("data-name") || "";
-    const label = document.getElementById("phaseTimer");
-    const phaseLabel = label ? label.textContent : "";
-
-    // --- SURGICAL ASSET MAPPING (Direct GitHub Sync) ---
-    // Αντιστοίχιση των ονομάτων από το data.js με τα πραγματικά .mp4 αρχεία
+    
+    // --- 🎯 SURGICAL ASSET MAPPING (Συγχρονισμός με data.js v10.3) ---
     const videoMap = {
-        "Low Seated Row": "lowrowsseated",
-        "Close Grip Pulldown": "latpulldownsclose",
-        "Lateral Raises": "uprightrows",
-        "Shoulder Press": "uprightrows",
-        "Tricep Extensions": "triceppulldowns",
-        "Tricep Pulldowns": "triceppulldowns",
-        "Incline Chest Press": "chestpress",
-        "Chest Press": "chestpress",
         "Seated Chest Press": "chestpress",
-        "Bicep Curls": "bicepcurls",
-        "Chest Flys": "chestflys",
-        "Bent Over Rows": "bentoverrows",
-        "Low Seated Row Wide": "lowrowsseated",
-        "Ποδηλασία 30km": "cycling",
-        "Ποδηλασία (Cycling)": "cycling",
+        "Pec Deck Flys": "chestflys",
+        "Lat Pulldown": "latpulldowns",
+        "Seated Row": "lowrowsseated",
+        "Bent Over Row": "bentoverrows",
+        "One Arm Pulldown": "onearmpulldowns",
+        "Upright Row": "uprightrows",
+        "Lateral Raises": "uprightrows",
+        "Shoulder Shrugs": "uprightrows",
+        "Standing Bicep Curl": "bicepcurls",
+        "Triceps Pushdown": "triceppulldowns",
+        "Preacher Curl": "preacherbicepcurls",
+        "Ab Crunch Cable": "abcrunches",
+        "Leg Extension": "legextensions",
+        "Glute Kickbacks": "glutekickbacks",
+        "Standing Leg Curl": "glutekickbacks",
+        "Cycling": "cycling",
         "EMS Training": "ems",
         "Stretching": "stretching"
     };
 
     let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
-    
-    // Force Warmup logic
-    if (phaseLabel.includes("Manual") || name === "Προθέρμανση") {
-        mappedVal = "warmup";
-    }
-
     const newSrc = `videos/${mappedVal}.mp4`;
     
-    // Εκτέλεση αλλαγής πηγής
+    // ⚡ RESET & LOAD PROTOCOL (Αποφυγή παγώματος)
     if (vid.getAttribute('src') !== newSrc) {
-        vid.style.display = "block";
-        vid.style.opacity = "1";
         vid.pause();
         vid.src = newSrc;
-        vid.load(); // Υποχρεωτικό Reload του Buffer
-        
+        vid.load(); 
         vid.play().catch(err => {
-            console.warn(`PEGASUS ASSET 404: ${mappedVal}.mp4. Falling back to warmup.`, err);
+            console.warn(`Asset 404: ${mappedVal}.mp4. Fallback to warmup.`);
             vid.src = "videos/warmup.mp4";
             vid.load();
             vid.play();
