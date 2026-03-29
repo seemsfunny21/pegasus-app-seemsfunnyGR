@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v2.2 (SESSION COMPLETION PROTOCOL)
-   Protocol: Strict Load Management - 45m Session Filler - Recovery Aware
-   Update: Added secondary group fallback to prevent short sessions.
+   PEGASUS DYNAMIC OPTIMIZER - v2.3 (SATURDAY CYCLE READY)
+   Protocol: Strict Load Management - 45m Session Filler - Saturday Anchor
+   Update: Saturday now acts as the start of the week for volume distribution.
    ========================================================================== */
 
 window.PegasusOptimizer = {
@@ -17,7 +17,18 @@ window.PegasusOptimizer = {
 
     // 2. Κύρια Λειτουργία Εφαρμογής Optimizer
     apply: function(day, sessionExercises) {
-        const progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        // --- PEGASUS SATURDAY ANCHOR LOGIC ---
+        // Αν είναι Σάββατο, ξεκινάμε με καθαρή μνήμη για τον υπολογισμό του νέου κύκλου.
+        let progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        
+        const lastReset = localStorage.getItem('pegasus_last_reset');
+        const todayDate = new Date().toISOString().split('T')[0];
+        
+        if (day === "Σάββατο" && lastReset !== todayDate) {
+            console.log("🚀 PEGASUS OPTIMIZER: New Cycle detected (Saturday). Resetting local memory stats...");
+            progress = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+        }
+        
         let sessionTracker = { ...progress };
         const currentTargets = this.getTargets(); 
 
@@ -30,7 +41,7 @@ window.PegasusOptimizer = {
 
         // 3. LOAD BALANCING PROTOCOL (Στόχος: 45 λεπτά)
         if ((day === "Παρασκευή" || day === "Σάββατο" || day === "Κυριακή") && currentMinutes < 40) {
-            console.log(`[OPTIMIZER v2.2] Session too short (${currentMinutes.toFixed(1)}m). Filling up...`);
+            console.log(`[OPTIMIZER v2.3] Session too short (${currentMinutes.toFixed(1)}m). Filling up based on priorities...`);
             
             // Ιεραρχία Ομάδων ανά ημέρα (Πρωτεύουσες -> Δευτερεύουσες -> Fallbacks)
             const priorities = {
@@ -45,6 +56,7 @@ window.PegasusOptimizer = {
                 if (currentMinutes >= 45) break;
 
                 // Φιλτράρισμα ασκήσεων από την DB που ανήκουν στην ομάδα και δεν είναι ήδη στο πλάνο
+                if (!window.exercisesDB) break;
                 const potentialEx = window.exercisesDB.filter(ex => ex.muscleGroup === groupName);
 
                 for (let sEx of potentialEx) {
