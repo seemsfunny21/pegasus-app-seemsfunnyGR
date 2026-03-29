@@ -523,9 +523,15 @@ input:checked + .slider:before { transform: translateX(26px); }
     gap: 10px;
     padding: 15px;
     
-    /* Διασφάλιση ότι το περιεχόμενο δεν θα επιβάλει σταθερό ύψος */
+    /* ⚡ ΑΥΤΟΜΑΤΟ ΥΨΟΣ ΧΩΡΙΣ SCROLLBAR */
     height: auto !important;
-    overflow-y: auto !important;
+    max-height: none !important; /* Επιτρέπει στο πλαίσιο να τεντώσει όσο χρειάζεται */
+    overflow: visible !important; /* Εξαφανίζει οριστικά τη μπάρα */
+}
+
+/* Fix για να μην "κολλάνε" οι εικόνες στο κάτω μέρος του πλαισίου */
+#previewPanel {
+    padding-bottom: 10px;
 }
 
 .preview-item {
