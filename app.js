@@ -653,7 +653,7 @@ function finishWorkout() {
     }, 5000);
 }
 
-/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT) ===== */
+/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.5) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -692,35 +692,61 @@ function openExercisePreview() {
         window.MuscleProgressUI.render(); 
     }
 
-    // --- SURGICAL IMAGE MAPPING (Match with GitHub images/) ---
+    // --- 🎯 SURGICAL IMAGE MAPPING (Συγχρονισμός με data.js v10.3) ---
     const nameMapping = {
-        "Low Seated Row": "lowrowsseated",
-        "Close Grip Pulldown": "latpulldownsclose",
-        "Tricep Extensions": "triceppulldowns",
-        "Shoulder Press": "uprightrows",
-        "Chest Press": "chestpress",
-        "Lateral Raises": "uprightrows", // Fallback σε υπάρχον asset
-        "Incline Chest Press": "chestpress", 
-        "Bicep Curls": "bicepcurls",
-        "Chest Flys": "chestflys",
-        "Lat Pulldowns": "latpulldowns",
-        "Bent Over Rows": "bentoverrows",
-        "Ab Crunches": "abcrunches"
+        // ΣΤΗΘΟΣ
+        "Seated Chest Press": "chestpress",
+        "Pec Deck Flys": "chestflys",
+        "Pushups": "pushups",
+
+        // ΠΛΑΤΗ
+        "Lat Pulldown": "latpulldowns",
+        "Seated Row": "lowrowsseated",
+        "Bent Over Row": "bentoverrows",
+        "One Arm Pulldown": "onearmpulldowns",
+        "EMS Training": "ems",
+
+        // ΩΜΟΙ
+        "Upright Row": "uprightrows",
+        "Lateral Raises": "uprightrows",
+        "Shoulder Shrugs": "uprightrows",
+
+        // ΧΕΡΙΑ
+        "Standing Bicep Curl": "bicepcurls",
+        "Triceps Pushdown": "triceppulldowns", // Match με triceppulldowns.png
+        "Preacher Curl": "preacherbicepcurls",
+
+        // ΚΟΡΜΟΣ
+        "Ab Crunch Cable": "abcrunches",
+        "Plank": "plank",
+        "Reverse Crunch": "reversecrunch",
+        "Leg Raise Hip Lift": "legraisehiplift",
+
+        // ΠΟΔΙΑ
+        "Leg Extension": "legextensions",
+        "Standing Leg Curl": "glutekickbacks", // Visual Proxy
+        "Glute Kickbacks": "glutekickbacks",
+        "Cycling": "cycling",
+
+        // OTHER
+        "Stretching": "stretching",
+        "Warmup": "warmup"
     };
 
     dayExercises.filter(ex => (ex.adjustedSets || ex.sets) > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
+        // Αντιστοίχιση στο mapping ή μετατροπή σε lowercase χωρίς κενά αν δεν υπάρχει στη λίστα
         let imgName = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
         
-        // Καθορισμός επέκτασης αρχείου
+        // Καθορισμός επέκτασης αρχείου (Cycling = .jpg, τα υπόλοιπα .png)
         let ext = (imgName === "cycling") ? ".jpg" : ".png";
 
-content.innerHTML += `
-    <div class="preview-item">
-        <img src="images/${imgName}${ext}" onerror="this.src='images/placeholder.jpg'">
-        <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
-    </div>
-`;
+        content.innerHTML += `
+            <div class="preview-item">
+                <img src="images/${imgName}${ext}" onerror="this.src='images/placeholder.jpg'">
+                <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
+            </div>
+        `;
     });
 }
 
