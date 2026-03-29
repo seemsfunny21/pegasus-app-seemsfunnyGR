@@ -13,24 +13,21 @@ const DEFAULT_SETTINGS = {
  * 1. GLOBAL ACCESSOR (Safe Load)
  */
 window.getPegasusSettings = function() {
-    try {
-        const storedTargets = localStorage.getItem("pegasus_muscle_targets");
-        // Χρήση του OR (||) για να μην επιστρέψει ΠΟΤΕ null ή κενό
-        return {
-            weight: parseFloat(localStorage.getItem("pegasus_weight")) || DEFAULT_SETTINGS.weight,
-            height: parseFloat(localStorage.getItem("pegasus_height")) || DEFAULT_SETTINGS.height,
-            age: parseInt(localStorage.getItem("pegasus_age")) || DEFAULT_SETTINGS.age,
-            gender: localStorage.getItem("pegasus_gender") || DEFAULT_SETTINGS.gender,
-            goalKcal: parseInt(localStorage.getItem("pegasus_goal_kcal")) || DEFAULT_SETTINGS.goalKcal,
-            goalProtein: parseInt(localStorage.getItem("pegasus_goal_protein")) || DEFAULT_SETTINGS.goalProtein,
-            exTime: parseInt(localStorage.getItem("pegasus_ex_time")) || DEFAULT_SETTINGS.exTime,
-            restTime: parseInt(localStorage.getItem("pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
-            muscleTargets: storedTargets ? JSON.parse(storedTargets) : DEFAULT_SETTINGS.muscleTargets
-        };
-    } catch (e) { 
-        console.warn("PEGASUS: Settings corruption detected, using defaults.");
-        return DEFAULT_SETTINGS; 
-    }
+    const d = { weight: 74, height: 187, age: 38, goalKcal: 2800, goalProtein: 160 };
+    return {
+        weight: parseFloat(localStorage.getItem("pegasus_weight")) || d.weight,
+        height: parseFloat(localStorage.getItem("pegasus_height")) || d.height,
+        age: parseInt(localStorage.getItem("pegasus_age")) || d.age,
+        goalKcal: parseInt(localStorage.getItem("pegasus_goal_kcal")) || d.goalKcal,
+        goalProtein: parseInt(localStorage.getItem("pegasus_goal_protein")) || d.goalProtein,
+        muscleTargets: JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }
+    };
+};
+
+window.initSettingsUI = function() {
+    const s = window.getPegasusSettings();
+    const fields = { "userWeightInput": s.weight, "userHeightInput": s.height, "userAgeInput": s.age, "goalKcalInput": s.goalKcal, "goalProteinInput": s.goalProtein };
+    for (let id in fields) { if (document.getElementById(id)) document.getElementById(id).value = fields[id]; }
 };
 
 /**
