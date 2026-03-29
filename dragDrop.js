@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER - v3.4 (UNIFIED DRAG & BRIDGE)
+   PEGASUS UI MANAGER - v3.5 (FINAL BRIDGE)
    Protocol: Strict Modular Design - Centralized Event Delegation
+   Features: Turbo, Mute, Partner & Sync Implementation
    ========================================================================== */
 
 const PegasusUI = {
@@ -9,8 +10,8 @@ const PegasusUI = {
     init() {
         this.initDraggablePanels();
         this.initClickOutside();
-        this.initButtonBridge(); // Νέος Μηχανισμός Σύνδεσης
-        console.log("✅ PEGASUS UI MANAGER: Unified Protocol v3.4 Active");
+        this.initButtonBridge(); 
+        console.log("✅ PEGASUS UI MANAGER: Unified Protocol v3.5 Active");
     },
 
     // --- ΜΗΧΑΝΙΣΜΟΣ ΣΥΝΔΕΣΗΣ ΚΟΥΜΠΙΩΝ (BRIDGE) ---
@@ -21,14 +22,39 @@ const PegasusUI = {
 
             const targetId = btn.id;
 
-            // Καταγραφή στο Tracer αν υπάρχει
             if (window.PegasusTracer) {
                 window.PegasusTracer.log(targetId, "UI_BRIDGE_CLICK", "START");
             }
 
             switch(targetId) {
+                // 1. TURBO MODE LOGIC
+                case 'btnTurboTools':
+                    const isTurbo = localStorage.getItem("pegasus_turbo") === "true";
+                    localStorage.setItem("pegasus_turbo", !isTurbo);
+                    btn.textContent = !isTurbo ? "Turbo: ΕΝΕΡΓΟ" : "Turbo: ΑΝΕΝΕΡΓΟ";
+                    btn.style.borderColor = !isTurbo ? "#ff4444" : "";
+                    // Ενημέρωση της παγκόσμιας μεταβλητής SPEED αν υπάρχει
+                    if (typeof SPEED !== 'undefined') window.SPEED = !isTurbo ? 10 : 1;
+                    break;
+
+                // 2. MUTE LOGIC
+                case 'btnMuteTools':
+                    const isMuted = localStorage.getItem("pegasus_mute") === "true";
+                    localStorage.setItem("pegasus_mute", !isMuted);
+                    btn.textContent = !isMuted ? "Ήχος: ΣΙΓΑΣΗ" : "Ήχος: ΕΝΕΡΓΟΣ";
+                    if (typeof muted !== 'undefined') window.muted = !isMuted;
+                    break;
+
+                // 3. PARTNER MODE BRIDGE
+                case 'btnPartnerMode':
+                    if (typeof window.togglePartnerMode === 'function') {
+                        window.togglePartnerMode();
+                    } else {
+                        console.warn("Partner Engine not found.");
+                    }
+                    break;
+
                 case 'btnImportData':
-                    console.log("🚀 Bridge: Triggering File Import");
                     const fileInput = document.getElementById('importFileTools');
                     if (fileInput) fileInput.click();
                     break;
@@ -55,10 +81,14 @@ const PegasusUI = {
                         if (window.GalleryEngine) window.GalleryEngine.render();
                     }
                     break;
+
+                case 'btnEMS':
+                    const ems = document.getElementById('emsModal');
+                    if (ems) ems.style.display = 'block';
+                    break;
             }
         });
 
-        // Σύνδεση του File Input με τη συνάρτηση του backup.js
         const importInput = document.getElementById('importFileTools');
         if (importInput) {
             importInput.onchange = (e) => {
@@ -67,7 +97,6 @@ const PegasusUI = {
         }
     },
 
-    // --- ΜΗΧΑΝΙΣΜΟΣ ΜΕΤΑΚΙΝΗΣΗΣ ---
     initDraggablePanels() {
         this.panels.forEach(panelId => {
             const panel = document.getElementById(panelId);
