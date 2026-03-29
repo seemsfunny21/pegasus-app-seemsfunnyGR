@@ -46,7 +46,7 @@ const PegasusCloud = {
         return false;
     },
 
-    pull: async function(silent = false) {
+ pull: async function(silent = false) {
         if (!this.isUnlocked) return;
         try {
             const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
@@ -58,57 +58,41 @@ const PegasusCloud = {
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
-                let requiresUIReload = false;
-
-                // 1. Core Muscle & Stats
-                if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
-                if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
-                if (cloud.weekly_history) {
-                    localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
-                    requiresUIReload = true;
-                }
-
-                // 2. 🔥 Calendar & Workout Sync (Critical Fix)
-                if (cloud.workouts_done) {
-                    localStorage.setItem('pegasus_workouts_done', JSON.stringify(cloud.workouts_done));
-                    requiresUIReload = true;
-                }
+                console.log("☁️ PEGASUS: New Data Detected. Synchronizing...");
                 
-                // 3. Inventory & Car Data
+                // 1. CORE STATS & HISTORY
+                if (cloud.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
+                if (cloud.workouts_done) localStorage.setItem('pegasus_workouts_done', JSON.stringify(cloud.workouts_done));
                 if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
-                if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
+                if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
+
+                // 2. 🔥 TARGETS RECOVERY (Διορθώνει τις εξαφανισμένες μπάρες)
+                if (cloud.goal_kcal) localStorage.setItem('pegasus_goal_kcal', cloud.goal_kcal);
+                if (cloud.goal_protein) localStorage.setItem('pegasus_goal_protein', cloud.goal_protein);
+
+                // 3. CAR & DOCUMENTS RESTORATION
                 if (cloud.car_identity) localStorage.setItem('peg_car_identity', JSON.stringify(cloud.car_identity));
                 if (cloud.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(cloud.car_dates));
                 if (cloud.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(cloud.car_service));
+                if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
                 if (cloud.vault_data) localStorage.setItem('peg_vault_data', JSON.stringify(cloud.vault_data));
 
-                // 4. Food Logs & Library
+                // 4. DIET & FOOD LOGS
                 if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
                 if (cloud.all_food_logs) {
                     Object.keys(cloud.all_food_logs).forEach(k => {
                         localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
                     });
                 }
-
-                // Daily Totals Mapping
+                
+                // Sync current day totals
                 localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
                 localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
-
-                // 5. History & Cardio Logs
-                if (cloud.cardio_logs) {
-                    Object.keys(cloud.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(cloud.cardio_logs[k])));
-                }
-                if (cloud.history_logs) {
-                    Object.keys(cloud.history_logs).forEach(k => {
-                        let val = cloud.history_logs[k];
-                        localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
-                    });
-                }
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
                 // UI REFRESH TRIGGERS
-                if (requiresUIReload && typeof window.updateFoodUI === "function") window.updateFoodUI();
+                if (typeof window.updateFoodUI === "function") window.updateFoodUI();
                 if (typeof window.updateSuppUI === "function") window.updateSuppUI();
                 if (typeof window.renderCalendar === "function") window.renderCalendar();
                 if (typeof window.loadSpecs === "function") window.loadSpecs();
