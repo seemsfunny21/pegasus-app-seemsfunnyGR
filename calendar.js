@@ -33,48 +33,46 @@ window.renderCalendar = function() {
     // Κενά για τις μέρες πριν την 1η του μηνός
     for (let i = 0; i < firstDayOfMonth; i++) html += `<div></div>`;
 
-    for (let day = 1; day <= daysInMonth; day++) {
-        const loopDate = new Date(currentYear, currentMonth, day);
-        const loopDateTime = loopDate.getTime();
-        const dayOfWeek = loopDate.getDay(); 
-        
-        const workoutKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const foodDateString = `${String(day).padStart(2, '0')}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
-        
-        let bg = "#1a1a1a";
-        let border = "1px solid #333";
-        let color = "#fff";
+for (let day = 1; day <= daysInMonth; day++) {
+    const loopDate = new Date(currentYear, currentMonth, day);
+    const loopDateTime = loopDate.getTime();
+    const dayOfWeek = loopDate.getDay(); 
+    
+    const workoutKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const foodDateString = `${String(day).padStart(2, '0')}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
+    
+    let bg = "#1a1a1a";
+    let border = "1px solid #333";
+    let color = "#fff";
 
-        // ΛΟΓΙΚΗ STRICT: 
-        // Δευτέρα (1) & Πέμπτη (4) = Recovery Days (Μπλε)
-        const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4);
-
-        if (isRecoveryDay) {
-            bg = "#1e3a5f"; 
-            border = "1px solid #64B5F6";
-        } 
-        else if (data[workoutKey]) {
-            // ΕΓΙΝΕ ΠΡΟΠΟΝΗΣΗ: ΠΡΑΣΙΝΟ
-            bg = "#4CAF50";
-            border = "1px solid #4CAF50";
-            color = "#000";
-        } 
-        else if (loopDateTime < todayStart) {
-            // ΠΑΡΕΛΘΟΝ & ΟΧΙ ΠΡΟΠΟΝΗΣΗ (Και όχι Recovery): ΚΟΚΚΙΝΟ
-            bg = "#b71c1c";
-            border = "1px solid #ff5252";
-        }
-
-        // Highlight Σήμερα (Χρυσό περίγραμμα)
-        if (loopDateTime === todayStart) {
-            border = "2px solid #FFD700";
-        }
-
-        html += `<div style="background:${bg};border:${border};color:${color};padding:8px 0;text-align:center;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;" 
-                    onclick="window.viewFoodFromCalendar('${foodDateString}')">
-                    ${day}
-                 </div>`;
+    // ΠΡΩΤΟΚΟΛΛΟ ΠΡΟΤΕΡΑΙΟΤΗΤΑΣ PEGASUS:
+    // 1. ΕΛΕΓΧΟΣ ΠΡΟΠΟΝΗΣΗΣ (Απόλυτη Προτεραιότητα)
+    if (data[workoutKey]) {
+        bg = "#4CAF50";      // ΠΡΑΣΙΝΟ
+        border = "1px solid #4CAF50";
+        color = "#000";
+    } 
+    // 2. ΕΛΕΓΧΟΣ RECOVERY (Δευτέρα & Πέμπτη) - Μόνο αν δεν έγινε προπόνηση
+    else if (dayOfWeek === 1 || dayOfWeek === 4) {
+        bg = "#1e3a5f";      // ΜΠΛΕ
+        border = "1px solid #64B5F6";
+    } 
+    // 3. ΕΛΕΓΧΟΣ ΠΑΡΕΛΘΟΝΤΟΣ (Missed Workout)
+    else if (loopDateTime < todayStart) {
+        bg = "#b71c1c";      // ΚΟΚΚΙΝΟ
+        border = "1px solid #ff5252";
     }
+
+    // Highlight Σήμερα (Χρυσό περίγραμμα)
+    if (loopDateTime === todayStart) {
+        border = "2px solid #FFD700";
+    }
+
+    html += `<div style="background:${bg};border:${border};color:${color};padding:8px 0;text-align:center;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;" 
+                onclick="window.viewFoodFromCalendar('${foodDateString}')">
+                ${day}
+             </div>`;
+}
 
     html += `</div>`;
     el.innerHTML = html;
