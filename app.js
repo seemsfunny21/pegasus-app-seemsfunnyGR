@@ -826,23 +826,6 @@ window.onload = () => {
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-        "btnWarmup": () => { 
-            const vid = document.getElementById("video");
-            const label = document.getElementById("phaseTimer");
-            if (vid && vid.src.includes("warmup") && vid.style.display !== "none") {
-                vid.pause(); vid.loop = false;
-                if (exercises.length > 0) {
-                    label.textContent = exercises[currentIdx].querySelector(".weight-input").getAttribute("data-name");
-                    showVideo(currentIdx); 
-                }
-            } else {
-                vid.style.display = "block"; vid.src = "videos/warmup.mp4"; vid.loop = true; vid.play();
-                if (label) { 
-                    label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)"; 
-                    label.style.color = "#64B5F6"; 
-                }
-            }
-        },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
