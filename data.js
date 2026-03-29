@@ -1,80 +1,153 @@
 /* ==========================================================================
-    PEGASUS DYNAMIC ENGINE - DATA RECOVERY (V10.1)
-    Protocol: Full Week Mapping & Asset Alignment
-    Strict Sync with GitHub /images/ and /videos/
+   PEGASUS DATA ENGINE - v8.2 (FINAL UNIFIED BUILD)
+   Protocol: Strict Data Analyst - Protected Storage Keys & Global Exports
    ========================================================================== */
 
-window.program = {
-    "Δευτέρα": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Close Grip Pulldown", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Incline Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Shoulder Press", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Lateral Raises", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Tricep Extensions", sets: 3, muscleGroup: "Χέρια" }
-    ],
-    "Τρίτη": [
-        { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" }
-    ],
-    "Τετάρτη": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Close Grip Pulldown", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Incline Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Shoulder Press", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Lateral Raises", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Tricep Extensions", sets: 3, muscleGroup: "Χέρια" }
-    ],
-    "Πέμπτη": [
-        { name: "Αποθεραπεία", sets: 0, muscleGroup: "None" }
-    ],
-    "Παρασκευή": [
-        { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη" }
-    ],
-    "Σάββατο": [
-        { name: "Low Seated Row", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Close Grip Pulldown", sets: 3, muscleGroup: "Πλάτη" },
-        { name: "Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Incline Chest Press", sets: 3, muscleGroup: "Στήθος" },
-        { name: "Shoulder Press", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Lateral Raises", sets: 3, muscleGroup: "Ώμοι" },
-        { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια" },
-        { name: "Tricep Extensions", sets: 3, muscleGroup: "Χέρια" }
-    ],
-    "Κυριακή": [
-        { name: "Ποδηλασία (Cycling)", sets: 1, muscleGroup: "Πόδια" }
-    ]
+window.USER_PROFILE = { weight: 74, height: 187, age: 38, gender: "male" };
+window.TARGET_SETS = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+window.REST_TIME = 60; 
+window.MAX_DAILY_MINUTES = 60;
+
+/**
+ * 1. PEGASUS STORE PROTOCOL
+ * Διαχωρισμός θερμίδων φαγητού (pegasus_diet_kcal) από προπόνηση (pegasus_today_kcal)
+ */
+window.PegasusStore = {
+    keys: {
+        foodPrefix: "food_log_",
+        kcalTotal: "pegasus_diet_kcal", 
+        protTotal: "pegasus_today_protein",
+        library: "pegasus_food_library"
+    },
+
+    getFoodLog: function(dateStr) {
+        const key = this.keys.foodPrefix + dateStr;
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : [];
+        } catch (e) { return []; }
+    },
+
+    saveFoodLog: function(dateStr, logArray) {
+        if (!Array.isArray(logArray)) return false;
+        localStorage.setItem(this.keys.foodPrefix + dateStr, JSON.stringify(logArray));
+        return true;
+    },
+
+    updateDailyTotals: function(kcal, prot) {
+        localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1));
+        localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1));
+    }
 };
 
-/* ===== SURGICAL VIDEO MAPPING (Direct GitHub Match) ===== */
-window.videoMap = {
-    "Low Seated Row": "lowrowsseated",
-    "Close Grip Pulldown": "latpulldownsclose",
-    "Chest Press": "chestpress",
-    "Incline Chest Press": "chestpress",
-    "Shoulder Press": "uprightrows",
-    "Lateral Raises": "uprightrows", // Συγχρονισμός με το υπάρχον asset
-    "Bicep Curls": "bicepcurls",
-    "Tricep Extensions": "triceppulldowns",
-    "EMS Training": "emsimage",
-    "Ποδηλασία (Cycling)": "cycling",
-    "Προθέρμανση": "warmup"
-};
-
-window.exercisesDB = [
-    { name: "Low Seated Row", muscleGroup: "Πλάτη" },
-    { name: "Close Grip Pulldown", muscleGroup: "Πλάτη" },
-    { name: "Chest Press", muscleGroup: "Στήθος" },
-    { name: "Incline Chest Press", muscleGroup: "Στήθος" },
-    { name: "Shoulder Press", muscleGroup: "Ώμοι" },
-    { name: "Lateral Raises", muscleGroup: "Ώμοι" },
-    { name: "Bicep Curls", muscleGroup: "Χέρια" },
-    { name: "Tricep Extensions", muscleGroup: "Χέρια" },
-    { name: "Ποδηλασία (Cycling)", muscleGroup: "Πόδια" },
-    { name: "EMS Training", muscleGroup: "Πλάτη" }
+const STRENGTH_EXERCISES = [
+    { name: "Seated Chest Press", muscleGroup: "Στήθος", defaultDuration: 45 },
+    { name: "Chest Flys", muscleGroup: "Στήθος", defaultDuration: 45 },
+    { name: "Pushups", muscleGroup: "Στήθος", defaultDuration: 45 },
+    { name: "Lat Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Close Grip Pulldown", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Low Seated Row Wide", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "One Arm Pulldowns", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "One Arm Rows", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Bent Over Rows", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Reverse Seated Rows", muscleGroup: "Πλάτη", defaultDuration: 45 },
+    { name: "Upright Rows", muscleGroup: "Ώμοι", defaultDuration: 45 },
+    { name: "Bicep Curls", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Tricep Pulldowns", muscleGroup: "Χέρια", defaultDuration: 45 },
+    { name: "Ab Crunches Cable", muscleGroup: "Κορμός", defaultDuration: 45 },
+    { name: "Plank", muscleGroup: "Κορμός", defaultDuration: 45 },
+    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός", defaultDuration: 45 },
+    { name: "Reverse Crunch", muscleGroup: "Κορμός", defaultDuration: 45 },
+    { name: "Lying Knee Raise", muscleGroup: "Κορμός", defaultDuration: 45 },
+    { name: "Situps", muscleGroup: "Κορμός", defaultDuration: 45 },
+    { name: "Glute Kickbacks", muscleGroup: "Πόδια", defaultDuration: 45 },
+    { name: "Leg Extensions", muscleGroup: "Πόδια", defaultDuration: 45 }
 ];
 
-console.log("✅ PEGASUS DATA ENGINE: Operational & Asset Aligned.");
+window.exercisesDB = STRENGTH_EXERCISES;
+
+/**
+ * 2. DYNAMIC PROGRAM GENERATOR
+ */
+window.calculateDailyProgram = function(dayName) {
+    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return [{ name: "Stretching", sets: 1, duration: 338, muscleGroup: "Κορμός" }];
+    if (dayName === "Τετάρτη") return [
+        { name: "EMS Lateral Raises (3kg)", muscleGroup: "Ώμοι", sets: 4, duration: 300 },
+        { name: "EMS Bicep Curls (3kg)", muscleGroup: "Χέρια", sets: 4, duration: 300 },
+        { name: "EMS Static Plank", muscleGroup: "Κορμός", sets: 3, duration: 450 },
+        { name: "EMS Static Crunches", muscleGroup: "Κορμός", sets: 3, duration: 450 }
+    ];
+
+    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    let currentMins = 0;
+    const program = [];
+
+    // Ορισμός προτεραιοτήτων ανά ημέρα
+    const focusGroups = (dayName === "Τρίτη") ? ["Στήθος", "Ώμοι", "Πλάτη"] : 
+                        (dayName === "Παρασκευή") ? ["Πλάτη", "Χέρια", "Ώμοι", "Στήθος"] : ["Κορμός"];
+    
+    focusGroups.forEach(group => {
+        const groupEx = STRENGTH_EXERCISES.filter(ex => ex.muscleGroup === group);
+        groupEx.forEach(ex => {
+            // Έλεγχος ορίου χρόνου (7 λεπτά μέσος όρος ανά άσκηση 4 σετ με διαλείμματα)
+            if (currentMins + 7 <= 60) {
+                program.push({ ...ex, sets: 4, duration: 45 });
+                currentMins += 7;
+            }
+        });
+    });
+
+    if (dayName === "Σάββατο" || dayName === "Κυριακή") {
+        program.push({ name: "Ποδηλασία 30km", sets: 1, duration: 0, muscleGroup: "Πόδια" });
+    }
+
+    return program;
+};
+
+window.program = {
+    "Δευτέρα": window.calculateDailyProgram("Δευτέρα"),
+    "Τρίτη": window.calculateDailyProgram("Τρίτη"),
+    "Τετάρτη": window.calculateDailyProgram("Τετάρτη"),
+    "Πέμπτη": window.calculateDailyProgram("Πέμπτη"),
+    "Παρασκευή": window.calculateDailyProgram("Παρασκευή"),
+    "Σάββατο": window.calculateDailyProgram("Σάββατο"),
+    "Κυριακή": window.calculateDailyProgram("Κυριακή")
+};
+
+/**
+ * 3. VIDEO MAPPING
+ */
+window.videoMap = {
+    "Seated Chest Press": "chestpress",
+    "Chest Flys": "chestflys",
+    "Pushups": "pushups",
+    "Lat Pulldowns": "latpulldowns",
+    "Close Grip Pulldown": "latpulldownsclose",
+    "Low Seated Row Wide": "lowrowsseated",
+    "Straight Arm Pulldowns": "straightarmpulldowns",
+    "One Arm Pulldowns": "onearmpulldowns",
+    "One Arm Rows": "onearmrows",
+    "Bent Over Rows": "bentoverrows",
+    "Reverse Seated Rows": "reverseseatedrows",
+    "Upright Rows": "uprightrows",
+    "Bicep Curls": "bicepcurls",
+    "Preacher Bicep Curls": "preacherbicepcurls",
+    "Tricep Pulldowns": "triceppulldowns",
+    "Ab Crunches Cable": "abcrunches",
+    "Plank": "plank",
+    "Leg Raise Hip Lift": "legraisehiplift",
+    "Reverse Crunch": "reversecrunch",
+    "Lying Knee Raise": "lyingkneeraise",
+    "Situps": "situps",
+    "Glute Kickbacks": "glutekickbacks",
+    "Leg Extensions": "legextensions",
+    "Ποδηλασία 30km": "cycling",
+    "Stretching": "stretching",
+    "Προθέρμανση": "warmup",
+    "EMS Lateral Raises (3kg)": "ems",
+    "EMS Bicep Curls (3kg)": "bicepcurls",
+    "EMS Static Plank": "plank",
+    "EMS Static Crunches": "abcrunches"
+};
