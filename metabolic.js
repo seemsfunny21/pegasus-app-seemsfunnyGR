@@ -1,17 +1,20 @@
 /* =============================================================
-   PEGASUS METABOLIC ENGINE - v7.1 (FINAL CORRECTED)
-   Protocol: Fail-Safe Precision + Unified Calendar/Cloud Bridge
+   PEGASUS METABOLIC ENGINE - FAIL-SAFE PRECISION
    ============================================================= */
 
 const MetabolicEngine = {
-    // Δυναμική ανάκτηση βάρους (Default 74kg βάσει προφίλ)
+    // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 1: Δυναμική ανάκτηση βάρους αντί για hardcoded 74kg
     get weight() {
         return parseFloat(localStorage.getItem("pegasus_weight")) || 74;
     },
 
+    // Προσωρινή μνήμη για αποφυγή I/O Overload στον δίσκο (LocalStorage)
     pendingKcal: 0,
     tickCount: 0,
 
+    /**
+     * Υπολογισμός MET βάσει φορτίου (Lifted Weight)
+     */
     getDynamicMET: function(exerciseName, weight) {
         if (exerciseName.includes("Ποδηλασία")) return 10.0;
         if (exerciseName.includes("Προθέρμανση")) return 3.0;
@@ -25,29 +28,12 @@ const MetabolicEngine = {
     },
 
     /**
-     * Ενημέρωση Ημερολογίου (Workout Done Protocol)
+     * Κύρια συνάρτηση υπολογισμού
      */
-    flagWorkoutAsDone: function() {
-        const now = new Date();
-        const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        let doneWorkouts = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
-        
-        if (!doneWorkouts[workoutKey]) {
-            doneWorkouts[workoutKey] = true;
-            localStorage.setItem("pegasus_workouts_done", JSON.stringify(doneWorkouts));
-            
-            // Trigger visual refresh για το πρασίνισμα
-            if (window.renderCalendar) window.renderCalendar();
-            if (window.PegasusCalendar && window.PegasusCalendar.render) window.PegasusCalendar.render();
-            
-            console.log("🎯 PEGASUS: Calendar marked as DONE for " + workoutKey);
-        }
-    },
-
     updateTracking: function(durationSeconds, exerciseName) {
         let liftedWeight = 0;
 
-        // UI INTERCEPTOR: Λήψη κιλών από το ενεργό DOM
+        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 2: Ασφαλής κλήση στο window scope για αποφυγή ReferenceError
         try {
             if (typeof window.exercises !== 'undefined' && typeof window.currentIdx !== 'undefined') {
                 const currentExNode = window.exercises[window.currentIdx];
@@ -57,10 +43,10 @@ const MetabolicEngine = {
                 }
             }
         } catch (e) {
-            console.warn("METABOLIC: UI Node not active.");
+            console.warn("METABOLIC: UI Node not active, switching to storage backup.");
         }
 
-        // FAIL-SAFE: Backup από LocalStorage
+        // FAIL-SAFE: Αν το UI είναι 0, τράβα από το LocalStorage
         if (liftedWeight === 0) {
             liftedWeight = parseFloat(localStorage.getItem(`weight_ANGELOS_${exerciseName}`)) || 0;
         }
@@ -68,36 +54,26 @@ const MetabolicEngine = {
         const activeMET = this.getDynamicMET(exerciseName, liftedWeight);
         const durationMins = durationSeconds / 60;
         
-        // Φόρμουλα: (MET * 3.5 * Weight) / 200
         const kcalPerMin = (activeMET * 3.5 * this.weight) / 200;
+        // Υψηλότερη ακρίβεια στη μνήμη για αποφυγή σφαλμάτων στρογγυλοποίησης
         const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(4)); 
 
+        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 3: I/O Bottleneck Fix (Εγγραφή στο δίσκο κάθε 5 ticks)
         this.pendingKcal += addedKcal;
         this.tickCount++;
 
         let currentDiskKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
         const displayTotal = currentDiskKcal + this.pendingKcal;
 
-        // Real-time UI Update
+        // Άμεση ενημέρωση UI σε πραγματικό χρόνο
         const kcalDisplay = document.querySelector(".kcal-value");
         if (kcalDisplay) kcalDisplay.textContent = displayTotal.toFixed(1);
 
-        // Batch Writing (κάθε 5 ticks / ~5 δευτερόλεπτα)
+        // Εγγραφή στο LocalStorage μόνο κάθε 5 δευτερόλεπτα (ή ticks) για δραματική μείωση του I/O Load
         if (this.tickCount >= 5) {
             localStorage.setItem("pegasus_today_kcal", displayTotal.toFixed(2));
-            
-            // Αυτόματο πρασίνισμα ημερολογίου
-            this.flagWorkoutAsDone();
-            
             this.pendingKcal = 0;
             this.tickCount = 0;
-
-            // Cloud Synchronization Bridge
-            // Έλεγχος αν το σύστημα είναι ξεκλείδωτο (Vault PIN)
-            const isSystemUnlocked = window.isUnlocked || (window.PegasusCloud && window.PegasusCloud.isUnlocked);
-            if (window.PegasusCloud && isSystemUnlocked) {
-                window.PegasusCloud.push(true);
-            }
         }
         
         return addedKcal;

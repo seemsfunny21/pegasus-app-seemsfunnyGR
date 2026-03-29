@@ -7,28 +7,22 @@
 /* --- 1. MUSCLE INVENTORY ENGINE --- */
 
 function getSortedMuscleGroups() {
-    // 1. Ανάκτηση ιστορικού (Done Sets)
-    const historyKey = window.PegasusManifest?.workout?.weekly_history || 'pegasus_weekly_history';
-    const history = JSON.parse(localStorage.getItem(historyKey)) || {};
-
-    // 2. ΔΥΝΑΜΙΚΗ ΑΝΑΚΤΗΣΗ ΣΤΟΧΩΝ (Targets)
-    // Διορθώνουμε το mapping ώστε να διαβάζει ΠΑΝΤΑ από το επίσημο κλειδί των ρυθμίσεων
-    const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
-                    { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    // ΔΙΟΡΘΩΣΗ: Δυναμική ανάκτηση από το settings.js, αποφυγή στατικών δεδομένων
+const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
+                { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
     
     let stats = Object.keys(targets).map(group => {
-        let done = parseInt(history[group]) || 0;
-        let target = parseInt(targets[group]) || 1; // Fallback στο 1 για αποφυγή διαίρεσης με το 0
-        
+        let done = history[group] || 0;
+        let target = targets[group];
         return {
             name: group,
-            // Υπολογισμός ποσοστού με ακρίβεια
-            percent: Math.min(100, Math.round((done / target) * 100)),
+            // Fallback ασφαλείας για να μην προκύψει ποτέ διαίρεση με το μηδέν
+            percent: target > 0 ? (done / target) * 100 : 100,
             remaining: Math.max(0, target - done)
         };
     });
 
-    // Ταξινόμηση: Αυτά που λείπουν περισσότερο (χαμηλότερο %) εμφανίζονται πρώτα
     return stats.sort((a, b) => a.percent - b.percent);
 }
 
