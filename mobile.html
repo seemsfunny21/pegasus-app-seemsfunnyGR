@@ -142,17 +142,22 @@
         <div id="libraryContainer" style="width:100%;"></div>
     </div>
 
-    <div id="cardio" class="view">
-        <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">Zeopa Data Bridge</div>
-        <input type="text" id="cdRoute" placeholder="Διαδρομή (π.χ. Ποδηλασία 30km)">
-        <div class="compact-grid">
-            <input type="number" id="cdKm" placeholder="Km" step="0.1" inputmode="decimal">
-            <input type="number" id="cdKcal" placeholder="Kcal (Zeopa)" inputmode="numeric">
-        </div>
-        <button class="primary-btn" onclick="saveCardio()">ΑΠΟΘΗΚΕΥΣΗ & ΣΥΓΧΡΟΝΙΣΜΟΣ</button>
-        <p style="font-size:9px; color:#666; margin-top:10px;">Οι θερμίδες θα προστεθούν αυτόματα στο Food Budget.</p>
+<div id="cardio" class="view">
+    <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
+    <div class="section-title">Zeopa Data Bridge</div>
+    
+    <div style="width:100%; margin-bottom: 15px;">
+        <div class="input-label">Απόσταση (Km)</div>
+        <input type="number" id="cdKm" placeholder="0.0" step="0.1" inputmode="decimal" style="font-size: 24px; padding: 18px;">
     </div>
+
+    <div style="width:100%; margin-bottom: 20px;">
+        <div class="input-label">Ενέργεια (Kcal)</div>
+        <input type="number" id="cdKcal" placeholder="0" inputmode="numeric" style="font-size: 24px; padding: 18px;">
+    </div>
+
+    <button class="primary-btn" onclick="saveCardio()" style="letter-spacing: 2px;">ΑΠΟΘΗΚΕΥΣΗ</button>
+</div>
 
     <div id="ems_panel" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
@@ -576,14 +581,14 @@ function deleteContact(idx) { let l = PegasusCloud.safeParse(PegasusStore.keys.c
 async function saveCardio() { 
     const km = parseFloat(document.getElementById('cdKm').value) || 0; 
     const kcal = parseFloat(document.getElementById('cdKcal').value) || 0;
-    const route = (document.getElementById('cdRoute').value || "").toUpperCase();
 
+    // Έλεγχος ελάχιστων δεδομένων (Data Validation)
     if(km <= 0 || kcal <= 0) {
-        alert("PEGASUS: Απαιτούνται Χιλιόμετρα και Θερμίδες.");
+        alert("PEGASUS: Απαιτούνται Χιλιόμετρα και Θερμίδες από το Zeopa.");
         return;
     }
 
-    // 1. ΕΝΗΜΕΡΩΣΗ FOOD BUDGET (Πρόσθεση θερμίδων στη διατροφή)
+    // 1. ΕΝΗΜΕΡΩΣΗ FOOD BUDGET (Direct Calorie Additive)
     let tk = parseFloat(localStorage.getItem(PegasusStore.keys.kcalTotal)) || 0;
     let tp = parseFloat(localStorage.getItem(PegasusStore.keys.protTotal)) || 0;
     PegasusStore.updateDailyTotals(tk + kcal, tp);
@@ -591,33 +596,31 @@ async function saveCardio() {
     // 2. ΕΝΗΜΕΡΩΣΗ ΕΒΔΟΜΑΔΙΑΙΑΣ ΠΡΟΟΔΟΥ ΠΟΔΙΩΝ
     let h = PegasusCloud.safeParse('pegasus_weekly_history', { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 });
     
-    // Υπολογισμός Credit: 18 μονάδες για Ποδηλασία/Cycling, αλλιώς αναλογία βάσει km
-    const credit = (route.includes("ΠΟΔΗΛΑΣΙΑ") || route.includes("CYCLING")) ? 18 : Math.max(1, Math.floor(km * 0.6));
+    // Default credit 18 μονάδες (Αντιστοιχία Zeopa Session)
+    const credit = 18;
     h["Πόδια"] = (h["Πόδια"] || 0) + credit;
-    
     localStorage.setItem('pegasus_weekly_history', JSON.stringify(h)); 
 
-    // 3. 🔥 WORKOUT COMPLETION PROTOCOL (Κάνει τη μέρα ΠΡΑΣΙΝΗ στο Ημερολόγιο)
+    // 3. 🔥 WORKOUT COMPLETION PROTOCOL (Calendar Green Activation)
     const now = new Date();
-    // Δημιουργία κλειδιού ημερομηνίας μορφής YYYY-MM-DD
     const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     
     let doneWorkouts = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
-    doneWorkouts[workoutKey] = true; // Μαρκάρισμα ημέρας ως ολοκληρωμένη
+    doneWorkouts[workoutKey] = true; 
     localStorage.setItem("pegasus_workouts_done", JSON.stringify(doneWorkouts));
 
-    // 4. UI REFRESH & SYNC
+    // 4. UI REFRESH & CLOUD SYNC
     updateDietUI();
     if(window.updateMuscleUI) updateMuscleUI();
     
-    // Καθαρισμός πεδίων
+    // Καθαρισμός πεδίων (Reset)
     document.getElementById('cdKm').value = "";
     document.getElementById('cdKcal').value = "";
-    document.getElementById('cdRoute').value = "";
+    // Το cdRoute δεν χρειάζεται πλέον καθαρισμό καθώς θα αφαιρεθεί από το HTML
     
     openView('home'); 
     await PegasusCloud.push(); 
-    alert(`✅ ZEOPA SYNC: Η μέρα έγινε ΠΡΑΣΙΝΗ! (+${kcal} kcal | +${credit} μονάδες στα Πόδια).`);
+    alert(`✅ ZEOPA SYNC: +${kcal} kcal | +18 μονάδες στα Πόδια | Η μέρα έγινε ΠΡΑΣΙΝΗ.`);
 }
 // --- MODULE: DIET & LIBRARY ---
 async function addFood() { const n = document.getElementById("fName").value || "Γεύμα"; const k = parseFloat(document.getElementById("fKcal").value) || 0; const p = parseFloat(document.getElementById("fProt").value) || 0; if(n.toLowerCase().includes("πρωτεΐνη")) consumeSupp('prot', 30, false); const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; let log = PegasusStore.getFoodLog(dateStr); log.unshift({name:n, kcal:k, protein:p}); PegasusStore.saveFoodLog(dateStr, log); let tk = parseFloat(localStorage.getItem(PegasusStore.keys.kcalTotal)) || 0; let tp = parseFloat(localStorage.getItem(PegasusStore.keys.protTotal)) || 0; PegasusStore.updateDailyTotals(tk + k, tp + p); document.getElementById("fName").value = ""; document.getElementById("fKcal").value = ""; document.getElementById("fProt").value = ""; updateDietUI(); await PegasusCloud.push(); }
