@@ -52,24 +52,24 @@ window.PegasusOptimizer = {
 
             const searchGroups = priorities[day] || ["Κορμός"];
             
-            for (let groupName of searchGroups) {
+for (let groupName of searchGroups) {
                 if (currentMinutes >= 45) break;
 
-                // Φιλτράρισμα ασκήσεων από την DB που ανήκουν στην ομάδα και δεν είναι ήδη στο πλάνο
                 if (!window.exercisesDB) break;
                 const potentialEx = window.exercisesDB.filter(ex => ex.muscleGroup === groupName);
 
                 for (let sEx of potentialEx) {
                     if (currentMinutes >= 45) break;
                     
-                    // GUARD: Απαγόρευση Ποδηλασίας εκτός Σαββάτου & Αποφυγή Ποδιών την Παρασκευή
-                    if (sEx.name.includes("Ποδηλασία")) continue;
+                    // 🔥 PEGASUS GUARD v2.4: Απαγόρευση αυτόματης προσθήκης Ποδηλασίας ΚΑΙ Stretching
+                    // Το Stretching θα εμφανίζεται ΜΟΝΟ αν το βάλουμε εμείς χειροκίνητα στο window.program
+                    if (sEx.name.includes("Ποδηλασία") || sEx.name.includes("Stretching") || sEx.name.includes("Warmup")) continue;
+                    
                     if (day === "Παρασκευή" && sEx.muscleGroup === "Πόδια") continue;
 
                     const done = sessionTracker[groupName] || 0;
                     const target = currentTargets[groupName] || 24;
 
-                    // Αν υπάρχουν ελλείμματα στην ομάδα και η άσκηση είναι νέα για σήμερα
                     if (done < target && !mappedData.some(m => m.name.trim() === sEx.name.trim())) {
                         let spilloverEx = this.calculateExercise({...sEx, sets: 5}, sessionTracker, currentTargets);
                         
