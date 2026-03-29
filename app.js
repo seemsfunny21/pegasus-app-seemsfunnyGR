@@ -1,9 +1,10 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.8 - DRAGGABLE UI)
+   PEGASUS WORKOUT ENGINE - FINAL AUDITED EDITION (V6.6 - MODULAR UI)
    Protocol: Native Metabolic Engine, Audio Unlocked, LIVE CLOUD SYNC
-   + PEGASUS PATCH: Persistent Movable Panels, Zero-Time Protocol
+   + PEGASUS PATCH: Zero-Time Protocol, 18-Set Cycling Credit, External UI
    ========================================================================== */
 
+// ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 1: Χρήση var αντί για let για αυτόματη προσάρτηση στο window scope
 var exercises = [];
 var remainingSets = [];
 var currentIdx = 0;
@@ -29,7 +30,7 @@ var userWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 74;
 let sysAudio = new Audio('videos/beep.mp3');
 let audioUnlocked = false;
 
-/* ===== AUDIO & MOBILE SYNC INITIALIZATION ===== */
+/* ===== AUDIO & MOBILE SYNC INITIALIZATION (v1.1) ===== */
 document.addEventListener('click', function() {
     if (!audioUnlocked) {
         sysAudio.play().then(() => {
@@ -38,6 +39,7 @@ document.addEventListener('click', function() {
             audioUnlocked = true;
             console.log("PEGASUS OS: Audio Unlocked");
 
+            // MOBILE SYNC PATCH: Εξαναγκασμός συγχρονισμού στο πρώτο User Gesture
             if (window.PegasusCloud && typeof window.PegasusCloud.pull === "function") {
                 console.log("PEGASUS MOBILE: User Interaction Detected. Initializing Cloud Sync...");
                 window.PegasusCloud.pull();
@@ -82,7 +84,7 @@ const getMuscleGroup = (exName) => {
     return "Άλλο";
 };
 
-/* ===== SELECTDAY ===== */
+/* ===== SELECTDAY (V6.7 - DYNAMIC OPTIMIZATION ENABLED) ===== */
 function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
@@ -107,6 +109,7 @@ function selectDay(btn, day) {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
+/* === OPTIMIZED DATA FETCHING (V6.7) === */
     let rawBaseData = (typeof getFinalProgram !== 'undefined') ? 
                       [...getFinalProgram(day, window.program)] : 
                       ((window.program[day]) ? [...window.program[day]] : []);
@@ -120,6 +123,7 @@ function selectDay(btn, day) {
 
     mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
 
+    /* === UI RENDERING === */
     const list = document.getElementById("exList");
     if (!list) return;
 
@@ -238,6 +242,7 @@ function runPhase() {
     let currentPhaseName = "";
     let t = 0;
     
+    // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ 2: Τοπική μεταβλητή για αποφυγή I/O overload στο localStorage
     let localRestKcal = 0; 
     let baseKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
 
@@ -265,6 +270,7 @@ function runPhase() {
             if (window.MetabolicEngine && phase === 1) {
                 window.MetabolicEngine.updateTracking(1, exName);
             } else if (phase === 2) {
+                // Υπολογισμός μνήμης αντί δίσκου
                 localRestKcal += (userWeight * 0.0008);
                 const kcalUI = document.querySelector(".kcal-value");
                 if (kcalUI) kcalUI.textContent = (baseKcal + localRestKcal).toFixed(1);
@@ -279,6 +285,7 @@ function runPhase() {
         }
 
         if (t <= 0) {
+            // Commit των θερμίδων στο δίσκο ΜΟΝΟ στο τέλος του σετ
             if (phase === 2 && localRestKcal > 0) {
                 let currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
                 localStorage.setItem("pegasus_today_kcal", (currentKcal + localRestKcal).toFixed(2));
@@ -395,7 +402,7 @@ function skipToNextExercise() {
     } else finishWorkout(); 
 }
 
-/* ===== PEGASUS DUAL VIDEO ENGINE ===== */
+/* ===== PEGASUS DUAL VIDEO ENGINE (LOCAL & YOUTUBE) ===== */
 function showVideo(i) {
     if (!exercises || !exercises[i]) return;
     
@@ -502,7 +509,7 @@ window.toggleSkipExercise = function(idx) {
     const originalSets = parseInt(exDiv.dataset.total) || 3;
     const isSkipped = exDiv.classList.toggle("exercise-skipped");
 
-    let done = parseInt(exDiv.dataset.done) || 0;
+let done = parseInt(exDiv.dataset.done) || 0;
     if (isSkipped) {
         exDiv.style.setProperty('opacity', '0.2', 'important');
         exDiv.style.setProperty('filter', 'grayscale(100%)', 'important');
@@ -519,6 +526,7 @@ window.toggleSkipExercise = function(idx) {
     if (typeof calculateTotalTime === "function") calculateTotalTime();
 };
 
+/* ===== FINISH LOGIC ===== */
 function finishWorkout() {
     if (!running && !timer) return; 
     
@@ -567,70 +575,6 @@ function finishWorkout() {
     }, 5000);
 }
 
-/* ===== DRAGGABLE UI ENGINE (STATE PERSISTENCE) ===== */
-function initDraggablePanels() {
-    const movablePanels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'];
-    
-    movablePanels.forEach(panelId => {
-        const panel = document.getElementById(panelId);
-        if (!panel) return;
-
-        // 1. Restore Position
-        const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
-        if (savedPos) {
-            panel.style.transform = "none";
-            panel.style.margin = "0";
-            panel.style.position = "fixed";
-            panel.style.top = savedPos.top;
-            panel.style.left = savedPos.left;
-        }
-
-        // 2. Identify Drag Handle (Header elements to avoid blocking inputs)
-        const header = panel.querySelector("h3") || panel.querySelector(".panel-header");
-        if (!header) return;
-
-        header.style.cursor = "grab";
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-        header.onmousedown = function(e) {
-            e.preventDefault();
-            header.style.cursor = "grabbing";
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            document.onmousemove = elementDrag;
-        };
-
-        function elementDrag(e) {
-            e.preventDefault();
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            
-            // Clear centering rules that conflict with Left/Top coordinates
-            panel.style.transform = "none";
-            panel.style.margin = "0";
-            panel.style.position = "fixed";
-            
-            panel.style.top = (panel.offsetTop - pos2) + "px";
-            panel.style.left = (panel.offsetLeft - pos1) + "px";
-        }
-
-        function closeDragElement() {
-            document.onmouseup = null;
-            document.onmousemove = null;
-            header.style.cursor = "grab";
-            
-            // 3. Save Position to LocalStorage
-            localStorage.setItem(`pegasus_pos_${panelId}`, JSON.stringify({
-                top: panel.style.top,
-                left: panel.style.left
-            }));
-        }
-    });
-}
-
 /* ===== INITIALIZATION ===== */
 window.onload = () => {
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
@@ -645,7 +589,6 @@ window.onload = () => {
     }
 
     createNavbar();
-    initDraggablePanels(); // Ενεργοποίηση Draggable Windows
     
     const btnStart = document.getElementById("btnStart");
     if (btnStart) btnStart.onclick = startPause;
@@ -746,7 +689,7 @@ window.onload = () => {
     }, 300);
 };
 
-/* ===== UI & PREVIEW LOGIC ===== */
+/* ===== UI & PREVIEW LOGIC (FIXED) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -769,10 +712,13 @@ function openExercisePreview() {
     if(dayExercises) {
         dayExercises.forEach(ex => {
             const cleanName = ex.name.trim();
+            
+            // Λήψη ID από το videoMap ή καθαρισμός ονόματος
             let videoId = (typeof videoMap !== 'undefined' && videoMap[cleanName]) 
                           ? videoMap[cleanName] 
                           : cleanName.replace(/\s+/g, '').toLowerCase();
 
+            // Καθορισμός αρχείου: .jpg για cycling, .png για τα υπόλοιπα
             let extension = (videoId === "cycling" || videoId === "bikeimage") ? ".jpg" : ".png";
             let imgFileName = videoId + extension;
 
@@ -788,7 +734,6 @@ function openExercisePreview() {
     }
 }
 
-// CLOSING LOGIC (Click Outside Protocol remains unmodified and functional)
 window.addEventListener('mousedown', (e) => {
     const panels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel'];
     let closedAny = false;
