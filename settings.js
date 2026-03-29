@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS SETTINGS ENGINE - v4.1 MODULAR (STRICT AUDIT)
+   PEGASUS SETTINGS ENGINE - v4.3 (STRICT AUDIT & AUTO-FILL)
    Protocol: Strict Data Analyst - Zero Logic Loss - Cross-File Sync
+   Status: FINAL CONVERGENCE READY
    ========================================================================== */
 
 const DEFAULT_SETTINGS = {
@@ -11,6 +12,7 @@ const DEFAULT_SETTINGS = {
 
 /**
  * 1. GLOBAL ACCESSOR (Safe Load)
+ * Διασφαλίζει ότι καμία τιμή δεν θα επιστρέψει null στο UI
  */
 window.getPegasusSettings = function() {
     try {
@@ -26,7 +28,10 @@ window.getPegasusSettings = function() {
             restTime: parseInt(localStorage.getItem("pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
             muscleTargets: storedTargets ? JSON.parse(storedTargets) : DEFAULT_SETTINGS.muscleTargets
         };
-    } catch (e) { return DEFAULT_SETTINGS; }
+    } catch (e) { 
+        console.warn("PEGASUS: Settings corruption detected, using defaults.");
+        return DEFAULT_SETTINGS; 
+    }
 };
 
 /**
@@ -47,73 +52,76 @@ window.calculateBMR = function() {
 };
 
 /**
- * 3. MASTER SAVE LOGIC (Called by app.js listener)
+ * 3. UI INITIALIZER (The "Bridge" Fix)
+ * Γεμίζει τα πεδία όταν ανοίγει το Panel
+ */
+window.initSettingsUI = function() {
+    console.log("⚙️ PEGASUS: Forcing Settings UI Auto-Fill...");
+    const s = window.getPegasusSettings();
+    
+    const fields = {
+        "userWeightInput": s.weight, 
+        "userHeightInput": s.height,
+        "userAgeInput": s.age, 
+        "userGenderInput": s.gender,
+        "goalKcalInput": s.goalKcal, 
+        "goalProteinInput": s.goalProtein,
+        "exerciseTimeInput": s.exTime, 
+        "restTimeInput": s.restTime
+    };
+
+    // Γέμισμα βασικών πεδίων
+    for (let id in fields) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = fields[id];
+            console.log(`Setting ${id} -> ${fields[id]}`);
+        }
+    }
+
+    // Γέμισμα Muscle Targets (Σημαντικό για τον Optimizer)
+    ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
+        const el = document.getElementById(`target${m}Input`);
+        if (el) el.value = s.muscleTargets[m] || DEFAULT_SETTINGS.muscleTargets[m];
+    });
+
+    // Σύνδεση BMR Events για αυτόματο υπολογισμό θερμίδων κατά την πληκτρολόγηση
+    ["userWeightInput", "userHeightInput", "userAgeInput", "userGenderInput"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.oninput = window.calculateBMR;
+    });
+};
+
+/**
+ * 4. MASTER SAVE LOGIC
+ * Καλείται από το app.js και κάνει Push στο Cloud
  */
 window.savePegasusSettingsGlobal = function() {
     try {
         console.log("PEGASUS: Executing Tactical Settings Save...");
 
-        const w = document.getElementById("userWeightInput")?.value;
-        const h = document.getElementById("userHeightInput")?.value;
-        const a = document.getElementById("userAgeInput")?.value;
-        const g = document.getElementById("userGenderInput")?.value;
-        const goalK = document.getElementById("goalKcalInput")?.value;
-        const goalP = document.getElementById("goalProteinInput")?.value;
-        const ex = document.getElementById("exerciseTimeInput")?.value;
-        const rs = document.getElementById("restTimeInput")?.value;
+        localStorage.setItem("pegasus_weight", document.getElementById("userWeightInput").value);
+        localStorage.setItem("pegasus_height", document.getElementById("userHeightInput").value);
+        localStorage.setItem("pegasus_age", document.getElementById("userAgeInput").value);
+        localStorage.setItem("pegasus_gender", document.getElementById("userGenderInput").value);
+        localStorage.setItem("pegasus_goal_kcal", document.getElementById("goalKcalInput").value);
+        localStorage.setItem("pegasus_goal_protein", document.getElementById("goalProteinInput").value);
+        localStorage.setItem("pegasus_ex_time", document.getElementById("exerciseTimeInput").value);
+        localStorage.setItem("pegasus_rest_time", document.getElementById("restTimeInput").value);
 
-        localStorage.setItem("pegasus_weight", w || DEFAULT_SETTINGS.weight);
-        localStorage.setItem("pegasus_height", h || DEFAULT_SETTINGS.height);
-        localStorage.setItem("pegasus_age", a || DEFAULT_SETTINGS.age);
-        localStorage.setItem("pegasus_gender", g || DEFAULT_SETTINGS.gender);
-        localStorage.setItem("pegasus_goal_kcal", goalK || DEFAULT_SETTINGS.goalKcal);
-        localStorage.setItem("pegasus_goal_protein", goalP || DEFAULT_SETTINGS.goalProtein);
-        localStorage.setItem("pegasus_ex_time", ex || DEFAULT_SETTINGS.exTime);
-        localStorage.setItem("pegasus_rest_time", rs || DEFAULT_SETTINGS.restTime);
-
-        // Muscle Targets Audit
         const targets = {};
         ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
             const el = document.getElementById(`target${m}Input`);
-            let val = el ? parseInt(el.value) : NaN;
-            targets[m] = isNaN(val) ? (DEFAULT_SETTINGS.muscleTargets[m] || 14) : val;
+            const val = el ? parseInt(el.value) : NaN;
+            targets[m] = isNaN(val) ? DEFAULT_SETTINGS.muscleTargets[m] : val;
         });
         localStorage.setItem("pegasus_muscle_targets", JSON.stringify(targets));
 
         if (window.PegasusCloud) window.PegasusCloud.push(true);
 
-        alert("PEGASUS SYNC: Οι ρυθμίσεις αποθηκεύτηκαν.");
-        window.location.reload();
+        alert("✅ Ρυθμίσεις Αποθηκεύτηκαν!");
+        location.reload();
     } catch (err) {
         console.error("CRITICAL ERROR IN SAVE:", err);
     }
-};
-
-/**
- * 4. UI INITIALIZER
- */
-window.initSettingsUI = function() {
-    const s = window.getPegasusSettings();
-    const fields = {
-        "userWeightInput": s.weight, "userHeightInput": s.height,
-        "userAgeInput": s.age, "userGenderInput": s.gender,
-        "goalKcalInput": s.goalKcal, "goalProteinInput": s.goalProtein,
-        "exerciseTimeInput": s.exTime, "restTimeInput": s.restTime
-    };
-
-    for (let id in fields) {
-        const el = document.getElementById(id);
-        if (el) el.value = fields[id];
-    }
-
-    Object.keys(s.muscleTargets).forEach(m => {
-        const el = document.getElementById(`target${m}Input`);
-        if (el) el.value = s.muscleTargets[m];
-    });
-
-    // Re-bind BMR Live Events
-    ["userWeightInput", "userHeightInput", "userAgeInput", "userGenderInput"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.oninput = window.calculateBMR;
-    });
 };
