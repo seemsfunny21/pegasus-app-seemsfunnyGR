@@ -616,14 +616,26 @@ window.onload = () => {
     const btnPreview = document.getElementById("btnPreviewUI");
     if (btnPreview) btnPreview.onclick = openExercisePreview;
 
-    const warmupBtn = document.getElementById("btnWarmup");
+const warmupBtn = document.getElementById("btnWarmup");
     if (warmupBtn) {
+        let warmupState = 0; // 0: Video, 1: First Exercise
         warmupBtn.onclick = () => {
             const vid = document.getElementById("video");
-            if (vid) {
-                vid.src = "videos/warmup.mp4";
-                vid.play().catch(e => console.log("Warmup error"));
-                if (document.getElementById("phaseTimer")) document.getElementById("phaseTimer").textContent = "Προθέρμανση...";
+            const label = document.getElementById("phaseTimer");
+            
+            if (warmupState === 0) {
+                // 1ο Πάτημα: Βίντεο Προθέρμανσης
+                if (vid) {
+                    vid.src = "videos/warmup.mp4";
+                    vid.play();
+                }
+                if (label) label.textContent = "Προθέρμανση...";
+                warmupState = 1;
+            } else {
+                // 2ο Πάτημα: Επιστροφή στην 1η Άσκηση
+                if (typeof showVideo === "function") showVideo(0);
+                if (label) label.textContent = "Έτοιμος για έναρξη";
+                warmupState = 0;
             }
         };
     }
