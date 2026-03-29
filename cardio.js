@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS METABOLIC ENGINE - v6.0 (ZEOPA BRIDGE MODE)
+   PEGASUS METABOLIC ENGINE - v6.2 (ZEOPA BRIDGE & CALENDAR FIX)
    Protocol: Manual Cardio Sync to Food Budget & Leg Sets Credit
+   Feature: Automatic Calendar Green-Light (workouts_done Integration)
    ========================================================================== */
 
 window.PegasusCardio = {
@@ -14,11 +15,15 @@ window.PegasusCardio = {
         const panel = document.getElementById("cardioPanel");
         if (panel) {
             panel.style.display = "block";
+            // Αυτόματη συμπλήρωση σημερινής ημερομηνίας
             document.getElementById("cDate").value = new Date().toISOString().split('T')[0];
         }
     },
 
-    close: function() { document.getElementById("cardioPanel").style.display = "none"; },
+    close: function() { 
+        const panel = document.getElementById("cardioPanel");
+        if (panel) panel.style.display = "none"; 
+    },
 
     resetForm: function() {
         ["cRoute", "cKm", "cTime", "cKcal"].forEach(id => {
@@ -38,13 +43,11 @@ window.PegasusCardio = {
         }
 
         // 1. ΕΝΗΜΕΡΩΣΗ FOOD BUDGET (Direct Additive Logic)
-        // Προσθέτουμε τις θερμίδες στο pegasus_today_kcal για να αυξηθεί το όριο φαγητού
         let currentDailyKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
         let newDailyKcal = parseFloat((currentDailyKcal + burnedKcal).toFixed(1));
         localStorage.setItem("pegasus_today_kcal", newDailyKcal);
 
         // 2. ΥΠΟΛΟΓΙΣΜΟΣ CREDIT ΣΕΤ (18 σετ standard για ολοκληρωμένη συνεδρία >20km)
-        // Αν τα χιλιόμετρα είναι λίγα, υπολογίζουμε αναλογικά (0.6 σετ/km) με max τα 18.
         const setCredit = Math.min(18, parseFloat((km * 0.6).toFixed(1)));
         
         // 3. ΕΝΗΜΕΡΩΣΗ ΕΒΔΟΜΑΔΙΑΙΑΣ ΠΡΟΟΔΟΥ ΠΟΔΙΩΝ
@@ -54,22 +57,39 @@ window.PegasusCardio = {
         history["Πόδια"] = parseFloat(((parseFloat(history["Πόδια"]) || 0) + setCredit).toFixed(1));
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
 
-        // 4. ΕΝΗΜΕΡΩΣΗ CARDIO OFFSET (Για την Παρασκευή)
+        // 4. 🔥 WORKOUT COMPLETION PROTOCOL (Calendar Green Activation)
+        // Διασφαλίζει ότι PC και Mobile χρησιμοποιούν το ίδιο κλειδί ημερομηνίας
+        const now = new Date();
+        const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        let doneWorkouts = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
+        doneWorkouts[workoutKey] = true;
+        localStorage.setItem("pegasus_workouts_done", JSON.stringify(doneWorkouts));
+
+        // 5. ΕΝΗΜΕΡΩΣΗ CARDIO OFFSET
         let currentOffset = parseFloat(localStorage.getItem("pegasus_cardio_offset_sets")) || 0;
         localStorage.setItem("pegasus_cardio_offset_sets", (currentOffset + setCredit).toFixed(1));
 
-        // 5. CLOUD SYNC & UI REFRESH
+        // 6. CLOUD SYNC & UI REFRESH
         if (window.MuscleProgressUI) window.MuscleProgressUI.render();
-        if (window.updateFoodUI) window.updateFoodUI(); // Ενημέρωση Food Panel budget
+        if (window.updateFoodUI) window.updateFoodUI(); 
+        
+        // Επιβολή επανασχεδίασης ημερολογίου για άμεσο πρασίνισμα
+        if (window.PegasusCalendar && window.PegasusCalendar.render) {
+            window.PegasusCalendar.render();
+        } else if (window.renderCalendar) {
+            window.renderCalendar();
+        }
 
         const activeBtn = document.querySelector(".navbar button.active");
         if (activeBtn && typeof window.selectDay === "function") {
             window.selectDay(activeBtn, activeBtn.textContent.trim());
         }
 
+        // Push στο Cloud αν υπάρχει σύνδεση
         if (window.PegasusCloud) window.PegasusCloud.push(true);
 
-        alert(`✅ ZEOPA SYNC: +${burnedKcal} kcal στο Food Budget | +${setCredit} σετ στα Πόδια.`);
+        alert(`✅ ZEOPA SYNC: +${burnedKcal} kcal | +${setCredit} σετ στα Πόδια | Η μέρα 29 έγινε ΠΡΑΣΙΝΗ.`);
+        
         this.close();
         this.resetForm();
     }
@@ -77,6 +97,7 @@ window.PegasusCardio = {
 
 window.saveCardioData = () => window.PegasusCardio.save();
 
+// Initialization on load
 window.addEventListener("load", () => { 
     if (window.PegasusCardio) window.PegasusCardio.init(); 
 });
