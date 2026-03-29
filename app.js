@@ -4,15 +4,16 @@
    Status: BLOCK 1 OPERATIONAL | Surgical Fix for Constant Assignment
    ========================================================================== */
 
-// 0. GLOBAL SCOPE BRIDGE (Surgical Fix for TypeError)
-// Χρησιμοποιούμε το P_M ως την επίσημη τοπική αναφορά
+// 0. GLOBAL SCOPE BRIDGE
 var P_M = window.PegasusManifest; 
 
-// Ελέγχουμε αν η M είναι ήδη δεσμευμένη (π.χ. ως const στο manifest.js)
+// ✅ ΚΡΑΤΑΜΕ ΑΥΤΟ: Δημιουργία του Global Bridge μία φορά στην αρχή
+window.masterUI = window.masterUI || {}; 
+
+// Ελέγχουμε αν η M είναι ήδη δεσμευμένη
 if (typeof M === 'undefined') {
     window.M = P_M;
 } else {
-    // Αν η M υπάρχει ήδη, δεν την πειράζουμε για να αποφύγουμε το Crash
     console.log("🛡️ PEGASUS BRIDGE: M is already linked globally.");
 }
 
@@ -116,6 +117,8 @@ function createNavbar() {
     });
 }
 
+/* === PEGASUS ENGINE: SELECTDAY PROTOCOL (v10.1.2 STABLE) === */
+/* === PEGASUS ENGINE: DYNAMIC SELECTDAY PROTOCOL (v10.2.3) === */
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) {
         console.error("❌ PEGASUS CRITICAL: window.program is missing! Check data.js");
@@ -125,6 +128,7 @@ function selectDay(btn, day) {
     // [PUSH TRIGGER] Συγχρονισμός πριν από κάθε αλλαγή ημέρας
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 
+    // UI: Ενημέρωση Navbar Buttons (Rollback Static Style)
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', '#000', 'important');
@@ -136,64 +140,52 @@ function selectDay(btn, day) {
         btn.style.setProperty('background-color', '#4CAF50', 'important');
     }
 
-    // Engine Reset
+    // Engine Reset: Καθαρισμός προηγούμενης κατάστασης
     clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
+    // Ανάκτηση κατάστασης καιρού
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
-    // Base Data Fetching
-    let rawBaseData = (typeof window.calculateDailyProgram !== 'undefined') ? 
-                      window.calculateDailyProgram(day, isRainy) : 
-                      ((window.program[day]) ? [...window.program[day]] : []);
-
-    // FRIDAY SPILLOVER LOGIC: Αν Παρασκευή & ΟΧΙ βροχή -> Πρόσθεσε Κυριακή (εκτός Ποδηλασίας)
-    if (day === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
-        const bonus = window.program["Κυριακή"]
-            .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
-            .map(ex => ({...ex, isSpillover: true}));
-        rawBaseData = [...rawBaseData, ...bonus];
-        console.log("PEGASUS: Sunday Exercises Added to Friday (No Rain detected).");
+    // --- 1. DYNAMIC BASE DATA FETCHING ---
+    let rawBaseData = [];
+    
+    // Logic: Αν είναι Σ/Κ και βρέχει, αντικατάσταση Ποδηλασίας με Βάρη
+    if ((day === "Σάββατο" || day === "Κυριακή") && isRainy) {
+        console.log(`[WEATHER TRIGGER]: Rain detected on ${day}. Switching to Weight Mode.`);
+        rawBaseData = [
+            { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
+            { name: "Low Seated Row", sets: 5, muscleGroup: "Πλάτη" },
+            { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός" }
+        ];
+    } else {
+        rawBaseData = (window.program[day]) ? [...window.program[day]] : [];
     }
 
-    // Optimizer Integration
-    let mappedData = window.PegasusOptimizer ? window.PegasusOptimizer.apply(day, rawBaseData) : 
+    // --- 2. OPTIMIZER INTEGRATION (The Volume Engine) ---
+    // Ο Optimizer v2.3 θα γεμίσει την Τρίτη (60') και την Παρασκευή (Cleanup)
+    let mappedData = window.PegasusOptimizer ? 
+                     window.PegasusOptimizer.apply(day, rawBaseData) : 
                      rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
 
-    // Cardio Deduction Logic (Manifest Keys)
-    let cardioCredit = parseFloat(localStorage.getItem(P_M?.workout.cardio_offset || "pegasus_cardio_offset_sets")) || 0;
-    
-    // Sort: Skip exercises with 0 sets to the bottom
-    mappedData.sort((a, b) => (a.adjustedSets === 0) ? 1 : (b.adjustedSets === 0) ? -1 : 0);
-
+    // --- 3. UI RENDERING & DATA BINDING ---
     const list = document.getElementById("exList");
     if (!list) return;
-    list.innerHTML = ""; exercises = []; remainingSets = [];
+    list.innerHTML = ""; 
+    
+    exercises = []; 
+    remainingSets = []; 
 
     mappedData.forEach((e, idx) => {
-        if (!e.name || e.name === "αα" || e.adjustedSets < 1) return;
+        if (!e.name || e.name === "αα" || e.adjustedSets < 0.1) return;
 
         let finalSets = parseFloat(e.adjustedSets);
-        const muscle = (window.exercisesDB?.find(ex => ex.name.trim() === e.name.trim()))?.muscleGroup || "Άλλο";
-
-        // Deduction logic for Legs based on Cardio Credit
-        if (muscle === "Πόδια" && cardioCredit > 0 && finalSets > 0) {
-            let deduction = Math.min(finalSets, cardioCredit);
-            finalSets = parseFloat((finalSets - deduction).toFixed(1));
-            cardioCredit = parseFloat((cardioCredit - deduction).toFixed(1));
-        }
-
         const d = document.createElement("div");
         d.className = "exercise"; 
         d.dataset.total = finalSets; 
         d.dataset.done = 0; 
         d.dataset.index = idx;
-
-        if (finalSets <= 0) {
-            d.classList.add("exercise-skipped");
-            d.style.opacity = "0.2"; d.style.filter = "grayscale(100%)"; d.style.pointerEvents = "none";
-        }
 
         const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -214,42 +206,17 @@ function selectDay(btn, day) {
     });
 
     if (typeof calculateTotalTime === "function") calculateTotalTime();
-    showVideo(0);
-}
-
-/* ===== 5. WORKOUT ENGINE (METABOLIC & CLOUD INTEGRATED) ===== */
-function startPause() {
-    if (exercises.length === 0) return;
-    const vid = document.getElementById("video");
     
-    // Διακοπή Manual Προθέρμανσης αν ξεκινήσει η κανονική ροή
-    if (vid && vid.src.includes("warmup")) { 
-        vid.loop = false; 
-        vid.pause(); 
-    }
-
-    // Skip αν η τρέχουσα άσκηση είναι απενεργοποιημένη
-    if (!running && exercises[currentIdx].classList.contains("exercise-skipped")) {
-        let firstAvailable = exercises.findIndex(ex => !ex.classList.contains("exercise-skipped") && remainingSets[exercises.indexOf(ex)] > 0);
-        if (firstAvailable !== -1) { 
-            currentIdx = firstAvailable; 
-            showVideo(currentIdx); 
-        } else {
-            return;
+    // 🔥 EXECUTION BUFFER (v10.2.3): Delay 150ms για σταθερότητα DOM και Video Load
+    setTimeout(() => {
+        if (typeof showVideo === "function") showVideo(0);
+        
+        if (exercises.length === 0) {
+            list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
         }
-    }
-
-    running = !running;
-    const sBtn = document.getElementById("btnStart");
-    if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
+    }, 150);
     
-    if (running) {
-        runPhase(); 
-    } else {
-        clearInterval(timer);
-        // [PUSH TRIGGER] Sync κατά την παύση για ασφάλεια
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
-    }
+    console.log(`[PEGASUS ENGINE]: ${day} Loaded. System state: ${isRainy ? 'Rainy' : 'Clear'}.`);
 }
 
 function runPhase() {
@@ -342,6 +309,148 @@ function runPhase() {
     }, 1000 / SPEED);
 }
 
+/* ===== 5. WORKOUT ENGINE CORE (RE-ESTABLISHED v10.2.5) ===== */
+function startPause() {
+    if (exercises.length === 0) return;
+    const vid = document.getElementById("video");
+    
+    if (vid && vid.src.includes("warmup")) { 
+        vid.loop = false; 
+        vid.pause(); 
+    }
+
+    if (!running && exercises[currentIdx].classList.contains("exercise-skipped")) {
+        let firstAvailable = exercises.findIndex(ex => !ex.classList.contains("exercise-skipped") && remainingSets[exercises.indexOf(ex)] > 0);
+        if (firstAvailable !== -1) { 
+            currentIdx = firstAvailable; 
+            showVideo(currentIdx); 
+        } else {
+            return;
+        }
+    }
+
+    running = !running;
+    const sBtn = document.getElementById("btnStart");
+    if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
+    
+    if (running) {
+        runPhase(); 
+    } else {
+        clearInterval(timer);
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
+    }
+}
+
+function runPhase() {
+    if (!running) return;
+    if (timer) clearInterval(timer);
+
+    if (remainingSets.every(s => s <= 0)) { 
+        finishWorkout(); 
+        return; 
+    }
+
+    const e = exercises[currentIdx];
+    if (!e) return;
+    const exName = e.querySelector(".weight-input").getAttribute("data-name");
+
+    exercises.forEach(ex => { 
+        ex.style.borderColor = "#222"; 
+        ex.style.background = "transparent"; 
+    });
+    e.style.borderColor = "#4CAF50"; 
+    e.style.background = "rgba(76, 175, 80, 0.1)";
+
+    let t = (phase === 0) ? 10 : (phase === 1 ? workoutPhases[1].d : workoutPhases[2].d);
+    let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
+
+    const label = document.getElementById("phaseTimer");
+    if (label) {
+        label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
+        label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
+    }
+
+    if (phase !== 2) showVideo(currentIdx);
+
+    timer = setInterval(() => {
+        t -= 1;
+        if (remainingSeconds > 0) { 
+            remainingSeconds -= 1; 
+            updateTotalBar(); 
+        }
+
+        if (phase === 1 || phase === 2) {
+            let currentKcal = parseFloat(localStorage.getItem(window.M?.nutrition.today_kcal || "pegasus_today_kcal")) || 0;
+            let burnRate = (phase === 1) ? (userWeight * 0.00017) : (userWeight * 0.00008); 
+            localStorage.setItem(window.M?.nutrition.today_kcal || "pegasus_today_kcal", (currentKcal + burnRate).toFixed(4));
+        }
+
+        if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
+
+        if (t <= 0) {
+            clearInterval(timer); 
+            playBeep();
+            
+            if (phase === 0) { 
+                phase = 1; 
+                runPhase(); 
+            } else if (phase === 1) {
+                let done = parseInt(e.dataset.done) || 0;
+                done++;
+                e.dataset.done = done;
+                remainingSets[currentIdx] = parseFloat(e.dataset.total) - done;
+                e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
+                
+                if (window.updateAchievements) window.updateAchievements(exName);
+                if (window.logPegasusSet) window.logPegasusSet(exName);
+                if (window.PegasusCloud) window.PegasusCloud.push(true);
+
+                phase = 2; 
+                runPhase();
+            } else {
+                let next = getNextIndexCircuit();
+                if (next !== -1) { 
+                    currentIdx = next; 
+                    phase = 0; 
+                    runPhase(); 
+                } else {
+                    finishWorkout();
+                }
+            }
+        }
+    }, 1000 / SPEED);
+}
+
+function skipToNextExercise() {
+    if (exercises.length === 0) return;
+    clearInterval(timer);
+
+    if ((phase === 1 || phase === 2) && running) {
+        const currentExNode = exercises[currentIdx];
+        const exName = currentExNode.querySelector(".weight-input").getAttribute("data-name");
+        
+        let done = parseInt(currentExNode.dataset.done) || 0;
+        done++;
+        currentExNode.dataset.done = done;
+        remainingSets[currentIdx]--;
+        
+        currentExNode.querySelector(".set-counter").textContent = `${done}/${currentExNode.dataset.total}`;
+        if (window.logPegasusSet) window.logPegasusSet(exName);
+    }
+
+    if (window.PegasusCloud) window.PegasusCloud.push(true);
+
+    let nextIdx = getNextIndexCircuit();
+    if (nextIdx !== -1) {
+        currentIdx = nextIdx; 
+        phase = 0; 
+        if (running) runPhase(); 
+        else showVideo(currentIdx);
+    } else {
+        finishWorkout();
+    }
+}
+
 /* ===== 6. SAVE & SKIP (DATA PERSISTENCE) ===== */
 function saveWeight(name, val) {
     const cleanName = name.trim();
@@ -356,95 +465,73 @@ function saveWeight(name, val) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 }
 
-function skipToNextExercise() {
-    if (exercises.length === 0) return;
-    
-    // Διακοπή τρέχοντος χρονομέτρου
-    clearInterval(timer);
 
-    // Αν ο χρήστης κάνει skip ενώ η άσκηση "τρέχει", θεωρούμε το σετ ως ολοκληρωμένο (Pegasus Logic)
-    if ((phase === 1 || phase === 2) && running) {
-        const currentExNode = exercises[currentIdx];
-        const exName = currentExNode.querySelector(".weight-input").getAttribute("data-name");
-        
-        let done = parseInt(currentExNode.dataset.done) || 0;
-        done++;
-        currentExNode.dataset.done = done;
-        remainingSets[currentIdx]--;
-        
-        currentExNode.querySelector(".set-counter").textContent = `${done}/${currentExNode.dataset.total}`;
-        
-        // Καταγραφή στο ιστορικό προόδου
-        if (window.logPegasusSet) window.logPegasusSet(exName);
-    }
 
-    // [PUSH TRIGGER] Συγχρονισμός κατά την παράκαμψη
-    if (window.PegasusCloud) window.PegasusCloud.push(true);
-
-    // Εύρεση επόμενης διαθέσιμης άσκησης στο κύκλωμα
-    let nextIdx = getNextIndexCircuit();
-    if (nextIdx !== -1) {
-        currentIdx = nextIdx; 
-        phase = 0; // Επαναφορά στην Προετοιμασία για τη νέα άσκηση
-        
-        if (running) {
-            runPhase(); 
-        } else {
-            showVideo(currentIdx);
-        }
-    } else {
-        // Αν δεν υπάρχουν άλλες ασκήσεις, τερματισμός
-        finishWorkout();
-    }
-}
-
-/* ===== 7. VIDEO & UI UTILS (ASSET ALIGNED) ===== */
+/* ===== 7. VIDEO & UI UTILS (ASSET ALIGNED v10.1.7) ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
     if (!vid) return;
-    vid.style.display = "block"; vid.style.opacity = "1";
-    
-    const ytFrame = document.getElementById("yt-video");
-    if (ytFrame) ytFrame.remove();
 
+    // 🛡️ ΠΡΟΣΤΑΣΙΑ: Έλεγχος αν το index i είναι έγκυρο και αν το UI είναι έτοιμο
+    if (typeof exercises === 'undefined' || !exercises || i === null || i === undefined || i === -1 || !exercises[i]) {
+        console.warn("PEGASUS: UI Bridge not ready or index out of bounds. Playing Warmup.");
+        vid.src = "videos/warmup.mp4";
+        vid.style.display = "block";
+        vid.style.opacity = "1";
+        return;
+    }
+
+    const weightInput = exercises[i].querySelector(".weight-input");
+    if (!weightInput) return; // Fail-safe αν το DOM δεν έχει προλάβει να κάνει render
+
+    const name = weightInput.getAttribute("data-name") || "";
     const label = document.getElementById("phaseTimer");
     const phaseLabel = label ? label.textContent : "";
-    
-    // Προσδιορισμός ονόματος άσκησης
-    let name = (phaseLabel.includes("Manual") || i === null || i === undefined || i === -1) ? 
-               "Προθέρμανση" : exercises[i].querySelector(".weight-input").getAttribute("data-name");
-    
-    // --- SURGICAL ASSET MAPPING (GitHub Sync) ---
-    // Αντιστοίχιση ονομάτων data.js με τα πραγματικά .mp4 αρχεία
+
+    // --- SURGICAL ASSET MAPPING (Direct GitHub Sync) ---
+    // Αντιστοίχιση των ονομάτων από το data.js με τα πραγματικά .mp4 αρχεία
     const videoMap = {
         "Low Seated Row": "lowrowsseated",
         "Close Grip Pulldown": "latpulldownsclose",
         "Lateral Raises": "uprightrows",
         "Shoulder Press": "uprightrows",
         "Tricep Extensions": "triceppulldowns",
+        "Tricep Pulldowns": "triceppulldowns",
         "Incline Chest Press": "chestpress",
         "Chest Press": "chestpress",
-        "Bicep Curls": "bicepcurls"
+        "Seated Chest Press": "chestpress",
+        "Bicep Curls": "bicepcurls",
+        "Chest Flys": "chestflys",
+        "Bent Over Rows": "bentoverrows",
+        "Low Seated Row Wide": "lowrowsseated",
+        "Ποδηλασία 30km": "cycling",
+        "Ποδηλασία (Cycling)": "cycling",
+        "EMS Training": "ems",
+        "Stretching": "stretching"
     };
 
     let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
     
-    // Force "ems" mapping
-    if (name.toLowerCase().includes("ems")) mappedVal = "ems";
+    // Force Warmup logic
+    if (phaseLabel.includes("Manual") || name === "Προθέρμανση") {
+        mappedVal = "warmup";
+    }
 
     const newSrc = `videos/${mappedVal}.mp4`;
     
+    // Εκτέλεση αλλαγής πηγής
     if (vid.getAttribute('src') !== newSrc) {
+        vid.style.display = "block";
+        vid.style.opacity = "1";
         vid.pause();
         vid.src = newSrc;
-        vid.load();
+        vid.load(); // Υποχρεωτικό Reload του Buffer
         
-        // Fallback Protocol: Αν το βίντεο λείπει, δείξε την προθέρμανση αντί για μαύρη οθόνη
-        vid.play().catch(() => { 
-            console.warn(`PEGASUS ASSET 404: ${mappedVal}.mp4 not found. Falling back to warmup.`);
-            vid.src = "videos/warmup.mp4"; 
-            vid.load(); 
-            vid.play(); 
+        vid.play().catch(err => {
+            console.warn(`PEGASUS ASSET 404: ${mappedVal}.mp4. Falling back to warmup.`, err);
+            vid.src = "videos/warmup.mp4";
+            vid.load();
+            vid.play();
         });
     }
 }
@@ -679,16 +766,38 @@ window.updateTotalWorkoutCount = function() {
     if (display) display.textContent = `Προπονήσεις: ${count}`;
 };
 
-window.onload = () => {
-    // 1. EmailJS Initialization
-    if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
-    
-    // 2. UI Construction
-    createNavbar();
-    window.updateTotalWorkoutCount();
+/* ==========================================================================
+   PEGASUS OS - CORE BOOT SEQUENCE (v10.1 STABLE)
+   Protocol: Console-Validated Global Bridge & Unified UI Mapping
+   ========================================================================== */
 
-    // 3. MASTER UI MAPPING (Event Delegation)
-    const masterUI = { 
+window.onload = () => {
+    // --- 0. GLOBAL CONSTANTS (Declared ONCE) ---
+    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const todayObj = new Date();
+    const todayName = greekDays[todayObj.getDay()];
+
+    // --- 1. PEGASUS SATURDAY RESET PROTOCOL ---
+    if (todayName === "Σάββατο") {
+        const lastReset = localStorage.getItem('pegasus_last_reset');
+        const todayDateStr = todayObj.toISOString().split('T')[0];
+        
+        if (lastReset !== todayDateStr) {
+            console.log("🚀 PEGASUS: New Weekly Cycle Starting! Resetting History...");
+            const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+            localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
+            localStorage.setItem('pegasus_last_reset', todayDateStr);
+            localStorage.setItem('pegasus_cardio_offset_sets', "0");
+        }
+    }
+
+    // --- 2. INITIALIZATION ---
+    if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
+    createNavbar();
+    if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
+
+    // --- 3. MASTER UI MAPPING (Command Center) ---
+    window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
         "btnWarmup": () => { 
@@ -712,50 +821,60 @@ window.onload = () => {
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
         "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
-        "btnToolsUI": { panel: "toolsPanel" },
-        "btnPreviewUI": { panel: "previewPanel", init: openExercisePreview },
+        "btnToolsUI": { panel: "toolsPanel", init: null },
+        "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
+        "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
+        "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
+        "btnEMS": { panel: "emsModal", init: window.logEMSData },
+        "btnManualEmail": () => {
+            if (window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true);
+            else alert("Reporting Engine Offline");
+        },
         "btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
-            localStorage.setItem(P_M?.user.weight || "pegasus_weight", weightVal);
+            const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
+            localStorage.setItem(weightKey, weightVal);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
-            console.log("PEGASUS SETTINGS: Data saved & synced.");
             location.reload();
         }
     };
 
-    Object.keys(masterUI).forEach(btnId => {
+    // --- 4. EVENT DELEGATION ---
+    Object.keys(window.masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                const target = masterUI[btnId];
-                
-                // Αυτόματο κλείσιμο άλλων panels
+                const target = window.masterUI[btnId];
                 if (!btnId.includes("Save") && !btnId.includes("Start")) {
                     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
-
-                if (typeof target === 'function') {
-                    target();
-                } else if (target.panel) {
+                if (typeof target === 'function') target();
+                else if (target && target.panel) {
                     const el = document.getElementById(target.panel);
-                    if (el) { 
-                        el.style.display = "block"; 
-                        if (target.init) target.init(); 
-                    }
+                    if (el) { el.style.display = "block"; if (target.init) target.init(); }
                 }
             };
         }
     });
 
-    // 4. AUTO-SELECT TODAY PROTOCOL
-    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const today = greekDays[new Date().getDay()];
+    // --- 5. AUTO-SELECT TODAY ---
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
-            if (b.textContent.trim().split(' ')[0] === today) selectDay(b, b.textContent);
+            if (b.textContent.trim().split(' ')[0] === todayName) {
+                if (typeof selectDay === "function") {
+                    selectDay(b, b.textContent);
+                    setTimeout(() => {
+                        remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
+                        currentIdx = 0;
+                        console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
+                    }, 150);
+                }
+            }
         }); 
     }, 400);
+
+    if (window.PegasusUI && typeof window.PegasusUI.init === "function") window.PegasusUI.init();
 };
 
 /* ===== 11. DEBUG BRIDGE (FIXED & FULL ACCESS) ===== */
