@@ -191,15 +191,15 @@ function selectDay(btn, day) {
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || "";
 
-        d.innerHTML = `
-            <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
-                <div class="set-counter">0/${finalSets}</div>
-                <div class="exercise-name">${cleanName}${e.isSpillover ? " ☀️" : ""}</div>
-                <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
-                       onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
-            </div>
-            <div class="progress-box"><div class="progress-bar"></div></div>
-        `;
+d.innerHTML = `
+    <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
+        <div class="set-counter">0/${finalSets}</div>
+        <div class="exercise-name">${cleanName}</div> 
+        <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
+               onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
+    </div>
+    <div class="progress-box"><div class="progress-bar"></div></div>
+`;
         list.appendChild(d);
         exercises.push(d);
         remainingSets.push(finalSets);
@@ -671,7 +671,7 @@ function openExercisePreview() {
     if (currentDay === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
         const bonus = window.program["Κυριακή"]
             .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
-            .map(ex => ({...ex, isSpillover: true}));
+            .map(ex => ({...ex, isSpillover: false}));
         rawData = [...rawData, ...bonus];
     }
 
@@ -715,12 +715,12 @@ function openExercisePreview() {
         // Καθορισμός επέκτασης αρχείου
         let ext = (imgName === "cycling") ? ".jpg" : ".png";
 
-        content.innerHTML += `
-            <div class="preview-item">
-                <img src="images/${imgName}${ext}" onerror="this.src='images/placeholder.jpg'">
-                <p>${cleanName}${ex.isSpillover ? " ☀️" : ""} (${ex.adjustedSets || ex.sets} set)</p>
-            </div>
-        `;
+content.innerHTML += `
+    <div class="preview-item">
+        <img src="images/${imgName}${ext}" onerror="this.src='images/placeholder.jpg'">
+        <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
+    </div>
+`;
     });
 }
 
