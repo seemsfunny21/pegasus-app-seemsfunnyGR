@@ -671,7 +671,7 @@ function openExercisePreview() {
     if (currentDay === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
         const bonus = window.program["Κυριακή"]
             .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
-            .map(ex => ({...ex, isSpillover: true}));
+            .map(ex => ({...ex, isSpillover: false}));
         rawData = [...rawData, ...bonus];
     }
 
