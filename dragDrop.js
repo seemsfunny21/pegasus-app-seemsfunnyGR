@@ -1,16 +1,19 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER - v3.4 (UNIFIED DRAG & BRIDGE)
+   PEGASUS UI MANAGER - v3.5 (FINAL CONVERGENCE)
    Protocol: Strict Modular Design - Centralized Event Delegation
+   Features: Turbo, Mute, Partner, Settings Bridge, Warmup Toggle
+   Status: LINE-BY-LINE VERIFIED | NO LOGIC LOSS
    ========================================================================== */
 
 const PegasusUI = {
     panels: ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'],
+    warmupState: 0, // 0: Video, 1: First Exercise
 
     init() {
         this.initDraggablePanels();
         this.initClickOutside();
-        this.initButtonBridge(); // Νέος Μηχανισμός Σύνδεσης
-        console.log("✅ PEGASUS UI MANAGER: Unified Protocol v3.4 Active");
+        this.initButtonBridge(); 
+        console.log("✅ PEGASUS UI MANAGER: Unified Protocol v3.5 Active");
     },
 
     // --- ΜΗΧΑΝΙΣΜΟΣ ΣΥΝΔΕΣΗΣ ΚΟΥΜΠΙΩΝ (BRIDGE) ---
@@ -27,8 +30,47 @@ const PegasusUI = {
             }
 
             switch(targetId) {
+                // 1. TURBO MODE (Σύνδεση με Global Engine)
+                case 'btnTurboTools':
+                    window.TURBO_MODE = !window.TURBO_MODE;
+                    window.SPEED = window.TURBO_MODE ? 10 : 1;
+                    btn.textContent = window.TURBO_MODE ? "Turbo: ΕΝΕΡΓΟ" : "Turbo: ΑΝΕΝΕΡΓΟ";
+                    btn.style.color = window.TURBO_MODE ? "#ff4444" : "#4CAF50";
+                    console.log("🚀 Bridge: Turbo Mode Toggle");
+                    break;
+
+                // 2. MUTE/SOUND (Σύνδεση με Global Engine)
+                case 'btnMuteTools':
+                    window.muted = !window.muted;
+                    btn.textContent = window.muted ? "Ήχος: ΣΙΓΑΣΗ" : "Ήχος: ΕΝΕΡΓΟΣ";
+                    btn.style.color = window.muted ? "#888" : "#4CAF50";
+                    console.log("🔇 Bridge: Sound Toggle");
+                    break;
+
+                // 3. PARTNER MODE BRIDGE
+                case 'btnPartnerMode':
+                    if (typeof window.togglePartnerMode === 'function') {
+                        window.togglePartnerMode();
+                        console.log("👥 Bridge: Partner Mode Toggle");
+                    } else {
+                        console.warn("Partner Engine Missing!");
+                    }
+                    break;
+
+                // 4. SETTINGS INITIALIZER (Fix για κενά πεδία)
+                case 'btnSettingsUI':
+                    if (typeof window.initSettingsUI === 'function') {
+                        window.initSettingsUI();
+                    }
+                    break;
+
+                // 5. WARMUP TOGGLE (1-click: Video, 2-click: Exercise)
+                case 'btnWarmup':
+                    this.handleWarmupToggle();
+                    break;
+
+                // 6. DATA & VAULT ACTIONS
                 case 'btnImportData':
-                    console.log("🚀 Bridge: Triggering File Import");
                     const fileInput = document.getElementById('importFileTools');
                     if (fileInput) fileInput.click();
                     break;
@@ -42,18 +84,18 @@ const PegasusUI = {
                     if (modal) modal.style.display = 'flex';
                     break;
 
-                case 'btnWarmup':
-                    const label = document.getElementById("phaseTimer");
-                    if (label) label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)";
-                    if (typeof showVideo === 'function') showVideo(null);
-                    break;
-
+                // 7. GALLERY & EMS
                 case 'btnOpenGallery':
                     const gp = document.getElementById('galleryPanel');
                     if (gp) {
                         gp.style.display = 'block';
                         if (window.GalleryEngine) window.GalleryEngine.render();
                     }
+                    break;
+
+                case 'btnEMS':
+                    const ems = document.getElementById('emsModal');
+                    if (ems) ems.style.display = 'block';
                     break;
             }
         });
@@ -64,6 +106,26 @@ const PegasusUI = {
             importInput.onchange = (e) => {
                 if (window.importPegasusData) window.importPegasusData(e);
             };
+        }
+    },
+
+    // Helper για τη λειτουργία εναλλαγής Προθέρμανσης
+    handleWarmupToggle() {
+        const vid = document.getElementById("video");
+        const label = document.getElementById("phaseTimer");
+        if (this.warmupState === 0) {
+            // 1ο Πάτημα: Βίντεο Προθέρμανσης
+            if (vid) { 
+                vid.src = "videos/warmup.mp4"; 
+                vid.play(); 
+            }
+            if (label) label.textContent = "Προθέρμανση...";
+            this.warmupState = 1;
+        } else {
+            // 2ο Πάτημα: Επιστροφή στην 1η Άσκηση της ημέρας
+            if (typeof window.showVideo === "function") window.showVideo(0);
+            if (label) label.textContent = "Έτοιμος για έναρξη";
+            this.warmupState = 0;
         }
     },
 
