@@ -759,12 +759,12 @@ function openExercisePreview() {
     if(dayExercises) {
         dayExercises.forEach(ex => {
             const cleanName = ex.name.trim().replace(" ☀️", "");
-            const nameMapping = {
-                "Seated Chest Press": "chestpress", "Chest Flys": "chestflys", "Low Seated Row": "lowrowsseated",
-                "Low Seated Row Wide": "lowrowsseated", "Close Grip Pulldown": "latpulldownsclose", "Shoulder Press": "uprightrows",
-                "Lateral Raises": "uprightrows", "Bicep Curls": "bicepcurls", "Tricep Extensions": "triceppulldowns",
-                "Ab Crunches": "abcrunches", "Ποδηλασία (Cycling)": "cycling", "Προθέρμανση": "warmup"
-            };
+const nameMapping = {
+    "Seated Chest Press": "chestpress", "Chest Flys": "chestflys", "Low Seated Row": "lowrowsseated",
+    "Low Seated Row Wide": "lowrowsseated", "Close Grip Pulldown": "latpulldownsclose", "Shoulder Press": "uprightrows",
+    "Lateral Raises": "uprightrows", "Bicep Curls": "bicepcurls", "Tricep Extensions": "triceppulldowns",
+    "Ab Crunches": "abcrunches", "Ποδηλασία (Cycling)": "cycling", "Προθέρμανση": "warmup"
+};
             let videoId = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
             let extension = (videoId === "cycling") ? ".jpg" : ".png";
 
