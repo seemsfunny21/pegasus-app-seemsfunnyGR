@@ -613,12 +613,11 @@ function finishWorkout() {
     }, 5000);
 }
 
-/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT) ===== */
+/* ===== 9. PREVIEW ENGINE (v10.4 - MUSCLE BARS INTEGRATION) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
-    // Καθαρισμός ονόματος από emojis για σωστό matching
     const currentDay = activeBtn.textContent.trim().split(' ')[0];
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
@@ -627,7 +626,7 @@ function openExercisePreview() {
                   window.calculateDailyProgram(currentDay, isRainy) : 
                   ((window.program[currentDay]) ? [...window.program[currentDay]] : []);
 
-    // Ενσωμάτωση Spillover Logic (Κυριακή -> Παρασκευή) στην προεπισκόπηση
+    // Ενσωμάτωση Spillover Logic (Κυριακή -> Παρασκευή)
     if (currentDay === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
         const bonus = window.program["Κυριακή"]
             .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
@@ -646,20 +645,39 @@ function openExercisePreview() {
     panel.style.display = 'block'; 
     content.innerHTML = ''; 
 
-    // Ενημέρωση Muscle Progress UI
-    if (window.MuscleProgressUI) { 
-        window.MuscleProgressUI.lastDataHash = null;
-        window.MuscleProgressUI.render(); 
+    // --- 🔥 PEGASUS MUSCLE STATUS GRID ---
+    if (window.MuscleProgressUI) {
+        const stats = window.MuscleProgressUI.calculateStats();
+        let gridHtml = `
+            <div style="width:100%; margin-bottom:20px; padding:12px; background:rgba(76, 175, 80, 0.05); border:1px solid #222; border-radius:10px;">
+                <p style="color:#4CAF50; font-size:11px; font-weight:bold; margin:0 0 10px 0; text-align:center; letter-spacing:1px;">WEEKLY MUSCLE COVERAGE</p>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">`;
+        
+        stats.forEach(s => {
+            gridHtml += `
+                <div style="font-size:10px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:3px; color:#eee;">
+                        <span>${s.name.toUpperCase()}</span>
+                        <span style="color:#4CAF50;">${s.percent}%</span>
+                    </div>
+                    <div style="width:100%; height:4px; background:#111; border-radius:2px; overflow:hidden; border:1px solid #333;">
+                        <div style="width:${s.percent}%; height:100%; background:#4CAF50; transition: width 1s ease;"></div>
+                    </div>
+                </div>`;
+        });
+        
+        gridHtml += `</div></div><hr style="border:0; border-top:1px solid #333; margin:15px 0; width:100%;">`;
+        content.innerHTML = gridHtml;
     }
 
-    // --- SURGICAL IMAGE MAPPING (Match with GitHub images/) ---
+    // --- EXERCISE ASSETS ---
     const nameMapping = {
         "Low Seated Row": "lowrowsseated",
         "Close Grip Pulldown": "latpulldownsclose",
         "Tricep Extensions": "triceppulldowns",
         "Shoulder Press": "uprightrows",
         "Chest Press": "chestpress",
-        "Lateral Raises": "uprightrows", // Fallback σε υπάρχον asset
+        "Lateral Raises": "uprightrows", 
         "Incline Chest Press": "chestpress", 
         "Bicep Curls": "bicepcurls",
         "Chest Flys": "chestflys",
@@ -671,16 +689,14 @@ function openExercisePreview() {
     dayExercises.filter(ex => (ex.adjustedSets || ex.sets) > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
         let imgName = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
-        
-        // Καθορισμός επέκτασης αρχείου
         let ext = (imgName === "cycling") ? ".jpg" : ".png";
 
-content.innerHTML += `
-    <div class="preview-item">
-        <img src="images/${imgName}${ext}" onerror="this.src='images/placeholder.jpg'">
-        <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
-    </div>
-`;
+        content.innerHTML += `
+            <div class="preview-item">
+                <img src="images/${imgName}${ext}" onerror="this.src='images/placeholder.jpg'">
+                <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
+            </div>
+        `;
     });
 }
 
