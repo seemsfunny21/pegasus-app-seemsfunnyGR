@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v9.0 (MASTER MANIFEST EDITION)
+   PEGASUS FOOD ENGINE - v9.1 (MASTER MANIFEST & AUTO-RESET)
    Protocol: Strict Data Mapping via window.PegasusManifest
-   Features: Midnight Rollover, Metabolic Sync, Kouki Store Integration
+   Features: Midnight Rollover, Metabolic Sync, Kouki Store, Search Reset
+   Status: LINE-BY-LINE VERIFIED | PC SEARCH FIX INCLUDED
    ========================================================================== */
 
-// 1. ΕΞΑΣΦΑΛΙΣΗ ΜΑΝΙΦΕΣΤΟΥ & INITIAL STATE
 const M = window.PegasusManifest;
 if (!M) console.error("❌ CRITICAL: PegasusManifest missing in food.js");
 
@@ -56,8 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-/* --- CORE DATE & RESET LOGIC --- */
-
 function changeFoodDate(days) {
     window.currentFoodDate.setDate(window.currentFoodDate.getDate() + days);
     updateFoodUI();
@@ -68,8 +66,6 @@ window.getStrictDateStr = function() {
     if (window.lastKnownSystemDate !== currentSystemDate) {
         if (window.currentFoodDate && window.currentFoodDate.toDateString() === window.lastKnownSystemDate) {
             window.currentFoodDate = new Date();
-            
-            // 🔥 METABOLIC RESET (Via Manifest)
             localStorage.setItem(M.workout.cardio_offset, "0");
             console.log("PEGASUS GUARD: Midnight Rollover & Metabolic Reset.");
         }
@@ -79,36 +75,26 @@ window.getStrictDateStr = function() {
     return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
 
-/* --- CALORIE & BMR ENGINE --- */
-
 function getDynamicBMR() {
     const w = parseFloat(localStorage.getItem(M.user.weight)) || 74;
     const h = parseFloat(localStorage.getItem(M.user.height)) || 187;
     const a = parseInt(localStorage.getItem(M.user.age)) || 38;
     const g = localStorage.getItem(M.user.gender) || "male";
-    
     let bmr = (10 * w) + (6.25 * h) - (5 * a);
     return (g === "male") ? bmr + 5 : bmr - 161;
 }
 
 function calculateDailyCalorieTarget(dateObj) {
-    const dateStr = dateObj.getDate() + "/" + (dateObj.getMonth() + 1) + "/" + dateObj.getFullYear();
     const dayOfWeek = dateObj.getDay(); 
     const workoutKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-    
     const workoutsDone = JSON.parse(localStorage.getItem(M.workout.done) || "{}");
     const hasWorkedOut = workoutsDone[workoutKey] === true;
-    
     const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4) && !hasWorkedOut;
     const activityMultiplier = isRecoveryDay ? 1.2 : 1.55;
-    
     const cardioBurn = parseFloat(localStorage.getItem(M.workout.cardio_offset)) || 0;
     const baseKcal = getDynamicBMR() * activityMultiplier;
-
     return Math.round(baseKcal + cardioBurn);
 }
-
-/* --- UI & STORAGE SYNC --- */
 
 window.updateFoodUI = function() {
     const dateStr = window.getStrictDateStr();
@@ -127,7 +113,6 @@ window.updateFoodUI = function() {
     foodLog.forEach((item, index) => {
         totalKcal += parseFloat(item.kcal) || 0;
         totalProtein += parseFloat(item.protein) || 0;
-
         const div = document.createElement('div');
         div.className = 'food-item';
         div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border-left:3px solid #4CAF50; border-radius:4px;";
@@ -141,20 +126,19 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    // 🔥 MANIFEST SYNC: Update Dashboard Keys
     localStorage.setItem(M.nutrition.today_kcal, totalKcal.toFixed(0));
     localStorage.setItem(M.nutrition.today_protein, totalProtein.toFixed(0));
-
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = totalKcal.toFixed(0);
     
     updateProgressBars(totalKcal, totalProtein);
     if (typeof window.filterLibrary === "function") window.filterLibrary(); 
     if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
-
-    console.log(`[PEGASUS AUDIT]: Date: ${dateStr} | Total: ${totalKcal} kcal | Items: ${foodLog.length}`);
 };
 
+/**
+ * UPDATED: addFoodItem περιλαμβάνει πλέον Search Reset
+ */
 window.addFoodItem = function(name, kcal, protein) {
     const dateStr = window.getStrictDateStr();
     const logKey = M.nutrition.log_prefix + dateStr;
@@ -164,8 +148,14 @@ window.addFoodItem = function(name, kcal, protein) {
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
     addToLibrary(name, kcal, protein);
-    window.updateFoodUI();
     
+    // 🔥 PC SEARCH RESET: Καθαρισμός αναζήτησης μετά την προσθήκη
+    const searchInput = document.getElementById('librarySearch');
+    if (searchInput) {
+        searchInput.value = "";
+    }
+
+    window.updateFoodUI();
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
@@ -173,30 +163,24 @@ window.deleteFoodItem = function(index) {
     const dateStr = window.getStrictDateStr();
     const logKey = M.nutrition.log_prefix + dateStr;
     let foodLog = JSON.parse(localStorage.getItem(logKey) || "[]");
-    
     foodLog.splice(index, 1);
     localStorage.setItem(logKey, JSON.stringify(foodLog));
-    
     window.updateFoodUI();
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
 function updateProgressBars(kcal, protein) {
     const goalKcal = calculateDailyCalorieTarget(window.currentFoodDate); 
-    const goalProtein = parseInt(localStorage.getItem(M.user.kcal_target)) ? 160 : 160; 
-    
+    const goalProtein = 160; 
     const kBar = document.getElementById('kcalBar');
     const pBar = document.getElementById('proteinBar');
     if (kBar) kBar.style.width = Math.min((kcal / goalKcal) * 100, 100) + "%";
     if (pBar) pBar.style.width = Math.min((protein / goalProtein) * 100, 100) + "%";
-    
     const kStat = document.getElementById('kcalStatus');
     const pStat = document.getElementById('proteinStatus');
     if (kStat) kStat.textContent = `${Math.round(kcal)} / ${goalKcal} kcal`;
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
-
-/* --- KOUKI QUICK MENU --- */
 
 const weeklyKoukiMenu = {
     "Δευτέρα": [{ name: "Μουσακάς", kcal: 600, protein: 25 }, { name: "Παστίτσιο", kcal: 600, protein: 28 }, { name: "Βακαλάος σκορδαλιά", kcal: 580, protein: 35 }],
@@ -215,7 +199,6 @@ window.renderKoukiMenu = function() {
     const targetDate = window.currentFoodDate || new Date();
     const targetDayName = days[targetDate.getDay()];
     const todayMenu = weeklyKoukiMenu[targetDayName] || [];
-
     container.innerHTML = `
         <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ)</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
@@ -235,7 +218,6 @@ window.addQuickFood = function(name, kcal, protein) {
     const kcalInp = document.getElementById('foodKcal');
     const protInp = document.getElementById('foodNote');
     const addBtn = document.getElementById('btnAddFood');
-
     if (nameInp && kcalInp && protInp && addBtn) {
         nameInp.value = name;
         kcalInp.value = kcal;
@@ -244,15 +226,12 @@ window.addQuickFood = function(name, kcal, protein) {
     }
 };
 
-/* --- LIBRARY LOGIC --- */
-
 window.filterLibrary = function() {
     const searchTerm = document.getElementById('librarySearch')?.value.toLowerCase() || "";
     const libKey = M.nutrition.library;
     const library = JSON.parse(localStorage.getItem(libKey) || "[]");
     const libContainer = document.getElementById('libraryFoodList');
     if (!libContainer) return;
-    
     libContainer.innerHTML = "";
     library.filter(item => item.name.toLowerCase().includes(searchTerm)).forEach(item => {
         const wrapper = document.createElement('div');
