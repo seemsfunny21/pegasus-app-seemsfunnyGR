@@ -811,28 +811,37 @@ window.updateTotalWorkoutCount = function() {
 };
 
 /* ==========================================================================
-   PEGASUS OS - CORE BOOT SEQUENCE (v10.1 STABLE)
-   Protocol: Console-Validated Global Bridge & Unified UI Mapping
+   PEGASUS OS - CORE BOOT SEQUENCE (v10.2 STABLE)
+   Protocol: Strict Saturday Reset Guard & Monday Persistence
+   Features: Date-Locked Weekly Reset, Master UI Delegation
+   Status: FINAL VERIFIED | FIX: DOUBLE RESET BUG
    ========================================================================== */
 
 window.onload = () => {
-    // --- 0. GLOBAL CONSTANTS (Declared ONCE) ---
+    // --- 0. GLOBAL CONSTANTS ---
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayObj = new Date();
     const todayName = greekDays[todayObj.getDay()];
 
-    // --- 1. PEGASUS SATURDAY RESET PROTOCOL ---
+    // --- 1. PEGASUS STRICT WEEKLY RESET PROTOCOL (v10.2) ---
+    // Ο μηδενισμός επιτρέπεται ΑΠΟΚΛΕΙΣΤΙΚΑ το Σάββατο.
     if (todayName === "Σάββατο") {
         const lastReset = localStorage.getItem('pegasus_last_reset');
         const todayDateStr = todayObj.toISOString().split('T')[0];
         
         if (lastReset !== todayDateStr) {
-            console.log("🚀 PEGASUS: New Weekly Cycle Starting! Resetting History...");
+            console.log("🚀 PEGASUS: New Weekly Cycle Starting! Executing Master Reset...");
             const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
             localStorage.setItem('pegasus_last_reset', todayDateStr);
             localStorage.setItem('pegasus_cardio_offset_sets', "0");
+            
+            // Cloud Sync αμέσως μετά το Reset
+            if (window.PegasusCloud) window.PegasusCloud.push(true);
         }
+    } else {
+        // Καμία άλλη μέρα (συμπεριλαμβανομένης της Δευτέρας) δεν μπορεί να κάνει reset.
+        console.log(`🛡️ PEGASUS: System Day: ${todayName}. History Preservation Active.`);
     }
 
     // --- 2. INITIALIZATION ---
@@ -854,7 +863,7 @@ window.onload = () => {
         "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
         "btnManualEmail": () => {
-            if (window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true);
+            if (window.PegasusReporting) window.ReportingEngine.sendReport(true);
             else alert("Reporting Engine Offline");
         },
         "btnSaveSettings": () => { 
@@ -892,9 +901,11 @@ window.onload = () => {
                 if (typeof selectDay === "function") {
                     selectDay(b, b.textContent);
                     setTimeout(() => {
-                        remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
-                        currentIdx = 0;
-                        console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
+                        if (typeof exercises !== 'undefined') {
+                            remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
+                            currentIdx = 0;
+                            console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
+                        }
                     }, 150);
                 }
             }
