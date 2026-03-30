@@ -147,15 +147,25 @@ window.addFoodItem = function(name, kcal, protein) {
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
-    addToLibrary(name, kcal, protein);
-    
-    // 🔥 PC SEARCH RESET: Καθαρισμός αναζήτησης μετά την προσθήκη
-    const searchInput = document.getElementById('librarySearch');
-    if (searchInput) {
-        searchInput.value = "";
+    // --- SMART DETECTION PROTOCOL (Source-Locked) ---
+    // Αφαιρεί ΜΟΝΟ αν η λέξη "πρωτεΐνη" γράφτηκε τώρα στο PC.
+    // Η παράμετρος p=false στο consumeSupp αποτρέπει το loop με το κινητό.
+    if (name.toLowerCase().includes("πρωτεΐνη")) {
+        if (window.consumeSupp) {
+            console.log("[PEGASUS PC]: Local Protein detected. Adjusting inventory...");
+            window.consumeSupp('prot', 30, false); 
+        }
     }
 
+    addToLibrary(name, kcal, protein);
+    
+    // Καθαρισμός αναζήτησης
+    const searchInput = document.getElementById('librarySearch');
+    if (searchInput) searchInput.value = "";
+
     window.updateFoodUI();
+    
+    // Συγχρονισμός στο Cloud (εδώ γίνεται η ενημέρωση και για τις δύο συσκευές)
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
