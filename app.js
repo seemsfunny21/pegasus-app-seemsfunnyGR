@@ -467,25 +467,43 @@ function saveWeight(name, val) {
 
 
 
-/* ===== 7. VIDEO & UI UTILS (STRICT ASSET ALIGNMENT v10.6) ===== */
+/* ===== 7. VIDEO & UI UTILS (STRICT RECOVERY ALIGNMENT v10.8) ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
+    const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
-    // ΠΡΟΣΤΑΣΙΑ: Αν δεν υπάρχει άσκηση ή το index είναι λάθος, παίζει Warmup
-    if (typeof exercises === 'undefined' || !exercises[i]) {
-        vid.src = "videos/warmup.mp4";
-        vid.load();
-        vid.play().catch(e => {});
+    // --- 1. RECOVERY DETECTION PROTOCOL ---
+    // Εντοπισμός ημέρας από το UI (Navbar)
+    const activeBtn = document.querySelector(".navbar button.active");
+    const currentDay = activeBtn ? activeBtn.textContent.trim() : "";
+    const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");
+
+    // --- 2. BRANCH A: RECOVERY OR EMPTY STATE ---
+    if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
+        const recoverySrc = "videos/stretching.mp4";
+        
+        if (vid.getAttribute('src') !== recoverySrc) {
+            vid.pause();
+            vid.src = recoverySrc;
+            vid.load();
+            vid.play().catch(e => console.log("Waiting for user to trigger playback..."));
+            
+            if (label && isRecoveryDay) {
+                label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
+                label.style.color = "#00bcd4"; // Cyan Recovery Color
+            }
+        }
         return;
     }
 
+    // --- 3. BRANCH B: ACTIVE WORKOUT LOGIC ---
     const weightInput = exercises[i].querySelector(".weight-input");
     if (!weightInput) return;
 
     const name = weightInput.getAttribute("data-name") || "";
     
-    // --- 🎯 SURGICAL ASSET MAPPING (Συγχρονισμός με data.js v10.3) ---
+    // --- 🎯 SURGICAL ASSET MAPPING (Aligned with data.js v10.3) ---
     const videoMap = {
         "Seated Chest Press": "chestpress",
         "Pec Deck Flys": "chestflys",
@@ -511,7 +529,7 @@ function showVideo(i) {
     let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
     const newSrc = `videos/${mappedVal}.mp4`;
     
-    // ⚡ RESET & LOAD PROTOCOL (Αποφυγή παγώματος)
+    // ⚡ RESET & LOAD PROTOCOL (Anti-Freeze Execution)
     if (vid.getAttribute('src') !== newSrc) {
         vid.pause();
         vid.src = newSrc;
