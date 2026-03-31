@@ -602,51 +602,50 @@ input:checked + .slider:before { transform: translateX(26px); }
 ::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 10px; }
 
 /* ==========================================================================
-   PEGASUS KOUKI MENU - UI FIX (ANTI-BAR & WHITE TEXT LOCK)
+   PEGASUS KOUKI MENU - UI FIX v2.2 (ZERO-SCROLL & WHITE TEXT)
+   Protocol: Strict Minimalism for Desktop UI
    ========================================================================== */
 
-/* 1. Αφαίρεση της διπλής μπάρας (background progress) */
-#koukiQuickMenu button, 
-#koukiQuickMenu .add-btn {
+/* 1. Καθαρισμός Buttons: Όχι μπάρες, όχι gradients, μόνο Macros */
+#koukiQuickMenu button {
     background-image: none !important;
     background: #0a0a0a !important;
     box-shadow: none !important;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
     border: 1px solid #333 !important;
+    padding: 12px 10px !important;
+    height: auto !important; /* Αυτόματο ύψος για να χωράνε τα Macros */
+    overflow: hidden;
 }
 
-/* 2. Lock στα χρώματα: Όνομα -> ΛΕΥΚΟ (Uniformity), Τιμή -> Πράσινο */
-#koukiQuickMenu .food-name, 
-#koukiQuickMenu strong,
-#koukiQuickMenu div[style*="color: #f39c12"], /* Override για τυχόν inline orange */
-#koukiQuickMenu div[style*="color: rgb(243, 156, 18)"] {
-    color: #eee !important; /* Λευκό Pegasus Standard */
+/* 2. Color Lock: Όνομα -> Λευκό, Macros -> Πράσινο */
+#koukiQuickMenu strong, 
+#koukiQuickMenu .food-name,
+#koukiQuickMenu div[style*="color"] {
+    color: #eee !important; /* Απόλυτο λευκό Pegasus */
     background: none !important;
     text-shadow: none !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
 }
 
-#koukiQuickMenu span[style*="color: #4CAF50"], 
-#koukiQuickMenu .food-price {
-    color: #4CAF50 !important; /* Διατήρηση Πράσινου για Macros/Price */
-    font-weight: bold !important;
+#koukiQuickMenu span {
+    font-size: 10px !important;
+    letter-spacing: 0.5px;
 }
 
-/* 3. Hover State */
+/* 3. Αφαίρεση του εσωτερικού Scrollbar (Επιβολή Unified Scroll) */
+#koukiQuickMenu div {
+    max-height: none !important; /* Απελευθέρωση ύψους */
+    overflow: visible !important; /* Κατάργηση εσωτερικού scroll */
+}
+
+/* 4. Hover State: Πράσινο περίγραμμα κατά την επιλογή */
 #koukiQuickMenu button:hover {
     border-color: #4CAF50 !important;
     background: #111 !important;
-}
-
-/* 4. Slim Scrollbar */
-#koukiQuickMenu div[style*="overflow-y: auto"]::-webkit-scrollbar {
-    width: 4px !important;
-}
-#koukiQuickMenu div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
-    background: #4CAF50 !important;
-    border-radius: 10px;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
 }
