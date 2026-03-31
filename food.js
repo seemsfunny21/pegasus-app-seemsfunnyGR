@@ -202,23 +202,43 @@ const weeklyKoukiMenu = {
     "Κυριακή": [{ name: "Κανελόνια", kcal: 680, protein: 32 }, { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 }]
 };
 
+/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.2) === */
+
+// 1. Αφαιρούμε το παλιό στατικό αντικείμενο weeklyKoukiMenu (το διαβάζουμε πλέον από το dietAdvisor.js)
+
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
-    const days = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+
+    // Συγχρονισμός με τις ημέρες του Advisor
+    const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const targetDate = window.currentFoodDate || new Date();
-    const targetDayName = days[targetDate.getDay()];
-    const todayMenu = weeklyKoukiMenu[targetDayName] || [];
+    const targetDayKey = daysMap[targetDate.getDay()];
+    
+    // Ελληνική ονομασία για το UI
+    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const targetDayName = greekDays[targetDate.getDay()];
+
+    // ⚡ Κρίσιμο: Τράβηγμα δεδομένων από το KOUKI_MASTER_MENU (Global από dietAdvisor.js)
+    const todayMenu = (typeof KOUKI_MASTER_MENU !== 'undefined') ? KOUKI_MASTER_MENU[targetDayKey] : [];
+
     container.innerHTML = `
-        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-            ${todayMenu.map(item => `
-                <button onclick="addQuickFood('${item.name}', ${item.kcal}, ${item.protein})" 
-                        style="background: #050505; border: 1px solid #4CAF50; color: #eee; padding: 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left;">
-                    <strong style="color: #4CAF50;">${item.name}</strong><br>
-                    <span>${item.kcal} kcal | ${item.protein}g P</span>
+        <h4 style="color: #f39c12; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ & ΡΕΒΥΘΙ)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+            ${todayMenu.map(item => {
+                // Υπολογισμός Macros βάσει κατηγορίας (tag) για ακρίβεια στο Log
+                let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
+                let kcal = (item.p >= 6.5) ? 680 : 520;
+
+                return `
+                <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
+                        style="background: #050505; border: 1px solid #f39c12; color: #eee; padding: 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;">
+                    <strong style="color: #f39c12;">${item.n}</strong><br>
+                    <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
+                    <span style="color: #888; font-size: 9px; float: right;">~${kcal} kcal</span>
                 </button>
-            `).join('')}
+                `;
+            }).join('')}
         </div>
     `;
 };
