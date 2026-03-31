@@ -1,8 +1,8 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER - v3.9 (STATE-LESS WARMUP & DRAG)
+   PEGASUS UI MANAGER - v4.0 (DIET ADVISOR INTEGRATED)
    Protocol: Strict Data Analyst - Real-time DOM Validation
-   Features: Direct Source Check, Mutation-Aware Dragging, Turbo, Mute
-   Status: FINAL STABLE | NO MORE STICKY WARMUP
+   Features: Direct Source Check, Mutation-Aware Dragging, Turbo, Mute, Diet Bridge
+   Status: FINAL STABLE | RE-VERIFIED FOR ZERO-BUG SIMULATION
    ========================================================================== */
 
 const PegasusUI = {
@@ -12,7 +12,7 @@ const PegasusUI = {
         this.initDraggablePanels();
         this.initClickOutside();
         this.initButtonBridge(); 
-        console.log("✅ PEGASUS UI MANAGER: v3.9 Operational (Centralized Logic)");
+        console.log("✅ PEGASUS UI MANAGER: v4.0 Operational (Centralized Logic with Diet Advisor)");
     },
 
     initButtonBridge() {
@@ -61,6 +61,15 @@ const PegasusUI = {
                     const ems = document.getElementById('emsModal');
                     if (ems) ems.style.display = 'block';
                     break;
+                
+                // ✨ ΝΕΟ: BRIDGE ΓΙΑ ΤΟΝ SMART DIET ADVISOR
+                case 'btnProposalsUI':
+                    if (window.masterUI && typeof window.masterUI.btnProposalsUI === 'function') {
+                        window.masterUI.btnProposalsUI();
+                    } else {
+                        console.error("❌ PEGASUS UI: masterUI.btnProposalsUI logic is missing in app.js");
+                    }
+                    break;
             }
         });
 
@@ -72,14 +81,12 @@ const PegasusUI = {
 
     /**
      * MASTER WARMUP CONTROLLER - v3.9
-     * Ελέγχει το βίντεο βάσει πραγματικής πηγής (src) και όχι μεταβλητής.
      */
     handleWarmupToggle() {
         const vid = document.getElementById("video");
         const label = document.getElementById("phaseTimer");
         if (!vid) return;
 
-        // Αν το βίντεο ΔΕΝ είναι το warmup, το ξεκινάμε
         if (!vid.src.includes("warmup.mp4")) {
             console.log("🏃 UI: Starting Warmup");
             vid.pause();
@@ -92,7 +99,6 @@ const PegasusUI = {
                 label.style.color = "#64B5F6";
             }
         } 
-        // Αν παίζει ΗΔΗ το warmup, το κλείνουμε και πάμε στην 1η άσκηση
         else {
             console.log("🔄 UI: Warmup Active -> Switching to Workout");
             vid.pause();
