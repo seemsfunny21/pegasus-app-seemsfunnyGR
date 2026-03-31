@@ -649,3 +649,55 @@ input:checked + .slider:before { transform: translateX(26px); }
     transform: translateY(-1px);
     transition: all 0.2s ease;
 }
+
+/* ==========================================================================
+   PEGASUS MUSCLE PROGRESS - UI RENDERING FIX
+   ========================================================================== */
+
+/* 1. Το κουτί που περιέχει όλες τις μπάρες */
+#muscleProgressContainer {
+    display: block !important;
+    width: 100% !important;
+    padding: 15px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-radius: 10px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+/* 2. Η κάθε γραμμή (Label + Bar) */
+.muscle-progress-row {
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+/* 3. Το κείμενο (π.χ. ΣΤΗΘΟΣ 6/24) */
+.muscle-label-wrapper {
+    display: flex;
+    justify-content: space-between;
+    color: #eee;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 4. Η στατική μπάρα (το φόντο) */
+.muscle-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: #222;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+/* 5. Η γεμάτη μπάρα (το πράσινο) */
+.muscle-bar-fill {
+    height: 100%;
+    background: #4CAF50 !important;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
