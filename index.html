@@ -353,17 +353,37 @@
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then((reg) => {
-            console.log('PEGASUS OS: Offline Vault Active.');
+            console.log('PEGASUS OS: Offline Vault Protocol Active.');
         });
     });
 
+    // 🛰️ LISTEN FOR CACHE PROGRESS FROM SW.JS
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'CACHE_PROGRESS') {
-            console.clear(); 
-            console.log(`%c PEGASUS OFFLINE SYNC: ${event.data.percent}% `, 'background: #00ff41; color: #000; font-weight: bold;');
-            
             const label = document.getElementById("phaseTimer");
-            if (label) label.textContent = `SYNCING MEDIA: ${event.data.percent}%`;
+            const fill = document.getElementById("phaseTimerFill");
+            const bar = document.getElementById("phaseTimerBar");
+
+            if (label) {
+                label.style.display = "block";
+                label.style.color = "#00ff41"; // Pegasus Green
+                label.textContent = `SYNCING MEDIA: ${event.data.percent}%`;
+            }
+            
+            if (bar) bar.style.display = "block"; // Εμφάνιση της μπάρας αν ήταν κρυφή
+            
+            if (fill) {
+                fill.style.width = event.data.percent + "%";
+                fill.style.background = "#00ff41";
+            }
+
+            if (event.data.percent === 100) {
+                setTimeout(() => {
+                    if (label) label.textContent = "SYSTEM READY - OFFLINE LOADED";
+                    // Προαιρετικά κρύβουμε τη μπάρα μετά από 3 δευτερόλεπτα
+                    setTimeout(() => { if(bar) bar.style.display = "none"; }, 3000);
+                }, 2000);
+            }
         }
     });
 }
