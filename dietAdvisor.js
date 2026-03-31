@@ -1,46 +1,81 @@
 /* ==========================================================================
-   PEGASUS SMART DIET ADVISOR - v1.0
-   Protocol: 14-Day Nutritional Gap Analysis & Kouki Menu Integration
+   PEGASUS SMART DIET ADVISOR - v2.0 (FULL MENU & ANALYTICS)
+   Protocol: 14-Day Nutritional Gap Analysis & Kouki Price Integration
    ========================================================================== */
 
-const koukiWeeklyMenu = {
-    "Monday": ["Μουσακάς", "Παστίτσιο", "Βακαλάος σκορδαλιά", "Κοτόσουπα", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Γεμιστά με ρύζι", "Φασολάδα", "Γίγαντες πλακί", "Μπάμιες με κοτόπουλο", "Μακαρόνια με κιμά", "Φασολάκια", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Μπιφτέκι μοσχαρίσιο", "Μπριάμ"],
-    "Tuesday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Αρακάς", "Ρεβύθια πλακί", "Γεμιστά με κιμά", "Μοσχάρι κοκκινιστό", "Κεφτεδάκια τηγανητά", "Γιουβαρλάκια", "Μακαρόνια με κιμά", "Σνίτσελ κοτόπουλο", "Κοντοσούβλι κοτόπουλο", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"],
-    "Wednesday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κιμά", "Μοσχάρι βραστό", "Μπιφτέκι κοτόπουλο", "Γίγαντες με χόρτα", "Χταπόδι με κοφτό μακαρονάκι", "Μακαρόνια με κιμά", "Γεμιστά με ρύζι", "Μπιφτέκι κοτόπουλο", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Σολομός φούρνου", "Κοτόπουλο φούρνου", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
-    "Thursday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Κεφτεδάκια τηγανητά", "Μοσχάρι με μελιτζάνες", "Γεμιστά με κιμά", "Σουπιές με σπανάκι", "Φασολάκια", "Μελιτζάνες ιμάμ", "Κοτόσουπα", "Γαριδομακαρονάδα", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Φιλέτο κοτόπουλο με καρότα"],
-    "Friday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κοτόπουλο", "Μπακαλιάρος σκορδαλιά", "Παπουτσάκια", "Φασολάδα", "Σπανακόρυζο", "Γεμιστά με ρύζι", "Μπιφτέκι γεμιστό", "Γίγαντες πλακί", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόπουλο φούρνου", "Μακαρόνια με κιμά", "Σουτζουκάκια", "Κοτόσουπα", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
-    "Saturday": ["Μουσακάς", "Παστίτσιο", "Ογκρατέν ζυμαρικών", "Μπακαλιάρος με κρεμμύδια", "Μπάμιες", "Γεμιστά με ρύζι", "Μπιφτέκι κοτόπουλο", "Γεμιστά κολοκυθάκια", "Γιουβαρλάκια", "Τσιπούρα φούρνου", "Αρνί με πατάτες", "Μοσχάρι γιουβέτσι", "Κοτόπουλο φούρνου", "Μοσχάρι κοκκινιστό", "Κοντοσούβλι χοιρινό", "Μακαρόνια με κιμά"],
-    "Sunday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Γίγαντες με χόρτα", "Κοτόσουπα", "Πέρκα φούρνου", "Μπιφτέκι γεμιστό", "Κεφτεδάκια τηγανητά", "Γαριδομακαρονάδα", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"]
+const KOUKI_MASTER_MENU = {
+    "Monday": [
+        {n:"Μουσακάς", p:6.00, t:"carb"}, {n:"Παστίτσιο", p:6.00, t:"carb"}, {n:"Μπακαλιάρος σκορδαλιά", p:6.50, t:"psari"},
+        {n:"Κοτόσουπα", p:4.50, t:"soup"}, {n:"Μοσχάρι κοκκινιστό", p:6.50, t:"kreas"}, {n:"Μοσχάρι γιουβέτσι", p:6.50, t:"kreas"},
+        {n:"Γεμιστά με ρύζι", p:5.00, t:"ladero"}, {n:"Φασολάδα", p:4.50, t:"ospro"}, {n:"Γίγαντες πλακί", p:6.00, t:"ospro"},
+        {n:"Μπάμιες με κοτόπουλο", p:6.00, t:"poulika"}, {n:"Μακαρόνια με κιμά", p:5.50, t:"carb"}, {n:"Φασολάκια", p:4.50, t:"ladero"},
+        {n:"Κοτόπουλο αλά κρεμ", p:6.00, t:"poulika"}, {n:"Κοτόπουλο γλυκόξινο", p:6.00, t:"poulika"}, {n:"Κοτόπουλο φούρνου", p:6.00, t:"poulika"},
+        {n:"Μπριζόλα χοιρινή", p:6.00, t:"kreas"}, {n:"Μπριζόλα μοσχαρίσια", p:8.50, t:"kreas"}, {n:"Μπιφτέκι μοσχαρίσιο", p:6.00, t:"kreas"}, {n:"Μπριάμ", p:5.50, t:"ladero"}
+    ],
+    "Tuesday": [
+        {n:"Ρεβύθια πλακί", p:5.00, t:"ospro"}, {n:"Κοντοσούβλι κοτόπουλο", p:6.00, t:"poulika"}, {n:"Μουσακάς", p:6.00, t:"carb"},
+        {n:"Παστίτσιο", p:6.00, t:"carb"}, {n:"Κανελόνια", p:6.00, t:"carb"}, {n:"Αρακάς", p:4.50, t:"ladero"},
+        {n:"Γεμιστά με κιμά", p:6.00, t:"kreas"}, {n:"Μοσχάρι κοκκινιστό", p:6.50, t:"kreas"}, {n:"Κεφτεδάκια τηγανητά", p:6.50, t:"kreas"},
+        {n:"Γιουβαρλάκια", p:5.50, t:"kreas"}, {n:"Μακαρόνια με κιμά", p:5.50, t:"carb"}, {n:"Σνίτσελ κοτόπουλο", p:6.00, t:"poulika"},
+        {n:"Κοτόπουλο αλά κρεμ", p:6.00, t:"poulika"}, {n:"Κοτόπουλο γλυκόξινο", p:6.00, t:"poulika"}, {n:"Κοτόπουλο φούρνου", p:6.00, t:"poulika"}
+    ],
+    "Wednesday": [
+        {n:"Λαζάνια με κιμά", p:6.00, t:"carb"}, {n:"Μπιφτέκι κοτόπουλο", p:6.00, t:"poulika"}, {n:"Χταπόδι με κοφτό", p:7.00, t:"psari"},
+        {n:"Σολομός φούρνου", p:8.00, t:"psari"}, {n:"Γίγαντες με χόρτα", p:6.00, t:"ospro"}, {n:"Μοσχάρι βραστό", p:6.00, t:"kreas"},
+        {n:"Μουσακάς", p:6.00, t:"carb"}, {n:"Παστίτσιο", p:6.00, t:"carb"}, {n:"Γεμιστά με ρύζι", p:5.00, t:"ladero"},
+        {n:"Μοσχάρι κοκκινιστό", p:6.50, t:"kreas"}, {n:"Μοσχάρι γιουβέτσι", p:6.50, t:"kreas"}, {n:"Κοτόπουλο φούρνου", p:6.00, t:"poulika"}
+    ],
+    "Thursday": [
+        {n:"Σουπιές με σπανάκι", p:7.00, t:"psari"}, {n:"Μοσχάρι με μελιτζάνες", p:6.50, t:"kreas"}, {n:"Γαριδομακαρονάδα", p:6.50, t:"psari"},
+        {n:"Κανελόνια", p:6.00, t:"carb"}, {n:"Κεφτεδάκια τηγανητά", p:6.50, t:"kreas"}, {n:"Γεμιστά με κιμά", p:6.00, t:"kreas"},
+        {n:"Φασολάκια", p:4.50, t:"ladero"}, {n:"Μελιτζάνες ιμάμ", p:6.00, t:"ladero"}, {n:"Κοτόσουπα", p:4.50, t:"soup"},
+        {n:"Μοσχάρι κοκκινιστό", p:6.50, t:"kreas"}, {n:"Μακαρόνια με κιμά", p:5.50, t:"carb"}, {n:"Κοτόπουλο φούρνου", p:6.00, t:"poulika"},
+        {n:"Φιλέτο κοτόπουλο", p:6.00, t:"poulika"}
+    ],
+    "Friday": [
+        {n:"Μπακαλιάρος σκορδαλιά", p:6.50, t:"psari"}, {n:"Παπουτσάκια", p:6.00, t:"ladero"}, {n:"Λαζάνια με κοτόπουλο", p:6.00, t:"carb"},
+        {n:"Φασολάδα", p:4.50, t:"ospro"}, {n:"Σπανακόρυζο", p:4.50, t:"ladero"}, {n:"Γεμιστά με ρύζι", p:5.00, t:"ladero"},
+        {n:"Μπιφτέκι γεμιστό", p:6.50, t:"kreas"}, {n:"Γίγαντες πλακί", p:6.00, t:"ospro"}, {n:"Μοσχάρι γιουβέτσι", p:6.50, t:"kreas"},
+        {n:"Μοσχάρι κοκκινιστό", p:6.50, t:"kreas"}, {n:"Σουτζουκάκια", p:6.50, t:"kreas"}, {n:"Κοτόπουλο αλά κρεμ", p:6.00, t:"poulika"}
+    ],
+    "Saturday": [
+        {n:"Ογκρατέν ζυμαρικών", p:6.00, t:"carb"}, {n:"Αρνί με πατάτες", p:7.50, t:"kreas"}, {n:"Τσιπούρα φούρνου", p:8.00, t:"psari"},
+        {n:"Μπακαλιάρος με κρεμμύδια", p:6.00, t:"psari"}, {n:"Μπάμιες", p:5.00, t:"ladero"}, {n:"Γεμιστά κολοκυθάκια", p:6.00, t:"ladero"},
+        {n:"Γιουβαρλάκια", p:5.50, t:"kreas"}, {n:"Κοντοσούβλι χοιρινό", p:6.00, t:"kreas"}, {n:"Μοσχάρι γιουβέτσι", p:6.50, t:"kreas"}
+    ],
+    "Sunday": [
+        {n:"Κανελόνια", p:6.00, t:"carb"}, {n:"Μπριζόλα μοσχαρίσια", p:8.50, t:"kreas"}, {n:"Γαριδομακαρονάδα", p:6.50, t:"psari"},
+        {n:"Πέρκα φούρνου", p:7.00, t:"psari"}, {n:"Μοσχάρι γιουβέτσι", p:6.50, t:"kreas"}, {n:"Μοσχάρι κοκκινιστό", p:6.50, t:"kreas"},
+        {n:"Γίγαντες με χόρτα", p:6.00, t:"ospro"}, {n:"Κοτόσουπα", p:4.50, t:"soup"}, {n:"Μπιφτέκι γεμιστό", p:6.50, t:"kreas"}
+    ]
 };
 
 window.PegasusDietAdvisor = {
-    getRecommendation: function() {
-        console.log("🧠 DIET ADVISOR: Analyzing 14-day history...");
+    analyzeAndRecommend: function() {
+        console.log("🧠 PEGASUS ADVISOR: Deep Analysis of 14-day history...");
         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        const today = dayNames[new Date().getDay()];
-        const todayOptions = koukiWeeklyMenu[today];
+        const todayKey = dayNames[new Date().getDay()];
+        const menu = KOUKI_MASTER_MENU[todayKey];
 
-        // 1. Fetch History
         const history = this.getRecentHistory(14);
-        
-        // 2. Logic: Check for Fish/Seafood Deficit
-        const hasFish = history.some(item => item.includes("Μπακαλιάρος") || item.includes("Σουπιές") || item.includes("Γαρίδες") || item.includes("Σολομός"));
-        
-        if (!hasFish) {
-            const fishOption = todayOptions.find(f => f.includes("Σουπιές") || f.includes("Μπακαλιάρος") || f.includes("Γαριδομακαρονάδα"));
-            if (fishOption) return `⭐ Πρόταση: ${fishOption} (Χρειάζεσαι Ωμέγα-3 & Ιώδιο)`;
-        }
 
-        // 3. Logic: Check for Ospro (Legumes) Deficit
-        const hasOspro = history.some(item => item.includes("Φασολάδα") || item.includes("Φακές") || item.includes("Ρεβύθια") || item.includes("Γίγαντες"));
-        
+        // --- 1. PRIORITY LOGIC: OSPRO DEFICIT (Fiber Audit) ---
+        const hasOspro = history.some(name => ["Φασολάδα", "Φακές", "Ρεβύθια", "Γίγαντες"].some(type => name.includes(type)));
         if (!hasOspro) {
-            const osproOption = todayOptions.find(o => o.includes("Ρεβύθια") || o.includes("Φασολάδα") || o.includes("Γίγαντες"));
-            if (osproOption) return `⭐ Πρόταση: ${osproOption} (Επιβεβλημένο: Έχεις έλλειψη σε φυτικές ίνες)`;
+            const pick = menu.find(i => i.t === "ospro");
+            if (pick) return { n: pick.n, price: pick.p, msg: `⚠️ Έχεις έλλειψη σε φυτικές ίνες (0% στα όσπρια). Προτείνω: ${pick.n}.` };
         }
 
-        // Default: Recovery Protein
-        return `🍖 Πρόταση: ${todayOptions[1]} (Ιδανικό για αποκατάσταση)`;
+        // --- 2. PRIORITY LOGIC: FISH DEFICIT (Omega-3 Audit) ---
+        const hasFish = history.some(name => ["Μπακαλιάρος", "Σουπιές", "Γαρίδες", "Σολομός", "Χταπόδι", "Τσιπούρα", "Πέρκα"].some(type => name.includes(type)));
+        if (!hasFish) {
+            const pick = menu.find(i => i.t === "psari");
+            if (pick) return { n: pick.n, price: pick.p, msg: `🌊 Χρειάζεσαι Ωμέγα-3 & Ιώδιο. Η βέλτιστη επιλογή σήμερα: ${pick.n}.` };
+        }
+
+        // --- 3. TRAINING LOGIC: PROTEIN RECOVERY ---
+        const recoveryPick = menu.find(i => i.t === "poulika" || i.t === "kreas") || menu[0];
+        return { n: recoveryPick.n, price: recoveryPick.p, msg: `💪 Ιδανικό για μυϊκή ανάρρωση και όγκο: ${recoveryPick.n}.` };
     },
 
     getRecentHistory: function(days) {
@@ -48,10 +83,33 @@ window.PegasusDietAdvisor = {
         for (let i = 0; i < days; i++) {
             let d = new Date();
             d.setDate(d.getDate() - i);
-            let key = `food_log_${d.getDate()}/${d.getMonth() + 1}/2026`;
-            let log = JSON.parse(localStorage.getItem(key)) || [];
+            let dateKey = `${d.getDate()}/${d.getMonth() + 1}/2026`;
+            let log = JSON.parse(localStorage.getItem(`food_log_${dateKey}`)) || [];
             log.forEach(entry => items.push(entry.name));
         }
         return items;
     }
+};
+
+// --- GLOBAL BRIDGE: AUTO-ADD TO LOG ---
+window.addKoukiToLog = function(name, price) {
+    const today = new Date();
+    const dateKey = `${today.getDate()}/${today.getMonth() + 1}/2026`;
+    let log = JSON.parse(localStorage.getItem(`food_log_${dateKey}`)) || [];
+    
+    // Προσθήκη με βασικά Macros (εκτίμηση)
+    log.push({
+        name: name + " (Κούκι)",
+        kcal: 650, // Average estimation
+        pro: 35,
+        car: 50,
+        fat: 25,
+        time: today.toLocaleTimeString()
+    });
+
+    localStorage.setItem(`food_log_${dateKey}`, JSON.stringify(log));
+    alert(`✅ Το φαγητό "${name}" προστέθηκε στο ημερολόγιο!`);
+    
+    if (window.updateFoodUI) window.updateFoodUI();
+    if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
