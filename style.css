@@ -600,3 +600,51 @@ input:checked + .slider:before { transform: translateX(26px); }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #000; }
 ::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 10px; }
+
+/* ==========================================================================
+   PEGASUS KOUKI MENU - UI FIX (ANTI-BAR & COLOR LOCK)
+   ========================================================================== */
+
+/* 1. Αφαίρεση της διπλής μπάρας (background progress) από τα κουμπιά του Κούκι */
+#koukiQuickMenu button, 
+#koukiQuickMenu .add-btn {
+    background-image: none !important;
+    background: #0a0a0a !important; /* Μαύρο φόντο χωρίς μπάρες */
+    box-shadow: none !important;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid #333 !important;
+}
+
+/* 2. Lock στα χρώματα: Όνομα -> Πορτοκαλί, Τιμή -> Πράσινο */
+#koukiQuickMenu .food-name, 
+#koukiQuickMenu strong {
+    color: #f39c12 !important; /* Πορτοκαλί για το όνομα */
+    background: none !important;
+    text-shadow: none !important;
+}
+
+#koukiQuickMenu span[style*="color: #4CAF50"], 
+#koukiQuickMenu .food-price {
+    color: #4CAF50 !important; /* Πράσινο για την τιμή */
+    font-weight: bold !important;
+}
+
+/* 3. Hover State χωρίς να πετάγονται μπάρες */
+#koukiQuickMenu button:hover {
+    border-color: #4CAF50 !important;
+    background: #111 !important;
+}
+
+/* 4. Slim Scrollbar για τη λίστα (Desktop Precision) */
+#koukiQuickMenu div[style*="overflow-y: auto"]::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+#koukiQuickMenu div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
+    background: #4CAF50 !important;
+    border-radius: 10px;
+}
