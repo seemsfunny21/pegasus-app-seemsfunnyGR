@@ -223,17 +223,17 @@ window.renderKoukiMenu = function() {
         <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ & ΡΕΒΥΘΙ)</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px; border: none;">
             ${todayMenu.map(item => `
-                <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
-                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 8px; border-radius: 6px; font-size: 11px; cursor: pointer; text-align: left; position: relative; overflow: hidden;">
-                    <div style="color: #f39c12; font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.n}</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
-                        <span style="color: #666; font-size: 9px;">+ LOG</span>
-                    </div>
-                </button>
-            `).join('')}
-        </div>
-    `;
+<button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
+        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 8px; border-radius: 6px; font-size: 11px; cursor: pointer; text-align: left; position: relative;">
+    <div style="color: #eee; font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        ${item.n}
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
+        <span style="color: #666; font-size: 8px; letter-spacing: 0.5px;">+ LOG</span>
+    </div>
+</button>
+`;
 };
 
 window.addQuickFood = function(name, kcal, protein) {
