@@ -602,14 +602,14 @@ input:checked + .slider:before { transform: translateX(26px); }
 ::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 10px; }
 
 /* ==========================================================================
-   PEGASUS KOUKI MENU - UI FIX (ANTI-BAR & COLOR LOCK)
+   PEGASUS KOUKI MENU - UI FIX (ANTI-BAR & WHITE TEXT LOCK)
    ========================================================================== */
 
-/* 1. Αφαίρεση της διπλής μπάρας (background progress) από τα κουμπιά του Κούκι */
+/* 1. Αφαίρεση της διπλής μπάρας (background progress) */
 #koukiQuickMenu button, 
 #koukiQuickMenu .add-btn {
     background-image: none !important;
-    background: #0a0a0a !important; /* Μαύρο φόντο χωρίς μπάρες */
+    background: #0a0a0a !important;
     box-shadow: none !important;
     position: relative;
     overflow: hidden;
@@ -619,31 +619,33 @@ input:checked + .slider:before { transform: translateX(26px); }
     border: 1px solid #333 !important;
 }
 
-/* 2. Lock στα χρώματα: Όνομα -> Πορτοκαλί, Τιμή -> Πράσινο */
+/* 2. Lock στα χρώματα: Όνομα -> ΛΕΥΚΟ (Uniformity), Τιμή -> Πράσινο */
 #koukiQuickMenu .food-name, 
-#koukiQuickMenu strong {
-    color: #f39c12 !important; /* Πορτοκαλί για το όνομα */
+#koukiQuickMenu strong,
+#koukiQuickMenu div[style*="color: #f39c12"], /* Override για τυχόν inline orange */
+#koukiQuickMenu div[style*="color: rgb(243, 156, 18)"] {
+    color: #eee !important; /* Λευκό Pegasus Standard */
     background: none !important;
     text-shadow: none !important;
+    font-size: 11px !important;
 }
 
 #koukiQuickMenu span[style*="color: #4CAF50"], 
 #koukiQuickMenu .food-price {
-    color: #4CAF50 !important; /* Πράσινο για την τιμή */
+    color: #4CAF50 !important; /* Διατήρηση Πράσινου για Macros/Price */
     font-weight: bold !important;
 }
 
-/* 3. Hover State χωρίς να πετάγονται μπάρες */
+/* 3. Hover State */
 #koukiQuickMenu button:hover {
     border-color: #4CAF50 !important;
     background: #111 !important;
 }
 
-/* 4. Slim Scrollbar για τη λίστα (Desktop Precision) */
+/* 4. Slim Scrollbar */
 #koukiQuickMenu div[style*="overflow-y: auto"]::-webkit-scrollbar {
     width: 4px !important;
 }
-
 #koukiQuickMenu div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
     background: #4CAF50 !important;
     border-radius: 10px;
