@@ -454,14 +454,16 @@ function skipToNextExercise() {
 /* ===== 6. SAVE & SKIP (DATA PERSISTENCE) ===== */
 function saveWeight(name, val) {
     const cleanName = name.trim();
-    
-    // Διπλή αποθήκευση για συμβατότητα με παλαιότερα reports και το νέο Manifest
     localStorage.setItem(`weight_ANGELOS_${cleanName}`, val);
     localStorage.setItem(`weight_${cleanName}`, val);
     
     console.log(`[PEGASUS LOG]: Weight updated for ${cleanName}: ${val}kg`);
 
-    // [PUSH TRIGGER] Άμεσος συγχρονισμός στο Cloud μετά την αλλαγή βάρους
+    // ⚡ ΠΡΟΣΘΗΚΗ: Ενημέρωση του UI των bars αμέσως μετά την αλλαγή
+    if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
+        window.MuscleProgressUI.render();
+    }
+
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 }
 
@@ -788,15 +790,15 @@ window.logPegasusSet = function(exName) {
         muscle = "Πόδια"; value = 6; 
     }
 
-    if (history.hasOwnProperty(muscle)) {
+if (history.hasOwnProperty(muscle)) {
         history[muscle] += value;
         localStorage.setItem(historyKey, JSON.stringify(history));
-        console.log(`[PEGASUS TRACKER]: ${value} set(s) added to ${muscle}`);
         
-        // Live UI Update των Muscle Bars
-        if (window.MuscleProgressUI) window.MuscleProgressUI.render();
+        // ⚡ ΔΙΑΣΦΑΛΙΣΗ: Render μόνο αν το UI είναι έτοιμο
+        if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
+            setTimeout(() => window.MuscleProgressUI.render(), 50); 
+        }
     }
-};
 
 window.updateTotalWorkoutCount = function() {
     const doneKey = P_M?.workout.done || "pegasus_workouts_done";
@@ -825,24 +827,21 @@ window.onload = () => {
 
     // --- 1. PEGASUS STRICT WEEKLY RESET PROTOCOL (v10.2) ---
     // Ο μηδενισμός επιτρέπεται ΑΠΟΚΛΕΙΣΤΙΚΑ το Σάββατο.
-    if (todayName === "Σάββατο") {
+if (todayName === "Σάββατο") {
+    try {
         const lastReset = localStorage.getItem('pegasus_last_reset');
         const todayDateStr = todayObj.toISOString().split('T')[0];
         
         if (lastReset !== todayDateStr) {
-            console.log("🚀 PEGASUS: New Weekly Cycle Starting! Executing Master Reset...");
             const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
             localStorage.setItem('pegasus_last_reset', todayDateStr);
-            localStorage.setItem('pegasus_cardio_offset_sets', "0");
-            
-            // Cloud Sync αμέσως μετά το Reset
             if (window.PegasusCloud) window.PegasusCloud.push(true);
         }
-    } else {
-        // Καμία άλλη μέρα (συμπεριλαμβανομένης της Δευτέρας) δεν μπορεί να κάνει reset.
-        console.log(`🛡️ PEGASUS: System Day: ${todayName}. History Preservation Active.`);
+    } catch (e) {
+        console.error("🛡️ PEGASUS RESET ERROR: Recovery initiated.", e);
     }
+}
 
     // --- 2. INITIALIZATION ---
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
