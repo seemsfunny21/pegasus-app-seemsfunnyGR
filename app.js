@@ -459,7 +459,6 @@ function saveWeight(name, val) {
     
     console.log(`[PEGASUS LOG]: Weight updated for ${cleanName}: ${val}kg`);
 
-    // ⚡ ΠΡΟΣΘΗΚΗ: Ενημέρωση του UI των bars αμέσως μετά την αλλαγή
     if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
         window.MuscleProgressUI.render();
     }
@@ -772,33 +771,30 @@ function openExercisePreview() {
 
 /* ===== 10. BOOT & TRACKING (STRICT MANIFEST ALIGNED) ===== */
 window.logPegasusSet = function(exName) {
-    // Ανάκτηση ιστορικού από το Manifest Key
     let historyKey = P_M?.workout.weekly_history || 'pegasus_weekly_history';
     let history = JSON.parse(localStorage.getItem(historyKey)) || { 
         "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 
     };
 
-    // Αναγνώριση Μυϊκής Ομάδας από την Database
     let muscle = (window.exercisesDB?.find(ex => ex.name.trim() === exName.trim()))?.muscleGroup || "Άλλο";
     let value = 1;
 
     const cleanName = exName.trim().toUpperCase();
-    // Special Credits Protocol
     if (cleanName.includes("ΠΟΔΗΛΑΣΙΑ") || cleanName.includes("CYCLING")) { 
         muscle = "Πόδια"; value = 18; 
     } else if (cleanName.includes("EMS ΠΟΔΙΩΝ")) { 
         muscle = "Πόδια"; value = 6; 
     }
 
-if (history.hasOwnProperty(muscle)) {
+    if (history.hasOwnProperty(muscle)) {
         history[muscle] += value;
         localStorage.setItem(historyKey, JSON.stringify(history));
         
-        // ⚡ ΔΙΑΣΦΑΛΙΣΗ: Render μόνο αν το UI είναι έτοιμο
         if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
             setTimeout(() => window.MuscleProgressUI.render(), 50); 
         }
     }
+};
 
 window.updateTotalWorkoutCount = function() {
     const doneKey = P_M?.workout.done || "pegasus_workouts_done";
