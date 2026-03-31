@@ -195,20 +195,26 @@ window.renderKoukiMenu = function() {
     const todayMenu = (typeof KOUKI_MASTER_MENU !== 'undefined') ? KOUKI_MASTER_MENU[targetDayKey] : [];
 
     container.innerHTML = `
-        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ & ΡΕΒΥΘΙ)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px;">
-            ${todayMenu.map(item => `
+        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px;">
+            ${todayMenu.map(item => {
+                // Δυναμικός υπολογισμός Macros βάσει του Tag (t)
+                let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
+                let kcal = (item.p >= 6.5) ? 680 : 520;
+
+                return `
                 <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
-                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 8px; border-radius: 6px; font-size: 11px; cursor: pointer; text-align: left; position: relative;">
-                    <div style="color: #eee; font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 12px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;">
+                    <div style="color: #eee; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
                         ${item.n}
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
-                        <span style="color: #666; font-size: 8px; letter-spacing: 0.5px;">+ LOG</span>
+                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                        <span style="color: #4CAF50; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;">🔥 ${kcal} KCAL</span>
+                        <span style="color: #81C784; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;">🍗 ${protein}G PROTEIN</span>
                     </div>
                 </button>
-            `).join('')}
+                `;
+            }).join('')}
         </div>
     `;
 };
