@@ -210,35 +210,28 @@ window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
 
-    // Συγχρονισμός με τις ημέρες του Advisor
     const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const targetDate = window.currentFoodDate || new Date();
     const targetDayKey = daysMap[targetDate.getDay()];
     
-    // Ελληνική ονομασία για το UI
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const targetDayName = greekDays[targetDate.getDay()];
 
-    // ⚡ Κρίσιμο: Τράβηγμα δεδομένων από το KOUKI_MASTER_MENU (Global από dietAdvisor.js)
     const todayMenu = (typeof KOUKI_MASTER_MENU !== 'undefined') ? KOUKI_MASTER_MENU[targetDayKey] : [];
 
     container.innerHTML = `
-        <h4 style="color: #f39c12; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ & ΡΕΒΥΘΙ)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
-            ${todayMenu.map(item => {
-                // Υπολογισμός Macros βάσει κατηγορίας (tag) για ακρίβεια στο Log
-                let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
-                let kcal = (item.p >= 6.5) ? 680 : 520;
-
-                return `
+        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ & ΡΕΒΥΘΙ)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px; border: none;">
+            ${todayMenu.map(item => `
                 <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
-                        style="background: #050505; border: 1px solid #f39c12; color: #eee; padding: 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;">
-                    <strong style="color: #f39c12;">${item.n}</strong><br>
-                    <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
-                    <span style="color: #888; font-size: 9px; float: right;">~${kcal} kcal</span>
+                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 8px; border-radius: 6px; font-size: 11px; cursor: pointer; text-align: left; position: relative; overflow: hidden;">
+                    <div style="color: #f39c12; font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.n}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
+                        <span style="color: #666; font-size: 9px;">+ LOG</span>
+                    </div>
                 </button>
-                `;
-            }).join('')}
+            `).join('')}
         </div>
     `;
 };
