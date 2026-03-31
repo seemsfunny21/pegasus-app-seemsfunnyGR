@@ -454,15 +454,19 @@ function skipToNextExercise() {
 /* ===== 6. SAVE & SKIP (DATA PERSISTENCE) ===== */
 function saveWeight(name, val) {
     const cleanName = name.trim();
-    localStorage.setItem(`weight_ANGELOS_${cleanName}`, val);
+    
+    // Χρήση του ελληνικού "Άγγελος" για συνέπεια με το υπόλοιπο Pegasus OS
+    localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
     localStorage.setItem(`weight_${cleanName}`, val);
     
     console.log(`[PEGASUS LOG]: Weight updated for ${cleanName}: ${val}kg`);
 
+    // Αυτόματο Re-render των Muscle Bars για να μην "κολλάει" το UI
     if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
         window.MuscleProgressUI.render();
     }
 
+    // Άμεσο Push στο Cloud
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 }
 
