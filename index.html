@@ -318,44 +318,33 @@
     }
 </script>
 <script src="manifest.js"></script>
-    <script src="data.js"></script>
-    <script src="settings.js"></script>
-    <script src="optimizer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
-    <script src="weather.js"></script>
-    <script src="weatherHandler.js"></script>
-    <script src="backup.js"></script>
-    <script src="inventoryHandler.js"></script>
-    <script src="cloudSync.js"></script>
+<script src="data.js"></script>
+<script src="settings.js"></script>
+<script src="optimizer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
-    <script src="ems.js"></script>
-    <script src="food.js"></script> <script src="dietAdvisor.js"></script> <script src="extensions.js"></script>
-    <script src="cardio.js"></script>
-    <script src="calendar.js"></script>
-    <script src="gallery.js"></script>
-    <script src="partner.js"></script>
-    <script src="achievements.js"></script>
-    <script src="progressUI.js"></script>
-    <script src="dragDrop.js"></script>
-    <script src="reporting.js"></script>
-    
-    <script src="metabolic.js"></script>
-    <script src="app.js"></script> <script src="debug.js"></script> ```
+<script src="weather.js"></script>
+<script src="weatherHandler.js"></script>
+<script src="backup.js"></script>
+<script src="inventoryHandler.js"></script>
+<script src="cloudSync.js"></script>
 
-### 🔍 Γιατί αυτή η αλλαγή;
+<script src="food.js"></script> 
+<script src="dietAdvisor.js"></script> 
+<script src="extensions.js"></script>
 
-1.  **Food -> DietAdvisor:** Ο `dietAdvisor` θα χρησιμοποιεί συναρτήσεις από το `food.js` (όπως την `updateFoodUI` ή την `addKoukiToLog`). Αν ο Advisor φορτώσει πρώτος, μπορεί να μην τις "βρει".
-2.  **App.js στη βάση:** Το `app.js` περιέχει το `window.onload` και το `masterUI`. Πρέπει να έχουν φορτωθεί **όλα** τα άλλα αρχεία πριν εκτελεστεί, αλλιώς τα κουμπιά σου θα βγάζουν "undefined".
-3.  **Metabolic Engine:** Πρέπει να είναι πάνω από το `app.js` γιατί το `app.js` (γραμμή 260 περίπου) καλεί το `window.MetabolicEngine.updateTracking`.
+<script src="ems.js"></script>
+<script src="cardio.js"></script>
+<script src="calendar.js"></script>
+<script src="gallery.js"></script>
+<script src="partner.js"></script>
+<script src="achievements.js"></script>
+<script src="progressUI.js"></script> <script src="dragDrop.js"></script>
+<script src="reporting.js"></script>
 
----
-
-### 🚀 Τελευταίο Βήμα: Το αρχείο `dietAdvisor.js`
-
-Τώρα που η σειρά είναι εντάξει, είσαι έτοιμος να δημιουργήσεις το αρχείο **`dietAdvisor.js`**. 
-
-**Θέλεις να σου στείλω τον πλήρη κώδικα του `dietAdvisor.js` με ΟΛΑ τα φαγητά (20+ ανά ημέρα) και τις τιμές τους, ώστε να τελειώνουμε με την εγκατάσταση;**
+<script src="metabolic.js"></script>
+<script src="app.js"></script> 
+<script src="debug.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
