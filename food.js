@@ -196,9 +196,8 @@ window.renderKoukiMenu = function() {
 
     container.innerHTML = `
         <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; width: 100%;">
             ${todayMenu.map(item => {
-                // Δυναμικός υπολογισμός Macros βάσει του Tag (t)
                 let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
                 let kcal = (item.p >= 6.5) ? 680 : 520;
 
