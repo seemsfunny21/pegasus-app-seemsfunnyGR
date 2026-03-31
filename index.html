@@ -246,57 +246,61 @@
         </div>
     </div>
     
-    <div class="content" id="content">
+  <div class="content" id="content">
         <div class="exercise-container">
             <div class="exercise-list" id="exList"></div>
             <div class="video-container">
                 <video id="video" loop muted playsinline class="main-video"></video>
                 <video id="webcam" autoplay playsinline class="webcam-overlay"></video>
+                
+                <div id="phaseTimer" class="phase-label">Επίλεξε Ημέρα</div>
+                
+                <div id="phaseTimerBar" class="hidden-timer">
+                    <div id="phaseTimerFill"></div>
+                </div>
             </div>
         </div>
     </div>
 
-<div id="previewPanel" class="pegasus-panel" style="display:none; min-width: 350px;">
-    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-bottom: 15px;">
-        <h3 id="previewTitle" style="margin:0; font-size: 14px;">ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ</h3>
-        <button onclick="document.getElementById('previewPanel').style.display='none'" style="background:none; border:none; color:#ff4444; cursor:pointer; font-weight:bold; font-size: 18px;">✕</button>
-    </div>
-
-    <div id="muscleProgressContainer" style="margin-bottom: 20px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+    <div id="previewPanel" class="pegasus-panel" style="display:none; min-width: 350px;">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 id="previewTitle" style="margin:0; font-size: 14px;">ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ</h3>
+            <button onclick="document.getElementById('previewPanel').style.display='none'" style="background:none; border:none; color:#ff4444; cursor:pointer; font-weight:bold; font-size: 18px;">✕</button>
         </div>
 
-    <hr style="border: 0; border-top: 1px solid #222; margin: 15px 0;">
+        <div id="muscleProgressContainer" style="margin-bottom: 20px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+            </div>
 
-    <h4 style="color: #888; font-size: 11px; text-align: center; margin-bottom: 10px; letter-spacing: 1px;">ΑΣΚΗΣΕΙΣ ΗΜΕΡΑΣ</h4>
-    <div id="previewContent" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-height: 40vh; overflow-y: auto;">
+        <hr style="border: 0; border-top: 1px solid #222; margin: 15px 0;">
+
+        <h4 style="color: #888; font-size: 11px; text-align: center; margin-bottom: 10px; letter-spacing: 1px;">ΑΣΚΗΣΕΙΣ ΗΜΕΡΑΣ</h4>
+        <div id="previewContent" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-height: 40vh; overflow-y: auto;">
+            </div>
+    </div>
+
+    <div id="emsModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid #4CAF50; padding: 25px; z-index: 99999 !important; width: 320px; border-radius: 15px; box-shadow: 0 0 30px rgba(0,0,0,1); font-family: sans-serif; color: white;">
+        <h3 style="color: #4CAF50; margin-top: 0; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</h3>
+        
+        <div style="margin-top: 15px;">
+            <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px; text-align: center;">ΗΜΕΡΟΜΗΝΙΑ ΤΕΤΑΡΤΗΣ:</label>
+            <input type="date" id="emsDate" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing: border-box; text-align: center;">
         </div>
-</div>
-
-    <div id="phaseTimerBar" class="hidden-timer"><div id="phaseTimerFill"></div></div>
-    
-<div id="emsModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 2px solid #4CAF50; padding: 25px; z-index: 99999 !important; width: 320px; border-radius: 15px; box-shadow: 0 0 30px rgba(0,0,0,1); font-family: sans-serif; color: white;">
-    <h3 style="color: #4CAF50; margin-top: 0; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</h3>
-    
-    <div style="margin-top: 15px;">
-        <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px; text-align: center;">ΗΜΕΡΟΜΗΝΙΑ ΤΕΤΑΡΤΗΣ:</label>
-        <input type="date" id="emsDate" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing: border-box; text-align: center;">
+        
+        <div style="margin-top: 15px;">
+            <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px; text-align: center;">ΜΕΣΗ ΕΝΤΑΣΗ (AVG %):</label>
+            <input type="number" id="emsAvg" step="0.1" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing: border-box; text-align: center;">
+        </div>
+        
+        <div style="margin-top: 15px;">
+            <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px; text-align: center;">ΘΕΡΜΙΔΕΣ (e-Kcal):</label>
+            <input type="number" id="emsKcal" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing: border-box; margin-bottom: 20px; text-align: center;">
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+            <button id="btnSaveEMS" style="flex: 1; background: #4CAF50; color: black; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">ΑΠΟΘΗΚΕΥΣΗ</button>
+            <button id="btnCloseEMS" style="flex: 1; background: #333; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">ΑΚΥΡΟ</button>
+        </div>
     </div>
-    
-    <div style="margin-top: 15px;">
-        <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px; text-align: center;">ΜΕΣΗ ΕΝΤΑΣΗ (AVG %):</label>
-        <input type="number" id="emsAvg" step="0.1" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing: border-box; text-align: center;">
-    </div>
-    
-    <div style="margin-top: 15px;">
-        <label style="color: #888; font-size: 11px; display: block; margin-bottom: 5px; text-align: center;">ΘΕΡΜΙΔΕΣ (e-Kcal):</label>
-        <input type="number" id="emsKcal" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing: border-box; margin-bottom: 20px; text-align: center;">
-    </div>
-    
-<div style="display: flex; gap: 10px;">
-    <button id="btnSaveEMS" style="flex: 1; background: #4CAF50; color: black; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">ΑΠΟΘΗΚΕΥΣΗ</button>
-    <button id="btnCloseEMS" style="flex: 1; background: #333; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">ΑΚΥΡΟ</button>
-</div>
-</div>
 
 <script>
     function attemptVaultUnlock() {
