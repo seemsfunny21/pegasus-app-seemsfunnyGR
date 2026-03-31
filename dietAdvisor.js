@@ -92,24 +92,46 @@ window.PegasusDietAdvisor = {
 };
 
 // --- GLOBAL BRIDGE: AUTO-ADD TO LOG ---
+// --- GLOBAL BRIDGE: AUTO-ADD TO LOG (DYNAMIC MACROS v2.1) ---
 window.addKoukiToLog = function(name, price) {
     const today = new Date();
     const dateKey = `${today.getDate()}/${today.getMonth() + 1}/2026`;
-    let log = JSON.parse(localStorage.getItem(`food_log_${dateKey}`)) || [];
+    const logKey = `food_log_${dateKey}`;
+    let log = JSON.parse(localStorage.getItem(logKey)) || [];
     
-    // Προσθήκη με βασικά Macros (εκτίμηση)
+    // 🔍 Εύρεση του αντικειμένου από το Master Menu για τα Tags
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const todayKey = dayNames[today.getDay()];
+    const menuItem = KOUKI_MASTER_MENU[todayKey].find(i => i.n === name);
+    const tag = menuItem ? menuItem.t : "default";
+
+    // 📊 Dynamic Macro Calculation Logic
+    let protein = 25; // Default
+    let kcal = 550;   // Default
+
+    if (tag === 'kreas' || tag === 'poulika') { protein = 45; kcal = 680; }
+    else if (tag === 'psari') { protein = 35; kcal = 580; }
+    else if (tag === 'ospro') { protein = 18; kcal = 500; }
+    else if (tag === 'carb') { protein = 22; kcal = 720; }
+    else if (tag === 'soup') { protein = 30; kcal = 400; }
+
+    // Προσθήκη στο Log με τα υπολογισμένα Macros
     log.push({
         name: name + " (Κούκι)",
-        kcal: 650, // Average estimation
-        pro: 35,
-        car: 50,
-        fat: 25,
+        kcal: kcal,
+        protein: protein, // Χρήση του "protein" για συμβατότητα με το food.js
         time: today.toLocaleTimeString()
     });
 
-    localStorage.setItem(`food_log_${dateKey}`, JSON.stringify(log));
-    alert(`✅ Το φαγητό "${name}" προστέθηκε στο ημερολόγιο!`);
+    localStorage.setItem(logKey, JSON.stringify(log));
+    
+    // 🔊 Feedback & Sync
+    console.log(`[PEGASUS ADVISOR]: Added ${name} with ${kcal}kcal and ${protein}g protein.`);
     
     if (window.updateFoodUI) window.updateFoodUI();
     if (window.PegasusCloud) window.PegasusCloud.push(true);
+    
+    // Κλείσιμο του panel αν είναι ανοιχτό (Προαιρετικό)
+    const proposals = document.getElementById("proposalsContent");
+    if (proposals) proposals.innerHTML = `<div style="color:#4CAF50; padding:10px; text-align:center;">✅ Προστέθηκε στο Log!</div>`;
 };
