@@ -1,8 +1,7 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v9.1 (MASTER MANIFEST & AUTO-RESET)
+   PEGASUS FOOD ENGINE - v9.3 (DYNAMIC KOUKI INTEGRATED)
    Protocol: Strict Data Mapping via window.PegasusManifest
-   Features: Midnight Rollover, Metabolic Sync, Kouki Store, Search Reset
-   Status: LINE-BY-LINE VERIFIED | PC SEARCH FIX INCLUDED
+   Status: FINAL STABLE | SYNTAX FIXED | DYNAMIC MENU ACTIVE
    ========================================================================== */
 
 const M = window.PegasusManifest;
@@ -136,9 +135,6 @@ window.updateFoodUI = function() {
     if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
 };
 
-/**
- * UPDATED: addFoodItem περιλαμβάνει πλέον Search Reset
- */
 window.addFoodItem = function(name, kcal, protein) {
     const dateStr = window.getStrictDateStr();
     const logKey = M.nutrition.log_prefix + dateStr;
@@ -147,25 +143,17 @@ window.addFoodItem = function(name, kcal, protein) {
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
-    // --- SMART DETECTION PROTOCOL (Source-Locked) ---
-    // Αφαιρεί ΜΟΝΟ αν η λέξη "πρωτεΐνη" γράφτηκε τώρα στο PC.
-    // Η παράμετρος p=false στο consumeSupp αποτρέπει το loop με το κινητό.
     if (name.toLowerCase().includes("πρωτεΐνη")) {
         if (window.consumeSupp) {
-            console.log("[PEGASUS PC]: Local Protein detected. Adjusting inventory...");
             window.consumeSupp('prot', 30, false); 
         }
     }
 
     addToLibrary(name, kcal, protein);
-    
-    // Καθαρισμός αναζήτησης
     const searchInput = document.getElementById('librarySearch');
     if (searchInput) searchInput.value = "";
 
     window.updateFoodUI();
-    
-    // Συγχρονισμός στο Cloud (εδώ γίνεται η ενημέρωση και για τις δύο συσκευές)
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
@@ -192,20 +180,7 @@ function updateProgressBars(kcal, protein) {
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
 
-const weeklyKoukiMenu = {
-    "Δευτέρα": [{ name: "Μουσακάς", kcal: 600, protein: 25 }, { name: "Παστίτσιο", kcal: 600, protein: 28 }, { name: "Βακαλάος σκορδαλιά", kcal: 580, protein: 35 }],
-    "Τρίτη": [{ name: "Ρεβύθια πλακί", kcal: 450, protein: 18 }, { name: "Κοντοσούβλι κοτόπουλο", kcal: 580, protein: 52 }],
-    "Τετάρτη": [{ name: "Λαζάνια με κιμά", kcal: 720, protein: 34 }, { name: "Μπιφτέκι κοτόπουλο", kcal: 480, protein: 45 }],
-    "Πέμπτη": [{ name: "Σουπιές με σπανάκι", kcal: 380, protein: 28 }, { name: "Μοσχάρι με μελιτζάνες", kcal: 640, protein: 40 }],
-    "Παρασκευή": [{ name: "Μπακαλιάρος σκορδαλιά", kcal: 580, protein: 35 }, { name: "Παπουτσάκια", kcal: 590, protein: 28 }],
-    "Σάββατο": [{ name: "Ογκρατέν ζυμαρικών", kcal: 750, protein: 28 }, { name: "Αρνί με πατάτες", kcal: 820, protein: 55 }],
-    "Κυριακή": [{ name: "Κανελόνια", kcal: 680, protein: 32 }, { name: "Μπριζόλα μοσχαρίσια", kcal: 620, protein: 55 }]
-};
-
-/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.2) === */
-
-// 1. Αφαιρούμε το παλιό στατικό αντικείμενο weeklyKoukiMenu (το διαβάζουμε πλέον από το dietAdvisor.js)
-
+/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.3) === */
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
@@ -221,19 +196,21 @@ window.renderKoukiMenu = function() {
 
     container.innerHTML = `
         <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ & ΡΕΒΥΘΙ)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px; border: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; max-height: 450px; overflow-y: auto; padding-right: 5px;">
             ${todayMenu.map(item => `
-<button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
-        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 8px; border-radius: 6px; font-size: 11px; cursor: pointer; text-align: left; position: relative;">
-    <div style="color: #eee; font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-        ${item.n}
-    </div>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
-        <span style="color: #666; font-size: 8px; letter-spacing: 0.5px;">+ LOG</span>
-    </div>
-</button>
-`;
+                <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
+                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 8px; border-radius: 6px; font-size: 11px; cursor: pointer; text-align: left; position: relative;">
+                    <div style="color: #eee; font-weight: bold; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${item.n}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #4CAF50; font-weight: bold;">${item.p.toFixed(2)}€</span>
+                        <span style="color: #666; font-size: 8px; letter-spacing: 0.5px;">+ LOG</span>
+                    </div>
+                </button>
+            `).join('')}
+        </div>
+    `;
 };
 
 window.addQuickFood = function(name, kcal, protein) {
