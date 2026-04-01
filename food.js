@@ -140,14 +140,15 @@ window.addFoodItem = function(name, kcal, protein) {
     const logKey = M.nutrition.log_prefix + dateStr;
     let foodLog = JSON.parse(localStorage.getItem(logKey) || "[]");
     
+    // Προσθήκη εγγραφής
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
-    // 🛡️ CALL INVENTORY GUARD (Modular Link)
+    // 🛡️ CALL INVENTORY GUARD (Surgical Link)
     if (window.PegasusInventoryPC) {
         window.PegasusInventoryPC.processEntry(name);
     } else {
-        // Fallback αν δεν έχει φορτώσει το αρχείο ακόμα
+        // Fallback αν το protcret.js δεν έχει φορτώσει
         if (name.toLowerCase().includes("πρωτεΐνη") && window.consumeSupp) {
             window.consumeSupp('prot', 30, false); 
         }
@@ -159,8 +160,6 @@ window.addFoodItem = function(name, kcal, protein) {
     if (searchInput) searchInput.value = "";
 
     window.updateFoodUI();
-    
-    // Trigger Cloud Push
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
