@@ -733,7 +733,16 @@ function openExercisePreview() {
         `;
     });
     
-    console.log("🚀 PEGASUS: Preview Assets Loaded. Waiting for Progress Render...");
+// 🎯 BRIDGE TO INLINE RENDERER (index.html)
+    // Καλούμε τη συνάρτηση που ορίσαμε στο HTML για να σχεδιάσει τις μπάρες
+    if (typeof window.forcePegasusRender === "function") {
+        setTimeout(() => {
+            window.forcePegasusRender();
+            console.log("📊 PEGASUS UI: Progress Bars Synced via App Bridge.");
+        }, 50); // 50ms αρκούν για το DOM Reflow
+    } else {
+        console.warn("⚠️ PEGASUS UI: forcePegasusRender not found in global scope.");
+    }
 }
 
 /* ===== 10. BOOT & TRACKING (STRICT MANIFEST ALIGNED) ===== */
