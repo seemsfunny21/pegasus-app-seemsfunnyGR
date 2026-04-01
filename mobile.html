@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v13.5 (Lite)</title>
+    <title>Pegasus Mobile v14.0 (Modular)</title>
 
     <script>
         (function() {
@@ -18,48 +18,18 @@
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root { --main: #00ff41; --danger: #ff4444; --bg: #050505; --card: rgba(23, 23, 23, 0.6); --border: rgba(0, 255, 65, 0.4); }
-        body, html { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; text-align: center; overscroll-behavior: none; position: fixed; width: 100%; }
-        body { padding: 20px 15px; box-sizing: border-box; background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); display: flex; flex-direction: column; align-items: center; }
-        #sync-indicator { font-size: 9px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 25px; text-transform: uppercase; text-align: center; width: 100%; }
-        .header h1 { font-size: 34px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; text-align: center; }
-        .header p { font-size: 11px; color: var(--main); margin: 4px 0 25px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
-        
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; }
-        .tile { background: var(--card); border: 1px solid rgba(0, 255, 65, 0.12); border-radius: 28px; padding: 20px 10px; text-align: center; backdrop-filter: blur(16px); transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-        .tile:active { transform: scale(0.95); border-color: var(--main); }
-        .tile-icon { font-size: 28px; margin-bottom: 8px; text-align: center; }
-        .tile-label { font-size: 10px; font-weight: 800; text-transform: uppercase; text-align: center; }
-        
-        .view { display: none; height: 85vh; flex-direction: column; width: 100%; align-items: center; overflow-y: auto; padding-bottom: 30px; text-align: center; }
-        .view.active { display: flex; animation: viewIn 0.3s forwards; }
-        @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 800; padding: 10px 18px; border-radius: 14px; margin-bottom: 20px; cursor: pointer; align-self: center; text-transform: uppercase; }
-        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 14px; color: #fff; padding: 14px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; text-align: center; transition: 0.3s; font-family: 'Inter', sans-serif; }
-        .input-label { font-size: 9px; color: #aaa; text-align: center; width: 100%; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer; text-align: center; }
-        .secondary-btn { width: 100%; padding: 16px; background: transparent; border: 1px solid var(--main); border-radius: 18px; color: var(--main); font-weight: 900; text-transform: uppercase; font-size: 12px; margin-bottom: 5px; cursor: pointer; text-align: center; }
-        .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 20px 0 10px; text-align: center; width: 100%; }
-        .log-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; border-left: 4px solid var(--main); text-align: center; position: relative; margin-bottom: 8px; width: 100%; box-sizing: border-box; }
-        .btn-del { position: absolute; top: 10px; right: 10px; color: #ff4444; background: none; border: none; font-size: 18px; cursor: pointer; font-weight: 900; }
-        .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
-        .mini-card { background: rgba(0, 255, 65, 0.05); padding: 15px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 8px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; text-align: center; }
-        .mini-label { font-size: 9px; font-weight: 800; color: var(--main); text-transform: uppercase; pointer-events: none; text-align: center; }
-        .mini-val { font-size: 14px; font-weight: 900; color: #eee; pointer-events: none; text-align: center; }
-        .bar-bg { width: 100%; background: #000; height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-        .bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 0.5s ease, background-color 0.3s; }
-    </style>
+    
+    <link rel="stylesheet" href="style-mobile.css">
 </head>
 <body>
 
     <div id="pinModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="background:#0a0a0a; border:1px solid var(--main); padding:30px; border-radius:24px; text-align:center; width:80%;">
+        <div style="background:#0a0a0a; border:1px solid #00ff41; padding:30px; border-radius:24px; text-align:center; width:80%;">
             <div style="font-size:30px; margin-bottom:10px;">🛡️</div>
-            <div style="color:var(--main); font-weight:900; margin-bottom:15px; letter-spacing:1px;">ΤΑΥΤΟΠΟΙΗΣΗ</div>
+            <div style="color:#00ff41; font-weight:900; margin-bottom:15px; letter-spacing:1px;">ΤΑΥΤΟΠΟΙΗΣΗ</div>
             <input type="password" id="pinInput" style="font-size:32px; letter-spacing:10px;" inputmode="numeric" maxlength="4" placeholder="••••">
             <button class="primary-btn" onclick="attemptVaultUnlock()">ΕΙΣΟΔΟΣ</button>
-            <button class="secondary-btn" style="margin-top: 10px;" onclick="skipVault()">OFFLINE ΧΡΗΣΗ</button>
+            <button class="secondary-btn" style="margin-top: 10px; border: 1px solid #00ff41; color: #00ff41; background: transparent; width: 100%; padding: 16px; border-radius: 18px; font-weight: 900;" onclick="skipVault()">OFFLINE ΧΡΗΣΗ</button>
         </div>
     </div>
 
@@ -82,16 +52,16 @@
                     <div style="font-size: 9px; color: #00bcd4; display: flex; justify-content: space-between; font-weight: bold;">
                         <span>Πρωτεΐνη</span><span id="homeProtTxt">--%</span>
                     </div>
-                    <div class="bar-bg" style="height: 5px; margin-top: 3px;">
-                        <div id="homeProtBar" class="bar-fill" style="background:#00bcd4; width: 0%;"></div>
+                    <div class="bar-bg" style="height: 5px; margin-top: 3px; background: #000; border-radius: 3px;">
+                        <div id="homeProtBar" class="bar-fill" style="background:#00bcd4; width: 0%; height: 100%;"></div>
                     </div>
                 </div>
                 <div style="width: 100%; text-align: left;">
                     <div style="font-size: 9px; color: #9c27b0; display: flex; justify-content: space-between; font-weight: bold;">
                         <span>Κρεατίνη</span><span id="homeCreaTxt">--%</span>
                     </div>
-                    <div class="bar-bg" style="height: 5px; margin-top: 3px;">
-                        <div id="homeCreaBar" class="bar-fill" style="background:#9c27b0; width: 0%;"></div>
+                    <div class="bar-bg" style="height: 5px; margin-top: 3px; background: #000; border-radius: 3px;">
+                        <div id="homeCreaBar" class="bar-fill" style="background:#9c27b0; width: 0%; height: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -101,23 +71,23 @@
 
     <div id="diet" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="compact-grid">
+        <div class="compact-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
             <div class="mini-card"><span class="mini-label">KCAL</span><div id="txtKcal" class="mini-val">0/2800</div></div>
             <div class="mini-card"><span class="mini-label">PROT</span><div id="txtProt" class="mini-val">0/160g</div></div>
         </div>
         <input type="text" id="fName" placeholder="Όνομα Γεύματος">
-        <div class="compact-grid">
+        <div class="compact-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
             <input type="number" id="fKcal" placeholder="Kcal" inputmode="numeric">
             <input type="number" id="fProt" placeholder="Prot" inputmode="numeric">
         </div>
-        <button class="primary-btn" onclick="addFood()">ΠΡΟΣΘΗΚΗ ΓΕΥΜΑΤΟΣ</button>
+        <button class="primary-btn" onclick="PegasusDiet.add()">ΠΡΟΣΘΗΚΗ ΓΕΥΜΑΤΟΣ</button>
         <div id="foodHistoryList" style="width:100%; margin-top:10px;"></div>
     </div>
 
     <div id="library" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Βιβλιοθήκη Γευμάτων</div>
-        <input type="text" id="libSearch" placeholder="Αναζήτηση..." oninput="renderLibrary()">
+        <input type="text" id="libSearch" placeholder="Αναζήτηση..." oninput="PegasusDiet.renderLibrary()">
         <div id="libraryContainer" style="width:100%;"></div>
     </div>
 
@@ -127,7 +97,7 @@
         <input type="text" id="cdRoute" placeholder="Διαδρομή">
         <input type="number" id="cdKm" placeholder="Χιλιόμετρα (Km)" step="0.1" inputmode="decimal">
         <input type="number" id="cdTime" placeholder="Λεπτά" inputmode="numeric">
-        <button class="primary-btn" onclick="saveCardio()">ΑΠΟΘΗΚΕΥΣΗ & ΜΕΙΩΣΗ ΠΟΔΙΩΝ</button>
+        <button class="primary-btn" onclick="PegasusCardio.save()">ΑΠΟΘΗΚΕΥΣΗ & ΜΕΙΩΣΗ ΠΟΔΙΩΝ</button>
     </div>
 
     <div id="ems_panel" class="view">
@@ -137,19 +107,19 @@
             <div id="totalProgress" class="mini-val">0%</div>
             <div class="bar-bg"><div id="mainProgressBar" class="bar-fill"></div></div>
         </div>
-        <div id="phaseTimer" style="font-size:40px; font-weight:900; color:var(--main); margin:20px 0;">25:00</div>
+        <div id="phaseTimer" style="font-size:40px; font-weight:900; color:#00ff41; margin:20px 0;">25:00</div>
         <div id="emsSteps" style="width:100%; margin-top:10px; box-sizing:border-box;"></div>
-        <button id="btnStart" class="primary-btn">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
-        <div id="emsTimeControls" class="compact-grid" style="display:none; margin-top:10px; width:100%;">
-            <button class="secondary-btn" onclick="adjustEmsTime(-5)" style="color:#ff4444; border-color:#ff4444;">-5s ΑΣΚΗΣΗ</button>
-            <button class="secondary-btn" onclick="adjustEmsTime(5)">+5s ΑΣΚΗΣΗ</button>
+        <button id="btnStart" class="primary-btn" onclick="PegasusEMS.start()">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
+        <div id="emsTimeControls" class="compact-grid" style="display:none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top:10px; width:100%;">
+            <button class="secondary-btn" onclick="PegasusEMS.adjust(-5)" style="color:#ff4444; border-color:#ff4444;">-5s ΑΣΚΗΣΗ</button>
+            <button class="secondary-btn" onclick="PegasusEMS.adjust(5)" style="border: 1px solid #00ff41; color: #00ff41; background: transparent;">+5s ΑΣΚΗΣΗ</button>
         </div>
     </div>
 
     <div id="preview" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Εβδομαδιαία Πρόοδος</div>
-        <div id="muscle-container" class="compact-grid"></div>
+        <div id="muscle-container" class="compact-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;"></div>
     </div>
 
     <div id="profile" class="view">
@@ -160,9 +130,9 @@
         <div class="input-label">ΑΦΜ</div><input type="text" id="pAFM" readonly>
         <div class="input-label">ΑΜΚΑ</div><input type="text" id="pAMKA" readonly>
         <div class="input-label">IBAN</div><input type="text" id="pIban" readonly>
-        <div class="compact-grid">
-            <button class="secondary-btn" onclick="unlockFields('profile')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
-            <button class="primary-btn" onclick="savePersonalSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+        <div class="compact-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+            <button class="secondary-btn" style="border: 1px solid #00ff41; color: #00ff41; background: transparent;" onclick="unlockFields('profile')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
+            <button class="primary-btn" onclick="PegasusProfile.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
         </div>
     </div>
 
@@ -178,8 +148,8 @@
         <div class="input-label">Λήξη Ασφάλειας</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
         <div class="input-label">Λήξη ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
         <div class="input-label">Επόμενο Service (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000" readonly>
-        <div class="compact-grid">
-            <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
+        <div class="compact-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+            <button class="secondary-btn" style="border: 1px solid #00ff41; color: #00ff41; background: transparent;" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
             <button class="primary-btn" onclick="window.PegasusCar?.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
         </div>
         <div class="section-title">Ιστορικό Εργασιών (Cloud)</div>
@@ -194,31 +164,29 @@
         <div class="section-title">Επαφές (Local)</div>
         <input type="text" id="cName" placeholder="Όνομα">
         <input type="tel" id="cNum" placeholder="Τηλέφωνο">
-        <button class="primary-btn" onclick="addContact()">ΠΡΟΣΘΗΚΗ</button>
+        <button class="primary-btn" onclick="PegasusProfile.addContact()">ΠΡΟΣΘΗΚΗ</button>
         <div id="contactList" style="width:100%; margin-top: 15px;"></div>
     </div>
 
     <div id="supps" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Απόθεμα Συμπληρωμάτων</div>
-        
         <div class="mini-card" style="width:100%; border-left: 4px solid #00bcd4;">
             <span class="mini-label">Protein Whey (2.5kg)</span>
             <div id="protLevelText" class="mini-val">--- / 2500g</div>
             <div class="bar-bg"><div id="protBar" class="bar-fill" style="background:#00bcd4;"></div></div>
-            <div class="compact-grid" style="margin-top:10px;">
-                <button class="primary-btn" onclick="consumeSupp('prot', 30)" style="background:#222; color:#fff;">-30g</button>
-                <button class="primary-btn" onclick="refillSupp('prot', 2500)">REFILL</button>
+            <div class="compact-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top:10px; width:100%;">
+                <button class="primary-btn" onclick="PegasusInventory.consume('prot', 30)" style="background:#222; color:#fff;">-30g</button>
+                <button class="primary-btn" onclick="PegasusInventory.refill('prot', 2500)">REFILL</button>
             </div>
         </div>
-        
         <div class="mini-card" style="width:100%; border-left: 4px solid #9c27b0;">
             <span class="mini-label">Creatine (1kg)</span>
             <div id="creaLevelText" class="mini-val">--- / 1000g</div>
             <div class="bar-bg"><div id="creaBar" class="bar-fill" style="background:#9c27b0;"></div></div>
-            <div class="compact-grid" style="margin-top:10px;">
-                <button class="primary-btn" onclick="consumeSupp('crea', 5)" style="background:#222; color:#fff;">-5g</button>
-                <button class="primary-btn" onclick="refillSupp('crea', 1000)">REFILL</button>
+            <div class="compact-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top:10px; width:100%;">
+                <button class="primary-btn" onclick="PegasusInventory.consume('crea', 5)" style="background:#222; color:#fff;">-5g</button>
+                <button class="primary-btn" onclick="PegasusInventory.refill('crea', 1000)">REFILL</button>
             </div>
         </div>
     </div>
@@ -227,51 +195,47 @@
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Διαχείριση Δεδομένων</div>
         <button class="primary-btn" onclick="exportData()">ΛΗΨΗ ΑΝΤΙΓΡΑΦΟΥ (BACKUP)</button>
-        <label class="secondary-btn" style="display:block; cursor:pointer; margin-top:10px;">
+        <label class="secondary-btn" style="display:block; cursor:pointer; margin-top:10px; border: 1px solid #00ff41; color: #00ff41; text-align: center; padding: 16px; border-radius: 18px; font-weight: 900;">
             ΕΠΑΝΑΦΟΡΑ (RESTORE)
             <input type="file" style="display:none;" onchange="importData(event)">
         </label>
-        
-        <button class="primary-btn" style="background: var(--danger); color: #fff; margin-top: 25px;" onclick="hardResetSystem()">🚨 ΕΚΚΑΘΑΡΙΣΗ ΜΝΗΜΗΣ (HARD RESET)</button>
+        <button class="primary-btn" style="background: #ff4444; color: #fff; margin-top: 25px;" onclick="hardResetSystem()">🚨 ΕΚΚΑΘΑΡΙΣΗ ΜΝΗΜΗΣ (HARD RESET)</button>
         <p style="font-size:9px; color:#666; margin-top:25px; line-height:1.4;">Το Backup περιλαμβάνει: Έγγραφα, Όχημα, Επαφές, Βιβλιοθήκη Φαγητού και Συμπληρώματα.</p>
     </div>
 
-<script src="car.js"></script>
+<script src="car-mobile.js"></script>
+<script src="diet-mobile.js"></script>
+<script src="cardio-mobile.js"></script>
+<script src="ems-mobile.js"></script>
+<script src="profile-mobile.js"></script>
+<script src="inventory-mobile.js"></script>
 
 <script>
+/* ===== PEGASUS MOBILE MASTER CONTROLLER ===== */
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
-function hardResetSystem() {
-    if(confirm("ΠΡΟΣΟΧΗ: Αυτό θα διαγράψει την προβληματική μνήμη (Cache) του κινητού και θα φέρει τον νέο κώδικα. Συνέχεια;")) {
-        if('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) registration.unregister();
-            });
-        }
-        caches.keys().then(function(names) {
-            for (let name of names) caches.delete(name);
-        });
-        alert("Η μνήμη καθαρίστηκε! Η εφαρμογή θα κάνει επανεκκίνηση τώρα.");
-        window.location.replace(window.location.pathname + '?v=' + Date.now());
-    }
-}
-
+// 1. SYSTEM NAVIGATION
 function openView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const targetView = document.getElementById(id);
     if (targetView) targetView.classList.add('active');
-    if (id === 'supps') updateSuppUI();
+    
+    // Module Refresh Triggers
+    if (id === 'diet') window.PegasusDiet?.updateUI();
+    if (id === 'library') window.PegasusDiet?.renderLibrary();
+    if (id === 'supps') window.PegasusInventory?.updateUI();
     if (id === 'preview') updateMuscleUI();
-    if (id === 'library') renderLibrary();
     if (id === 'car') window.PegasusCar?.load();
+    if (id === 'profile') window.PegasusProfile?.load();
+    if (id === 'phones') window.PegasusProfile?.renderContacts();
 }
 
+// 2. CORE UTILITIES
 const PegasusStore = {
     keys: { foodPrefix: "food_log_", kcalTotal: "pegasus_today_kcal", protTotal: "pegasus_today_protein", library: "pegasus_food_library", contacts: "pegasus_contacts" },
-    getFoodLog: function(dateStr) { const key = this.keys.foodPrefix + dateStr; try { const data = localStorage.getItem(key); return data ? JSON.parse(data) : []; } catch (e) { return []; } },
-    saveFoodLog: function(dateStr, logArray) { if (!Array.isArray(logArray)) return false; const key = this.keys.foodPrefix + dateStr; localStorage.setItem(key, JSON.stringify(logArray)); return true; },
-    updateDailyTotals: function(kcal, prot) { localStorage.setItem(this.keys.kcalTotal, parseFloat(kcal).toFixed(1)); localStorage.setItem(this.keys.protTotal, parseFloat(prot).toFixed(1)); }
+    getFoodLog: (dateStr) => { const k = PegasusStore.keys.foodPrefix + dateStr; try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e) { return []; } },
+    saveFoodLog: (dateStr, log) => localStorage.setItem(PegasusStore.keys.foodPrefix + dateStr, JSON.stringify(log))
 };
 
 const PegasusCloud = {
@@ -282,9 +246,7 @@ const PegasusCloud = {
             isUnlocked = true; 
             localStorage.setItem("pegasus_vault_pin", p); 
             PegasusCloud.pull(); 
-            if (!window.pegasusSyncInterval) {
-                window.pegasusSyncInterval = setInterval(() => { if (isUnlocked) PegasusCloud.pull(); }, 30000);
-            }
+            if (!window.pegasusSyncInterval) window.pegasusSyncInterval = setInterval(() => { if (isUnlocked) PegasusCloud.pull(); }, 30000);
             return true; 
         } 
         return false; 
@@ -296,45 +258,39 @@ const PegasusCloud = {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest?t=${Date.now()}`, { 
                 headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } 
             });
-            const rawData = await res.json();
-            const data = rawData.record || rawData;
+            const data = (await res.json()).record;
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
             if(data.peg_contacts) localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(data.peg_contacts));
             if(data.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(data.car_dates));
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
             if(data.food_library) localStorage.setItem(PegasusStore.keys.library, JSON.stringify(data.food_library));
-            if (data.all_food_logs) Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
-            if (data.kcal) localStorage.setItem(PegasusStore.keys.kcalTotal, data.kcal);
-            if (data.protein) localStorage.setItem(PegasusStore.keys.protTotal, data.protein);
+            if(data.all_food_logs) Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
             PegasusCloud.hasSuccessfullyPulled = true; setSyncStatus('online');
-        } catch(e) { PegasusCloud.hasSuccessfullyPulled = false; setSyncStatus('offline'); }
-        finally { updateDietUI(); updateSuppUI(); loadSpecs(); }
+        } catch(e) { setSyncStatus('offline'); }
+        finally { window.PegasusDiet?.updateUI(); window.PegasusInventory?.updateUI(); loadSpecs(); }
     },
     push: async () => {
         if (!isUnlocked || !PegasusCloud.hasSuccessfullyPulled) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
-        const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-        const allFoodLogs = {}; 
+        const allLogs = {}; 
         for (let i = 0; i < localStorage.length; i++) { 
             let k = localStorage.key(i); 
-            if (k.startsWith(PegasusStore.keys.foodPrefix)) allFoodLogs[k] = JSON.parse(localStorage.getItem(k)); 
+            if (k.startsWith("food_log_")) allLogs[k] = JSON.parse(localStorage.getItem(k)); 
         }
         const payload = { 
-            last_update_date: dateStr, last_update_ts: Date.now(), 
-            kcal: localStorage.getItem(PegasusStore.keys.kcalTotal) || "0", 
-            protein: localStorage.getItem(PegasusStore.keys.protTotal) || "0", 
+            last_update_ts: Date.now(),
             supp_inventory: PegasusCloud.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}), 
             weekly_history: PegasusCloud.safeParse("pegasus_weekly_history", {}), 
             car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}), 
             car_service: PegasusCloud.safeParse("pegasus_car_service", []), 
             food_library: PegasusCloud.safeParse(PegasusStore.keys.library, []), 
             peg_contacts: PegasusCloud.safeParse(PegasusStore.keys.contacts, []), 
-            today_food_log: PegasusStore.getFoodLog(dateStr), all_food_logs: allFoodLogs 
+            all_food_logs: allLogs 
         };
         try { 
             await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { 
-                method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key, 'X-Bin-Versioning': 'false' }, 
+                method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, 
                 body: JSON.stringify(payload) 
             }); 
             setSyncStatus('online'); 
@@ -342,38 +298,9 @@ const PegasusCloud = {
     }
 };
 
-function exportData() {
-    const backup = {};
-    const prefixes = ["pegasus_", "food_log_", "peg_car_", "weight_", "cardio_", "peg_vault_data", "peg_car_identity"];
-    for (let i = 0; i < localStorage.length; i++) {
-        let k = localStorage.key(i);
-        if (prefixes.some(p => k.startsWith(p))) backup[k] = localStorage.getItem(k);
-    }
-    const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `PEGASUS_BACKUP.json`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-
-function importData(event) {
-    const file = event.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (confirm("Αντικατάσταση δεδομένων;")) {
-                Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-                location.reload();
-            }
-        } catch (err) { alert("Σφάλμα."); }
-    };
-    reader.readAsText(file);
-}
-
+// 3. SHARED UI HELPERS
 function bindCopy(id, val) { 
-    const el = document.getElementById(id); 
-    if (!el) return; 
+    const el = document.getElementById(id); if (!el) return; 
     el.value = val || ""; 
     el.onclick = function() { 
         if (this.value && this.hasAttribute('readonly')) { 
@@ -386,101 +313,73 @@ function bindCopy(id, val) {
 
 function unlockFields(v) { 
     document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
-        el.removeAttribute('readonly'); 
-        el.style.border = "1px solid var(--main)"; 
+        el.removeAttribute('readonly'); el.style.border = "1px solid #00ff41"; 
     }); 
 }
 
-function savePersonalSpecs() { 
-    localStorage.setItem("peg_vault_data", JSON.stringify({ 
-        pa: document.getElementById('pPA').value, 
-        adt: document.getElementById('pADT').value, 
-        afm: document.getElementById('pAFM').value, 
-        amka: document.getElementById('pAMKA').value, 
-        iban: document.getElementById('pIban').value 
-    })); 
-    loadSpecs(); 
+function updateMuscleUI() { 
+    const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+    document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => {
+        const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
+        return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg" style="background:#000; height:6px; border-radius:3px; overflow:hidden; margin-top:8px;"><div class="bar-fill" style="width:${p}%; background:#00ff41; height:100%;"></div></div></div>`;
+    }).join('');
 }
 
 function loadSpecs() { 
-    const p = PegasusCloud.safeParse("peg_vault_data", {}); 
-    bindCopy('pPA', p.pa); 
-    bindCopy('pADT', p.adt); 
-    bindCopy('pAFM', p.afm); 
-    bindCopy('pAMKA', p.amka); 
-    bindCopy('pIban', p.iban); 
-    
-    // Call Modular Car Logic
+    window.PegasusProfile?.load();
     window.PegasusCar?.load();
-    renderContacts(); 
 }
 
-function addContact() { const n = document.getElementById('cName').value; const nu = document.getElementById('cNum').value; if(!n || !nu) return; let l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []); l.push({ n, nu }); localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(l)); document.getElementById('cName').value = ""; document.getElementById('cNum').value = ""; renderContacts(); PegasusCloud.push(); }
-function renderContacts() { const l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []); document.getElementById("contactList").innerHTML = l.map((i, idx) => `<div class="log-item" style="display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.n}</strong><br><small>${i.nu}</small></div><div style="gap:10px; display:flex;"><a href="tel:${i.nu}" style="text-decoration:none; background:var(--main); color:#000; padding:8px; border-radius:50%;">📞</a><button onclick="deleteContact(${idx})" style="color:var(--danger); border:none; background:none; font-weight:900;">✕</button></div></div>`).join(''); }
-function deleteContact(idx) { let l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []); l.splice(idx, 1); localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(l)); renderContacts(); PegasusCloud.push(); }
-
-async function saveCardio() { 
-    const km = parseFloat(document.getElementById('cdKm').value) || 0; 
-    const route = (document.getElementById('cdRoute').value || "").toUpperCase();
-    if(km > 0) { 
-        let h = PegasusCloud.safeParse('pegasus_weekly_history', { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
-        const credit = (route.includes("ΠΟΔΗΛΑΣΙΑ") || route.includes("CYCLING")) ? 18 : Math.max(1, Math.floor(km/2));
-        h["Πόδια"] = (h["Πόδια"] || 0) + credit;
-        localStorage.setItem('pegasus_weekly_history', JSON.stringify(h)); 
-    }
-    openView('home'); PegasusCloud.push();
+function setSyncStatus(s) { 
+    const e = document.getElementById("sync-indicator"); 
+    if(!e) return;
+    e.textContent = s.toUpperCase(); 
+    e.style.color = s==='online'?'#00ff41':s==='offline'?'#ff4444':'#00bcd4'; 
 }
 
-async function addFood() { const n = document.getElementById("fName").value || "Γεύμα"; const k = parseFloat(document.getElementById("fKcal").value) || 0; const p = parseFloat(document.getElementById("fProt").value) || 0; if(n.toLowerCase().includes("πρωτεΐνη")) consumeSupp('prot', 30, false); const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; let log = PegasusStore.getFoodLog(dateStr); log.unshift({name:n, kcal:k, protein:p}); PegasusStore.saveFoodLog(dateStr, log); updateDietUI(); await PegasusCloud.push(); }
-function updateDietUI() {
-    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    let log = PegasusStore.getFoodLog(dateStr); let tk = 0, tp = 0;
-    log.forEach(item => { tk += parseFloat(item.kcal || 0); tp += parseFloat(item.protein || 0); });
-    localStorage.setItem(PegasusStore.keys.kcalTotal, tk.toFixed(1)); localStorage.setItem(PegasusStore.keys.protTotal, tp.toFixed(1));
-    document.getElementById("txtKcal").textContent = `${Math.round(tk)}/2800`;
-    document.getElementById("txtProt").textContent = `${Math.round(tp)}/160g`;
-    document.getElementById("foodHistoryList").innerHTML = log.map((i, idx) => `<div class="log-item"><button class="btn-del" onclick="deleteFood(${idx})">✕</button><strong>${i.name}</strong><br><small>${i.kcal} kcal | ${i.protein}g P</small></div>`).join('');
-}
-async function deleteFood(idx) { const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; let log = PegasusStore.getFoodLog(dateStr); log.splice(idx, 1); PegasusStore.saveFoodLog(dateStr, log); updateDietUI(); await PegasusCloud.push(); }
-function renderLibrary() { const lib = PegasusCloud.safeParse(PegasusStore.keys.library, []); const term = document.getElementById('libSearch').value.toLowerCase(); document.getElementById('libraryContainer').innerHTML = lib.filter(i => i.name.toLowerCase().includes(term)).map(i => `<div class="mini-card" onclick="quickAdd('${i.name}', ${i.kcal}, ${i.protein})"><span class="mini-label">+ ΠΡΟΣΘΗΚΗ</span><div class="mini-val">${i.name}</div></div>`).join(''); }
-function quickAdd(n,k,p){document.getElementById("fName").value=n;document.getElementById("fKcal").value=k;document.getElementById("fProt").value=p;addFood();const i=document.getElementById('libSearch');if(i){i.value="";renderLibrary();}openView('diet');}
-    
-function updateSuppUI() { 
-    const s = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 }); 
-    const pP = Math.min((s.prot / 2500) * 100, 100); const cP = Math.min((s.crea / 1000) * 100, 100);
-    document.getElementById('protLevelText').textContent = `${Math.round(s.prot)} / 2500g`; 
-    document.getElementById('protBar').style.width = pP + '%'; 
-    document.getElementById('creaLevelText').textContent = `${Math.round(s.crea)} / 1000g`; 
-    document.getElementById('creaBar').style.width = cP + '%'; 
-    document.getElementById('homeProtTxt').textContent = Math.round(pP) + '%'; 
-    document.getElementById('homeProtBar').style.width = pP + '%'; 
-    document.getElementById('homeCreaTxt').textContent = Math.round(cP) + '%'; 
-    document.getElementById('homeCreaBar').style.width = cP + '%'; 
+function attemptVaultUnlock() { 
+    const pin = document.getElementById("pinInput").value;
+    if(PegasusCloud.unlock(pin)) { document.getElementById("pinModal").style.display = "none"; loadSpecs(); } 
 }
 
-function consumeSupp(t, a, p = true) { 
-    let s = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 }); 
-    s[t] = Math.max(0, s[t] - a); localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s)); 
-    updateSuppUI(); if(p) PegasusCloud.push(); 
-}
-function refillSupp(t, a) { let s = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 }); s[t] = a; localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s)); updateSuppUI(); PegasusCloud.push(); }
-
-function updateMuscleUI() { const h = PegasusCloud.safeParse('pegasus_weekly_history', {}); const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }; document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => { const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100); return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div></div>`; }).join(''); }
-
-let emsTimer = null; let emsSeconds = 1500; 
-document.getElementById('btnStart').onclick = function() { if (emsTimer) return; emsTimer = setInterval(() => updateEmsTick(false), 1000); };
-function updateEmsTick(sD) { if (!sD) { if (emsSeconds <= 0) { clearInterval(emsTimer); promptEMSCompletion(); return; } emsSeconds--; } let tE = 1500 - emsSeconds; document.getElementById('phaseTimer').textContent = `${String(Math.floor(emsSeconds/60)).padStart(2,'0')}:${String(emsSeconds%60).padStart(2,'0')}`; document.getElementById('mainProgressBar').style.width = (tE / 1500 * 100) + '%'; }
-async function promptEMSCompletion() { const kcal = prompt("KCAL:", "747"); if (kcal) { let h = PegasusCloud.safeParse('pegasus_weekly_history', {}); ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(g => h[g] = (h[g] || 0) + 6); localStorage.setItem('pegasus_weekly_history', JSON.stringify(h)); await PegasusCloud.push(); location.reload(); } }
-
-function setSyncStatus(s) { const e = document.getElementById("sync-indicator"); e.textContent = s.toUpperCase(); e.style.color = s==='online'?'#00ff41':s==='offline'?'#ff4444':'#00bcd4'; }
-function attemptVaultUnlock() { if(PegasusCloud.unlock(document.getElementById("pinInput").value)) { document.getElementById("pinModal").style.display = "none"; loadSpecs(); } }
 function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); loadSpecs(); }
 
+function hardResetSystem() {
+    if(confirm("ΠΡΟΣΟΧΗ: Διαγραφή Cache & Hard Reload. Συνέχεια;")) {
+        caches.keys().then(names => { for (let n of names) caches.delete(n); });
+        localStorage.removeItem("pegasus_vault_pin");
+        location.replace(location.pathname + '?v=' + Date.now());
+    }
+}
+
+function exportData() {
+    const backup = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        let k = localStorage.key(i);
+        if (k.includes("pegasus_") || k.includes("food_log_") || k.includes("peg_")) backup[k] = localStorage.getItem(k);
+    }
+    const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `PEGASUS_MOBILE_BACKUP.json`; a.click();
+}
+
+function importData(e) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const data = JSON.parse(event.target.result);
+        Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+        location.reload();
+    };
+    reader.readAsText(e.target.files[0]);
+}
+
+// 🚀 INITIALIZATION
 window.onload = () => { 
     const pin = localStorage.getItem("pegasus_vault_pin"); 
-    if(pin) { PegasusCloud.unlock(pin); } else { document.getElementById("pinModal").style.display="flex"; } 
-    updateDietUI(); 
-    updateSuppUI(); 
+    if(pin) PegasusCloud.unlock(pin); else document.getElementById("pinModal").style.display="flex"; 
+    window.PegasusDiet?.updateUI(); 
+    window.PegasusInventory?.updateUI(); 
     loadSpecs();
 };
 </script>
