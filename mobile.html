@@ -155,11 +155,11 @@
     <div id="profile" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Προσωπικά Έγγραφα (Local)</div>
-        <div class="input-label">Προσωπικός Αριθμός</div><input type="text" id="pPA">
-        <div class="input-label">ΑΔΤ</div><input type="text" id="pADT">
-        <div class="input-label">ΑΦΜ</div><input type="text" id="pAFM">
-        <div class="input-label">ΑΜΚΑ</div><input type="text" id="pAMKA">
-        <div class="input-label">IBAN</div><input type="text" id="pIban">
+        <div class="input-label">Προσωπικός Αριθμός</div><input type="text" id="pPA" readonly>
+        <div class="input-label">ΑΔΤ</div><input type="text" id="pADT" readonly>
+        <div class="input-label">ΑΦΜ</div><input type="text" id="pAFM" readonly>
+        <div class="input-label">ΑΜΚΑ</div><input type="text" id="pAMKA" readonly>
+        <div class="input-label">IBAN</div><input type="text" id="pIban" readonly>
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('profile')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
             <button class="primary-btn" onclick="savePersonalSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
@@ -169,23 +169,23 @@
     <div id="car" class="view">
         <button class="btn-back" onclick="openView('home')">ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">Στοιχεία Ταυτότητας (Local)</div>
-        <div class="input-label">Πινακίδα</div><input type="text" id="carPlate">
-        <div class="input-label">Μοντέλο</div><input type="text" id="carModel">
-        <div class="input-label">Αρ. Πλαισίου (VIN)</div><input type="text" id="carVin">
-        <div class="input-label">Αρ. Κινητήρα</div><input type="text" id="carEngine">
-        <div class="input-label">CC / HP</div><input type="text" id="carPower">
+        <div class="input-label">Πινακίδα</div><input type="text" id="carPlate" readonly>
+        <div class="input-label">Μοντέλο</div><input type="text" id="carModel" readonly>
+        <div class="input-label">Αρ. Πλαισίου (VIN)</div><input type="text" id="carVin" readonly>
+        <div class="input-label">Αρ. Κινητήρα</div><input type="text" id="carEngine" readonly>
+        <div class="input-label">CC / HP</div><input type="text" id="carPower" readonly>
         <div class="section-title">Ημερομηνίες & Service (Cloud)</div>
-        <div class="input-label">Λήξη Ασφάλειας</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
-        <div class="input-label">Λήξη ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ">
-        <div class="input-label">Επόμενο Service (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000">
+        <div class="input-label">Λήξη Ασφάλειας</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
+        <div class="input-label">Λήξη ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
+        <div class="input-label">Επόμενο Service (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000" readonly>
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
-            <button class="primary-btn" onclick="saveCarSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+            <button class="primary-btn" onclick="window.PegasusCar?.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
         </div>
         <div class="section-title">Ιστορικό Εργασιών (Cloud)</div>
         <input type="text" id="srvTask" placeholder="Περιγραφή Εργασίας">
         <input type="number" id="srvKm" placeholder="Χιλιόμετρα" inputmode="numeric">
-        <button class="primary-btn" onclick="addService()">ΚΑΤΑΓΡΑΦΗ SERVICE</button>
+        <button class="primary-btn" onclick="window.PegasusCar?.addService()">ΚΑΤΑΓΡΑΦΗ SERVICE</button>
         <div id="serviceLogList" style="width:100%; margin-top:10px;"></div>
     </div>
 
@@ -236,6 +236,8 @@
         <p style="font-size:9px; color:#666; margin-top:25px; line-height:1.4;">Το Backup περιλαμβάνει: Έγγραφα, Όχημα, Επαφές, Βιβλιοθήκη Φαγητού και Συμπληρώματα.</p>
     </div>
 
+<script src="car.js"></script>
+
 <script>
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
@@ -262,6 +264,7 @@ function openView(id) {
     if (id === 'supps') updateSuppUI();
     if (id === 'preview') updateMuscleUI();
     if (id === 'library') renderLibrary();
+    if (id === 'car') window.PegasusCar?.load();
 }
 
 const PegasusStore = {
@@ -368,15 +371,50 @@ function importData(event) {
     reader.readAsText(file);
 }
 
-function bindCopy(id, val) { const el = document.getElementById(id); if (!el) return; el.value = val || ""; el.setAttribute('readonly', 'true'); el.onclick = function() { if (this.value) { navigator.clipboard.writeText(this.value); this.style.background = "#004400"; setTimeout(() => this.style.background = "", 300); } }; }
-function unlockFields(v) { document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { el.removeAttribute('readonly'); el.style.border = "1px solid var(--main)"; }); }
+function bindCopy(id, val) { 
+    const el = document.getElementById(id); 
+    if (!el) return; 
+    el.value = val || ""; 
+    el.onclick = function() { 
+        if (this.value && this.hasAttribute('readonly')) { 
+            navigator.clipboard.writeText(this.value); 
+            this.style.background = "#004400"; 
+            setTimeout(() => this.style.background = "", 300); 
+        } 
+    }; 
+}
 
-function saveCarSpecs() { localStorage.setItem("peg_car_identity", JSON.stringify({ plate: document.getElementById('carPlate').value, model: document.getElementById('carModel').value, vin: document.getElementById('carVin').value, eng: document.getElementById('carEngine').value, pwr: document.getElementById('carPower').value })); localStorage.setItem("pegasus_car_dates", JSON.stringify({ ins: document.getElementById('carIns').value, kteo: document.getElementById('carKteo').value, srv: document.getElementById('carSrv').value })); loadSpecs(); PegasusCloud.push(); }
-function addService() { const t = document.getElementById('srvTask').value; const k = document.getElementById('srvKm').value; if(!t || !k) return; let l = PegasusCloud.safeParse("pegasus_car_service", []); l.unshift({ t, k, d: new Date().toLocaleDateString('el-GR') }); localStorage.setItem("pegasus_car_service", JSON.stringify(l)); document.getElementById('srvTask').value = ""; document.getElementById('srvKm').value = ""; renderService(); PegasusCloud.push(); }
-function renderService() { const l = PegasusCloud.safeParse("pegasus_car_service", []); document.getElementById("serviceLogList").innerHTML = l.map(i => `<div class="log-item"><strong>${i.t}</strong><br><small>${i.k} χλμ | ${i.d}</small></div>`).join(''); }
+function unlockFields(v) { 
+    document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
+        el.removeAttribute('readonly'); 
+        el.style.border = "1px solid var(--main)"; 
+    }); 
+}
 
-function savePersonalSpecs() { localStorage.setItem("peg_vault_data", JSON.stringify({ pa: document.getElementById('pPA').value, adt: document.getElementById('pADT').value, afm: document.getElementById('pAFM').value, amka: document.getElementById('pAMKA').value, iban: document.getElementById('pIban').value })); loadSpecs(); }
-function loadSpecs() { const identity = PegasusCloud.safeParse("peg_car_identity", {}); bindCopy('carPlate', identity.plate); bindCopy('carModel', identity.model); bindCopy('carVin', identity.vin); bindCopy('carEngine', identity.eng); bindCopy('carPower', identity.pwr); const dates = PegasusCloud.safeParse("pegasus_car_dates", {}); bindCopy('carIns', dates.ins); bindCopy('carKteo', dates.kteo); bindCopy('carSrv', dates.srv); const p = PegasusCloud.safeParse("peg_vault_data", {}); bindCopy('pPA', p.pa); bindCopy('pADT', p.adt); bindCopy('pAFM', p.afm); bindCopy('pAMKA', p.amka); bindCopy('pIban', p.iban); renderService(); renderContacts(); }
+function savePersonalSpecs() { 
+    localStorage.setItem("peg_vault_data", JSON.stringify({ 
+        pa: document.getElementById('pPA').value, 
+        adt: document.getElementById('pADT').value, 
+        afm: document.getElementById('pAFM').value, 
+        amka: document.getElementById('pAMKA').value, 
+        iban: document.getElementById('pIban').value 
+    })); 
+    loadSpecs(); 
+}
+
+function loadSpecs() { 
+    const p = PegasusCloud.safeParse("peg_vault_data", {}); 
+    bindCopy('pPA', p.pa); 
+    bindCopy('pADT', p.adt); 
+    bindCopy('pAFM', p.afm); 
+    bindCopy('pAMKA', p.amka); 
+    bindCopy('pIban', p.iban); 
+    
+    // Call Modular Car Logic
+    window.PegasusCar?.load();
+    renderContacts(); 
+}
+
 function addContact() { const n = document.getElementById('cName').value; const nu = document.getElementById('cNum').value; if(!n || !nu) return; let l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []); l.push({ n, nu }); localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(l)); document.getElementById('cName').value = ""; document.getElementById('cNum').value = ""; renderContacts(); PegasusCloud.push(); }
 function renderContacts() { const l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []); document.getElementById("contactList").innerHTML = l.map((i, idx) => `<div class="log-item" style="display:flex; justify-content:space-between; align-items:center;"><div><strong>${i.n}</strong><br><small>${i.nu}</small></div><div style="gap:10px; display:flex;"><a href="tel:${i.nu}" style="text-decoration:none; background:var(--main); color:#000; padding:8px; border-radius:50%;">📞</a><button onclick="deleteContact(${idx})" style="color:var(--danger); border:none; background:none; font-weight:900;">✕</button></div></div>`).join(''); }
 function deleteContact(idx) { let l = PegasusCloud.safeParse(PegasusStore.keys.contacts, []); l.splice(idx, 1); localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(l)); renderContacts(); PegasusCloud.push(); }
@@ -429,10 +467,8 @@ function refillSupp(t, a) { let s = PegasusCloud.safeParse('pegasus_supp_invento
 
 function updateMuscleUI() { const h = PegasusCloud.safeParse('pegasus_weekly_history', {}); const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }; document.getElementById("muscle-container").innerHTML = Object.keys(targets).map(g => { const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100); return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div></div>`; }).join(''); }
 
-let emsTimer = null; let emsSeconds = 1500; const emsCategories = [{ id: 0, n: "Lateral Raises", t: 4 }, { id: 1, n: "Bicep Curls", t: 4 }, { id: 2, n: "Static Plank", t: 3 }, { id: 3, n: "Static Crunches", t: 3 }, { id: 4, n: "Massage Mode", t: 1 }];
-let emsSchedule = [{ cid: 0, w: 45, d: 69, s: 1 }, { cid: 1, w: 45, d: 69, s: 1 }, { cid: 2, w: 90, d: 138, s: 1 }, { cid: 3, w: 90, d: 138, s: 1 }, { cid: 0, w: 45, d: 69, s: 2 }, { cid: 1, w: 45, d: 69, s: 2 }, { cid: 2, w: 90, d: 138, s: 2 }, { cid: 3, w: 90, d: 138, s: 2 }, { cid: 0, w: 45, d: 69, s: 3 }, { cid: 1, w: 45, d: 69, s: 3 }, { cid: 2, w: 90, d: 138, s: 3 }, { cid: 3, w: 90, d: 138, s: 3 }, { cid: 0, w: 45, d: 69, s: 4 }, { cid: 1, w: 45, d: 69, s: 4 }, { cid: 4, w: 120, d: 120, s: 1 }];
-function initEmsUI() { document.getElementById('emsSteps').innerHTML = emsCategories.map(cat => `<div id="emsCatRow_${cat.id}" style="margin-bottom:15px; opacity:0.3; width:100%;"><div style="display:flex; justify-content:space-between; font-size:10px; font-weight:900; color:var(--main); margin-bottom:8px;"><span id="emsCatTitle_${cat.id}">${cat.n} <small>(SET 1/${cat.t})</small></span><span id="emsCatTime_${cat.id}">ΑΝΑΜΟΝΗ</span></div><div class="bar-bg"><div id="emsCatBar_${cat.id}" class="bar-fill"></div></div></div>`).join(''); }
-document.getElementById('btnStart').onclick = function() { if (emsTimer) return; if (emsSeconds === 1500) initEmsUI(); emsTimer = setInterval(() => updateEmsTick(false), 1000); };
+let emsTimer = null; let emsSeconds = 1500; 
+document.getElementById('btnStart').onclick = function() { if (emsTimer) return; emsTimer = setInterval(() => updateEmsTick(false), 1000); };
 function updateEmsTick(sD) { if (!sD) { if (emsSeconds <= 0) { clearInterval(emsTimer); promptEMSCompletion(); return; } emsSeconds--; } let tE = 1500 - emsSeconds; document.getElementById('phaseTimer').textContent = `${String(Math.floor(emsSeconds/60)).padStart(2,'0')}:${String(emsSeconds%60).padStart(2,'0')}`; document.getElementById('mainProgressBar').style.width = (tE / 1500 * 100) + '%'; }
 async function promptEMSCompletion() { const kcal = prompt("KCAL:", "747"); if (kcal) { let h = PegasusCloud.safeParse('pegasus_weekly_history', {}); ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(g => h[g] = (h[g] || 0) + 6); localStorage.setItem('pegasus_weekly_history', JSON.stringify(h)); await PegasusCloud.push(); location.reload(); } }
 
@@ -443,7 +479,9 @@ function skipVault() { document.getElementById("pinModal").style.display = "none
 window.onload = () => { 
     const pin = localStorage.getItem("pegasus_vault_pin"); 
     if(pin) { PegasusCloud.unlock(pin); } else { document.getElementById("pinModal").style.display="flex"; } 
-    updateDietUI(); updateSuppUI(); 
+    updateDietUI(); 
+    updateSuppUI(); 
+    loadSpecs();
 };
 </script>
 </body>
