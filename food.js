@@ -143,17 +143,24 @@ window.addFoodItem = function(name, kcal, protein) {
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
-    if (name.toLowerCase().includes("πρωτεΐνη")) {
-        if (window.consumeSupp) {
+    // 🛡️ CALL INVENTORY GUARD (Modular Link)
+    if (window.PegasusInventoryPC) {
+        window.PegasusInventoryPC.processEntry(name);
+    } else {
+        // Fallback αν δεν έχει φορτώσει το αρχείο ακόμα
+        if (name.toLowerCase().includes("πρωτεΐνη") && window.consumeSupp) {
             window.consumeSupp('prot', 30, false); 
         }
     }
 
-    addToLibrary(name, kcal, protein);
+    if (typeof addToLibrary === "function") addToLibrary(name, kcal, protein);
+    
     const searchInput = document.getElementById('librarySearch');
     if (searchInput) searchInput.value = "";
 
     window.updateFoodUI();
+    
+    // Trigger Cloud Push
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
