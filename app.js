@@ -676,21 +676,18 @@ function finishWorkout() {
     }, 4000); // Μειωμένο delay για ταχύτερη απόκριση
 }
 
-/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.7) ===== */
+/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.8) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
-    // 1. Καθαρισμός ονόματος και αναγνώριση συνθηκών
     const currentDay = activeBtn.textContent.trim().split(' ')[0];
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
-    // 2. Ανάκτηση δεδομένων προγράμματος
     let rawData = (typeof window.calculateDailyProgram !== 'undefined') ? 
                   window.calculateDailyProgram(currentDay, isRainy) : 
                   ((window.program[currentDay]) ? [...window.program[currentDay]] : []);
 
-    // 3. Spillover Logic (Κυριακή -> Παρασκευή)
     if (currentDay === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
         const bonus = window.program["Κυριακή"]
             .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
@@ -698,7 +695,6 @@ function openExercisePreview() {
         rawData = [...rawData, ...bonus];
     }
 
-    // 4. Εφαρμογή Pegasus Optimizer
     const dayExercises = window.PegasusOptimizer ? window.PegasusOptimizer.apply(currentDay, rawData) : 
                          rawData.map(e => ({ ...e, adjustedSets: e.sets }));
 
@@ -708,55 +704,25 @@ function openExercisePreview() {
 
     if (!panel || !content) return;
 
-    // 5. Εμφάνιση Panel και Καθαρισμός
+    // 🛡️ RESET & DISPLAY
     panel.style.display = 'block'; 
     content.innerHTML = ''; 
+    if (muscleContainer) muscleContainer.innerHTML = ''; 
 
-    // --- 📊 MUSCLE BARS RENDER (STRICT MODULAR BRIDGE) ---
-    if (window.MuscleProgressUI && muscleContainer) { 
-        // Μικρό timeout για να προλάβει το Panel να γίνει ορατό (Reflow)
-        setTimeout(() => {
-            muscleContainer.innerHTML = ''; 
-            window.MuscleProgressUI.lastDataHash = null; // Force Render
-            window.MuscleProgressUI.render(muscleContainer); 
-            console.log("📊 Pegasus Bridge: Muscle Bars Synchronized.");
-        }, 50);
-    }
-
-    // --- 🎯 SURGICAL IMAGE MAPPING ---
     const nameMapping = {
-        "Seated Chest Press": "chestpress",
-        "Pec Deck Flys": "chestflys",
-        "Pushups": "pushups",
-        "Lat Pulldown": "latpulldowns",
-        "Seated Row": "lowrowsseated",
-        "Bent Over Row": "bentoverrows",
-        "One Arm Pulldown": "onearmpulldowns",
-        "EMS Training": "ems",
-        "Upright Row": "uprightrows",
-        "Lateral Raises": "uprightrows",
-        "Shoulder Shrugs": "uprightrows",
-        "Standing Bicep Curl": "bicepcurls",
-        "Triceps Pushdown": "triceppulldowns",
-        "Preacher Curl": "preacherbicepcurls",
-        "Ab Crunch Cable": "abcrunches",
-        "Plank": "plank",
-        "Reverse Crunch": "reversecrunch",
-        "Leg Raise Hip Lift": "legraisehiplift",
-        "Leg Extension": "legextensions",
-        "Standing Leg Curl": "glutekickbacks",
-        "Glute Kickbacks": "glutekickbacks",
-        "Cycling": "cycling",
-        "Stretching": "stretching",
-        "Warmup": "warmup"
+        "Seated Chest Press": "chestpress", "Pec Deck Flys": "chestflys", "Pushups": "pushups",
+        "Lat Pulldown": "latpulldowns", "Seated Row": "lowrowsseated", "Bent Over Row": "bentoverrows",
+        "One Arm Pulldown": "onearmpulldowns", "EMS Training": "ems", "Upright Row": "uprightrows",
+        "Lateral Raises": "uprightrows", "Shoulder Shrugs": "uprightrows", "Standing Bicep Curl": "bicepcurls",
+        "Triceps Pushdown": "triceppulldowns", "Preacher Curl": "preacherbicepcurls", "Ab Crunch Cable": "abcrunches",
+        "Plank": "plank", "Reverse Crunch": "reversecrunch", "Leg Raise Hip Lift": "legraisehiplift",
+        "Leg Extension": "legextensions", "Standing Leg Curl": "glutekickbacks", "Glute Kickbacks": "glutekickbacks",
+        "Cycling": "cycling", "Stretching": "stretching", "Warmup": "warmup"
     };
 
-    // 6. Δημιουργία Exercise Cards
     dayExercises.filter(ex => (ex.adjustedSets || ex.sets) > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
         let imgBase = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
-        
-        // Καθορισμός Extension
         const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
 
         content.innerHTML += `
@@ -766,6 +732,8 @@ function openExercisePreview() {
             </div>
         `;
     });
+    
+    console.log("🚀 PEGASUS: Preview Assets Loaded. Waiting for Progress Render...");
 }
 
 /* ===== 10. BOOT & TRACKING (STRICT MANIFEST ALIGNED) ===== */
