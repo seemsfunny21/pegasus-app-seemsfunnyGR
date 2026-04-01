@@ -1,10 +1,27 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v2.1 (ULTRA-SPEED SYNC)
+   PEGASUS PWA SERVICE WORKER - v2.2 (MODULAR SYNC EDITION)
+   Protocol: Full Asset Caching & Service Bridge
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-media-vault-v2.1';
+const CACHE_NAME = 'pegasus-modular-vault-v2.2'; // 🔄 Αλλαγή ονόματος για Force Refresh
+
 const ASSETS_TO_CACHE = [
-    './', './index.html', './mobile.html', './style.css', './app.js', './data.js', './cloudSync.js', './videos/beep.mp3',
+    './', 
+    './index.html', 
+    './mobile.html', 
+    './style.css', 
+    './style-mobile.css',    // 🟢 ΠΡΟΣΘΗΚΗ
+    './app.js', 
+    './data.js', 
+    './manifest.js',
+    './cloudSync.js',
+    './car-mobile.js',       // 🟢 ΠΡΟΣΘΗΚΗ
+    './diet-mobile.js',      // 🟢 ΠΡΟΣΘΗΚΗ
+    './cardio-mobile.js',    // 🟢 ΠΡΟΣΘΗΚΗ
+    './ems-mobile.js',       // 🟢 ΠΡΟΣΘΗΚΗ
+    './profile-mobile.js',   // 🟢 ΠΡΟΣΘΗΚΗ
+    './inventory-mobile.js', // 🟢 ΠΡΟΣΘΗΚΗ
+    './videos/beep.mp3',
     './videos/abcrunches.mp4', './videos/bentoverrows.mp4', './videos/bicepcurls.mp4',
     './videos/chestflys.mp4', './videos/chestpress.mp4', './videos/cycling.mp4',
     './videos/ems.mp4', './videos/glutekickbacks.mp4', './videos/latpulldowns.mp4',
@@ -35,7 +52,7 @@ self.addEventListener('install', (event) => {
                             file: url 
                         });
                     });
-                } catch (err) { console.error(`SW: Failed to cache ${url}`); }
+                } catch (err) { console.error(`SW: Failed to cache ${url}`, err); }
             }
         })
     );
@@ -44,7 +61,10 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then(keys => Promise.all(keys.map(key => {
-            if (key !== CACHE_NAME) return caches.delete(key);
+            if (key !== CACHE_NAME) {
+                console.log('SW: Purging Old Cache...', key);
+                return caches.delete(key);
+            }
         }))).then(() => self.clients.claim())
     );
 });
@@ -59,10 +79,18 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. NETWORK-FIRST: Code files
-    if (event.request.headers.get('accept')?.includes('text/html') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    // 2. NETWORK-FIRST: Code & Style files (For Instant Updates)
+    if (event.request.headers.get('accept')?.includes('text/html') || 
+        url.pathname.endsWith('.js') || 
+        url.pathname.endsWith('.css')) {
         event.respondWith(
-            fetch(event.request).catch(() => caches.match(event.request))
+            fetch(event.request)
+                .then(response => {
+                    const clonedRes = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedRes));
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
         );
         return;
     }
