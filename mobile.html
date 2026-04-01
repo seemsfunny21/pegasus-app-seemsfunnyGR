@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v14.0 (Modular)</title>
+    <title>Pegasus Mobile v14.1</title>
 
     <script>
         (function() {
@@ -19,7 +19,7 @@
     <link rel="apple-touch-icon" href="images/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style-mobile.css">
+    <link rel="stylesheet" href="style-mobile.css?v=1.2">
 </head>
 <body>
 
@@ -200,7 +200,6 @@
             <input type="file" style="display:none;" onchange="importData(event)">
         </label>
         <button class="primary-btn" style="background: #ff4444; color: #fff; margin-top: 25px;" onclick="hardResetSystem()">🚨 ΕΚΚΑΘΑΡΙΣΗ ΜΝΗΜΗΣ (HARD RESET)</button>
-        <p style="font-size:9px; color:#666; margin-top:25px; line-height:1.4;">Το Backup περιλαμβάνει: Έγγραφα, Όχημα, Επαφές, Βιβλιοθήκη Φαγητού και Συμπληρώματα.</p>
     </div>
 
 <script src="car-mobile.js"></script>
@@ -211,17 +210,14 @@
 <script src="inventory-mobile.js"></script>
 
 <script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER ===== */
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
-// 1. SYSTEM NAVIGATION
 function openView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const targetView = document.getElementById(id);
     if (targetView) targetView.classList.add('active');
     
-    // Module Refresh Triggers
     if (id === 'diet') window.PegasusDiet?.updateUI();
     if (id === 'library') window.PegasusDiet?.renderLibrary();
     if (id === 'supps') window.PegasusInventory?.updateUI();
@@ -231,10 +227,9 @@ function openView(id) {
     if (id === 'phones') window.PegasusProfile?.renderContacts();
 }
 
-// 2. CORE UTILITIES
 const PegasusStore = {
-    keys: { foodPrefix: "food_log_", kcalTotal: "pegasus_today_kcal", protTotal: "pegasus_today_protein", library: "pegasus_food_library", contacts: "pegasus_contacts" },
-    getFoodLog: (dateStr) => { const k = PegasusStore.keys.foodPrefix + dateStr; try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e) { return []; } },
+    keys: { foodPrefix: "food_log_", library: "pegasus_food_library", contacts: "pegasus_contacts" },
+    getFoodLog: (dateStr) => { try { return JSON.parse(localStorage.getItem(PegasusStore.keys.foodPrefix + dateStr)) || []; } catch(e) { return []; } },
     saveFoodLog: (dateStr, log) => localStorage.setItem(PegasusStore.keys.foodPrefix + dateStr, JSON.stringify(log))
 };
 
@@ -258,7 +253,10 @@ const PegasusCloud = {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest?t=${Date.now()}`, { 
                 headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } 
             });
-            const data = (await res.json()).record;
+            if (!res.ok) throw new Error("Network response was not ok");
+            const raw = await res.json();
+            const data = raw.record || raw;
+            
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
             if(data.peg_contacts) localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(data.peg_contacts));
@@ -266,9 +264,17 @@ const PegasusCloud = {
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
             if(data.food_library) localStorage.setItem(PegasusStore.keys.library, JSON.stringify(data.food_library));
             if(data.all_food_logs) Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
-            PegasusCloud.hasSuccessfullyPulled = true; setSyncStatus('online');
-        } catch(e) { setSyncStatus('offline'); }
-        finally { window.PegasusDiet?.updateUI(); window.PegasusInventory?.updateUI(); loadSpecs(); }
+            
+            PegasusCloud.hasSuccessfullyPulled = true; 
+            setSyncStatus('online');
+            // Refresh Components
+            window.PegasusDiet?.updateUI(); 
+            window.PegasusInventory?.updateUI(); 
+            loadSpecs();
+        } catch(e) { 
+            console.error("Cloud Pull Error:", e);
+            setSyncStatus('offline'); 
+        }
     },
     push: async () => {
         if (!isUnlocked || !PegasusCloud.hasSuccessfullyPulled) return;
@@ -298,7 +304,6 @@ const PegasusCloud = {
     }
 };
 
-// 3. SHARED UI HELPERS
 function bindCopy(id, val) { 
     const el = document.getElementById(id); if (!el) return; 
     el.value = val || ""; 
@@ -326,16 +331,14 @@ function updateMuscleUI() {
     }).join('');
 }
 
-function loadSpecs() { 
-    window.PegasusProfile?.load();
-    window.PegasusCar?.load();
-}
+function loadSpecs() { window.PegasusProfile?.load(); window.PegasusCar?.load(); }
 
 function setSyncStatus(s) { 
     const e = document.getElementById("sync-indicator"); 
     if(!e) return;
-    e.textContent = s.toUpperCase(); 
-    e.style.color = s==='online'?'#00ff41':s==='offline'?'#ff4444':'#00bcd4'; 
+    if (s === 'online') { e.textContent = "ONLINE"; e.style.color = "#00ff41"; }
+    else if (s === 'offline') { e.textContent = "OFFLINE"; e.style.color = "#ff4444"; }
+    else { e.textContent = s.toUpperCase(); e.style.color = "#00bcd4"; }
 }
 
 function attemptVaultUnlock() { 
@@ -374,7 +377,6 @@ function importData(e) {
     reader.readAsText(e.target.files[0]);
 }
 
-// 🚀 INITIALIZATION
 window.onload = () => { 
     const pin = localStorage.getItem("pegasus_vault_pin"); 
     if(pin) PegasusCloud.unlock(pin); else document.getElementById("pinModal").style.display="flex"; 
