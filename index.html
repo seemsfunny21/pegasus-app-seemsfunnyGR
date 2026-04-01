@@ -361,8 +361,9 @@ document.getElementById('btnPreviewUI').addEventListener('click', () => {
 });
 </script>
 
-   // αυτό είναι το αρχείο για να φορτώνει η σελίδα τοπικά 
+
     <script>
+           // αυτό είναι το αρχείο για να φορτώνει η σελίδα τοπικά 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then((reg) => {
