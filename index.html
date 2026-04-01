@@ -302,41 +302,19 @@
         </div>
     </div>
 
-<script>
-    function attemptVaultUnlock() {
-        const pin = document.getElementById("pinInput").value;
-        if (!pin) return;
-        
-        if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
-            document.getElementById("pinModal").style.display = "none";
-            const vaultBtn = document.getElementById("btnMasterVault");
-            if(vaultBtn) vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-        } else {
-            document.getElementById("pinError").textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN";
-            document.getElementById("pinInput").value = "";
-        }
-    }
-
-    function skipVault() {
-        document.getElementById("pinModal").style.display = "none";
-    }
-</script>
 <script src="manifest.js"></script>
 <script src="data.js"></script>
 <script src="settings.js"></script>
 <script src="optimizer.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
 <script src="weather.js"></script>
 <script src="weatherHandler.js"></script>
 <script src="backup.js"></script>
 <script src="inventoryHandler.js"></script>
 <script src="cloudSync.js"></script>
-
 <script src="food.js"></script> 
 <script src="dietAdvisor.js"></script> 
 <script src="extensions.js"></script>
-
 <script src="ems.js"></script>
 <script src="cardio.js"></script>
 <script src="calendar.js"></script>
@@ -345,25 +323,14 @@
 <script src="achievements.js"></script>
 <script src="dragDrop.js"></script>
 <script src="reporting.js"></script>
-
 <script src="metabolic.js"></script>
 <script src="app.js"></script> 
 <script src="debug.js"></script>
+
 <script src="progressUI.js?v=8.0"></script>
+
 <script>
-document.getElementById('btnPreviewUI').addEventListener('click', () => {
-    // Δίνουμε 150ms στο Panel να ανοίξει πριν το render
-    setTimeout(() => {
-        if (window.MuscleProgressUI) {
-            window.MuscleProgressUI.render();
-        }
-    }, 150);
-});
-</script>
-
-
-    <script>
-           // αυτό είναι το αρχείο για να φορτώνει η σελίδα τοπικά 
+// 🛡️ OFFLINE VAULT PROTOCOL
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then((reg) => {
@@ -395,12 +362,12 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// 4. UI RENDER TRIGGER (Preview Button)
+// 📊 UI RENDER TRIGGER (Μία φορά μόνο!)
 document.getElementById('btnPreviewUI').addEventListener('click', () => {
     setTimeout(() => {
         if (window.MuscleProgressUI) {
             window.MuscleProgressUI.render();
-            console.log("📊 UI Module: Modular Render Triggered.");
+            console.log("📊 UI Module: Render Executed.");
         }
     }, 150);
 });
