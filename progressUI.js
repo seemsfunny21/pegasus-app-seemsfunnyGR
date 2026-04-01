@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v6.7 (ZERO-LATENCY EDITION)
-   Protocol: Strict Data Analyst - Instant Render & Force Hash Bypass
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.0 (STABLE DOM ALIGNMENT)
+   Protocol: Strict Data Analyst - Independent Container Logic
    ========================================================================== */
 
 window.MuscleProgressUI = {
@@ -8,14 +8,13 @@ window.MuscleProgressUI = {
 
     init() {
         this.checkWeeklyReset();
-        // 1. Άμεση εκτέλεση κατά το initialization
-        this.render(true); 
+        // Εκτέλεση με μικρή καθυστέρηση για να προλάβει το DOM
+        setTimeout(() => this.render(true), 500);
         
-        // 2. Μείωση κύκλου στα 2 δευτερόλεπτα για πιο "ζωντανό" UI
         setInterval(() => {
             this.checkWeeklyReset();
             this.render();
-        }, 2000);
+        }, 3000);
     },
 
     calculateStats() {
@@ -32,43 +31,38 @@ window.MuscleProgressUI = {
     },
 
     render(force = false) {
-        const container = document.getElementById('previewContent') || document.querySelector('.daily-program-container');
+        // 🎯 ΣΤΟΧΕΥΣΗ ΣΤΟ ΑΥΣΤΗΡΟ CONTAINER (Όχι στο previewContent)
+        const container = document.getElementById('muscleProgressContainer');
         if (!container) return;
 
         const stats = this.calculateStats();
         const currentDataHash = JSON.stringify(stats);
 
-        // 3. Παράκαμψη ελέγχου αν ζητηθεί Force Render (από app.js ή init)
         if (!force && this.lastDataHash === currentDataHash) return; 
         this.lastDataHash = currentDataHash;
 
-        const oldWrapper = document.getElementById('temp-progress-wrapper');
-        if (oldWrapper) oldWrapper.remove();
-
         const pegasusGreen = "#4CAF50";
-        let htmlString = `<div id="muscle-progress-section" style="width: 100%; background: #070707; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #4CAF50; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-            <h3 style="color:#4CAF50; text-align:center; font-size:12px; margin-bottom:15px; text-transform:uppercase; margin-top:0; letter-spacing:1px;">Weekly Muscle Coverage</h3>`;
+        let htmlString = `<div style="width: 100%; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; box-sizing: border-box;">
+            <h3 style="color:${pegasusGreen}; text-align:center; font-size:11px; margin-bottom:12px; text-transform:uppercase; margin-top:0; letter-spacing:1px; font-weight:900;">Weekly Muscle Coverage</h3>`;
         
         stats.forEach(s => {
             const isDone = s.percent >= 100;
             const diff = s.target - s.done;
-            htmlString += `<div style="margin-bottom: 12px; width: 100%;">
-                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:4px; color:#aaa; font-weight:bold;">
+            htmlString += `<div style="margin-bottom: 10px; width: 100%;">
+                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px; color:#eee; font-weight:bold;">
                     <span>${s.name.toUpperCase()}</span>
-                    <span>${s.done}/${s.target} <span style="color:${pegasusGreen};">${isDone ? "🎯 OPTIMIZED" : `NEED ${diff}`}</span></span>
+                    <span>${s.done}/${s.target} <span style="color:${pegasusGreen};">${isDone ? "🎯 OPTIMIZED" : ""}</span></span>
                 </div>
                 <div style="width:100%; height:6px; background:#111; border-radius:3px; overflow:hidden; border:1px solid #222;">
-                    <div style="width:${s.percent}%; height:100%; background:${pegasusGreen}; box-shadow: 0 0 8px ${pegasusGreen}66; transition: width 0.8s ease-in-out;"></div>
+                    <div style="width:${s.percent}%; height:100%; background:${pegasusGreen}; box-shadow: 0 0 8px ${pegasusGreen}88; transition: width 0.8s ease-in-out;"></div>
                 </div>
             </div>`;
         });
         htmlString += `</div>`;
 
-        const tempDiv = document.createElement('div');
-        tempDiv.id = "temp-progress-wrapper";
-        tempDiv.style.width = "100%";
-        tempDiv.innerHTML = htmlString;
-        container.prepend(tempDiv);
+        // ⚡ INSTANT INJECTION
+        container.innerHTML = htmlString;
+        container.style.display = "block";
     },
 
     checkWeeklyReset() {
@@ -76,6 +70,7 @@ window.MuscleProgressUI = {
         const now = new Date();
         const todayStr = now.toDateString();
 
+        // Reset κάθε Δευτέρα
         if (now.getDay() === 1 && lastResetDate !== todayStr) {
             const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
@@ -86,6 +81,9 @@ window.MuscleProgressUI = {
     }
 };
 
-window.addEventListener('load', () => {
-    if (window.MuscleProgressUI) window.MuscleProgressUI.init();
-});
+// Initialization
+if (document.readyState === 'complete') {
+    window.MuscleProgressUI.init();
+} else {
+    window.addEventListener('load', () => window.MuscleProgressUI.init());
+}
