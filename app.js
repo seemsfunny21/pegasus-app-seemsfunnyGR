@@ -676,19 +676,21 @@ function finishWorkout() {
     }, 4000); // Μειωμένο delay για ταχύτερη απόκριση
 }
 
-/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.6) ===== */
+/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.7) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
+    // 1. Καθαρισμός ονόματος και αναγνώριση συνθηκών
     const currentDay = activeBtn.textContent.trim().split(' ')[0];
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
+    // 2. Ανάκτηση δεδομένων προγράμματος
     let rawData = (typeof window.calculateDailyProgram !== 'undefined') ? 
                   window.calculateDailyProgram(currentDay, isRainy) : 
                   ((window.program[currentDay]) ? [...window.program[currentDay]] : []);
 
-    // Spillover Logic
+    // 3. Spillover Logic (Κυριακή -> Παρασκευή)
     if (currentDay === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
         const bonus = window.program["Κυριακή"]
             .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
@@ -696,26 +698,32 @@ function openExercisePreview() {
         rawData = [...rawData, ...bonus];
     }
 
+    // 4. Εφαρμογή Pegasus Optimizer
     const dayExercises = window.PegasusOptimizer ? window.PegasusOptimizer.apply(currentDay, rawData) : 
                          rawData.map(e => ({ ...e, adjustedSets: e.sets }));
 
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
-    const muscleContainer = document.getElementById('muscleProgressContainer'); // 🛡️ CRITICAL TARGET
+    const muscleContainer = document.getElementById('muscleProgressContainer'); 
 
     if (!panel || !content) return;
 
+    // 5. Εμφάνιση Panel και Καθαρισμός
     panel.style.display = 'block'; 
     content.innerHTML = ''; 
 
-    // --- 📊 MUSCLE BARS RENDER (STRICT SEQUENCE) ---
+    // --- 📊 MUSCLE BARS RENDER (STRICT MODULAR BRIDGE) ---
     if (window.MuscleProgressUI && muscleContainer) { 
-        muscleContainer.innerHTML = ''; // Καθαρισμός πριν το νέο render
-        window.MuscleProgressUI.lastDataHash = null;
-        window.MuscleProgressUI.render(muscleContainer); // 🎯 Στόχευση στο σωστό div
+        // Μικρό timeout για να προλάβει το Panel να γίνει ορατό (Reflow)
+        setTimeout(() => {
+            muscleContainer.innerHTML = ''; 
+            window.MuscleProgressUI.lastDataHash = null; // Force Render
+            window.MuscleProgressUI.render(muscleContainer); 
+            console.log("📊 Pegasus Bridge: Muscle Bars Synchronized.");
+        }, 50);
     }
 
-    // --- 🎯 IMAGE MAPPING ---
+    // --- 🎯 SURGICAL IMAGE MAPPING ---
     const nameMapping = {
         "Seated Chest Press": "chestpress",
         "Pec Deck Flys": "chestflys",
@@ -743,16 +751,17 @@ function openExercisePreview() {
         "Warmup": "warmup"
     };
 
+    // 6. Δημιουργία Exercise Cards
     dayExercises.filter(ex => (ex.adjustedSets || ex.sets) > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
         let imgBase = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
         
-        // 🛡️ Error Shield: Δοκιμή PNG, αν αποτύχει Placeholder
+        // Καθορισμός Extension
         const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
 
         content.innerHTML += `
             <div class="preview-item">
-                <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';">
+                <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';" alt="${cleanName}">
                 <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
             </div>
         `;
