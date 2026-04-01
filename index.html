@@ -388,5 +388,51 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
+
+    <script>
+/* ==========================================================================
+   PEGASUS INLINE RENDERER - v7.5 (FINAL VERSION)
+   ========================================================================== */
+window.forcePegasusRender = function() {
+    const container = document.getElementById('muscleProgressContainer');
+    if (!container) return;
+
+    // Data Extraction
+    const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 20, "Ώμοι": 20, "Κορμός": 15 };
+
+    let html = `<div style="padding:10px; background:rgba(0,255,65,0.03); border:1px solid #4CAF50; border-radius:10px;">
+                <h4 style="color:#4CAF50; font-size:11px; text-align:center; margin:0 0 10px 0; letter-spacing:1px;">WEEKLY MUSCLE COVERAGE</h4>`;
+
+    const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+    
+    groups.forEach(m => {
+        const done = parseInt(history[m]) || 0;
+        const target = targets[m];
+        const percent = Math.min(100, Math.round((done / target) * 100));
+        
+        html += `
+            <div style="margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; color:#eee; font-size:10px; margin-bottom:2px; font-weight:bold;">
+                    <span>${m.toUpperCase()}</span>
+                    <span>${done}/${target}</span>
+                </div>
+                <div style="width:100%; height:6px; background:#111; border-radius:3px; overflow:hidden; border:1px solid #222;">
+                    <div style="width:${percent}%; height:100%; background:#4CAF50; box-shadow:0 0 8px #4CAF50; transition:width 0.5s;"></div>
+                </div>
+            </div>`;
+    });
+    html += `</div>`;
+    
+    container.innerHTML = html;
+    container.style.display = "block";
+    console.log("🚀 PEGASUS: Inline Render Executed.");
+};
+
+// Σύνδεση με το κουμπί Προεπισκόπησης
+document.getElementById('btnPreviewUI').addEventListener('click', () => {
+    setTimeout(window.forcePegasusRender, 100);
+});
+</script>
 </body>
 </html>
