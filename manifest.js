@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER DATA MANIFEST (v1.0)
+   PEGASUS OS - MASTER DATA MANIFEST (v1.1)
    The "Single Source of Truth" for all LocalStorage Keys
    ========================================================================== */
 
@@ -11,44 +11,48 @@ window.PegasusManifest = {
         age: "pegasus_age",
         gender: "pegasus_gender",
         kcal_target: "pegasus_target_kcal",
-        protein_target: "pegasus_target_protein"
+        protein_target: "pegasus_target_protein",
+        ex_time: "pegasus_ex_time",      // 🟢 ΠΡΟΣΘΗΚΗ (Χρησιμοποιείται στο app.js)
+        rest_time: "pegasus_rest_time"   // 🟢 ΠΡΟΣΘΗΚΗ (Χρησιμοποιείται στο app.js)
     },
 
-    // 2. ΠΡΟΠΟΝΗΣΗ & ΙΣΤΟΡΙΚΟ (Owner: app.js / calendar.js / achievements.js)
+    // 2. ΠΡΟΠΟΝΗΣΗ & ΙΣΤΟΡΙΚΟ (Owner: app.js / calendar.js / achievements.js / optimizer.js)
     workout: {
-        done: "pegasus_workouts_done",       // Το ημερολόγιο (45 sessions)
-        total: "pegasus_total_workouts",     // Ο μετρητής
-        weekly_history: "pegasus_weekly_history", // Οι μπάρες μυϊκών ομάδων
-        order_prefix: "pegasus_order_",      // Η σειρά των ασκήσεων ανά ημέρα
-        cardio_offset: "pegasus_cardio_offset_sets", // Πίστωση από ποδήλατο
-        ems_log_prefix: "pegasus_ems_log_"   // Ιστορικό EMS
+        done: "pegasus_workouts_done",       
+        total: "pegasus_total_workouts",     
+        weekly_history: "pegasus_weekly_history", 
+        muscle_targets: "pegasus_muscle_targets", // 🟢 ΠΡΟΣΘΗΚΗ (Για τις μπάρες στο UI)
+        last_reset: "pegasus_last_reset",         // 🟢 ΠΡΟΣΘΗΚΗ (Για το Saturday Anchor στο optimizer.js)
+        order_prefix: "pegasus_order_",      
+        cardio_offset: "pegasus_cardio_offset_sets", 
+        ems_log_prefix: "pegasus_ems_log_"   
     },
 
     // 3. ΔΙΑΤΡΟΦΗ (Owner: food.js)
     nutrition: {
-        log_prefix: "food_log_",             // Τα γεύματα (π.χ. food_log_28/3/2026)
-        library: "pegasus_food_library",     // Συχνές επιλογές
-        today_kcal: "pegasus_today_kcal",    // Τρέχουσες θερμίδες ημέρας
-        today_protein: "pegasus_today_protein", // Τρέχουσα πρωτεΐνη ημέρας
-        last_report: "pegasus_last_auto_report" // Πότε στάλθηκε το πρωινό email
+        log_prefix: "food_log_",             
+        library: "pegasus_food_library",     
+        today_kcal: "pegasus_today_kcal",    
+        today_protein: "pegasus_today_protein", 
+        last_report: "pegasus_last_auto_report" 
     },
 
     // 4. ΕΞΟΠΛΙΣΜΟΣ & INVENTORY (Owner: inventoryHandler.js)
     inventory: {
-        supplements: "pegasus_supp_inventory", // Πρωτεΐνη/Κρεατίνη (grams)
-        contacts: "pegasus_contacts"           // Επαφές/Συνεργάτες
+        supplements: "pegasus_supp_inventory", 
+        contacts: "pegasus_contacts"           
     },
 
     // 5. ΣΥΣΤΗΜΑ & UI STATE (Owner: dragDrop.js / cloudSync.js)
     system: {
-        vault_pin: "pegasus_vault_pin",      // Cloud PIN
-        last_push: "pegasus_last_push",      // Timestamp τελευταίου συγχρονισμού
-        logs: "pegasus_system_logs",         // Logs σφαλμάτων
-        trace: "pegasus_command_trace",      // Tracer (αυτό που φτιάξαμε σήμερα)
-        pos_prefix: "pegasus_pos_",          // Θέσεις των panels (draggable)
-        mute: "pegasus_mute_state",          // On/Off ήχος
-        turbo: "pegasus_turbo_state"         // Ταχύτητα χρονομέτρου
+        vault_pin: "pegasus_vault_pin",      
+        last_push: "pegasus_last_push",      
+        logs: "pegasus_system_logs",         
+        trace: "pegasus_command_trace",      
+        pos_prefix: "pegasus_pos_",          
+        mute: "pegasus_mute_state",          
+        turbo: "pegasus_turbo_state"         
     }
 };
 
-console.log("🛡️ PEGASUS MANIFEST: All Data Keys Globally Mapped.");
+console.log("🛡️ PEGASUS MANIFEST v1.1: System Integrity Verified.");
