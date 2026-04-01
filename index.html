@@ -301,7 +301,31 @@
             <button id="btnCloseEMS" style="flex: 1; background: #333; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">ΑΚΥΡΟ</button>
         </div>
     </div>
+<script>
+    function attemptVaultUnlock() {
+        const pin = document.getElementById("pinInput").value;
+        if (!pin) return;
+        
+        // Σύνδεση με το cloudSync.js
+        if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
+            document.getElementById("pinModal").style.display = "none";
+            const vaultBtn = document.getElementById("btnMasterVault");
+            if(vaultBtn) {
+                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+                vaultBtn.style.borderColor = "#00ff41";
+                vaultBtn.style.color = "#00ff41";
+            }
+        } else {
+            const errorDiv = document.getElementById("pinError");
+            if(errorDiv) errorDiv.textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN";
+            document.getElementById("pinInput").value = "";
+        }
+    }
 
+    function skipVault() {
+        document.getElementById("pinModal").style.display = "none";
+    }
+</script>
 <script src="manifest.js"></script>
 <script src="data.js"></script>
 <script src="settings.js"></script>
