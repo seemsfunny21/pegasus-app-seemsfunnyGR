@@ -676,21 +676,19 @@ function finishWorkout() {
     }, 4000); // Μειωμένο delay για ταχύτερη απόκριση
 }
 
-/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.5) ===== */
+/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.6) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
-    // Καθαρισμός ονόματος από emojis για σωστό matching
     const currentDay = activeBtn.textContent.trim().split(' ')[0];
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
-    // Ανάκτηση δεδομένων βάσει ημέρας και καιρού
     let rawData = (typeof window.calculateDailyProgram !== 'undefined') ? 
                   window.calculateDailyProgram(currentDay, isRainy) : 
                   ((window.program[currentDay]) ? [...window.program[currentDay]] : []);
 
-    // Ενσωμάτωση Spillover Logic (Κυριακή -> Παρασκευή) στην προεπισκόπηση
+    // Spillover Logic
     if (currentDay === "Παρασκευή" && !isRainy && window.program["Κυριακή"]) {
         const bonus = window.program["Κυριακή"]
             .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
@@ -698,75 +696,63 @@ function openExercisePreview() {
         rawData = [...rawData, ...bonus];
     }
 
-    // Εφαρμογή Optimizer
     const dayExercises = window.PegasusOptimizer ? window.PegasusOptimizer.apply(currentDay, rawData) : 
                          rawData.map(e => ({ ...e, adjustedSets: e.sets }));
 
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
+    const muscleContainer = document.getElementById('muscleProgressContainer'); // 🛡️ CRITICAL TARGET
+
     if (!panel || !content) return;
 
     panel.style.display = 'block'; 
     content.innerHTML = ''; 
 
-    // Ενημέρωση Muscle Progress UI
-    if (window.MuscleProgressUI) { 
+    // --- 📊 MUSCLE BARS RENDER (STRICT SEQUENCE) ---
+    if (window.MuscleProgressUI && muscleContainer) { 
+        muscleContainer.innerHTML = ''; // Καθαρισμός πριν το νέο render
         window.MuscleProgressUI.lastDataHash = null;
-        window.MuscleProgressUI.render(); 
+        window.MuscleProgressUI.render(muscleContainer); // 🎯 Στόχευση στο σωστό div
     }
 
-    // --- 🎯 SURGICAL IMAGE MAPPING (Συγχρονισμός με data.js v10.3) ---
+    // --- 🎯 IMAGE MAPPING ---
     const nameMapping = {
-        // ΣΤΗΘΟΣ
         "Seated Chest Press": "chestpress",
         "Pec Deck Flys": "chestflys",
         "Pushups": "pushups",
-
-        // ΠΛΑΤΗ
         "Lat Pulldown": "latpulldowns",
         "Seated Row": "lowrowsseated",
         "Bent Over Row": "bentoverrows",
         "One Arm Pulldown": "onearmpulldowns",
         "EMS Training": "ems",
-
-        // ΩΜΟΙ
         "Upright Row": "uprightrows",
         "Lateral Raises": "uprightrows",
         "Shoulder Shrugs": "uprightrows",
-
-        // ΧΕΡΙΑ
         "Standing Bicep Curl": "bicepcurls",
-        "Triceps Pushdown": "triceppulldowns", // Match με triceppulldowns.png
+        "Triceps Pushdown": "triceppulldowns",
         "Preacher Curl": "preacherbicepcurls",
-
-        // ΚΟΡΜΟΣ
         "Ab Crunch Cable": "abcrunches",
         "Plank": "plank",
         "Reverse Crunch": "reversecrunch",
         "Leg Raise Hip Lift": "legraisehiplift",
-
-        // ΠΟΔΙΑ
         "Leg Extension": "legextensions",
-        "Standing Leg Curl": "glutekickbacks", // Visual Proxy
+        "Standing Leg Curl": "glutekickbacks",
         "Glute Kickbacks": "glutekickbacks",
         "Cycling": "cycling",
-
-        // OTHER
         "Stretching": "stretching",
         "Warmup": "warmup"
     };
 
     dayExercises.filter(ex => (ex.adjustedSets || ex.sets) > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
-        // Αντιστοίχιση στο mapping ή μετατροπή σε lowercase χωρίς κενά αν δεν υπάρχει στη λίστα
-        let imgName = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
+        let imgBase = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
         
-        // Καθορισμός επέκτασης αρχείου (Cycling = .jpg, τα υπόλοιπα .png)
-        let ext = (imgName === "cycling") ? ".jpg" : ".png";
+        // 🛡️ Error Shield: Δοκιμή PNG, αν αποτύχει Placeholder
+        const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
 
         content.innerHTML += `
             <div class="preview-item">
-                <img src="images/${imgName}${ext}" onerror="this.src='images/placeholder.jpg'">
+                <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';">
                 <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
             </div>
         `;
