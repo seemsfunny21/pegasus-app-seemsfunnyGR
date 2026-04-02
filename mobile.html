@@ -339,22 +339,23 @@ function refreshUIComponent(id) {
 }
 
 const PegasusCloud = {
+    isUnlocked: false, // 🟢 ΠΡΟΣΘΗΚΗ: Η κατάσταση κλειδώματος ανήκει εδώ
     hasSuccessfullyPulled: false,
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
     
     unlock: (p) => { 
         if (btoa(p) === "MjM3NQ==") { 
-            isUnlocked = true; 
+            PegasusCloud.isUnlocked = true; // 🟢 FIX: Αναφορά στο σωστό object
             localStorage.setItem("pegasus_vault_pin", p); 
             PegasusCloud.pull(true); 
-            if (!window.pegasusSyncInterval) window.pegasusSyncInterval = setInterval(() => { if (isUnlocked) PegasusCloud.pull(true); }, 30000);
+            if (!window.pegasusSyncInterval) window.pegasusSyncInterval = setInterval(() => { if (PegasusCloud.isUnlocked) PegasusCloud.pull(true); }, 30000);
             return true; 
         } 
         return false; 
     },
 
     pull: async (silent = false) => {
-        if (!isUnlocked) return;
+        if (!PegasusCloud.isUnlocked) return; // 🟢 FIX: Reference check
         if (!silent) setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest?t=${Date.now()}`, { 
@@ -364,7 +365,6 @@ const PegasusCloud = {
             const raw = await res.json();
             const data = raw.record || raw;
             
-            // 📊 Data Integrity Mapping
             const map = {
                 'weekly_history': 'pegasus_weekly_history', 'muscle_targets': 'pegasus_muscle_targets',
                 'supp_inventory': 'pegasus_supp_inventory', 'peg_contacts': 'pegasus_contacts',
@@ -383,19 +383,17 @@ const PegasusCloud = {
 
             PegasusCloud.hasSuccessfullyPulled = true; 
             setSyncStatus('online');
-            
-            // 🛡️ Fail-Safe UI Triggers (Δεν κρασάρουν αν τα αρχεία αργούν)
             if (typeof refreshAllUI === "function") refreshAllUI();
             
         } catch(e) { 
-            console.error("Critical Sync Error:", e);
+            console.error("Critical Pull Error:", e);
             setSyncStatus('offline'); 
         }
     },
 
-    push: async () => {
-        if (!isUnlocked || !PegasusCloud.hasSuccessfullyPulled) return;
-        setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
+    push: async (silent = true) => { // 🟢 FIX: Προσθήκη default παραμέτρου silent
+        if (!PegasusCloud.isUnlocked || !PegasusCloud.hasSuccessfullyPulled) return;
+        if (!silent) setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         
         const allLogs = {}; 
         for (let i = 0; i < localStorage.length; i++) { 
@@ -429,7 +427,10 @@ const PegasusCloud = {
                 body: JSON.stringify(payload) 
             }); 
             if (res.ok) setSyncStatus('online'); else throw new Error("Push Fail");
-        } catch(e) { setSyncStatus('offline'); }
+        } catch(e) { 
+            console.error("Critical Push Error:", e);
+            setSyncStatus('offline'); 
+        }
     }
 };
 
