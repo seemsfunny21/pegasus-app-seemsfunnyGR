@@ -1,12 +1,11 @@
 /* ==========================================================================
-   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.0)
+   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.1 - MOBILE ALIGNED)
    Protocol: Daily Weight Logging & Moving Average Calculation
-   Status: OPERATIONAL | INTEGRATED WITH USER SETTINGS
    ========================================================================== */
 
 window.PegasusWeight = {
-    // 1. Καταγραφή βάρους για τη σημερινή ημερομηνία
-    logWeight: function(val) {
+    // 1. Καταγραφή βάρους (Συμβατό με το onclick="window.PegasusWeight?.save")
+    save: function(val) {
         const weight = parseFloat(val);
         if (isNaN(weight) || weight <= 0) return;
 
@@ -16,41 +15,45 @@ window.PegasusWeight = {
         let history = JSON.parse(localStorage.getItem('pegasus_weight_history') || "{}");
         history[dateKey] = weight;
         
-        // Αποθήκευση ιστορικού
         localStorage.setItem('pegasus_weight_history', JSON.stringify(history));
+        localStorage.setItem('pegasus_weight', weight);
         
-        // Ενημέρωση του τρέχοντος βάρους στο κεντρικό Manifest Key
-        localStorage.setItem(window.PegasusManifest?.user.weight || 'pegasus_weight', weight);
-        
-        console.log(`⚖️ PEGASUS DATA: Weight logged for ${dateKey}: ${weight}kg`);
+        console.log(`⚖️ PEGASUS DATA: Weight logged: ${weight}kg`);
         
         if (window.PegasusCloud) window.PegasusCloud.push(true);
-        this.updateWeightUI();
+        this.updateUI();
     },
 
-    // 2. Υπολογισμός μέσου όρου τελευταίων 7 ημερών
+    // 2. Υπολογισμός μέσου όρου
     getWeeklyAverage: function() {
         const history = JSON.parse(localStorage.getItem('pegasus_weight_history') || "{}");
-        const dates = Object.keys(history).sort().reverse(); // Από το πιο πρόσφατο
+        const weights = Object.values(history);
         
-        if (dates.length === 0) return null;
+        if (weights.length === 0) return null;
 
-        const last7 = dates.slice(0, 7);
-        const sum = last7.reduce((acc, date) => acc + history[date], 0);
-        return (sum / last7.length).toFixed(2);
+        const last7 = weights.slice(-7);
+        const sum = last7.reduce((acc, val) => acc + val, 0);
+        return (sum / last7.length).toFixed(1);
     },
 
-    // 3. Ενημέρωση του UI (Αν υπάρχει πεδίο στην οθόνη)
-    updateWeightUI: function() {
+    // 3. Ενημέρωση UI (Συμβατό με το refreshAllUI -> window.PegasusWeight?.updateUI)
+    updateUI: function() {
         const avg = this.getWeeklyAverage();
-        const display = document.getElementById('weeklyWeightAvg');
+        const display = document.getElementById('mobileWeightAvg');
+        const inputEl = document.getElementById('mobileWeightInput');
+        const history = JSON.parse(localStorage.getItem('pegasus_weight_history') || "{}");
+        const weights = Object.values(history);
+
         if (display && avg) {
-            display.textContent = `Μ.Ο. Εβδομάδας: ${avg} kg`;
+            display.textContent = `M.O. Εβδομάδας: ${avg} kg`;
+        }
+        
+        // Ενημέρωση του input με το τελευταίο βάρος αν είναι άδειο
+        if (inputEl && weights.length > 0 && !inputEl.value) {
+            inputEl.value = weights[weights.length - 1];
         }
     }
 };
 
-// Αυτόματη ενημέρωση κατά τη φόρτωση
-window.addEventListener('load', () => {
-    if (window.PegasusWeight) window.PegasusWeight.updateWeightUI();
-});
+// Αρχική ενημέρωση
+console.log("⚖️ PEGASUS WEIGHT: Module Operational & Aligned.");
