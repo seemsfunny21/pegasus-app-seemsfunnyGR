@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v15.4</title>
+    <title>Pegasus Mobile v15.6</title>
 
     <script>
         (function() {
@@ -102,7 +102,7 @@
 <body>
 
     <div id="pinModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="background:#0a0a0a; border:2px solid #00ff41; padding:40px 30px; border-radius:30px; text-align:center; width:85%; max-width: 320px; box-shadow: 0 0 50px rgba(0,255,65,0.15);">
+        <div style="background:#0a0a0a; border:1px solid #00ff41; padding:40px 30px; border-radius:30px; text-align:center; width:85%; max-width: 320px; box-shadow: 0 0 50px rgba(0,255,65,0.15);">
             <div style="font-size:35px; margin-bottom:15px;">🛡️</div>
             <div style="color:#00ff41; font-weight:900; margin-bottom:5px; letter-spacing:1px; font-size: 20px;">PEGASUS OS</div>
             <div style="color:#555; font-size: 10px; font-weight: 800; margin-bottom: 25px; letter-spacing: 2px;">SECURE AUTHENTICATION</div>
@@ -118,46 +118,36 @@
     <div id="home" class="view active">
         <div class="header"><h1>PEGASUS</h1><p>Tactical Data Interface</p></div>
         
-<div class="grid">
-    <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
-    <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
-    
-    <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
-    <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
-    
-    <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
-    <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
-    
-    <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
-    <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
+        <div class="grid">
+            <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
+            <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
+            <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
+            <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
+            <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
+            <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
+            <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
+            <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
 
-    <div class="tile" onclick="openView('parking_panel')">
-        <span class="tile-icon">🅿️</span>
-        <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
-    </div>
+            <div class="tile" onclick="openView('parking_panel')">
+                <span class="tile-icon">🅿️</span>
+                <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
+            </div>
 
-    <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
-        <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
-            <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
-                <span>WHEY</span><span id="homeProtTxt" style="color: var(--main);">--%</span>
+            <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;"><span>WHEY</span><span id="homeProtTxt" style="color: var(--main);">--%</span></div>
+                    <div class="bar-bg" style="height: 3px; margin: 0;"><div id="homeProtBar" class="bar-fill"></div></div>
+                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;"><span>CREA</span><span id="homeCreaTxt" style="color: var(--main);">--%</span></div>
+                    <div class="bar-bg" style="height: 3px; margin: 0;"><div id="homeCreaBar" class="bar-fill"></div></div>
+                </div>
             </div>
-            <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
-                <div id="homeProtBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
-            </div>
-            <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
-                <span>CREA</span><span id="homeCreaTxt" style="color: var(--main);">--%</span>
-            </div>
-            <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
-                <div id="homeCreaBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
+
+            <div class="tile" onclick="openView('settings_panel')" style="grid-column: span 2; min-height: 55px; border-color: var(--main);">
+                <span class="tile-icon" style="font-size: 20px;">⚙️</span>
+                <span class="tile-label" style="color: var(--main); font-weight: 900;">ΡΥΘΜΙΣΕΙΣ ΣΥΣΤΗΜΑΤΟΣ & ΒΑΡΟΣ</span>
             </div>
         </div>
     </div>
-
-    <div class="tile" onclick="openView('settings_panel')" style="grid-column: span 2;">
-        <span class="tile-icon" style="font-size: 20px;">⚙️</span>
-        <span class="tile-label" style="color: var(--main); font-weight: 900;">ΡΥΘΜΙΣΕΙΣ ΣΥΣΤΗΜΑΤΟΣ & ΒΑΡΟΣ</span>
-    </div>
-</div>
 
     <div id="diet" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
@@ -184,7 +174,6 @@
     <div id="cardio" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">ΚΑΤΑΓΡΑΦΗ ΑΕΡΟΒΙΑΣ</div>
-        <div class="input-label">ΔΙΑΔΡΟΜΗ / ΤΥΠΟΣ</div>
         <input type="text" id="cdRoute" placeholder="π.χ. ΠΟΔΗΛΑΣΙΑ">
         <div class="compact-grid">
             <div><div class="input-label">ΧΙΛΙΟΜΕΤΡΑ</div><input type="number" id="cdKm" placeholder="Km" step="0.1" inputmode="decimal"></div>
@@ -251,11 +240,11 @@
 
     <div id="supps" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΑΠΟΘΕΜΑ ΣΥΜΠΛΗΡΩΜΑΤΩΝ</div>
+        <div class="section-title">ΑΠΟΘΕΜΑ ΣΥΜΠΛΗΡΩΜΑΩΝ</div>
         <div class="mini-card" style="border-left: 4px solid #00bcd4;">
             <span class="mini-label">ΠΡΩΤΕΪΝΗ WHEY</span>
             <div id="protLevelText" class="mini-val">--- / 2500g</div>
-            <div class="bar-bg"><div id="protBar" class="bar-fill" style="background:#00bcd4;"></div></div>
+            <div class="bar-bg"><div id="protBar" class="bar-fill"></div></div>
             <div class="compact-grid" style="margin-top:15px;">
                 <button class="secondary-btn" onclick="PegasusInventory.consume('prot', 30)">-30g</button>
                 <button class="primary-btn" onclick="PegasusInventory.refill('prot', 2500)">ΑΝΑΠΛΗΡΩΣΗ</button>
@@ -304,7 +293,7 @@
     </div>
 
 <script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER v15.4 ===== */
+/* ===== PEGASUS MOBILE MASTER CONTROLLER v15.6 ===== */
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
@@ -362,7 +351,7 @@ function setSyncStatus(s) {
 
 function attemptVaultUnlock() { 
     const pin = document.getElementById("pinInput").value;
-    if(PegasusCloud.unlock(pin)) { document.getElementById("pinModal").style.display = "none"; } 
+    if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { document.getElementById("pinModal").style.display = "none"; } 
 }
 
 function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); refreshAllUI(); }
@@ -397,14 +386,15 @@ function importData(e) {
 
 window.onload = () => { 
     const pin = localStorage.getItem("pegasus_vault_pin"); 
-    if(pin) PegasusCloud.unlock(pin); else document.getElementById("pinModal").style.display="flex"; 
+    if(pin && window.PegasusCloud) window.PegasusCloud.unlock(pin); 
+    else if (!pin) document.getElementById("pinModal").style.display="flex"; 
     setTimeout(refreshAllUI, 500);
 };
 </script>
 
-<script src="cloudSync.js"></script>
 <script src="manifest.js"></script>
 <script src="data.js"></script>
+<script src="cloudSync.js"></script>
 <script src="car-mobile.js"></script>
 <script src="diet-mobile.js"></script>
 <script src="cardio-mobile.js"></script>
