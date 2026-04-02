@@ -132,7 +132,30 @@ window.updateFoodUI = function() {
     
     updateProgressBars(totalKcal, totalProtein);
     if (typeof window.filterLibrary === "function") window.filterLibrary(); 
-    if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
+    
+    // 🟢 ΑΥΤΟΜΑΤΟ RENDERING ΜΕΝΟΥ (ΚΟΥΚΙ)
+    if (typeof window.renderKoukiMenu === "function") {
+        window.renderKoukiMenu();
+
+        // 🧠 PEGASUS INTELLIGENCE: Ενσωμάτωση Πρότασης Advisor μέσα στο Panel
+        if (window.PegasusDietAdvisor) {
+            const recommendation = window.PegasusDietAdvisor.analyzeAndRecommend();
+            const menuContainer = document.getElementById('koukiQuickMenu');
+            
+            if (menuContainer && recommendation) {
+                const adviceHTML = `
+                    <div id="aiAdvice" style="background: rgba(243, 156, 18, 0.1); border: 1px solid #f39c12; padding: 12px; border-radius: 8px; margin: 15px 0; font-size: 11px; color: #eee; line-height: 1.4;">
+                        <div style="color: #f39c12; font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+                            <span>🧠 PEGASUS ADVISOR</span>
+                        </div>
+                        ${recommendation.msg}
+                    </div>
+                `;
+                // Τοποθέτηση στην αρχή του menu container
+                menuContainer.insertAdjacentHTML('afterbegin', adviceHTML);
+            }
+        }
+    }
 };
 
 window.addFoodItem = function(name, kcal, protein) {
