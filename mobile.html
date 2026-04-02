@@ -217,15 +217,19 @@
         </div>
     </div>
 
-    <div id="car" class="view">
+<div id="car" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ</div>
         <div class="input-label">ΠΙΝΑΚΙΔΑ</div><input type="text" id="carPlate" readonly>
         <div class="input-label">ΜΟΝΤΕΛΟ</div><input type="text" id="carModel" readonly>
         <div class="input-label">VIN (ΠΛΑΙΣΙΟ)</div><input type="text" id="carVin" readonly>
+        
         <div class="section-title" style="margin-top:15px; color: #555;">DATES & SERVICE</div>
         <div class="input-label">ΛΗΞΗ ΑΣΦΑΛΕΙΑΣ</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
+        <div class="input-label">ΛΗΞΗ ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
+        
         <div class="input-label">ΕΠΟΜΕΝΟ SERVICE (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000" readonly>
+        
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
             <button class="primary-btn" onclick="window.PegasusCar?.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
