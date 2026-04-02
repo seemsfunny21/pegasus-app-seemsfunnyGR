@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - CORE SYNC (v14.8 - MAXIMALIST EDITION)
-   Protocol: Strict Data Analyst - Dual Mode Architecture
-   Features: Vehicle Data, Supplement Interceptor, Offline Guard Patch
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v15.5)
+   Protocol: Strict Data Analyst - Maximalist Alignment
+   Features: Unified Desktop/Mobile Sync, Vehicle Data, Parking, Interceptor
    ========================================================================== */
 
 const PegasusCloud = {
@@ -11,16 +11,16 @@ const PegasusCloud = {
     },
     
     isUnlocked: false,
-    hasSuccessfullyPulled: true, // PEGASUS PATCH: Disarmed Guard for Desktop Stability
+    hasSuccessfullyPulled: false, 
     userKey: "",
     syncInterval: null,
 
-    getTodayKey: function() {
+    getTodayKey: () => {
         const d = new Date();
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
-    safeParse: function(key, fallback) {
+    safeParse: (key, fallback) => {
         try {
             const val = localStorage.getItem(key);
             return val ? JSON.parse(val) : fallback;
@@ -49,123 +49,109 @@ const PegasusCloud = {
 
     pull: async function(silent = false) {
         if (!this.isUnlocked) return;
+        if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
+        
         try {
-            const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`, {
                 headers: { 
                     'X-Master-Key': this.userKey, 
                     'X-Bin-Meta': 'false',
                     'Content-Type': 'application/json'
                 }
             });
+            
+            // 🟢 OFFLINE BUG FIX: Απασφάλιση Guard αμέσως μετά την απόκριση
+            if (res.ok) this.hasSuccessfullyPulled = true;
+
             const cloudData = await res.json();
             const cloud = cloudData.record || cloudData;
             
-            const dateStr = this.getTodayKey();
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 console.log("☁️ PEGASUS: New Cloud Data Found. Syncing Full Registry...");
-                let requiresUIReload = false;
 
-                // 1. Core Profile & Stats
-                if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
-                if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
-                if (cloud.weekly_history) {
-                    localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
-                    requiresUIReload = true;
-                }
-                
-                // 2. Inventory & Logistics
-                if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
-                if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
-                
-                // 3. Vehicle & Documents (v1.2 Manifest Alignment)
-                if (cloud.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(cloud.car_dates));
-                if (cloud.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(cloud.car_service));
-                if (cloud.car_specs) localStorage.setItem('pegasus_car_specs', JSON.stringify(cloud.car_specs));
-                
-                // 4. Nutrition Engine
-                if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
-                if (cloud.all_food_logs) {
+                // 📊 Universal Data Mapping (Manifest v1.2 Alignment)
+                const map = {
+                    'weekly_history': 'pegasus_weekly_history',
+                    'muscle_targets': 'pegasus_muscle_targets',
+                    'supp_inventory': 'pegasus_supp_inventory',
+                    'peg_contacts': 'pegasus_contacts',
+                    'car_dates': 'pegasus_car_dates',
+                    'car_service': 'pegasus_car_service',
+                    'car_specs': 'pegasus_car_specs',
+                    'parking_loc': 'pegasus_parking_loc',
+                    'food_library': 'pegasus_food_library',
+                    'peg_stats': 'pegasus_stats'
+                };
+
+                Object.entries(map).forEach(([ck, lk]) => {
+                    if(cloud[ck]) localStorage.setItem(lk, JSON.stringify(cloud[ck]));
+                });
+
+                if(cloud.all_food_logs) {
                     Object.keys(cloud.all_food_logs).forEach(k => {
                         localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
                     });
                 }
 
-                if (cloud.last_update_date === dateStr) {
+                if (cloud.last_update_date === this.getTodayKey()) {
                     localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
                     localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
-                    requiresUIReload = true;
-                }
-
-                // 5. Activity Logs (Cardio & History)
-                if (cloud.cardio_logs) {
-                    Object.keys(cloud.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(cloud.cardio_logs[k])));
-                }
-                if (cloud.history_logs) {
-                    Object.keys(cloud.history_logs).forEach(k => {
-                        let val = cloud.history_logs[k];
-                        localStorage.setItem(k, typeof val === 'string' ? val : JSON.stringify(val));
-                    });
                 }
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
-                // Trigger UI Updates
-                if (requiresUIReload && typeof window.updateFoodUI === "function") window.updateFoodUI();
-                if (typeof window.updateSuppUI === "function") window.updateSuppUI();
+                // 🔄 Smart UI Refresh Logic
+                if (typeof refreshAllUI === "function") refreshAllUI(); // Mobile Hook
+                if (typeof window.updateFoodUI === "function") window.updateFoodUI(); // Desktop Hook
+                if (typeof window.updateSuppUI === "function") window.updateSuppUI(); // Desktop Hook
                 if (window.MuscleProgressUI) window.MuscleProgressUI.render();
             }
-            
-            this.hasSuccessfullyPulled = true; 
+
+            if (typeof setSyncStatus === "function") setSyncStatus('online');
             
         } catch (e) {
-            console.error("❌ PEGASUS Cloud Pull Error:", e);
+            console.error("❌ PEGASUS Pull Error:", e);
+            if (typeof setSyncStatus === "function") setSyncStatus('offline');
         }
     },
 
     push: async function(silent = true) {
         if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
+        if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
 
         const dateStr = this.getTodayKey();
         const syncTimestamp = Date.now();
         
-        const cardioLogs = {};
-        const historyLogs = {};
-        const allFoodLogs = {};
-        
+        const allLogs = {};
         for (let i = 0; i < localStorage.length; i++) {
-            let key = localStorage.key(i);
-            try {
-                if (key.startsWith('cardio_log_')) cardioLogs[key] = JSON.parse(localStorage.getItem(key));
-                if (key.startsWith('pegasus_history_')) historyLogs[key] = JSON.parse(localStorage.getItem(key));
-                if (key.startsWith('pegasus_day_status_')) historyLogs[key] = localStorage.getItem(key);
-                if (key.startsWith('food_log_')) allFoodLogs[key] = JSON.parse(localStorage.getItem(key));
-            } catch(e) {}
+            let k = localStorage.key(i);
+            if (k.startsWith("food_log_")) {
+                try { allLogs[k] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
+            }
         }
 
         const payload = {
-            last_update_date: dateStr, 
-            last_update_ts: syncTimestamp, 
-            kcal: localStorage.getItem("pegasus_today_kcal") || "0", 
-            protein: localStorage.getItem("pegasus_today_protein") || "0", 
-            weekly_history: this.safeParse("pegasus_weekly_history", {}), 
-            food_library: this.safeParse("pegasus_food_library", []), 
+            last_update_date: dateStr,
+            last_update_ts: syncTimestamp,
+            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
+            protein: localStorage.getItem("pegasus_today_protein") || "0",
+            supp_inventory: this.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
+            weekly_history: this.safeParse("pegasus_weekly_history", {}),
             muscle_targets: this.safeParse("pegasus_muscle_targets", {}),
             peg_stats: this.safeParse("pegasus_stats", {}),
-            supp_inventory: this.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
-            peg_contacts: this.safeParse("pegasus_contacts", []),
             car_dates: this.safeParse("pegasus_car_dates", {}),
             car_service: this.safeParse("pegasus_car_service", []),
             car_specs: this.safeParse("pegasus_car_specs", {}),
-            today_food_log: this.safeParse(`food_log_${dateStr}`, []),
-            all_food_logs: allFoodLogs,
-            cardio_logs: cardioLogs,
-            history_logs: historyLogs
+            parking_loc: this.safeParse("pegasus_parking_loc", null),
+            food_library: this.safeParse("pegasus_food_library", []),
+            peg_contacts: this.safeParse("pegasus_contacts", []),
+            all_food_logs: allLogs
         };
 
         try {
-            const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId, {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}`, {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json', 
@@ -174,13 +160,13 @@ const PegasusCloud = {
                 },
                 body: JSON.stringify(payload)
             });
-            
             if (res.ok) {
                 localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
-                if (!silent) console.log("✅ PEGASUS Cloud Sync: Push Success");
+                if (typeof setSyncStatus === "function") setSyncStatus('online');
             }
         } catch (e) {
-            console.error("❌ PEGASUS Cloud Sync: Push Failed", e);
+            console.error("❌ PEGASUS Push Error:", e);
+            if (typeof setSyncStatus === "function") setSyncStatus('offline');
         }
     }
 };
@@ -215,6 +201,7 @@ window.consumeSupp = function(type, amount) {
     }
     
     if (typeof updateSuppUI === "function") updateSuppUI();
+    if (typeof refreshAllUI === "function") refreshAllUI();
     
     setTimeout(() => {
         if (window.PegasusCloud && window.PegasusCloud.hasSuccessfullyPulled) window.PegasusCloud.push();
