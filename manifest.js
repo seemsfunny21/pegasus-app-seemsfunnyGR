@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER DATA MANIFEST (v1.1)
+   PEGASUS OS - MASTER DATA MANIFEST (v1.2)
    The "Single Source of Truth" for all LocalStorage Keys
    ========================================================================== */
 
@@ -12,17 +12,17 @@ window.PegasusManifest = {
         gender: "pegasus_gender",
         kcal_target: "pegasus_target_kcal",
         protein_target: "pegasus_target_protein",
-        ex_time: "pegasus_ex_time",      // 🟢 ΠΡΟΣΘΗΚΗ (Χρησιμοποιείται στο app.js)
-        rest_time: "pegasus_rest_time"   // 🟢 ΠΡΟΣΘΗΚΗ (Χρησιμοποιείται στο app.js)
+        ex_time: "pegasus_ex_time",
+        rest_time: "pegasus_rest_time"
     },
 
-    // 2. ΠΡΟΠΟΝΗΣΗ & ΙΣΤΟΡΙΚΟ (Owner: app.js / calendar.js / achievements.js / optimizer.js)
+    // 2. ΠΡΟΠΟΝΗΣΗ & ΙΣΤΟΡΙΚΟ (Owner: app.js / calendar.js / achievements.js)
     workout: {
         done: "pegasus_workouts_done",       
         total: "pegasus_total_workouts",     
         weekly_history: "pegasus_weekly_history", 
-        muscle_targets: "pegasus_muscle_targets", // 🟢 ΠΡΟΣΘΗΚΗ (Για τις μπάρες στο UI)
-        last_reset: "pegasus_last_reset",         // 🟢 ΠΡΟΣΘΗΚΗ (Για το Saturday Anchor στο optimizer.js)
+        muscle_targets: "pegasus_muscle_targets",
+        last_reset: "pegasus_last_reset",
         order_prefix: "pegasus_order_",      
         cardio_offset: "pegasus_cardio_offset_sets", 
         ems_log_prefix: "pegasus_ems_log_"   
@@ -43,7 +43,14 @@ window.PegasusManifest = {
         contacts: "pegasus_contacts"           
     },
 
-    // 5. ΣΥΣΤΗΜΑ & UI STATE (Owner: dragDrop.js / cloudSync.js)
+    // 5. VEHICLE & DOCUMENTS (Owner: car-mobile.js / profile-mobile.js) 🟢 ΠΡΟΣΘΗΚΗ
+    vehicle: {
+        dates: "pegasus_car_dates",      // Λήξη Ασφάλειας & ΚΤΕΟ
+        service: "pegasus_car_service",  // Ιστορικό Service
+        specs: "pegasus_car_specs"       // Πινακίδα, VIN, Μοντέλο
+    },
+
+    // 6. ΣΥΣΤΗΜΑ & UI STATE (Owner: dragDrop.js / cloudSync.js)
     system: {
         vault_pin: "pegasus_vault_pin",      
         last_push: "pegasus_last_push",      
@@ -55,4 +62,4 @@ window.PegasusManifest = {
     }
 };
 
-console.log("🛡️ PEGASUS MANIFEST v1.1: System Integrity Verified.");
+console.log("🛡️ PEGASUS MANIFEST v1.2: System Integrity Verified (Vehicle Support Added).");
