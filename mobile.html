@@ -118,39 +118,46 @@
     <div id="home" class="view active">
         <div class="header"><h1>PEGASUS</h1><p>Tactical Data Interface</p></div>
         
-        <div class="grid">
-            <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
-            <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
-            
-            <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
-            <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
-            
-            <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
-            <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
-            
-            <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
-            <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
+<div class="grid">
+    <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
+    <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
+    
+    <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
+    <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
+    
+    <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
+    <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
+    
+    <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
+    <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
 
-            <div class="tile" onclick="openView('parking_panel')">
-                <span class="tile-icon">📍</span>
-                <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
+    <div class="tile" onclick="openView('parking_panel')">
+        <span class="tile-icon">🅿️</span>
+        <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
+    </div>
+
+    <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
+                <span>WHEY</span><span id="homeProtTxt" style="color: var(--main);">--%</span>
             </div>
-
-            <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
-                <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 7px; color: #00bcd4; display: flex; justify-content: space-between; font-weight: 900;"><span>WHEY</span><span id="homeProtTxt">--%</span></div>
-                    <div class="bar-bg" style="height: 3px; margin: 0;"><div id="homeProtBar" class="bar-fill" style="background:#00bcd4;"></div></div>
-                    <div style="font-size: 7px; color: #9c27b0; display: flex; justify-content: space-between; font-weight: 900;"><span>CREA</span><span id="homeCreaTxt">--%</span></div>
-                    <div class="bar-bg" style="height: 3px; margin: 0;"><div id="homeCreaBar" class="bar-fill" style="background:#9c27b0;"></div></div>
-                </div>
+            <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
+                <div id="homeProtBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
             </div>
-
-            <div class="tile" onclick="openView('settings_panel')" style="grid-column: span 2;">
-                <span class="tile-icon" style="font-size: 20px;">⚙️</span>
-                <span class="tile-label" style="color: var(--main); font-weight: 900;">ΡΥΘΜΙΣΕΙΣ ΣΥΣΤΗΜΑΤΟΣ & ΒΑΡΟΣ</span>
+            <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
+                <span>CREA</span><span id="homeCreaTxt" style="color: var(--main);">--%</span>
+            </div>
+            <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
+                <div id="homeCreaBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
             </div>
         </div>
     </div>
+
+    <div class="tile" onclick="openView('settings_panel')" style="grid-column: span 2;">
+        <span class="tile-icon" style="font-size: 20px;">⚙️</span>
+        <span class="tile-label" style="color: var(--main); font-weight: 900;">ΡΥΘΜΙΣΕΙΣ ΣΥΣΤΗΜΑΤΟΣ & ΒΑΡΟΣ</span>
+    </div>
+</div>
 
     <div id="diet" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
