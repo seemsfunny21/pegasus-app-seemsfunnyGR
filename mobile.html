@@ -318,7 +318,7 @@
     </div>
 
 <script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER v14.8 (FIXED) ===== */
+/* ===== PEGASUS MOBILE MASTER CONTROLLER v15.0 (CLEAN & SYNCED) ===== */
 const PEGASUS = { 
     key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
     bin: "69b6757ab7ec241ddc6d7230" 
@@ -375,6 +375,7 @@ const PegasusCloud = {
             const raw = await res.json();
             const data = raw.record || raw;
             
+            // Data Injection
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
             if(data.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(data.muscle_targets));
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
@@ -384,20 +385,22 @@ const PegasusCloud = {
             if(data.car_specs) localStorage.setItem('pegasus_car_specs', JSON.stringify(data.car_specs));
             if(data.parking_loc) localStorage.setItem('pegasus_parking_loc', JSON.stringify(data.parking_loc));
             if(data.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(data.food_library));
+            if(data.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(data.peg_stats));
+            
             if(data.all_food_logs) {
                 Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
             }
-            if(data.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(data.peg_stats));
 
             PegasusCloud.hasSuccessfullyPulled = true; 
             setSyncStatus('online');
             
+            // UI Triggering
             window.PegasusDiet?.updateUI(); 
             window.PegasusInventory?.updateUI(); 
             window.PegasusWeight?.updateUI();
             window.PegasusParking?.updateUI();
             loadSpecs();
-        } catch(e) { setSyncStatus('offline'); }
+        } catch(e) { console.error(e); setSyncStatus('offline'); }
     },
 
     push: async () => {
@@ -438,13 +441,14 @@ const PegasusCloud = {
 
         try { 
             await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { 
-                method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, 
                 body: JSON.stringify(payload) 
             }); 
             setSyncStatus('online'); 
         } catch(e) { setSyncStatus('offline'); }
     }
-}; // <--- ΕΔΩ ΗΤΑΝ ΤΟ ΛΑΘΟΣ (ΕΛΕΙΠΕ Η ΚΛΕΙΣΤΡΑ)
+};
 
 function bindCopy(id, val) { 
     const el = document.getElementById(id); if (!el) return; 
@@ -471,7 +475,7 @@ function updateMuscleUI() {
     if (!container) return;
     container.innerHTML = Object.keys(targets).map(g => {
         const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
-        return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${p}%;"></div></div></div>`;
+        return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div id="bar-${g}" class="bar-fill" style="width:${p}%;"></div></div></div>`;
     }).join('');
 }
 
