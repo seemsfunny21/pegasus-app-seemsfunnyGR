@@ -882,7 +882,7 @@ if (todayName === "Σάββατο") {
                 location.reload();
             }, 100);
         }
-
+};
     // --- 4. EVENT DELEGATION (v11.2 - Anti-Panel-Closing Logic) ---
     Object.keys(window.masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
@@ -964,4 +964,5 @@ window.addEventListener('mousedown', (e) => {
     if (closedAny && window.PegasusCloud) {
         window.PegasusCloud.push(true); 
     }
-}); // <--- Βεβαιώσου ότι υπάρχει αυτό το κλείσιμο εδώ
+});
+// ΤΕΛΟΣ ΑΡΧΕΙΟΥ PEGASUS v12.2
