@@ -863,14 +863,25 @@ if (todayName === "Σάββατο") {
             if (window.PegasusReporting) window.ReportingEngine.sendReport(true);
             else alert("Reporting Engine Offline");
         },
-        "btnSaveSettings": () => { 
+"btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
             const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
-            localStorage.setItem(weightKey, weightVal);
+            
+            // ⚖️ PEGASUS WEIGHT TRACKER INTEGRATION
+            // Καταγραφή στο ιστορικό για υπολογισμό Μέσου Όρου πριν το reload
+            if (window.PegasusWeight) {
+                window.PegasusWeight.logWeight(weightVal);
+            } else {
+                localStorage.setItem(weightKey, weightVal);
+            }
+
             if (window.PegasusCloud) window.PegasusCloud.push(true);
-            location.reload();
+            
+            // Μικρή καθυστέρηση για να διασφαλιστεί η εγγραφή πριν το reload
+            setTimeout(() => {
+                location.reload();
+            }, 100);
         }
-    };
 
     // --- 4. EVENT DELEGATION (v11.2 - Anti-Panel-Closing Logic) ---
     Object.keys(window.masterUI).forEach(btnId => {
