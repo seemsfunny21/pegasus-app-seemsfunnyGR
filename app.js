@@ -964,4 +964,4 @@ window.addEventListener('mousedown', (e) => {
     if (closedAny && window.PegasusCloud) {
         window.PegasusCloud.push(true); 
     }
-});
+}); // <--- Βεβαιώσου ότι υπάρχει αυτό το κλείσιμο εδώ
