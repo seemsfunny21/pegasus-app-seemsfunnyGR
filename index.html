@@ -63,8 +63,8 @@
                 <input type="date" id="cDate" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
                 <label style="display: block; text-align: center; margin-bottom: 5px;">Διαδρομή:</label>
                 <input type="text" id="cRoute" placeholder="Πού πήγες;" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
-                <label for="cKm" style="display: block; text-align: center; margin-bottom: 5px;">Χιλιόμετρα (km):</label>
-                <input type="number" id="cKm" step="0.1" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
+<label for="cKm" style="display: block; text-align: center; margin-bottom: 5px;">Χιλιόμετρα (km):</label>
+<input type="number" id="cKm" name="cKm" step="0.1" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
                 <label for="cTime" style="display: block; text-align: center; margin-bottom: 5px;">Χρόνος:</label>
                 <input type="text" id="cTime" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
                 <label for="cKcal" style="display: block; text-align: center; margin-bottom: 5px;">Θερμίδες:</label>
@@ -137,12 +137,12 @@
                 <input type="number" id="userHeightInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
-                <label for="userAgeInput" style="font-size: 13px; color: #ccc;">Ηλικία</label>
-                <input type="number" id="userAgeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
+<label for="userAgeInput" style="font-size: 13px; color: #ccc;">Ηλικία</label>
+<input type="number" id="userAgeInput" name="userAgeInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; text-align: center; padding: 3px;">
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
-                <label for="userGenderInput" style="font-size: 13px; color: #ccc;">Φύλο</label>
-                <select id="userGenderInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; font-size: 12px; padding: 2px;">
+<label for="userGenderInput" style="font-size: 13px; color: #ccc;">Φύλο</label>
+<select id="userGenderInput" name="userGenderInput" style="width: 70px; background: #000; border: 1px solid #333; color: #fff; font-size: 12px; padding: 2px;">
                     <option value="male">Άνδρας</option>
                     <option value="female">Γυναίκα</option>
                 </select>
@@ -237,7 +237,7 @@
 
         <div class="food-input-row">
             <input type="text" id="foodName" name="foodName" placeholder="Φαγητό" class="flex-2" style="text-align: center;">
-            <input type="number" id="foodKcal" placeholder="kcal" class="flex-1" style="text-align: center;">
+            <input type="number" id="foodKcal" name="foodKcal" placeholder="kcal" class="flex-1" style="text-align: center;">
             <input type="text" id="foodNote" name="foodNote" placeholder="Πρωτεΐνη (g)" class="flex-1-5" style="text-align: center;">
             <button id="btnAddFood" class="p-btn">➕</button>
         </div>
