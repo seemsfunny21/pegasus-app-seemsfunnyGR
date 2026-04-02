@@ -90,7 +90,5 @@ window.addKoukiToLog = function(name, price) {
     if (window.updateFoodUI) window.updateFoodUI();
     if (window.PegasusCloud) window.PegasusCloud.push(true);
     
-    // Κλείσιμο του panel αν είναι ανοιχτό (Προαιρετικό)
-    const proposals = document.getElementById("proposalsContent");
-    if (proposals) proposals.innerHTML = `<div style="color:#4CAF50; padding:10px; text-align:center;">✅ Προστέθηκε στο Log!</div>`;
+
 };
