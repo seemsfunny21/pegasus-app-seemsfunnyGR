@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v15.4</title>
+    <title>Pegasus Mobile v15.9</title>
 
     <script>
         (function() {
@@ -20,7 +20,7 @@
     <style>
         :root { 
             --main: #00ff41; --danger: #ff4444; --bg: #050505; 
-            --card: rgba(23, 23, 23, 0.85); --border: rgba(0, 255, 65, 0.8); 
+            --card: rgba(23, 23, 23, 0.85); --border: #00ff41; 
         }
         
         body, html { 
@@ -47,7 +47,7 @@
             background: var(--card); border: 2px solid var(--border); border-radius: 24px; 
             padding: 18px 10px; backdrop-filter: blur(12px); transition: 0.15s; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
         }
         .tile:active { transform: scale(0.94); background: rgba(0,255,65,0.1); }
         .tile-icon { font-size: 26px; margin-bottom: 6px; }
@@ -57,37 +57,12 @@
         .view.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
         @keyframes viewIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        input { 
-            width: 100%; background: #000; border: 1px solid #222; border-radius: 16px; 
-            color: #fff; padding: 14px; margin-bottom: 10px; font-size: 16px; 
-            box-sizing: border-box; text-align: center; outline: none;
-        }
-        input:focus { border-color: var(--main); box-shadow: 0 0 10px rgba(0,255,65,0.1); }
-        
-        .primary-btn { 
-            width: 100%; padding: 16px; background: var(--main); border: none; 
-            border-radius: 18px; color: #000; font-weight: 900; 
-            text-transform: uppercase; font-size: 12px; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,255,65,0.2);
-        }
+        input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16px; color: #fff; padding: 14px; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; text-align: center; outline: none; }
+        .primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,255,65,0.2); }
+        .secondary-btn { background: transparent; border: 1px solid var(--main); color: var(--main); padding: 14px; border-radius: 16px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; width: 100%; }
+        .btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 900; padding: 10px 20px; border-radius: 14px; margin-bottom: 20px; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
 
-        .secondary-btn { 
-            background: transparent; border: 1px solid var(--main); color: var(--main);
-            padding: 14px; border-radius: 16px; font-weight: 800; font-size: 11px;
-            text-transform: uppercase; cursor: pointer; width: 100%;
-        }
-
-        .btn-back { 
-            background: rgba(255,255,255,0.05); border: none; color: var(--main); 
-            font-weight: 900; padding: 10px 20px; border-radius: 14px; 
-            margin-bottom: 20px; text-transform: uppercase; font-size: 10px; letter-spacing: 1px;
-        }
-
-        .mini-card { 
-            background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 20px; 
-            border: 1px solid #1a1a1a; margin-bottom: 10px; width: 100%; box-sizing: border-box; 
-        }
-        
+        .mini-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 20px; border: 1px solid #1a1a1a; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
         .mini-label { font-size: 9px; font-weight: 800; color: var(--main); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: block; }
         .mini-val { font-size: 16px; font-weight: 900; color: #fff; }
 
@@ -118,46 +93,47 @@
     <div id="home" class="view active">
         <div class="header"><h1>PEGASUS</h1><p>Tactical Data Interface</p></div>
         
-<div class="grid">
-    <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
-    <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
-    
-    <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
-    <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
-    
-    <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
-    <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
-    
-    <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
-    <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
+        <div class="grid">
+            <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
+            <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
+            
+            <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
+            <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
+            
+            <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
+            <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
+            
+            <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
+            <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
 
-    <div class="tile" onclick="openView('parking_panel')">
-        <span class="tile-icon">🅿️</span>
-        <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
-    </div>
+            <div class="tile" onclick="openView('parking_panel')">
+                <span class="tile-icon">🅿️</span>
+                <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
+            </div>
 
-    <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
-        <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
-            <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
-                <span>WHEY</span><span id="homeProtTxt" style="color: var(--main);">--%</span>
+            <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;">
+                        <span>WHEY</span><span id="homeProtTxt" style="color: var(--main);">--%</span>
+                    </div>
+                    <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
+                        <div id="homeProtBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
+                    </div>
+                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;">
+                        <span>CREA</span><span id="homeCreaTxt" style="color: var(--main);">--%</span>
+                    </div>
+                    <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
+                        <div id="homeCreaBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
+                    </div>
+                </div>
             </div>
-            <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
-                <div id="homeProtBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
-            </div>
-            <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
-                <span>CREA</span><span id="homeCreaTxt" style="color: var(--main);">--%</span>
-            </div>
-            <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
-                <div id="homeCreaBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
+
+            <div class="tile" onclick="openView('settings_panel')" style="grid-column: span 2;">
+                <span class="tile-icon" style="font-size: 20px;">⚙️</span>
+                <span class="tile-label" style="color: var(--main); font-weight: 900;">ΡΥΘΜΙΣΕΙΣ ΣΥΣΤΗΜΑΤΟΣ & ΒΑΡΟΣ</span>
             </div>
         </div>
     </div>
-
-    <div class="tile" onclick="openView('settings_panel')" style="grid-column: span 2;">
-        <span class="tile-icon" style="font-size: 20px;">⚙️</span>
-        <span class="tile-label" style="color: var(--main); font-weight: 900;">ΡΥΘΜΙΣΕΙΣ ΣΥΣΤΗΜΑΤΟΣ & ΒΑΡΟΣ</span>
-    </div>
-</div>
 
     <div id="diet" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
@@ -304,7 +280,7 @@
     </div>
 
 <script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER v15.4 ===== */
+/* ===== PEGASUS MOBILE MASTER CONTROLLER v15.9 ===== */
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
@@ -335,6 +311,8 @@ function refreshAllUI() {
     window.PegasusCar?.load(); window.PegasusProfile?.load();
     updateMuscleUI();
 }
+
+
 
 function unlockFields(v) { 
     document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
