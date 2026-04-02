@@ -207,13 +207,13 @@
             <button id="btnSaveSettings" class="p-btn" style="width: 100%; margin-top: 15px; background: #4CAF50; color: #000; font-weight: bold;">ΑΠΟΘΗΚΕΥΣΗ</button>
         </div>
     </div>
-
-    <div id="foodPanel" class="pegasus-panel">
+<div id="foodPanel" class="pegasus-panel">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px;">
             <button id="btnPrevDay" class="p-btn" style="padding: 5px 10px;">◀</button>
             <h3 id="currentFoodDateDisplay" style="margin: 0; font-size: 16px; text-align: center;">Ημερολόγιο Διατροφής</h3>
             <button id="btnNextDay" class="p-btn" style="padding: 5px 10px;">▶</button>
         </div>
+
         <div class="pegasus-stats-container">
             <div class="stat-group">
                 <div class="stat-label-row"><span>ΘΕΡΜΙΔΕΣ</span><span id="kcalStatus">0 / 3100 kcal</span></div>
@@ -224,6 +224,34 @@
                 <div class="progress-track"><div id="proteinBar" class="progress-fill"></div></div>
             </div>
         </div>
+
+        <div id="pcInventoryPanel" style="margin: 15px 0; padding: 12px; background: rgba(0, 255, 65, 0.03); border: 1px solid rgba(0, 255, 65, 0.15); border-radius: 8px; position: relative; display: flex; align-items: center;">
+            
+            <div style="width: 70%; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <span style="font-size: 9px; font-weight: 900; color: #00bcd4; letter-spacing: 1px;">WHEY STOCK</span>
+                    <span id="pcProtValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 2500g</span>
+                </div>
+                <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
+                    <div id="protBarPC" style="width: 0%; height: 100%; background: #00bcd4; box-shadow: 0 0 8px #00bcd4; transition: width 0.5s ease;"></div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <span style="font-size: 9px; font-weight: 900; color: #9c27b0; letter-spacing: 1px;">CREA STOCK</span>
+                    <span id="pcCreaValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 1000g</span>
+                </div>
+                <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden;">
+                    <div id="creaBarPC" style="width: 0%; height: 100%; background: #9c27b0; box-shadow: 0 0 8px #9c27b0; transition: width 0.5s ease;"></div>
+                </div>
+            </div>
+
+            <div id="agreementCounterUI" style="width: 30%; text-align: center; padding-left: 5px;">
+                <div style="font-size: 8px; font-weight: 900; color: #4CAF50; letter-spacing: 1px; margin-bottom: 2px;">ΥΠΟΛΟΙΠΟ</div>
+                <div id="agreementStatus" style="font-size: 18px; font-weight: 900; color: #eee; line-height: 1;">--</div>
+                <div style="font-size: 7px; color: #666; margin-top: 2px; font-weight: bold;">ΓΕΥΜΑΤΑ</div>
+            </div>
+        </div>
+
         <div class="food-input-row">
             <input type="text" id="foodName" placeholder="Φαγητό" class="flex-2" style="text-align: center;">
             <input type="number" id="foodKcal" placeholder="kcal" class="flex-1" style="text-align: center;">
@@ -242,10 +270,6 @@
                 <div id="libraryFoodList"></div>
             </div>
             <div id="weeklyAvgDisplay" style="text-align:center; font-size:12px; margin-bottom:15px; font-weight:bold;"></div>
-            <div id="agreementCounterUI" style="margin-top: 15px; padding: 10px; background: rgba(76, 175, 80, 0.1); border: 1px solid #4CAF50; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-    <span style="font-size: 11px; font-weight: bold; color: #4CAF50;">🤝 ΣΥΜΦΩΝΙΑ 30 ΓΕΥΜΑΤΩΝ</span>
-    <span id="agreementStatus" style="font-size: 12px; font-weight: 900; color: #eee;">-- / 30</span>
-</div>
             <div id="koukiQuickMenu"></div>
         </div>
     </div>
