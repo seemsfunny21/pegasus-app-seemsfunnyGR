@@ -120,7 +120,7 @@
     </div>
 
     <div id="sync-indicator">ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ</div>
-
+<div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin: 10px 0; text-transform: uppercase; letter-spacing: 1px;"></div>
     <div id="home" class="view active">
         <div class="header"><h1>PEGASUS</h1><p>Tactical Data Interface</p></div>
         <div class="grid">
@@ -267,6 +267,12 @@
 
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="mini-card" style="border-left: 4px solid var(--main); margin-bottom: 20px;">
+    <span class="mini-label">ΚΑΤΑΓΡΑΦΗ ΒΑΡΟΥΣ</span>
+    <input type="number" id="mobileWeightInput" placeholder="74.0" step="0.1" style="margin: 10px 0;">
+    <div id="mobileWeightAvg" style="font-size: 10px; color: var(--main); font-weight: 800;">M.O. Εβδομάδας: -- kg</div>
+    <button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value)" style="margin-top: 10px; padding: 10px;">ΕΝΗΜΕΡΩΣΗ</button>
+</div>
         <div class="section-title">DATA MANAGEMENT</div>
         <button class="secondary-btn" style="margin-bottom: 10px; border-color: #4CAF50; color: #4CAF50;" onclick="exportData()">DOWNLOAD BACKUP</button>
         <label class="secondary-btn" style="display:block; text-align: center; border-color: #2196F3; color: #2196F3;">
@@ -275,13 +281,6 @@
         </label>
         <button class="primary-btn" style="background: #ff4444; color: #fff; margin-top: 40px;" onclick="hardResetSystem()">🚨 HARD RESET SYSTEM</button>
     </div>
-
-<script src="car-mobile.js"></script>
-<script src="diet-mobile.js"></script>
-<script src="cardio-mobile.js"></script>
-<script src="ems-mobile.js"></script>
-<script src="profile-mobile.js"></script>
-<script src="inventory-mobile.js"></script>
 
 <script>
 /* ===== PEGASUS MOBILE MASTER CONTROLLER v14.5 ===== */
@@ -471,5 +470,17 @@ window.onload = () => {
     }, 500);
 };
 </script>
+    <script src="manifest.js"></script>
+<script src="data.js"></script>
+
+<script src="car-mobile.js"></script>
+<script src="diet-mobile.js"></script>
+<script src="cardio-mobile.js"></script>
+<script src="ems-mobile.js"></script>
+<script src="profile-mobile.js"></script>
+<script src="inventory-mobile.js"></script>
+
+<script src="dietAdvisor.js"></script>
+<script src="weightTracker.js"></script>
 </body>
 </html>
