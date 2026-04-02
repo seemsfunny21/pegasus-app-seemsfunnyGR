@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v1.1)
-   Protocol: Strict Kcal/Protein Tracking & Anti-Duplicate Inventory Guard
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v1.0)
+   Protocol: Strict Kcal/Protein Tracking & Inventory Link
    ========================================================================== */
 
 window.PegasusDiet = {
@@ -14,29 +14,16 @@ window.PegasusDiet = {
         const k = parseFloat(kcalInput.value) || 0;
         const p = parseFloat(protInput.value) || 0;
 
+        // Αυτόματη κατανάλωση πρωτεΐνης αν το όνομα περιέχει τη λέξη
+        if(n.toLowerCase().includes("πρωτεΐνη") && window.PegasusInventory) {
+            window.PegasusInventory.consume('prot', 30);
+        }
+
         const d = new Date();
         const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
         
         let log = this.getLog(dateStr);
-        
-        // 🛡️ INVENTORY GUARD: Έλεγχος πριν την προσθήκη
-        let isWhey = n.toLowerCase().includes("πρωτεΐνη");
-        let processed = false;
-
-        if (isWhey && window.PegasusInventory) {
-            window.PegasusInventory.consume('prot', 30, false); // false = don't push yet
-            processed = true;
-            console.log("🥤 MOBILE DIET: Whey stock adjusted.");
-        }
-
-        // Προσθήκη στο log με το flag προστασίας
-        log.unshift({ 
-            name: n, 
-            kcal: k, 
-            protein: p, 
-            ts: Date.now(),
-            inventoryProcessed: processed // 🟢 ΚΛΕΙΔΩΝΕΙ ΤΗΝ ΚΑΤΑΝΑΛΩΣΗ
-        });
+        log.unshift({ name: n, kcal: k, protein: p, ts: Date.now() });
         
         localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
         
@@ -81,9 +68,11 @@ window.PegasusDiet = {
             tp += parseFloat(item.protein || 0); 
         });
 
+        // Ενημέρωση LocalStorage για τα totals
         localStorage.setItem("pegasus_today_kcal", tk.toFixed(1));
         localStorage.setItem("pegasus_today_protein", tp.toFixed(1));
 
+        // Mapping στο HTML
         const kcalDisplay = document.getElementById("txtKcal");
         const protDisplay = document.getElementById("txtProt");
         const listDisplay = document.getElementById("foodHistoryList");
@@ -119,16 +108,10 @@ window.PegasusDiet = {
     },
 
     quickAdd: function(n, k, p) {
-        const nameInput = document.getElementById("fName");
-        const kcalInput = document.getElementById("fKcal");
-        const protInput = document.getElementById("fProt");
-        
-        if(nameInput) nameInput.value = n;
-        if(kcalInput) kcalInput.value = k;
-        if(protInput) protInput.value = p;
-        
+        document.getElementById("fName").value = n;
+        document.getElementById("fKcal").value = k;
+        document.getElementById("fProt").value = p;
         this.add();
-        // Επιστροφή στην καρτέλα διατροφής αν είμαστε στη βιβλιοθήκη
-        if(typeof openView === 'function') openView('diet');
+        openView('diet');
     }
 };
