@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - CORE SYNC (v14.6 - TOTAL INTEGRITY)
+   PEGASUS CLOUD VAULT - CORE SYNC (v14.8 - MAXIMALIST EDITION)
    Protocol: Strict Data Analyst - Dual Mode Architecture
-   Features: CORS Fix, DB Interceptor, Auto-Pull Guard Disarm
+   Features: Vehicle Data, Supplement Interceptor, Offline Guard Patch
    ========================================================================== */
 
 const PegasusCloud = {
@@ -30,7 +30,6 @@ const PegasusCloud = {
     unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
-        // PIN Verification: 2375
         if (btoa(cleanPin) === "MjM3NQ==") { 
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
@@ -51,7 +50,6 @@ const PegasusCloud = {
     pull: async function(silent = false) {
         if (!this.isUnlocked) return;
         try {
-            // CORS FIX: Added cache buster and meta header
             const res = await fetch("https://api.jsonbin.io/v3/b/" + this.config.binId + "/latest?nocache=" + Date.now(), {
                 headers: { 
                     'X-Master-Key': this.userKey, 
@@ -66,22 +64,27 @@ const PegasusCloud = {
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
-                console.log("☁️ PEGASUS: New Cloud Data Found. Syncing...");
+                console.log("☁️ PEGASUS: New Cloud Data Found. Syncing Full Registry...");
                 let requiresUIReload = false;
 
+                // 1. Core Profile & Stats
                 if (cloud.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(cloud.muscle_targets));
                 if (cloud.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(cloud.peg_stats));
-
                 if (cloud.weekly_history) {
                     localStorage.setItem('pegasus_weekly_history', JSON.stringify(cloud.weekly_history));
                     requiresUIReload = true;
                 }
                 
+                // 2. Inventory & Logistics
                 if (cloud.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(cloud.supp_inventory));
                 if (cloud.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(cloud.peg_contacts));
+                
+                // 3. Vehicle & Documents (v1.2 Manifest Alignment)
                 if (cloud.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(cloud.car_dates));
                 if (cloud.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(cloud.car_service));
+                if (cloud.car_specs) localStorage.setItem('pegasus_car_specs', JSON.stringify(cloud.car_specs));
                 
+                // 4. Nutrition Engine
                 if (cloud.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(cloud.food_library));
                 if (cloud.all_food_logs) {
                     Object.keys(cloud.all_food_logs).forEach(k => {
@@ -95,6 +98,7 @@ const PegasusCloud = {
                     requiresUIReload = true;
                 }
 
+                // 5. Activity Logs (Cardio & History)
                 if (cloud.cardio_logs) {
                     Object.keys(cloud.cardio_logs).forEach(k => localStorage.setItem(k, JSON.stringify(cloud.cardio_logs[k])));
                 }
@@ -107,6 +111,7 @@ const PegasusCloud = {
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
+                // Trigger UI Updates
                 if (requiresUIReload && typeof window.updateFoodUI === "function") window.updateFoodUI();
                 if (typeof window.updateSuppUI === "function") window.updateSuppUI();
                 if (window.MuscleProgressUI) window.MuscleProgressUI.render();
@@ -120,13 +125,7 @@ const PegasusCloud = {
     },
 
     push: async function(silent = true) {
-        if (!this.isUnlocked) return;
-        
-        // Safety Guard
-        if (!this.hasSuccessfullyPulled) {
-            console.error("PEGASUS GUARD: Push aborted to prevent cloud corruption.");
-            return;
-        }
+        if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
 
         const dateStr = this.getTodayKey();
         const syncTimestamp = Date.now();
@@ -158,6 +157,7 @@ const PegasusCloud = {
             peg_contacts: this.safeParse("pegasus_contacts", []),
             car_dates: this.safeParse("pegasus_car_dates", {}),
             car_service: this.safeParse("pegasus_car_service", []),
+            car_specs: this.safeParse("pegasus_car_specs", {}),
             today_food_log: this.safeParse(`food_log_${dateStr}`, []),
             all_food_logs: allFoodLogs,
             cardio_logs: cardioLogs,
@@ -187,13 +187,17 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// Boot Load
+// Boot Load Alignment
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
         window.PegasusCloud.unlock(savedPin);
         const vaultBtn = document.getElementById("btnMasterVault");
-        if (vaultBtn) vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+        if (vaultBtn) {
+            vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+            vaultBtn.style.color = "#00ff41";
+            vaultBtn.style.borderColor = "#00ff41";
+        }
     }
 });
 
