@@ -300,8 +300,11 @@
     </div>
 
 <script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER v14.5 ===== */
-const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
+/* ===== PEGASUS MOBILE MASTER CONTROLLER v14.8 (CLOUD INTEGRATED) ===== */
+const PEGASUS = { 
+    key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
+    bin: "69b6757ab7ec241ddc6d7230" 
+};
 let isUnlocked = false;
 
 function openView(id) {
@@ -309,7 +312,6 @@ function openView(id) {
     const targetView = document.getElementById(id);
     if (targetView) targetView.classList.add('active');
     
-    // Fail-Safe Module Refresh
     try {
         if (id === 'diet') window.PegasusDiet?.updateUI();
         if (id === 'library') window.PegasusDiet?.renderLibrary();
@@ -318,6 +320,7 @@ function openView(id) {
         if (id === 'car') window.PegasusCar?.load();
         if (id === 'profile') window.PegasusProfile?.load();
         if (id === 'phones') window.PegasusProfile?.renderContacts();
+        if (id === 'settings_panel') window.PegasusWeight?.updateUI();
     } catch(e) { console.error("View Refresh Error:", e); }
 }
 
@@ -330,6 +333,7 @@ const PegasusStore = {
 const PegasusCloud = {
     hasSuccessfullyPulled: false,
     safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
+    
     unlock: (p) => { 
         if (btoa(p) === "MjM3NQ==") { 
             isUnlocked = true; 
@@ -340,6 +344,7 @@ const PegasusCloud = {
         } 
         return false; 
     },
+
     pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
@@ -351,40 +356,77 @@ const PegasusCloud = {
             const raw = await res.json();
             const data = raw.record || raw;
             
+            // 1. Προπόνηση & Ιστορικό
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
+            if(data.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(data.muscle_targets));
+            
+            // 2. Inventory & Επαφές
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
-            if(data.peg_contacts) localStorage.setItem(PegasusStore.keys.contacts, JSON.stringify(data.peg_contacts));
+            if(data.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(data.peg_contacts));
+            
+            // 3. VEHICLE DATA PULL (Surgical Alignment)
             if(data.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(data.car_dates));
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
-            if(data.food_library) localStorage.setItem(PegasusStore.keys.library, JSON.stringify(data.food_library));
-            if(data.all_food_logs) Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
+            if(data.car_specs) localStorage.setItem('pegasus_car_specs', JSON.stringify(data.car_specs));
             
+            // 4. Διατροφή & Logs
+            if(data.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(data.food_library));
+            if(data.all_food_logs) {
+                Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
+            }
+            
+            // 5. Weight Data
+            if(data.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(data.peg_stats));
+
             PegasusCloud.hasSuccessfullyPulled = true; 
             setSyncStatus('online');
-            // Hard Refresh UI
+            
+            // UI Refresh
             window.PegasusDiet?.updateUI(); 
             window.PegasusInventory?.updateUI(); 
+            window.PegasusWeight?.updateUI();
             loadSpecs();
         } catch(e) { setSyncStatus('offline'); }
     },
+
     push: async () => {
         if (!isUnlocked || !PegasusCloud.hasSuccessfullyPulled) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
+        
         const allLogs = {}; 
+        const cardioLogs = {};
+        const historyLogs = {};
+
         for (let i = 0; i < localStorage.length; i++) { 
             let k = localStorage.key(i); 
-            if (k.startsWith("food_log_")) allLogs[k] = JSON.parse(localStorage.getItem(k)); 
+            try {
+                if (k.startsWith("food_log_")) allLogs[k] = JSON.parse(localStorage.getItem(k)); 
+                if (k.startsWith('cardio_log_')) cardioLogs[k] = JSON.parse(localStorage.getItem(k));
+                if (k.startsWith('pegasus_history_')) historyLogs[k] = JSON.parse(localStorage.getItem(k));
+            } catch(e) {}
         }
+
         const payload = { 
             last_update_ts: Date.now(),
+            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
+            protein: localStorage.getItem("pegasus_today_protein") || "0",
             supp_inventory: PegasusCloud.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}), 
             weekly_history: PegasusCloud.safeParse("pegasus_weekly_history", {}), 
+            muscle_targets: PegasusCloud.safeParse("pegasus_muscle_targets", {}),
+            peg_stats: PegasusCloud.safeParse("pegasus_stats", {}),
+            
+            // VEHICLE DATA PUSH
             car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}), 
             car_service: PegasusCloud.safeParse("pegasus_car_service", []), 
-            food_library: PegasusCloud.safeParse(PegasusStore.keys.library, []), 
-            peg_contacts: PegasusCloud.safeParse(PegasusStore.keys.contacts, []), 
-            all_food_logs: allLogs 
+            car_specs: PegasusCloud.safeParse("pegasus_car_specs", {}),
+            
+            food_library: PegasusCloud.safeParse("pegasus_food_library", []), 
+            peg_contacts: PegasusCloud.safeParse("pegasus_contacts", []), 
+            all_food_logs: allLogs,
+            cardio_logs: cardioLogs,
+            history_logs: historyLogs
         };
+
         try { 
             await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { 
                 method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, 
@@ -479,10 +521,10 @@ window.onload = () => {
     const pin = localStorage.getItem("pegasus_vault_pin"); 
     if(pin) PegasusCloud.unlock(pin); else document.getElementById("pinModal").style.display="flex"; 
     
-    // Initial UI Build
     setTimeout(() => {
         window.PegasusDiet?.updateUI(); 
         window.PegasusInventory?.updateUI(); 
+        window.PegasusWeight?.updateUI();
         loadSpecs();
     }, 500);
 };
