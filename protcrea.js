@@ -50,19 +50,14 @@ window.PegasusInventoryPC = {
     },
 
     // 2. Ενημέρωση των Progress Bars στον υπολογιστή
-updateUI: function() {
+    updateUI: function() {
         const stock = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {...this.defaults};
         
         const protBar = document.getElementById('protBarPC'); 
         const creaBar = document.getElementById('creaBarPC');
-        const protVal = document.getElementById('pcProtValue'); // 🟢 Προσθήκη
-        const creaVal = document.getElementById('pcCreaValue'); // 🟢 Προσθήκη
 
         if (protBar) protBar.style.width = (stock.prot / 2500 * 100) + '%';
         if (creaBar) creaBar.style.width = (stock.crea / 1000 * 100) + '%';
-        
-        if (protVal) protVal.textContent = `${Math.round(stock.prot)} / 2500g`; // 🟢 Προσθήκη
-        if (creaVal) creaVal.textContent = `${Math.round(stock.crea)} / 1000g`; // 🟢 Προσθήκη
         
         console.log(`📊 INVENTORY STATUS: Prot: ${stock.prot}g | Crea: ${stock.crea}g`);
     }

@@ -828,6 +828,32 @@ if (todayName === "Σάββατο") {
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
         "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
+        
+        // ✨ ΠΡΟΣΘΗΚΗ: Ο Logic Controller του Diet Advisor
+        "btnProposalsUI": () => {
+            if (window.PegasusDietAdvisor) {
+                const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
+                const content = document.getElementById("proposalsContent");
+                if (content) {
+                    content.innerHTML = `
+                        <div style="background: #1a1a1a; border-left: 4px solid #f39c12; padding: 15px; border-radius: 5px; margin-top: 10px;">
+                            <h3 style="color: #f39c12; margin: 0 0 10px 0; font-size: 1.1em;">🧠 Pegasus Advisor</h3>
+                            <p style="color: #fff; margin-bottom: 12px; line-height: 1.4;">${advice.msg}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; padding-top: 10px;">
+                                <span style="color: #4CAF50; font-weight: bold; font-size: 1.1em;">${advice.price.toFixed(2)}€</span>
+                                <button onclick="window.addKoukiToLog('${advice.n}', ${advice.price})" 
+                                        style="background: #f39c12; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                                    Προσθήκη στο Log
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί.");
+            }
+        },
+
         "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
         "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
@@ -855,7 +881,7 @@ if (todayName === "Σάββατο") {
                 const target = window.masterUI[btnId];
                 
                 // ΕΔΩ Η ΑΛΛΑΓΗ: Μην κλείνεις τα πάνελ αν πατάμε "Προτάσεις" (είναι μέσα στο Food Panel)
-              if (!btnId.includes("Save") && !btnId.includes("Start")) {
+                if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
                     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
                 
