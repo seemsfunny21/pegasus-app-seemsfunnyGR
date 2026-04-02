@@ -195,8 +195,8 @@ d.innerHTML = `
     <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
         <div class="set-counter">0/${finalSets}</div>
         <div class="exercise-name">${cleanName}</div> 
-        <input type="number" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
-               onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
+<input type="number" id="weight-${idx}" name="workout-weight" class="weight-input" data-name="${safeName}" placeholder="kg" value="${savedWeight}" 
+       onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
     </div>
     <div class="progress-box"><div class="progress-bar"></div></div>
 `;
