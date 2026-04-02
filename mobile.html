@@ -338,110 +338,7 @@ function refreshUIComponent(id) {
     } catch(e) { console.error("Refresh Error:", e); }
 }
 
-const PegasusCloud = {
-    isUnlocked: false, // 🟢 ΠΡΟΣΘΗΚΗ: Η κατάσταση κλειδώματος ανήκει εδώ
-    hasSuccessfullyPulled: false,
-    safeParse: (k, f) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch(e) { return f; } },
-    
-    unlock: (p) => { 
-        if (btoa(p) === "MjM3NQ==") { 
-            PegasusCloud.isUnlocked = true; // 🟢 FIX: Αναφορά στο σωστό object
-            localStorage.setItem("pegasus_vault_pin", p); 
-            PegasusCloud.pull(true); 
-            if (!window.pegasusSyncInterval) window.pegasusSyncInterval = setInterval(() => { if (PegasusCloud.isUnlocked) PegasusCloud.pull(true); }, 30000);
-            return true; 
-        } 
-        return false; 
-    },
 
-    pull: async (silent = false) => {
-        if (!PegasusCloud.isUnlocked) return; // 🟢 FIX: Reference check
-        if (!silent) setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
-        try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}/latest?t=${Date.now()}`, { 
-                headers: { 'X-Master-Key': PEGASUS.key, 'X-Bin-Meta': 'false', 'Cache-Control': 'no-cache' } 
-            });
-            if (!res.ok) throw new Error("Network Response Fail");
-            const raw = await res.json();
-            const data = raw.record || raw;
-            
-            const map = {
-                'weekly_history': 'pegasus_weekly_history', 'muscle_targets': 'pegasus_muscle_targets',
-                'supp_inventory': 'pegasus_supp_inventory', 'peg_contacts': 'pegasus_contacts',
-                'car_dates': 'pegasus_car_dates', 'car_service': 'pegasus_car_service',
-                'car_specs': 'pegasus_car_specs', 'parking_loc': 'pegasus_parking_loc',
-                'food_library': 'pegasus_food_library', 'peg_stats': 'pegasus_stats'
-            };
-
-            Object.entries(map).forEach(([cloudK, localK]) => {
-                if(data[cloudK]) localStorage.setItem(localK, JSON.stringify(data[cloudK]));
-            });
-            
-            if(data.all_food_logs) {
-                Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
-            }
-
-            PegasusCloud.hasSuccessfullyPulled = true; 
-            setSyncStatus('online');
-            if (typeof refreshAllUI === "function") refreshAllUI();
-            
-        } catch(e) { 
-            console.error("Critical Pull Error:", e);
-            setSyncStatus('offline'); 
-        }
-    },
-
-    push: async (silent = true) => { // 🟢 FIX: Προσθήκη default παραμέτρου silent
-        if (!PegasusCloud.isUnlocked || !PegasusCloud.hasSuccessfullyPulled) return;
-        if (!silent) setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
-        
-        const allLogs = {}; 
-        for (let i = 0; i < localStorage.length; i++) { 
-            let k = localStorage.key(i); 
-            if (k.startsWith("food_log_")) {
-                try { allLogs[k] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
-            }
-        }
-
-        const payload = { 
-            last_update_ts: Date.now(),
-            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
-            protein: localStorage.getItem("pegasus_today_protein") || "0",
-            supp_inventory: PegasusCloud.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}), 
-            weekly_history: PegasusCloud.safeParse("pegasus_weekly_history", {}), 
-            muscle_targets: PegasusCloud.safeParse("pegasus_muscle_targets", {}),
-            peg_stats: PegasusCloud.safeParse("pegasus_stats", {}),
-            car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}), 
-            car_service: PegasusCloud.safeParse("pegasus_car_service", []), 
-            car_specs: PegasusCloud.safeParse("pegasus_car_specs", {}),
-            parking_loc: PegasusCloud.safeParse("pegasus_parking_loc", null),
-            food_library: PegasusCloud.safeParse("pegasus_food_library", []), 
-            peg_contacts: PegasusCloud.safeParse("pegasus_contacts", []), 
-            all_food_logs: allLogs
-        };
-
-        try { 
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${PEGASUS.bin}`, { 
-                method: 'PUT', 
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': PEGASUS.key }, 
-                body: JSON.stringify(payload) 
-            }); 
-            if (res.ok) setSyncStatus('online'); else throw new Error("Push Fail");
-        } catch(e) { 
-            console.error("Critical Push Error:", e);
-            setSyncStatus('offline'); 
-        }
-    }
-};
-
-function getAllFoodLogs() {
-    const logs = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        let k = localStorage.key(i);
-        if (k.startsWith("food_log_")) logs[k] = JSON.parse(localStorage.getItem(k));
-    }
-    return logs;
-}
 
 function refreshAllUI() {
     window.PegasusDiet?.updateUI(); window.PegasusInventory?.updateUI(); 
@@ -528,7 +425,7 @@ window.onload = () => {
     setTimeout(refreshAllUI, 500);
 };
 </script>
-
+<script src="cloudSync.js"></script>
 <script src="manifest.js"></script>
 <script src="data.js"></script>
 <script src="car-mobile.js"></script>
