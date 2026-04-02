@@ -207,13 +207,13 @@
             <button id="btnSaveSettings" class="p-btn" style="width: 100%; margin-top: 15px; background: #4CAF50; color: #000; font-weight: bold;">ΑΠΟΘΗΚΕΥΣΗ</button>
         </div>
     </div>
-
-    <div id="foodPanel" class="pegasus-panel">
+<div id="foodPanel" class="pegasus-panel">
         <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px;">
             <button id="btnPrevDay" class="p-btn" style="padding: 5px 10px;">◀</button>
             <h3 id="currentFoodDateDisplay" style="margin: 0; font-size: 16px; text-align: center;">Ημερολόγιο Διατροφής</h3>
             <button id="btnNextDay" class="p-btn" style="padding: 5px 10px;">▶</button>
         </div>
+
         <div class="pegasus-stats-container">
             <div class="stat-group">
                 <div class="stat-label-row"><span>ΘΕΡΜΙΔΕΣ</span><span id="kcalStatus">0 / 3100 kcal</span></div>
@@ -222,6 +222,24 @@
             <div class="stat-group">
                 <div class="stat-label-row"><span>ΠΡΩΤΕΪΝΗ</span><span id="proteinStatus">0 / 160g</span></div>
                 <div class="progress-track"><div id="proteinBar" class="progress-fill"></div></div>
+            </div>
+        </div>
+
+        <div id="pcInventoryPanel" style="margin: 15px 0; padding: 12px; background: rgba(0, 255, 65, 0.03); border: 1px solid rgba(0, 255, 65, 0.15); border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; font-weight: 900; color: #00bcd4; letter-spacing: 1px;">WHEY STOCK</span>
+                <span id="pcProtValue" style="font-size: 10px; font-weight: 900; color: #eee;">-- / 2500g</span>
+            </div>
+            <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
+                <div id="protBarPC" style="width: 0%; height: 100%; background: #00bcd4; box-shadow: 0 0 8px #00bcd4; transition: width 0.5s ease;"></div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 10px; font-weight: 900; color: #9c27b0; letter-spacing: 1px;">CREA STOCK</span>
+                <span id="pcCreaValue" style="font-size: 10px; font-weight: 900; color: #eee;">-- / 1000g</span>
+            </div>
+            <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden;">
+                <div id="creaBarPC" style="width: 0%; height: 100%; background: #9c27b0; box-shadow: 0 0 8px #9c27b0; transition: width 0.5s ease;"></div>
             </div>
         </div>
         <div class="food-input-row">
