@@ -50,47 +50,6 @@ const KOUKI_MASTER_MENU = {
     ]
 };
 
-window.PegasusDietAdvisor = {
-    analyzeAndRecommend: function() {
-        console.log("🧠 PEGASUS ADVISOR: Deep Analysis of 14-day history...");
-        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        const todayKey = dayNames[new Date().getDay()];
-        const menu = KOUKI_MASTER_MENU[todayKey];
-
-        const history = this.getRecentHistory(14);
-
-        // --- 1. PRIORITY LOGIC: OSPRO DEFICIT (Fiber Audit) ---
-        const hasOspro = history.some(name => ["Φασολάδα", "Φακές", "Ρεβύθια", "Γίγαντες"].some(type => name.includes(type)));
-        if (!hasOspro) {
-            const pick = menu.find(i => i.t === "ospro");
-            if (pick) return { n: pick.n, price: pick.p, msg: `⚠️ Έχεις έλλειψη σε φυτικές ίνες (0% στα όσπρια). Προτείνω: ${pick.n}.` };
-        }
-
-        // --- 2. PRIORITY LOGIC: FISH DEFICIT (Omega-3 Audit) ---
-        const hasFish = history.some(name => ["Μπακαλιάρος", "Σουπιές", "Γαρίδες", "Σολομός", "Χταπόδι", "Τσιπούρα", "Πέρκα"].some(type => name.includes(type)));
-        if (!hasFish) {
-            const pick = menu.find(i => i.t === "psari");
-            if (pick) return { n: pick.n, price: pick.p, msg: `🌊 Χρειάζεσαι Ωμέγα-3 & Ιώδιο. Η βέλτιστη επιλογή σήμερα: ${pick.n}.` };
-        }
-
-        // --- 3. TRAINING LOGIC: PROTEIN RECOVERY ---
-        const recoveryPick = menu.find(i => i.t === "poulika" || i.t === "kreas") || menu[0];
-        return { n: recoveryPick.n, price: recoveryPick.p, msg: `💪 Ιδανικό για μυϊκή ανάρρωση και όγκο: ${recoveryPick.n}.` };
-    },
-
-    getRecentHistory: function(days) {
-        let items = [];
-        for (let i = 0; i < days; i++) {
-            let d = new Date();
-            d.setDate(d.getDate() - i);
-            let dateKey = `${d.getDate()}/${d.getMonth() + 1}/2026`;
-            let log = JSON.parse(localStorage.getItem(`food_log_${dateKey}`)) || [];
-            log.forEach(entry => items.push(entry.name));
-        }
-        return items;
-    }
-};
-
 // --- GLOBAL BRIDGE: AUTO-ADD TO LOG ---
 // --- GLOBAL BRIDGE: AUTO-ADD TO LOG (DYNAMIC MACROS v2.1) ---
 window.addKoukiToLog = function(name, price) {
