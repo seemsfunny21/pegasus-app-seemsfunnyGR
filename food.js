@@ -42,12 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (prevBtn) prevBtn.onclick = () => changeFoodDate(-1);
     if (nextBtn) nextBtn.onclick = () => changeFoodDate(1);
     
-    const btnFoodUI = document.getElementById('btnFoodUI');
-    if (btnFoodUI) {
-        btnFoodUI.addEventListener('click', () => {
-            setTimeout(window.renderKoukiMenu, 300);
-        });
-    }
+    // Αφαιρέθηκε ο listener για το btnSuggestionsUI 🗑️
 
     const searchInput = document.getElementById('librarySearch');
     if (searchInput) {
