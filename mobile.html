@@ -281,7 +281,25 @@
             </div>
         </div>
     </div>
-
+<div class="tile" onclick="openView('parking_panel')">
+    <span class="tile-icon">📍</span>
+    <span id="parkingStatus" class="tile-label" style="color: var(--main);">PARKING: --</span>
+</div>
+    <div id="parking_panel" class="view">
+    <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+    <div class="section-title">TRACKING ΤΟΠΟΘΕΣΙΑΣ ΟΧΗΜΑΤΟΣ</div>
+    
+    <div class="mini-card" style="border-left: 4px solid #ff9800;">
+        <span class="mini-label">ΤΕΛΕΥΤΑΙΟ ΣΗΜΕΙΟ ΠΑΡΚΙΝΓΚ</span>
+        <input type="text" id="parkingInput" placeholder="π.χ. Οδός, Όροφος, Θέση..." style="margin-top: 15px;">
+        <div id="parkingTime" style="font-size: 10px; color: #888; margin-bottom: 10px;">Παρκαρίστηκε: --</div>
+        
+        <div class="compact-grid">
+            <button class="primary-btn" onclick="window.PegasusParking?.save()">ΑΠΟΘΗΚΕΥΣΗ</button>
+            <button class="secondary-btn" onclick="window.PegasusParking?.clear()" style="border-color: #444; color: #666;">ΚΑΘΑΡΙΣΜΟΣ</button>
+        </div>
+    </div>
+</div>
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
         <div class="mini-card" style="border-left: 4px solid var(--main); margin-bottom: 20px;">
@@ -345,7 +363,7 @@ const PegasusCloud = {
         return false; 
     },
 
-    pull: async () => {
+pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
@@ -364,10 +382,13 @@ const PegasusCloud = {
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
             if(data.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(data.peg_contacts));
             
-            // 3. VEHICLE DATA PULL (Surgical Alignment)
+            // 3. VEHICLE DATA (Surgical Alignment)
             if(data.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(data.car_dates));
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
             if(data.car_specs) localStorage.setItem('pegasus_car_specs', JSON.stringify(data.car_specs));
+            
+            // 📍 PARKING DATA PULL (New Module Integration)
+            if(data.parking_loc) localStorage.setItem('pegasus_parking_loc', JSON.stringify(data.parking_loc));
             
             // 4. Διατροφή & Logs
             if(data.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(data.food_library));
@@ -385,6 +406,7 @@ const PegasusCloud = {
             window.PegasusDiet?.updateUI(); 
             window.PegasusInventory?.updateUI(); 
             window.PegasusWeight?.updateUI();
+            window.PegasusParking?.updateUI(); // 📍 Refresh Parking UI
             loadSpecs();
         } catch(e) { setSyncStatus('offline'); }
     },
@@ -415,10 +437,13 @@ const PegasusCloud = {
             muscle_targets: PegasusCloud.safeParse("pegasus_muscle_targets", {}),
             peg_stats: PegasusCloud.safeParse("pegasus_stats", {}),
             
-            // VEHICLE DATA PUSH
+            // VEHICLE DATA
             car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}), 
             car_service: PegasusCloud.safeParse("pegasus_car_service", []), 
             car_specs: PegasusCloud.safeParse("pegasus_car_specs", {}),
+            
+            // 📍 PARKING DATA PUSH
+            parking_loc: PegasusCloud.safeParse("pegasus_parking_loc", null),
             
             food_library: PegasusCloud.safeParse("pegasus_food_library", []), 
             peg_contacts: PegasusCloud.safeParse("pegasus_contacts", []), 
@@ -435,7 +460,6 @@ const PegasusCloud = {
             setSyncStatus('online'); 
         } catch(e) { setSyncStatus('offline'); }
     }
-};
 
 function bindCopy(id, val) { 
     const el = document.getElementById(id); if (!el) return; 
@@ -538,7 +562,7 @@ window.onload = () => {
 <script src="ems-mobile.js"></script>
 <script src="profile-mobile.js"></script>
 <script src="inventory-mobile.js"></script>
-
+<script src="parking-mobile.js"></script>
 <script src="dietAdvisor.js"></script>
 <script src="weightTracker.js"></script>
 </body>
