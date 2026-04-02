@@ -32,16 +32,7 @@ const KOUKI_MENU = [
     { name: "Μουσακάς", kcal: 800, protein: 30, type: "cheat" }
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
-    const foodPanel = document.getElementById('foodPanel');
-    if (foodPanel) {
-        const planBtn = document.createElement('button');
-        planBtn.innerHTML = "ΠΡΟΤΑΣΕΙΣ";
-        planBtn.className = "planner-btn";
-        planBtn.onclick = showWeeklyPlanner;
-        foodPanel.appendChild(planBtn);
-    }
-});
+
 
 function showWeeklyPlanner() {
     let history = [];
