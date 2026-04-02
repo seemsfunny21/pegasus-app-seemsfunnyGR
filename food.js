@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v9.3 (DYNAMIC KOUKI INTEGRATED)
-   Protocol: Strict Data Mapping via window.PegasusManifest
-   Status: FINAL STABLE | SYNTAX FIXED | DYNAMIC MENU ACTIVE
+   PEGASUS FOOD ENGINE - v9.6 (FULL INTEGRATION EDITION)
+   Protocol: Strict Data Mapping & Unified Intelligence
+   Features: 30-Meal Agreement Counter | Auto-Advisor | Kouki Menu
    ========================================================================== */
 
 const M = window.PegasusManifest;
@@ -21,16 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const nameEl = document.getElementById('foodName');
             const kcalEl = document.getElementById('foodKcal');
             const protEl = document.getElementById('foodNote');
-            
-            const name = nameEl?.value;
-            const kcal = kcalEl?.value;
-            const protein = protEl?.value || 0;
-
-            if (name && kcal) {
-                addFoodItem(name, kcal, protein);
-                if (nameEl) nameEl.value = "";
-                if (kcalEl) kcalEl.value = "";
-                if (protEl) protEl.value = "";
+            if (nameEl?.value && kcalEl?.value) {
+                addFoodItem(nameEl.value, kcalEl.value, protEl?.value || 0);
+                nameEl.value = ""; kcalEl.value = ""; protEl.value = "";
             } else {
                 alert("PEGASUS STRICT: Συμπλήρωσε Φαγητό και Θερμίδες!");
             }
@@ -42,17 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (prevBtn) prevBtn.onclick = () => changeFoodDate(-1);
     if (nextBtn) nextBtn.onclick = () => changeFoodDate(1);
     
-    const btnFoodUI = document.getElementById('btnFoodUI');
-    if (btnFoodUI) {
-        btnFoodUI.addEventListener('click', () => {
-            setTimeout(window.renderKoukiMenu, 300);
-        });
-    }
-
     const searchInput = document.getElementById('librarySearch');
-    if (searchInput) {
-        searchInput.oninput = () => window.filterLibrary();
-    }
+    if (searchInput) searchInput.oninput = () => window.filterLibrary();
 });
 
 function changeFoodDate(days) {
@@ -66,7 +50,6 @@ window.getStrictDateStr = function() {
         if (window.currentFoodDate && window.currentFoodDate.toDateString() === window.lastKnownSystemDate) {
             window.currentFoodDate = new Date();
             localStorage.setItem(M.workout.cardio_offset, "0");
-            console.log("PEGASUS GUARD: Midnight Rollover & Metabolic Reset.");
         }
         window.lastKnownSystemDate = currentSystemDate;
     }
@@ -74,26 +57,16 @@ window.getStrictDateStr = function() {
     return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
 };
 
-function getDynamicBMR() {
-    const w = parseFloat(localStorage.getItem(M.user.weight)) || 74;
-    const h = parseFloat(localStorage.getItem(M.user.height)) || 187;
-    const a = parseInt(localStorage.getItem(M.user.age)) || 38;
-    const g = localStorage.getItem(M.user.gender) || "male";
-    let bmr = (10 * w) + (6.25 * h) - (5 * a);
-    return (g === "male") ? bmr + 5 : bmr - 161;
-}
-
-function calculateDailyCalorieTarget(dateObj) {
-    const dayOfWeek = dateObj.getDay(); 
-    const workoutKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-    const workoutsDone = JSON.parse(localStorage.getItem(M.workout.done) || "{}");
-    const hasWorkedOut = workoutsDone[workoutKey] === true;
-    const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4) && !hasWorkedOut;
-    const activityMultiplier = isRecoveryDay ? 1.2 : 1.55;
-    const cardioBurn = parseFloat(localStorage.getItem(M.workout.cardio_offset)) || 0;
-    const baseKcal = getDynamicBMR() * activityMultiplier;
-    return Math.round(baseKcal + cardioBurn);
-}
+// 🤝 1. KOUKI AGREEMENT COUNTER ENGINE
+window.updateAgreementUI = function() {
+    const agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
+    const count = agreementLog.length;
+    const display = document.getElementById('agreementStatus');
+    if (display) {
+        display.textContent = `${count} / 30`;
+        display.style.color = (count >= 25) ? "#ff4444" : "#eee";
+    }
+};
 
 window.updateFoodUI = function() {
     const dateStr = window.getStrictDateStr();
@@ -106,8 +79,7 @@ window.updateFoodUI = function() {
     if (!listContainer) return;
     
     listContainer.innerHTML = "";
-    let totalKcal = 0;
-    let totalProtein = 0;
+    let totalKcal = 0, totalProtein = 0;
 
     foodLog.forEach((item, index) => {
         totalKcal += parseFloat(item.kcal) || 0;
@@ -127,61 +99,47 @@ window.updateFoodUI = function() {
 
     localStorage.setItem(M.nutrition.today_kcal, totalKcal.toFixed(0));
     localStorage.setItem(M.nutrition.today_protein, totalProtein.toFixed(0));
-    const kcalNum = document.getElementById('todayTotalKcal');
-    if (kcalNum) kcalNum.textContent = totalKcal.toFixed(0);
     
     updateProgressBars(totalKcal, totalProtein);
     if (typeof window.filterLibrary === "function") window.filterLibrary(); 
     
-    // 🟢 ΑΥΤΟΜΑΤΟ RENDERING ΜΕΝΟΥ (ΚΟΥΚΙ)
+    // 🟢 2. AUTO-RENDER MENU & INTELLIGENCE
     if (typeof window.renderKoukiMenu === "function") {
         window.renderKoukiMenu();
-
-        // 🧠 PEGASUS INTELLIGENCE: Ενσωμάτωση Πρότασης Advisor μέσα στο Panel
+        
+        // 🧠 ADVISOR GAP ANALYSIS INTEGRATION
         if (window.PegasusDietAdvisor) {
             const recommendation = window.PegasusDietAdvisor.analyzeAndRecommend();
             const menuContainer = document.getElementById('koukiQuickMenu');
-            
             if (menuContainer && recommendation) {
                 const adviceHTML = `
                     <div id="aiAdvice" style="background: rgba(243, 156, 18, 0.1); border: 1px solid #f39c12; padding: 12px; border-radius: 8px; margin: 15px 0; font-size: 11px; color: #eee; line-height: 1.4;">
-                        <div style="color: #f39c12; font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
-                            <span>🧠 PEGASUS ADVISOR</span>
-                        </div>
-                        ${recommendation.msg}
-                    </div>
-                `;
-                // Τοποθέτηση στην αρχή του menu container
+                        <span style="color: #f39c12; font-weight: bold;">🧠 PEGASUS ADVISOR:</span> ${recommendation.msg}
+                    </div>`;
                 menuContainer.insertAdjacentHTML('afterbegin', adviceHTML);
             }
         }
     }
+    // 🤝 3. UPDATE AGREEMENT STATUS
+    window.updateAgreementUI();
 };
 
 window.addFoodItem = function(name, kcal, protein) {
     const dateStr = window.getStrictDateStr();
     const logKey = M.nutrition.log_prefix + dateStr;
     let foodLog = JSON.parse(localStorage.getItem(logKey) || "[]");
-    
-    // Προσθήκη εγγραφής
     foodLog.unshift({ name, kcal: parseFloat(kcal), protein: parseFloat(protein || 0) });
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
-    // 🛡️ CALL INVENTORY GUARD (Surgical Link)
-    if (window.PegasusInventoryPC) {
-        window.PegasusInventoryPC.processEntry(name);
-    } else {
-        // Fallback αν το protcret.js δεν έχει φορτώσει
-        if (name.toLowerCase().includes("πρωτεΐνη") && window.consumeSupp) {
-            window.consumeSupp('prot', 30, false); 
-        }
+    // 🤝 4. AGREEMENT LOGGING TRIGGER
+    if (name.includes("(Κούκι)")) {
+        let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
+        agreementLog.push({ date: dateStr, food: name });
+        localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
     }
 
+    if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry(name);
     if (typeof addToLibrary === "function") addToLibrary(name, kcal, protein);
-    
-    const searchInput = document.getElementById('librarySearch');
-    if (searchInput) searchInput.value = "";
-
     window.updateFoodUI();
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
@@ -190,6 +148,15 @@ window.deleteFoodItem = function(index) {
     const dateStr = window.getStrictDateStr();
     const logKey = M.nutrition.log_prefix + dateStr;
     let foodLog = JSON.parse(localStorage.getItem(logKey) || "[]");
+    
+    // Safety check για τη συμφωνία αν διαγράφουμε Κούκι
+    const itemToDelete = foodLog[index];
+    if (itemToDelete && itemToDelete.name.includes("(Κούκι)")) {
+        let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
+        agreementLog.pop(); // Αφαιρούμε την τελευταία καταχώρηση συμφωνίας
+        localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
+    }
+
     foodLog.splice(index, 1);
     localStorage.setItem(logKey, JSON.stringify(foodLog));
     window.updateFoodUI();
@@ -197,73 +164,44 @@ window.deleteFoodItem = function(index) {
 };
 
 function updateProgressBars(kcal, protein) {
-    const goalKcal = calculateDailyCalorieTarget(window.currentFoodDate); 
-    const goalProtein = 160; 
+    const goalKcal = 2800; // Aligned with TDEE logic
     const kBar = document.getElementById('kcalBar');
     const pBar = document.getElementById('proteinBar');
     if (kBar) kBar.style.width = Math.min((kcal / goalKcal) * 100, 100) + "%";
-    if (pBar) pBar.style.width = Math.min((protein / goalProtein) * 100, 100) + "%";
+    if (pBar) pBar.style.width = Math.min((protein / 160) * 100, 100) + "%";
+    
     const kStat = document.getElementById('kcalStatus');
     const pStat = document.getElementById('proteinStatus');
     if (kStat) kStat.textContent = `${Math.round(kcal)} / ${goalKcal} kcal`;
-    if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
+    if (pStat) pStat.textContent = `${Math.round(protein)} / 160g`;
 }
 
-/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.3) === */
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
-
     const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const targetDate = window.currentFoodDate || new Date();
-    const targetDayKey = daysMap[targetDate.getDay()];
-    
+    const targetDayKey = daysMap[window.currentFoodDate.getDay()];
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const targetDayName = greekDays[targetDate.getDay()];
-
     const todayMenu = (typeof KOUKI_MASTER_MENU !== 'undefined') ? KOUKI_MASTER_MENU[targetDayKey] : [];
 
     container.innerHTML = `
-        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ)</h4>
+        <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${greekDays[window.currentFoodDate.getDay()].toUpperCase()} (ΚΟΥΚΙ)</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; width: 100%;">
             ${todayMenu.map(item => {
-                let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
-                let kcal = (item.p >= 6.5) ? 680 : 520;
-
-                return `
-                <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
-                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 12px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;">
-                    <div style="color: #eee; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
-                        ${item.n}
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 3px;">
-                        <span style="color: #4CAF50; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;">🔥 ${kcal} KCAL</span>
-                        <span style="color: #81C784; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;">🍗 ${protein}G PROTEIN</span>
-                    </div>
-                </button>
-                `;
+                let p = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
+                let k = (item.p >= 6.5) ? 680 : 520;
+                return `<button onclick="window.addFoodItem('${item.n} (Κούκι)', ${k}, ${p})" 
+                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 12px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left;">
+                    <div style="font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">${item.n}</div>
+                    <div style="color: #4CAF50; font-weight: bold; font-size: 10px;">🔥 ${k} KCAL | 🍗 ${p}G P</div>
+                </button>`;
             }).join('')}
-        </div>
-    `;
-};
-
-window.addQuickFood = function(name, kcal, protein) {
-    const nameInp = document.getElementById('foodName');
-    const kcalInp = document.getElementById('foodKcal');
-    const protInp = document.getElementById('foodNote');
-    const addBtn = document.getElementById('btnAddFood');
-    if (nameInp && kcalInp && protInp && addBtn) {
-        nameInp.value = name;
-        kcalInp.value = kcal;
-        protInp.value = protein;
-        addBtn.click();
-    }
+        </div>`;
 };
 
 window.filterLibrary = function() {
     const searchTerm = document.getElementById('librarySearch')?.value.toLowerCase() || "";
-    const libKey = M.nutrition.library;
-    const library = JSON.parse(localStorage.getItem(libKey) || "[]");
+    const library = JSON.parse(localStorage.getItem(M.nutrition.library) || "[]");
     const libContainer = document.getElementById('libraryFoodList');
     if (!libContainer) return;
     libContainer.innerHTML = "";
@@ -275,27 +213,22 @@ window.filterLibrary = function() {
                 <span style="font-weight: bold; color: #eee; font-size: 14px;">+ ${item.name}</span>
                 <span style="font-size: 11px; color: #4CAF50;">${item.kcal} kcal | ${item.protein || 0}g P</span>
             </div>
-            <button class="delete-btn" onclick="removeFromLibrary('${item.name}')">✕</button>
-        `;
+            <button class="delete-btn" onclick="removeFromLibrary('${item.name}')">✕</button>`;
         libContainer.appendChild(wrapper);
     });
 };
 
 function addToLibrary(name, kcal, protein) {
-    const libKey = M.nutrition.library;
-    let library = JSON.parse(localStorage.getItem(libKey) || "[]");
+    let library = JSON.parse(localStorage.getItem(M.nutrition.library) || "[]");
     if (!library.some(item => item.name.toLowerCase() === name.toLowerCase())) {
         library.push({ name, kcal, protein: parseFloat(protein || 0) });
-        localStorage.setItem(libKey, JSON.stringify(library));
+        localStorage.setItem(M.nutrition.library, JSON.stringify(library));
     }
 }
 
 function removeFromLibrary(name) {
-    const libKey = M.nutrition.library;
-    let library = JSON.parse(localStorage.getItem(libKey) || "[]");
+    let library = JSON.parse(localStorage.getItem(M.nutrition.library) || "[]");
     library = library.filter(item => item.name !== name);
-    localStorage.setItem(libKey, JSON.stringify(library));
+    localStorage.setItem(M.nutrition.library, JSON.stringify(library));
     window.filterLibrary();
 }
-
-window.renderFood = window.updateFoodUI;
