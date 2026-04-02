@@ -318,7 +318,7 @@
     </div>
 
 <script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER v14.8 (CLOUD INTEGRATED) ===== */
+/* ===== PEGASUS MOBILE MASTER CONTROLLER v14.8 (FIXED) ===== */
 const PEGASUS = { 
     key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", 
     bin: "69b6757ab7ec241ddc6d7230" 
@@ -339,6 +339,7 @@ function openView(id) {
         if (id === 'profile') window.PegasusProfile?.load();
         if (id === 'phones') window.PegasusProfile?.renderContacts();
         if (id === 'settings_panel') window.PegasusWeight?.updateUI();
+        if (id === 'parking_panel') window.PegasusParking?.updateUI();
     } catch(e) { console.error("View Refresh Error:", e); }
 }
 
@@ -363,7 +364,7 @@ const PegasusCloud = {
         return false; 
     },
 
-pull: async () => {
+    pull: async () => {
         if (!isUnlocked) return;
         setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         try {
@@ -374,39 +375,27 @@ pull: async () => {
             const raw = await res.json();
             const data = raw.record || raw;
             
-            // 1. Προπόνηση & Ιστορικό
             if(data.weekly_history) localStorage.setItem('pegasus_weekly_history', JSON.stringify(data.weekly_history));
             if(data.muscle_targets) localStorage.setItem('pegasus_muscle_targets', JSON.stringify(data.muscle_targets));
-            
-            // 2. Inventory & Επαφές
             if(data.supp_inventory) localStorage.setItem('pegasus_supp_inventory', JSON.stringify(data.supp_inventory));
             if(data.peg_contacts) localStorage.setItem('pegasus_contacts', JSON.stringify(data.peg_contacts));
-            
-            // 3. VEHICLE DATA (Surgical Alignment)
             if(data.car_dates) localStorage.setItem('pegasus_car_dates', JSON.stringify(data.car_dates));
             if(data.car_service) localStorage.setItem('pegasus_car_service', JSON.stringify(data.car_service));
             if(data.car_specs) localStorage.setItem('pegasus_car_specs', JSON.stringify(data.car_specs));
-            
-            // 📍 PARKING DATA PULL (New Module Integration)
             if(data.parking_loc) localStorage.setItem('pegasus_parking_loc', JSON.stringify(data.parking_loc));
-            
-            // 4. Διατροφή & Logs
             if(data.food_library) localStorage.setItem('pegasus_food_library', JSON.stringify(data.food_library));
             if(data.all_food_logs) {
                 Object.keys(data.all_food_logs).forEach(k => localStorage.setItem(k, JSON.stringify(data.all_food_logs[k])));
             }
-            
-            // 5. Weight Data
             if(data.peg_stats) localStorage.setItem('pegasus_stats', JSON.stringify(data.peg_stats));
 
             PegasusCloud.hasSuccessfullyPulled = true; 
             setSyncStatus('online');
             
-            // UI Refresh
             window.PegasusDiet?.updateUI(); 
             window.PegasusInventory?.updateUI(); 
             window.PegasusWeight?.updateUI();
-            window.PegasusParking?.updateUI(); // 📍 Refresh Parking UI
+            window.PegasusParking?.updateUI();
             loadSpecs();
         } catch(e) { setSyncStatus('offline'); }
     },
@@ -436,15 +425,10 @@ pull: async () => {
             weekly_history: PegasusCloud.safeParse("pegasus_weekly_history", {}), 
             muscle_targets: PegasusCloud.safeParse("pegasus_muscle_targets", {}),
             peg_stats: PegasusCloud.safeParse("pegasus_stats", {}),
-            
-            // VEHICLE DATA
             car_dates: PegasusCloud.safeParse("pegasus_car_dates", {}), 
             car_service: PegasusCloud.safeParse("pegasus_car_service", []), 
             car_specs: PegasusCloud.safeParse("pegasus_car_specs", {}),
-            
-            // 📍 PARKING DATA PUSH
             parking_loc: PegasusCloud.safeParse("pegasus_parking_loc", null),
-            
             food_library: PegasusCloud.safeParse("pegasus_food_library", []), 
             peg_contacts: PegasusCloud.safeParse("pegasus_contacts", []), 
             all_food_logs: allLogs,
@@ -460,6 +444,7 @@ pull: async () => {
             setSyncStatus('online'); 
         } catch(e) { setSyncStatus('offline'); }
     }
+}; // <--- ΕΔΩ ΗΤΑΝ ΤΟ ΛΑΘΟΣ (ΕΛΕΙΠΕ Η ΚΛΕΙΣΤΡΑ)
 
 function bindCopy(id, val) { 
     const el = document.getElementById(id); if (!el) return; 
@@ -549,6 +534,7 @@ window.onload = () => {
         window.PegasusDiet?.updateUI(); 
         window.PegasusInventory?.updateUI(); 
         window.PegasusWeight?.updateUI();
+        window.PegasusParking?.updateUI();
         loadSpecs();
     }, 500);
 };
