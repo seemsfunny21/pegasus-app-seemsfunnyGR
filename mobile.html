@@ -42,7 +42,18 @@
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; overflow-y: auto; scrollbar-width: none; }
         .grid::-webkit-scrollbar { display: none; }
-        
+        .log-item { 
+            background: rgba(255, 255, 255, 0.05); 
+            padding: 12px; 
+            border-radius: 18px; 
+            border: 1px solid var(--border); 
+            text-align: left; 
+            position: relative; 
+            margin-bottom: 10px; 
+            width: 100%; 
+            box-sizing: border-box; 
+        }
+        .btn-del { position: absolute; top: 10px; right: 10px; color: var(--danger); background: none; border: none; font-size: 18px; font-weight: 900; }
         .tile { 
             background: var(--card); border: 2px solid var(--border); border-radius: 24px; 
             padding: 18px 10px; backdrop-filter: blur(12px); transition: 0.15s; 
@@ -380,8 +391,9 @@ window.onload = () => {
 };
 </script>
 
-<script src="cloudSync.js"></script>
+
 <script src="manifest.js"></script>
+    <script src="cloudSync.js"></script>
 <script src="data.js"></script>
 <script src="car-mobile.js"></script>
 <script src="diet-mobile.js"></script>
