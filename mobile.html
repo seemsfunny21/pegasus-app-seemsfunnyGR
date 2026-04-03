@@ -279,7 +279,7 @@
         </div>
     </div>
 
-    <div id="parking_panel" class="view">
+<div id="parking_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
         <div class="mini-card" style="border-left: 4px solid #ff9800;">
@@ -288,9 +288,11 @@
             <div id="parkingTime" style="font-size: 10px; color: #888; margin-bottom: 10px;">Ενημερώθηκε: --</div>
             <div class="compact-grid">
                 <button class="primary-btn" onclick="saveParkingLocal()">ΑΠΟΘΗΚΕΥΣΗ</button>
-                <button class="secondary-btn" onclick="window.PegasusParking?.clear()">ΔΙΑΓΡΑΦΗ</button>
+                <button class="secondary-btn" onclick="clearParkingLocal()">ΔΙΑΓΡΑΦΗ</button>
             </div>
         </div>
+        <div class="section-title">ΠΡΟΣΦΑΤΑ ΣΗΜΕΙΑ (TOP 10)</div>
+        <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
     <div id="settings_panel" class="view">
@@ -396,11 +398,50 @@ function deleteFoodLocal(idx) {
     if(window.PegasusCloud) window.PegasusCloud.push();
 }
 
-function saveParkingLocal() {
-    const val = document.getElementById('parkingInput').value;
+async function saveParkingLocal() {
+    const inputEl = document.getElementById('parkingInput');
+    const val = inputEl.value.trim();
+    if (!val) return;
+
+    // Διαχείριση Ιστορικού (Maximalist Retention)
+    let history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+    history = history.filter(item => item !== val);
+    history.unshift(val);
+    if (history.length > 10) history.pop();
+
+    // Τοπική Αποθήκευση
     localStorage.setItem('pegasus_parking_loc', val);
+    localStorage.setItem('pegasus_parking_history', JSON.stringify(history));
+    
     updateParkingUI();
-    openView('home');
+    
+    // CRITICAL: Force Push πριν το επόμενο Pull
+    if(window.PegasusCloud && window.PegasusCloud.push) {
+        setSyncStatus('ΑΠΟΣΤΟΛΗ...');
+        await window.PegasusCloud.push();
+        setSyncStatus('online');
+    }
+
+    inputEl.value = "";
+    renderParkingHistory();
+}
+
+function renderParkingHistory() {
+    const history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+    const container = document.getElementById('parkingHistoryList');
+    if (!container) return;
+    
+    container.innerHTML = history.map(loc => `
+        <div class="log-item" onclick="document.getElementById('parkingInput').value='${loc}'; saveParkingLocal();" style="cursor:pointer; border-color:rgba(255,152,0,0.4); margin-bottom:8px;">
+            <div style="font-size:13px; font-weight:800; color:#fff;">📍 ${loc}</div>
+        </div>
+    `).join('');
+}
+
+function clearParkingLocal() {
+    localStorage.removeItem('pegasus_parking_loc');
+    localStorage.removeItem('pegasus_parking_history');
+    updateParkingUI();
     if(window.PegasusCloud) window.PegasusCloud.push();
 }
 
