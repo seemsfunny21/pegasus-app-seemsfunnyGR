@@ -284,7 +284,7 @@
     <div class="mini-card" style="border-left: 4px solid #ff9800;">
         <span class="mini-label">ΝΕΑ ΠΕΡΙΟΧΗ / ΘΕΣΗ</span>
         <input type="text" id="parkingInput" placeholder="π.χ. Γιάννενα, Κέντρο...">
-        <button class="primary-btn" onclick="saveParkingAction()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ CLOUD</button>
+       <button class="primary-btn" onclick="window.PegasusParking.save()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ CLOUD</button>
     </div>
     <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (TOP 10)</div>
     <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
@@ -340,9 +340,8 @@ function refreshAllUI() {
     window.PegasusDiet?.updateUI(); 
     window.PegasusInventory?.updateUI(); 
     window.PegasusWeight?.updateUI(); 
-    updateParkingUI(); // <--- Προσθήκη
-    renderParkingHistory(); // <--- Προσθήκη
-    if (window.PegasusCar) window.PegasusCar.load();
+    window.PegasusParking?.updateUI(); // <--- Αυτό κάνει render και την αρχική και το ιστορικό
+    window.PegasusCar?.load();
     updateMuscleUI();
 }
 
@@ -399,68 +398,7 @@ function deleteFoodLocal(idx) {
     if(window.PegasusCloud) window.PegasusCloud.push();
 }
 
-// --- ΔΙΟΡΘΩΜΕΝΟ PARKING ΜΕ FORCE PUSH & ΙΣΤΟΡΙΚΟ 10 ΘΕΣΕΩΝ ---
-async function saveParkingLocal() {
-    const inputEl = document.getElementById('parkingInput');
-    const val = inputEl.value.trim();
-    if (!val) return;
 
-    // 1. Αποθήκευση ως απλό κείμενο (για αποφυγή SyntaxError)
-    localStorage.setItem('pegasus_parking_loc', val);
-
-    // 2. Ενημέρωση Ιστορικού 10 θέσεων
-    let history = [];
-    try {
-        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
-    } catch(e) { history = []; }
-    
-    history = history.filter(item => item !== val);
-    history.unshift(val);
-    if (history.length > 10) history.pop();
-    localStorage.setItem('pegasus_parking_history', JSON.stringify(history));
-
-    // 3. Συγχρονισμός Cloud
-    if (window.PegasusCloud && window.PegasusCloud.push) {
-        setSyncStatus('ΑΠΟΣΤΟΛΗ...');
-        await window.PegasusCloud.push();
-        setSyncStatus('online');
-    }
-
-    inputEl.value = "";
-    refreshAllUI(); // Ενημερώνει την αρχική οθόνη
-    renderParkingHistory(); // Ενημερώνει τη λίστα στο panel
-}
-
-function updateParkingUI() {
-    // Στην αρχική οθόνη δείχνουμε μόνο το τελευταίο σημείο
-    let loc = localStorage.getItem('pegasus_parking_loc') || "--";
-    // Καθαρισμός από τυχόν εισαγωγικά JSON
-    loc = loc.replace(/^"|"$/g, ''); 
-    
-    const statusEl = document.getElementById('parkingStatus');
-    if (statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
-}
-
-function renderParkingHistory() {
-    let history = [];
-    try {
-        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
-    } catch(e) { history = []; }
-    
-    const container = document.getElementById('parkingHistoryList');
-    if (!container) return;
-
-    container.innerHTML = history.map(loc => `
-        <div class="log-item" onclick="document.getElementById('parkingInput').value='${loc}'; saveParkingLocal();" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4); margin-bottom:8px;">
-            <div style="font-size:13px; font-weight:800; color:#fff;">📍 ${loc}</div>
-        </div>
-    `).join('');
-}
-
-function selectFromHistory(loc) {
-    document.getElementById('parkingInput').value = loc;
-    saveParkingAction();
-}
 
 // --- ΠΡΟΣΘΗΚΗ ΓΙΑ ΑΕΡΟΒΙΑ ---
 window.PegasusCardio = {
