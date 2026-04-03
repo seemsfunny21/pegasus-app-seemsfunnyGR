@@ -11,7 +11,7 @@ window.PegasusCar = {
             srv: document.getElementById('carSrv').value
         };
 
-        // Ευθυγράμμιση με cloudSync.js (Key: pegasus_car_specs)
+        // Αποθήκευση με τα σωστά Keys για το Cloud
         localStorage.setItem("pegasus_car_specs", JSON.stringify(identity));
         localStorage.setItem("pegasus_car_dates", JSON.stringify(dates));
         
