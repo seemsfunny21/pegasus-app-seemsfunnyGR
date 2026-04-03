@@ -1,18 +1,18 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v2.0 ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v2.1 (Anti-Crash Version) ===== */
 window.PegasusParking = {
     save: async function() {
         const inputEl = document.getElementById('parkingInput');
         const location = inputEl ? inputEl.value.trim() : "";
         if (!location) return;
 
-        // 1. Αποθήκευση ως JSON Object ΑΥΣΤΗΡΑ (για να το διαβάζει το cloudSync.js)
+        // 1. Αποθήκευση ως JSON Object (ΑΥΣΤΗΡΑ για συμβατότητα με cloudSync.js)
         const parkingData = {
             loc: location,
             ts: new Date().toLocaleString('el-GR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
         };
         localStorage.setItem('pegasus_parking_loc', JSON.stringify(parkingData));
 
-        // 2. Ενημέρωση Ιστορικού 10 Θέσεων
+        // 2. Ενημέρωση Ιστορικού (10 Θέσεις)
         let history = [];
         try {
             history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
@@ -25,7 +25,7 @@ window.PegasusParking = {
 
         this.updateUI();
 
-        // 3. Force Cloud Push (Αποστολή στο Server)
+        // 3. Force Cloud Push
         if (window.PegasusCloud && window.PegasusCloud.push) {
             if (typeof setSyncStatus === "function") setSyncStatus('ΑΠΟΣΤΟΛΗ...');
             await window.PegasusCloud.push();
@@ -37,21 +37,42 @@ window.PegasusParking = {
     },
 
     updateUI: function() {
-        let data = null;
-        try {
-            data = JSON.parse(localStorage.getItem('pegasus_parking_loc'));
-        } catch(e) {
-            console.warn("Parking Data Reset due to invalid JSON format.");
+        let locToDisplay = "--";
+        const rawData = localStorage.getItem('pegasus_parking_loc');
+
+        // -------------------------------------------------------------
+        // ROBUST PARSING LOGIC (Εξαλείφει το [object Object] και τα σφάλματα)
+        // -------------------------------------------------------------
+        if (rawData) {
+            if (rawData === "[object Object]") {
+                // Περίπτωση 1: Η μνήμη έχει κολλήσει στο [object Object].
+                // Κάνουμε reset για να μην δείχνει χαλασμένο UI.
+                console.warn("Parking UI: Detected corrupted [object Object]. Resetting.");
+                localStorage.removeItem('pegasus_parking_loc');
+            } else {
+                try {
+                    // Περίπτωση 2: Είναι σωστό JSON (όπως το περιμένει το Cloud)
+                    const parsed = JSON.parse(rawData);
+                    if (parsed && typeof parsed === 'object' && parsed.loc) {
+                        locToDisplay = parsed.loc;
+                    } else if (typeof parsed === 'string') {
+                        // Αν το JSON.parse επιστρέψει string (π.χ. γιατί ήταν αποθηκευμένο σαν "Γιάννενα")
+                        locToDisplay = parsed;
+                    }
+                } catch(e) {
+                    // Περίπτωση 3: Είναι απλό κείμενο (π.χ. "Γιάννενα") χωρίς εισαγωγικά JSON
+                    locToDisplay = rawData;
+                }
+            }
         }
 
-        // Ενημέρωση αρχικής οθόνης (Quick Dashboard)
+        // Ενημέρωση του UI (Αρχική Οθόνη)
         const statusEl = document.getElementById('parkingStatus');
-        if (data && data.loc) {
-            if (statusEl) statusEl.textContent = `ΠΑΡΚΙΝΓΚ: ${data.loc}`;
-        } else {
-            if (statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: --";
+        if (statusEl) {
+            statusEl.textContent = `ΠΑΡΚΙΝΓΚ: ${locToDisplay}`;
         }
 
+        // Ενημέρωση Ιστορικού
         this.renderHistory();
     },
 
