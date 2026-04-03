@@ -330,12 +330,13 @@
             <div id="mobileWeightAvg" style="font-size: 10px; color: var(--main); font-weight: 800;">M.O. Εβδομάδας: -- kg</div>
             <button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value)">ΕΝΗΜΕΡΩΣΗ</button>
         </div>
-        <div class="section-title">ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ</div>
-        <button class="secondary-btn" style="margin-bottom: 10px; border-color: #4CAF50; color: #4CAF50;" onclick="exportData()">ΛΗΨΗ BACKUP</button>
-        <label class="secondary-btn" style="display:block; text-align: center; border-color: #2196F3; color: #2196F3;">
-            ΕΠΑΝΑΦΟΡΑ DATA
-            <input type="file" style="display:none;" onchange="importData(event)">
-        </label>
+<div class="section-title">ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ</div>
+<button class="secondary-btn" style="margin-bottom: 10px; border-color: #4CAF50; color: #4CAF50;" onclick="exportData()">ΛΗΨΗ BACKUP</button>
+
+<label class="secondary-btn" style="display:block; text-align: center; border-color: #2196F3; color: #2196F3; cursor: pointer;">
+    ΕΠΑΝΑΦΟΡΑ DATA
+    <input type="file" id="importFile" style="display:none;" onchange="importData(event)" accept=".json">
+</label>
         <button class="primary-btn" style="background: #ff4444; color: #fff; margin-top: 40px;" onclick="hardResetSystem()">🚨 ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ</button>
     </div>
 
