@@ -1,12 +1,9 @@
 window.PegasusCar = {
     saveSpecs: async function() {
-        const oldData = JSON.parse(localStorage.getItem("pegasus_car_specs")) || {};
         const identity = {
             plate: document.getElementById('carPlate').value,
             model: document.getElementById('carModel').value,
-            vin: document.getElementById('carVin').value,
-            eng: oldData.eng || "", 
-            pwr: oldData.pwr || ""
+            vin: document.getElementById('carVin').value
         };
         const dates = {
             ins: document.getElementById('carIns').value,
@@ -14,13 +11,12 @@ window.PegasusCar = {
             srv: document.getElementById('carSrv').value
         };
 
+        // Ευθυγράμμιση με cloudSync.js (Key: pegasus_car_specs)
         localStorage.setItem("pegasus_car_specs", JSON.stringify(identity));
         localStorage.setItem("pegasus_car_dates", JSON.stringify(dates));
         
         if (window.PegasusCloud && window.PegasusCloud.push) {
-            setSyncStatus('ΑΠΟΣΤΟΛΗ...');
             await window.PegasusCloud.push();
-            setSyncStatus('online');
         }
         this.load();
     },
