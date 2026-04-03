@@ -280,20 +280,16 @@
     </div>
 
 <div id="parking_panel" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
-        <div class="mini-card" style="border-left: 4px solid #ff9800;">
-            <span class="mini-label">ΘΕΣΗ ΠΑΡΚΙΝΓΚ</span>
-            <input type="text" id="parkingInput" placeholder="π.χ. Οδός, Όροφος, Θέση...">
-            <div id="parkingTime" style="font-size: 10px; color: #888; margin-bottom: 10px;">Ενημερώθηκε: --</div>
-            <div class="compact-grid">
-                <button class="primary-btn" onclick="saveParkingLocal()">ΑΠΟΘΗΚΕΥΣΗ</button>
-                <button class="secondary-btn" onclick="clearParkingLocal()">ΔΙΑΓΡΑΦΗ</button>
-            </div>
-        </div>
-        <div class="section-title">ΠΡΟΣΦΑΤΑ ΣΗΜΕΙΑ (TOP 10)</div>
-        <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
+    <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+    <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
+    <div class="mini-card" style="border-left: 4px solid #ff9800;">
+        <span class="mini-label">ΝΕΑ ΠΕΡΙΟΧΗ / ΘΕΣΗ</span>
+        <input type="text" id="parkingInput" placeholder="π.χ. Γιάννενα, Κέντρο...">
+        <button class="primary-btn" onclick="saveParkingAction()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ CLOUD</button>
     </div>
+    <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (SYNCED)</div>
+    <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
+</div>
 
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
@@ -342,9 +338,12 @@ function refreshUIComponent(id) {
 }
 
 function refreshAllUI() {
-    window.PegasusDiet?.updateUI(); window.PegasusInventory?.updateUI(); 
-    window.PegasusWeight?.updateUI(); window.PegasusParking?.updateUI();
-    window.PegasusCar?.load(); window.PegasusProfile?.load();
+    window.PegasusDiet?.updateUI(); 
+    window.PegasusInventory?.updateUI(); 
+    window.PegasusWeight?.updateUI(); 
+    updateParkingUI(); // <--- Προσθήκη
+    renderParkingHistory(); // <--- Προσθήκη
+    if (window.PegasusCar) window.PegasusCar.load();
     updateMuscleUI();
 }
 
@@ -403,29 +402,29 @@ function deleteFoodLocal(idx) {
 
 // --- ΔΙΟΡΘΩΜΕΝΟ PARKING ΜΕ FORCE PUSH & ΙΣΤΟΡΙΚΟ 10 ΘΕΣΕΩΝ ---
 // --- ΔΙΟΡΘΩΜΕΝΟ PARKING ΜΕ FORCE PUSH & ΙΣΤΟΡΙΚΟ 10 ΘΕΣΕΩΝ ---
-async function saveParkingLocal() {
+// --- ΠΡΩΤΟΚΟΛΛΟ ΕΠΙΚΟΙΝΩΝΙΑΣ ΜΕ CLOUDSYNC.JS ---
+async function saveParkingAction() {
     const inputEl = document.getElementById('parkingInput');
     const val = inputEl.value.trim();
     if (!val) return;
 
-    // 1. Διαχείριση Ιστορικού (Maximalist Retention)
-    let history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
-    history = history.filter(item => item !== val); // Αφαίρεση αν υπάρχει ήδη
-    history.unshift(val); // Προσθήκη στην κορυφή
-    if (history.length > 10) history.pop(); // Περιορισμός στις 10 τελευταίες
-
-    // 2. Τοπική Αποθήκευση
+    // 1. Ενημέρωση τρέχουσας θέσης (Key: pegasus_parking_loc)
     localStorage.setItem('pegasus_parking_loc', val);
+
+    // 2. Ενημέρωση Ιστορικού (Key: pegasus_parking_history)
+    let history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+    history = history.filter(item => item !== val);
+    history.unshift(val);
+    if (history.length > 10) history.pop();
     localStorage.setItem('pegasus_parking_history', JSON.stringify(history));
-    
+
     updateParkingUI();
-    
-    // 3. CRITICAL FORCE PUSH: Ενημέρωση Cloud ΠΡΙΝ την ανανέωση
+
+    // 3. ΕΝΤΟΛΗ ΠΡΟΣ CLOUDSYNC: Push τα πάντα στον υπολογιστή
     if (window.PegasusCloud && window.PegasusCloud.push) {
         setSyncStatus('ΑΠΟΣΤΟΛΗ...');
-        await window.PegasusCloud.push(); // Περιμένει την ολοκλήρωση της αποστολής
+        await window.PegasusCloud.push(); // Περιμένει το Cloud Vault να απαντήσει
         setSyncStatus('online');
-        console.log("🚀 PEGASUS: Η θέση πάρκινγκ κλειδώθηκε στο Cloud.");
     }
 
     inputEl.value = "";
@@ -436,50 +435,24 @@ function renderParkingHistory() {
     const history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
     const container = document.getElementById('parkingHistoryList');
     if (!container) return;
-    
+
     container.innerHTML = history.map(loc => `
-        <div class="log-item" onclick="document.getElementById('parkingInput').value='${loc}'; saveParkingLocal();" style="cursor:pointer; border-color:rgba(255,152,0,0.4); margin-bottom:8px;">
-            <div style="font-size:13px; font-weight:800; color:#fff;">📍 ${loc}</div>
+        <div class="log-item" onclick="selectFromHistory('${loc}')" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4);">
+            <div style="font-weight:800; color:#fff;">📍 ${loc}</div>
         </div>
     `).join('');
 }
 
-function clearParkingLocal() {
-    localStorage.removeItem('pegasus_parking_loc');
-    localStorage.removeItem('pegasus_parking_history');
-    updateParkingUI();
-    if (window.PegasusCloud) window.PegasusCloud.push();
+function selectFromHistory(loc) {
+    document.getElementById('parkingInput').value = loc;
+    saveParkingAction(); // Την ανεβάζει ξανά ως "τρέχουσα"
 }
 
+// Ενημέρωση του UI από το αυτόματο PULL του cloudSync.js
 function updateParkingUI() {
-    try {
-        let loc = localStorage.getItem('pegasus_parking_loc') || "--";
-        
-        // Καθαρισμός από τυχόν εισαγωγικά αν ήρθε ως stringified JSON
-        if (loc.startsWith('"') && loc.endsWith('"')) {
-            loc = JSON.parse(loc);
-        }
-
-        const statusEl = document.getElementById('parkingStatus');
-        if (statusEl) {
-            statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
-        }
-        
-        // Ενημέρωση και του input placeholder
-        const inputEl = document.getElementById('parkingInput');
-        if (inputEl && loc !== "--") {
-            inputEl.placeholder = "Τρέχουσα: " + loc;
-        }
-        
-        renderParkingHistory();
-    } catch (e) {
-        console.warn("Parking UI Update caught a non-JSON value, recovering...", e);
-        // Fallback αν αποτύχει το parse
-        const loc = localStorage.getItem('pegasus_parking_loc') || "--";
-        if (document.getElementById('parkingStatus')) {
-            document.getElementById('parkingStatus').textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
-        }
-    }
+    const loc = localStorage.getItem('pegasus_parking_loc') || "--";
+    const statusEl = document.getElementById('parkingStatus');
+    if (statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
 }
 
 // --- ΠΡΟΣΘΗΚΗ ΓΙΑ ΑΕΡΟΒΙΑ ---
