@@ -400,19 +400,18 @@ function deleteFoodLocal(idx) {
 }
 
 // --- ΔΙΟΡΘΩΜΕΝΟ PARKING ΜΕ FORCE PUSH & ΙΣΤΟΡΙΚΟ 10 ΘΕΣΕΩΝ ---
-async function saveParkingAction() {
+async function saveParkingLocal() {
     const inputEl = document.getElementById('parkingInput');
     const val = inputEl.value.trim();
     if (!val) return;
 
-    // 1. Αποθήκευση Τρέχουσας Θέσης (Ωμό κείμενο για αποφυγή Parse Error)
+    // 1. Αποθήκευση ως απλό κείμενο (για αποφυγή SyntaxError)
     localStorage.setItem('pegasus_parking_loc', val);
 
-    // 2. Ενημέρωση Ιστορικού (JSON Array)
+    // 2. Ενημέρωση Ιστορικού 10 θέσεων
     let history = [];
     try {
-        const stored = localStorage.getItem('pegasus_parking_history');
-        history = stored ? JSON.parse(stored) : [];
+        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
     } catch(e) { history = []; }
     
     history = history.filter(item => item !== val);
@@ -420,9 +419,7 @@ async function saveParkingAction() {
     if (history.length > 10) history.pop();
     localStorage.setItem('pegasus_parking_history', JSON.stringify(history));
 
-    updateParkingUI();
-
-    // 3. Force Cloud Push
+    // 3. Συγχρονισμός Cloud
     if (window.PegasusCloud && window.PegasusCloud.push) {
         setSyncStatus('ΑΠΟΣΤΟΛΗ...');
         await window.PegasusCloud.push();
@@ -430,8 +427,8 @@ async function saveParkingAction() {
     }
 
     inputEl.value = "";
-    renderParkingHistory();
-    openView('home'); 
+    refreshAllUI(); // Ενημερώνει την αρχική οθόνη
+    renderParkingHistory(); // Ενημερώνει τη λίστα στο panel
 }
 
 function updateParkingUI() {
@@ -447,15 +444,14 @@ function updateParkingUI() {
 function renderParkingHistory() {
     let history = [];
     try {
-        const stored = localStorage.getItem('pegasus_parking_history');
-        history = stored ? JSON.parse(stored) : [];
+        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
     } catch(e) { history = []; }
     
     const container = document.getElementById('parkingHistoryList');
     if (!container) return;
 
     container.innerHTML = history.map(loc => `
-        <div class="log-item" onclick="selectFromHistory('${loc}')" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4); margin-bottom:8px;">
+        <div class="log-item" onclick="document.getElementById('parkingInput').value='${loc}'; saveParkingLocal();" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4); margin-bottom:8px;">
             <div style="font-size:13px; font-weight:800; color:#fff;">📍 ${loc}</div>
         </div>
     `).join('');
