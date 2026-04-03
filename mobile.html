@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v15.9</title>
+    <title>Pegasus Mobile v16.0</title>
 
     <script>
         (function() {
@@ -42,18 +42,7 @@
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; overflow-y: auto; scrollbar-width: none; }
         .grid::-webkit-scrollbar { display: none; }
-        .log-item { 
-            background: rgba(255, 255, 255, 0.05); 
-            padding: 12px; 
-            border-radius: 18px; 
-            border: 1px solid var(--border); 
-            text-align: left; 
-            position: relative; 
-            margin-bottom: 10px; 
-            width: 100%; 
-            box-sizing: border-box; 
-        }
-        .btn-del { position: absolute; top: 10px; right: 10px; color: var(--danger); background: none; border: none; font-size: 18px; font-weight: 900; }
+        
         .tile { 
             background: var(--card); border: 2px solid var(--border); border-radius: 24px; 
             padding: 18px 10px; backdrop-filter: blur(12px); transition: 0.15s; 
@@ -63,6 +52,34 @@
         .tile:active { transform: scale(0.94); background: rgba(0,255,65,0.1); }
         .tile-icon { font-size: 26px; margin-bottom: 6px; }
         .tile-label { font-size: 9px; font-weight: 900; text-transform: uppercase; color: #fff; letter-spacing: 1px; }
+
+        /* FIX ΓΙΑ ΤΗ ΛΙΣΤΑ ΠΟΥ ΧΑΛΑΣΕ */
+        .log-item { 
+            background: rgba(255, 255, 255, 0.05); 
+            padding: 15px; 
+            border-radius: 18px; 
+            border: 1px solid var(--border); 
+            text-align: left; 
+            position: relative; 
+            margin-bottom: 12px; 
+            width: 100%; 
+            box-sizing: border-box; 
+            display: block;
+        }
+
+        .btn-del { 
+            position: absolute; 
+            top: 12px; 
+            right: 12px; 
+            color: var(--danger); 
+            background: rgba(255, 68, 68, 0.1); 
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 14px; 
+            font-weight: 900; 
+            cursor: pointer;
+        }
 
         .view { display: none; height: 82vh; flex-direction: column; width: 100%; align-items: center; overflow-y: auto; padding-bottom: 40px; scrollbar-width: none; }
         .view.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
@@ -83,12 +100,7 @@
         .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 25px 0 12px; text-align: center; }
         .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 10px; }
         .input-label { font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; text-align: center; width: 100%; }
-        .icon-parking {
-    color: var(--main); /* Χρησιμοποιεί το Pegasus Green */
-    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); /* Προσθέτει Tactical Glow */
-    font-style: normal;
-    font-weight: 900;
-}
+        .icon-parking { color: var(--main); text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); font-style: normal; font-weight: 900; }
     </style>
 </head>
 <body>
@@ -123,19 +135,19 @@
             <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
             <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
 
-<div class="tile" onclick="openView('parking_panel')">
-    <span class="tile-icon icon-parking">P</span> <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
-</div>
+            <div class="tile" onclick="openView('parking_panel')">
+                <span class="tile-icon icon-parking">P</span> <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
+            </div>
 
             <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
                 <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
-                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;">
+                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
                         <span>WHEY</span><span id="homeProtTxt" style="color: var(--main);">--%</span>
                     </div>
                     <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
                         <div id="homeProtBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
                     </div>
-                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;">
+                    <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase;">
                         <span>CREA</span><span id="homeCreaTxt" style="color: var(--main);">--%</span>
                     </div>
                     <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
@@ -162,74 +174,8 @@
             <input type="number" id="fKcal" placeholder="Θερμίδες" inputmode="numeric">
             <input type="number" id="fProt" placeholder="Πρωτεΐνη" inputmode="numeric">
         </div>
-        <button class="primary-btn" onclick="PegasusDiet.add()">ΚΑΤΑΓΡΑΦΗ ΓΕΥΜΑΤΟΣ</button>
+        <button class="primary-btn" onclick="addFoodLocal()">ΚΑΤΑΓΡΑΦΗ ΓΕΥΜΑΤΟΣ</button>
         <div id="foodHistoryList" style="width:100%; margin-top:20px;"></div>
-    </div>
-
-    <div id="library" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΒΙΒΛΙΟΘΗΚΗ ΦΑΓΗΤΩΝ</div>
-        <input type="text" id="libSearch" placeholder="🔍 Αναζήτηση..." oninput="PegasusDiet.renderLibrary()">
-        <div id="libraryContainer" style="width:100%;"></div>
-    </div>
-
-    <div id="cardio" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΚΑΤΑΓΡΑΦΗ ΑΕΡΟΒΙΑΣ</div>
-        <div class="input-label">ΔΙΑΔΡΟΜΗ / ΤΥΠΟΣ</div>
-        <input type="text" id="cdRoute" placeholder="π.χ. ΠΟΔΗΛΑΣΙΑ">
-        <div class="compact-grid">
-            <div><div class="input-label">ΧΙΛΙΟΜΕΤΡΑ</div><input type="number" id="cdKm" placeholder="Km" step="0.1" inputmode="decimal"></div>
-            <div><div class="input-label">ΛΕΠΤΑ</div><input type="number" id="cdTime" placeholder="Λεπτά" inputmode="numeric"></div>
-        </div>
-        <button class="primary-btn" onclick="PegasusCardio.save()">ΑΠΟΘΗΚΕΥΣΗ</button>
-    </div>
-
-    <div id="ems_panel" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΣΥΝΕΔΡΙΑ IMS / EMS</div>
-        <div class="mini-card" style="padding: 25px;">
-            <div id="totalProgress" style="font-size: 12px; font-weight: 900; margin-bottom: 10px;">0% ΟΛΟΚΛΗΡΩΣΗ</div>
-            <div class="bar-bg"><div id="mainProgressBar" class="bar-fill"></div></div>
-            <div id="phaseTimer" style="font-size:55px; font-weight:900; color:#00ff41; margin:20px 0; font-variant-numeric: tabular-nums;">25:00</div>
-        </div>
-        <button id="btnStart" class="primary-btn" onclick="PegasusEMS.start()" style="padding: 20px;">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
-    </div>
-
-    <div id="preview" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΕΒΔΟΜΑΔΙΑΙΑ ΣΤΟΧΕΥΣΗ</div>
-        <div id="muscle-container" class="compact-grid"></div>
-    </div>
-
-    <div id="profile" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΠΡΟΣΩΠΙΚΑ ΕΓΓΡΑΦΑ</div>
-        <div class="input-label">ΠΡΟΣΩΠΙΚΟΣ ΑΡΙΘΜΟΣ</div><input type="text" id="pPA" readonly>
-        <div class="input-label">ΑΔΤ</div><input type="text" id="pADT" readonly>
-        <div class="input-label">ΑΦΜ</div><input type="text" id="pAFM" readonly>
-        <div class="input-label">ΑΜΚΑ</div><input type="text" id="pAMKA" readonly>
-        <div class="input-label">IBAN</div><input type="text" id="pIban" readonly>
-        <div class="compact-grid">
-            <button class="secondary-btn" onclick="unlockFields('profile')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
-            <button class="primary-btn" onclick="PegasusProfile.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
-        </div>
-    </div>
-
-    <div id="car" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ</div>
-        <div class="input-label">ΠΙΝΑΚΙΔΑ</div><input type="text" id="carPlate" readonly>
-        <div class="input-label">ΜΟΝΤΕΛΟ</div><input type="text" id="carModel" readonly>
-        <div class="input-label">VIN (ΠΛΑΙΣΙΟ)</div><input type="text" id="carVin" readonly>
-        <div class="section-title" style="margin-top:15px; color: #555;">ΗΜΕΡΟΜΗΝΙΕΣ & ΣΕΡΒΙΣ</div>
-        <div class="input-label">ΛΗΞΗ ΑΣΦΑΛΕΙΑΣ</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
-        <div class="input-label">ΛΗΞΗ ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
-        <div class="input-label">ΕΠΟΜΕΝΟ SERVICE (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000" readonly>
-        <div class="compact-grid">
-            <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
-            <button class="primary-btn" onclick="window.PegasusCar?.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
-        </div>
     </div>
 
     <div id="phones" class="view">
@@ -237,168 +183,145 @@
         <div class="section-title">ΕΠΑΦΕΣ ΑΝΑΓΚΗΣ</div>
         <input type="text" id="cName" placeholder="Όνομα">
         <input type="tel" id="cNum" placeholder="Τηλέφωνο">
-        <button class="primary-btn" onclick="PegasusProfile.addContact()">ΠΡΟΣΘΗΚΗ</button>
+        <button class="primary-btn" onclick="window.PegasusProfile?.addContact()">ΠΡΟΣΘΗΚΗ</button>
         <div id="contactList" style="width:100%; margin-top: 15px;"></div>
     </div>
 
-    <div id="supps" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΑΠΟΘΕΜΑ ΣΥΜΠΛΗΡΩΜΑΤΩΝ</div>
-        <div class="mini-card" style="border-left: 4px solid #00bcd4;">
-            <span class="mini-label">ΠΡΩΤΕΪΝΗ WHEY</span>
-            <div id="protLevelText" class="mini-val">--- / 2500g</div>
-            <div class="bar-bg"><div id="protBar" class="bar-fill" style="background:#00bcd4;"></div></div>
-            <div class="compact-grid" style="margin-top:15px;">
-                <button class="secondary-btn" onclick="PegasusInventory.consume('prot', 30)">-30g</button>
-                <button class="primary-btn" onclick="PegasusInventory.refill('prot', 2500)">ΑΝΑΠΛΗΡΩΣΗ</button>
-            </div>
-        </div>
-        <div class="mini-card" style="border-left: 4px solid #9c27b0;">
-            <span class="mini-label">ΚΡΕΑΤΙΝΗ</span>
-            <div id="creaLevelText" class="mini-val">--- / 1000g</div>
-            <div class="bar-bg"><div id="creaBar" class="bar-fill" style="background:#9c27b0;"></div></div>
-            <div class="compact-grid" style="margin-top:15px;">
-                <button class="secondary-btn" onclick="PegasusInventory.consume('crea', 5)">-5g</button>
-                <button class="primary-btn" onclick="PegasusInventory.refill('crea', 1000)">ΑΝΑΠΛΗΡΩΣΗ</button>
-            </div>
-        </div>
-    </div>
-
+    <div id="library" class="view"><button class="btn-back" onclick="openView('home')">◀ ΠΙΣΩ</button><div id="libraryContainer"></div></div>
+    <div id="car" class="view"><button class="btn-back" onclick="openView('home')">◀ ΠΙΣΩ</button><input type="text" id="carPlate" readonly><button class="primary-btn" onclick="window.PegasusCar?.saveSpecs()">ΣΩΣΕ</button></div>
     <div id="parking_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
-        <div class="mini-card" style="border-left: 4px solid #ff9800;">
-            <span class="mini-label">ΘΕΣΗ ΠΑΡΚΙΝΓΚ</span>
-            <input type="text" id="parkingInput" placeholder="π.χ. Οδός, Όροφος, Θέση...">
-            <div id="parkingTime" style="font-size: 10px; color: #888; margin-bottom: 10px;">Ενημερώθηκε: --</div>
-            <div class="compact-grid">
-                <button class="primary-btn" onclick="window.PegasusParking?.save()">ΑΠΟΘΗΚΕΥΣΗ</button>
-                <button class="secondary-btn" onclick="window.PegasusParking?.clear()">ΔΙΑΓΡΑΦΗ</button>
-            </div>
-        </div>
+        <div class="section-title">ΘΕΣΗ ΠΑΡΚΙΝΓΚ</div>
+        <input type="text" id="parkingInput" placeholder="Πού πάρκαρες;">
+        <button class="primary-btn" onclick="saveParkingLocal()">ΑΠΟΘΗΚΕΥΣΗ</button>
     </div>
-
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="mini-card" style="border-left: 4px solid var(--main); margin-bottom: 20px;">
-            <span class="mini-label">ΚΑΤΑΓΡΑΦΗ ΒΑΡΟΥΣ ΣΩΜΑΤΟΣ</span>
-            <input type="number" id="mobileWeightInput" placeholder="74.0" step="0.1">
-            <div id="mobileWeightAvg" style="font-size: 10px; color: var(--main); font-weight: 800;">M.O. Εβδομάδας: -- kg</div>
-            <button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value)">ΕΝΗΜΕΡΩΣΗ</button>
-        </div>
-        <div class="section-title">ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ</div>
-        <button class="secondary-btn" style="margin-bottom: 10px; border-color: #4CAF50; color: #4CAF50;" onclick="exportData()">ΛΗΨΗ BACKUP</button>
-        <label class="secondary-btn" style="display:block; text-align: center; border-color: #2196F3; color: #2196F3;">
-            ΕΠΑΝΑΦΟΡΑ DATA
-            <input type="file" style="display:none;" onchange="importData(event)">
-        </label>
-        <button class="primary-btn" style="background: #ff4444; color: #fff; margin-top: 40px;" onclick="hardResetSystem()">🚨 ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ</button>
+        <div class="mini-card"><input type="number" id="mobileWeightInput" placeholder="Βάρος"><button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value)">ΕΝΗΜΕΡΩΣΗ</button></div>
+        <button class="primary-btn" style="background:#f44; margin-top:20px;" onclick="hardResetSystem()">HARD RESET</button>
     </div>
 
 <script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER v15.9 ===== */
+/* ===== MASTER CONTROLLER v16.0 ===== */
 const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
 let isUnlocked = false;
 
 function openView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const targetView = document.getElementById(id);
-    if (targetView) targetView.classList.add('active');
+    const target = document.getElementById(id);
+    if (target) target.classList.add('active');
     refreshUIComponent(id);
 }
 
 function refreshUIComponent(id) {
     try {
-        if (id === 'diet') window.PegasusDiet?.updateUI();
-        if (id === 'library') window.PegasusDiet?.renderLibrary();
-        if (id === 'supps') window.PegasusInventory?.updateUI();
-        if (id === 'preview') updateMuscleUI();
+        if (id === 'diet') updateDietUI();
+        if (id === 'supps' || id === 'home') updateSuppUI();
+        if (id === 'parking_panel' || id === 'home') updateParkingUI();
         if (id === 'car') window.PegasusCar?.load();
         if (id === 'profile') window.PegasusProfile?.load();
-        if (id === 'phones') window.PegasusProfile?.renderContacts();
         if (id === 'settings_panel') window.PegasusWeight?.updateUI();
-        if (id === 'parking_panel') window.PegasusParking?.updateUI();
-    } catch(e) { console.error("Refresh Error:", e); }
+    } catch(e) { console.error(e); }
 }
 
-function refreshAllUI() {
-    window.PegasusDiet?.updateUI(); window.PegasusInventory?.updateUI(); 
-    window.PegasusWeight?.updateUI(); window.PegasusParking?.updateUI();
-    window.PegasusCar?.load(); window.PegasusProfile?.load();
-    updateMuscleUI();
+function refreshAllUI() { updateDietUI(); updateSuppUI(); updateParkingUI(); window.PegasusWeight?.updateUI(); }
+
+// DIET LOGIC (FIXED)
+function addFoodLocal() {
+    const name = document.getElementById("fName").value || "Γεύμα";
+    const kcal = parseFloat(document.getElementById("fKcal").value) || 0;
+    const prot = parseFloat(document.getElementById("fProt").value) || 0;
+    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    let log = JSON.parse(localStorage.getItem("food_log_" + dateStr)) || [];
+    log.unshift({name, kcal, protein: prot});
+    localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
+    let tk = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+    let tp = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
+    localStorage.setItem("pegasus_today_kcal", (tk + kcal));
+    localStorage.setItem("pegasus_today_protein", (tp + prot));
+    updateDietUI();
+    if(window.PegasusCloud) window.PegasusCloud.push();
 }
 
-
-
-function unlockFields(v) { 
-    document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
-        el.removeAttribute('readonly'); el.style.border = "1px solid #00ff41"; 
-    }); 
+function updateDietUI() {
+    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    const log = JSON.parse(localStorage.getItem("food_log_" + dateStr)) || [];
+    const tk = localStorage.getItem("pegasus_today_kcal") || "0";
+    const tp = localStorage.getItem("pegasus_today_protein") || "0";
+    document.getElementById("txtKcal").textContent = `${Math.round(tk)} / 2800`;
+    document.getElementById("txtProt").textContent = `${Math.round(tp)} / 160g`;
+    document.getElementById("foodHistoryList").innerHTML = log.map((i, idx) => `
+        <div class="log-item">
+            <button class="btn-del" onclick="deleteFoodLocal(${idx})">✕</button>
+            <div style="font-weight: 800; color: #fff;">${i.name}</div>
+            <div style="color: var(--main); font-size: 12px;">${i.kcal} kcal | ${i.protein}g P</div>
+        </div>`).join('');
 }
 
-function updateMuscleUI() { 
-    const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-    const container = document.getElementById("muscle-container");
-    if (!container) return;
-    container.innerHTML = Object.keys(targets).map(g => {
-        const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
-        return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${p}%;"></div></div></div>`;
-    }).join('');
+function deleteFoodLocal(idx) {
+    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    let log = JSON.parse(localStorage.getItem("food_log_" + dateStr)) || [];
+    const item = log[idx];
+    if(item) {
+        let tk = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+        let tp = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
+        localStorage.setItem("pegasus_today_kcal", Math.max(0, tk - item.kcal));
+        localStorage.setItem("pegasus_today_protein", Math.max(0, tp - item.protein));
+    }
+    log.splice(idx, 1);
+    localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
+    updateDietUI();
+    if(window.PegasusCloud) window.PegasusCloud.push();
+}
+
+// PARKING
+function saveParkingLocal() {
+    const val = document.getElementById('parkingInput').value;
+    localStorage.setItem('pegasus_parking_loc', val);
+    updateParkingUI();
+    openView('home');
+    if(window.PegasusCloud) window.PegasusCloud.push();
+}
+
+function updateParkingUI() {
+    const loc = localStorage.getItem('pegasus_parking_loc') || "--";
+    const el = document.getElementById('parkingStatus');
+    if(el) el.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
+}
+
+// SUPPLEMENTS
+function updateSuppUI() {
+    const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {prot: 2500, crea: 1000};
+    const pPct = (s.prot / 2500) * 100;
+    const cPct = (s.crea / 1000) * 100;
+    if(document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
+    if(document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
+    if(document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
+    if(document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
 }
 
 function setSyncStatus(s) { 
     const e = document.getElementById("sync-indicator"); if(!e) return;
-    if (s === 'online') { e.textContent = "ONLINE"; e.style.color = "#00ff41"; }
-    else if (s === 'offline') { e.textContent = "OFFLINE"; e.style.color = "#ff4444"; }
-    else { e.textContent = s.toUpperCase(); e.style.color = "#00bcd4"; }
+    e.textContent = s.toUpperCase(); e.style.color = (s === 'online') ? "#00ff41" : "#ff4444";
 }
 
-function attemptVaultUnlock() { 
+function attemptVaultUnlock() {
     const pin = document.getElementById("pinInput").value;
-    if(PegasusCloud.unlock(pin)) { document.getElementById("pinModal").style.display = "none"; } 
+    if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { document.getElementById("pinModal").style.display = "none"; isUnlocked = true; }
 }
 
-function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); refreshAllUI(); }
+function hardResetSystem() { if(confirm("RESET;")) { localStorage.clear(); location.reload(); } }
 
-function hardResetSystem() {
-    if(confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache & Hard Reload. Συνέχεια;")) {
-        localStorage.removeItem("pegasus_vault_pin");
-        location.replace(location.pathname + '?v=' + Date.now());
-    }
-}
-
-function exportData() {
-    const backup = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        let k = localStorage.key(i);
-        if (k.includes("pegasus_") || k.includes("food_log_") || k.includes("peg_")) backup[k] = localStorage.getItem(k);
-    }
-    const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `PEGASUS_MOBILE_BACKUP.json`; a.click();
-}
-
-function importData(e) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const data = JSON.parse(event.target.result);
-        Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-        location.reload();
-    };
-    reader.readAsText(e.target.files[0]);
-}
-
-window.onload = () => { 
-    const pin = localStorage.getItem("pegasus_vault_pin"); 
-    if(pin) PegasusCloud.unlock(pin); else document.getElementById("pinModal").style.display="flex"; 
+window.onload = () => {
+    const pin = localStorage.getItem("pegasus_vault_pin");
+    if(pin && window.PegasusCloud) { window.PegasusCloud.unlock(pin); document.getElementById("pinModal").style.display="none"; }
+    else { document.getElementById("pinModal").style.display="flex"; }
     setTimeout(refreshAllUI, 500);
 };
 </script>
 
-
 <script src="manifest.js"></script>
-    <script src="cloudSync.js"></script>
+<script src="cloudSync.js"></script>
 <script src="data.js"></script>
 <script src="car-mobile.js"></script>
 <script src="diet-mobile.js"></script>
