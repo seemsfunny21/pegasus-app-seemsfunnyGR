@@ -23,22 +23,31 @@ window.PegasusParking = {
         if (window.PegasusCloud) window.PegasusCloud.push();
     },
 
-    updateUI: function() {
-        const data = JSON.parse(localStorage.getItem('pegasus_parking_loc')) || null;
-        const statusEl = document.getElementById('parkingStatus');
-        const timeEl = document.getElementById('parkingTime');
-        const inputEl = document.getElementById('parkingInput');
-
-        if (data) {
-            if (statusEl) statusEl.textContent = `PARKING: ${data.loc}`;
-            if (timeEl) timeEl.textContent = `Παρκαρίστηκε: ${data.ts}`;
-            if (inputEl) inputEl.value = data.loc;
-        } else {
-            if (statusEl) statusEl.textContent = "PARKING: --";
-            if (timeEl) timeEl.textContent = "Παρκαρίστηκε: --";
-        }
+updateUI: function() {
+    let data = null;
+    const rawData = localStorage.getItem('pegasus_parking_loc');
+    
+    try {
+        // Προσπάθεια ανάγνωσης ως JSON (για συμβατότητα με παλιά δεδομένα)
+        data = JSON.parse(rawData);
+    } catch (e) {
+        // Αν αποτύχει (π.χ. "ααα"), το αντιμετωπίζουμε ως απλό κείμενο
+        if (rawData) data = { loc: rawData, ts: "---" };
     }
-};
+
+    const statusEl = document.getElementById('parkingStatus');
+    const inputEl = document.getElementById('parkingInput');
+
+    if (data && data.loc) {
+        if (statusEl) statusEl.textContent = `ΠΑΡΚΙΝΓΚ: ${data.loc}`;
+        if (inputEl) inputEl.placeholder = `Τρέχουσα: ${data.loc}`;
+    } else {
+        if (statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: --";
+    }
+    
+    // Κλήση του ιστορικού που βρίσκεται στο mobile.html
+    if (typeof renderParkingHistory === "function") renderParkingHistory();
+}
 
 // Αρχική φόρτωση
 document.addEventListener('DOMContentLoaded', () => window.PegasusParking.updateUI());
