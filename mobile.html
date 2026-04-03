@@ -405,13 +405,14 @@ async function saveParkingAction() {
     const val = inputEl.value.trim();
     if (!val) return;
 
-    // 1. Ενημέρωση τρέχουσας θέσης (Ωμό κείμενο για αποφυγή σφάλματος JSON)
+    // 1. Αποθήκευση Τρέχουσας Θέσης (Ωμό κείμενο για αποφυγή Parse Error)
     localStorage.setItem('pegasus_parking_loc', val);
 
     // 2. Ενημέρωση Ιστορικού (JSON Array)
     let history = [];
     try {
-        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+        const stored = localStorage.getItem('pegasus_parking_history');
+        history = stored ? JSON.parse(stored) : [];
     } catch(e) { history = []; }
     
     history = history.filter(item => item !== val);
@@ -421,6 +422,7 @@ async function saveParkingAction() {
 
     updateParkingUI();
 
+    // 3. Force Cloud Push
     if (window.PegasusCloud && window.PegasusCloud.push) {
         setSyncStatus('ΑΠΟΣΤΟΛΗ...');
         await window.PegasusCloud.push();
@@ -429,12 +431,13 @@ async function saveParkingAction() {
 
     inputEl.value = "";
     renderParkingHistory();
+    openView('home'); 
 }
 
 function updateParkingUI() {
     // Στην αρχική οθόνη δείχνουμε μόνο το τελευταίο σημείο
     let loc = localStorage.getItem('pegasus_parking_loc') || "--";
-    // Καθαρισμός αν έχει αποθηκευτεί κατά λάθος με εισαγωγικά
+    // Καθαρισμός από τυχόν εισαγωγικά JSON
     loc = loc.replace(/^"|"$/g, ''); 
     
     const statusEl = document.getElementById('parkingStatus');
@@ -444,15 +447,16 @@ function updateParkingUI() {
 function renderParkingHistory() {
     let history = [];
     try {
-        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+        const stored = localStorage.getItem('pegasus_parking_history');
+        history = stored ? JSON.parse(stored) : [];
     } catch(e) { history = []; }
     
     const container = document.getElementById('parkingHistoryList');
     if (!container) return;
 
     container.innerHTML = history.map(loc => `
-        <div class="log-item" onclick="selectFromHistory('${loc}')" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4);">
-            <div style="font-weight:800; color:#fff;">📍 ${loc}</div>
+        <div class="log-item" onclick="selectFromHistory('${loc}')" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4); margin-bottom:8px;">
+            <div style="font-size:13px; font-weight:800; color:#fff;">📍 ${loc}</div>
         </div>
     `).join('');
 }
