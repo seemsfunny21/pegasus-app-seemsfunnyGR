@@ -508,7 +508,6 @@ function hardResetSystem() {
     }
 }
 
-function exportData() {
 // --- PEGASUS HIGH-INTEGRITY BACKUP SYSTEM ---
 function exportData() {
     const backup = {};
@@ -547,20 +546,17 @@ function importData(e) {
             const data = JSON.parse(event.target.result);
             
             if (confirm("🚨 ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα διαγραφούν και θα αντικατασταθούν από το Backup. Συνέχεια;")) {
-                // 1. Καθαρισμός τρέχουσας μνήμης (Full Wipe)
                 localStorage.clear();
-                
-                // 2. Εισαγωγή νέων δεδομένων
                 Object.keys(data).forEach(k => {
                     localStorage.setItem(k, data[k]);
                 });
 
-                alert("✅ Η επαναφορά ολοκληρώθηκε επιτυχώς. Το σύστημα θα κάνει επανεκκίνηση.");
+                alert("✅ Η επαναφορά ολοκληρώθηκε. Επανεκκίνηση...");
                 location.replace(location.pathname + '?v=' + Date.now());
             }
         } catch (err) {
             console.error("Restore Error:", err);
-            alert("❌ ΣΦΑΛΜΑ: Το αρχείο δεν είναι έγκυρο αρχείο Pegasus Backup.");
+            alert("❌ ΣΦΑΛΜΑ: Το αρχείο δεν είναι έγκυρο.");
         }
     };
     reader.readAsText(file);
@@ -572,10 +568,11 @@ window.onload = async () => {
         if (window.PegasusCloud) await window.PegasusCloud.unlock(pin); 
         
         setTimeout(() => {
-            refreshAllUI();
+            if (typeof refreshAllUI === "function") refreshAllUI();
         }, 1000);
     } else {
-        document.getElementById("pinModal").style.display="flex"; 
+        const modal = document.getElementById("pinModal");
+        if (modal) modal.style.display = "flex"; 
     }
 };
 </script>
