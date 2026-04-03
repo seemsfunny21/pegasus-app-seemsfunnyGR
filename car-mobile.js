@@ -1,17 +1,18 @@
 /* ==========================================================================
-   PEGASUS OS - VEHICLE MANAGEMENT MODULE (v1.0)
-   Protocol: Strict Cloud Sync & Identity Mapping
+   PEGASUS OS - VEHICLE MANAGEMENT MODULE (v1.1)
+   Protocol: Strict Cloud Sync & Direct UI Mapping
    ========================================================================== */
 
 window.PegasusCar = {
-    // 1. Αποθήκευση Τεχνικών Χαρακτηριστικών (Local Identity)
-    saveSpecs: function() {
+    // 1. Αποθήκευση Τεχνικών Χαρακτηριστικών (Local Identity & Sync)
+    saveSpecs: async function() {
         const identity = {
             plate: document.getElementById('carPlate').value,
             model: document.getElementById('carModel').value,
             vin: document.getElementById('carVin').value,
-            eng: document.getElementById('carEngine').value,
-            pwr: document.getElementById('carPower').value
+            // Χρήση σωστών ID βάσει mobile.html (τα carEngine/carPower λείπουν από το HTML)
+            eng: identity?.eng || "", 
+            pwr: identity?.pwr || ""
         };
         const dates = {
             ins: document.getElementById('carIns').value,
@@ -23,34 +24,41 @@ window.PegasusCar = {
         localStorage.setItem("pegasus_car_dates", JSON.stringify(dates));
         
         console.log("🚗 CAR MODULE: Identity Saved Local.");
+        
+        // Force Cloud Sync
+        if (window.PegasusCloud && window.PegasusCloud.push) {
+            await window.PegasusCloud.push();
+            console.log("☁️ CAR MODULE: Cloud Synced.");
+        }
+
         this.load();
-        if (window.PegasusCloud) window.PegasusCloud.push();
     },
 
-    // 2. Φόρτωση Δεδομένων στα Inputs
+    // 2. Φόρτωση Δεδομένων στα Inputs (Direct DOM Access)
     load: function() {
         const identity = JSON.parse(localStorage.getItem("peg_car_identity")) || {};
         const dates = JSON.parse(localStorage.getItem("pegasus_car_dates")) || {};
         
-        // Mapping values to UI
-        if(window.bindCopy) {
-            bindCopy('carPlate', identity.plate);
-            bindCopy('carModel', identity.model);
-            bindCopy('carVin', identity.vin);
-            bindCopy('carEngine', identity.eng);
-            bindCopy('carPower', identity.pwr);
-            bindCopy('carIns', dates.ins);
-            bindCopy('carKteo', dates.kteo);
-            bindCopy('carSrv', dates.srv);
-        }
+        // Απευθείας ανάθεση αντί για bindCopy που προκαλεί σφάλματα
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || "";
+        };
+
+        setVal('carPlate', identity.plate);
+        setVal('carModel', identity.model);
+        setVal('carVin', identity.vin);
+        setVal('carIns', dates.ins);
+        setVal('carKteo', dates.kteo);
+        setVal('carSrv', dates.srv);
 
         this.renderServiceLog();
     },
 
     // 3. Προσθήκη Νέας Εργασίας (Service)
-    addService: function() {
-        const task = document.getElementById('srvTask').value;
-        const km = document.getElementById('srvKm').value;
+    addService: async function() {
+        const task = document.getElementById('srvTask')?.value;
+        const km = document.getElementById('srvKm')?.value;
         
         if (!task || !km) return;
 
@@ -63,15 +71,17 @@ window.PegasusCar = {
 
         localStorage.setItem("pegasus_car_service", JSON.stringify(logs));
         
-        // Reset inputs
-        document.getElementById('srvTask').value = "";
-        document.getElementById('srvKm').value = "";
+        if (document.getElementById('srvTask')) document.getElementById('srvTask').value = "";
+        if (document.getElementById('srvKm')) document.getElementById('srvKm').value = "";
         
         this.renderServiceLog();
-        if (window.PegasusCloud) window.PegasusCloud.push();
+        
+        if (window.PegasusCloud && window.PegasusCloud.push) {
+            await window.PegasusCloud.push();
+        }
     },
 
-    // 4. Σχεδίαση Ιστορικού
+    // 4. Σχεδίαση Ιστορικού (Tactical Grid)
     renderServiceLog: function() {
         const logs = JSON.parse(localStorage.getItem("pegasus_car_service")) || [];
         const container = document.getElementById("serviceLogList");
@@ -79,12 +89,12 @@ window.PegasusCar = {
 
         container.innerHTML = logs.map(i => `
             <div class="log-item">
-                <div style="font-weight:bold; color:var(--main);">${i.t}</div>
-                <div style="font-size:11px; color:#aaa;">${i.k} χλμ | ${i.d}</div>
+                <div style="font-weight:bold; color:var(--main); font-size:13px;">${i.t}</div>
+                <div style="font-size:11px; color:#aaa; margin-top:4px;">${i.k} χλμ | ${i.d}</div>
             </div>
         `).join('');
     }
 };
 
 // Auto-init on script load
-console.log("🚗 PEGASUS CAR: Module Operational.");
+console.log("🚗 PEGASUS CAR: Module Operational (v1.1).");
