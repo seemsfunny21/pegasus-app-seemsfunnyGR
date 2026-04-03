@@ -137,9 +137,8 @@
             <div class="tile" onclick="openView('phones')"><span class="tile-icon">📞</span><span class="tile-label">Επαφές</span></div>
 
 <div class="tile" onclick="openView('parking_panel')">
-    <span class="tile-icon icon-parking">P</span> <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
-    <div class="section-title">ΠΡΟΣΦΑΤΑ ΣΗΜΕΙΑ (TOP 10)</div>
-<div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
+    <span class="tile-icon icon-parking">P</span> 
+    <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
 </div>
 
             <div class="tile" onclick="openView('supps')" style="padding: 10px 8px;">
@@ -287,7 +286,7 @@
         <input type="text" id="parkingInput" placeholder="π.χ. Γιάννενα, Κέντρο...">
         <button class="primary-btn" onclick="saveParkingAction()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ CLOUD</button>
     </div>
-    <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (SYNCED)</div>
+    <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (TOP 10)</div>
     <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
 </div>
 
@@ -401,18 +400,20 @@ function deleteFoodLocal(idx) {
 }
 
 // --- ΔΙΟΡΘΩΜΕΝΟ PARKING ΜΕ FORCE PUSH & ΙΣΤΟΡΙΚΟ 10 ΘΕΣΕΩΝ ---
-// --- ΔΙΟΡΘΩΜΕΝΟ PARKING ΜΕ FORCE PUSH & ΙΣΤΟΡΙΚΟ 10 ΘΕΣΕΩΝ ---
-// --- ΠΡΩΤΟΚΟΛΛΟ ΕΠΙΚΟΙΝΩΝΙΑΣ ΜΕ CLOUDSYNC.JS ---
 async function saveParkingAction() {
     const inputEl = document.getElementById('parkingInput');
     const val = inputEl.value.trim();
     if (!val) return;
 
-    // 1. Ενημέρωση τρέχουσας θέσης (Key: pegasus_parking_loc)
+    // 1. Ενημέρωση τρέχουσας θέσης (Ωμό κείμενο για αποφυγή σφάλματος JSON)
     localStorage.setItem('pegasus_parking_loc', val);
 
-    // 2. Ενημέρωση Ιστορικού (Key: pegasus_parking_history)
-    let history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+    // 2. Ενημέρωση Ιστορικού (JSON Array)
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+    } catch(e) { history = []; }
+    
     history = history.filter(item => item !== val);
     history.unshift(val);
     if (history.length > 10) history.pop();
@@ -420,10 +421,9 @@ async function saveParkingAction() {
 
     updateParkingUI();
 
-    // 3. ΕΝΤΟΛΗ ΠΡΟΣ CLOUDSYNC: Push τα πάντα στον υπολογιστή
     if (window.PegasusCloud && window.PegasusCloud.push) {
         setSyncStatus('ΑΠΟΣΤΟΛΗ...');
-        await window.PegasusCloud.push(); // Περιμένει το Cloud Vault να απαντήσει
+        await window.PegasusCloud.push();
         setSyncStatus('online');
     }
 
@@ -431,8 +431,22 @@ async function saveParkingAction() {
     renderParkingHistory();
 }
 
+function updateParkingUI() {
+    // Στην αρχική οθόνη δείχνουμε μόνο το τελευταίο σημείο
+    let loc = localStorage.getItem('pegasus_parking_loc') || "--";
+    // Καθαρισμός αν έχει αποθηκευτεί κατά λάθος με εισαγωγικά
+    loc = loc.replace(/^"|"$/g, ''); 
+    
+    const statusEl = document.getElementById('parkingStatus');
+    if (statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
+}
+
 function renderParkingHistory() {
-    const history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+    let history = [];
+    try {
+        history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
+    } catch(e) { history = []; }
+    
     const container = document.getElementById('parkingHistoryList');
     if (!container) return;
 
@@ -445,14 +459,7 @@ function renderParkingHistory() {
 
 function selectFromHistory(loc) {
     document.getElementById('parkingInput').value = loc;
-    saveParkingAction(); // Την ανεβάζει ξανά ως "τρέχουσα"
-}
-
-// Ενημέρωση του UI από το αυτόματο PULL του cloudSync.js
-function updateParkingUI() {
-    const loc = localStorage.getItem('pegasus_parking_loc') || "--";
-    const statusEl = document.getElementById('parkingStatus');
-    if (statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
+    saveParkingAction();
 }
 
 // --- ΠΡΟΣΘΗΚΗ ΓΙΑ ΑΕΡΟΒΙΑ ---
