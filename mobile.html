@@ -398,28 +398,30 @@ function deleteFoodLocal(idx) {
     if(window.PegasusCloud) window.PegasusCloud.push();
 }
 
+// --- ΔΙΟΡΘΩΜΕΝΟ PARKING ΜΕ FORCE PUSH & ΙΣΤΟΡΙΚΟ 10 ΘΕΣΕΩΝ ---
 async function saveParkingLocal() {
     const inputEl = document.getElementById('parkingInput');
     const val = inputEl.value.trim();
     if (!val) return;
 
-    // Διαχείριση Ιστορικού (Maximalist Retention)
+    // 1. Διαχείριση Ιστορικού (Maximalist Retention)
     let history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
-    history = history.filter(item => item !== val);
-    history.unshift(val);
-    if (history.length > 10) history.pop();
+    history = history.filter(item => item !== val); // Αφαίρεση αν υπάρχει ήδη
+    history.unshift(val); // Προσθήκη στην κορυφή
+    if (history.length > 10) history.pop(); // Περιορισμός στις 10 τελευταίες
 
-    // Τοπική Αποθήκευση
+    // 2. Τοπική Αποθήκευση
     localStorage.setItem('pegasus_parking_loc', val);
     localStorage.setItem('pegasus_parking_history', JSON.stringify(history));
     
     updateParkingUI();
     
-    // CRITICAL: Force Push πριν το επόμενο Pull
-    if(window.PegasusCloud && window.PegasusCloud.push) {
+    // 3. CRITICAL FORCE PUSH: Ενημέρωση Cloud ΠΡΙΝ την ανανέωση
+    if (window.PegasusCloud && window.PegasusCloud.push) {
         setSyncStatus('ΑΠΟΣΤΟΛΗ...');
-        await window.PegasusCloud.push();
+        await window.PegasusCloud.push(); // Περιμένει την ολοκλήρωση της αποστολής
         setSyncStatus('online');
+        console.log("🚀 PEGASUS: Η θέση πάρκινγκ κλειδώθηκε στο Cloud.");
     }
 
     inputEl.value = "";
@@ -442,7 +444,7 @@ function clearParkingLocal() {
     localStorage.removeItem('pegasus_parking_loc');
     localStorage.removeItem('pegasus_parking_history');
     updateParkingUI();
-    if(window.PegasusCloud) window.PegasusCloud.push();
+    if (window.PegasusCloud) window.PegasusCloud.push();
 }
 
 function updateParkingUI() {
