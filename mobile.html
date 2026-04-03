@@ -334,7 +334,10 @@ function refreshUIComponent(id) {
         if (id === 'profile') window.PegasusProfile?.load();
         if (id === 'phones') window.PegasusProfile?.renderContacts();
         if (id === 'settings_panel') window.PegasusWeight?.updateUI();
-        if (id === 'parking_panel') window.PegasusParking?.updateUI();
+        if (id === 'parking_panel') {
+            updateParkingUI();
+            renderParkingHistory();
+        }
     } catch(e) { console.error("Refresh Error:", e); }
 }
 
@@ -452,6 +455,9 @@ function updateParkingUI() {
     const loc = localStorage.getItem('pegasus_parking_loc') || "--";
     const statusEl = document.getElementById('parkingStatus');
     if(statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
+    
+    // Αν είμαστε στο parking_panel, ανανεώνουμε το ιστορικό
+    renderParkingHistory();
 }
 
 // --- ΠΡΟΣΘΗΚΗ ΓΙΑ ΑΕΡΟΒΙΑ ---
@@ -551,10 +557,19 @@ function importData(e) {
     reader.readAsText(e.target.files[0]);
 }
 
-window.onload = () => { 
+window.onload = async () => { 
     const pin = localStorage.getItem("pegasus_vault_pin"); 
-    if(pin) PegasusCloud.unlock(pin); else document.getElementById("pinModal").style.display="flex"; 
-    setTimeout(refreshAllUI, 500);
+    if(pin) {
+        // Περιμένουμε το ξεκλείδωμα και το πρώτο Pull
+        await PegasusCloud.unlock(pin); 
+        // Δίνουμε 1 δευτερόλεπτο στο δίκτυο να φέρει τα δεδομένα πριν κάνουμε Refresh το UI
+        setTimeout(() => {
+            refreshAllUI();
+            renderParkingHistory(); // Φορτώνει το ιστορικό 10 θέσεων
+        }, 1000);
+    } else {
+        document.getElementById("pinModal").style.display="flex"; 
+    }
 };
 </script>
 
