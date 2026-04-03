@@ -1,10 +1,13 @@
-/* ===== PEGASUS OS - VEHICLE MANAGEMENT MODULE v1.2 ===== */
+/* ===== PEGASUS OS - VEHICLE MANAGEMENT MODULE v1.3 ===== */
 window.PegasusCar = {
+    // 1. Αποθήκευση όλων των στοιχείων (Key: pegasus_car_specs)
     saveSpecs: async function() {
         const identity = {
             plate: document.getElementById('carPlate').value,
             model: document.getElementById('carModel').value,
-            vin: document.getElementById('carVin').value
+            vin: document.getElementById('carVin').value,
+            eng: document.getElementById('carEngine').value, // ΠΡΟΣΘΗΚΗ
+            pwr: document.getElementById('carPower').value   // ΠΡΟΣΘΗΚΗ
         };
         const dates = {
             ins: document.getElementById('carIns').value,
@@ -12,7 +15,7 @@ window.PegasusCar = {
             srv: document.getElementById('carSrv').value
         };
 
-        // Key Alignment με το cloudSync.js
+        // Ευθυγράμμιση με cloudSync.js
         localStorage.setItem("pegasus_car_specs", JSON.stringify(identity));
         localStorage.setItem("pegasus_car_dates", JSON.stringify(dates));
         
@@ -21,9 +24,11 @@ window.PegasusCar = {
             await window.PegasusCloud.push();
             if (typeof setSyncStatus === "function") setSyncStatus('online');
         }
+        alert("ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ ΕΝΗΜΕΡΩΘΗΚΑΝ");
         this.load();
     },
 
+    // 2. Φόρτωση όλων των πεδίων στο UI
     load: function() {
         const identity = JSON.parse(localStorage.getItem("pegasus_car_specs")) || {};
         const dates = JSON.parse(localStorage.getItem("pegasus_car_dates")) || {};
@@ -33,9 +38,14 @@ window.PegasusCar = {
             if (el) el.value = val || "";
         };
 
+        // Mapping Identity
         setVal('carPlate', identity.plate);
         setVal('carModel', identity.model);
         setVal('carVin', identity.vin);
+        setVal('carEngine', identity.eng); // ΠΡΟΣΘΗΚΗ
+        setVal('carPower', identity.pwr);   // ΠΡΟΣΘΗΚΗ
+
+        // Mapping Dates
         setVal('carIns', dates.ins);
         setVal('carKteo', dates.kteo);
         setVal('carSrv', dates.srv);
