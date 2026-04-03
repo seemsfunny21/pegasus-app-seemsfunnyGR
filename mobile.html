@@ -330,8 +330,7 @@ function refreshUIComponent(id) {
         if (id === 'phones') window.PegasusProfile?.renderContacts();
         if (id === 'settings_panel') window.PegasusWeight?.updateUI();
         if (id === 'parking_panel') {
-            updateParkingUI();
-            renderParkingHistory();
+            window.PegasusParking?.updateUI(); // ΟΡΘΗ ΚΛΗΣΗ
         }
     } catch(e) { console.error("Refresh Error:", e); }
 }
@@ -340,9 +339,9 @@ function refreshAllUI() {
     window.PegasusDiet?.updateUI(); 
     window.PegasusInventory?.updateUI(); 
     window.PegasusWeight?.updateUI(); 
-    window.PegasusParking?.updateUI(); // <--- Αυτό κάνει render και την αρχική και το ιστορικό
-    window.PegasusCar?.load();
-    updateMuscleUI();
+    window.PegasusParking?.updateUI(); // ΟΡΘΗ ΚΛΗΣΗ
+    window.PegasusCar?.load(); 
+    if (typeof updateMuscleUI === "function") updateMuscleUI();
 }
 
 // --- ΣΥΝΑΡΤΗΣΕΙΣ ΠΟΥ ΛΕΙΠΟΥΝ ---
@@ -500,12 +499,10 @@ function importData(e) {
 window.onload = async () => { 
     const pin = localStorage.getItem("pegasus_vault_pin"); 
     if(pin) {
-        // Περιμένουμε το ξεκλείδωμα και το πρώτο Pull
-        await PegasusCloud.unlock(pin); 
-        // Δίνουμε 1 δευτερόλεπτο στο δίκτυο να φέρει τα δεδομένα πριν κάνουμε Refresh το UI
+        if (window.PegasusCloud) await window.PegasusCloud.unlock(pin); 
+        
         setTimeout(() => {
             refreshAllUI();
-            renderParkingHistory(); // Φορτώνει το ιστορικό 10 θέσεων
         }, 1000);
     } else {
         document.getElementById("pinModal").style.display="flex"; 
