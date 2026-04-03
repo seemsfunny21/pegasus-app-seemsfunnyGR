@@ -508,24 +508,61 @@ function hardResetSystem() {
 }
 
 function exportData() {
+// --- PEGASUS HIGH-INTEGRITY BACKUP SYSTEM ---
+function exportData() {
     const backup = {};
     for (let i = 0; i < localStorage.length; i++) {
         let k = localStorage.key(i);
-        if (k.includes("pegasus_") || k.includes("food_log_") || k.includes("peg_")) backup[k] = localStorage.getItem(k);
+        // Αντιγράφουμε μόνο τα κλειδιά του Pegasus
+        if (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_")) {
+            backup[k] = localStorage.getItem(k);
+        }
     }
-    const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `PEGASUS_MOBILE_BACKUP.json`; a.click();
+    
+    if (Object.keys(backup).length === 0) {
+        alert("⚠️ ΣΦΑΛΜΑ: Δεν βρέθηκαν δεδομένα για Backup.");
+        return;
+    }
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 16);
+    
+    a.href = URL.createObjectURL(blob);
+    a.download = `PEGASUS_RESTORE_${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    alert("✅ Το αρχείο Backup δημιουργήθηκε.");
 }
 
 function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (event) => {
-        const data = JSON.parse(event.target.result);
-        Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-        location.reload();
+        try {
+            const data = JSON.parse(event.target.result);
+            
+            if (confirm("🚨 ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα διαγραφούν και θα αντικατασταθούν από το Backup. Συνέχεια;")) {
+                // 1. Καθαρισμός τρέχουσας μνήμης (Full Wipe)
+                localStorage.clear();
+                
+                // 2. Εισαγωγή νέων δεδομένων
+                Object.keys(data).forEach(k => {
+                    localStorage.setItem(k, data[k]);
+                });
+
+                alert("✅ Η επαναφορά ολοκληρώθηκε επιτυχώς. Το σύστημα θα κάνει επανεκκίνηση.");
+                location.replace(location.pathname + '?v=' + Date.now());
+            }
+        } catch (err) {
+            console.error("Restore Error:", err);
+            alert("❌ ΣΦΑΛΜΑ: Το αρχείο δεν είναι έγκυρο αρχείο Pegasus Backup.");
+        }
     };
-    reader.readAsText(e.target.files[0]);
+    reader.readAsText(file);
 }
 
 window.onload = async () => { 
