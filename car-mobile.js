@@ -1,45 +1,51 @@
 /* ==========================================================================
-   PEGASUS OS - VEHICLE MANAGEMENT MODULE (v1.1)
+   PEGASUS OS - VEHICLE MANAGEMENT MODULE (v1.2)
    Protocol: Strict Cloud Sync & Direct UI Mapping
+   Alignment: Maximalist Retention & Key Consistency
    ========================================================================== */
 
 window.PegasusCar = {
-    // 1. Αποθήκευση Τεχνικών Χαρακτηριστικών (Local Identity & Sync)
+    // 1. Αποθήκευση Τεχνικών Χαρακτηριστικών
     saveSpecs: async function() {
+        // Ανάκτηση παλαιών δεδομένων για διατήρηση eng/pwr αν δεν υπάρχουν στο UI
+        const oldData = JSON.parse(localStorage.getItem("pegasus_car_specs")) || {};
+
         const identity = {
             plate: document.getElementById('carPlate').value,
             model: document.getElementById('carModel').value,
             vin: document.getElementById('carVin').value,
-            // Χρήση σωστών ID βάσει mobile.html (τα carEngine/carPower λείπουν από το HTML)
-            eng: identity?.eng || "", 
-            pwr: identity?.pwr || ""
+            eng: oldData.eng || "", 
+            pwr: oldData.pwr || ""
         };
+        
         const dates = {
             ins: document.getElementById('carIns').value,
             kteo: document.getElementById('carKteo').value,
             srv: document.getElementById('carSrv').value
         };
 
-        localStorage.setItem("peg_car_identity", JSON.stringify(identity));
+        // Χρήση του pegasus_car_specs για αυτόματο συγχρονισμό από το cloudSync.js
+        localStorage.setItem("pegasus_car_specs", JSON.stringify(identity));
         localStorage.setItem("pegasus_car_dates", JSON.stringify(dates));
         
-        console.log("🚗 CAR MODULE: Identity Saved Local.");
+        console.log("🚗 CAR MODULE: Identity & Dates Saved Local.");
         
-        // Force Cloud Sync
+        // Άμεσο Force Push στο Cloud
         if (window.PegasusCloud && window.PegasusCloud.push) {
+            setSyncStatus('ΑΠΟΣΤΟΛΗ...');
             await window.PegasusCloud.push();
-            console.log("☁️ CAR MODULE: Cloud Synced.");
+            setSyncStatus('online');
+            console.log("☁️ CAR MODULE: Cloud Vault Updated.");
         }
 
         this.load();
     },
 
-    // 2. Φόρτωση Δεδομένων στα Inputs (Direct DOM Access)
+    // 2. Φόρτωση Δεδομένων (Direct DOM Mapping)
     load: function() {
-        const identity = JSON.parse(localStorage.getItem("peg_car_identity")) || {};
+        const identity = JSON.parse(localStorage.getItem("pegasus_car_specs")) || {};
         const dates = JSON.parse(localStorage.getItem("pegasus_car_dates")) || {};
         
-        // Απευθείας ανάθεση αντί για bindCopy που προκαλεί σφάλματα
         const setVal = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.value = val || "";
@@ -55,24 +61,24 @@ window.PegasusCar = {
         this.renderServiceLog();
     },
 
-    // 3. Προσθήκη Νέας Εργασίας (Service)
+    // 3. Προσθήκη Service με Cloud Interceptor
     addService: async function() {
-        const task = document.getElementById('srvTask')?.value;
-        const km = document.getElementById('srvKm')?.value;
+        const taskEl = document.getElementById('srvTask');
+        const kmEl = document.getElementById('srvKm');
         
-        if (!task || !km) return;
+        if (!taskEl?.value || !kmEl?.value) return;
 
         let logs = JSON.parse(localStorage.getItem("pegasus_car_service")) || [];
         logs.unshift({
-            t: task,
-            k: km,
+            t: taskEl.value,
+            k: kmEl.value,
             d: new Date().toLocaleDateString('el-GR')
         });
 
         localStorage.setItem("pegasus_car_service", JSON.stringify(logs));
         
-        if (document.getElementById('srvTask')) document.getElementById('srvTask').value = "";
-        if (document.getElementById('srvKm')) document.getElementById('srvKm').value = "";
+        taskEl.value = "";
+        kmEl.value = "";
         
         this.renderServiceLog();
         
@@ -96,5 +102,4 @@ window.PegasusCar = {
     }
 };
 
-// Auto-init on script load
-console.log("🚗 PEGASUS CAR: Module Operational (v1.1).");
+console.log("🚗 PEGASUS CAR: Module Operational (v1.2).");
