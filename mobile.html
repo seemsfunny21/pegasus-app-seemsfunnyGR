@@ -452,12 +452,34 @@ function clearParkingLocal() {
 }
 
 function updateParkingUI() {
-    const loc = localStorage.getItem('pegasus_parking_loc') || "--";
-    const statusEl = document.getElementById('parkingStatus');
-    if(statusEl) statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
-    
-    // Αν είμαστε στο parking_panel, ανανεώνουμε το ιστορικό
-    renderParkingHistory();
+    try {
+        let loc = localStorage.getItem('pegasus_parking_loc') || "--";
+        
+        // Καθαρισμός από τυχόν εισαγωγικά αν ήρθε ως stringified JSON
+        if (loc.startsWith('"') && loc.endsWith('"')) {
+            loc = JSON.parse(loc);
+        }
+
+        const statusEl = document.getElementById('parkingStatus');
+        if (statusEl) {
+            statusEl.textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
+        }
+        
+        // Ενημέρωση και του input placeholder
+        const inputEl = document.getElementById('parkingInput');
+        if (inputEl && loc !== "--") {
+            inputEl.placeholder = "Τρέχουσα: " + loc;
+        }
+        
+        renderParkingHistory();
+    } catch (e) {
+        console.warn("Parking UI Update caught a non-JSON value, recovering...", e);
+        // Fallback αν αποτύχει το parse
+        const loc = localStorage.getItem('pegasus_parking_loc') || "--";
+        if (document.getElementById('parkingStatus')) {
+            document.getElementById('parkingStatus').textContent = "ΠΑΡΚΙΝΓΚ: " + loc;
+        }
+    }
 }
 
 // --- ΠΡΟΣΘΗΚΗ ΓΙΑ ΑΕΡΟΒΙΑ ---
