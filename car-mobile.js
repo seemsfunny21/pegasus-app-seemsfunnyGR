@@ -1,15 +1,12 @@
-/* ==========================================================================
-   PEGASUS OS - VEHICLE MANAGEMENT MODULE (v1.2)
-   Protocol: Strict Cloud Sync Alignment
-   ========================================================================== */
-
 window.PegasusCar = {
-    // 1. Αποθήκευση με το ΣΩΣΤΟ KEY για το Cloud (pegasus_car_specs)
     saveSpecs: async function() {
+        const oldData = JSON.parse(localStorage.getItem("pegasus_car_specs")) || {};
         const identity = {
             plate: document.getElementById('carPlate').value,
             model: document.getElementById('carModel').value,
-            vin: document.getElementById('carVin').value
+            vin: document.getElementById('carVin').value,
+            eng: oldData.eng || "", 
+            pwr: oldData.pwr || ""
         };
         const dates = {
             ins: document.getElementById('carIns').value,
@@ -17,48 +14,48 @@ window.PegasusCar = {
             srv: document.getElementById('carSrv').value
         };
 
-        // ΑΛΛΑΓΗ ΕΔΩ: Χρήση των Keys που περιμένει το cloudSync.js
         localStorage.setItem("pegasus_car_specs", JSON.stringify(identity));
         localStorage.setItem("pegasus_car_dates", JSON.stringify(dates));
         
-        console.log("🚗 CAR MODULE: Data Saved with Cloud Sync Keys.");
-        
-        // Force Push για να κλειδώσουν στο Cloud αμέσως
         if (window.PegasusCloud && window.PegasusCloud.push) {
+            setSyncStatus('ΑΠΟΣΤΟΛΗ...');
             await window.PegasusCloud.push();
+            setSyncStatus('online');
         }
-
         this.load();
     },
 
-    // 2. Φόρτωση από τα ΣΩΣΤΑ KEYS
     load: function() {
         const identity = JSON.parse(localStorage.getItem("pegasus_car_specs")) || {};
         const dates = JSON.parse(localStorage.getItem("pegasus_car_dates")) || {};
         
-        if (document.getElementById('carPlate')) document.getElementById('carPlate').value = identity.plate || "";
-        if (document.getElementById('carModel')) document.getElementById('carModel').value = identity.model || "";
-        if (document.getElementById('carVin')) document.getElementById('carVin').value = identity.vin || "";
-        if (document.getElementById('carIns')) document.getElementById('carIns').value = dates.ins || "";
-        if (document.getElementById('carKteo')) document.getElementById('carKteo').value = dates.kteo || "";
-        if (document.getElementById('carSrv')) document.getElementById('carSrv').value = dates.srv || "";
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || "";
+        };
+
+        setVal('carPlate', identity.plate);
+        setVal('carModel', identity.model);
+        setVal('carVin', identity.vin);
+        setVal('carIns', dates.ins);
+        setVal('carKteo', dates.kteo);
+        setVal('carSrv', dates.srv);
 
         this.renderServiceLog();
     },
 
     addService: async function() {
-        const task = document.getElementById('srvTask')?.value;
-        const km = document.getElementById('srvKm')?.value;
-        if (!task || !km) return;
+        const t = document.getElementById('srvTask')?.value;
+        const k = document.getElementById('srvKm')?.value;
+        if (!t || !k) return;
 
         let logs = JSON.parse(localStorage.getItem("pegasus_car_service")) || [];
-        logs.unshift({ t: task, k: km, d: new Date().toLocaleDateString('el-GR') });
+        logs.unshift({ t, k, d: new Date().toLocaleDateString('el-GR') });
         localStorage.setItem("pegasus_car_service", JSON.stringify(logs));
         
         document.getElementById('srvTask').value = "";
         document.getElementById('srvKm').value = "";
         this.renderServiceLog();
-        
         if (window.PegasusCloud) await window.PegasusCloud.push();
     },
 
@@ -73,5 +70,3 @@ window.PegasusCar = {
             </div>`).join('');
     }
 };
-
-console.log("🚗 PEGASUS CAR: Module v1.2 Aligned with Cloud.");
