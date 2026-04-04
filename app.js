@@ -505,7 +505,7 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
-    // 1. RECOVERY DETECTION & UI SYNC
+    // 1. ΕΛΕΓΧΟΣ ΗΜΕΡΑΣ ΑΠΟΘΕΡΑΠΕΙΑΣ
     const activeBtn = document.querySelector(".navbar button.active");
     const currentDay = activeBtn ? activeBtn.textContent.trim() : "";
     const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");
@@ -513,24 +513,19 @@ function showVideo(i) {
     if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
         const recoverySrc = "videos/stretching.mp4";
         if (vid.getAttribute('src') !== recoverySrc) {
-            vid.pause();
             vid.src = recoverySrc;
             vid.load();
-            vid.play().catch(() => console.log("Playback pending user interaction..."));
-            
-            if (label && isRecoveryDay) {
-                label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
-                label.style.color = "#00bcd4";
-            }
+            vid.play().catch(e => console.log("Manual play required"));
         }
         return;
     }
 
-    // 2. SURGICAL ASSET MAPPING (v10.5 Aligned)
+    // 2. ΑΝΑΚΤΗΣΗ ΟΝΟΜΑΤΟΣ ΑΣΚΗΣΗΣ
     const weightInput = exercises[i].querySelector(".weight-input");
     if (!weightInput) return;
-
     const name = weightInput.getAttribute("data-name") || "";
+
+    // 3. ΑΠΛΟ & ΚΑΘΑΡΟ MAPPING (Το "Ποδηλασία" προστέθηκε εδώ)
     const videoMap = {
         "Seated Chest Press": "chestpress",
         "Pec Deck Flys": "chestflys",
@@ -539,39 +534,25 @@ function showVideo(i) {
         "Bent Over Row": "bentoverrows",
         "Standing Bicep Curl": "bicepcurls",
         "Cycling": "cycling",
-        "Ποδηλασία": "cycling", // ✅ ΠΡΟΣΘΗΚΗ: Ελληνικό mapping για την Ποδηλασία
+        "Ποδηλασία": "cycling", 
         "Stretching": "stretching",
         "Warmup": "warmup"
     };
 
     let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
-    
-    // 3. SECURE PATH PROTOCOL
-    // Χρησιμοποιούμε σχετική διαδρομή. Αν αποτύχει, το Catch θα δοκιμάσει Root Path.
     const newSrc = `videos/${mappedVal}.mp4`;
     
+    // 4. ΑΠΛΗ ΦΟΡΤΩΣΗ (Οπως δούλευε πάντα)
     if (vid.getAttribute('src') !== newSrc) {
         vid.pause();
         vid.src = newSrc;
         vid.load(); 
-        
-        let playPromise = vid.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(err => {
-                console.warn(`⚠️ PEGASUS: Asset ${mappedVal} pending. Retrying...`);
-                
-                // --- RETRY PROTOCOL ---
-                // Δοκιμάζουμε με την απόλυτη διαδρομή αν η σχετική αποτύχει
-                vid.src = "./videos/" + mappedVal + ".mp4";
-                vid.load();
-                vid.play().catch(() => {
-                    console.error(`❌ PEGASUS: 404 for ${mappedVal}. Fallback to warmup.`);
-                    vid.src = "videos/warmup.mp4";
-                    vid.load();
-                    vid.play();
-                });
-            });
-        }
+        vid.play().catch(err => {
+            // Αν όντως λείπει το αρχείο, τότε μόνο δείξε warmup
+            vid.src = "videos/warmup.mp4";
+            vid.load();
+            vid.play();
+        });
     }
 }
 
