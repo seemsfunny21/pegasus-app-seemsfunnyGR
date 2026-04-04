@@ -15,78 +15,71 @@ const PegasusUI = {
         console.log("✅ PEGASUS UI MANAGER: v4.3 Operational (Shielded Numeric Hotkeys Enabled)");
     },
 
-    /**
-     * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.3)
-     * Protocol: Digit Recognition via e.code to bypass Shift-Symbol conflicts
-     */
-  /**
-     * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.4 - FINAL DEBUG)
-     * Protocol: Multi-Symbol Recognition (Covers all Keyboard Layouts)
+/**
+     * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.6 - UNIVERSAL)
+     * Supports: Alt + Top Row OR Alt + Numpad
+     * Fixes: Numpad Navigation Conflict & Shift Desync
      */
     initHotkeys() {
         window.addEventListener('keydown', (e) => {
-            // 1. Καταγραφή στην κονσόλα για εντοπισμό σφάλματος
-            console.log(`Key: ${e.key} | Code: ${e.code} | Shift: ${e.shiftKey}`);
-
-            // 2. Προστασία εισαγωγής
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
 
-            // 3. Έλεγχος αν είναι πατημένο το Shift
-            if (!e.shiftKey) return;
+            // Χρησιμοποιούμε ALT για να αποφύγουμε το "μπέρδεμα" του Shift με τα βελάκια του Numpad
+            if (!e.altKey) return;
 
-            const key = e.key;
+            const code = e.code; 
+            console.log("⌨️ PEGASUS UI: Executing Command for " + code);
 
-            // Έλεγχος βάσει συμβόλων (για ελληνικά/αγγλικά πληκτρολόγια)
-            switch(key) {
-                case '1': case '!': // Shift + 1
+            switch(code) {
+                case 'Digit1': case 'Numpad1': 
                     e.preventDefault();
                     const startBtn = document.getElementById('btnStart') || document.getElementById('btnStartTraining');
                     if (startBtn) startBtn.click();
                     break;
 
-                case '2': case '@': case '"': // Shift + 2
+                case 'Digit2': case 'Numpad2': 
                     e.preventDefault();
                     if (typeof window.nextPhase === "function") window.nextPhase();
                     else if (document.getElementById('btnNext')) document.getElementById('btnNext').click();
                     break;
 
-                case '3': case '#': case '£': // Shift + 3
+                case 'Digit3': case 'Numpad3': 
                     e.preventDefault();
                     this.togglePanel('calendarPanel');
                     break;
 
-                case '4': case '$': // Shift + 4
+                case 'Digit4': case 'Numpad4': 
                     e.preventDefault();
                     this.togglePanel('achievementsPanel');
                     break;
 
-                case '5': case '%': // Shift + 5
+                case 'Digit5': case 'Numpad5': 
                     e.preventDefault();
                     this.togglePanel('foodPanel');
                     break;
 
-                case '6': case '^': // Shift + 6
+                case 'Digit6': case 'Numpad6': 
                     e.preventDefault();
                     this.togglePanel('previewPanel');
                     break;
 
-                case '7': case '&': // Shift + 7
+                case 'Digit7': case 'Numpad7': 
                     e.preventDefault();
                     this.togglePanel('settingsPanel');
                     break;
 
-                case '8': case '*': // Shift + 8
+                case 'Digit8': case 'Numpad8': 
                     e.preventDefault();
                     this.togglePanel('toolsPanel');
                     break;
 
-                case '9': case '(': // Shift + 9
+                case 'Digit9': case 'Numpad9': 
                     e.preventDefault();
                     if (window.exportPegasusData) window.exportPegasusData();
                     if (window.PegasusCloud && window.PegasusCloud.push) window.PegasusCloud.push();
                     break;
             }
-        }, true); // Το 'true' (Capture mode) δίνει προτεραιότητα στο Pegasus
+        }, true);
     },
 
     /**
