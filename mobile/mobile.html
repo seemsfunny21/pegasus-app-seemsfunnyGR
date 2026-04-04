@@ -130,7 +130,7 @@
         
         <div class="grid">
             <div class="tile" onclick="openView('diet')"><span class="tile-icon">🥗</span><span class="tile-label">Διατροφή</span></div>
-            <div class="tile" onclick="openView('library')"><span class="tile-icon">📚</span><span class="tile-label">Βιβλιοθήκη</span></div>
+           <div class="tile" onclick="openView('library')"><span class="tile-icon">🍽️</span><span class="tile-label">Γεύματα</span></div>
             
             <div class="tile" onclick="openView('cardio')"><span class="tile-icon">🚴</span><span class="tile-label">Αερόβια</span></div>
             <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
@@ -191,12 +191,11 @@
         <div id="foodHistoryList" style="width:100%; margin-top:20px;"></div>
     </div>
 
-    <div id="library" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΒΙΒΛΙΟΘΗΚΗ ΦΑΓΗΤΩΝ</div>
-        <input type="text" id="libSearch" placeholder="🔍 Αναζήτηση..." oninput="PegasusDiet.renderLibrary()">
-        <div id="libraryContainer" style="width:100%;"></div>
-    </div>
+<div id="library" class="view">
+    <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+    <div class="section-title">ΗΜΕΡΗΣΙΟ ΜΕΝΟΥ (ΚΟΥΚΙ)</div>
+    <div id="libraryContainer" style="width:100%;"></div>
+</div>
 
 <div id="cardio" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
