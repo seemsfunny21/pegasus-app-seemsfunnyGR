@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v13.6)
-   Protocol: Live Search, Unified PC Weekly Menu Sync & AI Advisor Integration
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v13.7)
+   Protocol: One-Tap Logging, Unified PC Menu Sync & Night Routine Trigger
    ========================================================================== */
 
 const KOUKI_MASTER = [
@@ -24,39 +24,38 @@ const KOUKI_MASTER = [
 ];
 
 window.PegasusDiet = {
-    // 1. Προσθήκη Γεύματος
-    add: async function() {
-        const nameInput = document.getElementById("fName");
-        const kcalInput = document.getElementById("fKcal");
-        const protInput = document.getElementById("fProt");
+    // 1. Έξυπνη Προσθήκη Γεύματος (Υποστηρίζει Direct Inject)
+    add: async function(n, k, p) {
+        // Παίρνει τα δεδομένα κατευθείαν από το πάτημα (ή από το search input αν το γράψεις χειροκίνητα)
+        const name = n || document.getElementById("fName")?.value;
+        const kcal = k || 0;
+        const prot = p || 0;
 
-        const n = nameInput.value || "Γεύμα";
-        const k = parseFloat(kcalInput.value) || 0;
-        const p = parseFloat(protInput.value) || 0;
+        if(!name || name.trim() === "") return; // Ακύρωση αν είναι άδειο
 
-        // Αυτόματη κατανάλωση πρωτεΐνης από το Inventory
-        if(n.toLowerCase().includes("πρωτεΐνη") && window.PegasusInventory) {
+        // Αυτόματη αφαίρεση 1 Scoop Whey από το Inventory (αν υπάρχει η λέξη whey)
+        if(name.toLowerCase().includes("whey") && window.PegasusInventory) {
             window.PegasusInventory.consume('prot', 30);
+            console.log("🧬 INVENTORY: 30g Whey deducted automatically.");
         }
         
         // Καταγραφή στο Κουκί Agreement
-        if(n.includes("(Κούκι)")) {
+        if(name.includes("(Κούκι)")) {
             let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
-            agreementLog.push({ date: new Date().toLocaleDateString('el-GR'), food: n });
+            agreementLog.push({ date: new Date().toLocaleDateString('el-GR'), food: name });
             localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
             console.log("📊 KOUKI: Agreement Balance Updated.");
         }
 
         const dateStr = new Date().toLocaleDateString('el-GR');
         let log = this.getLog(dateStr);
-        log.unshift({ name: n, kcal: k, protein: p, ts: Date.now() });
+        log.unshift({ name: name, kcal: kcal, protein: prot, ts: Date.now() });
         
         localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
         
-        // Reset Inputs
-        nameInput.value = "";
-        kcalInput.value = "";
-        protInput.value = "";
+        // Καθαρισμός UI & Κλείσιμο Αναζήτησης
+        const fNameEl = document.getElementById("fName");
+        if(fNameEl) fNameEl.value = "";
         this.closeSearch();
 
         this.updateUI();
@@ -105,7 +104,7 @@ window.PegasusDiet = {
 
         if(matches.length > 0) {
             resBox.innerHTML = matches.map(i => `
-                <div class="search-item" onclick="PegasusDiet.selectSuggested('${i.name}', ${i.kcal}, ${i.protein})">
+                <div class="search-item" onclick="window.PegasusDiet.selectSuggested('${i.name}', ${i.kcal}, ${i.protein})">
                     <span style="color:#fff; font-weight:bold; font-size:13px;">${i.name}</span>
                     <span style="color:var(--main); font-size:11px; font-weight:900;">${i.kcal} kcal | ${i.protein}g P</span>
                 </div>
@@ -116,11 +115,9 @@ window.PegasusDiet = {
         }
     },
 
+    // 🎯 ONE-TAP ACTION: Μόλις πατάς αποτέλεσμα, καταγράφεται
     selectSuggested: function(n, k, p) {
-        document.getElementById("fName").value = n;
-        document.getElementById("fKcal").value = k;
-        document.getElementById("fProt").value = p;
-        this.closeSearch();
+        this.add(n, k, p);
     },
 
     closeSearch: function() {
@@ -230,11 +227,9 @@ window.PegasusDiet = {
         } catch (e) { return []; }
     },
 
+    // 🚀 QUICK ADD ACTION: (Για το Μωβ Κουμπί & το Κουκί Menu)
     quickAdd: function(n, k, p) {
-        document.getElementById("fName").value = n;
-        document.getElementById("fKcal").value = k;
-        document.getElementById("fProt").value = p;
-        this.add();
+        this.add(n, k, p);
         if (typeof openView === "function") openView('diet');
     }
 };
