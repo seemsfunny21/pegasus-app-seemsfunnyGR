@@ -825,29 +825,28 @@ window.onload = () => {
     const todayName = greekDays[todayObj.getDay()];
 
     // --- 1. PEGASUS STRICT WEEKLY RESET PROTOCOL (v10.2) ---
-    // Ο μηδενισμός επιτρέπεται ΑΠΟΚΛΕΙΣΤΙΚΑ το Σάββατο.
-if (todayName === "Σάββατο") {
-    try {
-        const lastReset = localStorage.getItem('pegasus_last_reset');
-        const todayDateStr = todayObj.toISOString().split('T')[0];
-        
-        if (lastReset !== todayDateStr) {
-            const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
-            localStorage.setItem('pegasus_last_reset', todayDateStr);
-            if (window.PegasusCloud) window.PegasusCloud.push(true);
+    if (todayName === "Σάββατο") {
+        try {
+            const lastReset = localStorage.getItem('pegasus_last_reset');
+            const todayDateStr = todayObj.toISOString().split('T')[0];
+            
+            if (lastReset !== todayDateStr) {
+                const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+                localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
+                localStorage.setItem('pegasus_last_reset', todayDateStr);
+                if (window.PegasusCloud) window.PegasusCloud.push(true);
+            }
+        } catch (e) {
+            console.error("🛡️ PEGASUS RESET ERROR: Recovery initiated.", e);
         }
-    } catch (e) {
-        console.error("🛡️ PEGASUS RESET ERROR: Recovery initiated.", e);
     }
-}
 
     // --- 2. INITIALIZATION ---
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     createNavbar();
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
 
- // --- 3. MASTER UI MAPPING (Command Center - v11.2 Optimized) ---
+    // --- 3. MASTER UI MAPPING (Command Center - v11.2 Optimized) ---
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -855,8 +854,6 @@ if (todayName === "Σάββατο") {
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
         "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
-        
-        // ✨ ΠΡΟΣΘΗΚΗ: Ο Logic Controller του Diet Advisor
         "btnProposalsUI": () => {
             if (window.PegasusDietAdvisor) {
                 const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
@@ -873,14 +870,12 @@ if (todayName === "Σάββατο") {
                                     Προσθήκη στο Log
                                 </button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
             } else {
                 alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί.");
             }
         },
-
         "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
         "btnGallery": { panel: "galleryPanel", init: () => window.GalleryEngine.render() },
@@ -890,39 +885,26 @@ if (todayName === "Σάββατο") {
             if (window.PegasusReporting) window.ReportingEngine.sendReport(true);
             else alert("Reporting Engine Offline");
         },
-"btnSaveSettings": () => { 
+        "btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
             const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
-            
-            // ⚖️ PEGASUS WEIGHT TRACKER INTEGRATION
-            // Καταγραφή στο ιστορικό για υπολογισμό Μέσου Όρου πριν το reload
-            if (window.PegasusWeight) {
-                window.PegasusWeight.logWeight(weightVal);
-            } else {
-                localStorage.setItem(weightKey, weightVal);
-            }
-
+            if (window.PegasusWeight) window.PegasusWeight.logWeight(weightVal);
+            else localStorage.setItem(weightKey, weightVal);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
-            
-            // Μικρή καθυστέρηση για να διασφαλιστεί η εγγραφή πριν το reload
-            setTimeout(() => {
-                location.reload();
-            }, 100);
+            setTimeout(() => { location.reload(); }, 100);
         }
-};
-    // --- 4. EVENT DELEGATION (v11.2 - Anti-Panel-Closing Logic) ---
+    };
+
+    // --- 4. EVENT DELEGATION ---
     Object.keys(window.masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const target = window.masterUI[btnId];
-                
-                // ΕΔΩ Η ΑΛΛΑΓΗ: Μην κλείνεις τα πάνελ αν πατάμε "Προτάσεις" (είναι μέσα στο Food Panel)
                 if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
                     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
-                
                 if (typeof target === 'function') target();
                 else if (target && target.panel) {
                     const el = document.getElementById(target.panel);
@@ -951,8 +933,18 @@ if (todayName === "Σάββατο") {
     }, 400);
 
     if (window.PegasusUI && typeof window.PegasusUI.init === "function") window.PegasusUI.init();
-};
 
+    // --- ✨ 6. PRELOADER TERMINATION PROTOCOL ---
+    // Εξαφάνιση του Loader 1 δευτερόλεπτο αφού όλα έχουν φορτώσει
+    setTimeout(() => {
+        const loader = document.getElementById('pegasus-loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            loader.style.visibility = 'hidden';
+            console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
+        }
+    }, 1000); 
+};
 /* ===== 11. DEBUG BRIDGE (FIXED & FULL ACCESS) ===== */
 window.PegasusDebug = {
     // Κατάσταση Engine: PegasusDebug.state()
