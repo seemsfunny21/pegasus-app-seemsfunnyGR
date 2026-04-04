@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER - v4.0 (DIET ADVISOR INTEGRATED)
+   PEGASUS UI MANAGER - v4.2 (NUMERIC HOTKEYS INTEGRATED)
    Protocol: Strict Data Analyst - Real-time DOM Validation
-   Features: Direct Source Check, Mutation-Aware Dragging, Turbo, Mute, Diet Bridge
+   Features: Shift+1-9 Shortcuts, Mutation-Aware Dragging, Diet Bridge
    Status: FINAL STABLE | RE-VERIFIED FOR ZERO-BUG SIMULATION
    ========================================================================== */
 
@@ -12,7 +12,96 @@ const PegasusUI = {
         this.initDraggablePanels();
         this.initClickOutside();
         this.initButtonBridge(); 
-        console.log("✅ PEGASUS UI MANAGER: v4.0 Operational (Centralized Logic with Diet Advisor)");
+        this.initHotkeys(); 
+        console.log("✅ PEGASUS UI MANAGER: v4.2 Operational (Numeric Hotkeys Enabled)");
+    },
+
+    /**
+     * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.2)
+     * Layout: Shift + Numeric (1-9)
+     * Protocol: Zero-Bug Logic & Input Protection
+     */
+    initHotkeys() {
+        window.addEventListener('keydown', (e) => {
+            // Αποφυγή ενεργοποίησης όταν ο χρήστης πληκτρολογεί σε πεδία
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+            // Έλεγχος αν πατήθηκε το Shift
+            if (!e.shiftKey) return;
+
+            const key = e.key; 
+
+            switch(key) {
+                case '1': // ΕΝΑΡΞΗ / ΠΑΥΣΗ
+                    e.preventDefault();
+                    console.log("⌨️ Hotkey: START/PAUSE");
+                    const startBtn = document.getElementById('btnStart') || document.getElementById('btnStartTraining');
+                    if (startBtn) startBtn.click();
+                    break;
+
+                case '2': // ΕΠΟΜΕΝΟ
+                    e.preventDefault();
+                    console.log("⌨️ Hotkey: NEXT");
+                    if (typeof window.nextPhase === "function") window.nextPhase();
+                    else if (document.getElementById('btnNext')) document.getElementById('btnNext').click();
+                    break;
+
+                case '3': // ΗΜΕΡΟΛΟΓΙΟ
+                    e.preventDefault();
+                    this.togglePanel('calendarPanel');
+                    break;
+
+                case '4': // ΕΠΙΤΕΥΓΜΑΤΑ
+                    e.preventDefault();
+                    this.togglePanel('achievementsPanel');
+                    break;
+
+                case '5': // ΔΙΑΤΡΟΦΗ
+                    e.preventDefault();
+                    this.togglePanel('foodPanel');
+                    break;
+
+                case '6': // ΠΡΟΕΠΙΣΚΟΠΗΣΗ
+                    e.preventDefault();
+                    this.togglePanel('previewPanel');
+                    break;
+
+                case '7': // ΡΥΘΜΙΣΕΙΣ
+                    e.preventDefault();
+                    this.togglePanel('settingsPanel');
+                    break;
+
+                case '8': // ΕΡΓΑΛΕΙΑ
+                    e.preventDefault();
+                    this.togglePanel('toolsPanel');
+                    break;
+
+                case '9': // SAVE BACKUP (Cloud Push & Export)
+                    e.preventDefault();
+                    console.log("⌨️ Hotkey: MASTER SAVE");
+                    if (window.exportPegasusData) window.exportPegasusData();
+                    if (window.PegasusCloud && window.PegasusCloud.push) window.PegasusCloud.push();
+                    break;
+            }
+        });
+    },
+
+    // Βοηθητική συνάρτηση για Toggle των Panels (v4.2)
+    togglePanel(id) {
+        const panel = document.getElementById(id);
+        if (!panel) return;
+        const isVisible = panel.style.display === 'block';
+        
+        // Κλείσιμο αν είναι ανοιχτό, άνοιγμα αν είναι κλειστό
+        panel.style.display = isVisible ? 'none' : 'block';
+        
+        if (!isVisible) {
+            document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
+            panel.style.zIndex = "1001";
+            // Logic Bridge για συγκεκριμένα Panels
+            if (id === 'settingsPanel' && typeof window.initSettingsUI === 'function') window.initSettingsUI();
+            if (id === 'galleryPanel' && window.GalleryEngine) window.GalleryEngine.render();
+        }
     },
 
     initButtonBridge() {
@@ -54,20 +143,14 @@ const PegasusUI = {
                     if (modal) modal.style.display = 'flex';
                     break;
                 case 'btnOpenGallery':
-                    const gp = document.getElementById('galleryPanel');
-                    if (gp) { gp.style.display = 'block'; if (window.GalleryEngine) window.GalleryEngine.render(); }
+                    this.togglePanel('galleryPanel');
                     break;
                 case 'btnEMS':
-                    const ems = document.getElementById('emsModal');
-                    if (ems) ems.style.display = 'block';
+                    this.togglePanel('emsModal');
                     break;
-                
-                // ✨ ΝΕΟ: BRIDGE ΓΙΑ ΤΟΝ SMART DIET ADVISOR
                 case 'btnProposalsUI':
                     if (window.masterUI && typeof window.masterUI.btnProposalsUI === 'function') {
                         window.masterUI.btnProposalsUI();
-                    } else {
-                        console.error("❌ PEGASUS UI: masterUI.btnProposalsUI logic is missing in app.js");
                     }
                     break;
             }
@@ -79,30 +162,23 @@ const PegasusUI = {
         }
     },
 
-    /**
-     * MASTER WARMUP CONTROLLER - v3.9
-     */
     handleWarmupToggle() {
         const vid = document.getElementById("video");
         const label = document.getElementById("phaseTimer");
         if (!vid) return;
 
         if (!vid.src.includes("warmup.mp4")) {
-            console.log("🏃 UI: Starting Warmup");
             vid.pause();
             vid.src = "videos/warmup.mp4";
             vid.load();
             vid.play().catch(e => console.log("Play interrupted"));
-            
             if (label) {
                 label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)";
                 label.style.color = "#64B5F6";
             }
         } 
         else {
-            console.log("🔄 UI: Warmup Active -> Switching to Workout");
             vid.pause();
-            
             if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
                 window.currentIdx = 0;
                 window.phase = 0;
@@ -144,8 +220,14 @@ const PegasusUI = {
             panel.style.top = (panel.offsetTop - pos2) + "px";
             panel.style.left = (panel.offsetLeft - pos1) + "px";
         };
-        const closeDrag = () => { document.onmouseup = null; document.onmousemove = null; header.style.cursor = "grab"; localStorage.setItem(`pegasus_pos_${panel.id}`, JSON.stringify({ top: panel.style.top, left: panel.style.left })); };
-        document.onmouseup = closeDrag; document.onmousemove = elementDrag;
+        const closeDrag = () => { 
+            document.onmouseup = null; 
+            document.onmousemove = null; 
+            header.style.cursor = "grab"; 
+            localStorage.setItem(`pegasus_pos_${panel.id}`, JSON.stringify({ top: panel.style.top, left: panel.style.left })); 
+        };
+        document.onmouseup = closeDrag; 
+        document.onmousemove = elementDrag;
     },
 
     initClickOutside() {
