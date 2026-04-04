@@ -233,3 +233,37 @@ if (!window.originalSetItem) {
         }
     };
 }
+/* ==========================================================================
+   PEGASUS CLOUD SYNC - DEBOUNCE PATCH (API RATE LIMIT GUARD v13.0)
+   ========================================================================== */
+if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+    
+    // 1. Αποθήκευση της αρχικής (βαριάς) λειτουργίας αποστολής
+    const originalPush = window.PegasusCloud.push.bind(window.PegasusCloud);
+    let pushTimeout = null;
+
+    // 2. Επικάλυψη (Override) με τον αλγόριθμο Debounce
+    window.PegasusCloud.push = function(force = false) {
+        
+        // Αν ζητηθεί "Σκληρό" Push (π.χ. χειροκίνητο κουμπί Backup)
+        if (force === "STRICT") {
+            console.log("🚀 PEGASUS CLOUD: Strict Push Requested. Bypassing Debounce...");
+            return originalPush();
+        }
+
+        // Αν υπάρχει ήδη προγραμματισμένη αποστολή, την ακυρώνουμε
+        if (pushTimeout) {
+            clearTimeout(pushTimeout);
+            console.log("⏳ PEGASUS CLOUD: Multiple actions detected. Resetting Sync Timer...");
+        }
+
+        // Προγραμματίζουμε την αποστολή σε 3 δευτερόλεπτα "ησυχίας"
+        pushTimeout = setTimeout(async () => {
+            console.log("📡 PEGASUS CLOUD: Stable State Reached. Executing Batch Sync...");
+            await originalPush();
+            pushTimeout = null;
+        }, 10000); 
+    };
+    
+    console.log("🛡️ PEGASUS CLOUD: Debounce Protocol Active.");
+}
