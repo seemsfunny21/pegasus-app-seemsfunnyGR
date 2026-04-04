@@ -220,29 +220,41 @@
             </div>
         </div>
 
-        <div id="pcInventoryPanel" style="margin: 15px 0; padding: 12px; background: rgba(0, 255, 65, 0.03); border: 1px solid rgba(0, 255, 65, 0.15); border-radius: 8px; display: flex; align-items: center;">
-            <div style="width: 70%; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <span style="font-size: 9px; font-weight: 900; color: #00bcd4; letter-spacing: 1px;">WHEY STOCK</span>
-                    <span id="pcProtValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 2500g</span>
-                </div>
-                <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
-                    <div id="protBarPC" style="width: 0%; height: 100%; background: #00bcd4; box-shadow: 0 0 8px #00bcd4; transition: width 0.5s ease;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <span style="font-size: 9px; font-weight: 900; color: #9c27b0; letter-spacing: 1px;">CREA STOCK</span>
-                    <span id="pcCreaValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 1000g</span>
-                </div>
-                <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden;">
-                    <div id="creaBarPC" style="width: 0%; height: 100%; background: #9c27b0; box-shadow: 0 0 8px #9c27b0; transition: width 0.5s ease;"></div>
-                </div>
-            </div>
-            <div id="agreementCounterUI" style="width: 30%; text-align: center; padding-left: 5px;">
-                <div style="font-size: 8px; font-weight: 900; color: #4CAF50; letter-spacing: 1px; margin-bottom: 2px;">ΥΠΟΛΟΙΠΟ</div>
-                <div id="agreementStatus" style="font-size: 18px; font-weight: 900; color: #eee; line-height: 1;">--</div>
-                <div style="font-size: 7px; color: #666; margin-top: 2px; font-weight: bold;">ΓΕΥΜΑΤΑ</div>
-            </div>
+<div id="pcInventoryPanel" style="margin: 15px 0; padding: 12px; background: rgba(0, 255, 65, 0.03); border: 1px solid rgba(0, 255, 65, 0.15); border-radius: 8px; display: flex; align-items: center;">
+    
+    <div style="width: 65%; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <span style="font-size: 9px; font-weight: 900; color: #00bcd4; letter-spacing: 1px;">WHEY STOCK</span>
+            <span id="pcProtValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 2500g</span>
         </div>
+        <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
+            <div id="protBarPC" style="width: 0%; height: 100%; background: #00bcd4; box-shadow: 0 0 8px #00bcd4; transition: width 0.5s ease;"></div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <span style="font-size: 9px; font-weight: 900; color: #9c27b0; letter-spacing: 1px;">CREA STOCK</span>
+            <span id="pcCreaValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 1000g</span>
+        </div>
+        <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden;">
+            <div id="creaBarPC" style="width: 0%; height: 100%; background: #9c27b0; box-shadow: 0 0 8px #9c27b0; transition: width 0.5s ease;"></div>
+        </div>
+    </div>
+
+    <div id="agreementCounterUI" style="width: 35%; text-align: center; padding-left: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="font-size: 8px; font-weight: 900; color: #4CAF50; letter-spacing: 1px; margin-bottom: 4px;">ΥΠΟΛΟΙΠΟ</div>
+        
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="agreementStatus" style="font-size: 20px; font-weight: 900; color: #eee; line-height: 1; min-width: 25px;">--</div>
+            
+            <button onclick="window.addThirtyMeals()" 
+                    style="background: #4CAF50; color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(76, 175, 80, 0.3); transition: transform 0.1s active;">
+                +
+            </button>
+        </div>
+
+        <div style="font-size: 7px; color: #666; margin-top: 5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">ΓΕΥΜΑΤΑ</div>
+    </div>
+</div>
 
 <div class="food-input-row">
     <input type="text" id="foodName" name="foodName" placeholder="Φαγητό" class="flex-2" style="text-align: center;" autocomplete="off" spellcheck="false">
