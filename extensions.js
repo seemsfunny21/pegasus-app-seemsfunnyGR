@@ -114,22 +114,33 @@ window.addFromPlanner = function(n, k, p) {
    PEGASUS KOUKI AGREEMENT MONITOR (v13.1)
    ========================================================================== */
 window.updateKoukiBalance = function() {
-    const AGREEMENT_TOTAL = 30; // Η συμφωνία σου
+    const AGREEMENT_TOTAL = 30;
     const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
     
-    // Υπολογισμός υπολοίπου
     const consumed = log.length;
     const remaining = AGREEMENT_TOTAL - consumed;
 
-    // Ενημέρωση του UI (Αν υπάρχει στοιχείο με ID 'koukiCount')
     const display = document.getElementById("koukiCount");
     if (display) {
-        display.textContent = `${remaining} / ${AGREEMENT_TOTAL}`;
-        display.style.color = remaining <= 5 ? "#ff4444" : "#4CAF50"; // Κόκκινο αν μείνουν < 5
+        // Αν τα γεύματα είναι πάνω από 30 (π.χ. 37), δείχνουμε το σύνολο καταμέτρησης
+        if (consumed > AGREEMENT_TOTAL) {
+            display.textContent = `${consumed} / ${AGREEMENT_TOTAL}`;
+            display.style.color = "#ff4444"; // Κόκκινο προειδοποίησης για υπέρβαση
+        } else {
+            display.textContent = `${remaining} / ${AGREEMENT_TOTAL}`;
+            display.style.color = remaining <= 5 ? "#ff9800" : "#4CAF50";
+        }
+        console.log("📊 KOUKI TRACKER: UI Updated successfully.");
+    } else {
+        console.warn("⚠️ KOUKI TRACKER: Element 'koukiCount' not found in DOM yet.");
     }
-    
     return remaining;
 };
+
+// 🔥 FORCE INITIALIZATION: Εκτέλεση 3 φορές για να σιγουρευτούμε ότι το HTML είναι έτοιμο
+[100, 500, 2000].forEach(delay => {
+    setTimeout(() => window.updateKoukiBalance(), delay);
+});
 
 // Αν θες να δεις όλη τη λίστα στην κονσόλα (F12) γράψε: showHistory()
 window.showHistory = function() {
