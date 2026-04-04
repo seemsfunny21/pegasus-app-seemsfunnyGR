@@ -1,8 +1,7 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER - v4.2 (NUMERIC HOTKEYS INTEGRATED)
-   Protocol: Strict Data Analyst - Real-time DOM Validation
-   Features: Shift+1-9 Shortcuts, Mutation-Aware Dragging, Diet Bridge
-   Status: FINAL STABLE | RE-VERIFIED FOR ZERO-BUG SIMULATION
+   PEGASUS UI MANAGER (dragdrop.js) - v4.3 SHIELDED
+   Protocol: Strict Data Analyst - Keyboard Code Validation (Digit Recognition)
+   Features: Shift+1-9 Shortcuts, Mutation-Aware Dragging, High Z-Index Panels
    ========================================================================== */
 
 const PegasusUI = {
@@ -13,70 +12,70 @@ const PegasusUI = {
         this.initClickOutside();
         this.initButtonBridge(); 
         this.initHotkeys(); 
-        console.log("✅ PEGASUS UI MANAGER: v4.2 Operational (Numeric Hotkeys Enabled)");
+        console.log("✅ PEGASUS UI MANAGER: v4.3 Operational (Shielded Numeric Hotkeys Enabled)");
     },
 
     /**
-     * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.2)
-     * Layout: Shift + Numeric (1-9)
-     * Protocol: Zero-Bug Logic & Input Protection
+     * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.3)
+     * Protocol: Digit Recognition via e.code to bypass Shift-Symbol conflicts
      */
     initHotkeys() {
         window.addEventListener('keydown', (e) => {
-            // Αποφυγή ενεργοποίησης όταν ο χρήστης πληκτρολογεί σε πεδία
+            // Προστασία εισαγωγής: Μην ενεργοποιείς τα hotkeys αν γράφεις σε πεδία
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
 
-            // Έλεγχος αν πατήθηκε το Shift
+            // Έλεγχος αν είναι πατημένο το Shift
             if (!e.shiftKey) return;
 
-            const key = e.key; 
+            // Χρήση e.code για αναγνώριση Digit πλήκτρου ανεξαρτήτως συμβόλου (!, @, # κλπ)
+            const code = e.code; 
 
-            switch(key) {
-                case '1': // ΕΝΑΡΞΗ / ΠΑΥΣΗ
+            switch(code) {
+                case 'Digit1': // Shift + 1: ΕΝΑΡΞΗ / ΠΑΥΣΗ
                     e.preventDefault();
                     console.log("⌨️ Hotkey: START/PAUSE");
                     const startBtn = document.getElementById('btnStart') || document.getElementById('btnStartTraining');
                     if (startBtn) startBtn.click();
                     break;
 
-                case '2': // ΕΠΟΜΕΝΟ
+                case 'Digit2': // Shift + 2: ΕΠΟΜΕΝΟ
                     e.preventDefault();
                     console.log("⌨️ Hotkey: NEXT");
                     if (typeof window.nextPhase === "function") window.nextPhase();
                     else if (document.getElementById('btnNext')) document.getElementById('btnNext').click();
                     break;
 
-                case '3': // ΗΜΕΡΟΛΟΓΙΟ
+                case 'Digit3': // Shift + 3: ΗΜΕΡΟΛΟΓΙΟ
                     e.preventDefault();
                     this.togglePanel('calendarPanel');
                     break;
 
-                case '4': // ΕΠΙΤΕΥΓΜΑΤΑ
+                case 'Digit4': // Shift + 4: ΕΠΙΤΕΥΓΜΑΤΑ
                     e.preventDefault();
                     this.togglePanel('achievementsPanel');
                     break;
 
-                case '5': // ΔΙΑΤΡΟΦΗ
+                case 'Digit5': // Shift + 5: ΔΙΑΤΡΟΦΗ
                     e.preventDefault();
                     this.togglePanel('foodPanel');
                     break;
 
-                case '6': // ΠΡΟΕΠΙΣΚΟΠΗΣΗ
+                case 'Digit6': // Shift + 6: ΠΡΟΕΠΙΣΚΟΠΗΣΗ (ΜΥΕΣ)
                     e.preventDefault();
                     this.togglePanel('previewPanel');
                     break;
 
-                case '7': // ΡΥΘΜΙΣΕΙΣ
+                case 'Digit7': // Shift + 7: ΡΥΘΜΙΣΕΙΣ
                     e.preventDefault();
                     this.togglePanel('settingsPanel');
                     break;
 
-                case '8': // ΕΡΓΑΛΕΙΑ
+                case 'Digit8': // Shift + 8: ΕΡΓΑΛΕΙΑ (TOOLS)
                     e.preventDefault();
                     this.togglePanel('toolsPanel');
                     break;
 
-                case '9': // SAVE BACKUP (Cloud Push & Export)
+                case 'Digit9': // Shift + 9: MASTER SAVE & BACKUP
                     e.preventDefault();
                     console.log("⌨️ Hotkey: MASTER SAVE");
                     if (window.exportPegasusData) window.exportPegasusData();
@@ -86,21 +85,34 @@ const PegasusUI = {
         });
     },
 
-    // Βοηθητική συνάρτηση για Toggle των Panels (v4.2)
+    /**
+     * 🛠️ TACTICAL PANEL TOGGLE
+     * Manages Visibility, Z-Index and Logic Initialization Bridges
+     */
     togglePanel(id) {
         const panel = document.getElementById(id);
-        if (!panel) return;
+        if (!panel) {
+            console.error(`❌ UI ERROR: Panel with ID '${id}' not found.`);
+            return;
+        }
+
+        // Διασφάλιση αρχικής τιμής display
+        if (panel.style.display === "" || !panel.style.display) {
+            panel.style.display = window.getComputedStyle(panel).display;
+        }
+
         const isVisible = panel.style.display === 'block';
-        
-        // Κλείσιμο αν είναι ανοιχτό, άνοιγμα αν είναι κλειστό
         panel.style.display = isVisible ? 'none' : 'block';
         
         if (!isVisible) {
+            // Φέρνει το παράθυρο μπροστά από όλα
             document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
-            panel.style.zIndex = "1001";
-            // Logic Bridge για συγκεκριμένα Panels
+            panel.style.zIndex = "2000";
+
+            // Logic Bridges (v4.3)
             if (id === 'settingsPanel' && typeof window.initSettingsUI === 'function') window.initSettingsUI();
             if (id === 'galleryPanel' && window.GalleryEngine) window.GalleryEngine.render();
+            if (id === 'foodPanel' && typeof window.updateFoodUI === "function") window.updateFoodUI();
         }
     },
 
@@ -129,7 +141,7 @@ const PegasusUI = {
                     if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode();
                     break;
                 case 'btnSettingsUI':
-                    if (typeof window.initSettingsUI === 'function') window.initSettingsUI();
+                    this.togglePanel('settingsPanel');
                     break;
                 case 'btnImportData':
                     const fileInput = document.getElementById('importFileTools');
@@ -235,7 +247,7 @@ const PegasusUI = {
             this.panels.forEach(id => {
                 const panel = document.getElementById(id);
                 if (panel && panel.style.display === 'block') {
-                    if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button')) {
+                    if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button') && !e.shiftKey) {
                         panel.style.display = 'none';
                         if (window.PegasusCloud) window.PegasusCloud.push(true);
                     }
