@@ -60,7 +60,7 @@ window.PegasusManifest = {
         mute: "pegasus_mute_state",          
         turbo: "pegasus_turbo_state"         
     }
-}; // 🟢 ΕΔΩ ΚΛΕΙΝΕΙ ΤΟ OBJECT ΟΡΙΣΤΙΚΑ. Τίποτα δεν μπαίνει πριν από αυτή την αγκύλη.
+}; 
 
 /* ==========================================================================
    PEGASUS STRICT DATE CONTROLLER (v13.0)
