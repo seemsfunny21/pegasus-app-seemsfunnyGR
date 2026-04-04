@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v13.5)
-   Protocol: Live Search, Dynamic Daily Kouki Menu & AI Advisor Integration
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v13.6)
+   Protocol: Live Search, Unified PC Weekly Menu Sync & AI Advisor Integration
    ========================================================================== */
 
 const KOUKI_MASTER = [
@@ -128,29 +128,54 @@ window.PegasusDiet = {
         if(res) res.style.display = "none";
     },
 
-    // --- 🍽️ 4. DYNAMIC DAILY KOUKI MENU ---
+    // --- 🍽️ 4. DYNAMIC DAILY KOUKI MENU (ALIGNED WITH PC) ---
     renderDailyKouki: function() {
-        const container = document.getElementById('koukiContainer');
+        const container = document.getElementById('libraryContainer') || document.getElementById('koukiContainer');
         if(!container) return;
 
-        // Ημερήσιος αλγόριθμος Seed (ίδιο μενού όλη μέρα, αλλάζει στις 00:00)
-        const today = new Date();
-        const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-        let random = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
-        
-        let dailyMenu = [...KOUKI_MASTER].sort((a, b) => 0.5 - random(seed + a.name.charCodeAt(0))).slice(0, 8);
+        const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+        const todayName = greekDays[new Date().getDay()];
 
-        container.innerHTML = dailyMenu.map(i => `
-            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${i.name} (Κούκι)', ${i.kcal}, ${i.protein})" 
-                 style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:10px; padding:15px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
-                <div style="text-align:left;">
-                    <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΚΟΥΚΙ</span>
-                    <div style="font-weight:900; font-size:14px; color:#fff;">${i.name}</div>
-                    <div style="color:#888; font-size:10px; margin-top:3px;">${i.protein}g Πρωτεΐνη</div>
-                </div>
-                <div style="font-weight:900; color:var(--main); font-size:14px;">${i.kcal} <span style="font-size:8px; color:#666;">KCAL</span></div>
+        let dailyMenu = [];
+
+        // Προσπάθεια ανάγνωσης του Global Menu (από data.js ή cloud)
+        if (typeof window.weeklyKoukiMenu !== 'undefined' && window.weeklyKoukiMenu[todayName]) {
+            dailyMenu = window.weeklyKoukiMenu[todayName];
+        } 
+        else {
+            try {
+                const storedWeeklyMenu = JSON.parse(localStorage.getItem('pegasus_weekly_kouki_menu') || "{}");
+                if (storedWeeklyMenu[todayName]) {
+                    dailyMenu = storedWeeklyMenu[todayName];
+                } else {
+                    dailyMenu = KOUKI_MASTER.slice(0, 8); // Fallback
+                }
+            } catch(e) {
+                dailyMenu = KOUKI_MASTER.slice(0, 8);
+            }
+        }
+
+        container.innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; margin-bottom:20px;">
+                <span style="color:#ff4444; font-size:14px; margin-right:5px;">📍</span>
+                <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${todayName} (ΚΟΥΚΙ)</span>
             </div>
-        `).join('');
+        ` + dailyMenu.map(i => {
+            const k = i.kcal || i.calories || 0;
+            const p = i.protein || 0;
+            return `
+            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${i.name} (Κούκι)', ${k}, ${p})" 
+                 style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
+                <div style="text-align:left;">
+                    <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΠΡΟΣΘΗΚΗ ΣΤΟ LOG</span>
+                    <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${i.name}</div>
+                    <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${p}G PROTEIN</div>
+                </div>
+                <div style="font-weight:900; color:#eee; font-size:16px;">
+                    🔥 ${k} <span style="font-size:8px; color:#666; display:block; text-align:right;">KCAL</span>
+                </div>
+            </div>
+        `}).join('');
     },
 
     // --- 📊 5. UI & LOGIC SYNC ---
