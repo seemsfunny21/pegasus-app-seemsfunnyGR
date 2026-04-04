@@ -505,50 +505,69 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
-    // 1. ΕΛΕΓΧΟΣ ΗΜΕΡΑΣ ΑΠΟΘΕΡΑΠΕΙΑΣ
+    // --- 1. RECOVERY DETECTION PROTOCOL ---
     const activeBtn = document.querySelector(".navbar button.active");
     const currentDay = activeBtn ? activeBtn.textContent.trim() : "";
     const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");
 
+    // --- 2. BRANCH A: RECOVERY OR EMPTY STATE ---
     if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
         const recoverySrc = "videos/stretching.mp4";
+        
         if (vid.getAttribute('src') !== recoverySrc) {
+            vid.pause();
             vid.src = recoverySrc;
             vid.load();
-            vid.play().catch(e => console.log("Manual play required"));
+            vid.play().catch(e => console.log("Waiting for user to trigger playback..."));
+            
+            if (label && isRecoveryDay) {
+                label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
+                label.style.color = "#00bcd4"; 
+            }
         }
         return;
     }
 
-    // 2. ΑΝΑΚΤΗΣΗ ΟΝΟΜΑΤΟΣ ΑΣΚΗΣΗΣ
+    // --- 3. BRANCH B: ACTIVE WORKOUT LOGIC ---
     const weightInput = exercises[i].querySelector(".weight-input");
     if (!weightInput) return;
-    const name = weightInput.getAttribute("data-name") || "";
 
-    // 3. ΑΠΛΟ & ΚΑΘΑΡΟ MAPPING (Το "Ποδηλασία" προστέθηκε εδώ)
+    const name = weightInput.getAttribute("data-name") || "";
+    
+    // --- 🎯 SURGICAL ASSET MAPPING ---
     const videoMap = {
         "Seated Chest Press": "chestpress",
         "Pec Deck Flys": "chestflys",
         "Lat Pulldown": "latpulldowns",
         "Seated Row": "lowrowsseated",
         "Bent Over Row": "bentoverrows",
+        "One Arm Pulldown": "onearmpulldowns",
+        "Upright Row": "uprightrows",
+        "Lateral Raises": "uprightrows",
+        "Shoulder Shrugs": "uprightrows",
         "Standing Bicep Curl": "bicepcurls",
+        "Triceps Pushdown": "triceppulldowns",
+        "Preacher Curl": "preacherbicepcurls",
+        "Ab Crunch Cable": "abcrunches",
+        "Leg Extension": "legextensions",
+        "Glute Kickbacks": "glutekickbacks",
+        "Standing Leg Curl": "glutekickbacks",
         "Cycling": "cycling",
-        "Ποδηλασία": "cycling", 
-        "Stretching": "stretching",
-        "Warmup": "warmup"
+        "Ποδηλασία": "cycling", // ✅ Η μόνη προσθήκη για να δουλέψει το σημερινό mapping
+        "EMS Training": "ems",
+        "Stretching": "stretching"
     };
 
     let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
     const newSrc = `videos/${mappedVal}.mp4`;
     
-    // 4. ΑΠΛΗ ΦΟΡΤΩΣΗ (Οπως δούλευε πάντα)
+    // ⚡ RESET & LOAD PROTOCOL
     if (vid.getAttribute('src') !== newSrc) {
         vid.pause();
         vid.src = newSrc;
         vid.load(); 
         vid.play().catch(err => {
-            // Αν όντως λείπει το αρχείο, τότε μόνο δείξε warmup
+            console.warn(`Asset 404: ${mappedVal}.mp4. Fallback to warmup.`);
             vid.src = "videos/warmup.mp4";
             vid.load();
             vid.play();
