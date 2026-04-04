@@ -232,7 +232,7 @@ function runPhase() {
     if (!running) return;
     if (timer) clearInterval(timer);
 
-    // Έλεγχος ολοκλήρωσης
+    // 1. Έλεγχος ολοκλήρωσης προπόνησης
     if (remainingSets.every(s => s <= 0)) { 
         finishWorkout(); 
         return; 
@@ -242,7 +242,7 @@ function runPhase() {
     if (!e) return;
     const exName = e.querySelector(".weight-input").getAttribute("data-name");
 
-    // UI Highlight τρέχουσας άσκησης
+    // 2. UI Highlight τρέχουσας άσκησης
     exercises.forEach(ex => { 
         ex.style.borderColor = "#222"; 
         ex.style.background = "transparent"; 
@@ -250,6 +250,7 @@ function runPhase() {
     e.style.borderColor = "#4CAF50"; 
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
+    // 3. Χρονισμός Φάσης
     let t = (phase === 0) ? 10 : (phase === 1 ? workoutPhases[1].d : workoutPhases[2].d);
     let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
 
@@ -261,6 +262,7 @@ function runPhase() {
 
     if (phase !== 2) showVideo(currentIdx);
 
+    // 4. Κύριος Βρόχος (Ticker)
     timer = setInterval(() => {
         t -= 1;
         if (remainingSeconds > 0) { 
@@ -268,17 +270,24 @@ function runPhase() {
             updateTotalBar(); 
         }
 
-        // --- METABOLIC ENGINE (LIVE CALORIE BURN) ---
-        // Formula: weight * constant per second (Exercise vs Rest)
-        if (phase === 1 || phase === 2) {
-            let currentKcal = parseFloat(localStorage.getItem(P_M?.nutrition.today_kcal || "pegasus_today_kcal")) || 0;
-            let burnRate = (phase === 1) ? (userWeight * 0.00017) : (userWeight * 0.00008); 
-            localStorage.setItem(P_M?.nutrition.today_kcal || "pegasus_today_kcal", (currentKcal + burnRate).toFixed(4));
+        // --- METABOLIC ENGINE SYNC (v16.1) ---
+        // Σταματάμε τον παλιό εσωτερικό υπολογισμό burnRate.
+        // Καλούμε τη μηχανή PegasusMetabolic μόνο κατά την ΑΣΚΗΣΗ (phase 1).
+        if (phase === 1 && window.PegasusMetabolic) {
+            window.PegasusMetabolic.updateTracking(1, exName);
         }
 
-        if (window.MetabolicEngine && phase === 1) window.MetabolicEngine.updateTracking(1, exName);
+        // LIVE UI RE-RENDER (Διασφαλίζει ότι το 230kcal θα φανεί αμέσως)
         if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
+        
+        // Ενημέρωση Desktop UI αν υπάρχει
+        const kcalDisplay = document.querySelector(".kcal-value");
+        if (kcalDisplay) {
+            const currentKcal = localStorage.getItem("pegasus_today_kcal") || "0";
+            kcalDisplay.textContent = parseFloat(currentKcal).toFixed(1);
+        }
 
+        // 5. Λογική Αλλαγής Φάσης
         if (t <= 0) {
             clearInterval(timer); 
             playBeep();
