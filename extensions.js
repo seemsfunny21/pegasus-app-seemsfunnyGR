@@ -176,3 +176,43 @@ window.showHistory = function() {
     console.table(log);
     console.log(`Συνολικό Stock: ${stock} | Κατανάλωση: ${log.length} | Υπόλοιπο: ${stock - log.length}`);
 };
+
+/* ==========================================================================
+   PEGASUS OS - PC ZERO-CLICK DAILY ROUTINE (Cross-Device Sync)
+   ========================================================================== */
+window.checkDailyRoutinePC = function() {
+    const dateStr = new Date().toLocaleDateString('el-GR');
+    const flagKey = "pegasus_routine_injected_" + dateStr;
+
+    // Αν δεν έχει μπει η ρουτίνα ούτε από το κινητό ούτε από το PC σήμερα...
+    if (!localStorage.getItem(flagKey)) {
+        
+        // 1. Εισαγωγή των γευμάτων χρησιμοποιώντας τη βασική συνάρτηση του υπολογιστή
+        if (typeof window.addFoodItem === "function") {
+            // Χρησιμοποιούμε setTimeout για να διασφαλίσουμε σωστή σειρά εγγραφής
+            setTimeout(() => window.addFoodItem("Γιαούρτι 2% + Whey (Ρουτίνα)", 250, 35), 100);
+            setTimeout(() => window.addFoodItem("3 Αυγά (Ρουτίνα)", 210, 18), 300);
+        }
+
+        // 2. Αφαίρεση 30g πρωτεΐνης από το Inventory
+        let s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || { prot: 2500, crea: 1000 };
+        s.prot = Math.max(0, s.prot - 30);
+        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+
+        // 3. Ενεργοποίηση της σημαίας (ώστε να μην ξαναμπούν αν ανοίξεις το κινητό)
+        localStorage.setItem(flagKey, "true");
+
+        console.log("🌅 PEGASUS PC: Daily Routine auto-injected successfully.");
+
+        // 4. Ανανέωση των Bars στον υπολογιστή (αν υπάρχουν οι συναρτήσεις)
+        setTimeout(() => {
+            if (typeof updateInventoryUI === "function") updateInventoryUI();
+            if (typeof updateKoukiBalance === "function") window.updateKoukiBalance();
+        }, 800);
+    }
+};
+
+// Εκτέλεση του ελέγχου 2 δευτερόλεπτα μετά το άνοιγμα του Pegasus στον υπολογιστή
+setTimeout(() => {
+    if (window.checkDailyRoutinePC) window.checkDailyRoutinePC();
+}, 2000);
