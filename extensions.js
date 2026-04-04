@@ -1,7 +1,9 @@
 /* ==========================================================================
-   PEGASUS EXTENSIONS - ULTIMATE PLANNER & AGREEMENT LOG
+   PEGASUS EXTENSIONS - ULTIMATE PLANNER & ROLLING AGREEMENT (v13.2)
+   Protocol: Maximalist Retention - Logic Mirroring & Variable Persistence
    ========================================================================== */
 
+// --- 1. DATA CONSTANTS: KOUKI MENU ---
 const KOUKI_MENU = [
     { name: "Κοτόπουλο με κάρυ & λαχανικά", kcal: 580, protein: 52, type: "meat" },
     { name: "Κοτόπουλο με χυλοπίτες", kcal: 680, protein: 48, type: "meat" },
@@ -32,8 +34,7 @@ const KOUKI_MENU = [
     { name: "Μουσακάς", kcal: 800, protein: 30, type: "cheat" }
 ];
 
-
-
+// --- 2. UI: WEEKLY PLANNER MODAL ---
 function showWeeklyPlanner() {
     let history = [];
     for (let i = 0; i < 7; i++) {
@@ -49,7 +50,6 @@ function showWeeklyPlanner() {
     });
 
     if (available.length < 6) available = [...KOUKI_MENU];
-
     available.sort(() => 0.5 - Math.random());
     let picked = available.slice(0, 6);
 
@@ -63,7 +63,7 @@ function showWeeklyPlanner() {
     }
     modal.style.display = 'flex';
 
-let html = `
+    let html = `
         <div class="planner-content">
             <div style="color:#4CAF50; font-weight:bold; font-size:18px; margin-bottom:15px; text-align:center; border-bottom:1px solid #222; padding-bottom:15px; letter-spacing:1px;">WEEKLY PLANNER</div>
             <div style="padding-top:5px;">
@@ -71,12 +71,12 @@ let html = `
 
     picked.forEach(item => {
         html += `
-            <div class="planner-item">
+            <div class="planner-item" style="display:flex; justify-content:space-between; align-items:center; background:#111; margin-bottom:8px; padding:10px; border-radius:5px; border-left:3px solid #4CAF50;">
                 <div style="flex:1;">
                     <div style="color:#fff; font-size:11px; font-weight:bold;">${item.name}</div>
                     <div style="color:#4CAF50; font-size:10px; margin-top:3px;">${item.protein}g P | ${item.kcal} kcal</div>
                 </div>
-                <button class="planner-add-btn" onclick="addFromPlanner('${item.name}', ${item.kcal}, ${item.protein})">+</button>
+                <button class="planner-add-btn" onclick="addFromPlanner('${item.name}', ${item.kcal}, ${item.protein})" style="background:#4CAF50; color:#fff; border:none; border-radius:4px; width:30px; height:30px; cursor:pointer; font-weight:bold;">+</button>
             </div>
         `;
     });
@@ -89,67 +89,90 @@ window.closePlannerOnly = function() {
     document.getElementById('pegasusModal').style.display = 'none';
 };
 
-// --- LOGIC ΓΙΑ ΤΗ ΣΥΜΦΩΝΙΑ ΤΩΝ 30 ΓΕΥΜΑΤΩΝ ---
+// --- 3. LOGIC: ADD MEAL & UPDATE AGREEMENT ---
 window.addFromPlanner = function(n, k, p) {
     if (window.addFoodItem) {
-        // 1. Καταγραφή στο Pegasus
+        // 1. Καταγραφή στο Pegasus (Macros/Inventory)
         window.addFoodItem(n, k, p);
         
-        // 2. Καταγραφή στη Συμφωνία
+        // 2. Καταγραφή στη Συμφωνία (Agreement Log)
         const today = new Date().toLocaleDateString('el-GR');
         let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
-        
         agreementLog.push({ date: today, food: n });
         localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
         
-        // 3. Ενημέρωση χρήστη
-        const count = agreementLog.length;
-        alert(`ΚΑΤΑΓΡΑΦΗΚΕ!\nΓεύμα: ${count} από 30\nΑπομένουν: ${30 - count}`);
+        // 3. Ενημέρωση UI & User Feedback
+        window.updateKoukiBalance();
+        const totalStock = parseInt(localStorage.getItem('kouki_total_stock') || "30");
+        const remaining = totalStock - agreementLog.length;
         
+        console.log(`✅ PEGASUS: Meal Added. Remaining Agreement: ${remaining}`);
         window.closePlannerOnly();
     }
 };
 
 /* ==========================================================================
-   PEGASUS KOUKI AGREEMENT MONITOR (v13.1 - HTML ALIGNED)
+   PEGASUS KOUKI AGREEMENT MONITOR (v13.2 - ROLLING STOCK)
    ========================================================================== */
-window.updateKoukiBalance = function() {
-    const AGREEMENT_TOTAL = 30;
-    const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
-    
-    const consumed = log.length;
-    const remaining = AGREEMENT_TOTAL - consumed;
 
-    // 🎯 Στόχευση του ID "agreementStatus" (όπως ορίστηκε στο index.html)
-    const display = document.getElementById("agreementStatus");
+// Ενημέρωση του UI στο Sidebar
+window.updateKoukiBalance = function() {
+    // Διαβάζουμε το συνολικό Stock (Αγορασμένα γεύματα)
+    let totalStock = parseInt(localStorage.getItem('kouki_total_stock') || "30");
     
+    // Διαβάζουμε το Ιστορικό Κατανάλωσης
+    const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
+    const consumed = log.length;
+
+    // ΥΠΟΛΟΙΠΟ = Συνολικό Stock - Κατανάλωση
+    const remaining = totalStock - consumed;
+
+    const display = document.getElementById("agreementStatus");
     if (display) {
-        if (consumed > AGREEMENT_TOTAL) {
-            // Περίπτωση υπέρβασης (π.χ. 37)
-            display.textContent = consumed; 
-            display.style.color = "#ff4444"; // Κόκκινο alert
+        display.textContent = remaining;
+        
+        // Χρωματική κωδικοποίηση βάσει υπολοίπου
+        if (remaining <= 0) {
+            display.style.color = "#ff4444"; // Κόκκινο (Χρέος / 0)
+        } else if (remaining <= 5) {
+            display.style.color = "#f39c12"; // Πορτοκαλί (Κοντά στη λήξη)
         } else {
-            // Κανονικό υπόλοιπο
-            display.textContent = remaining; 
-            display.style.color = remaining <= 5 ? "#f39c12" : "#eee"; // Πορτοκαλί αν τελειώνουν
+            display.style.color = "#eee";    // Λευκό (Nominal)
         }
-        console.log(`📊 KOUKI TRACKER: UI Updated (${consumed}/${AGREEMENT_TOTAL}).`);
-    } else {
-        console.warn("⚠️ KOUKI TRACKER: Element 'agreementStatus' not found in DOM.");
+        console.log(`📊 KOUKI TRACKER: ${remaining} meals remaining of ${totalStock}`);
     }
-    return remaining;
 };
 
-// 🔥 FORCE INITIALIZATION
+// Συνάρτηση του κουμπιού (+) για ανανέωση 30 γευμάτων
+window.addThirtyMeals = function() {
+    let currentStock = parseInt(localStorage.getItem('kouki_total_stock') || "30");
+    let newStock = currentStock + 30;
+    
+    localStorage.setItem('kouki_total_stock', newStock.toString());
+    window.updateKoukiBalance();
+    
+    console.log(`📡 PEGASUS: Agreement Renewed. New Stock Limit: ${newStock}`);
+};
+
+// Βοηθητική συνάρτηση για χειροκίνητη διόρθωση αποθέματος (π.χ. για τα +7 που χρωστούσαν)
+window.setKoukiStock = function(amount) {
+    localStorage.setItem('kouki_total_stock', amount.toString());
+    window.updateKoukiBalance();
+    return `Stock updated to: ${amount}`;
+};
+
+// 🔥 FORCE INITIALIZATION: Διασφάλιση εμφάνισης στο UI
 [100, 500, 2000].forEach(delay => {
     setTimeout(() => {
         if (window.updateKoukiBalance) window.updateKoukiBalance();
     }, delay);
 });
 
+// Ιστορικό στην κονσόλα
 window.showHistory = function() {
     const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
-    console.log("--- ΙΣΤΟΡΙΚΟ ΣΥΜΦΩΝΙΑΣ (ΚΟΥΚΙ & ΡΕΒΥΘΙ) ---");
+    const stock = localStorage.getItem('kouki_total_stock') || "30";
+    console.log("--- PEGASUS AGREEMENT AUDIT ---");
     console.table(log);
-    return `Σύνολο: ${log.length}/30`;
+    console.log(`Συνολικό Stock: ${stock} | Κατανάλωση: ${log.length} | Υπόλοιπο: ${stock - log.length}`);
 };
