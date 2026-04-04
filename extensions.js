@@ -111,7 +111,7 @@ window.addFromPlanner = function(n, k, p) {
 };
 
 /* ==========================================================================
-   PEGASUS KOUKI AGREEMENT MONITOR (v13.1)
+   PEGASUS KOUKI AGREEMENT MONITOR (v13.1 - HTML ALIGNED)
    ========================================================================== */
 window.updateKoukiBalance = function() {
     const AGREEMENT_TOTAL = 30;
@@ -120,29 +120,33 @@ window.updateKoukiBalance = function() {
     const consumed = log.length;
     const remaining = AGREEMENT_TOTAL - consumed;
 
-    const display = document.getElementById("koukiCount");
+    // 🎯 Στόχευση του ID "agreementStatus" (όπως ορίστηκε στο index.html)
+    const display = document.getElementById("agreementStatus");
+    
     if (display) {
-        // Αν τα γεύματα είναι πάνω από 30 (π.χ. 37), δείχνουμε το σύνολο καταμέτρησης
         if (consumed > AGREEMENT_TOTAL) {
-            display.textContent = `${consumed} / ${AGREEMENT_TOTAL}`;
-            display.style.color = "#ff4444"; // Κόκκινο προειδοποίησης για υπέρβαση
+            // Περίπτωση υπέρβασης (π.χ. 37)
+            display.textContent = consumed; 
+            display.style.color = "#ff4444"; // Κόκκινο alert
         } else {
-            display.textContent = `${remaining} / ${AGREEMENT_TOTAL}`;
-            display.style.color = remaining <= 5 ? "#ff9800" : "#4CAF50";
+            // Κανονικό υπόλοιπο
+            display.textContent = remaining; 
+            display.style.color = remaining <= 5 ? "#f39c12" : "#eee"; // Πορτοκαλί αν τελειώνουν
         }
-        console.log("📊 KOUKI TRACKER: UI Updated successfully.");
+        console.log(`📊 KOUKI TRACKER: UI Updated (${consumed}/${AGREEMENT_TOTAL}).`);
     } else {
-        console.warn("⚠️ KOUKI TRACKER: Element 'koukiCount' not found in DOM yet.");
+        console.warn("⚠️ KOUKI TRACKER: Element 'agreementStatus' not found in DOM.");
     }
     return remaining;
 };
 
-// 🔥 FORCE INITIALIZATION: Εκτέλεση 3 φορές για να σιγουρευτούμε ότι το HTML είναι έτοιμο
+// 🔥 FORCE INITIALIZATION
 [100, 500, 2000].forEach(delay => {
-    setTimeout(() => window.updateKoukiBalance(), delay);
+    setTimeout(() => {
+        if (window.updateKoukiBalance) window.updateKoukiBalance();
+    }, delay);
 });
 
-// Αν θες να δεις όλη τη λίστα στην κονσόλα (F12) γράψε: showHistory()
 window.showHistory = function() {
     const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
     console.log("--- ΙΣΤΟΡΙΚΟ ΣΥΜΦΩΝΙΑΣ (ΚΟΥΚΙ & ΡΕΒΥΘΙ) ---");
