@@ -7,15 +7,16 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
-    <script>
-    /* PEGASUS DEVICE ROUTING PROTOCOL */
+<script>
+    /* PEGASUS DEVICE ROUTING PROTOCOL v16.0 */
     const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isSmallScreen = window.innerWidth <= 800;
 
     if (isMobileAgent || isSmallScreen) {
-        window.location.replace("mobile.html");
+        // ΔΙΟΡΘΩΣΗ ΔΙΑΔΡΟΜΗΣ: Προσθήκη του φακέλου mobile/
+        window.location.replace("mobile/mobile.html");
     }
-    </script>
+</script>
 </head>
 <body>
 
