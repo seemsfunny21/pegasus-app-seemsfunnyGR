@@ -377,61 +377,6 @@ function refreshAllUI() {
     if (typeof updateMuscleUI === "function") updateMuscleUI();
 }
 
-// --- ΣΥΝΑΡΤΗΣΕΙΣ ΠΟΥ ΛΕΙΠΟΥΝ ---
-function addFoodLocal() {
-    const name = document.getElementById("fName").value || "Γεύμα";
-    const kcal = parseFloat(document.getElementById("fKcal").value) || 0;
-    const prot = parseFloat(document.getElementById("fProt").value) || 0;
-    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    let log = JSON.parse(localStorage.getItem("food_log_" + dateStr)) || [];
-    log.unshift({name, kcal, protein: prot});
-    localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
-    
-    let tk = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-    let tp = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
-    localStorage.setItem("pegasus_today_kcal", (tk + kcal));
-    localStorage.setItem("pegasus_today_protein", (tp + prot));
-    
-    document.getElementById("fName").value = ""; 
-    document.getElementById("fKcal").value = ""; 
-    document.getElementById("fProt").value = "";
-    updateDietUI();
-    if(window.PegasusCloud) window.PegasusCloud.push();
-}
-
-function updateDietUI() {
-    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    const log = JSON.parse(localStorage.getItem("food_log_" + dateStr)) || [];
-    const tk = localStorage.getItem("pegasus_today_kcal") || "0";
-    const tp = localStorage.getItem("pegasus_today_protein") || "0";
-    document.getElementById("txtKcal").textContent = `${Math.round(tk)} / 2800`;
-    document.getElementById("txtProt").textContent = `${Math.round(tp)} / 160g`;
-    document.getElementById("foodHistoryList").innerHTML = log.map((i, idx) => `
-        <div class="log-item">
-            <button class="btn-del" onclick="deleteFoodLocal(${idx})">✕</button>
-            <div style="font-weight: 800; color: #fff;">${i.name}</div>
-            <div style="color: var(--main); font-size: 12px; font-weight:600;">${i.kcal} kcal | ${i.protein}g P</div>
-        </div>`).join('');
-}
-
-function deleteFoodLocal(idx) {
-    const d = new Date(); const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    let log = JSON.parse(localStorage.getItem("food_log_" + dateStr)) || [];
-    const item = log[idx];
-    if(item) {
-        let tk = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-        let tp = parseFloat(localStorage.getItem("pegasus_today_protein")) || 0;
-        localStorage.setItem("pegasus_today_kcal", Math.max(0, tk - item.kcal));
-        localStorage.setItem("pegasus_today_protein", Math.max(0, tp - item.protein));
-    }
-    log.splice(idx, 1);
-    localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
-    updateDietUI();
-    if(window.PegasusCloud) window.PegasusCloud.push();
-}
-
-
-
 // --- ΠΡΟΣΘΗΚΗ ΓΙΑ ΑΕΡΟΒΙΑ ---
 window.PegasusCardio = {
     save: function() {
