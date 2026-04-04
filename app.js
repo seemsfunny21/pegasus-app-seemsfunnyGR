@@ -332,6 +332,15 @@ function startPause() {
     if (exercises.length === 0) return;
     const vid = document.getElementById("video");
     
+    // --- PEGASUS SESSION RESET LOGIC ---
+    // Αν η προπόνηση ξεκινάει τώρα (πρώτη άσκηση, πρώτη φάση) 
+    // μηδενίζουμε τις θερμίδες της συνεδρίας (sessionKcal).
+    if (!running && currentIdx === 0 && phase === 0) {
+        if (window.PegasusMetabolic && typeof window.PegasusMetabolic.resetSession === 'function') {
+            window.PegasusMetabolic.resetSession();
+        }
+    }
+
     if (vid && vid.src.includes("warmup")) { 
         vid.loop = false; 
         vid.pause(); 
