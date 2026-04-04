@@ -170,14 +170,19 @@
         </div>
     </div>
 
-    <div id="diet" class="view">
+<div id="diet" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
         <div class="compact-grid">
             <div class="mini-card"><span class="mini-label">ΘΕΡΜΙΔΕΣ</span><div id="txtKcal" class="mini-val">0 / 2800</div></div>
             <div class="mini-card"><span class="mini-label">ΠΡΩΤΕΪΝΗ</span><div id="txtProt" class="mini-val">0 / 160g</div></div>
         </div>
-        <input type="text" id="fName" placeholder="Όνομα Γεύματος" oninput="PegasusDiet.handleSearch(this.value)">
-<div id="searchSuggestions" style="display:none; background:#111; border:1px solid var(--main); border-radius:15px; margin-top:-10px; margin-bottom:15px; text-align:left; max-height:200px; overflow-y:auto; width:100%; z-index:100;"></div>
+        
+        <button class="secondary-btn" style="border-color: #f39c12; color: #f39c12; margin-bottom: 15px;" onclick="window.PegasusDiet.askAdvisor()">🧠 ΡΩΤΑ ΤΟΝ PEGASUS ADVISOR</button>
+        <div id="advisorMobileResult" style="width: 100%; margin-bottom: 15px;"></div>
+
+        <input type="text" id="fName" placeholder="Αναζήτηση Φαγητού..." oninput="window.PegasusDiet.handleSearch(this.value)" autocomplete="off">
+        <div id="searchSuggestions" class="search-results"></div>
+        
         <div class="compact-grid">
             <input type="number" id="fKcal" placeholder="Θερμίδες" inputmode="numeric">
             <input type="number" id="fProt" placeholder="Πρωτεΐνη" inputmode="numeric">
