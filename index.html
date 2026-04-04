@@ -235,23 +235,23 @@
             </div>
         </div>
 
-        <div class="food-input-row">
-            <input type="text" id="foodName" name="foodName" placeholder="Φαγητό" class="flex-2" style="text-align: center;">
-            <input type="number" id="foodKcal" name="foodKcal" placeholder="kcal" class="flex-1" style="text-align: center;">
-            <input type="text" id="foodNote" name="foodNote" placeholder="Πρωτεΐνη (g)" class="flex-1-5" style="text-align: center;">
-            <button id="btnAddFood" class="p-btn">➕</button>
-        </div>
+<div class="food-input-row">
+    <input type="text" id="foodName" name="foodName" placeholder="Φαγητό" class="flex-2" style="text-align: center;" autocomplete="off" spellcheck="false">
+    <input type="number" id="foodKcal" name="foodKcal" placeholder="kcal" class="flex-1" style="text-align: center;" autocomplete="off">
+    <input type="text" id="foodNote" name="foodNote" placeholder="Πρωτεΐνη (g)" class="flex-1-5" style="text-align: center;" autocomplete="off" spellcheck="false">
+    <button id="btnAddFood" class="p-btn">➕</button>
+</div>
         <hr class="panel-divider">
         <div class="food-layout">
             <div class="food-section">
                 <h4 class="section-title-today" style="text-align: center;">Σήμερα (<span id="todayTotalKcal">0</span> kcal)</h4>
                 <div id="todayFoodList"></div>
             </div>
-            <div class="food-section">
-                <h4 class="section-title-library" style="text-align: center;">Συχνές Επιλογές</h4>
-                <input type="text" id="librarySearch" placeholder="🔍 Αναζήτηση..." onkeyup="filterLibrary()" style="width: 100%; padding: 8px; background: #000; border: 1px solid #4CAF50; color: #4CAF50; border-radius: 4px; font-size: 13px; box-sizing: border-box; text-align: center;">
-                <div id="libraryFoodList"></div>
-            </div>
+<div class="food-section">
+    <h4 class="section-title-library" style="text-align: center;">Συχνές Επιλογές</h4>
+    <input type="text" id="librarySearch" placeholder="🔍 Αναζήτηση..." onkeyup="filterLibrary()" style="width: 100%; padding: 8px; background: #000; border: 1px solid #4CAF50; color: #4CAF50; border-radius: 4px; font-size: 13px; box-sizing: border-box; text-align: center;" autocomplete="off" spellcheck="false">
+    <div id="libraryFoodList"></div>
+</div>
             <div id="weeklyAvgDisplay" style="text-align:center; font-size:12px; margin-bottom:15px; font-weight:bold;"></div>
             <div id="koukiQuickMenu"></div>
         </div>
