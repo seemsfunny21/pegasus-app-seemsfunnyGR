@@ -532,18 +532,34 @@ window.onload = async () => {
 };
 </script>
 <script src="../manifest.js"></script>
-    <script src="../cloudSync.js"></script>
     <script src="../data.js"></script>
+    <script src="../extensions.js"></script>
     <script src="../metabolicEngine.js"></script>
     <script src="../dietAdvisor.js"></script>
-    <script src="../weightTracker.js"></script>
+    <script src="../cloudSync.js"></script>
 
-    <script src="car-mobile.js"></script>
     <script src="diet-mobile.js"></script>
     <script src="cardio-mobile.js"></script>
-    <script src="ems-mobile.js"></script>
     <script src="profile-mobile.js"></script>
-    <script src="inventory-mobile.js"></script>
+    <script src="car-mobile.js"></script>
     <script src="parking-mobile.js"></script>
+    <script src="inventory-mobile.js"></script>
+    <script src="ems-mobile.js"></script>
+
+    <script>
+        function openView(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const target = document.getElementById(id);
+            if (target) target.classList.add('active');
+            
+            // UI Triggers
+            if(id === 'diet') window.PegasusDiet.updateUI();
+            if(id === 'library') window.PegasusDiet.renderDailyKouki(); // Το νέο δυναμικό μενού
+            if(id === 'notes') { 
+                document.getElementById('nDate').value = new Date().toLocaleDateString('el-GR');
+                window.PegasusProfile.renderNotes(); 
+            }
+        }
+    </script>
 </body>
 </html>
