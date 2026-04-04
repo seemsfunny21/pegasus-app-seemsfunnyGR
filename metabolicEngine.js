@@ -1,7 +1,7 @@
 /* =============================================================
-   PEGASUS UNIFIED METABOLIC ENGINE - v1.0
+   PEGASUS UNIFIED METABOLIC ENGINE - v16.2
    Merged: calories.js + metabolic.js
-   Protocol: Strict Persistence & Zero-Bug Simulation
+   Protocol: Universal UI Sync & Zero-Bug Simulation
    ============================================================= */
 
 const PegasusMetabolic = {
@@ -11,14 +11,13 @@ const PegasusMetabolic = {
     },
 
     pendingKcal: 0,
-    tickCount: 0,
 
     /**
      * Υπολογισμός MET βάσει άσκησης και φορτίου
      */
     getMET: function(exerciseName, liftedWeight) {
-        if (exerciseName.includes("Ποδηλασία")) return 10.0;
-        if (exerciseName.includes("Προθέρμανση")) return 3.0;
+        if (exerciseName.includes("Ποδηλασία") || exerciseName.includes("Cycling")) return 10.0;
+        if (exerciseName.includes("Προθέρμανση") || exerciseName.includes("Warmup")) return 3.0;
         
         let baseMET = 7.0; 
         if (liftedWeight > 0) {
@@ -29,7 +28,7 @@ const PegasusMetabolic = {
     },
 
     /**
-     * Κύρια συνάρτηση καταγραφής - ΚΑΛΕΙΤΑΙ ΑΠΟ ΤΟ app.js
+     * Κύρια συνάρτηση καταγραφής - ΚΑΛΕΙΤΑΙ ΑΠΟ ΤΟ app.js ΚΑΘΕ ΔΕΥΤΕΡΟΛΕΠΤΟ
      */
     updateTracking: function(durationSeconds, exerciseName) {
         // 1. ΑΚΑΡΙΑΙΑ ΑΠΟΘΗΚΕΥΣΗ ΚΙΛΩΝ (Fix για το "χάσιμο" των κιλών)
@@ -37,48 +36,53 @@ const PegasusMetabolic = {
         let liftedWeight = weightInput ? parseFloat(weightInput.value) : 0;
         
         if (liftedWeight > 0) {
-            // Χρήση του Master Key ΑΓΓΕΛΟΣ για μόνιμη εγγραφή
             localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${exerciseName.trim()}_records`, liftedWeight);
-            console.log(`⚖️ PEGASUS: Weight Locked -> ${liftedWeight}kg`);
         } else {
             liftedWeight = parseFloat(localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${exerciseName.trim()}_records`)) || 0;
         }
 
-        // 2. ΥΠΟΛΟΓΙΣΜΟΣ ΘΕΡΜΙΔΩΝ
+        // 2. ΥΠΟΛΟΓΙΣΜΟΣ ΘΕΡΜΙΔΩΝ (Formula: kcal = (MET * 3.5 * weight) / 200 * mins)
         const activeMET = this.getMET(exerciseName, liftedWeight);
         const durationMins = durationSeconds / 60;
         const kcalPerMin = (activeMET * 3.5 * this.userWeight) / 200;
         const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(4));
 
-        this.pendingKcal += addedKcal;
-        
-        // 3. ΣΥΓΧΡΟΝΙΣΜΟΣ ΜΕ ΤΟ LOCALSTORAGE (Κάθε 1 tick για απόλυτη ασφάλεια)
+        // 3. ΣΥΓΧΡΟΝΙΣΜΟΣ ΜΕ ΤΟ LOCALSTORAGE
         let currentTotal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-        localStorage.setItem("pegasus_today_kcal", (currentTotal + addedKcal).toFixed(2));
+        let newTotal = currentTotal + addedKcal;
+        localStorage.setItem("pegasus_today_kcal", newTotal.toFixed(4));
         
-        this.renderUI(currentTotal + addedKcal);
+        // 4. ΕΝΗΜΕΡΩΣΗ ΟΛΩΝ ΤΩΝ UI
+        this.renderUI(newTotal);
         
-        // 4. ΕΠΙΚΥΡΩΣΗ ΗΜΕΡΟΛΟΓΙΟΥ (Πρασίνισμα)
+        // 5. ΕΠΙΚΥΡΩΣΗ ΗΜΕΡΟΛΟΓΙΟΥ
         this.validateDay();
     },
 
-renderUI: function(total) {
-    const val = parseFloat(total) || 0;
-    
-    // 1. Desktop UI (.kcal-value)
-    const kcalDesktop = document.querySelector(".kcal-value");
-    if (kcalDesktop) kcalDesktop.textContent = val.toFixed(1);
-   }
-    
-    console.log(`📊 UI Updated: ${val} kcal displayed.`);
-}
+    /**
+     * UNIVERSAL UI RENDERER: Ενημερώνει Desktop και Mobile ταυτόχρονα
+     */
+    renderUI: function(total) {
+        const val = parseFloat(total) || 0;
+        
+        // Α. Desktop UI (.kcal-value)
+        const kcalDesktop = document.querySelector(".kcal-value");
+        if (kcalDesktop) {
+            kcalDesktop.textContent = val.toFixed(1);
+        }
+
+        // Β. Mobile UI (txtKcal)
+        const kcalMobile = document.getElementById("txtKcal");
+        if (kcalMobile) {
+            kcalMobile.textContent = `${val.toFixed(0)} / 2800`;
+        }
+    },
 
     validateDay: function() {
         const today = new Date().toISOString().split('T')[0];
         let history = JSON.parse(localStorage.getItem('pegasus_calendar_history') || "{}");
         let workouts = JSON.parse(localStorage.getItem('pegasus_workouts_done') || "{}");
         
-        // Αν έχουμε θερμίδες, η μέρα θεωρείται ενεργή
         const currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
         if (currentKcal > 100) {
             const entry = { status: "completed", verified: true, kcal: currentKcal };
@@ -91,4 +95,11 @@ renderUI: function(total) {
 };
 
 // Global Bridge
+window.PegasusMetabolic = PegasusMetabolic;
 window.trackSetCalories = PegasusMetabolic.updateTracking.bind(PegasusMetabolic);
+
+// Initial Render στο φόρτωμα
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem("pegasus_today_kcal") || "0";
+    PegasusMetabolic.renderUI(saved);
+});
