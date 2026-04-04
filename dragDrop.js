@@ -19,70 +19,74 @@ const PegasusUI = {
      * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.3)
      * Protocol: Digit Recognition via e.code to bypass Shift-Symbol conflicts
      */
+  /**
+     * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.4 - FINAL DEBUG)
+     * Protocol: Multi-Symbol Recognition (Covers all Keyboard Layouts)
+     */
     initHotkeys() {
         window.addEventListener('keydown', (e) => {
-            // Προστασία εισαγωγής: Μην ενεργοποιείς τα hotkeys αν γράφεις σε πεδία
+            // 1. Καταγραφή στην κονσόλα για εντοπισμό σφάλματος
+            console.log(`Key: ${e.key} | Code: ${e.code} | Shift: ${e.shiftKey}`);
+
+            // 2. Προστασία εισαγωγής
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
 
-            // Έλεγχος αν είναι πατημένο το Shift
+            // 3. Έλεγχος αν είναι πατημένο το Shift
             if (!e.shiftKey) return;
 
-            // Χρήση e.code για αναγνώριση Digit πλήκτρου ανεξαρτήτως συμβόλου (!, @, # κλπ)
-            const code = e.code; 
+            const key = e.key;
 
-            switch(code) {
-                case 'Digit1': // Shift + 1: ΕΝΑΡΞΗ / ΠΑΥΣΗ
+            // Έλεγχος βάσει συμβόλων (για ελληνικά/αγγλικά πληκτρολόγια)
+            switch(key) {
+                case '1': case '!': // Shift + 1
                     e.preventDefault();
-                    console.log("⌨️ Hotkey: START/PAUSE");
                     const startBtn = document.getElementById('btnStart') || document.getElementById('btnStartTraining');
                     if (startBtn) startBtn.click();
                     break;
 
-                case 'Digit2': // Shift + 2: ΕΠΟΜΕΝΟ
+                case '2': case '@': case '"': // Shift + 2
                     e.preventDefault();
-                    console.log("⌨️ Hotkey: NEXT");
                     if (typeof window.nextPhase === "function") window.nextPhase();
                     else if (document.getElementById('btnNext')) document.getElementById('btnNext').click();
                     break;
 
-                case 'Digit3': // Shift + 3: ΗΜΕΡΟΛΟΓΙΟ
+                case '3': case '#': case '£': // Shift + 3
                     e.preventDefault();
                     this.togglePanel('calendarPanel');
                     break;
 
-                case 'Digit4': // Shift + 4: ΕΠΙΤΕΥΓΜΑΤΑ
+                case '4': case '$': // Shift + 4
                     e.preventDefault();
                     this.togglePanel('achievementsPanel');
                     break;
 
-                case 'Digit5': // Shift + 5: ΔΙΑΤΡΟΦΗ
+                case '5': case '%': // Shift + 5
                     e.preventDefault();
                     this.togglePanel('foodPanel');
                     break;
 
-                case 'Digit6': // Shift + 6: ΠΡΟΕΠΙΣΚΟΠΗΣΗ (ΜΥΕΣ)
+                case '6': case '^': // Shift + 6
                     e.preventDefault();
                     this.togglePanel('previewPanel');
                     break;
 
-                case 'Digit7': // Shift + 7: ΡΥΘΜΙΣΕΙΣ
+                case '7': case '&': // Shift + 7
                     e.preventDefault();
                     this.togglePanel('settingsPanel');
                     break;
 
-                case 'Digit8': // Shift + 8: ΕΡΓΑΛΕΙΑ (TOOLS)
+                case '8': case '*': // Shift + 8
                     e.preventDefault();
                     this.togglePanel('toolsPanel');
                     break;
 
-                case 'Digit9': // Shift + 9: MASTER SAVE & BACKUP
+                case '9': case '(': // Shift + 9
                     e.preventDefault();
-                    console.log("⌨️ Hotkey: MASTER SAVE");
                     if (window.exportPegasusData) window.exportPegasusData();
                     if (window.PegasusCloud && window.PegasusCloud.push) window.PegasusCloud.push();
                     break;
             }
-        });
+        }, true); // Το 'true' (Capture mode) δίνει προτεραιότητα στο Pegasus
     },
 
     /**
