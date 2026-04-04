@@ -110,6 +110,27 @@ window.addFromPlanner = function(n, k, p) {
     }
 };
 
+/* ==========================================================================
+   PEGASUS KOUKI AGREEMENT MONITOR (v13.1)
+   ========================================================================== */
+window.updateKoukiBalance = function() {
+    const AGREEMENT_TOTAL = 30; // Η συμφωνία σου
+    const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
+    
+    // Υπολογισμός υπολοίπου
+    const consumed = log.length;
+    const remaining = AGREEMENT_TOTAL - consumed;
+
+    // Ενημέρωση του UI (Αν υπάρχει στοιχείο με ID 'koukiCount')
+    const display = document.getElementById("koukiCount");
+    if (display) {
+        display.textContent = `${remaining} / ${AGREEMENT_TOTAL}`;
+        display.style.color = remaining <= 5 ? "#ff4444" : "#4CAF50"; // Κόκκινο αν μείνουν < 5
+    }
+    
+    return remaining;
+};
+
 // Αν θες να δεις όλη τη λίστα στην κονσόλα (F12) γράψε: showHistory()
 window.showHistory = function() {
     const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
