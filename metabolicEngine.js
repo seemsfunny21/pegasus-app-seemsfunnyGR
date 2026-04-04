@@ -62,10 +62,16 @@ const PegasusMetabolic = {
         this.validateDay();
     },
 
-    renderUI: function(total) {
-        const kcalDisplay = document.querySelector(".kcal-value");
-        if (kcalDisplay) kcalDisplay.textContent = parseFloat(total).toFixed(1);
-    },
+renderUI: function(total) {
+    const val = parseFloat(total) || 0;
+    
+    // 1. Desktop UI (.kcal-value)
+    const kcalDesktop = document.querySelector(".kcal-value");
+    if (kcalDesktop) kcalDesktop.textContent = val.toFixed(1);
+   }
+    
+    console.log(`📊 UI Updated: ${val} kcal displayed.`);
+}
 
     validateDay: function() {
         const today = new Date().toISOString().split('T')[0];
