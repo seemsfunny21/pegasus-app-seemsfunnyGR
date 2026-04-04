@@ -846,6 +846,11 @@ window.onload = () => {
     createNavbar();
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
 
+    // 🟢 PEGASUS v13.1: Kouki Agreement Monitor Trigger
+    if (window.updateKoukiBalance) {
+        window.updateKoukiBalance();
+    }
+
     // --- 3. MASTER UI MAPPING (Command Center - v11.2 Optimized) ---
     window.masterUI = {
         "btnStart": startPause,
@@ -935,7 +940,6 @@ window.onload = () => {
     if (window.PegasusUI && typeof window.PegasusUI.init === "function") window.PegasusUI.init();
 
     // --- ✨ 6. PRELOADER TERMINATION PROTOCOL ---
-    // Εξαφάνιση του Loader 1 δευτερόλεπτο αφού όλα έχουν φορτώσει
     setTimeout(() => {
         const loader = document.getElementById('pegasus-loader');
         if (loader) {
