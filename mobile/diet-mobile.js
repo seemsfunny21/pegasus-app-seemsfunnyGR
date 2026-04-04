@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v13.7)
-   Protocol: One-Tap Logging, Unified PC Menu Sync & Night Routine Trigger
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v13.8)
+   Protocol: Zero-Click Daily Routine Auto-Injection
    ========================================================================== */
 
 const KOUKI_MASTER = [
@@ -24,27 +24,48 @@ const KOUKI_MASTER = [
 ];
 
 window.PegasusDiet = {
-    // 1. Έξυπνη Προσθήκη Γεύματος (Υποστηρίζει Direct Inject)
+    // --- 🤖 ZERO-CLICK DAILY ROUTINE ---
+    checkDailyRoutine: function() {
+        const dateStr = new Date().toLocaleDateString('el-GR');
+        const flagKey = "pegasus_routine_injected_" + dateStr;
+
+        // Αν δεν έχει γίνει inject σήμερα...
+        if (!localStorage.getItem(flagKey)) {
+            let log = this.getLog(dateStr);
+
+            // Προσθήκη Baseline Γευμάτων (Με βάση τυπικά Macros)
+            log.push({ name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, ts: Date.now() - 1000 });
+            log.push({ name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, ts: Date.now() - 2000 });
+
+            localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
+            
+            // Τοποθέτηση "Σημαίας" (Flag) για να μην ξαναμπούν αν κάνεις refresh
+            localStorage.setItem(flagKey, "true");
+
+            // Αφαίρεση 1 Scoop Whey από το Inventory του PEGASUS
+            if (window.PegasusInventory && typeof window.PegasusInventory.consume === 'function') {
+                window.PegasusInventory.consume('prot', 30, false);
+            }
+            console.log("🌅 DIET: Daily Routine auto-injected successfully.");
+        }
+    },
+
+    // --- 1. Έξυπνη Προσθήκη Γεύματος ---
     add: async function(n, k, p) {
-        // Παίρνει τα δεδομένα κατευθείαν από το πάτημα (ή από το search input αν το γράψεις χειροκίνητα)
         const name = n || document.getElementById("fName")?.value;
         const kcal = k || 0;
         const prot = p || 0;
 
-        if(!name || name.trim() === "") return; // Ακύρωση αν είναι άδειο
+        if(!name || name.trim() === "") return;
 
-        // Αυτόματη αφαίρεση 1 Scoop Whey από το Inventory (αν υπάρχει η λέξη whey)
         if(name.toLowerCase().includes("whey") && window.PegasusInventory) {
             window.PegasusInventory.consume('prot', 30);
-            console.log("🧬 INVENTORY: 30g Whey deducted automatically.");
         }
         
-        // Καταγραφή στο Κουκί Agreement
         if(name.includes("(Κούκι)")) {
             let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
             agreementLog.push({ date: new Date().toLocaleDateString('el-GR'), food: name });
             localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
-            console.log("📊 KOUKI: Agreement Balance Updated.");
         }
 
         const dateStr = new Date().toLocaleDateString('el-GR');
@@ -53,7 +74,6 @@ window.PegasusDiet = {
         
         localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
         
-        // Καθαρισμός UI & Κλείσιμο Αναζήτησης
         const fNameEl = document.getElementById("fName");
         if(fNameEl) fNameEl.value = "";
         this.closeSearch();
@@ -62,14 +82,13 @@ window.PegasusDiet = {
         if(window.PegasusCloud) await window.PegasusCloud.push();
     },
 
-    // --- 🧠 2. PEGASUS DIET ADVISOR (MOBILE LINK) ---
+    // --- 🧠 2. PEGASUS DIET ADVISOR ---
     askAdvisor: function() {
         const resultContainer = document.getElementById("advisorMobileResult");
         
         if (window.PegasusDietAdvisor && typeof window.PegasusDietAdvisor.analyzeAndRecommend === "function") {
             const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
             
-            // Ανάκτηση Macros από το KOUKI_MASTER
             const suggestedFood = KOUKI_MASTER.find(f => f.name.includes(advice.n) || advice.n.includes(f.name));
             const kcal = suggestedFood ? suggestedFood.kcal : 0;
             const prot = suggestedFood ? suggestedFood.protein : 0;
@@ -94,10 +113,7 @@ window.PegasusDiet = {
         const resBox = document.getElementById("searchSuggestions");
         if(!resBox) return;
 
-        if(!term || term.length < 2) { 
-            resBox.style.display = "none"; 
-            return; 
-        }
+        if(!term || term.length < 2) { resBox.style.display = "none"; return; }
 
         const lib = JSON.parse(localStorage.getItem("pegasus_food_library")) || [];
         const matches = lib.filter(i => i.name.toLowerCase().includes(term.toLowerCase())).slice(0, 5);
@@ -115,17 +131,13 @@ window.PegasusDiet = {
         }
     },
 
-    // 🎯 ONE-TAP ACTION: Μόλις πατάς αποτέλεσμα, καταγράφεται
-    selectSuggested: function(n, k, p) {
-        this.add(n, k, p);
-    },
-
+    selectSuggested: function(n, k, p) { this.add(n, k, p); },
     closeSearch: function() {
         const res = document.getElementById("searchSuggestions");
         if(res) res.style.display = "none";
     },
 
-    // --- 🍽️ 4. DYNAMIC DAILY KOUKI MENU (ALIGNED WITH PC) ---
+    // --- 🍽️ 4. DYNAMIC DAILY KOUKI MENU ---
     renderDailyKouki: function() {
         const container = document.getElementById('libraryContainer') || document.getElementById('koukiContainer');
         if(!container) return;
@@ -134,22 +146,13 @@ window.PegasusDiet = {
         const todayName = greekDays[new Date().getDay()];
 
         let dailyMenu = [];
-
-        // Προσπάθεια ανάγνωσης του Global Menu (από data.js ή cloud)
         if (typeof window.weeklyKoukiMenu !== 'undefined' && window.weeklyKoukiMenu[todayName]) {
             dailyMenu = window.weeklyKoukiMenu[todayName];
-        } 
-        else {
+        } else {
             try {
                 const storedWeeklyMenu = JSON.parse(localStorage.getItem('pegasus_weekly_kouki_menu') || "{}");
-                if (storedWeeklyMenu[todayName]) {
-                    dailyMenu = storedWeeklyMenu[todayName];
-                } else {
-                    dailyMenu = KOUKI_MASTER.slice(0, 8); // Fallback
-                }
-            } catch(e) {
-                dailyMenu = KOUKI_MASTER.slice(0, 8);
-            }
+                dailyMenu = storedWeeklyMenu[todayName] ? storedWeeklyMenu[todayName] : KOUKI_MASTER.slice(0, 8);
+            } catch(e) { dailyMenu = KOUKI_MASTER.slice(0, 8); }
         }
 
         container.innerHTML = `
@@ -177,6 +180,9 @@ window.PegasusDiet = {
 
     // --- 📊 5. UI & LOGIC SYNC ---
     updateUI: function() {
+        // Τρέχει την αυτοματοποίηση της ημέρας ΠΡΙΝ ζωγραφίσει το UI
+        this.checkDailyRoutine();
+
         const dateStr = new Date().toLocaleDateString('el-GR');
         const log = this.getLog(dateStr);
         let tk = 0, tp = 0;
@@ -189,7 +195,6 @@ window.PegasusDiet = {
         localStorage.setItem("pegasus_today_kcal", tk.toFixed(1));
         localStorage.setItem("pegasus_today_protein", tp.toFixed(1));
 
-        // Υπολογισμός Target (Βασικός στόχος + Αερόβια)
         const cardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
         const targetKcal = 2800 + cardioKcal;
 
@@ -227,7 +232,6 @@ window.PegasusDiet = {
         } catch (e) { return []; }
     },
 
-    // 🚀 QUICK ADD ACTION: (Για το Μωβ Κουμπί & το Κουκί Menu)
     quickAdd: function(n, k, p) {
         this.add(n, k, p);
         if (typeof openView === "function") openView('diet');
