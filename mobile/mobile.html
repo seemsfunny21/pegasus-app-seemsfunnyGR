@@ -98,6 +98,9 @@
         .section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 25px 0 12px; text-align: center; }
         .compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 10px; }
         .input-label { font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; text-align: center; width: 100%; }
+		.search-item { padding: 12px 15px; border-bottom: 1px solid #222; font-size: 13px; cursor: pointer; }
+.search-item:last-child { border-bottom: none; }
+.search-item:active { background: rgba(0, 255, 65, 0.1); }
         .icon-parking {
     color: var(--main); /* Χρησιμοποιεί το Pegasus Green */
     text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); /* Προσθέτει Tactical Glow */
@@ -173,7 +176,8 @@
             <div class="mini-card"><span class="mini-label">ΘΕΡΜΙΔΕΣ</span><div id="txtKcal" class="mini-val">0 / 2800</div></div>
             <div class="mini-card"><span class="mini-label">ΠΡΩΤΕΪΝΗ</span><div id="txtProt" class="mini-val">0 / 160g</div></div>
         </div>
-        <input type="text" id="fName" placeholder="Όνομα Γεύματος">
+        <input type="text" id="fName" placeholder="Όνομα Γεύματος" oninput="PegasusDiet.handleSearch(this.value)">
+<div id="searchSuggestions" style="display:none; background:#111; border:1px solid var(--main); border-radius:15px; margin-top:-10px; margin-bottom:15px; text-align:left; max-height:200px; overflow-y:auto; width:100%; z-index:100;"></div>
         <div class="compact-grid">
             <input type="number" id="fKcal" placeholder="Θερμίδες" inputmode="numeric">
             <input type="number" id="fProt" placeholder="Πρωτεΐνη" inputmode="numeric">
