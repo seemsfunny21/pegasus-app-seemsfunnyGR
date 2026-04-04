@@ -177,6 +177,59 @@ window.pegasusHealthCheck = async function() {
     console.log("%c--- CHECK COMPLETE ---", "color: #4CAF50; font-weight: bold;");
 };
 
+/* ==========================================================================
+   PEGASUS GARBAGE COLLECTOR (v13.0 AUTO-PRUNING)
+   ========================================================================== */
+window.PegasusGarbageCollector = {
+    retentionDays: 60, // Όριο: 2 Μήνες
+
+    run: function() {
+        console.log("🧹 PEGASUS GC: Initiating Storage Scan...");
+        const now = new Date();
+        let deletedCount = 0;
+        let keysToDelete = [];
+
+        // 1. Σάρωση όλου του LocalStorage
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+
+            // Εντοπισμός των Food Logs (Μορφή: food_log_DD/MM/YYYY)
+            if (key && key.startsWith("food_log_")) {
+                const dateStr = key.replace("food_log_", ""); 
+                const parts = dateStr.split('/');
+                
+                // Αν η ημερομηνία είναι έγκυρη (DD/MM/YYYY)
+                if (parts.length === 3) {
+                    const logDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                    const diffTime = Math.abs(now - logDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+                    // Αν πέρασαν 60+ μέρες, βάλτο στη λίστα διαγραφής
+                    if (diffDays > this.retentionDays) {
+                        keysToDelete.push(key);
+                    }
+                }
+            }
+        }
+
+        // 2. Μαζική Διαγραφή & Απελευθέρωση Μνήμης
+        keysToDelete.forEach(key => {
+            localStorage.removeItem(key);
+            deletedCount++;
+        });
+
+        // 3. System Feedback
+        if (deletedCount > 0) {
+            console.log(`🧹 PEGASUS GC: Cleared ${deletedCount} obsolete logs. Memory freed.`);
+            // Προαιρετικό: Ενημέρωση του Cloud για τον καθαρισμό
+            if (window.PegasusCloud) window.PegasusCloud.push(true);
+        } else {
+            console.log("🧹 PEGASUS GC: Storage is optimal. No action required.");
+        }
+    }
+};
+
+
 // 5. GLOBAL RUNTIME ERROR CATCHER
 window.onerror = function(message, source, lineno, colno, error) {
     const fileName = source ? source.split('/').pop() : "unknown";
@@ -187,5 +240,10 @@ window.onerror = function(message, source, lineno, colno, error) {
 
 // ΑΥΞΗΣΗ ΚΑΘΥΣΤΕΡΗΣΗΣ ΣΕ 5 ΔΕΥΤΕΡΟΛΕΠΤΑ (Για απόλυτο συγχρονισμό)
 setTimeout(() => {
+    // 🧹 Εκτέλεση Καθαρισμού Μνήμης στο Παρασκήνιο
+    if (window.PegasusGarbageCollector) {
+        window.PegasusGarbageCollector.run();
+    }
+    
     window.pegasusHealthCheck();
 }, 5000);
