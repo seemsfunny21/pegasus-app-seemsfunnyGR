@@ -759,3 +759,32 @@ input:checked + .slider:before { transform: translateX(26px); }
     0% { width: 0%; }
     100% { width: 100%; }
 }
+
+/* Animation για τις τελείες */
+.dots {
+    display: inline-block;
+    width: 20px; /* Σταθερό πλάτος για να μην "κουνιέται" το κείμενο */
+    text-align: left;
+    animation: ellipsis 1.5s infinite;
+}
+
+@keyframes ellipsis {
+    0% { content: ""; }
+    25% { content: "."; }
+    50% { content: ".."; }
+    75% { content: "..."; }
+    100% { content: ""; }
+}
+
+/* Εναλλακτική μέθοδος αν η παραπάνω δεν υποστηρίζεται από τον browser σου: */
+.dots::after {
+    content: '';
+    animation: dots-blink 1.5s infinite;
+}
+
+@keyframes dots-blink {
+    0% { content: ''; }
+    33% { content: '.'; }
+    66% { content: '..'; }
+    100% { content: '...'; }
+}
