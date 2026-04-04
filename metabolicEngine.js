@@ -1,23 +1,33 @@
 /* =============================================================
-   PEGASUS UNIFIED METABOLIC ENGINE - v16.2
+   PEGASUS UNIFIED METABOLIC ENGINE - v16.3 (SESSION ALIGNED)
    Merged: calories.js + metabolic.js
-   Protocol: Universal UI Sync & Zero-Bug Simulation
+   Protocol: Session vs Daily Tracking & Universal UI Sync
    ============================================================= */
 
 const PegasusMetabolic = {
+    sessionKcal: 0, // Μηδενίζει σε κάθε πάτημα του "Έναρξη"
+
     // Δυναμική ανάκτηση βάρους χρήστη
     get userWeight() {
         return parseFloat(localStorage.getItem("pegasus_weight")) || 74;
     },
 
-    pendingKcal: 0,
+    /**
+     * Μηδενισμός θερμίδων συνεδρίας (Καλείται στο Start Workout)
+     */
+    resetSession: function() {
+        this.sessionKcal = 0;
+        this.renderUI(0); // Ενημέρωση UI για το μηδενισμό
+        console.log("🔄 PEGASUS: Session Counter Reset to 0.");
+    },
 
     /**
      * Υπολογισμός MET βάσει άσκησης και φορτίου
      */
     getMET: function(exerciseName, liftedWeight) {
-        if (exerciseName.includes("Ποδηλασία") || exerciseName.includes("Cycling")) return 10.0;
-        if (exerciseName.includes("Προθέρμανση") || exerciseName.includes("Warmup")) return 3.0;
+        const name = exerciseName.toLowerCase();
+        if (name.includes("ποδηλασία") || name.includes("cycling")) return 10.0;
+        if (name.includes("προθέρμανση") || name.includes("warmup")) return 3.0;
         
         let baseMET = 7.0; 
         if (liftedWeight > 0) {
@@ -31,7 +41,7 @@ const PegasusMetabolic = {
      * Κύρια συνάρτηση καταγραφής - ΚΑΛΕΙΤΑΙ ΑΠΟ ΤΟ app.js ΚΑΘΕ ΔΕΥΤΕΡΟΛΕΠΤΟ
      */
     updateTracking: function(durationSeconds, exerciseName) {
-        // 1. ΑΚΑΡΙΑΙΑ ΑΠΟΘΗΚΕΥΣΗ ΚΙΛΩΝ (Fix για το "χάσιμο" των κιλών)
+        // 1. ΑΚΑΡΙΑΙΑ ΑΠΟΘΗΚΕΥΣΗ ΚΙΛΩΝ
         const weightInput = document.querySelector(".weight-input");
         let liftedWeight = weightInput ? parseFloat(weightInput.value) : 0;
         
@@ -41,40 +51,45 @@ const PegasusMetabolic = {
             liftedWeight = parseFloat(localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${exerciseName.trim()}_records`)) || 0;
         }
 
-        // 2. ΥΠΟΛΟΓΙΣΜΟΣ ΘΕΡΜΙΔΩΝ (Formula: kcal = (MET * 3.5 * weight) / 200 * mins)
+        // 2. ΥΠΟΛΟΓΙΣΜΟΣ ΘΕΡΜΙΔΩΝ
         const activeMET = this.getMET(exerciseName, liftedWeight);
         const durationMins = durationSeconds / 60;
         const kcalPerMin = (activeMET * 3.5 * this.userWeight) / 200;
         const addedKcal = parseFloat((kcalPerMin * durationMins).toFixed(4));
 
-        // 3. ΣΥΓΧΡΟΝΙΣΜΟΣ ΜΕ ΤΟ LOCALSTORAGE
-        let currentTotal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
-        let newTotal = currentTotal + addedKcal;
-        localStorage.setItem("pegasus_today_kcal", newTotal.toFixed(4));
+        // 3. ΕΝΗΜΕΡΩΣΗ COUNTERS
+        this.sessionKcal += addedKcal; // Live session counter
+
+        let currentDaily = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+        let newDaily = currentDaily + addedKcal;
+        localStorage.setItem("pegasus_today_kcal", newDaily.toFixed(4));
         
         // 4. ΕΝΗΜΕΡΩΣΗ ΟΛΩΝ ΤΩΝ UI
-        this.renderUI(newTotal);
+        // Περνάμε και τις δύο τιμές για να αποφασίσει το renderUI τι θα δείξει πού
+        this.renderUI(this.sessionKcal, newDaily);
         
         // 5. ΕΠΙΚΥΡΩΣΗ ΗΜΕΡΟΛΟΓΙΟΥ
         this.validateDay();
     },
 
     /**
-     * UNIVERSAL UI RENDERER: Ενημερώνει Desktop και Mobile ταυτόχρονα
+     * UNIVERSAL UI RENDERER: Διαφορετική προβολή για Desktop και Mobile
      */
-    renderUI: function(total) {
-        const val = parseFloat(total) || 0;
+    renderUI: function(session, daily) {
+        // Αν δεν περαστούν ορίσματα (π.χ. στο Load), τραβάμε τα Daily
+        const sVal = parseFloat(session) || this.sessionKcal;
+        const dVal = parseFloat(daily) || parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
         
-        // Α. Desktop UI (.kcal-value)
+        // Α. Desktop UI (.kcal-value): Δείχνει τις θερμίδες της ΤΡΕΧΟΥΣΑΣ προπόνησης
         const kcalDesktop = document.querySelector(".kcal-value");
         if (kcalDesktop) {
-            kcalDesktop.textContent = val.toFixed(1);
+            kcalDesktop.textContent = sVal.toFixed(1);
         }
 
-        // Β. Mobile UI (txtKcal)
+        // Β. Mobile UI (txtKcal): Δείχνει το ΣΥΝΟΛΟ της ημέρας (π.χ. Πρωινή + Τρέχουσα)
         const kcalMobile = document.getElementById("txtKcal");
         if (kcalMobile) {
-            kcalMobile.textContent = `${val.toFixed(0)} / 2800`;
+            kcalMobile.textContent = `${dVal.toFixed(0)} / 2800`;
         }
     },
 
@@ -98,8 +113,8 @@ const PegasusMetabolic = {
 window.PegasusMetabolic = PegasusMetabolic;
 window.trackSetCalories = PegasusMetabolic.updateTracking.bind(PegasusMetabolic);
 
-// Initial Render στο φόρτωμα
+// Initial Render στο φόρτωμα (Δείχνουμε το daily μέχρι να πατηθεί το Start)
 document.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem("pegasus_today_kcal") || "0";
-    PegasusMetabolic.renderUI(saved);
+    const savedDaily = localStorage.getItem("pegasus_today_kcal") || "0";
+    PegasusMetabolic.renderUI(0, savedDaily);
 });
