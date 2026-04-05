@@ -1,62 +1,51 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v2.3 (EXTENSION-PROOF SHIELD)
-   Protocol: Strict Asset Caching & Error Mitigation
-   Status: FINAL STABLE
+   PEGASUS PWA SERVICE WORKER - v2.4 (ULTIMATE OPTIMIZATION)
+   Protocol: Strict Asset Caching & Query-String Neutralization
+   Status: RE-ENGINEERED FOR GTMETRIX GRADE A+
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v2.3'; // 🔄 Forced Cache Invalidation
+const CACHE_NAME = 'pegasus-shield-v2.4'; 
 
 const ASSETS_TO_CACHE = [
     './', 
     './index.html', 
-    './mobile.html', 
-    './style.css', 
-    './style-mobile.css',
+    './mobile/mobile.html', 
     './app.js', 
     './data.js', 
     './manifest.js',
     './cloudSync.js',
-    './car-mobile.js',
-    './diet-mobile.js',
-    './cardio-mobile.js',
-    './ems-mobile.js',
-    './profile-mobile.js',
-    './inventory-mobile.js',
-    './protcrea.js',         // 🟢 ΠΡΟΣΘΗΚΗ (PC Inventory Guard)
+    './dragDrop.js',
+    './extensions.js',
+    './dietAdvisor.js',
+    './metabolicEngine.js',
+    './weather.js',
+    './weightTracker.js',
+    './gallery.js',
+    './protcrea.js',
+    './cardio.js',
+    './mobile/diet-mobile.js',
+    './mobile/cardio-mobile.js',
+    './mobile/profile-mobile.js',
+    './mobile/car-mobile.js',
+    './mobile/parking-mobile.js',
+    './mobile/inventory-mobile.js',
+    './mobile/ems-mobile.js',
     './videos/beep.mp3',
-    './videos/abcrunches.mp4', './videos/bentoverrows.mp4', './videos/bicepcurls.mp4',
-    './videos/chestflys.mp4', './videos/chestpress.mp4', './videos/cycling.mp4',
-    './videos/ems.mp4', './videos/glutekickbacks.mp4', './videos/latpulldowns.mp4',
-    './videos/latpulldownsclose.mp4', './videos/legextensions.mp4', './videos/legraisehiplift.mp4',
-    './videos/lowrowsseated.mp4', './videos/lyingkneeraise.mp4', './videos/onearmpulldowns.mp4',
-    './videos/onearmrows.mp4', './videos/plank.mp4', './videos/preacherbicepcurls.mp4',
-    './videos/pushups.mp4', './videos/reversecrunch.mp4', './videos/reverseseatedrows.mp4',
-    './videos/situps.mp4', './videos/straightarmpulldowns.mp4', './videos/stretching.mp4',
-    './videos/triceppulldowns.mp4', './videos/uprightrows.mp4', './videos/warmup.mp4'
+    './videos/warmup.mp4'
 ];
 
+// ⚡ INSTALL: Caching Assets
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then(async (cache) => {
-            let downloaded = 0;
-            for (const url of ASSETS_TO_CACHE) {
-                try {
-                    await cache.add(url);
-                    downloaded++;
-                    const allClients = await self.clients.matchAll({ includeUncontrolled: true });
-                    allClients.forEach(client => {
-                        client.postMessage({ 
-                            type: 'CACHE_PROGRESS', 
-                            percent: Math.round((downloaded / ASSETS_TO_CACHE.length) * 100) 
-                        });
-                    });
-                } catch (err) { console.warn(`SW: Skip optional asset ${url}`); }
-            }
+        caches.open(CACHE_NAME).then((cache) => {
+            console.log('🛡️ SW: Shielding Pegasus Assets...');
+            return cache.addAll(ASSETS_TO_CACHE);
         })
     );
 });
 
+// 🧹 ACTIVATE: Purge Old Versions
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then(keys => Promise.all(keys.map(key => {
@@ -65,37 +54,31 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// SMART ROUTING ENGINE (v2.3 - Optimized for Data Integrity)
+// 🚀 FETCH ENGINE: Query-String Aware
 self.addEventListener('fetch', (event) => {
-    // 🛡️ GUARD: Ignore non-http requests (Fixes Chrome Extension Errors)
     if (!event.request.url.startsWith('http')) return;
 
+    // Tactical Fix: Αφαίρεση του ?v=... από το URL για να βρίσκει το αρχείο στην cache
     const url = new URL(event.request.url);
+    const cleanUrl = url.origin + url.pathname;
 
-    // 1. API BYPASS: Cloud & AI data (Always LIVE)
+    // 1. API BYPASS: Μην κάνεις ποτέ cache το Cloud ή την Google
     if (url.hostname.includes('jsonbin.io') || url.hostname.includes('googleapis.com')) {
         event.respondWith(fetch(event.request));
         return;
     }
 
-    // 2. NETWORK-FIRST: Code & Logic files
-    if (event.request.headers.get('accept')?.includes('text/html') || 
-        url.pathname.endsWith('.js') || 
-        url.pathname.endsWith('.css')) {
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
+    // 2. STRATEGY: Cache First, Network Fallback (Για ταχύτητα)
+    event.respondWith(
+        caches.match(cleanUrl).then((cachedRes) => {
+            return cachedRes || fetch(event.request).then(response => {
+                // Αν είναι JS/CSS/HTML, το βάζουμε στην cache για την επόμενη φορά
+                if (response.status === 200 && (cleanUrl.endsWith('.js') || cleanUrl.endsWith('.css'))) {
                     const clonedRes = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedRes));
-                    return response;
-                })
-                .catch(() => caches.match(event.request))
-        );
-        return;
-    }
-
-    // 3. CACHE-FIRST: Heavy Media (Videos)
-    event.respondWith(
-        caches.match(event.request).then((cachedRes) => cachedRes || fetch(event.request))
+                }
+                return response;
+            });
+        })
     );
 });
