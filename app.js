@@ -1,13 +1,13 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.1 (PRECISION BLOCK 1)
+   PEGASUS WORKOUT ENGINE - v10.5 (PRECISION BLOCK 1)
    Protocol: Zero-Conflict Variable Bridge & Manifest Alignment
-   Status: BLOCK 1 OPERATIONAL | Surgical Fix for Constant Assignment
+   Status: BLOCK 1 OPERATIONAL | Full Syntax Restore & Weight Tracker Fix
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
 var P_M = window.PegasusManifest; 
 
-// ✅ ΚΡΑΤΑΜΕ ΑΥΤΟ: Δημιουργία του Global Bridge μία φορά στην αρχή
+// Δημιουργία του Global Bridge μία φορά στην αρχή
 window.masterUI = window.masterUI || {}; 
 
 // Ελέγχουμε αν η M είναι ήδη δεσμευμένη
@@ -117,7 +117,6 @@ function createNavbar() {
     });
 }
 
-/* === PEGASUS ENGINE: SELECTDAY PROTOCOL (v10.1.2 STABLE) === */
 /* === PEGASUS ENGINE: DYNAMIC SELECTDAY PROTOCOL (v10.2.3) === */
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) {
@@ -191,7 +190,7 @@ function selectDay(btn, day) {
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || "";
 
-d.innerHTML = `
+        d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">0/${finalSets}</div>
                 <div class="exercise-name">${cleanName}</div> 
@@ -226,105 +225,6 @@ d.innerHTML = `
     }, 150);
     
     console.log(`[PEGASUS ENGINE]: ${day} Loaded. System state: ${isRainy ? 'Rainy' : 'Clear'}.`);
-}
-
-function runPhase() {
-    if (!running) return;
-    if (timer) clearInterval(timer);
-
-    // 1. Έλεγχος ολοκλήρωσης προπόνησης
-    if (remainingSets.every(s => s <= 0)) { 
-        finishWorkout(); 
-        return; 
-    }
-
-    const e = exercises[currentIdx];
-    if (!e) return;
-    const exName = e.querySelector(".weight-input").getAttribute("data-name");
-
-    // 2. UI Highlight τρέχουσας άσκησης
-    exercises.forEach(ex => { 
-        ex.style.borderColor = "#222"; 
-        ex.style.background = "transparent"; 
-    });
-    e.style.borderColor = "#4CAF50"; 
-    e.style.background = "rgba(76, 175, 80, 0.1)";
-
-    // 3. Χρονισμός Φάσης
-    let t = (phase === 0) ? 10 : (phase === 1 ? workoutPhases[1].d : workoutPhases[2].d);
-    let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
-
-    const label = document.getElementById("phaseTimer");
-    if (label) {
-        label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
-        label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
-    }
-
-    if (phase !== 2) showVideo(currentIdx);
-
-    // 4. Κύριος Βρόχος (Ticker)
-    timer = setInterval(() => {
-        t -= 1;
-        if (remainingSeconds > 0) { 
-            remainingSeconds -= 1; 
-            updateTotalBar(); 
-        }
-
-        // --- METABOLIC ENGINE SYNC (v16.1) ---
-        // Σταματάμε τον παλιό εσωτερικό υπολογισμό burnRate.
-        // Καλούμε τη μηχανή PegasusMetabolic μόνο κατά την ΑΣΚΗΣΗ (phase 1).
-        if (phase === 1 && window.PegasusMetabolic) {
-            window.PegasusMetabolic.updateTracking(1, exName);
-        }
-
-        // LIVE UI RE-RENDER (Διασφαλίζει ότι το 230kcal θα φανεί αμέσως)
-        if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
-        
-        // Ενημέρωση Desktop UI αν υπάρχει
-        const kcalDisplay = document.querySelector(".kcal-value");
-        if (kcalDisplay) {
-            const currentKcal = localStorage.getItem("pegasus_today_kcal") || "0";
-            kcalDisplay.textContent = parseFloat(currentKcal).toFixed(1);
-        }
-
-        // 5. Λογική Αλλαγής Φάσης
-        if (t <= 0) {
-            clearInterval(timer); 
-            playBeep();
-            
-            if (phase === 0) { 
-                phase = 1; 
-                runPhase(); 
-            } else if (phase === 1) {
-                // Ολοκλήρωση Σετ
-                let done = parseInt(e.dataset.done) || 0;
-                done++;
-                e.dataset.done = done;
-                remainingSets[currentIdx] = parseFloat(e.dataset.total) - done;
-                e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
-                
-                // Achievement & Logic Bridge
-                if (window.updateAchievements) window.updateAchievements(exName);
-                if (window.logPegasusSet) window.logPegasusSet(exName);
-
-                // [PUSH TRIGGER] Αυτόματο Cloud Sync μετά από κάθε σετ
-                if (window.PegasusCloud) window.PegasusCloud.push(true);
-
-                phase = 2; 
-                runPhase();
-            } else {
-                // Μετάβαση στην επόμενη άσκηση (Circuit Logic)
-                let next = getNextIndexCircuit();
-                if (next !== -1) { 
-                    currentIdx = next; 
-                    phase = 0; 
-                    runPhase(); 
-                } else {
-                    finishWorkout();
-                }
-            }
-        }
-    }, 1000 / SPEED);
 }
 
 /* ===== 5. WORKOUT ENGINE CORE (RE-ESTABLISHED v10.2.5) ===== */
@@ -372,6 +272,7 @@ function runPhase() {
     if (!running) return;
     if (timer) clearInterval(timer);
 
+    // 1. Έλεγχος ολοκλήρωσης προπόνησης
     if (remainingSets.every(s => s <= 0)) { 
         finishWorkout(); 
         return; 
@@ -381,6 +282,7 @@ function runPhase() {
     if (!e) return;
     const exName = e.querySelector(".weight-input").getAttribute("data-name");
 
+    // 2. UI Highlight τρέχουσας άσκησης
     exercises.forEach(ex => { 
         ex.style.borderColor = "#222"; 
         ex.style.background = "transparent"; 
@@ -388,6 +290,7 @@ function runPhase() {
     e.style.borderColor = "#4CAF50"; 
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
+    // 3. Χρονισμός Φάσης
     let t = (phase === 0) ? 10 : (phase === 1 ? workoutPhases[1].d : workoutPhases[2].d);
     let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
 
@@ -399,6 +302,7 @@ function runPhase() {
 
     if (phase !== 2) showVideo(currentIdx);
 
+    // 4. Κύριος Βρόχος (Ticker)
     timer = setInterval(() => {
         t -= 1;
         if (remainingSeconds > 0) { 
@@ -406,14 +310,22 @@ function runPhase() {
             updateTotalBar(); 
         }
 
-        if (phase === 1 || phase === 2) {
-            let currentKcal = parseFloat(localStorage.getItem(window.M?.nutrition.today_kcal || "pegasus_today_kcal")) || 0;
-            let burnRate = (phase === 1) ? (userWeight * 0.00017) : (userWeight * 0.00008); 
-            localStorage.setItem(window.M?.nutrition.today_kcal || "pegasus_today_kcal", (currentKcal + burnRate).toFixed(4));
+        // --- METABOLIC ENGINE SYNC (v16.1) ---
+        if (phase === 1 && window.PegasusMetabolic) {
+            window.PegasusMetabolic.updateTracking(1, exName);
         }
 
+        // LIVE UI RE-RENDER
         if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
+        
+        // Ενημέρωση Desktop UI αν υπάρχει
+        const kcalDisplay = document.querySelector(".kcal-value");
+        if (kcalDisplay) {
+            const currentKcal = localStorage.getItem("pegasus_today_kcal") || "0";
+            kcalDisplay.textContent = parseFloat(currentKcal).toFixed(1);
+        }
 
+        // 5. Λογική Αλλαγής Φάσης
         if (t <= 0) {
             clearInterval(timer); 
             playBeep();
@@ -422,19 +334,24 @@ function runPhase() {
                 phase = 1; 
                 runPhase(); 
             } else if (phase === 1) {
+                // Ολοκλήρωση Σετ
                 let done = parseInt(e.dataset.done) || 0;
                 done++;
                 e.dataset.done = done;
                 remainingSets[currentIdx] = parseFloat(e.dataset.total) - done;
                 e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
                 
+                // Achievement & Logic Bridge
                 if (window.updateAchievements) window.updateAchievements(exName);
                 if (window.logPegasusSet) window.logPegasusSet(exName);
+
+                // [PUSH TRIGGER] Αυτόματο Cloud Sync μετά από κάθε σετ
                 if (window.PegasusCloud) window.PegasusCloud.push(true);
 
                 phase = 2; 
                 runPhase();
             } else {
+                // Μετάβαση στην επόμενη άσκηση (Circuit Logic)
                 let next = getNextIndexCircuit();
                 if (next !== -1) { 
                     currentIdx = next; 
@@ -497,8 +414,6 @@ function saveWeight(name, val) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 }
 
-
-
 /* ===== 7. VIDEO & UI UTILS (STRICT RECOVERY ALIGNMENT v10.8) ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
@@ -553,7 +468,7 @@ function showVideo(i) {
         "Glute Kickbacks": "glutekickbacks",
         "Standing Leg Curl": "glutekickbacks",
         "Cycling": "cycling",
-        "Ποδηλασία": "cycling", // ✅ Η μόνη προσθήκη για να δουλέψει το σημερινό mapping
+        "Ποδηλασία": "cycling", 
         "EMS Training": "ems",
         "Stretching": "stretching"
     };
@@ -645,7 +560,6 @@ window.toggleSkipExercise = function(idx) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
-/* ===== 8. FINISH & REPORTING (MANIFEST COMPLIANT) ===== */
 /* ===== 8. FINISH & REPORTING (STRICT LOCAL-FIRST v10.6.2) ===== */
 function finishWorkout() {
     // Αποτροπή διπλοεκτέλεσης αν δεν υπάρχει ενεργή προπόνηση
@@ -700,7 +614,7 @@ function finishWorkout() {
         
         console.log("PEGASUS OS: Session Terminated. Reloading...");
         location.reload(); 
-    }, 4000); // Μειωμένο delay για ταχύτερη απόκριση
+    }, 4000); 
 }
 
 /* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.8) ===== */
@@ -760,13 +674,12 @@ function openExercisePreview() {
         `;
     });
     
-// 🎯 BRIDGE TO INLINE RENDERER (index.html)
-    // Καλούμε τη συνάρτηση που ορίσαμε στο HTML για να σχεδιάσει τις μπάρες
+    // 🎯 BRIDGE TO INLINE RENDERER (index.html)
     if (typeof window.forcePegasusRender === "function") {
         setTimeout(() => {
             window.forcePegasusRender();
             console.log("📊 PEGASUS UI: Progress Bars Synced via App Bridge.");
-        }, 50); // 50ms αρκούν για το DOM Reflow
+        }, 50);
     } else {
         console.warn("⚠️ PEGASUS UI: forcePegasusRender not found in global scope.");
     }
@@ -815,7 +728,7 @@ window.updateTotalWorkoutCount = function() {
    PEGASUS OS - CORE BOOT SEQUENCE (v10.2 STABLE)
    Protocol: Strict Saturday Reset Guard & Monday Persistence
    Features: Date-Locked Weekly Reset, Master UI Delegation
-   Status: FINAL VERIFIED | FIX: DOUBLE RESET BUG
+   Status: FINAL VERIFIED | FIX: FULL SYNTAX RESTORE
    ========================================================================== */
 
 window.onload = () => {
@@ -890,7 +803,7 @@ window.onload = () => {
             if (window.PegasusReporting) window.ReportingEngine.sendReport(true);
             else alert("Reporting Engine Offline");
         },
-"btnSaveSettings": () => { 
+        "btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
             const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
             
@@ -906,6 +819,7 @@ window.onload = () => {
             // Μικρή καθυστέρηση για να προλάβει το Save πριν το Reload
             setTimeout(() => { location.reload(); }, 300);
         }
+    }; // <-- ΕΔΩ ΗΤΑΝ ΤΟ ΛΑΘΟΣ (Η αγκύλη που έλειπε)
 
     // --- 4. EVENT DELEGATION ---
     Object.keys(window.masterUI).forEach(btnId => {
@@ -956,23 +870,17 @@ window.onload = () => {
         }
     }, 1000); 
 };
+
 /* ===== 11. DEBUG BRIDGE (FIXED & FULL ACCESS) ===== */
 window.PegasusDebug = {
-    // Κατάσταση Engine: PegasusDebug.state()
     state: () => ({ exercises, remainingSets, currentIdx, running, phase }),
-    
-    // Έλεγχος Manifest: PegasusDebug.manifest()
     manifest: () => P_M,
-    
-    // Έλεγχος Assets: PegasusDebug.testImage('uprightrows')
     testImage: (name) => {
         const testImg = new Image();
         testImg.onload = () => console.log(`%c ✅ ASSET FOUND: ${name}.png`, "color: #4CAF50; font-weight: bold;");
         testImg.onerror = () => console.error(`%c ❌ ASSET 404: ${name}.png is missing from GitHub!`, "color: #ff4444;");
         testImg.src = `images/${name}.png`;
     },
-    
-    // Πρόσφατα Logs: PegasusDebug.logs()
     logs: () => window.pegasusLogs
 };
 
@@ -995,4 +903,4 @@ window.addEventListener('mousedown', (e) => {
         window.PegasusCloud.push(true); 
     }
 });
-// ΤΕΛΟΣ ΑΡΧΕΙΟΥ PEGASUS v12.2
+// ΤΕΛΟΣ ΑΡΧΕΙΟΥ PEGASUS v10.5
