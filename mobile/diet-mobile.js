@@ -134,40 +134,50 @@ renderDailyKouki: function() {
         const container = document.getElementById('libraryContainer');
         if(!container) return;
         
+        const targetDate = new Date();
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-        const todayName = greekDays[new Date().getDay()];
+        const targetDayName = greekDays[targetDate.getDay()];
+        
+        // 🎯 LOGIC ALIGNMENT: Αντιγραφή της λογικής του υπολογιστή (food.js)
+        const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const targetDayKey = daysMap[targetDate.getDay()];
         
         let dailyMenu = [];
-        try {
-            // 1. Προσπάθεια λήψης του συγχρονισμένου μενού από το Cloud/PC
-            const storedWeeklyMenu = JSON.parse(localStorage.getItem('pegasus_weekly_kouki_menu') || "{}");
-            
-            if (storedWeeklyMenu[todayName] && storedWeeklyMenu[todayName].length > 0) {
-                dailyMenu = storedWeeklyMenu[todayName];
-            } else {
-                // 2. Fallback: Αν δεν υπάρχει συγχρονισμένο μενού, φιλτράρουμε το MASTER βάσει ημέρας
-                // Παράδειγμα: Κυριακή δείχνει τα 8 τελευταία, Δευτέρα τα 8 πρώτα κλπ
-                const offset = new Date().getDay() * 2; 
-                dailyMenu = KOUKI_MASTER.slice(offset, offset + 8);
-            }
-        } catch(e) { 
-            dailyMenu = KOUKI_MASTER.slice(0, 8); 
+        
+        // Διαβάζουμε απευθείας το data.js (KOUKI_MASTER_MENU) όπως το PC
+        if (typeof KOUKI_MASTER_MENU !== 'undefined' && KOUKI_MASTER_MENU[targetDayKey]) {
+            dailyMenu = KOUKI_MASTER_MENU[targetDayKey];
+        } else {
+            // Absolute Fallback αν δεν φορτώσει το data.js
+            const offset = targetDate.getDay() * 2; 
+            dailyMenu = KOUKI_MASTER.slice(offset, offset + 8);
         }
 
         container.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-                <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${todayName} (ΚΟΥΚΙ)</span>
-                <span style="color:#666; font-size:9px;">SYNCED FROM PEGASUS CLOUD</span>
-            </div>` + dailyMenu.map(i => `
-            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${i.name} (Κούκι)', ${i.kcal || i.calories}, ${i.protein})" 
+                <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${targetDayName} (ΚΟΥΚΙ)</span>
+            </div>` + dailyMenu.map(item => {
+                
+                // Υπολογισμός Μακροθρεπτικών ΑΚΡΙΒΩΣ όπως στο PC (food.js)
+                let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
+                let kcal = (item.p >= 6.5) ? 680 : 520;
+                
+                // Αν το data.js έχει ήδη έτοιμα τα macros (fallback)
+                protein = item.protein || protein;
+                kcal = item.kcal || item.calories || kcal;
+                const itemName = item.n || item.name;
+
+                return `
+            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${itemName} (Κούκι)', ${kcal}, ${protein})" 
                  style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
                 <div style="text-align:left;">
                     <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΠΡΟΣΘΗΚΗ ΣΤΟ LOG</span>
-                    <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${i.name}</div>
-                    <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${i.protein}G PROTEIN</div>
+                    <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${itemName}</div>
+                    <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${protein}G PROTEIN</div>
                 </div>
-                <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${i.kcal || i.calories}</div>
-            </div>`).join('');
+                <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${kcal} KCAL</div>
+            </div>`
+            }).join('');
     },
 
     updateUI: function() {
