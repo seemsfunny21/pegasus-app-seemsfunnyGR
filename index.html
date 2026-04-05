@@ -405,11 +405,33 @@
             btnPreview.addEventListener('click', () => { setTimeout(window.forcePegasusRender, 200); });
         }
 
-        // 🛡️ SW REGISTRATION (OPTIMIZED)
+// 🛡️ PEGASUS SW REGISTRATION & PROGRESS TRACKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('🛡️ PEGASUS SW: Operational'))
+                .then(registration => {
+                    console.log('🛡️ PEGASUS SW: Operational');
+                    
+                    // Ακρόαση μηνυμάτων από το Service Worker
+                    navigator.serviceWorker.addEventListener('message', event => {
+                        if (event.data && event.data.type === 'CACHE_PROGRESS') {
+                            const percent = event.data.percent;
+                            const loaderBar = document.querySelector('.loader-bar-fill');
+                            const loaderText = document.querySelector('.loader-text');
+                            
+                            if (loaderBar) loaderBar.style.width = percent + '%';
+                            if (loaderText) {
+                                loaderText.textContent = `ΛΗΨΗ ΑΡΧΕΙΩΝ: ${percent}%`;
+                            }
+                            
+                            if (percent === 100) {
+                                setTimeout(() => {
+                                    if (loaderText) loaderText.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
+                                }, 1000);
+                            }
+                        }
+                    });
+                })
                 .catch(err => console.error('❌ PEGASUS SW: Failed', err));
             });
         }
