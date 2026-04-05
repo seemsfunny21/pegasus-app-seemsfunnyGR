@@ -13,7 +13,6 @@
         const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const isSmallScreen = window.innerWidth <= 800;
 
-        // Redirect to Mobile UI if needed
         if (isMobileAgent || isSmallScreen) {
             window.location.replace("mobile/mobile.html");
         }
@@ -261,29 +260,30 @@
             <input type="text" id="foodNote" name="foodNote" placeholder="Πρωτεΐνη (g)" class="flex-1-5" style="text-align: center;" autocomplete="off" spellcheck="false">
             <button id="btnAddFood" class="p-btn">➕</button>
         </div>
+        
         <hr class="panel-divider">
         
-<div class="food-layout">
-    <div class="food-section">
-        <h4 class="section-title-today" style="text-align: center;">Σήμερα (<span id="todayTotalKcal">0</span> kcal)</h4>
-        <div id="todayFoodList"></div>
-    </div>
-    <div class="food-section">
-        <h4 class="section-title-library" style="text-align: center;">Συχνές Επιλογές</h4>
-        <input type="text" id="librarySearch" placeholder="🔍 Αναζήτηση..." onkeyup="filterLibrary()" style="width: 100%; padding: 8px; background: #000; border: 1px solid #4CAF50; color: #4CAF50; border-radius: 4px; font-size: 13px; box-sizing: border-box; text-align: center;" autocomplete="off" spellcheck="false">
-        <div id="libraryFoodList"></div>
-    </div>
-    <div class="food-section">
-        <h4 style="text-align: center; color: #4CAF50; font-size: 14px; margin-bottom: 10px;">ΜΕΝΟΥ ΚΟΥΚΙ</h4>
-        <div id="koukiQuickMenu"></div>
-    </div>
-</div>
-<div id="weeklyAvgDisplay" style="text-align:center; font-size:12px; margin-bottom:15px; font-weight:bold;"></div>    
-    <div class="content" id="content">
+        <div class="food-layout">
+            <div class="food-section">
+                <h4 class="section-title-today" style="text-align: center;">Σήμερα (<span id="todayTotalKcal">0</span> kcal)</h4>
+                <div id="todayFoodList"></div>
+            </div>
+            <div class="food-section">
+                <h4 class="section-title-library" style="text-align: center;">Συχνές Επιλογές</h4>
+                <input type="text" id="librarySearch" placeholder="🔍 Αναζήτηση..." onkeyup="filterLibrary()" style="width: 100%; padding: 8px; background: #000; border: 1px solid #4CAF50; color: #4CAF50; border-radius: 4px; font-size: 13px; box-sizing: border-box; text-align: center;" autocomplete="off" spellcheck="false">
+                <div id="libraryFoodList"></div>
+            </div>
+            <div class="food-section">
+                <h4 style="text-align: center; color: #4CAF50; font-size: 14px; margin-bottom: 10px;">ΜΕΝΟΥ ΚΟΥΚΙ</h4>
+                <div id="koukiQuickMenu"></div>
+            </div>
+        </div>
+        <div id="weeklyAvgDisplay" style="text-align:center; font-size:12px; margin-bottom:15px; font-weight:bold;"></div>
+    </div> <div class="content" id="content">
         <div class="exercise-container">
             <div class="exercise-list" id="exList"></div>
             <div class="video-container">
-                <video id="video" preload="none" loop muted playsinline class="main-video"></video>
+                <video id="video" loop muted playsinline class="main-video"></video>
                 <video id="webcam" autoplay playsinline class="webcam-overlay"></video>
                 <div id="phaseTimer" class="phase-label">Επίλεξε Ημέρα</div>
                 <div id="phaseTimerBar" class="hidden-timer"><div id="phaseTimerFill"></div></div>
@@ -371,7 +371,7 @@
     <script src="app.js"></script> 
     <script src="debug.js"></script>
 
-<script>
+    <script>
         /* PEGASUS ANTI-AUTOCOMPLETE PROTOCOL */
         document.addEventListener("DOMContentLoaded", function() {
             const inputs = document.querySelectorAll('input');
@@ -406,8 +406,7 @@
             btnPreview.addEventListener('click', () => { setTimeout(window.forcePegasusRender, 200); });
         }
 
-        // 🛡️ PEGASUS SW REGISTRATION & ROBUST PROGRESS TRACKER
-    // 🛡️ PEGASUS SW REGISTRATION & PROGRESS TRACKER (v16.4)
+        // 🛡️ PEGASUS SW REGISTRATION & ROBUST PROGRESS TRACKER (v16.4)
         if ('serviceWorker' in navigator) {
             // Δέκτης μηνυμάτων (Πάντα ενεργός)
             navigator.serviceWorker.addEventListener('message', event => {
