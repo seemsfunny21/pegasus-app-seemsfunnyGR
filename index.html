@@ -19,7 +19,7 @@
     </script>
 </head>
 <body>
-    <div id="pegasus-loader">
+<div id="pegasus-loader">
         <div class="loader-content">
             <div class="pegasus-logo-anim">P</div>
             <div class="loader-text">ΑΡΧΙΚΟΠΟΙΗΣΗ ΣΥΣΤΗΜΑΤΟΣ<span class="dots"></span></div>
@@ -214,11 +214,15 @@
         <div class="pegasus-stats-container">
             <div class="stat-group">
                 <div class="stat-label-row"><span>ΘΕΡΜΙΔΕΣ</span><span id="kcalStatus">0 / 3100 kcal</span></div>
-                <div class="progress-track"><div id="kcalBar" class="progress-fill"></div></div>
+                <div class="progress-track" style="width: 100%; height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid #4CAF50; margin-bottom: 10px;">
+                    <div id="kcalBar" class="progress-fill" style="background: #4CAF50; height: 100%; width: 0%; transition: width 0.8s ease-out;"></div>
+                </div>
             </div>
             <div class="stat-group">
                 <div class="stat-label-row"><span>ΠΡΩΤΕΪΝΗ</span><span id="proteinStatus">0 / 160g</span></div>
-                <div class="progress-track"><div id="proteinBar" class="progress-fill"></div></div>
+                <div class="progress-track" style="width: 100%; height: 10px; background: #000; border-radius: 5px; overflow: hidden; border: 1px solid #4CAF50; margin-bottom: 10px;">
+                    <div id="proteinBar" class="progress-fill" style="background: #81C784; height: 100%; width: 0%; transition: width 0.8s ease-out;"></div>
+                </div>
             </div>
         </div>
 
@@ -228,16 +232,16 @@
                     <span style="font-size: 9px; font-weight: 900; color: #00bcd4; letter-spacing: 1px;">WHEY STOCK</span>
                     <span id="pcProtValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 2500g</span>
                 </div>
-                <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
-                    <div id="protBarPC" style="width: 0%; height: 100%; background: #00bcd4; box-shadow: 0 0 8px #00bcd4; transition: width 0.5s ease;"></div>
+                <div class="progress-track" style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
+                    <div id="protBarPC" class="progress-fill" style="background: #00bcd4; height: 100%; width: 0%; box-shadow: 0 0 8px #00bcd4; transition: width 0.5s ease;"></div>
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                     <span style="font-size: 9px; font-weight: 900; color: #9c27b0; letter-spacing: 1px;">CREA STOCK</span>
                     <span id="pcCreaValue" style="font-size: 9px; font-weight: 900; color: #eee;">-- / 1000g</span>
                 </div>
-                <div style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden;">
-                    <div id="creaBarPC" style="width: 0%; height: 100%; background: #9c27b0; box-shadow: 0 0 8px #9c27b0; transition: width 0.5s ease;"></div>
+                <div class="progress-track" style="width: 100%; height: 4px; background: #000; border-radius: 2px; overflow: hidden;">
+                    <div id="creaBarPC" class="progress-fill" style="background: #9c27b0; height: 100%; width: 0%; box-shadow: 0 0 8px #9c27b0; transition: width 0.5s ease;"></div>
                 </div>
             </div>
 
