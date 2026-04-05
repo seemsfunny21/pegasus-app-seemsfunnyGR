@@ -461,16 +461,29 @@
             reader.readAsText(file);
         }
 
-        // ⚡ INSTANT BOOT SEQUENCE
+// ⚡ INSTANT BOOT SEQUENCE (v16.2 - Error Proof)
         (async function boot() {
             console.log("⚡ PEGASUS: Fast Boot...");
             const pin = localStorage.getItem("pegasus_vault_pin"); 
+            
+            // 1. Σχεδιάζουμε το UI αμέσως με ό,τι έχουμε τοπικά
             refreshAllUI();
+
             if(pin && window.PegasusCloud) {
-                window.PegasusCloud.unlock(pin).then(() => {
-                    setSyncStatus('online');
-                    refreshAllUI();
-                });
+                try {
+                    // 2. Ξεκλειδώνουμε το Cloud
+                    const success = await window.PegasusCloud.unlock(pin);
+                    
+                    if (success) {
+                        console.log("📡 Cloud Sync: Fully Connected.");
+                        setSyncStatus('online');
+                        // 3. Μόλις συνδεθεί, κάνουμε ένα refresh για να έρθουν τα φρέσκα δεδομένα
+                        setTimeout(() => refreshAllUI(), 500); 
+                    }
+                } catch (e) {
+                    console.error("📡 Cloud Boot Error:", e);
+                    setSyncStatus('offline');
+                }
             } else {
                 const modal = document.getElementById("pinModal");
                 if (modal) modal.style.display = "flex"; 
