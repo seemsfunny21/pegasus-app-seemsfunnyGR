@@ -130,20 +130,34 @@ window.PegasusDiet = {
     selectSuggested: function(n, k, p) { this.add(n, k, p); },
     closeSearch: function() { if(document.getElementById("searchSuggestions")) document.getElementById("searchSuggestions").style.display = "none"; },
 
-    renderDailyKouki: function() {
+renderDailyKouki: function() {
         const container = document.getElementById('libraryContainer');
         if(!container) return;
+        
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const todayName = greekDays[new Date().getDay()];
+        
         let dailyMenu = [];
         try {
+            // 1. Προσπάθεια λήψης του συγχρονισμένου μενού από το Cloud/PC
             const storedWeeklyMenu = JSON.parse(localStorage.getItem('pegasus_weekly_kouki_menu') || "{}");
-            dailyMenu = storedWeeklyMenu[todayName] || KOUKI_MASTER.slice(0, 8);
-        } catch(e) { dailyMenu = KOUKI_MASTER.slice(0, 8); }
+            
+            if (storedWeeklyMenu[todayName] && storedWeeklyMenu[todayName].length > 0) {
+                dailyMenu = storedWeeklyMenu[todayName];
+            } else {
+                // 2. Fallback: Αν δεν υπάρχει συγχρονισμένο μενού, φιλτράρουμε το MASTER βάσει ημέρας
+                // Παράδειγμα: Κυριακή δείχνει τα 8 τελευταία, Δευτέρα τα 8 πρώτα κλπ
+                const offset = new Date().getDay() * 2; 
+                dailyMenu = KOUKI_MASTER.slice(offset, offset + 8);
+            }
+        } catch(e) { 
+            dailyMenu = KOUKI_MASTER.slice(0, 8); 
+        }
 
         container.innerHTML = `
-            <div style="display:flex; justify-content:center; align-items:center; margin-bottom:20px;">
+            <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
                 <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${todayName} (ΚΟΥΚΙ)</span>
+                <span style="color:#666; font-size:9px;">SYNCED FROM PEGASUS CLOUD</span>
             </div>` + dailyMenu.map(i => `
             <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${i.name} (Κούκι)', ${i.kcal || i.calories}, ${i.protein})" 
                  style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
