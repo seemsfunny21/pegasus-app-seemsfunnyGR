@@ -4,7 +4,7 @@
    Status: RE-ENGINEERED FOR GTMETRIX GRADE A+
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v2.6'; 
+const CACHE_NAME = 'pegasus-shield-v2.7'; 
 
 const ASSETS_TO_CACHE = [
     './', 
