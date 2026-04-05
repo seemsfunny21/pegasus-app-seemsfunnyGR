@@ -370,7 +370,7 @@
     <script src="app.js"></script> 
     <script src="debug.js"></script>
 
-    <script>
+<script>
         /* PEGASUS ANTI-AUTOCOMPLETE PROTOCOL */
         document.addEventListener("DOMContentLoaded", function() {
             const inputs = document.querySelectorAll('input');
@@ -405,33 +405,37 @@
             btnPreview.addEventListener('click', () => { setTimeout(window.forcePegasusRender, 200); });
         }
 
-// 🛡️ PEGASUS SW REGISTRATION & PROGRESS TRACKER
+        // 🛡️ PEGASUS SW REGISTRATION & ROBUST PROGRESS TRACKER
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('🛡️ PEGASUS SW: Operational');
+            // 1. Ορίζουμε τον δέκτη μηνυμάτων ΠΡΙΝ το registration για να μη χάσουμε κανένα πακέτο
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.type === 'CACHE_PROGRESS') {
+                    const percent = event.data.percent;
+                    const loaderBar = document.querySelector('.loader-bar-fill');
+                    const loaderText = document.querySelector('.loader-text');
                     
-                    // Ακρόαση μηνυμάτων από το Service Worker
-                    navigator.serviceWorker.addEventListener('message', event => {
-                        if (event.data && event.data.type === 'CACHE_PROGRESS') {
-                            const percent = event.data.percent;
-                            const loaderBar = document.querySelector('.loader-bar-fill');
-                            const loaderText = document.querySelector('.loader-text');
-                            
-                            if (loaderBar) loaderBar.style.width = percent + '%';
-                            if (loaderText) {
-                                loaderText.textContent = `ΛΗΨΗ ΑΡΧΕΙΩΝ: ${percent}%`;
-                            }
-                            
-                            if (percent === 100) {
-                                setTimeout(() => {
-                                    if (loaderText) loaderText.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
-                                }, 1000);
-                            }
-                        }
-                    });
-                })
+                    if (loaderBar) loaderBar.style.width = percent + '%';
+                    if (loaderText) {
+                        loaderText.textContent = `STORAGE INITIALIZATION: ${percent}%`;
+                        loaderText.style.color = "#00ff41";
+                    }
+                    
+                    if (percent === 100) {
+                        console.log("🛡️ SW: Cache Complete (100%)");
+                        setTimeout(() => {
+                            if (loaderText) loaderText.textContent = "SYSTEM READY - ENCRYPTED";
+                        }, 1000);
+                    }
+                }
+            });
+
+            // 2. Εκτέλεση Registration
+            window.addEventListener('load', () => {
+                // Προσοχή: Στο mobile.html άλλαξε το './sw.js' σε '../sw.js'
+                const swPath = window.location.pathname.includes('mobile/') ? '../sw.js' : './sw.js';
+                
+                navigator.serviceWorker.register(swPath)
+                .then(reg => console.log('🛡️ PEGASUS SW: Shield Active'))
                 .catch(err => console.error('❌ PEGASUS SW: Failed', err));
             });
         }
