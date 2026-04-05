@@ -90,6 +90,7 @@
         .search-item:last-child { border-bottom: none; }
         .search-item:active { background: rgba(0, 255, 65, 0.1); }
         .icon-parking { color: var(--main); text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); font-style: normal; font-weight: 900; }
+        .search-results { display:none; background:#111; border:1px solid var(--main); border-radius:16px; margin-bottom:15px; max-height:200px; overflow-y:auto; width:100%; text-align:left; }
     </style>
 </head>
 <body>
@@ -119,7 +120,6 @@
             <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
             <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
             <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
-            
             <div class="tile" onclick="openView('notes')"><span class="tile-icon">📝</span><span class="tile-label">Σημειώσεις</span></div>
 
             <div class="tile" onclick="openView('parking_panel')">
@@ -193,7 +193,7 @@
             <div class="bar-bg"><div id="mainProgressBar" class="bar-fill"></div></div>
             <div id="phaseTimer" style="font-size:55px; font-weight:900; color:#00ff41; margin:20px 0; font-variant-numeric: tabular-nums;">25:00</div>
         </div>
-        <button id="btnStart" class="primary-btn" onclick="PegasusEMS.start()" style="padding: 20px;">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
+        <button id="btnStart" class="primary-btn" onclick="PegasusEMS.start()">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
     </div>
 
     <div id="preview" class="view">
@@ -309,163 +309,6 @@
         <button class="primary-btn" style="background: #ff4444; color: #fff; margin-top: 40px;" onclick="hardResetSystem()">🚨 ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ</button>
     </div>
 
-<script>
-/* ===== PEGASUS MOBILE MASTER CONTROLLER v15.9 ===== */
-const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
-let isUnlocked = false;
-
-// UPDATE 3: Καθαρή συνάρτηση openView, χωρίς διπλοτυπίες!
-function openView(id) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const targetView = document.getElementById(id);
-    if (targetView) targetView.classList.add('active');
-    refreshUIComponent(id);
-}
-
-function refreshUIComponent(id) {
-    try {
-        if (id === 'diet') window.PegasusDiet?.updateUI();
-        if (id === 'library') window.PegasusDiet?.renderDailyKouki();
-        if (id === 'supps') window.PegasusInventory?.updateUI();
-        if (id === 'preview') updateMuscleUI();
-        if (id === 'car') window.PegasusCar?.load();
-        if (id === 'profile') window.PegasusProfile?.load();
-        if (id === 'notes') {
-            const nDate = document.getElementById('nDate');
-            if(nDate) nDate.value = new Date().toLocaleDateString('el-GR');
-            window.PegasusProfile?.renderNotes();
-        }
-        if (id === 'settings_panel') window.PegasusWeight?.updateUI();
-        if (id === 'parking_panel') window.PegasusParking?.updateUI();
-    } catch(e) { console.error("Refresh Error:", e); }
-}
-
-function refreshAllUI() {
-    window.PegasusDiet?.updateUI(); 
-    window.PegasusInventory?.updateUI(); 
-    window.PegasusWeight?.updateUI(); 
-    window.PegasusParking?.updateUI();
-    window.PegasusCar?.load(); 
-    if (typeof updateMuscleUI === "function") updateMuscleUI();
-}
-
-function updateSuppUI() {
-    const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {prot: 2500, crea: 1000};
-    const pPct = (s.prot / 2500) * 100;
-    const cPct = (s.crea / 1000) * 100;
-    if(document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
-    if(document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
-    if(document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
-    if(document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
-}
-
-function unlockFields(v) { 
-    document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
-        el.removeAttribute('readonly'); el.style.border = "1px solid #00ff41"; 
-    }); 
-}
-
-function updateMuscleUI() { 
-    const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-    const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-    const container = document.getElementById("muscle-container");
-    if (!container) return;
-    container.innerHTML = Object.keys(targets).map(g => {
-        const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
-        return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${p}%;"></div></div></div>`;
-    }).join('');
-}
-
-function setSyncStatus(s) { 
-    const e = document.getElementById("sync-indicator"); if(!e) return;
-    if (s === 'online') { e.textContent = "ONLINE"; e.style.color = "#00ff41"; }
-    else if (s === 'offline') { e.textContent = "OFFLINE"; e.style.color = "#ff4444"; }
-    else { e.textContent = s.toUpperCase(); e.style.color = "#00bcd4"; }
-}
-
-function attemptVaultUnlock() { 
-    const pin = document.getElementById("pinInput").value;
-    if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { 
-        document.getElementById("pinModal").style.display = "none"; 
-        isUnlocked = true;
-    } else if (!window.PegasusCloud) {
-        console.error("Critical: cloudSync.js not loaded.");
-    }
-}
-
-function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); refreshAllUI(); }
-
-function hardResetSystem() {
-    if(confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache & Hard Reload. Συνέχεια;")) {
-        localStorage.removeItem("pegasus_vault_pin");
-        location.replace(location.pathname + '?v=' + Date.now());
-    }
-}
-
-function exportData() {
-    const backup = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        let k = localStorage.key(i);
-        if (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_")) {
-            backup[k] = localStorage.getItem(k);
-        }
-    }
-    
-    if (Object.keys(backup).length === 0) {
-        alert("⚠️ ΣΦΑΛΜΑ: Δεν βρέθηκαν δεδομένα για Backup.");
-        return;
-    }
-
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 16);
-    
-    a.href = URL.createObjectURL(blob);
-    a.download = `PEGASUS_RESTORE_${timestamp}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    alert("✅ Το αρχείο Backup δημιουργήθηκε.");
-}
-
-function importData(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const data = JSON.parse(event.target.result);
-            if (confirm("🚨 ΠΡΟΣΟΧΗ: Τα τρέχοντα δεδομένα θα διαγραφούν και θα αντικατασταθούν από το Backup. Συνέχεια;")) {
-                localStorage.clear();
-                Object.keys(data).forEach(k => {
-                    localStorage.setItem(k, data[k]);
-                });
-                alert("✅ Η επαναφορά ολοκληρώθηκε. Επανεκκίνηση...");
-                location.replace(location.pathname + '?v=' + Date.now());
-            }
-        } catch (err) {
-            console.error("Restore Error:", err);
-            alert("❌ ΣΦΑΛΜΑ: Το αρχείο δεν είναι έγκυρο.");
-        }
-    };
-    reader.readAsText(file);
-}
-
-window.onload = async () => { 
-    const pin = localStorage.getItem("pegasus_vault_pin"); 
-    if(pin) {
-        if (window.PegasusCloud) await window.PegasusCloud.unlock(pin); 
-        setTimeout(() => {
-            if (typeof refreshAllUI === "function") refreshAllUI();
-        }, 1000);
-    } else {
-        const modal = document.getElementById("pinModal");
-        if (modal) modal.style.display = "flex"; 
-    }
-};
-</script>
-
     <script src="../manifest.js"></script>
     <script src="../data.js"></script>
     <script src="../extensions.js"></script>
@@ -480,5 +323,144 @@ window.onload = async () => {
     <script src="parking-mobile.js"></script>
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
+
+    <script>
+        /* ===== PEGASUS MOBILE MASTER CONTROLLER v15.9 ===== */
+        const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
+        let isUnlocked = false;
+
+        function openView(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const targetView = document.getElementById(id);
+            if (targetView) targetView.classList.add('active');
+            refreshUIComponent(id);
+        }
+
+        function refreshUIComponent(id) {
+            try {
+                if (id === 'diet') window.PegasusDiet?.updateUI();
+                if (id === 'library') window.PegasusDiet?.renderDailyKouki();
+                if (id === 'supps') window.PegasusInventory?.updateUI();
+                if (id === 'preview') updateMuscleUI();
+                if (id === 'car') window.PegasusCar?.load();
+                if (id === 'profile') window.PegasusProfile?.load();
+                if (id === 'notes') {
+                    const nDate = document.getElementById('nDate');
+                    if(nDate) nDate.value = new Date().toLocaleDateString('el-GR');
+                    window.PegasusProfile?.renderNotes();
+                }
+                if (id === 'settings_panel') window.PegasusWeight?.updateUI();
+                if (id === 'parking_panel') window.PegasusParking?.updateUI();
+            } catch(e) { console.error("Refresh Error:", e); }
+        }
+
+        function refreshAllUI() {
+            window.PegasusDiet?.updateUI(); 
+            window.PegasusInventory?.updateUI(); 
+            window.PegasusWeight?.updateUI(); 
+            window.PegasusParking?.updateUI();
+            window.PegasusCar?.load(); 
+            if (typeof updateMuscleUI === "function") updateMuscleUI();
+        }
+
+        function updateSuppUI() {
+            const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {prot: 2500, crea: 1000};
+            const pPct = (s.prot / 2500) * 100;
+            const cPct = (s.crea / 1000) * 100;
+            if(document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
+            if(document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
+            if(document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
+            if(document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
+        }
+
+        function unlockFields(v) { 
+            document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
+                el.removeAttribute('readonly'); el.style.border = "1px solid #00ff41"; 
+            }); 
+        }
+
+        function updateMuscleUI() { 
+            const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+            const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+            const container = document.getElementById("muscle-container");
+            if (!container) return;
+            container.innerHTML = Object.keys(targets).map(g => {
+                const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
+                return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${p}%;"></div></div></div>`;
+            }).join('');
+        }
+
+        function setSyncStatus(s) { 
+            const e = document.getElementById("sync-indicator"); if(!e) return;
+            if (s === 'online') { e.textContent = "ONLINE"; e.style.color = "#00ff41"; }
+            else if (s === 'offline') { e.textContent = "OFFLINE"; e.style.color = "#ff4444"; }
+            else { e.textContent = s.toUpperCase(); e.style.color = "#00bcd4"; }
+        }
+
+        function attemptVaultUnlock() { 
+            const pin = document.getElementById("pinInput").value;
+            if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { 
+                document.getElementById("pinModal").style.display = "none"; 
+                isUnlocked = true;
+            } else if (!window.PegasusCloud) {
+                console.error("Critical: cloudSync.js not loaded.");
+            }
+        }
+
+        function skipVault() { document.getElementById("pinModal").style.display = "none"; setSyncStatus('offline'); refreshAllUI(); }
+
+        function hardResetSystem() {
+            if(confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache & Hard Reload. Συνέχεια;")) {
+                localStorage.removeItem("pegasus_vault_pin");
+                location.replace(location.pathname + '?v=' + Date.now());
+            }
+        }
+
+        function exportData() {
+            const backup = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                let k = localStorage.key(i);
+                if (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_")) {
+                    backup[k] = localStorage.getItem(k);
+                }
+            }
+            if (Object.keys(backup).length === 0) return alert("⚠️ ΣΦΑΛΜΑ: Δεν βρέθηκαν δεδομένα για Backup.");
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `PEGASUS_RESTORE_${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 16)}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            alert("✅ Το αρχείο Backup δημιουργήθηκε.");
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (confirm("🚨 ΠΡΟΣΟΧΗ: Τα δεδομένα θα αντικατασταθούν. Συνέχεια;")) {
+                        localStorage.clear();
+                        Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                        alert("✅ Επαναφορά ολοκληρώθηκε.");
+                        location.replace(location.pathname + '?v=' + Date.now());
+                    }
+                } catch (err) { alert("❌ ΣΦΑΛΜΑ: Μη έγκυρο αρχείο."); }
+            };
+            reader.readAsText(file);
+        }
+
+        window.onload = async () => { 
+            const pin = localStorage.getItem("pegasus_vault_pin"); 
+            if(pin) {
+                if (window.PegasusCloud) await window.PegasusCloud.unlock(pin); 
+                setTimeout(() => { if (typeof refreshAllUI === "function") refreshAllUI(); }, 1000);
+            } else {
+                const modal = document.getElementById("pinModal");
+                if (modal) modal.style.display = "flex"; 
+            }
+        };
+    </script>
 </body>
 </html>
