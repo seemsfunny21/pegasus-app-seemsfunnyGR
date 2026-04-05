@@ -742,11 +742,12 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .loader-bar-fill {
-    width: 0%;
+    width: 0%; /* Ξεκινάει από το 0 */
     height: 100%;
     background: #4CAF50;
     box-shadow: 0 0 10px #4CAF50;
-    animation: fillBar 2s forwards;
+    /* animation: fillBar 2s forwards; <-- ΔΙΑΓΡΑΨΕ Η ΣΧΟΛΙΑΣΕ ΑΥΤΗ ΤΗ ΓΡΑΜΜΗ */
+    transition: width 0.3s ease; /* Πρόσθεσε αυτό για ομαλή κίνηση */
 }
 
 /* --- PEGASUS BOOT ANIMATIONS --- */
