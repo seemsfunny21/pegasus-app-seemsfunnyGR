@@ -1,7 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v15.5)
-   Protocol: Strict Data Analyst - Maximalist Alignment
-   Features: Unified Desktop/Mobile Sync, Vehicle Data, Parking, Interceptor
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.0)
+   Protocol: Strict Data Analyst - Flat Payload & Fast Debounce
    ========================================================================== */
 
 const PegasusCloud = {
@@ -18,13 +17,6 @@ const PegasusCloud = {
     getTodayKey: () => {
         const d = new Date();
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
-    },
-
-    safeParse: (key, fallback) => {
-        try {
-            const val = localStorage.getItem(key);
-            return val ? JSON.parse(val) : fallback;
-        } catch (e) { return fallback; }
     },
 
     unlock: function(pin) {
@@ -60,18 +52,24 @@ const PegasusCloud = {
                 }
             });
             
-            // 🟢 OFFLINE BUG FIX: Απασφάλιση Guard αμέσως μετά την απόκριση
             if (res.ok) this.hasSuccessfullyPulled = true;
 
             const cloudData = await res.json();
             const cloud = cloudData.record || cloudData;
-            
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 console.log("☁️ PEGASUS: New Cloud Data Found. Syncing Full Registry...");
 
-                // 📊 Universal Data Mapping (Manifest v1.2 Alignment)
+                // 1. FLAT SYNC: Η απόλυτη λύση. Μεταφέρει την ακριβή μορφή των δεδομένων.
+                Object.keys(cloud).forEach(key => {
+                    if (key.startsWith('pegasus_') || key.startsWith('food_log_') || key.startsWith('kouki_')) {
+                        const val = typeof cloud[key] === 'string' ? cloud[key] : JSON.stringify(cloud[key]);
+                        localStorage.setItem(key, val);
+                    }
+                });
+
+                // 2. LEGACY SUPPORT (Για να μην χαθούν τα παλιά δεδομένα πριν το Flat Sync)
                 const map = {
                     'weekly_history': 'pegasus_weekly_history',
                     'muscle_targets': 'pegasus_muscle_targets',
@@ -84,28 +82,22 @@ const PegasusCloud = {
                     'food_library': 'pegasus_food_library',
                     'peg_stats': 'pegasus_stats'
                 };
-
                 Object.entries(map).forEach(([ck, lk]) => {
-                    if(cloud[ck]) localStorage.setItem(lk, JSON.stringify(cloud[ck]));
+                    if(cloud[ck] && !cloud[lk]) localStorage.setItem(lk, JSON.stringify(cloud[ck]));
                 });
 
                 if(cloud.all_food_logs) {
                     Object.keys(cloud.all_food_logs).forEach(k => {
-                        localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
+                        if(!cloud[k]) localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
                     });
-                }
-
-                if (cloud.last_update_date === this.getTodayKey()) {
-                    localStorage.setItem("pegasus_today_kcal", cloud.kcal || "0"); 
-                    localStorage.setItem("pegasus_today_protein", cloud.protein || "0"); 
                 }
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
-                // 🔄 Smart UI Refresh Logic
-                if (typeof refreshAllUI === "function") refreshAllUI(); // Mobile Hook
-                if (typeof window.updateFoodUI === "function") window.updateFoodUI(); // Desktop Hook
-                if (typeof window.updateSuppUI === "function") window.updateSuppUI(); // Desktop Hook
+                // Hooks για το UI
+                if (typeof refreshAllUI === "function") refreshAllUI(); 
+                if (typeof window.updateFoodUI === "function") window.updateFoodUI(); 
+                if (typeof window.updateSuppUI === "function") window.updateSuppUI(); 
                 if (window.MuscleProgressUI) window.MuscleProgressUI.render();
             }
 
@@ -121,34 +113,19 @@ const PegasusCloud = {
         if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
         if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
 
-        const dateStr = this.getTodayKey();
-        const syncTimestamp = Date.now();
+        const syncTimestamp = Date.now().toString();
+        const payload = {
+            last_update_date: this.getTodayKey(),
+            last_update_ts: syncTimestamp
+        };
         
-        const allLogs = {};
+        // 🎯 THE ABSOLUTE SYNC: Παίρνει ΟΛΑ τα σχετικά κλειδιά (και το Kouki) σε String μορφή
         for (let i = 0; i < localStorage.length; i++) {
             let k = localStorage.key(i);
-            if (k.startsWith("food_log_")) {
-                try { allLogs[k] = JSON.parse(localStorage.getItem(k)); } catch(e) {}
+            if (k.startsWith("pegasus_") || k.startsWith("food_log_") || k.startsWith("kouki_")) {
+                payload[k] = localStorage.getItem(k); 
             }
         }
-
-        const payload = {
-            last_update_date: dateStr,
-            last_update_ts: syncTimestamp,
-            kcal: localStorage.getItem("pegasus_today_kcal") || "0",
-            protein: localStorage.getItem("pegasus_today_protein") || "0",
-            supp_inventory: this.safeParse("pegasus_supp_inventory", {prot:2500, crea:1000}),
-            weekly_history: this.safeParse("pegasus_weekly_history", {}),
-            muscle_targets: this.safeParse("pegasus_muscle_targets", {}),
-            peg_stats: this.safeParse("pegasus_stats", {}),
-            car_dates: this.safeParse("pegasus_car_dates", {}),
-            car_service: this.safeParse("pegasus_car_service", []),
-            car_specs: this.safeParse("pegasus_car_specs", {}),
-            parking_loc: this.safeParse("pegasus_parking_loc", null),
-            food_library: this.safeParse("pegasus_food_library", []),
-            peg_contacts: this.safeParse("pegasus_contacts", []),
-            all_food_logs: allLogs
-        };
 
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}`, {
@@ -161,7 +138,7 @@ const PegasusCloud = {
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                localStorage.setItem("pegasus_last_push", syncTimestamp.toString());
+                localStorage.setItem("pegasus_last_push", syncTimestamp);
                 if (typeof setSyncStatus === "function") setSyncStatus('online');
             }
         } catch (e) {
@@ -173,7 +150,6 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// Boot Load Alignment
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     if (savedPin) {
@@ -191,7 +167,8 @@ window.addEventListener('load', () => {
    DATA INTERCEPTOR (SUPPLEMENT LOGISTICS)
    ========================================================================== */
 window.consumeSupp = function(type, amount) {
-    let s = PegasusCloud.safeParse('pegasus_supp_inventory', { prot: 2500, crea: 1000 });
+    let val = localStorage.getItem('pegasus_supp_inventory');
+    let s = val ? JSON.parse(val) : { prot: 2500, crea: 1000 };
     s[type] = Math.max(0, s[type] - amount);
     
     if (window.originalSetItem) {
@@ -233,37 +210,37 @@ if (!window.originalSetItem) {
         }
     };
 }
+
 /* ==========================================================================
-   PEGASUS CLOUD SYNC - DEBOUNCE PATCH (API RATE LIMIT GUARD v13.0)
+   PEGASUS CLOUD SYNC - FAST DEBOUNCE PATCH (PROMISE COMPATIBLE)
    ========================================================================== */
 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-    
-    // 1. Αποθήκευση της αρχικής (βαριάς) λειτουργίας αποστολής
     const originalPush = window.PegasusCloud.push.bind(window.PegasusCloud);
     let pushTimeout = null;
 
-    // 2. Επικάλυψη (Override) με τον αλγόριθμο Debounce
     window.PegasusCloud.push = function(force = false) {
-        
-        // Αν ζητηθεί "Σκληρό" Push (π.χ. χειροκίνητο κουμπί Backup)
-        if (force === "STRICT") {
-            console.log("🚀 PEGASUS CLOUD: Strict Push Requested. Bypassing Debounce...");
-            return originalPush();
-        }
+        return new Promise((resolve, reject) => {
+            if (force === "STRICT") {
+                console.log("🚀 CLOUD: Strict Push Requested.");
+                return originalPush().then(resolve).catch(reject);
+            }
 
-        // Αν υπάρχει ήδη προγραμματισμένη αποστολή, την ακυρώνουμε
-        if (pushTimeout) {
-            clearTimeout(pushTimeout);
-            console.log("⏳ PEGASUS CLOUD: Multiple actions detected. Resetting Sync Timer...");
-        }
+            if (pushTimeout) {
+                clearTimeout(pushTimeout);
+            }
 
-        // Προγραμματίζουμε την αποστολή σε 3 δευτερόλεπτα "ησυχίας"
-        pushTimeout = setTimeout(async () => {
-            console.log("📡 PEGASUS CLOUD: Stable State Reached. Executing Batch Sync...");
-            await originalPush();
-            pushTimeout = null;
-        }, 10000); 
+            // ⏱️ 2 Seconds instead of 10 for absolute safety before tab close
+            pushTimeout = setTimeout(async () => {
+                console.log("📡 CLOUD: Executing Batch Sync...");
+                try {
+                    await originalPush();
+                    pushTimeout = null;
+                    resolve();
+                } catch(e) {
+                    reject(e);
+                }
+            }, 2000); 
+        });
     };
-    
-    console.log("🛡️ PEGASUS CLOUD: Debounce Protocol Active.");
+    console.log("🛡️ PEGASUS CLOUD: Fast Promise-Debounce Active.");
 }
