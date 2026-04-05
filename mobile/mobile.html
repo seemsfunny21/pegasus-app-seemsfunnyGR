@@ -309,7 +309,7 @@
         <button class="primary-btn" style="background: #ff4444; color: #fff; margin-top: 40px;" onclick="hardResetSystem()">🚨 ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ</button>
     </div>
 
-    <script src="../manifest.js"></script>
+<script src="../manifest.js"></script>
     <script src="../data.js"></script>
     <script src="../extensions.js"></script>
     <script src="../metabolicEngine.js"></script>
@@ -324,11 +324,10 @@
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
 
-  /* ===== PEGASUS MOBILE MASTER CONTROLLER v16.1 ===== */
+    <script>
         const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
         let isUnlocked = false;
 
-        // 🚀 VIEW SWITCHER (Άμεση αλλαγή οθόνης)
         function openView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             const targetView = document.getElementById(id);
@@ -338,18 +337,20 @@
             }
         }
 
-        // 🔄 COMPONENT REFRESHER (Ενημερώνει μόνο ό,τι βλέπεις)
         function refreshUIComponent(id) {
             try {
                 if (id === 'diet') window.PegasusDiet?.updateUI();
                 if (id === 'library') window.PegasusDiet?.renderDailyKouki();
                 if (id === 'supps') {
                     window.PegasusInventory?.updateUI();
-                    updateSuppUI(); // Fallback συνάρτηση 
+                    updateSuppUI();
                 }
                 if (id === 'preview') updateMuscleUI();
-                if (id === 'profile') window.PegasusProfile?.load(); // ✅ Ανακτά τα έγγραφα
-                if (id === 'car') window.PegasusCar?.load(); // ✅ Ανακτά το όχημα
+                
+                // ✅ CRITICAL FIX: Φόρτωση δεδομένων κατά το άνοιγμα του View
+                if (id === 'profile') window.PegasusProfile?.load(); 
+                if (id === 'car') window.PegasusCar?.load();
+                
                 if (id === 'notes') {
                     const nDate = document.getElementById('nDate');
                     if(nDate) nDate.value = new Date().toLocaleDateString('el-GR');
@@ -360,7 +361,6 @@
             } catch(e) { console.error("Refresh Error:", e); }
         }
 
-        // 🔄 GLOBAL REFRESHER (Ενημερώνει τα πάντα στο background)
         function refreshAllUI() {
             window.PegasusDiet?.updateUI(); 
             window.PegasusInventory?.updateUI(); 
@@ -372,7 +372,6 @@
             if (typeof updateSuppUI === "function") updateSuppUI();
         }
 
-        // 📊 FALLBACK INVENTORY UI
         function updateSuppUI() {
             const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {prot: 2500, crea: 1000};
             const pPct = (s.prot / 2500) * 100;
@@ -383,7 +382,6 @@
             if(document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
         }
 
-        // 🔓 UNLOCK FIELDS (Για Έγγραφα / Όχημα)
         function unlockFields(v) { 
             document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
                 el.removeAttribute('readonly'); 
@@ -391,7 +389,6 @@
             }); 
         }
 
-        // 💪 PREVIEW UI
         function updateMuscleUI() { 
             const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
             const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
@@ -403,7 +400,6 @@
             }).join('');
         }
 
-        // 📡 STATUS INDICATOR
         function setSyncStatus(s) { 
             const e = document.getElementById("sync-indicator"); if(!e) return;
             if (s === 'online') { e.textContent = "ONLINE"; e.style.color = "#00ff41"; }
@@ -411,15 +407,12 @@
             else { e.textContent = s.toUpperCase(); e.style.color = "#00bcd4"; }
         }
 
-        // 🔐 VAULT SYSTEM
         function attemptVaultUnlock() { 
             const pin = document.getElementById("pinInput").value;
             if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { 
                 document.getElementById("pinModal").style.display = "none"; 
                 isUnlocked = true;
                 refreshAllUI();
-            } else if (!window.PegasusCloud) {
-                console.error("Critical: cloudSync.js not loaded.");
             }
         }
 
@@ -430,13 +423,12 @@
         }
 
         function hardResetSystem() {
-            if(confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache & Hard Reload. Συνέχεια;")) {
+            if(confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
                 localStorage.removeItem("pegasus_vault_pin");
                 location.replace(location.pathname + '?v=' + Date.now());
             }
         }
 
-        // 💾 DATA MANAGEMENT (Export / Import)
         function exportData() {
             const backup = {};
             for (let i = 0; i < localStorage.length; i++) {
@@ -445,13 +437,11 @@
                     backup[k] = localStorage.getItem(k);
                 }
             }
-            if (Object.keys(backup).length === 0) return alert("⚠️ ΣΦΑΛΜΑ: Δεν βρέθηκαν δεδομένα για Backup.");
             const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = `PEGASUS_RESTORE_${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 16)}.json`;
+            a.download = `PEGASUS_MOBILE_BKP.json`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            alert("✅ Το αρχείο Backup δημιουργήθηκε.");
         }
 
         function importData(e) {
@@ -461,36 +451,31 @@
             reader.onload = (event) => {
                 try {
                     const data = JSON.parse(event.target.result);
-                    if (confirm("🚨 ΠΡΟΣΟΧΗ: Τα δεδομένα θα αντικατασταθούν. Συνέχεια;")) {
+                    if (confirm("🚨 Επαναφορά δεδομένων;")) {
                         localStorage.clear();
                         Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-                        alert("✅ Επαναφορά ολοκληρώθηκε.");
-                        location.replace(location.pathname + '?v=' + Date.now());
+                        location.reload();
                     }
-                } catch (err) { alert("❌ ΣΦΑΛΜΑ: Μη έγκυρο αρχείο."); }
+                } catch (err) { alert("❌ Μη έγκυρο αρχείο."); }
             };
             reader.readAsText(file);
         }
 
-        // ⚡ INSTANT BOOT SEQUENCE (v16.1)
+        // ⚡ INSTANT BOOT SEQUENCE
         (async function boot() {
-            console.log("⚡ PEGASUS: Initiating Fast Boot...");
+            console.log("⚡ PEGASUS: Fast Boot...");
             const pin = localStorage.getItem("pegasus_vault_pin"); 
-            
-            // Επιτρέπουμε στο UI να χτιστεί αμέσως χρησιμοποιώντας την τοπική μνήμη
             refreshAllUI();
-
             if(pin && window.PegasusCloud) {
-                // Τρέχει στο background χωρίς να μπλοκάρει την οθόνη
                 window.PegasusCloud.unlock(pin).then(() => {
-                    console.log("📡 Cloud Sync: Fully Connected.");
                     setSyncStatus('online');
-                    refreshAllUI(); // Κάνει ένα τελικό update όταν έρθουν τα cloud data
+                    refreshAllUI();
                 });
             } else {
                 const modal = document.getElementById("pinModal");
                 if (modal) modal.style.display = "flex"; 
             }
         })();
+    </script>
 </body>
 </html>
