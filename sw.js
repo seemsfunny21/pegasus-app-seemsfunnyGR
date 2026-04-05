@@ -34,13 +34,29 @@ const ASSETS_TO_CACHE = [
     './videos/warmup.mp4'
 ];
 
-// ⚡ INSTALL: Caching Assets
+// ⚡ INSTALL: Caching Assets with Reliable Progress
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
+        caches.open(CACHE_NAME).then(async (cache) => {
             console.log('🛡️ SW: Shielding Pegasus Assets...');
-            return cache.addAll(ASSETS_TO_CACHE);
+            let downloaded = 0;
+            for (const url of ASSETS_TO_CACHE) {
+                try {
+                    await cache.add(url);
+                    downloaded++;
+                    // Tactical Messaging: Στέλνουμε την πρόοδο σε κάθε αρχείο
+                    const allClients = await self.clients.matchAll({ includeUncontrolled: true });
+                    allClients.forEach(client => {
+                        client.postMessage({
+                            type: 'CACHE_PROGRESS',
+                            percent: Math.round((downloaded / ASSETS_TO_CACHE.length) * 100)
+                        });
+                    });
+                } catch (err) {
+                    console.warn(`SW: Skip asset ${url}`, err);
+                }
+            }
         })
     );
 });
