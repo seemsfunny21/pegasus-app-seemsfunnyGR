@@ -890,15 +890,22 @@ window.onload = () => {
             if (window.PegasusReporting) window.ReportingEngine.sendReport(true);
             else alert("Reporting Engine Offline");
         },
-        "btnSaveSettings": () => { 
+"btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
             const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
-            if (window.PegasusWeight) window.PegasusWeight.logWeight(weightVal);
-            else localStorage.setItem(weightKey, weightVal);
+            
+            // ΔΙΟΡΘΩΣΗ: Καλούμε τη συνάρτηση .save αντί για .logWeight
+            if (window.PegasusWeight && typeof window.PegasusWeight.save === "function") {
+                window.PegasusWeight.save(weightVal);
+            } else {
+                localStorage.setItem(weightKey, weightVal);
+            }
+
             if (window.PegasusCloud) window.PegasusCloud.push(true);
-            setTimeout(() => { location.reload(); }, 100);
+            
+            // Μικρή καθυστέρηση για να προλάβει το Save πριν το Reload
+            setTimeout(() => { location.reload(); }, 300);
         }
-    };
 
     // --- 4. EVENT DELEGATION ---
     Object.keys(window.masterUI).forEach(btnId => {
