@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v2.4 (ULTIMATE OPTIMIZATION)
-   Protocol: Strict Asset Caching & Query-String Neutralization
-   Status: RE-ENGINEERED FOR GTMETRIX GRADE A+
+   PEGASUS PWA SERVICE WORKER - v3.0 (ULTIMATE OPTIMIZATION)
+   Protocol: Network-First for Code, Cache-First for Media
+   Status: ZERO-TOUCH DEPLOYMENT ACTIVE (No manual version bumps needed)
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v2.14'; 
+const CACHE_NAME = 'pegasus-shield-v3.0-DYNAMIC'; 
 
 const ASSETS_TO_CACHE = [
     './', 
@@ -70,31 +70,49 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// 🚀 FETCH ENGINE: Query-String Aware
+// 🚀 FETCH ENGINE: DYNAMIC PROTOCOL (The "Zero-Touch" Fix)
 self.addEventListener('fetch', (event) => {
     if (!event.request.url.startsWith('http')) return;
 
-    // Tactical Fix: Αφαίρεση του ?v=... από το URL για να βρίσκει το αρχείο στην cache
     const url = new URL(event.request.url);
     const cleanUrl = url.origin + url.pathname;
 
-    // 1. API BYPASS: Μην κάνεις ποτέ cache το Cloud ή την Google
-    if (url.hostname.includes('jsonbin.io') || url.hostname.includes('googleapis.com')) {
-        event.respondWith(fetch(event.request));
-        return;
+    // 1. API BYPASS: Μην κάνεις ποτέ cache το Cloud, την Google ή EmailJS
+    if (url.hostname.includes('jsonbin.io') || url.hostname.includes('googleapis.com') || url.hostname.includes('emailjs.com')) {
+        return; // Αφήνουμε τον browser να το χειριστεί ελεύθερα
     }
 
-    // 2. STRATEGY: Cache First, Network Fallback (Για ταχύτητα)
-    event.respondWith(
-        caches.match(cleanUrl).then((cachedRes) => {
-            return cachedRes || fetch(event.request).then(response => {
-                // Αν είναι JS/CSS/HTML, το βάζουμε στην cache για την επόμενη φορά
-                if (response.status === 200 && (cleanUrl.endsWith('.js') || cleanUrl.endsWith('.css'))) {
-                    const clonedRes = response.clone();
+    // 2. Ανίχνευση τύπου αρχείου
+    const isMediaAsset = cleanUrl.match(/\.(mp4|mp3|png|jpg|jpeg|svg|woff2|gif)$/i);
+
+    if (isMediaAsset) {
+        // ⚡ STRATEGY A: CACHE-FIRST (Για βίντεο & εικόνες - Φορτώνουν ακαριαία, σώζουν MBs)
+        event.respondWith(
+            caches.match(cleanUrl, { ignoreSearch: true }).then((cachedRes) => {
+                return cachedRes || fetch(event.request).then(networkResponse => {
+                    if (networkResponse.status === 200) {
+                        const clonedRes = networkResponse.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedRes));
+                    }
+                    return networkResponse;
+                }).catch(() => console.warn(`SW: Media fetch failed for ${cleanUrl}`));
+            })
+        );
+    } else {
+        // 🌐 STRATEGY B: NETWORK-FIRST (Για .js, .html, .css - Πάντα ο πιο πρόσφατος κώδικας)
+        event.respondWith(
+            fetch(event.request).then(networkResponse => {
+                // Έχουμε ίντερνετ: Κατεβάζουμε τον φρέσκο κώδικα (π.χ. νέο app.js) και ενημερώνουμε σιωπηλά την cache
+                if (networkResponse.status === 200) {
+                    const clonedRes = networkResponse.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedRes));
                 }
-                return response;
-            });
-        })
-    );
+                return networkResponse;
+            }).catch(() => {
+                // Είμαστε Offline: Το δίκτυο έπεσε, οπότε τραβάμε την τελευταία έκδοση από την Cache
+                console.warn(`[PEGASUS SW]: Offline fallback active for ${cleanUrl}`);
+                return caches.match(event.request, { ignoreSearch: true }); // Το ignoreSearch διαγράφει την ανάγκη για ακριβές ?v=
+            })
+        );
+    }
 });
