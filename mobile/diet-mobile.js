@@ -1,6 +1,6 @@
 /* ==========================================================================
    PEGASUS OS - DIET MODULE (MOBILE EDITION v13.9 SAFE)
-   Protocol: Anti-Loop Routine Injection & Metabolic Sync
+   Protocol: Anti-Loop Routine Injection & Multi-Choice Advisor Sync
    Status: STABLE | ZERO-BUG RE-VERIFIED
    ========================================================================== */
 
@@ -86,24 +86,37 @@ window.PegasusDiet = {
     },
 
     askAdvisor: function() {
-        const resultContainer = document.getElementById("advisorMobileResult");
-        if (window.PegasusDietAdvisor && typeof window.PegasusDietAdvisor.analyzeAndRecommend === "function") {
-            const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
-            const suggestedFood = KOUKI_MASTER.find(f => f.name.includes(advice.n) || advice.n.includes(f.name));
-            const kcal = suggestedFood ? suggestedFood.kcal : 0;
-            const prot = suggestedFood ? suggestedFood.protein : 0;
+        if (!window.PegasusDietAdvisor) return alert("Advisor Offline");
+        
+        const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
+        const container = document.getElementById("advisorMobileResult"); 
+        
+        if (!container) return;
 
-            resultContainer.innerHTML = `
-                <div style="background: rgba(243, 156, 18, 0.1); border-left: 4px solid #f39c12; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <div style="color: #f39c12; font-weight: 900; font-size: 14px; margin-bottom: 5px;">ΑΝΑΛΥΣΗ PEGASUS:</div>
-                    <p style="color: #eee; font-size: 12px; margin: 0 0 10px 0; line-height: 1.4;">${advice.msg}</p>
-                    <button onclick="window.PegasusDiet.quickAdd('${advice.n} (Κούκι)', ${kcal}, ${prot}); document.getElementById('advisorMobileResult').innerHTML='';" 
-                            style="background: #f39c12; color: #000; border: none; padding: 10px; border-radius: 4px; width: 100%; font-weight: bold; font-size: 13px;">
-                        + ΠΡΟΣΘΗΚΗ ΠΡΟΤΑΣΗΣ ΣΤΟ LOG
+        let html = `
+            <div style="background:#111; border:1px solid #f39c12; padding:15px; border-radius:12px; margin:10px 0;">
+                <div style="color:#f39c12; font-weight:900; font-size:13px; margin-bottom:10px;">🧠 PEGASUS LOGIC</div>
+                <div style="color:#eee; font-size:14px; margin-bottom:15px; line-height:1.4;">${advice.msg}</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+        `;
+
+        advice.options.forEach(opt => {
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
+                    <div style="text-align:left;">
+                        <div style="color:#fff; font-weight:bold; font-size:14px;">${opt.n}</div>
+                        <div style="color:#4CAF50; font-size:12px; font-weight:900;">${opt.p.toFixed(2)}€</div>
+                    </div>
+                    <button onclick="window.PegasusDiet.quickAdd('${opt.n} (Κούκι)', 500, 20); document.getElementById('advisorMobileResult').innerHTML='';" 
+                            style="background:#f39c12; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:900; font-size:11px;">
+                        ΠΡΟΣΘΗΚΗ
                     </button>
                 </div>
             `;
-        }
+        });
+
+        html += `</div></div>`;
+        container.innerHTML = html;
     },
 
     handleSearch: function(term) {
@@ -130,7 +143,7 @@ window.PegasusDiet = {
     selectSuggested: function(n, k, p) { this.add(n, k, p); },
     closeSearch: function() { if(document.getElementById("searchSuggestions")) document.getElementById("searchSuggestions").style.display = "none"; },
 
-renderDailyKouki: function() {
+    renderDailyKouki: function() {
         const container = document.getElementById('libraryContainer');
         if(!container) return;
         
