@@ -10,6 +10,7 @@ const ASSETS_TO_CACHE = [
     './', 
     './index.html', 
     './mobile/mobile.html', 
+   './mobile/style.css', 
     './app.js', 
     './data.js', 
     './manifest.js',
