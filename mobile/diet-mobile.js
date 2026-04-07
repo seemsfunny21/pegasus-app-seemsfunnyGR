@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.2 INVENTORY SYNC)
-   Protocol: Anti-Loop Routine Injection, Inventory Sync & Inline Search UI
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.3 FULL WRAPPER UI)
+   Protocol: Anti-Loop Routine Injection, Inventory Sync & Standalone UI
    Status: STABLE | ZERO-BUG RE-VERIFIED
    ========================================================================== */
 
@@ -41,7 +41,6 @@ window.PegasusDiet = {
             log.push({ name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, ts: Date.now() - 1000 });
             log.push({ name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, ts: Date.now() - 2000 });
 
-            // 🎯 FIXED: Αφαίρεση 30g Whey από την αποθήκη κατά την αυτόματη εισαγωγή της ρουτίνας
             if (window.PegasusInventory) {
                 window.PegasusInventory.consume('prot', 30);
             }
@@ -50,7 +49,6 @@ window.PegasusDiet = {
             return true;
         }
         
-        // 🚨 ΑΥΤΟ ΕΙΧΕ ΣΒΗΣΤΕΙ ΚΑΤΑ ΛΑΘΟΣ ΚΑΙ ΘΑ ΕΡΙΧΝΕ ΤΟ ΣΥΣΤΗΜΑ 🚨
         return false;
     },
 
@@ -120,10 +118,12 @@ window.PegasusDiet = {
 
     handleSearch: function(term) {
         const resBox = document.getElementById("searchSuggestions");
+        const fNameInput = document.getElementById("fName");
+        
         if(!resBox) return;
         if(!term || term.length < 2) { 
             resBox.style.display = "none"; 
-            document.getElementById("fName").style.borderRadius = "16px";
+            if(fNameInput) fNameInput.style.borderRadius = "16px";
             return; 
         }
 
@@ -138,10 +138,11 @@ window.PegasusDiet = {
                 </div>
             `).join('');
             resBox.style.display = "block";
-            document.getElementById("fName").style.borderRadius = "16px 16px 0 0";
+            // Διατηρείται πάντα στρογγυλό το πεδίο αναζήτησης
+            if(fNameInput) fNameInput.style.borderRadius = "16px";
         } else {
             resBox.style.display = "none";
-            document.getElementById("fName").style.borderRadius = "16px";
+            if(fNameInput) fNameInput.style.borderRadius = "16px";
         }
     },
 
