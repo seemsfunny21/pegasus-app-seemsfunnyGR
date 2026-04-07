@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v13.8)
-   Protocol: Metabolic Engine Sync & Muscle Fatigue (Legs)
+   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v13.9 FINAL)
+   Protocol: Metabolic Engine Sync, Muscle Fatigue & Calendar Integration
    ========================================================================== */
 
 window.PegasusCardio = {
@@ -36,6 +36,19 @@ window.PegasusCardio = {
                 window.PegasusDiet.updateUI();
             }
             console.log(`🔥 CARDIO: Target increased by ${burnedKcal} kcal.`);
+        }
+
+        // --- 3. 🎯 CALENDAR SYNC (ΝΕΟ): Πρασίνισμα στο Ημερολόγιο (app.js) ---
+        // Αν έκανες πάνω από 15km ποδήλατο ή έκαψες πάνω από 400 θερμίδες, θεωρείται "Πλήρης Προπόνηση"
+        if ((route.includes("ΠΟΔΗΛΑ") || route.includes("CYCL")) && (km >= 15 || burnedKcal >= 400)) {
+            const now = new Date();
+            const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            let doneKey = "pegasus_workouts_done";
+            let data = JSON.parse(localStorage.getItem(doneKey) || "{}");
+            
+            data[workoutKey] = true;
+            localStorage.setItem(doneKey, JSON.stringify(data));
+            console.log(`✅ CALENDAR: Day marked as completed (${workoutKey}).`);
         }
         
         // Καθαρισμός πεδίων
