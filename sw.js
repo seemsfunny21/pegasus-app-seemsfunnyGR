@@ -1,16 +1,16 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.0 (ULTIMATE OPTIMIZATION)
+   PEGASUS PWA SERVICE WORKER - v3.1 (ULTIMATE OPTIMIZATION)
    Protocol: Network-First for Code, Cache-First for Media
    Status: ZERO-TOUCH DEPLOYMENT ACTIVE (No manual version bumps needed)
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.0-DYNAMIC'; 
+const CACHE_NAME = 'pegasus-shield-v3.1-DYNAMIC'; 
 
 const ASSETS_TO_CACHE = [
     './', 
     './index.html', 
     './mobile/mobile.html', 
-   './mobile/style.css', 
+    './mobile/style.css', /* <--- ΠΡΟΣΤΕΘΗΚΕ ΤΟ ΝΕΟ CSS */
     './app.js', 
     './data.js', 
     './manifest.js',
