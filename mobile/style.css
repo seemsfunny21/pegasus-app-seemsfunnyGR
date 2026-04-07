@@ -1,1 +1,106 @@
-test
+/* ==========================================================================
+   PEGASUS OS - MOBILE STYLESHEET v15.9
+   ========================================================================== */
+
+:root { 
+    --main: #00ff41; --danger: #ff4444; --bg: #050505; 
+    --card: rgba(23, 23, 23, 0.85); --border: #00ff41; 
+}
+
+body, html { 
+    height: 100%; margin: 0; overflow: hidden; background: var(--bg); 
+    color: #fff; font-family: 'Inter', sans-serif; text-align: center; 
+    overscroll-behavior: none; position: fixed; width: 100%; 
+}
+
+body { 
+    padding: 20px 15px; box-sizing: border-box; 
+    background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); 
+    display: flex; flex-direction: column; align-items: center; 
+}
+
+#sync-indicator { font-size: 10px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 10px; text-transform: uppercase; text-shadow: 0 0 10px var(--main); }
+
+.header h1 { font-size: 38px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header p { font-size: 10px; color: var(--main); margin: 4px 0 20px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; overflow-y: auto; scrollbar-width: none; }
+.grid::-webkit-scrollbar { display: none; }
+
+.log-item { 
+    background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; 
+    border: 1px solid var(--border); text-align: left; position: relative; 
+    margin-bottom: 12px; width: 100%; box-sizing: border-box; display: block; 
+}
+
+.btn-del { 
+    position: absolute; top: 12px; right: 12px; color: var(--danger); 
+    background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger);
+    border-radius: 8px; padding: 5px 10px; font-size: 14px; font-weight: 900; cursor: pointer;
+}
+
+.tile { 
+    background: var(--card); border: 2px solid var(--border); border-radius: 24px; 
+    padding: 18px 10px; backdrop-filter: blur(12px); transition: 0.15s; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
+}
+.tile:active { transform: scale(0.94); background: rgba(0,255,65,0.1); }
+.tile-icon { font-size: 26px; margin-bottom: 6px; }
+.tile-label { font-size: 9px; font-weight: 900; text-transform: uppercase; color: #fff; letter-spacing: 1px; }
+
+.view { display: none; height: 82vh; flex-direction: column; width: 100%; align-items: center; overflow-y: auto; padding-bottom: 40px; scrollbar-width: none; }
+.view.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16px; color: #fff; padding: 14px; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; text-align: center; outline: none; }
+.primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,255,65,0.2); }
+.secondary-btn { background: transparent; border: 1px solid var(--main); color: var(--main); padding: 14px; border-radius: 16px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; width: 100%; }
+.btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 900; padding: 10px 20px; border-radius: 14px; margin-bottom: 20px; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+
+.mini-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 20px; border: 1px solid #1a1a1a; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+.mini-label { font-size: 9px; font-weight: 800; color: var(--main); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: block; }
+.mini-val { font-size: 16px; font-weight: 900; color: #fff; }
+
+.bar-bg { width: 100%; background: #000; height: 6px; border-radius: 3px; margin-top: 10px; overflow: hidden; border: 1px solid #111; }
+.bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--main); }
+
+.section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 25px 0 12px; text-align: center; }
+.compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 10px; }
+.input-label { font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; text-align: center; width: 100%; }
+.icon-parking { color: var(--main); text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); font-style: normal; font-weight: 900; }
+
+/* ==========================================================================
+   PEGASUS SEARCH FIX: Absolute Floating Dropdown 
+   ========================================================================== */
+#searchSuggestions {
+    position: absolute !important;
+    z-index: 10000 !important;
+    background: #111 !important;
+    width: calc(100% - 40px) !important;
+    max-height: 250px !important;
+    overflow-y: auto !important;
+    border: 2px solid var(--main) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.9) !important;
+    margin-top: 55px !important; /* Σπρώχνει το dropdown κάτω από το Input Box */
+    display: none;
+    text-align: left;
+}
+
+.search-item {
+    padding: 15px 12px !important;
+    border-bottom: 1px solid #333 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    cursor: pointer;
+}
+
+.search-item:last-child {
+    border-bottom: none !important;
+}
+
+.search-item:active { 
+    background: rgba(0, 255, 65, 0.1) !important; 
+}
