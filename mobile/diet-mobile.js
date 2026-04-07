@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.1 UI FIX)
-   Protocol: Anti-Loop Routine Injection & Inline Search UI
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.2 INVENTORY SYNC)
+   Protocol: Anti-Loop Routine Injection, Inventory Sync & Inline Search UI
    Status: STABLE | ZERO-BUG RE-VERIFIED
    ========================================================================== */
 
@@ -41,9 +41,16 @@ window.PegasusDiet = {
             log.push({ name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, ts: Date.now() - 1000 });
             log.push({ name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, ts: Date.now() - 2000 });
 
+            // 🎯 FIXED: Αφαίρεση 30g Whey από την αποθήκη κατά την αυτόματη εισαγωγή της ρουτίνας
+            if (window.PegasusInventory) {
+                window.PegasusInventory.consume('prot', 30);
+            }
+
             localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
             return true;
         }
+        
+        // 🚨 ΑΥΤΟ ΕΙΧΕ ΣΒΗΣΤΕΙ ΚΑΤΑ ΛΑΘΟΣ ΚΑΙ ΘΑ ΕΡΙΧΝΕ ΤΟ ΣΥΣΤΗΜΑ 🚨
         return false;
     },
 
@@ -111,7 +118,6 @@ window.PegasusDiet = {
         container.innerHTML = html;
     },
 
-    // 🎯 FIXED: Νέα λογική εμφάνισης για να μην "καβαλάει" το πεδίο
     handleSearch: function(term) {
         const resBox = document.getElementById("searchSuggestions");
         if(!resBox) return;
@@ -141,7 +147,6 @@ window.PegasusDiet = {
 
     selectSuggested: function(n, k, p) { this.add(n, k, p); },
     
-    // 🎯 FIXED: Επαναφορά του σχήματος του κουτιού όταν κλείνει η αναζήτηση
     closeSearch: function() { 
         if(document.getElementById("searchSuggestions")) {
             document.getElementById("searchSuggestions").style.display = "none"; 
