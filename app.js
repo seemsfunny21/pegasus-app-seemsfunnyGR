@@ -188,7 +188,8 @@ function selectDay(btn, day) {
 
         const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const savedWeight = localStorage.getItem(`weight_ANGELOS_${cleanName}`) || "";
+        // 🎯 FIXED: Ενοποίηση του κλειδιού στα Ελληνικά (ΑΓΓΕΛΟΣ) για να διαβάζει ακριβώς αυτό που σώζει
+        const savedWeight = localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`) || localStorage.getItem(`weight_${cleanName}`) || "";
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
