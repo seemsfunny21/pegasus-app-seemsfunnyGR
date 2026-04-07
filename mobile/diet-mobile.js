@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v13.9 SAFE)
-   Protocol: Anti-Loop Routine Injection & Multi-Choice Advisor Sync
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.1 UI FIX)
+   Protocol: Anti-Loop Routine Injection & Inline Search UI
    Status: STABLE | ZERO-BUG RE-VERIFIED
    ========================================================================== */
 
@@ -25,31 +25,24 @@ const KOUKI_MASTER = [
 ];
 
 window.PegasusDiet = {
-    // --- 🤖 SAFE AUTO-INJECTION (v13.9) ---
     checkDailyRoutine: function() {
         const dateStr = new Date().toLocaleDateString('el-GR');
         const flagKey = "pegasus_routine_injected_" + dateStr;
 
-        // ΦΡΟΥΡΟΣ 1: Αν έχει γίνει ήδη, σταμάτα αμέσως.
         if (localStorage.getItem(flagKey) === "true") return false;
 
         console.log("🚀 DIET: Injecting daily baseline...");
-        
-        // ΦΡΟΥΡΟΣ 2: Θέτουμε τη σημαία ΠΡΙΝ την επεξεργασία για να μπλοκάρουμε ταυτόχρονα calls
         localStorage.setItem(flagKey, "true");
 
         let log = this.getLog(dateStr);
-        
-        // Έλεγχος αν υπάρχουν ήδη (διπλή ασφάλεια)
         const hasRoutine = log.some(i => i.name.includes("(Ρουτίνα)"));
         
         if (!hasRoutine) {
-            // Προσθήκη Macros χωρίς αφαίρεση από Inventory (Protocol Check)
             log.push({ name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, ts: Date.now() - 1000 });
             log.push({ name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, ts: Date.now() - 2000 });
 
             localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
-            return true; // Επιστρέφει true αν έγινε όντως αλλαγή
+            return true;
         }
         return false;
     },
@@ -61,7 +54,6 @@ window.PegasusDiet = {
 
         if(!name || name.trim() === "") return;
 
-        // Χειροκίνητη κατανάλωση Whey (εδώ παραμένει ενεργό το Inventory)
         if(name.toLowerCase().includes("whey") && window.PegasusInventory) {
             window.PegasusInventory.consume('prot', 30);
         }
@@ -119,10 +111,15 @@ window.PegasusDiet = {
         container.innerHTML = html;
     },
 
+    // 🎯 FIXED: Νέα λογική εμφάνισης για να μην "καβαλάει" το πεδίο
     handleSearch: function(term) {
         const resBox = document.getElementById("searchSuggestions");
         if(!resBox) return;
-        if(!term || term.length < 2) { resBox.style.display = "none"; return; }
+        if(!term || term.length < 2) { 
+            resBox.style.display = "none"; 
+            document.getElementById("fName").style.borderRadius = "16px";
+            return; 
+        }
 
         const lib = JSON.parse(localStorage.getItem("pegasus_food_library")) || [];
         const matches = lib.filter(i => i.name.toLowerCase().includes(term.toLowerCase())).slice(0, 5);
@@ -130,18 +127,27 @@ window.PegasusDiet = {
         if(matches.length > 0) {
             resBox.innerHTML = matches.map(i => `
                 <div class="search-item" onclick="window.PegasusDiet.selectSuggested('${i.name}', ${i.kcal}, ${i.protein})">
-                    <span style="color:#fff; font-weight:bold; font-size:13px;">${i.name}</span>
-                    <span style="color:var(--main); font-size:11px; font-weight:900;">${i.kcal} kcal | ${i.protein}g P</span>
+                    <span class="search-item-name">${i.name}</span>
+                    <span class="search-item-macros">${i.kcal} kcal | ${i.protein}g</span>
                 </div>
             `).join('');
             resBox.style.display = "block";
+            document.getElementById("fName").style.borderRadius = "16px 16px 0 0";
         } else {
             resBox.style.display = "none";
+            document.getElementById("fName").style.borderRadius = "16px";
         }
     },
 
     selectSuggested: function(n, k, p) { this.add(n, k, p); },
-    closeSearch: function() { if(document.getElementById("searchSuggestions")) document.getElementById("searchSuggestions").style.display = "none"; },
+    
+    // 🎯 FIXED: Επαναφορά του σχήματος του κουτιού όταν κλείνει η αναζήτηση
+    closeSearch: function() { 
+        if(document.getElementById("searchSuggestions")) {
+            document.getElementById("searchSuggestions").style.display = "none"; 
+            if(document.getElementById("fName")) document.getElementById("fName").style.borderRadius = "16px";
+        }
+    },
 
     renderDailyKouki: function() {
         const container = document.getElementById('libraryContainer');
@@ -151,17 +157,14 @@ window.PegasusDiet = {
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const targetDayName = greekDays[targetDate.getDay()];
         
-        // 🎯 LOGIC ALIGNMENT: Αντιγραφή της λογικής του υπολογιστή (food.js)
         const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const targetDayKey = daysMap[targetDate.getDay()];
         
         let dailyMenu = [];
         
-        // Διαβάζουμε απευθείας το data.js (KOUKI_MASTER_MENU) όπως το PC
         if (typeof KOUKI_MASTER_MENU !== 'undefined' && KOUKI_MASTER_MENU[targetDayKey]) {
             dailyMenu = KOUKI_MASTER_MENU[targetDayKey];
         } else {
-            // Absolute Fallback αν δεν φορτώσει το data.js
             const offset = targetDate.getDay() * 2; 
             dailyMenu = KOUKI_MASTER.slice(offset, offset + 8);
         }
@@ -171,11 +174,9 @@ window.PegasusDiet = {
                 <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${targetDayName} (ΚΟΥΚΙ)</span>
             </div>` + dailyMenu.map(item => {
                 
-                // Υπολογισμός Μακροθρεπτικών ΑΚΡΙΒΩΣ όπως στο PC (food.js)
                 let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
                 let kcal = (item.p >= 6.5) ? 680 : 520;
                 
-                // Αν το data.js έχει ήδη έτοιμα τα macros (fallback)
                 protein = item.protein || protein;
                 kcal = item.kcal || item.calories || kcal;
                 const itemName = item.n || item.name;
@@ -194,7 +195,6 @@ window.PegasusDiet = {
     },
 
     updateUI: function() {
-        // Εκτέλεση ρουτίνας
         this.checkDailyRoutine();
 
         const dateStr = new Date().toLocaleDateString('el-GR');
