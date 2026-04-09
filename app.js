@@ -600,22 +600,24 @@ function finishWorkout() {
         }
     }
 
-    // 5. REPORTING SEQUENCE
+// 5. REPORTING SEQUENCE (STRICT NETWORK SYNC)
     setTimeout(() => {
         if (window.PegasusReporting) {
             // Ανάκτηση τελικών θερμίδων
             const kcalKey = P_M?.nutrition.today_kcal || "pegasus_today_kcal";
             const currentKcal = localStorage.getItem(kcalKey) || "0";
             
+            // Το reporting.js αναλαμβάνει πλέον και το location.reload()!
             window.PegasusReporting.prepareAndSaveReport(currentKcal);
             
             // Καθαρισμός ημερήσιων θερμίδων
             localStorage.setItem(kcalKey, "0.0");
+        } else {
+            // Fail-safe: Αν δεν υπάρχει το reporting, κάνε reload κανονικά
+            console.log("PEGASUS OS: Session Terminated. Reloading...");
+            window.location.reload(); 
         }
-        
-        console.log("PEGASUS OS: Session Terminated. Reloading...");
-        location.reload(); 
-    }, 4000); 
+    }, 4000);
 }
 
 /* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.8) ===== */
