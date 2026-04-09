@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.0)
-   Protocol: Strict Data Analyst - Flat Payload & Fast Debounce
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.1 TTL SECURITY PATCH)
+   Protocol: Strict Data Analyst - Flat Payload & 24h Auto-Lock
    ========================================================================== */
 
 const PegasusCloud = {
@@ -25,7 +25,10 @@ const PegasusCloud = {
         if (btoa(cleanPin) === "MjM3NQ==") { 
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
+            
+            // 🎯 SECURITY: Αποθήκευση PIN και Ώρας ξεκλειδώματος (Timestamp)
             localStorage.setItem("pegasus_vault_pin", cleanPin);
+            localStorage.setItem("pegasus_vault_time", Date.now().toString());
             
             this.pull(true);
             
@@ -61,7 +64,7 @@ const PegasusCloud = {
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 console.log("☁️ PEGASUS: New Cloud Data Found. Syncing Full Registry...");
 
-                // 1. FLAT SYNC: Η απόλυτη λύση. Μεταφέρει την ακριβή μορφή των δεδομένων.
+                // 1. FLAT SYNC
                 Object.keys(cloud).forEach(key => {
                     if (key.startsWith('pegasus_') || key.startsWith('food_log_') || key.startsWith('kouki_')) {
                         const val = typeof cloud[key] === 'string' ? cloud[key] : JSON.stringify(cloud[key]);
@@ -69,7 +72,7 @@ const PegasusCloud = {
                     }
                 });
 
-                // 2. LEGACY SUPPORT (Για να μην χαθούν τα παλιά δεδομένα πριν το Flat Sync)
+                // 2. LEGACY SUPPORT
                 const map = {
                     'weekly_history': 'pegasus_weekly_history',
                     'muscle_targets': 'pegasus_muscle_targets',
@@ -94,7 +97,6 @@ const PegasusCloud = {
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
-                // Hooks για το UI
                 if (typeof refreshAllUI === "function") refreshAllUI(); 
                 if (typeof window.updateFoodUI === "function") window.updateFoodUI(); 
                 if (typeof window.updateSuppUI === "function") window.updateSuppUI(); 
@@ -119,7 +121,6 @@ const PegasusCloud = {
             last_update_ts: syncTimestamp
         };
         
-        // 🎯 THE ABSOLUTE SYNC: Παίρνει ΟΛΑ τα σχετικά κλειδιά (και το Kouki) σε String μορφή
         for (let i = 0; i < localStorage.length; i++) {
             let k = localStorage.key(i);
             if (k.startsWith("pegasus_") || k.startsWith("food_log_") || k.startsWith("kouki_")) {
@@ -150,15 +151,33 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
+// 🎯 SECURITY: Έλεγχος 24 Ωρών κατά τη φόρτωση
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
+    const authTime = localStorage.getItem("pegasus_vault_time");
+    
     if (savedPin) {
-        window.PegasusCloud.unlock(savedPin);
-        const vaultBtn = document.getElementById("btnMasterVault");
-        if (vaultBtn) {
-            vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-            vaultBtn.style.color = "#00ff41";
-            vaultBtn.style.borderColor = "#00ff41";
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; // 24 ώρες σε milliseconds
+        
+        // Έλεγχος αν πέρασαν 24 ώρες ή αν λείπει το timestamp
+        if (!authTime || (now - parseInt(authTime) > TWENTY_FOUR_HOURS)) {
+            console.log("🔒 PEGASUS: Session expired (24h limit). Requiring PIN.");
+            localStorage.removeItem("pegasus_vault_pin");
+            localStorage.removeItem("pegasus_vault_time");
+            
+            // Εμφάνιση του Modal PIN αν υπάρχει στο DOM (Desktop & Mobile)
+            const pinModal = document.getElementById("pinModal");
+            if (pinModal) pinModal.style.display = "flex";
+        } else {
+            // Το PIN είναι ακόμα έγκυρο, ξεκλειδώνουμε
+            window.PegasusCloud.unlock(savedPin);
+            const vaultBtn = document.getElementById("btnMasterVault");
+            if (vaultBtn) {
+                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+                vaultBtn.style.color = "#00ff41";
+                vaultBtn.style.borderColor = "#00ff41";
+            }
         }
     }
 });
@@ -229,7 +248,6 @@ if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                 clearTimeout(pushTimeout);
             }
 
-            // ⏱️ 2 Seconds instead of 10 for absolute safety before tab close
             pushTimeout = setTimeout(async () => {
                 console.log("📡 CLOUD: Executing Batch Sync...");
                 try {
