@@ -225,7 +225,7 @@
             <span class="mini-label">ΚΑΤΑΓΡΑΦΗ ΒΑΡΟΥΣ ΣΩΜΑΤΟΣ</span>
             <input type="number" id="mobileWeightInput" placeholder="74.0" step="0.1">
             <div id="mobileWeightAvg" style="font-size: 10px; color: var(--main); font-weight: 800;">M.O. Εβδομάδας: -- kg</div>
-            <button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value); setTimeout(updateMobileWeightUI, 200);">ΕΝΗΜΕΡΩΣΗ</button>
+            <button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value);">ΕΝΗΜΕΡΩΣΗ</button>
         </div>
         <div class="section-title">ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ</div>
         <button class="secondary-btn" style="margin-bottom: 10px; border-color: #4CAF50; color: #4CAF50;" onclick="exportData()">ΛΗΨΗ BACKUP</button>
@@ -243,8 +243,7 @@
     <script src="../metabolicEngine.js"></script>
     <script src="../dietAdvisor.js"></script>
     <script src="../cloudSync.js"></script>
-
-    <script src="diet-mobile.js"></script>
+    <script src="../weightTracker.js"></script> <script src="diet-mobile.js"></script>
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
@@ -283,7 +282,8 @@
                     if(nDate) nDate.value = new Date().toLocaleDateString('el-GR');
                     window.PegasusProfile?.renderNotes();
                 }
-               if (id === 'settings_panel') { window.PegasusWeight?.updateUI(); if(typeof updateMobileWeightUI === 'function') updateMobileWeightUI(); }
+                // 🎯 FIXED: Αφήνουμε το `weightTracker.js` να κάνει Update μόνο του
+                if (id === 'settings_panel') window.PegasusWeight?.updateUI(); 
                 if (id === 'parking_panel') window.PegasusParking?.updateUI();
             } catch(e) { console.error("Refresh Error:", e); }
         }
@@ -291,8 +291,7 @@
         function refreshAllUI() {
             window.PegasusDiet?.updateUI(); 
             window.PegasusInventory?.updateUI(); 
-           window.PegasusWeight?.updateUI(); 
-if (typeof updateMobileWeightUI === "function") updateMobileWeightUI();
+            window.PegasusWeight?.updateUI(); 
             window.PegasusParking?.updateUI();
             window.PegasusCar?.load(); 
             window.PegasusProfile?.load();
@@ -310,33 +309,6 @@ if (typeof updateMobileWeightUI === "function") updateMobileWeightUI();
             if(document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
         }
 
-function updateMobileWeightUI() {
-            const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
-            const logKey = "pegasus_weight_log"; 
-            
-            const currentWeight = localStorage.getItem(weightKey) || 74;
-            const input = document.getElementById("mobileWeightInput");
-            if (input && !input.value) input.value = currentWeight;
-
-            const avgDisplay = document.getElementById("mobileWeightAvg");
-            if (avgDisplay) {
-                try {
-                    let log = JSON.parse(localStorage.getItem(logKey) || "[]");
-                    if (log.length > 0) {
-                        let recent = log.slice(-7); // Τελευταίες 7 μέρες
-                        let sum = recent.reduce((acc, item) => acc + parseFloat(item.weight || item.w || item.val || currentWeight), 0);
-                        let avg = (sum / recent.length).toFixed(1);
-                        avgDisplay.textContent = `M.O. Εβδομάδας: ${avg} kg`;
-                    } else {
-                        avgDisplay.textContent = `M.O. Εβδομάδας: ${currentWeight} kg`;
-                    }
-                } catch(e) {
-                    avgDisplay.textContent = `M.O. Εβδομάδας: ${currentWeight} kg`;
-                }
-            }
-        }
-
-        
         function unlockFields(v) { 
             document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
                 el.removeAttribute('readonly'); 
