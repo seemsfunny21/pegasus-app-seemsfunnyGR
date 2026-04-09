@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V3.2 (STRICT ANALYST EDITION - NETWORK SHIELD)
-   Protocol: Async Override, Memory-First Commit & Guaranteed Delivery
+   PEGASUS REPORTING SYSTEM - V3.3 (STRICT ANALYST EDITION - DIRECT SYNC)
+   Protocol: Guaranteed Delivery with Explicit Reload Hook
    ========================================================================== */
 
 const PegasusReporting = {
@@ -8,24 +8,17 @@ const PegasusReporting = {
     pendingReportKey: "pegasus_pending_report",
     historyKey: "pegasus_weekly_history",
 
-    /**
-     * 1. SAVE WORKOUT (Manual or Auto)
-     */
     saveWorkout: function(kcalVal, memoryData = null) {
         console.log("PEGASUS: Workout save/sync triggered...");
         this.prepareAndSaveReport(kcalVal, memoryData);
     },
 
-    /**
-     * 2. DATA COMMIT & PREPARATION
-     */
     prepareAndSaveReport: function(kcal, sessionData = null) {
         let dailyMax = {};
         let weeklyHistory = JSON.parse(localStorage.getItem(this.historyKey)) || {
             "Πλάτη": 0, "Στήθος": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0, "Ώμοι": 0, "Άλλο": 0
         };
 
-        // Χρήση δεδομένων μνήμης (SessionData) για αποφυγή DOM Race Condition
         const sourceData = sessionData || Array.from(document.querySelectorAll('.exercise'))
             .map(node => ({
                 name: node.querySelector('.exercise-name').textContent.trim().replace(" ☀️", ""),
@@ -56,16 +49,13 @@ const PegasusReporting = {
             localStorage.setItem(this.historyKey, JSON.stringify(weeklyHistory));
         }
 
-        // Σύνθεση Αναφοράς
         let summary = Object.entries(dailyMax).map(([name, weight]) => `• ${name}: ${weight}kg`);
         const today = new Date();
         const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
         
-        // Ανάκτηση δεδομένων από άλλα modules (Cardio & Food)
         const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStr) || "[]");
         const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStr) || "null");
         
-        // Nutrition & Recovery Logic
         const isRecovery = (today.getDay() === 1 || today.getDay() === 4);
         const recovery = isRecovery ? 
             { msg: "Recovery Day Active", nutrition: "Focus on hydration & stretching" } : 
@@ -87,67 +77,43 @@ const PegasusReporting = {
         };
 
         localStorage.setItem(this.pendingReportKey, JSON.stringify(pendingData));
-        console.log("✅ PEGASUS: Data Committed & Manual Save Complete.");
+        console.log("✅ PEGASUS: Data Committed & Ready for Broadcast.");
         
-        // Σύγχρονη κλήση του CloudSync
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
             window.PegasusCloud.push(true);
         }
 
-        // 🎯 STRICT FIX: Εκκίνηση αποστολής email (με Network Shield)
+        // Ξεκινάει η μετάδοση του Email!
         this.checkAndSendMorningReport(true); 
     },
 
-    /**
-     * 3. ΕΛΕΓΧΟΣ & ΑΠΟΣΤΟΛΗ (EMAILJS με Network Shield)
-     */
     checkAndSendMorningReport: function(forceSend = false) {
         const rawData = localStorage.getItem(this.pendingReportKey);
         if (!rawData) {
             if(forceSend) console.warn("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
+            window.location.reload();
             return;
         }
 
         const pending = JSON.parse(rawData);
 
-        // 🛡️ THE NETWORK SHIELD: Παγίδευση του location.reload() του app.js
-        const originalReload = window.location.reload;
-        let isReloading = false;
-        
-        window.location.reload = function() {
-            if (!isReloading) console.log("⏳ PEGASUS GUARD: Reload intercepted. Waiting for EmailJS to transmit...");
-            isReloading = true;
-        };
-
-        // Failsafe Timer (Αν το EmailJS κολλήσει για πάνω από 4 δευτερόλεπτα, κάνουμε force reload)
-        const fallbackTimer = setTimeout(() => {
-            if (isReloading) {
-                console.warn("⚠️ PEGASUS GUARD: Network timeout. Force reloading...");
-                originalReload.call(window.location);
-            }
-        }, 4000);
-
         if (typeof emailjs !== 'undefined') {
+            console.log("⏳ PEGASUS: Transmitting Report to Cloud Server...");
+            
+            // Το σύστημα περιμένει την απάντηση του δικτύου (.then) για να κάνει reload
             emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
                 .then(() => {
                     console.log("✅ PEGASUS: Email Report Sent Successfully.");
                     localStorage.removeItem(this.pendingReportKey);
-                    
-                    // Απελευθέρωση του Reload
-                    clearTimeout(fallbackTimer);
-                    if (isReloading) originalReload.call(window.location);
+                    setTimeout(() => window.location.reload(), 500); // 🚀 Ασφαλής Επανεκκίνηση!
                 })
                 .catch(err => {
                     console.error("❌ PEGASUS: Email Error", err);
-                    
-                    // Απελευθέρωση του Reload (Ακόμα κι αν απέτυχε)
-                    clearTimeout(fallbackTimer);
-                    if (isReloading) originalReload.call(window.location);
+                    setTimeout(() => window.location.reload(), 500); // 🚀 Fail-safe Επανεκκίνηση
                 });
         } else {
             console.warn("PEGASUS: EmailJS not loaded. Sending failed.");
-            clearTimeout(fallbackTimer);
-            if (isReloading) originalReload.call(window.location);
+            window.location.reload();
         }
     }
 };
