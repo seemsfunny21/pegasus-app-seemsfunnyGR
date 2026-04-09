@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V3.0 (STRICT ANALYST EDITION)
-   Protocol: Memory-First Commit, Full Nutrition & Cardio Integration
+   PEGASUS REPORTING SYSTEM - V3.1 (STRICT ANALYST EDITION - UNLOCKED)
+   Protocol: Memory-First Commit, Immediate Send & Full Integration
    ========================================================================== */
 
 const PegasusReporting = {
@@ -35,7 +35,7 @@ const PegasusReporting = {
                 group: node.dataset.group
             })).filter(ex => ex.done > 0);
 
-        if (sourceData.length > 0) {
+        if (sourceData && sourceData.length > 0) {
             sourceData.forEach(ex => {
                 if (!dailyMax[ex.name] || ex.weight > dailyMax[ex.name]) dailyMax[ex.name] = ex.weight;
 
@@ -94,40 +94,35 @@ const PegasusReporting = {
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
             window.PegasusCloud.push(true);
         }
+
+        // 🎯 STRICT FIX: Άμεση αποστολή email μετά την προετοιμασία αντί για αναμονή
+        this.checkAndSendMorningReport(true); 
     },
 
     /**
      * 3. ΕΛΕΓΧΟΣ & ΑΠΟΣΤΟΛΗ (EMAILJS)
      */
-    checkAndSendMorningReport: function(isManual = false) {
+    checkAndSendMorningReport: function(forceSend = false) {
         const rawData = localStorage.getItem(this.pendingReportKey);
         if (!rawData) {
-            if(isManual) alert("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
+            if(forceSend) console.warn("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
             return;
         }
 
         const pending = JSON.parse(rawData);
-        const today = new Date();
-        const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
 
-        // Αποστολή αν είναι manual ή αν άλλαξε η μέρα
-        if (isManual || pending.dateSent !== dateStr) {
-            if (typeof emailjs !== 'undefined') {
-                emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
-                    .then(() => {
-                        console.log("✅ PEGASUS: Report Sent Successfully.");
-                        localStorage.removeItem(this.pendingReportKey);
-                        if(isManual) alert("Επιτυχία: Η αναφορά και ο συγχρονισμός ολοκληρώθηκαν!");
-                    })
-                    .catch(err => {
-                        console.error("❌ PEGASUS: Email Error", err);
-                        if(isManual) alert("Σφάλμα κατά την αποστολή.");
-                    });
-            } else {
-                console.warn("PEGASUS: EmailJS not loaded.");
-            }
+        if (typeof emailjs !== 'undefined') {
+            // 🎯 STRICT FIX: Αφαίρεση του "Time Lock". Στέλνει πάντα όταν καλείται.
+            emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
+                .then(() => {
+                    console.log("✅ PEGASUS: Email Report Sent Successfully.");
+                    localStorage.removeItem(this.pendingReportKey);
+                })
+                .catch(err => {
+                    console.error("❌ PEGASUS: Email Error", err);
+                });
         } else {
-            console.log("PEGASUS: Report locked. Scheduled for tomorrow morning.");
+            console.warn("PEGASUS: EmailJS not loaded. Sending failed.");
         }
     }
 };
