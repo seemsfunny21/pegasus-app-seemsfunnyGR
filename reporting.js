@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V3.1 (STRICT ANALYST EDITION - UNLOCKED)
-   Protocol: Memory-First Commit, Immediate Send & Full Integration
+   PEGASUS REPORTING SYSTEM - V3.2 (STRICT ANALYST EDITION - NETWORK SHIELD)
+   Protocol: Async Override, Memory-First Commit & Guaranteed Delivery
    ========================================================================== */
 
 const PegasusReporting = {
@@ -26,7 +26,6 @@ const PegasusReporting = {
         };
 
         // Χρήση δεδομένων μνήμης (SessionData) για αποφυγή DOM Race Condition
-        // Fallback στο DOM αν δεν δοθούν δεδομένα μνήμης
         const sourceData = sessionData || Array.from(document.querySelectorAll('.exercise'))
             .map(node => ({
                 name: node.querySelector('.exercise-name').textContent.trim().replace(" ☀️", ""),
@@ -95,12 +94,12 @@ const PegasusReporting = {
             window.PegasusCloud.push(true);
         }
 
-        // 🎯 STRICT FIX: Άμεση αποστολή email μετά την προετοιμασία αντί για αναμονή
+        // 🎯 STRICT FIX: Εκκίνηση αποστολής email (με Network Shield)
         this.checkAndSendMorningReport(true); 
     },
 
     /**
-     * 3. ΕΛΕΓΧΟΣ & ΑΠΟΣΤΟΛΗ (EMAILJS)
+     * 3. ΕΛΕΓΧΟΣ & ΑΠΟΣΤΟΛΗ (EMAILJS με Network Shield)
      */
     checkAndSendMorningReport: function(forceSend = false) {
         const rawData = localStorage.getItem(this.pendingReportKey);
@@ -111,18 +110,44 @@ const PegasusReporting = {
 
         const pending = JSON.parse(rawData);
 
+        // 🛡️ THE NETWORK SHIELD: Παγίδευση του location.reload() του app.js
+        const originalReload = window.location.reload;
+        let isReloading = false;
+        
+        window.location.reload = function() {
+            if (!isReloading) console.log("⏳ PEGASUS GUARD: Reload intercepted. Waiting for EmailJS to transmit...");
+            isReloading = true;
+        };
+
+        // Failsafe Timer (Αν το EmailJS κολλήσει για πάνω από 4 δευτερόλεπτα, κάνουμε force reload)
+        const fallbackTimer = setTimeout(() => {
+            if (isReloading) {
+                console.warn("⚠️ PEGASUS GUARD: Network timeout. Force reloading...");
+                originalReload.call(window.location);
+            }
+        }, 4000);
+
         if (typeof emailjs !== 'undefined') {
-            // 🎯 STRICT FIX: Αφαίρεση του "Time Lock". Στέλνει πάντα όταν καλείται.
             emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
                 .then(() => {
                     console.log("✅ PEGASUS: Email Report Sent Successfully.");
                     localStorage.removeItem(this.pendingReportKey);
+                    
+                    // Απελευθέρωση του Reload
+                    clearTimeout(fallbackTimer);
+                    if (isReloading) originalReload.call(window.location);
                 })
                 .catch(err => {
                     console.error("❌ PEGASUS: Email Error", err);
+                    
+                    // Απελευθέρωση του Reload (Ακόμα κι αν απέτυχε)
+                    clearTimeout(fallbackTimer);
+                    if (isReloading) originalReload.call(window.location);
                 });
         } else {
             console.warn("PEGASUS: EmailJS not loaded. Sending failed.");
+            clearTimeout(fallbackTimer);
+            if (isReloading) originalReload.call(window.location);
         }
     }
 };
