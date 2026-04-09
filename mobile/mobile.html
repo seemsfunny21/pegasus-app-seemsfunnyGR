@@ -18,7 +18,6 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css?v=2.0">
 </head>
 <body>
@@ -219,7 +218,7 @@
         <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
-<div id="settings_panel" class="view">
+    <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
         
         <div class="mini-card" style="border: 1px solid var(--main); padding: 25px 20px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,65,0.05);">
@@ -267,7 +266,9 @@
     <script src="../metabolicEngine.js"></script>
     <script src="../dietAdvisor.js"></script>
     <script src="../cloudSync.js"></script>
-    <script src="../weightTracker.js"></script> <script src="diet-mobile.js"></script>
+    <script src="../weightTracker.js"></script>
+
+    <script src="diet-mobile.js"></script>
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
@@ -306,7 +307,7 @@
                     if(nDate) nDate.value = new Date().toLocaleDateString('el-GR');
                     window.PegasusProfile?.renderNotes();
                 }
-                // 🎯 FIXED: Αφήνουμε το `weightTracker.js` να κάνει Update μόνο του
+                
                 if (id === 'settings_panel') window.PegasusWeight?.updateUI(); 
                 if (id === 'parking_panel') window.PegasusParking?.updateUI();
             } catch(e) { console.error("Refresh Error:", e); }
