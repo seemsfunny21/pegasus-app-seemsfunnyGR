@@ -1,82 +1,62 @@
-/* ===== PEGASUS OS - VEHICLE MANAGEMENT MODULE v1.3 ===== */
-window.PegasusCar = {
-    // 1. Αποθήκευση όλων των στοιχείων (Key: pegasus_car_specs)
-    saveSpecs: async function() {
-        const identity = {
-            plate: document.getElementById('carPlate').value,
-            model: document.getElementById('carModel').value,
-            vin: document.getElementById('carVin').value,
-            eng: document.getElementById('carEngine').value, // ΠΡΟΣΘΗΚΗ
-            pwr: document.getElementById('carPower').value   // ΠΡΟΣΘΗΚΗ
-        };
-        const dates = {
-            ins: document.getElementById('carIns').value,
-            kteo: document.getElementById('carKteo').value,
-            srv: document.getElementById('carSrv').value
-        };
+/* ==========================================================================
+   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.4 MIRRORED)
+   Protocol: Metabolic Engine Sync, Muscle Fatigue & Calendar Integration
+   ========================================================================== */
 
-        // Ευθυγράμμιση με cloudSync.js
-        localStorage.setItem("pegasus_car_specs", JSON.stringify(identity));
-        localStorage.setItem("pegasus_car_dates", JSON.stringify(dates));
+window.PegasusCardio = {
+    save: async function() {
+        const km = parseFloat(document.getElementById('cdKm').value) || 0; 
+        const burnedKcal = parseFloat(document.getElementById('cdKcalBurned').value) || 0;
+        const route = (document.getElementById('cdRoute').value || "ΑΕΡΟΒΙΑ").toUpperCase();
         
-        if (window.PegasusCloud && window.PegasusCloud.push) {
-            if (typeof setSyncStatus === "function") setSyncStatus('ΑΠΟΣΤΟΛΗ...');
-            await window.PegasusCloud.push();
-            if (typeof setSyncStatus === "function") setSyncStatus('online');
+        if (km === 0 && burnedKcal === 0) return; // Ακύρωση αν πατηθεί κατά λάθος άδειο
+
+        // --- 1. ΕΚΤΙΜΗΣΗ ΚΟΠΩΣΗΣ (ΠΙΣΤΩΣΗ ΣΤΑ ΠΟΔΙΑ) ---
+        if(km > 0) { 
+            let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+            
+            // 🎯 PEGASUS PATCH: Ευθυγράμμιση με τον υπολογιστή (Πολλαπλασιαστής 0.6 αντί για km/2)
+            const credit = (route.includes("ΠΟΔΗΛΑ") || route.includes("CYCL")) ? 18 : Math.max(1, Math.floor(km * 0.6));
+            
+            history["Πόδια"] = (history["Πόδια"] || 0) + credit;
+            localStorage.setItem('pegasus_weekly_history', JSON.stringify(history)); 
+            console.log(`🚴 CARDIO: Credited ${credit} sets to Legs.`);
         }
-        alert("ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ ΕΝΗΜΕΡΩΘΗΚΑΝ");
-        this.load();
-    },
 
-    // 2. Φόρτωση όλων των πεδίων στο UI
-    load: function() {
-        const identity = JSON.parse(localStorage.getItem("pegasus_car_specs")) || {};
-        const dates = JSON.parse(localStorage.getItem("pegasus_car_dates")) || {};
+        // --- 2. ΜΕΤΑΒΟΛΙΚΗ ΣΥΝΔΕΣΗ (ΑΥΞΗΣΗ ΗΜΕΡΗΣΙΟΥ ΣΤΟΧΟΥ ΘΕΡΜΙΔΩΝ) ---
+        if(burnedKcal > 0) {
+            const dateStr = new Date().toLocaleDateString('el-GR');
+            let todayCardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
+            
+            // Προσθέτει τις νέες θερμίδες στις ήδη υπάρχουσες της ημέρας
+            localStorage.setItem("pegasus_cardio_kcal_" + dateStr, todayCardioKcal + burnedKcal);
+            
+            // Κάνει Update το UI της Διατροφής
+            if(window.PegasusDiet && typeof window.PegasusDiet.updateUI === "function") {
+                window.PegasusDiet.updateUI();
+            }
+            console.log(`🔥 CARDIO: Target increased by ${burnedKcal} kcal.`);
+        }
+
+        // --- 3. 🎯 CALENDAR SYNC: Πρασίνισμα στο Ημερολόγιο (app.js) ---
+        // Αν έκανες πάνω από 15km ποδήλατο ή έκαψες πάνω από 400 θερμίδες, θεωρείται "Πλήρης Προπόνηση"
+        if ((route.includes("ΠΟΔΗΛΑ") || route.includes("CYCL")) && (km >= 15 || burnedKcal >= 400)) {
+            const now = new Date();
+            const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            let doneKey = "pegasus_workouts_done";
+            let data = JSON.parse(localStorage.getItem(doneKey) || "{}");
+            
+            data[workoutKey] = true;
+            localStorage.setItem(doneKey, JSON.stringify(data));
+            console.log(`✅ CALENDAR: Day marked as completed (${workoutKey}).`);
+        }
         
-        const setVal = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.value = val || "";
-        };
-
-        // Mapping Identity
-        setVal('carPlate', identity.plate);
-        setVal('carModel', identity.model);
-        setVal('carVin', identity.vin);
-        setVal('carEngine', identity.eng); // ΠΡΟΣΘΗΚΗ
-        setVal('carPower', identity.pwr);   // ΠΡΟΣΘΗΚΗ
-
-        // Mapping Dates
-        setVal('carIns', dates.ins);
-        setVal('carKteo', dates.kteo);
-        setVal('carSrv', dates.srv);
-
-        this.renderServiceLog();
-    },
-
-    addService: async function() {
-        const t = document.getElementById('srvTask')?.value;
-        const k = document.getElementById('srvKm')?.value;
-        if (!t || !k) return;
-
-        let logs = JSON.parse(localStorage.getItem("pegasus_car_service")) || [];
-        logs.unshift({ t, k, d: new Date().toLocaleDateString('el-GR') });
-        localStorage.setItem("pegasus_car_service", JSON.stringify(logs));
+        // Καθαρισμός πεδίων
+        document.getElementById('cdKm').value = "";
+        document.getElementById('cdKcalBurned').value = "";
+        document.getElementById('cdRoute').value = "";
         
-        document.getElementById('srvTask').value = "";
-        document.getElementById('srvKm').value = "";
-        this.renderServiceLog();
-        
+        if (typeof openView === "function") openView('home');
         if (window.PegasusCloud) await window.PegasusCloud.push();
-    },
-
-    renderServiceLog: function() {
-        const logs = JSON.parse(localStorage.getItem("pegasus_car_service")) || [];
-        const container = document.getElementById("serviceLogList");
-        if (!container) return;
-        container.innerHTML = logs.map(i => `
-            <div class="log-item">
-                <div style="font-weight:bold; color:var(--main);">${i.t}</div>
-                <div style="font-size:11px; color:#aaa;">${i.k} χλμ | ${i.d}</div>
-            </div>`).join('');
     }
 };
