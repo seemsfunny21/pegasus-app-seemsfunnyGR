@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v9.4 (DYNAMIC KOUKI INTEGRATED + STRICT OVERRIDE)
-   Protocol: Strict Data Mapping via window.PegasusManifest
+   PEGASUS FOOD ENGINE - v9.5 (DYNAMIC MACRO BRIDGE INTEGRATED)
+   Protocol: Strict Data Mapping via window.PegasusManifest & Master Macros
    Status: FINAL STABLE | SYNTAX FIXED | DYNAMIC MENU ACTIVE
    ========================================================================== */
 
@@ -186,7 +186,7 @@ function updateProgressBars(kcal, protein) {
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
 
-/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.4) === */
+/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.5) === */
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
@@ -204,17 +204,23 @@ window.renderKoukiMenu = function() {
         <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ)</h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; width: 100%;">
             ${todayMenu.map(item => {
-                let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
-                let kcal = (item.p >= 6.5) ? 680 : 520;
-
-                // 🚨 STRICT DATA OVERRIDE: Οπτική επιβεβαίωση (Visual Audit)
-                if (item.n === "Μουσακάς") {
-                    kcal = 830;
-                    protein = 26;
+                
+                // 🎯 EXPLICIT BRIDGE: Κλήση της Κεντρικής Μηχανής Μακροθρεπτικών 
+                // (αν δεν τη βρει, χρησιμοποιεί ένα safe fallback)
+                let protein, kcal;
+                if (typeof window.getPegasusMacros === "function") {
+                    const macros = window.getPegasusMacros(item.n, item.t);
+                    protein = macros.protein;
+                    kcal = macros.kcal;
+                } else {
+                    protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
+                    kcal = (item.p >= 6.5) ? 680 : 520;
+                    if (item.n === "Μουσακάς") { kcal = 830; protein = 26; }
+                    if (item.n === "Παστίτσιο") { kcal = 750; protein = 35; }
                 }
 
                 return `
-                <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
+                <button onclick="window.addKoukiToLog('${item.n}', '${item.t || item.p}')" 
                         style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 12px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;">
                     <div style="color: #eee; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
                         ${item.n}
