@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v9.5 (DYNAMIC MACRO BRIDGE INTEGRATED)
+   PEGASUS FOOD ENGINE - v9.6 (STRICT NATIVE INJECTION PATCH)
    Protocol: Strict Data Mapping via window.PegasusManifest & Master Macros
    Status: FINAL STABLE | SYNTAX FIXED | DYNAMIC MENU ACTIVE
    ========================================================================== */
@@ -186,7 +186,7 @@ function updateProgressBars(kcal, protein) {
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
 
-/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.5) === */
+/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.6) === */
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
@@ -205,8 +205,6 @@ window.renderKoukiMenu = function() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; width: 100%;">
             ${todayMenu.map(item => {
                 
-                // 🎯 EXPLICIT BRIDGE: Κλήση της Κεντρικής Μηχανής Μακροθρεπτικών 
-                // (αν δεν τη βρει, χρησιμοποιεί ένα safe fallback)
                 let protein, kcal;
                 if (typeof window.getPegasusMacros === "function") {
                     const macros = window.getPegasusMacros(item.n, item.t);
@@ -219,8 +217,9 @@ window.renderKoukiMenu = function() {
                     if (item.n === "Παστίτσιο") { kcal = 750; protein = 35; }
                 }
 
+                // 🎯 STRICT FIX: Καλεί ΑΠΕΥΘΕΙΑΣ την window.addFoodItem για να περάσει στο σωστό κλειδί
                 return `
-                <button onclick="window.addKoukiToLog('${item.n}', '${item.t || item.p}')" 
+                <button onclick="window.addFoodItem('${item.n} (Κούκι)', ${kcal}, ${protein})" 
                         style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 12px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;">
                     <div style="color: #eee; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
                         ${item.n}
