@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS SMART DIET ADVISOR - v2.6 (UPDATED MENU MATRIX)
+   PEGASUS SMART DIET ADVISOR - v2.7 (FUTURE-PROOF PATCH)
    Protocol: Nutritional Gap & Category Menu Integration
    ========================================================================== */
 
@@ -97,7 +97,8 @@ window.PegasusDietAdvisor = {
         for (let i = 0; i < days; i++) {
             let d = new Date();
             d.setDate(today.getDate() - i);
-            let dateKey = `${d.getDate()}/${d.getMonth() + 1}/2026`;
+            // 🎯 FIXED PATCH: Δυναμική ημερομηνία χωρίς "2026" για το Ιστορικό
+            let dateKey = d.toLocaleDateString('el-GR');
             let log = JSON.parse(localStorage.getItem(`food_log_${dateKey}`)) || [];
             log.forEach(entry => items.push(entry.name));
         }
@@ -130,7 +131,8 @@ window.renderAdvisorUI = function() {
 
 window.addKoukiToLog = function(name, price) {
     const today = new Date();
-    const dateKey = `${today.getDate()}/${today.getMonth() + 1}/2026`;
+    // 🎯 FIXED PATCH: Δυναμική ημερομηνία χωρίς "2026" για το Σημερινό Log
+    const dateKey = (typeof P_M !== "undefined" && P_M.getStrictDate) ? P_M.getStrictDate() : today.toLocaleDateString('el-GR');
     const logKey = `food_log_${dateKey}`;
     let log = JSON.parse(localStorage.getItem(logKey)) || [];
     
