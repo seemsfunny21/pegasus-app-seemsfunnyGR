@@ -1,28 +1,73 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.4 FULL WRAPPER UI)
-   Protocol: Anti-Loop Routine Injection, Inventory Sync & Standalone UI
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.5 STRICT MACROS)
+   Protocol: Master Macro Engine Integration & Absolute Data Consistency
    Status: STABLE | ZERO-BUG RE-VERIFIED
    ========================================================================== */
 
 const KOUKI_MASTER = [
-    { name: "Κοτόπουλο με κάρυ & λαχανικά", kcal: 580, protein: 52 },
-    { name: "Κοτόπουλο με χυλοπίτες", kcal: 680, protein: 48 },
-    { name: "Κοτόπουλο λεμονάτο", kcal: 550, protein: 52 },
-    { name: "Χοιρινό με δαμάσκηνα", kcal: 650, protein: 42 },
-    { name: "Χοιρινό πρασοσέλινο", kcal: 610, protein: 40 },
-    { name: "Μοσχαράκι κοκκινιστό", kcal: 640, protein: 45 },
-    { name: "Μοσχάρι γιουβέτσι", kcal: 720, protein: 46 },
-    { name: "Μπιφτέκια μοσχαρίσια σχάρας", kcal: 540, protein: 44 },
-    { name: "Γιουβαρλάκια αυγολέμονο", kcal: 490, protein: 30 },
-    { name: "Ρεβύθια με κάρυ", kcal: 480, protein: 18 },
-    { name: "Ρεβύθια λεμονάτα", kcal: 450, protein: 17 },
-    { name: "Γίγαντες φούρνου", kcal: 480, protein: 19 },
-    { name: "Φασολάκια πράσινα", kcal: 350, protein: 8 },
-    { name: "Σουπιές με σπανάκι", kcal: 420, protein: 38 },
-    { name: "Τσιπούρα ψητή", kcal: 420, protein: 45 },
-    { name: "Παστίτσιο", kcal: 750, protein: 35 },
-    { name: "Μουσακάς", kcal: 830, protein: 26 } // 🎯 FIXED: Ακριβής θερμιδική αποτύπωση
+    { name: "Κοτόπουλο με κάρυ & λαχανικά", type: "poulika" },
+    { name: "Κοτόπουλο με χυλοπίτες", type: "poulika" },
+    { name: "Κοτόπουλο λεμονάτο", type: "poulika" },
+    { name: "Χοιρινό με δαμάσκηνα", type: "kreas" },
+    { name: "Χοιρινό πρασοσέλινο", type: "kreas" },
+    { name: "Μοσχαράκι κοκκινιστό", type: "kreas" },
+    { name: "Μοσχάρι γιουβέτσι", type: "kreas" },
+    { name: "Μπιφτέκια μοσχαρίσια σχάρας", type: "kreas" },
+    { name: "Γιουβαρλάκια αυγολέμονο", type: "kreas" },
+    { name: "Ρεβύθια με κάρυ", type: "ospro" },
+    { name: "Ρεβύθια λεμονάτα", type: "ospro" },
+    { name: "Γίγαντες φούρνου", type: "ospro" },
+    { name: "Φασολάκια πράσινα", type: "ladero" },
+    { name: "Σουπιές με σπανάκι", type: "psari" },
+    { name: "Τσιπούρα ψητή", type: "psari" },
+    { name: "Παστίτσιο", type: "carb" },
+    { name: "Μουσακάς", type: "carb" }
 ];
+
+// 🎯 INTERNAL MOBILE MACRO ENGINE (Mirrors Desktop dietAdvisor.js)
+function getMobilePegasusMacros(name, tag) {
+    let baseK = 0, baseP = 0;
+    const n = name.toLowerCase();
+
+    // 1. OUTLIERS & HEAVY CARBS (Χωρίς ρύζι)
+    if (n.includes("μουσακάς")) return { kcal: 830, protein: 26 };
+    if (n.includes("παστίτσιο") && !n.includes("λαχανικών")) return { kcal: 750, protein: 35 };
+    if (n.includes("μακαρόνια") || n.includes("λαζάνια") || n.includes("κανελόνια") || n.includes("χυλοπίτες")) return { kcal: 650, protein: 30 };
+    if (n.includes("πίτα") || n.includes("μπατσαριά") || n.includes("μπριάμ")) return { kcal: 450, protein: (n.includes("κοτό") ? 25 : 12) };
+
+    // 2. BASE MEAL MACROS (Καθαρό Βάρος χωρίς συνοδευτικό)
+    if (tag === 'kreas') {
+        if (n.includes("μοσχάρι") || n.includes("μοσχαράκι")) { baseK = 480; baseP = 42; }
+        else if (n.includes("χοιριν") || n.includes("αρνί")) { baseK = 580; baseP = 45; }
+        else { baseK = 500; baseP = 40; }
+    }
+    else if (tag === 'poulika') {
+        if (n.includes("αλά κρεμ") || n.includes("γλυκόξινο")) { baseK = 550; baseP = 40; }
+        else { baseK = 420; baseP = 48; } 
+    }
+    else if (tag === 'psari') {
+        if (n.includes("τηγαν") || n.includes("σκορδαλιά")) { baseK = 550; baseP = 30; }
+        else { baseK = 380; baseP = 38; }
+    }
+    else if (tag === 'ospro') {
+        baseK = 420; baseP = 18;
+    }
+    else if (tag === 'ladero' || tag === 'veggies') {
+        if (n.includes("γεμιστά με κιμά")) { baseK = 500; baseP = 25; }
+        else { baseK = 420; baseP = 8; }
+    }
+    else if (tag === 'soup') {
+        baseK = 380; baseP = 30;
+    } else {
+        baseK = 450; baseP = 20; 
+    }
+
+    // 3. THE RICE OFFSET PROTOCOL
+    return { 
+        kcal: baseK + 280, // Προσθήκη Μερίδας Ρυζιού
+        protein: baseP + 6 
+    };
+}
 
 window.PegasusDiet = {
     checkDailyRoutine: function() {
@@ -98,13 +143,16 @@ window.PegasusDiet = {
         `;
 
         advice.options.forEach(opt => {
+            // Δυναμικός υπολογισμός μέσα στον Advisor
+            const macros = getMobilePegasusMacros(opt.n, opt.t);
+            
             html += `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
                     <div style="text-align:left;">
                         <div style="color:#fff; font-weight:bold; font-size:14px;">${opt.n}</div>
-                        <div style="color:#4CAF50; font-size:12px; font-weight:900;">${opt.p.toFixed(2)}€</div>
+                        <div style="color:#4CAF50; font-size:12px; font-weight:900;">🔥 ${macros.kcal} kcal | 🍗 ${macros.protein}g</div>
                     </div>
-                    <button onclick="window.PegasusDiet.quickAdd('${opt.n} (Κούκι)', 500, 20); document.getElementById('advisorMobileResult').innerHTML='';" 
+                    <button onclick="window.PegasusDiet.quickAdd('${opt.n} (Κούκι)', ${macros.kcal}, ${macros.protein}); document.getElementById('advisorMobileResult').innerHTML='';" 
                             style="background:#f39c12; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:900; font-size:11px;">
                         ΠΡΟΣΘΗΚΗ
                     </button>
@@ -179,28 +227,21 @@ window.PegasusDiet = {
                 <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${targetDayName} (ΚΟΥΚΙ)</span>
             </div>` + dailyMenu.map(item => {
                 
-                let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
-                let kcal = (item.p >= 6.5) ? 680 : 520;
-                
-                protein = item.protein || protein;
-                kcal = item.kcal || item.calories || kcal;
                 const itemName = item.n || item.name;
+                const itemTag = item.t || item.type || "kreas";
 
-                // 🚨 STRICT DATA OVERRIDE: Οπτική επιβεβαίωση (Visual Audit)
-                if (itemName === "Μουσακάς") {
-                    kcal = 830;
-                    protein = 26;
-                }
+                // 🎯 STRICT MACRO OVERRIDE: Διαβάζει από την κεντρική μηχανή
+                const macros = getMobilePegasusMacros(itemName, itemTag);
 
                 return `
-            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${itemName} (Κούκι)', ${kcal}, ${protein})" 
+            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${itemName} (Κούκι)', ${macros.kcal}, ${macros.protein})" 
                  style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
                 <div style="text-align:left;">
                     <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΠΡΟΣΘΗΚΗ ΣΤΟ LOG</span>
                     <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${itemName}</div>
-                    <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${protein}G PROTEIN</div>
+                    <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${macros.protein}G PROTEIN</div>
                 </div>
-                <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${kcal} KCAL</div>
+                <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${macros.kcal} KCAL</div>
             </div>`
             }).join('');
     },
