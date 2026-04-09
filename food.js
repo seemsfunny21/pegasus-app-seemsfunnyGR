@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v9.3 (DYNAMIC KOUKI INTEGRATED)
+   PEGASUS FOOD ENGINE - v9.4 (DYNAMIC KOUKI INTEGRATED + STRICT OVERRIDE)
    Protocol: Strict Data Mapping via window.PegasusManifest
    Status: FINAL STABLE | SYNTAX FIXED | DYNAMIC MENU ACTIVE
    ========================================================================== */
@@ -186,7 +186,7 @@ function updateProgressBars(kcal, protein) {
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
 
-/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.3) === */
+/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.4) === */
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
@@ -206,6 +206,12 @@ window.renderKoukiMenu = function() {
             ${todayMenu.map(item => {
                 let protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
                 let kcal = (item.p >= 6.5) ? 680 : 520;
+
+                // 🚨 STRICT DATA OVERRIDE: Οπτική επιβεβαίωση (Visual Audit)
+                if (item.n === "Μουσακάς") {
+                    kcal = 830;
+                    protein = 26;
+                }
 
                 return `
                 <button onclick="window.addKoukiToLog('${item.n}', ${item.p})" 
