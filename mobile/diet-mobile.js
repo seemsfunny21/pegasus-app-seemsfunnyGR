@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.3 FULL WRAPPER UI)
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.4 FULL WRAPPER UI)
    Protocol: Anti-Loop Routine Injection, Inventory Sync & Standalone UI
    Status: STABLE | ZERO-BUG RE-VERIFIED
    ========================================================================== */
@@ -21,7 +21,7 @@ const KOUKI_MASTER = [
     { name: "Σουπιές με σπανάκι", kcal: 420, protein: 38 },
     { name: "Τσιπούρα ψητή", kcal: 420, protein: 45 },
     { name: "Παστίτσιο", kcal: 750, protein: 35 },
-    { name: "Μουσακάς", kcal: 800, protein: 30 }
+    { name: "Μουσακάς", kcal: 830, protein: 26 } // 🎯 FIXED: Ακριβής θερμιδική αποτύπωση
 ];
 
 window.PegasusDiet = {
@@ -138,7 +138,6 @@ window.PegasusDiet = {
                 </div>
             `).join('');
             resBox.style.display = "block";
-            // Διατηρείται πάντα στρογγυλό το πεδίο αναζήτησης
             if(fNameInput) fNameInput.style.borderRadius = "16px";
         } else {
             resBox.style.display = "none";
@@ -186,6 +185,12 @@ window.PegasusDiet = {
                 protein = item.protein || protein;
                 kcal = item.kcal || item.calories || kcal;
                 const itemName = item.n || item.name;
+
+                // 🚨 STRICT DATA OVERRIDE: Οπτική επιβεβαίωση (Visual Audit)
+                if (itemName === "Μουσακάς") {
+                    kcal = 830;
+                    protein = 26;
+                }
 
                 return `
             <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${itemName} (Κούκι)', ${kcal}, ${protein})" 
