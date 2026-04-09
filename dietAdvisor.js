@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS SMART DIET ADVISOR - v2.8 (FUTURE-PROOF & STRICT CALORIE PATCH)
-   Protocol: Nutritional Gap & Category Menu Integration
+   PEGASUS SMART DIET ADVISOR - v3.0 (STRICT MACRO ENGINE & RICE OFFSET)
+   Protocol: Absolute Data Precision & Universal Macro Sourcing
    ========================================================================== */
 
 const KOUKI_MASTER_MENU = {
@@ -68,6 +68,51 @@ const KOUKI_MASTER_MENU = {
     ]
 };
 
+// 🎯 THE PEGASUS MACRO ENGINE (Global Scope for Logic Mirroring)
+window.getPegasusMacros = function(name, tag) {
+    let baseK = 0, baseP = 0;
+    const n = name.toLowerCase();
+
+    // 1. OUTLIERS & HEAVY CARBS (Δεν παίρνουν έξτρα ρύζι λόγω φύσης)
+    if (n.includes("μουσακάς")) return { kcal: 830, protein: 26 };
+    if (n.includes("παστίτσιο") && !n.includes("λαχανικών")) return { kcal: 750, protein: 35 };
+    if (n.includes("μακαρόνια") || n.includes("λαζάνια") || n.includes("κανελόνια")) return { kcal: 650, protein: 30 };
+    if (n.includes("πίτα") || n.includes("μπατσαριά") || n.includes("μπριάμ")) return { kcal: 450, protein: (n.includes("κοτό") ? 25 : 12) };
+
+    // 2. BASE MEAL MACROS (Καθαρό Βάρος Μερίδας χωρίς συνοδευτικό)
+    if (tag === 'kreas') {
+        if (n.includes("μοσχάρι")) { baseK = 480; baseP = 42; }
+        else if (n.includes("χοιριν") || n.includes("αρνί")) { baseK = 580; baseP = 45; }
+        else { baseK = 500; baseP = 40; } // Κιμάδες, Μπιφτέκια
+    }
+    else if (tag === 'poulika') {
+        if (n.includes("αλά κρεμ") || n.includes("γλυκόξινο")) { baseK = 550; baseP = 40; }
+        else { baseK = 420; baseP = 48; } // Φούρνου, Λεμονάτο
+    }
+    else if (tag === 'psari') {
+        if (n.includes("τηγαν") || n.includes("σκορδαλιά")) { baseK = 550; baseP = 30; }
+        else { baseK = 380; baseP = 38; } // Φούρνου, Ψητά
+    }
+    else if (tag === 'ospro') {
+        baseK = 420; baseP = 18;
+    }
+    else if (tag === 'ladero' || tag === 'veggies') {
+        if (n.includes("γεμιστά με κιμά")) { baseK = 500; baseP = 25; }
+        else { baseK = 420; baseP = 8; }
+    }
+    else if (tag === 'soup') {
+        baseK = 380; baseP = 30;
+    } else {
+        baseK = 450; baseP = 20; // Fallback
+    }
+
+    // 3. THE RICE OFFSET PROTOCOL
+    return { 
+        kcal: baseK + 280, // Προσθήκη Μερίδας Ρυζιού
+        protein: baseP + 6 
+    };
+};
+
 window.PegasusDietAdvisor = {
     analyzeAndRecommend: function() {
         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -97,7 +142,6 @@ window.PegasusDietAdvisor = {
         for (let i = 0; i < days; i++) {
             let d = new Date();
             d.setDate(today.getDate() - i);
-            // 🎯 FIXED PATCH: Δυναμική ημερομηνία χωρίς "2026" για το Ιστορικό
             let dateKey = d.toLocaleDateString('el-GR');
             let log = JSON.parse(localStorage.getItem(`food_log_${dateKey}`)) || [];
             log.forEach(entry => items.push(entry.name));
@@ -117,49 +161,36 @@ window.renderAdvisorUI = function() {
                 <div style="display: flex; flex-direction: column; gap: 8px;">`;
 
     advice.options.forEach(opt => {
+        // Υπολογισμός των Macros σε πραγματικό χρόνο για το UI
+        const macros = window.getPegasusMacros(opt.n, opt.t);
+        
         html += `<div style="display: flex; justify-content: space-between; align-items: center; background: #000; padding: 8px 12px; border-radius: 4px; border: 1px solid #333;">
                     <div style="text-align: left;">
                         <div style="color: #fff; font-weight: bold; font-size: 0.9em;">${opt.n}</div>
-                        <div style="color: #4CAF50; font-size: 0.8em; font-weight: 900;">${opt.p.toFixed(2)}€</div>
+                        <div style="color: #4CAF50; font-size: 0.75em; font-weight: 900; margin-top: 3px;">🔥 ${macros.kcal} kcal | 🍗 ${macros.protein}g</div>
                     </div>
-                    <button onclick="window.addKoukiToLog('${opt.n}', ${opt.p})" style="background: #4CAF50; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8em;">ΠΡΟΣΘΗΚΗ</button>
+                    <button onclick="window.addKoukiToLog('${opt.n}', '${opt.t}')" style="background: #4CAF50; color: #000; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8em;">ΠΡΟΣΘΗΚΗ</button>
                 </div>`;
     });
     html += `</div></div>`;
     content.innerHTML = html;
 };
 
-window.addKoukiToLog = function(name, price) {
+window.addKoukiToLog = function(name, tag) {
     const today = new Date();
-    // 🎯 FIXED PATCH: Δυναμική ημερομηνία χωρίς "2026" για το Σημερινό Log
     const dateKey = (typeof P_M !== "undefined" && P_M.getStrictDate) ? P_M.getStrictDate() : today.toLocaleDateString('el-GR');
     const logKey = `food_log_${dateKey}`;
     let log = JSON.parse(localStorage.getItem(logKey)) || [];
     
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const todayKey = dayNames[today.getDay()];
-    const menuItem = KOUKI_MASTER_MENU[todayKey].find(i => i.n === name);
-    const tag = menuItem ? menuItem.t : "default";
+    // 🎯 Κλήση της Κεντρικής Μηχανής για ΑΠΟΛΥΤΗ ΑΚΡΙΒΕΙΑ
+    const macros = window.getPegasusMacros(name, tag);
 
-    let protein = 25, kcal = 550;
-    if (tag === 'kreas' || tag === 'poulika') { protein = 45; kcal = 680; }
-    else if (tag === 'psari') { protein = 35; kcal = 580; }
-    else if (tag === 'ospro') { protein = 18; kcal = 500; }
-    else if (tag === 'carb') { protein = 22; kcal = 720; }
-    else if (tag === 'soup') { protein = 30; kcal = 400; }
-
-    // 🚨 STRICT DATA OVERRIDE: Κλείδωμα πραγματικών θερμίδων για Μουσακά (Visual Audit)
-    if (name === "Μουσακάς") {
-        kcal = 830;
-        protein = 26;
-    }
-
-    log.push({ name: name + " (Κούκι)", kcal: kcal, protein: protein, time: today.toLocaleTimeString() });
+    log.push({ name: name + " (Κούκι)", kcal: macros.kcal, protein: macros.protein, time: today.toLocaleTimeString() });
     localStorage.setItem(logKey, JSON.stringify(log));
     
     if (window.updateFoodUI) window.updateFoodUI();
     if (window.PegasusCloud) window.PegasusCloud.push(true);
     
     const proposals = document.getElementById("proposalsContent");
-    if (proposals) proposals.innerHTML = `<div style="color:#4CAF50; padding:20px; text-align:center; font-weight:bold;">✅ ΠΡΟΣΤΕΘΗΚΕ ΣΤΟ LOG! (${kcal} kcal)</div>`;
+    if (proposals) proposals.innerHTML = `<div style="color:#4CAF50; padding:20px; text-align:center; font-weight:bold;">✅ ΠΡΟΣΤΕΘΗΚΕ ΣΤΟ LOG! (${macros.kcal} kcal)</div>`;
 };
