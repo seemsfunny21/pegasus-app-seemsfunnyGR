@@ -16,8 +16,13 @@ const MetabolicEngine = {
      * Υπολογισμός MET βάσει φορτίου (Lifted Weight)
      */
     getDynamicMET: function(exerciseName, weight) {
-        if (exerciseName.includes("Ποδηλασία")) return 10.0;
-        if (exerciseName.includes("Προθέρμανση")) return 3.0;
+        const n = exerciseName.toLowerCase();
+        
+        if (exerciseName.includes("Ποδηλασία") || n.includes("ποδηλασία")) return 10.0;
+        if (exerciseName.includes("Προθέρμανση") || n.includes("προθέρμανση")) return 3.0;
+
+        // 🎯 PEGASUS PATCH: Μηδενισμός πλασματικών θερμίδων στις ημέρες αποθεραπείας
+        if (n.includes("stretching") || n.includes("διατάσεις") || n.includes("αποθεραπεία")) return 2.0;
 
         let baseMET = 7.0; 
         if (weight > 0) {
@@ -48,7 +53,8 @@ const MetabolicEngine = {
 
         // FAIL-SAFE: Αν το UI είναι 0, τράβα από το LocalStorage
         if (liftedWeight === 0) {
-            liftedWeight = parseFloat(localStorage.getItem(`weight_ANGELOS_${exerciseName}`)) || 0;
+            // 🎯 FIXED: Ενιαία Ελληνική ονοματολογία ID
+            liftedWeight = parseFloat(localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${exerciseName}`)) || 0;
         }
 
         const activeMET = this.getDynamicMET(exerciseName, liftedWeight);
