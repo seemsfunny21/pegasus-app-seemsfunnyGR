@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS SMART DIET ADVISOR - v2.7 (FUTURE-PROOF PATCH)
+   PEGASUS SMART DIET ADVISOR - v2.8 (FUTURE-PROOF & STRICT CALORIE PATCH)
    Protocol: Nutritional Gap & Category Menu Integration
    ========================================================================== */
 
@@ -148,6 +148,12 @@ window.addKoukiToLog = function(name, price) {
     else if (tag === 'carb') { protein = 22; kcal = 720; }
     else if (tag === 'soup') { protein = 30; kcal = 400; }
 
+    // 🚨 STRICT DATA OVERRIDE: Κλείδωμα πραγματικών θερμίδων για Μουσακά (Visual Audit)
+    if (name === "Μουσακάς") {
+        kcal = 830;
+        protein = 26;
+    }
+
     log.push({ name: name + " (Κούκι)", kcal: kcal, protein: protein, time: today.toLocaleTimeString() });
     localStorage.setItem(logKey, JSON.stringify(log));
     
@@ -155,5 +161,5 @@ window.addKoukiToLog = function(name, price) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
     
     const proposals = document.getElementById("proposalsContent");
-    if (proposals) proposals.innerHTML = `<div style="color:#4CAF50; padding:20px; text-align:center; font-weight:bold;">✅ ΠΡΟΣΤΕΘΗΚΕ ΣΤΟ LOG!</div>`;
+    if (proposals) proposals.innerHTML = `<div style="color:#4CAF50; padding:20px; text-align:center; font-weight:bold;">✅ ΠΡΟΣΤΕΘΗΚΕ ΣΤΟ LOG! (${kcal} kcal)</div>`;
 };
