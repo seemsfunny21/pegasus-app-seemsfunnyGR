@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS EXTENSIONS - ULTIMATE PLANNER & ROLLING AGREEMENT (v13.2)
+   PEGASUS EXTENSIONS - ULTIMATE PLANNER & ROLLING AGREEMENT (v13.3 STRICT)
    Protocol: Maximalist Retention - Logic Mirroring & Variable Persistence
    ========================================================================== */
 
@@ -30,8 +30,8 @@ const KOUKI_MENU = [
     { name: "Σουπιές με σπανάκι", kcal: 420, protein: 38, type: "fish" },
     { name: "Ψάρι φιλέτο (Γλώσσα) με λαχανικά", kcal: 400, protein: 42, type: "fish" },
     { name: "Τσιπούρα ψητή", kcal: 420, protein: 45, type: "fish" },
-    { name: "Παστίτσιο", kcal: 750, protein: 35, type: "cheat" },
-    { name: "Μουσακάς", kcal: 800, protein: 30, type: "cheat" }
+    { name: "Παστίτσιο", kcal: 720, protein: 22, type: "cheat" }, // 🎯 Ευθυγράμμιση με Carb Tag
+    { name: "Μουσακάς", kcal: 830, protein: 26, type: "cheat" } // 🎯 FIXED: Το Χειρουργικό Visual Patch
 ];
 
 // --- 2. UI: WEEKLY PLANNER MODAL ---
