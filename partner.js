@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS PARTNER ENGINE - ULTIMATE SMART LIST (STRICT)
+   PEGASUS PARTNER ENGINE - ULTIMATE SMART LIST (STRICT v16.1 PATCHED)
    ========================================================================== */
 
 let partnerData = {
@@ -61,19 +61,19 @@ function updatePartnerDatalist() {
     // Περνάμε τα ονόματα από 2 φίλτρα για να είμαστε σίγουροι
     let partnerNames = new Set();
 
-    // Φίλτρο Α: Από την ειδική λίστα ονομάτων
+    // Φίλτρο Α: Από την ειδική λίστα ονομάτων (Μπλοκάρει Λατινικά & Ελληνικά)
     let list = JSON.parse(localStorage.getItem("pegasus_partners_list") || "[]");
     list.forEach(n => {
-        if(n !== "ZZ" && n !== "ANGELOS") partnerNames.add(n);
+        if(n !== "ZZ" && n !== "ANGELOS" && n !== "ΑΓΓΕΛΟΣ") partnerNames.add(n);
     });
 
     // Φίλτρο Β: Από υπάρχοντα βάρη (για παλιούς συνεργάτες)
     Object.keys(localStorage).forEach(key => {
-        if (key.startsWith("weight_") && !key.startsWith("weight_ANGELOS_")) {
+        if (key.startsWith("weight_") && !key.startsWith("weight_ANGELOS_") && !key.startsWith("weight_ΑΓΓΕΛΟΣ_")) {
             const parts = key.split('_');
             if (parts.length >= 3) {
                 const foundName = parts[1];
-                if (foundName !== "ANGELOS" && foundName !== "" && foundName !== "ZZ") {
+                if (foundName !== "ANGELOS" && foundName !== "ΑΓΓΕΛΟΣ" && foundName !== "" && foundName !== "ZZ") {
                     partnerNames.add(foundName);
                 }
             }
@@ -90,13 +90,15 @@ function updatePartnerDatalist() {
 
 // 4. ΑΠΟΘΗΚΕΥΣΗ / ΦΟΡΤΩΣΗ ΚΙΛΩΝ
 function savePartnerWeight(exerciseName, weight) {
-    const userKey = partnerData.isUser1Turn ? "ANGELOS" : partnerData.currentPartner;
+    // 🎯 FIXED: Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
+    const userKey = partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : partnerData.currentPartner;
     localStorage.setItem(`weight_${userKey}_${exerciseName.trim()}`, weight);
     if (partnerData.isUser1Turn) localStorage.setItem(`weight_${exerciseName.trim()}`, weight);
 }
 
 function loadPartnerWeight(exerciseName) {
-    const userKey = partnerData.isUser1Turn ? "ANGELOS" : partnerData.currentPartner;
+    // 🎯 FIXED: Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
+    const userKey = partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : partnerData.currentPartner;
     return localStorage.getItem(`weight_${userKey}_${exerciseName.trim()}`) || localStorage.getItem(`weight_${exerciseName.trim()}`) || "";
 }
 
