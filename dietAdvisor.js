@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS SMART DIET ADVISOR - v3.0 (STRICT MACRO ENGINE & RICE OFFSET)
+   PEGASUS SMART DIET ADVISOR - v3.1 (STRICT NATIVE ROUTING)
    Protocol: Absolute Data Precision & Universal Macro Sourcing
    ========================================================================== */
 
@@ -176,20 +176,26 @@ window.renderAdvisorUI = function() {
     content.innerHTML = html;
 };
 
+// 🎯 THE STRICT NATIVE BRIDGE: H addKoukiToLog γίνεται απλώς αναμεταδότης!
 window.addKoukiToLog = function(name, tag) {
-    const today = new Date();
-    const dateKey = (typeof P_M !== "undefined" && P_M.getStrictDate) ? P_M.getStrictDate() : today.toLocaleDateString('el-GR');
-    const logKey = `food_log_${dateKey}`;
-    let log = JSON.parse(localStorage.getItem(logKey)) || [];
-    
-    // 🎯 Κλήση της Κεντρικής Μηχανής για ΑΠΟΛΥΤΗ ΑΚΡΙΒΕΙΑ
     const macros = window.getPegasusMacros(name, tag);
 
-    log.push({ name: name + " (Κούκι)", kcal: macros.kcal, protein: macros.protein, time: today.toLocaleTimeString() });
-    localStorage.setItem(logKey, JSON.stringify(log));
-    
-    if (window.updateFoodUI) window.updateFoodUI();
-    if (window.PegasusCloud) window.PegasusCloud.push(true);
+    if (typeof window.addFoodItem === "function") {
+        window.addFoodItem(name + " (Κούκι)", macros.kcal, macros.protein);
+    } else {
+        // Fallback ΜΟΝΟ αν το food.js δεν υπάρχει (απίθανο)
+        const today = new Date();
+        const dateKey = (typeof window.getStrictDateStr === "function") ? window.getStrictDateStr() : today.toLocaleDateString('el-GR');
+        const logPrefix = (typeof M !== 'undefined' && M.nutrition) ? M.nutrition.log_prefix : "food_log_";
+        const logKey = logPrefix + dateKey;
+        
+        let log = JSON.parse(localStorage.getItem(logKey)) || [];
+        log.push({ name: name + " (Κούκι)", kcal: macros.kcal, protein: macros.protein, time: today.toLocaleTimeString() });
+        localStorage.setItem(logKey, JSON.stringify(log));
+        
+        if (window.updateFoodUI) window.updateFoodUI();
+        if (window.PegasusCloud) window.PegasusCloud.push(true);
+    }
     
     const proposals = document.getElementById("proposalsContent");
     if (proposals) proposals.innerHTML = `<div style="color:#4CAF50; padding:20px; text-align:center; font-weight:bold;">✅ ΠΡΟΣΤΕΘΗΚΕ ΣΤΟ LOG! (${macros.kcal} kcal)</div>`;
