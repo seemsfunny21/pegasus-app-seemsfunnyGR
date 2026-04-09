@@ -29,6 +29,9 @@ const PegasusMetabolic = {
         if (name.includes("ποδηλασία") || name.includes("cycling")) return 10.0;
         if (name.includes("προθέρμανση") || name.includes("warmup")) return 3.0;
         
+        // 🎯 PEGASUS PATCH: Μηδενισμός πλασματικών θερμίδων στις ημέρες αποθεραπείας (Stretching Calorie Leak)
+        if (name.includes("stretching") || name.includes("διατάσεις") || name.includes("αποθεραπεία")) return 2.0;
+
         let baseMET = 7.0; 
         if (liftedWeight > 0) {
             const loadRatio = liftedWeight / this.userWeight;
@@ -45,6 +48,7 @@ const PegasusMetabolic = {
         const weightInput = document.querySelector(".weight-input");
         let liftedWeight = weightInput ? parseFloat(weightInput.value) : 0;
         
+        // 🎯 FIXED: Ενιαία Ελληνική ονοματολογία ID (ήδη σωστό, το διατηρούμε)
         if (liftedWeight > 0) {
             localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${exerciseName.trim()}_records`, liftedWeight);
         } else {
