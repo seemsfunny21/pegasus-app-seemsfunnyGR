@@ -126,7 +126,7 @@ const SUPPLEMENT_CONFIG = {
 };
 
 function initSupplementInventory() {
-    return JSON.parse(localStorage.getItem('pegasus_supplements')) || {
+    return JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {
         protein: 0,
         creatine: 0
     };
@@ -138,7 +138,7 @@ function consumeDailySupplements() {
     inv.protein = Math.max(0, inv.protein - SUPPLEMENT_CONFIG.doses.protein);
     inv.creatine = Math.max(0, inv.creatine - SUPPLEMENT_CONFIG.doses.creatine);
 
-    localStorage.setItem('pegasus_supplements', JSON.stringify(inv));
+    localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
     return checkSupplementAlerts(inv);
 }
 
@@ -182,7 +182,7 @@ function restockSupplement(type, grams) {
     let inv = initSupplementInventory();
     if (inv[type] !== undefined) {
         inv[type] += grams;
-        localStorage.setItem('pegasus_supplements', JSON.stringify(inv));
+        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
     }
     return inv;
 }
