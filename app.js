@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.5 (PRECISION BLOCK 1)
+   PEGASUS WORKOUT ENGINE - v10.6 (PRECISION BLOCK 1 - EMAIL UNLOCKED)
    Protocol: Zero-Conflict Variable Bridge & Manifest Alignment
    Status: BLOCK 1 OPERATIONAL | Full Syntax Restore & Weight Tracker Fix
    ========================================================================== */
@@ -62,7 +62,7 @@ var SPEED = TURBO_MODE ? 10 : 1;
 /* === DYNAMIC PARAMETERS (MANIFEST STRICT) === */
 var workoutPhases = [
     { n: "Προετοιμασία", d: 10 }, 
-    { n: "Άσκηση", d: parseInt(localStorage.getItem(P_M?.user.ex_time || "pegasus_ex_time")) || 45 },      
+    { n: "Άσκηση", d: parseInt(localStorage.getItem(P_M?.user.ex_time || "pegasus_ex_time")) || 45 },     
     { n: "Διάλειμμα", d: parseInt(localStorage.getItem(P_M?.user.rest_time || "pegasus_rest_time")) || 60 }      
 ];
 
@@ -600,7 +600,7 @@ function finishWorkout() {
         }
     }
 
-// 5. REPORTING SEQUENCE (STRICT NETWORK SYNC)
+    // 5. REPORTING SEQUENCE (STRICT NETWORK SYNC)
     setTimeout(() => {
         if (window.PegasusReporting) {
             // Ανάκτηση τελικών θερμίδων
@@ -613,7 +613,7 @@ function finishWorkout() {
             // Καθαρισμός ημερήσιων θερμίδων
             localStorage.setItem(kcalKey, "0.0");
         } else {
-            // Fail-safe: Αν δεν υπάρχει το reporting, κάνε reload κανονικά
+            // Fail-safe: Αν δεν υπάρχει το reporting, κάνε reload κανονικά (ΜΟΝΟ ΤΟΤΕ)
             console.log("PEGASUS OS: Session Terminated. Reloading...");
             window.location.reload(); 
         }
@@ -728,7 +728,7 @@ window.updateTotalWorkoutCount = function() {
 };
 
 /* ==========================================================================
-   PEGASUS OS - CORE BOOT SEQUENCE (v10.2 STABLE)
+   PEGASUS OS - CORE BOOT SEQUENCE (v10.6 STABLE)
    Protocol: Strict Saturday Reset Guard & Monday Persistence
    Features: Date-Locked Weekly Reset, Master UI Delegation
    Status: FINAL VERIFIED | FIX: FULL SYNTAX RESTORE
@@ -775,7 +775,7 @@ window.onload = () => {
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
         "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
-"btnProposalsUI": () => {
+        "btnProposalsUI": () => {
             if (window.PegasusDietAdvisor && typeof window.renderAdvisorUI === 'function') {
                 window.renderAdvisorUI();
             } else {
@@ -788,7 +788,7 @@ window.onload = () => {
         "btnCardio": { panel: "cardioPanel", init: () => window.PegasusCardio.open() },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
         "btnManualEmail": () => {
-            if (window.PegasusReporting) window.ReportingEngine.sendReport(true);
+            if (window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true);
             else alert("Reporting Engine Offline");
         },
         "btnSaveSettings": () => { 
@@ -807,7 +807,7 @@ window.onload = () => {
             // Μικρή καθυστέρηση για να προλάβει το Save πριν το Reload
             setTimeout(() => { location.reload(); }, 300);
         }
-    }; // <-- ΕΔΩ ΗΤΑΝ ΤΟ ΛΑΘΟΣ (Η αγκύλη που έλειπε)
+    };
 
     // --- 4. EVENT DELEGATION ---
     Object.keys(window.masterUI).forEach(btnId => {
@@ -891,4 +891,4 @@ window.addEventListener('mousedown', (e) => {
         window.PegasusCloud.push(true); 
     }
 });
-// ΤΕΛΟΣ ΑΡΧΕΙΟΥ PEGASUS v10.5
+// ΤΕΛΟΣ ΑΡΧΕΙΟΥ PEGASUS v10.6
