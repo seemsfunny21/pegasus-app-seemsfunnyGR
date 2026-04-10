@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.16 (STRICT DATA ISOLATION - ZERO BLEED)
-   Protocol: State-Driven UI, Strict Session Isolation & Weekly Aggregation
+   PEGASUS WORKOUT ENGINE - v10.18 (DYNAMIC VOLUME-BASED METABOLICS)
+   Protocol: Strict Data Isolation & Live Weight-Adjusted Burn Rate
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
@@ -51,6 +51,9 @@ var timer = null;
 var totalSeconds = 0;
 var remainingSeconds = 0;
 
+// 🎯 ΑΠΟΜΟΝΩΜΕΝΟΣ ΜΕΤΡΗΤΗΣ ΘΕΡΜΙΔΩΝ ΣΥΝΕΔΡΙΑΣ
+var sessionActiveKcal = 0;
+
 var muted = localStorage.getItem(P_M?.system.mute || "pegasus_mute_state") === "true";
 var TURBO_MODE = localStorage.getItem(P_M?.system.turbo || "pegasus_turbo_state") === "true";
 var SPEED = TURBO_MODE ? 10 : 1;
@@ -70,20 +73,17 @@ window.updateKcalUI = function() {
     
     if (!kcalDisplay) return;
 
-    if (running) {
-        // 🎯 STRICT ISOLATION: Καμία σχέση με το φαγητό. Μόνο session_kcal.
-        let sessionKcal = localStorage.getItem("pegasus_session_kcal") || "0";
-        if (window.PegasusMetabolic && typeof window.PegasusMetabolic.getSessionKcal === 'function') {
-            sessionKcal = window.PegasusMetabolic.getSessionKcal();
-        }
-        
-        kcalDisplay.textContent = parseFloat(sessionKcal).toFixed(1);
+    // STATE CHECK: Είναι σε εξέλιξη η προπόνηση;
+    const isWorkoutActive = running || currentIdx > 0 || phase > 0;
+
+    if (isWorkoutActive) {
+        // ACTIVE WORKOUT: Δείξε τον LIVE εσωτερικό μετρητή (Κίτρινο)
+        kcalDisplay.textContent = parseFloat(sessionActiveKcal).toFixed(1);
         kcalDisplay.style.color = "#FFC107"; 
         if (kcalLabel) kcalLabel.textContent = "KCAL ΠΡΟΠΟΝΗΣΗΣ";
     } else {
         // IDLE: Δείξε τις συνολικές εβδομαδιαίες θερμίδες (Πράσινο)
-        let weeklyKcal = localStorage.getItem("pegasus_weekly_kcal") || "0";
-        
+        let weeklyKcal = localStorage.getItem("pegasus_weekly_kcal") || "0.0";
         kcalDisplay.textContent = parseFloat(weeklyKcal).toFixed(1);
         kcalDisplay.style.color = "#4CAF50"; 
         if (kcalLabel) kcalLabel.textContent = "KCAL ΕΒΔΟΜΑΔΑΣ";
@@ -103,7 +103,6 @@ document.addEventListener('click', function() {
             console.log("PEGASUS OS: Audio Unlocked & Ready.");
 
             if (window.PegasusCloud && typeof window.PegasusCloud.pull === "function") {
-                console.log("PEGASUS CLOUD: User interaction detected. Syncing...");
                 window.PegasusCloud.pull();
             }
         }).catch(err => console.warn("PEGASUS OS: Audio unlock pending user action", err));
@@ -155,18 +154,20 @@ function selectDay(btn, day) {
         btn.style.setProperty('background-color', '#4CAF50', 'important');
     }
 
+    // 🎯 HARD RESET
     clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
+    sessionActiveKcal = 0; 
+    localStorage.setItem("pegasus_session_kcal", "0.0");
+    
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    // Επαναφορά του Kcal UI στο Idle (Σύνολο Εβδομάδας)
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     let rawBaseData = [];
     
     if ((day === "Σάββατο" || day === "Κυριακή") && isRainy) {
-        console.log(`[WEATHER TRIGGER]: Rain detected on ${day}. Switching to Weight Mode.`);
         rawBaseData = [
             { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
             { name: "Low Seated Row", sets: 5, muscleGroup: "Πλάτη" },
@@ -240,12 +241,10 @@ function startPause() {
     if (exercises.length === 0) return;
     const vid = document.getElementById("video");
     
-    // 🎯 ZERO BLEED PROTOCOL: Force reset before any new session starts
+    // ZERO BLEED
     if (!running && currentIdx === 0 && phase === 0) {
+        sessionActiveKcal = 0;
         localStorage.setItem("pegasus_session_kcal", "0.0");
-        if (window.PegasusMetabolic && typeof window.PegasusMetabolic.resetSession === 'function') {
-            window.PegasusMetabolic.resetSession();
-        }
     }
 
     if (vid && vid.src.includes("warmup")) { 
@@ -267,7 +266,6 @@ function startPause() {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
     
-    // Ενημέρωση του UI μόλις πατηθεί το κουμπί
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     if (running) {
@@ -290,6 +288,27 @@ function runPhase() {
     const e = exercises[currentIdx];
     if (!e) return;
     const exName = e.querySelector(".weight-input").getAttribute("data-name");
+    
+    // 🎯 ΥΠΟΛΟΓΙΣΜΟΣ ΕΝΤΑΣΗΣ ΒΑΣΕΙ ΒΑΡΟΥΣ (Intensity Multiplier)
+    let liftedWeight = parseFloat(e.querySelector(".weight-input").value) || 0;
+    
+    // Βασικό MET (Μεταβολικό Ισοδύναμο) για Άρση Βαρών είναι ~3.5
+    // Το προσαρμόζουμε βάσει των κιλών που σηκώνεις (Volume Load)
+    let baseMET = 3.5; 
+    let intensityMultiplier = 1.0;
+
+    if (exName.toLowerCase().includes("cycling") || exName.toLowerCase().includes("ποδηλασία")) {
+        // Η ποδηλασία καίει σταθερά ~8.0 METs αν είναι έντονη
+        baseMET = 8.0; 
+    } else if (liftedWeight > 0) {
+        // Αν σηκώνεις βάρη, αυξάνουμε την καύση. 
+        // Λογική: Κάθε 10 κιλά προσθέτουν 10% παραπάνω έργο/καύση
+        intensityMultiplier = 1 + (liftedWeight / 100); 
+    }
+
+    // Τύπος: Kcal/min = (MET * Βάρος Χρήστη * 3.5) / 200
+    let kcalPerMin = (baseMET * intensityMultiplier * userWeight * 3.5) / 200;
+    let kcalPerSecond = kcalPerMin / 60;
 
     exercises.forEach(ex => { 
         ex.style.borderColor = "#222"; 
@@ -316,13 +335,17 @@ function runPhase() {
             updateTotalBar(); 
         }
 
-        if (phase === 1 && window.PegasusMetabolic) {
-            window.PegasusMetabolic.updateTracking(1, exName);
+        // 🎯 LIVE METABOLIC TICKER (Μόνο κατά τη διάρκεια της Άσκησης - Φάση 1)
+        if (phase === 1) {
+            sessionActiveKcal += kcalPerSecond;
+        } else if (phase === 2) {
+            // Στο Διάλειμμα καίμε λιγότερο (Ενεργητική Ανάρρωση ~2.0 METs)
+            let restKcalPerSec = ((2.0 * userWeight * 3.5) / 200) / 60;
+            sessionActiveKcal += restKcalPerSec;
         }
 
         if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
         
-        // 🎯 ΔΥΝΑΜΙΚΗ ΑΠΕΙΚΟΝΙΣΗ ΘΕΡΜΙΔΩΝ (Καθαρός κώδικας χωρίς παρεμβολές)
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
         if (t <= 0) {
@@ -519,7 +542,7 @@ window.toggleSkipExercise = function(idx) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
-/* ===== 8. FINISH & REPORTING (WEEKLY AGGREGATION FIX) ===== */
+/* ===== 8. FINISH & REPORTING ===== */
 function finishWorkout() {
     if (!running && !timer && phase === 0) return; 
     
@@ -545,30 +568,22 @@ function finishWorkout() {
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
 
     if (window.PegasusCloud) {
-        try {
-            window.PegasusCloud.push(true);
-        } catch(e) {}
+        try { window.PegasusCloud.push(true); } catch(e) {}
     }
 
-    // REPORTING & WEEKLY ACCUMULATION
+    // 🎯 REPORTING & WEEKLY ACCUMULATION
     setTimeout(() => {
         if (window.PegasusReporting) {
-            // 1. Παίρνουμε τις θερμίδες της τρέχουσας συνεδρίας
-            let sessionKcalStr = localStorage.getItem("pegasus_session_kcal") || "0";
-            if (window.PegasusMetabolic && typeof window.PegasusMetabolic.getSessionKcal === 'function') {
-                sessionKcalStr = window.PegasusMetabolic.getSessionKcal();
-            }
-            let sessionKcal = parseFloat(sessionKcalStr) || 0;
+            let sessionKcal = sessionActiveKcal;
 
-            // 2. Προσθήκη στο Εβδομαδιαίο Σύνολο
             let currentWeekly = parseFloat(localStorage.getItem("pegasus_weekly_kcal")) || 0;
             let newWeekly = currentWeekly + sessionKcal;
             localStorage.setItem("pegasus_weekly_kcal", newWeekly.toFixed(1));
 
-            // 3. Αποστολή Αναφοράς
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
             
-            // 4. Καθαρισμός ΜΟΝΟ των θερμίδων προπόνησης. Προστατεύουμε τη διατροφή!
+            // Μηδενισμός του εσωτερικού μετρητή
+            sessionActiveKcal = 0;
             localStorage.setItem("pegasus_session_kcal", "0.0");
         } else {
             console.log("PEGASUS OS: Session Terminated. Reloading...");
@@ -628,9 +643,7 @@ function openExercisePreview() {
     });
     
     if (typeof window.forcePegasusRender === "function") {
-        setTimeout(() => {
-            window.forcePegasusRender();
-        }, 50);
+        setTimeout(() => { window.forcePegasusRender(); }, 50);
     }
 }
 
@@ -673,7 +686,7 @@ window.updateTotalWorkoutCount = function() {
     if (display) display.textContent = `Προπονήσεις: ${count}`;
 };
 
-/* ===== 11. BOOT SEQUENCE (SATURDAY RESET) ===== */
+/* ===== 11. BOOT SEQUENCE ===== */
 window.onload = () => {
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayObj = new Date();
@@ -687,10 +700,7 @@ window.onload = () => {
             if (lastReset !== todayDateStr) {
                 const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
                 localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
-                
-                // 🎯 ΜΗΔΕΝΙΣΜΟΣ ΕΒΔΟΜΑΔΙΑΙΩΝ ΘΕΡΜΙΔΩΝ ΤΟ ΣΑΒΒΑΤΟ
                 localStorage.setItem('pegasus_weekly_kcal', "0.0");
-                
                 localStorage.setItem('pegasus_last_reset', todayDateStr);
                 if (window.PegasusCloud) window.PegasusCloud.push(true);
             }
@@ -703,8 +713,6 @@ window.onload = () => {
     createNavbar();
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     if (window.updateKoukiBalance) window.updateKoukiBalance();
-    
-    // Αρχική Ενημέρωση του UI των Θερμίδων
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     window.masterUI = {
