@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v10.8 (STRICT ASSET ALIGNMENT & OVERLOADING)
-   Protocol: Absolute Visual Mapping - No Phantom Exercises
+   PEGASUS DATA ENGINE - v10.9 (STRICT SERVER ALIGNMENT)
+   Protocol: Absolute Visual Mapping - Verified vs GitHub Assets
    ========================================================================== */
 
 window.program = {
@@ -40,9 +40,9 @@ window.exercisesDB = [
     { name: "Lat Pulldowns (Wide Grip)", muscleGroup: "Πλάτη" },
     { name: "Lat Pulldowns (Medium Grip)", muscleGroup: "Πλάτη" },
     { name: "Lat Pulldowns (Behind Neck)", muscleGroup: "Πλάτη" },
+    { name: "Close Grip Lat Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Seated Rows", muscleGroup: "Πλάτη" },
     { name: "Reverse Seated Rows", muscleGroup: "Πλάτη" },
-    { name: "Reverse Grip Cable Row", muscleGroup: "Πλάτη" },
     { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
     { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
     { name: "EMS Training", muscleGroup: "Πλάτη" },
@@ -62,7 +62,7 @@ window.exercisesDB = [
     { name: "Warmup", muscleGroup: "None" }
 ];
 
-// ASSET MAPPING (ASSET OVERLOADING ACTIVE)
+// ASSET MAPPING (VERIFIED AGAINST GITHUB REPO)
 window.videoMap = {
     "Chest Press": "chestpress",
     "Chest Flys": "chestflys",
@@ -73,9 +73,9 @@ window.videoMap = {
     "Lat Pulldowns (Medium Grip)": "latpulldowns",
     "Lat Pulldowns (Behind Neck)": "latpulldowns",
     
+    "Close Grip Lat Pulldowns": "latpulldownsclose",
     "Seated Rows": "lowrowsseated",
     "Reverse Seated Rows": "reverseseatedrows",
-    "Reverse Grip Cable Row": "reversegripcablerow",
     "Bent Over Rows": "bentoverrows",
     "Straight Arm Pulldowns": "straightarmpulldowns",
     "EMS Training": "ems",
@@ -95,4 +95,4 @@ window.videoMap = {
     "Warmup": "warmup"
 };
 
-console.log("🚀 PEGASUS DATA ENGINE: v10.8 Aligned & Full Schedule Active. Pulldown Trifecta Integrated.");
+console.log("🚀 PEGASUS DATA ENGINE: v10.9 Verified Server Assets. Pulldown Trifecta Active.");
