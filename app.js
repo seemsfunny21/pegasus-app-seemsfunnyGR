@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.15 (STRICT DYNAMIC UI & WEEKLY KCAL)
-   Protocol: State-Driven UI, Session Isolation & Weekly Aggregation
+   PEGASUS WORKOUT ENGINE - v10.16 (STRICT DATA ISOLATION - ZERO BLEED)
+   Protocol: State-Driven UI, Strict Session Isolation & Weekly Aggregation
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
@@ -71,8 +71,8 @@ window.updateKcalUI = function() {
     if (!kcalDisplay) return;
 
     if (running) {
-        // ACTIVE WORKOUT: Δείξε ΜΟΝΟ τη συνεδρία (Κίτρινο)
-        let sessionKcal = localStorage.getItem("pegasus_session_kcal") || localStorage.getItem("pegasus_today_kcal") || "0";
+        // 🎯 STRICT ISOLATION: Καμία σχέση με το φαγητό. Μόνο session_kcal.
+        let sessionKcal = localStorage.getItem("pegasus_session_kcal") || "0";
         if (window.PegasusMetabolic && typeof window.PegasusMetabolic.getSessionKcal === 'function') {
             sessionKcal = window.PegasusMetabolic.getSessionKcal();
         }
@@ -240,7 +240,9 @@ function startPause() {
     if (exercises.length === 0) return;
     const vid = document.getElementById("video");
     
+    // 🎯 ZERO BLEED PROTOCOL: Force reset before any new session starts
     if (!running && currentIdx === 0 && phase === 0) {
+        localStorage.setItem("pegasus_session_kcal", "0.0");
         if (window.PegasusMetabolic && typeof window.PegasusMetabolic.resetSession === 'function') {
             window.PegasusMetabolic.resetSession();
         }
@@ -320,7 +322,7 @@ function runPhase() {
 
         if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
         
-        // ΔΥΝΑΜΙΚΗ ΑΠΕΙΚΟΝΙΣΗ ΘΕΡΜΙΔΩΝ (Αντί για hardcode)
+        // 🎯 ΔΥΝΑΜΙΚΗ ΑΠΕΙΚΟΝΙΣΗ ΘΕΡΜΙΔΩΝ (Καθαρός κώδικας χωρίς παρεμβολές)
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
         if (t <= 0) {
@@ -552,7 +554,7 @@ function finishWorkout() {
     setTimeout(() => {
         if (window.PegasusReporting) {
             // 1. Παίρνουμε τις θερμίδες της τρέχουσας συνεδρίας
-            let sessionKcalStr = localStorage.getItem("pegasus_session_kcal") || localStorage.getItem("pegasus_today_kcal") || "0";
+            let sessionKcalStr = localStorage.getItem("pegasus_session_kcal") || "0";
             if (window.PegasusMetabolic && typeof window.PegasusMetabolic.getSessionKcal === 'function') {
                 sessionKcalStr = window.PegasusMetabolic.getSessionKcal();
             }
@@ -568,12 +570,6 @@ function finishWorkout() {
             
             // 4. Καθαρισμός ΜΟΝΟ των θερμίδων προπόνησης. Προστατεύουμε τη διατροφή!
             localStorage.setItem("pegasus_session_kcal", "0.0");
-            
-            // Αν το παλιό σύστημα έγραφε στο today_kcal, το μηδενίζουμε ΜΟΝΟ αν δεν ταυτίζεται με το κλειδί διατροφής
-            const foodKey = P_M?.nutrition?.today_kcal || "pegasus_nutrition_today_kcal";
-            if (foodKey !== "pegasus_today_kcal") {
-                localStorage.setItem("pegasus_today_kcal", "0.0");
-            }
         } else {
             console.log("PEGASUS OS: Session Terminated. Reloading...");
             window.location.reload(); 
