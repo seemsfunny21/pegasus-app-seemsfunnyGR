@@ -1,7 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.6 (PRECISION BLOCK 1 - EMAIL UNLOCKED)
-   Protocol: Zero-Conflict Variable Bridge & Manifest Alignment
-   Status: BLOCK 1 OPERATIONAL | Full Syntax Restore & Weight Tracker Fix
+   PEGASUS WORKOUT ENGINE - v10.14 (STRICT ARCHITECTURE - ZERO HARDCODING)
+   Protocol: Single Source of Truth (data.js) & Manifest Alignment
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
@@ -415,7 +414,7 @@ function saveWeight(name, val) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 }
 
-/* ===== 7. VIDEO & UI UTILS (STRICT ASSET ALIGNMENT v10.13) ===== */
+/* ===== 7. VIDEO & UI UTILS (STRICT ASSET ALIGNMENT v10.14) ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
     const label = document.getElementById("phaseTimer");
@@ -607,7 +606,7 @@ function finishWorkout() {
     }, 4000);
 }
 
-/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.8) ===== */
+/* ===== 9. PREVIEW ENGINE (STRICT ASSET ALIGNMENT v10.14) ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -640,20 +639,16 @@ function openExercisePreview() {
     content.innerHTML = ''; 
     if (muscleContainer) muscleContainer.innerHTML = ''; 
 
-    const nameMapping = {
-        "Seated Chest Press": "chestpress", "Pec Deck Flys": "chestflys", "Pushups": "pushups",
-        "Lat Pulldown": "latpulldowns", "Seated Row": "lowrowsseated", "Bent Over Row": "bentoverrows",
-        "One Arm Pulldown": "onearmpulldowns", "EMS Training": "ems", "Upright Row": "uprightrows",
-        "Lateral Raises": "uprightrows", "Shoulder Shrugs": "uprightrows", "Standing Bicep Curl": "bicepcurls",
-        "Triceps Pushdown": "triceppulldowns", "Preacher Curl": "preacherbicepcurls", "Ab Crunch Cable": "abcrunches",
-        "Plank": "plank", "Reverse Crunch": "reversecrunch", "Leg Raise Hip Lift": "legraisehiplift",
-        "Leg Extension": "legextensions", "Standing Leg Curl": "glutekickbacks", "Glute Kickbacks": "glutekickbacks",
-        "Cycling": "cycling", "Stretching": "stretching", "Warmup": "warmup"
-    };
-
+    // --- 🎯 THE MAGIC FIX: DICTIONARY MAPPING FOR IMAGES ---
     dayExercises.filter(ex => (ex.adjustedSets || ex.sets) > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
-        let imgBase = nameMapping[cleanName] || cleanName.replace(/\s+/g, '').toLowerCase();
+        
+        // Ζητάμε το σωστό όνομα αρχείου από το data.js (videoMap). Αν δεν υπάρχει, κάνουμε fallback.
+        let imgBase = window.videoMap ? window.videoMap[cleanName] : null;
+        if (!imgBase) {
+            imgBase = cleanName.replace(/\s+/g, '').toLowerCase();
+        }
+
         const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
 
         content.innerHTML += `
