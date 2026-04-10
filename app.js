@@ -415,7 +415,7 @@ function saveWeight(name, val) {
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 }
 
-/* ===== 7. VIDEO & UI UTILS (STRICT RECOVERY ALIGNMENT v10.8) ===== */
+/* ===== 7. VIDEO & UI UTILS (STRICT ASSET ALIGNMENT v10.13) ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
     const label = document.getElementById("phaseTimer");
@@ -448,33 +448,20 @@ function showVideo(i) {
     const weightInput = exercises[i].querySelector(".weight-input");
     if (!weightInput) return;
 
-    const name = weightInput.getAttribute("data-name") || "";
+    // Παίρνουμε το όνομα και καθαρίζουμε τυχόν κενά
+    let name = weightInput.getAttribute("data-name") || "";
+    name = name.trim();
     
-    // --- 🎯 SURGICAL ASSET MAPPING ---
-    const videoMap = {
-        "Seated Chest Press": "chestpress",
-        "Pec Deck Flys": "chestflys",
-        "Lat Pulldown": "latpulldowns",
-        "Seated Row": "lowrowsseated",
-        "Bent Over Row": "bentoverrows",
-        "One Arm Pulldown": "onearmpulldowns",
-        "Upright Row": "uprightrows",
-        "Lateral Raises": "uprightrows",
-        "Shoulder Shrugs": "uprightrows",
-        "Standing Bicep Curl": "bicepcurls",
-        "Triceps Pushdown": "triceppulldowns",
-        "Preacher Curl": "preacherbicepcurls",
-        "Ab Crunch Cable": "abcrunches",
-        "Leg Extension": "legextensions",
-        "Glute Kickbacks": "glutekickbacks",
-        "Standing Leg Curl": "glutekickbacks",
-        "Cycling": "cycling",
-        "Ποδηλασία": "cycling", 
-        "EMS Training": "ems",
-        "Stretching": "stretching"
-    };
+    // --- 🎯 THE MAGIC FIX: DYNAMIC DICTIONARY LOOKUP (from data.js) ---
+    // Διαβάζει απευθείας από τον κεντρικό χάρτη window.videoMap
+    let mappedVal = window.videoMap ? window.videoMap[name] : null;
+    
+    // Fallback αν για κάποιο λόγο δεν βρεθεί (δεν θα συμβεί χάρη στο data.js v10.12)
+    if (!mappedVal) {
+        console.warn(`[PEGASUS LOGIC]: "${name}" not found in window.videoMap. Using fallback.`);
+        mappedVal = name.replace(/\s+/g, '').toLowerCase();
+    }
 
-    let mappedVal = videoMap[name] || name.replace(/\s+/g, '').toLowerCase();
     const newSrc = `videos/${mappedVal}.mp4`;
     
     // ⚡ RESET & LOAD PROTOCOL
