@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v10.9 (STRICT SERVER ALIGNMENT)
-   Protocol: Absolute Visual Mapping - Verified vs GitHub Assets
+   PEGASUS DATA ENGINE - v10.10 (STRICT ASSET ALIGNMENT & CLEAN NAMING)
+   Protocol: Absolute Visual Mapping - Clean Strings
    ========================================================================== */
 
 window.program = {
@@ -11,7 +11,7 @@ window.program = {
         { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "70" },
         { name: "Chest Flys", sets: 4, muscleGroup: "Στήθος", weight: "45" },
         { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "55" },
-        { name: "Lat Pulldowns (Wide Grip)", sets: 4, muscleGroup: "Πλάτη", weight: "60" },
+        { name: "Wide Pulldowns", sets: 4, muscleGroup: "Πλάτη", weight: "60" },
         { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι", weight: "35" },
         { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια", weight: "15" },
         { name: "Tricep Pulldowns", sets: 3, muscleGroup: "Χέρια", weight: "20" },
@@ -25,7 +25,7 @@ window.program = {
     "Πέμπτη": [{ name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" }],
     "Παρασκευή": [
         { name: "Pushups", sets: 3, muscleGroup: "Στήθος", weight: "0" },
-        { name: "Lat Pulldowns (Medium Grip)", sets: 4, muscleGroup: "Πλάτη", weight: "60" },
+        { name: "Medium Pulldowns", sets: 4, muscleGroup: "Πλάτη", weight: "60" },
         { name: "Bent Over Rows", sets: 4, muscleGroup: "Πλάτη", weight: "40" },
         { name: "Straight Arm Pulldowns", sets: 4, muscleGroup: "Πλάτη", weight: "20" },
         { name: "Leg Extensions", sets: 4, muscleGroup: "Πόδια", weight: "50" }
@@ -37,9 +37,9 @@ window.exercisesDB = [
     { name: "Chest Press", muscleGroup: "Στήθος" },
     { name: "Chest Flys", muscleGroup: "Στήθος" },
     { name: "Pushups", muscleGroup: "Στήθος" },
-    { name: "Lat Pulldowns (Wide Grip)", muscleGroup: "Πλάτη" },
-    { name: "Lat Pulldowns (Medium Grip)", muscleGroup: "Πλάτη" },
-    { name: "Lat Pulldowns (Behind Neck)", muscleGroup: "Πλάτη" },
+    { name: "Wide Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "Medium Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "Neck Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Close Grip Lat Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Seated Rows", muscleGroup: "Πλάτη" },
     { name: "Reverse Seated Rows", muscleGroup: "Πλάτη" },
@@ -62,16 +62,16 @@ window.exercisesDB = [
     { name: "Warmup", muscleGroup: "None" }
 ];
 
-// ASSET MAPPING (VERIFIED AGAINST GITHUB REPO)
+// ASSET MAPPING (VERIFIED AGAINST GITHUB REPO & CLEANED)
 window.videoMap = {
     "Chest Press": "chestpress",
     "Chest Flys": "chestflys",
     "Pushups": "pushups",
     
-    // 🎯 THE PULLDOWN TRIFECTA (Mapped to the same video)
-    "Lat Pulldowns (Wide Grip)": "latpulldowns",
-    "Lat Pulldowns (Medium Grip)": "latpulldowns",
-    "Lat Pulldowns (Behind Neck)": "latpulldowns",
+    // 🎯 THE PULLDOWN TRIFECTA (Clean Names, Same Video)
+    "Wide Pulldowns": "latpulldowns",
+    "Medium Pulldowns": "latpulldowns",
+    "Neck Pulldowns": "latpulldowns",
     
     "Close Grip Lat Pulldowns": "latpulldownsclose",
     "Seated Rows": "lowrowsseated",
@@ -95,4 +95,4 @@ window.videoMap = {
     "Warmup": "warmup"
 };
 
-console.log("🚀 PEGASUS DATA ENGINE: v10.9 Verified Server Assets. Pulldown Trifecta Active.");
+console.log("🚀 PEGASUS DATA ENGINE: v10.10 Verified Server Assets. Clean Pulldown Trifecta Active.");
