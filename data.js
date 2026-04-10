@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v10.11 (STRICT ASSET ALIGNMENT & PERFECT MATCHING)
-   Protocol: Absolute Visual Mapping - Clean Strings
+   PEGASUS DATA ENGINE - v10.12 (STRICT ASSET ALIGNMENT & PERFECT MATCHING)
+   Protocol: Absolute Visual Mapping - Clean Strings (Final Polish)
    ========================================================================== */
 
 window.program = {
@@ -40,7 +40,7 @@ window.exercisesDB = [
     { name: "Wide Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Medium Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Neck Pulldowns", muscleGroup: "Πλάτη" },
-    { name: "Close Grip Lat Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "Close Grip Pulldowns", muscleGroup: "Πλάτη" }, // 🎯 Τελική διόρθωση ονόματος
     { name: "Seated Rows", muscleGroup: "Πλάτη" },
     { name: "Reverse Seated Rows", muscleGroup: "Πλάτη" },
     { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
@@ -48,7 +48,7 @@ window.exercisesDB = [
     { name: "EMS Training", muscleGroup: "Πλάτη" },
     { name: "Upright Rows", muscleGroup: "Ώμοι" },
     { name: "Bicep Curls", muscleGroup: "Χέρια" },
-    { name: "Preacher Curls", muscleGroup: "Χέρια" }, // Διορθώθηκε σε Curls
+    { name: "Preacher Curls", muscleGroup: "Χέρια" },
     { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
     { name: "Ab Crunches", muscleGroup: "Κορμός" },
     { name: "Sit Ups", muscleGroup: "Κορμός" },
@@ -68,12 +68,12 @@ window.videoMap = {
     "Chest Flys": "chestflys",
     "Pushups": "pushups",
     
-    // 🎯 THE PULLDOWN TRIFECTA (Matched EXACTLY with program names)
+    // 🎯 THE PULLDOWN TRIFECTA
     "Wide Pulldowns": "latpulldowns",
     "Medium Pulldowns": "latpulldowns",
     "Neck Pulldowns": "latpulldowns",
     
-    "Close Grip Lat Pulldowns": "latpulldownsclose",
+    "Close Grip Pulldowns": "latpulldownsclose", // 🎯 Τελική διόρθωση αντιστοίχισης
     "Seated Rows": "lowrowsseated",
     "Reverse Seated Rows": "reverseseatedrows",
     "Bent Over Rows": "bentoverrows",
@@ -81,7 +81,7 @@ window.videoMap = {
     "EMS Training": "ems",
     "Upright Rows": "uprightrows",
     "Bicep Curls": "bicepcurls",
-    "Preacher Curls": "preacherbicepcurls", // Διορθώθηκε σε Curls
+    "Preacher Curls": "preacherbicepcurls", 
     "Tricep Pulldowns": "triceppulldowns",
     "Ab Crunches": "abcrunches",
     "Sit Ups": "situps",
@@ -95,4 +95,4 @@ window.videoMap = {
     "Warmup": "warmup"
 };
 
-console.log("🚀 PEGASUS DATA ENGINE: v10.11 Perfect Dictionary Sync. No more 404s.");
+console.log("🚀 PEGASUS DATA ENGINE: v10.12 Perfect Dictionary Sync. Total Data Consistency Achieved.");
