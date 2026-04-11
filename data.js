@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DATA ENGINE - v10.15 (STRICT ASSET ALIGNMENT & DYNAMIC SPLITS)
-   Protocol: Absolute Visual Mapping + Pegasus Split Engine
+   PEGASUS DATA ENGINE - v10.20 (DYNAMIC TIMER & SPLIT INTEGRATION)
+   Protocol: Absolute Visual Mapping + Pegasus Split Engine + Time Logic
    ========================================================================== */
 
 window.program = {
@@ -62,17 +62,14 @@ window.exercisesDB = [
     { name: "Warmup", muscleGroup: "None" }
 ];
 
-// ASSET MAPPING (VERIFIED & PERFECTLY MATCHED)
+// ASSET MAPPING
 window.videoMap = {
     "Chest Press": "chestpress",
     "Chest Flys": "chestflys",
     "Pushups": "pushups",
-    
-    // 🎯 THE PULLDOWN TRIFECTA
     "Wide Pulldowns": "latpulldowns",
     "Medium Pulldowns": "latpulldowns",
     "Neck Pulldowns": "latpulldowns",
-    
     "Close Grip Pulldowns": "latpulldownsclose", 
     "Seated Rows": "lowrowsseated",
     "Reverse Seated Rows": "reverseseatedrows",
@@ -95,18 +92,18 @@ window.videoMap = {
     "Warmup": "warmup"
 };
 
-console.log("🚀 PEGASUS DATA ENGINE: v10.15 Perfect Dictionary Sync. Total Data Consistency Achieved.");
+console.log("🚀 PEGASUS DATA ENGINE: v10.20 Active.");
 
 /* ==========================================================================
-   PEGASUS SPLIT ENGINE (DYNAMIC PROGRAM ROUTING)
+   PEGASUS SPLIT & TIMER ENGINE
    ========================================================================== */
 window.setPegasusPlan = function(planCode) {
     localStorage.setItem('pegasus_active_plan', planCode);
-    alert("ΑΛΛΑΓΗ ΣΥΣΤΗΜΑΤΟΣ: " + planCode + "\nΤο PEGASUS OS θα κάνει επανεκκίνηση για να φορτώσει τις νέες ασκήσεις.");
+    alert("ΣΥΣΤΗΜΑ: ΕΝΑΡΞΗ ΠΡΩΤΟΚΟΛΛΟΥ " + planCode);
     window.location.reload();
 };
 
-// UI Binding για το Modal του Επιλογέα
+// UI Binding
 document.addEventListener("DOMContentLoaded", function() {
     const btnPlan = document.getElementById('btnPlanSelector');
     if (btnPlan) {
@@ -125,16 +122,18 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// Κινητήρας Αντικατάστασης (Εκτελείται ακαριαία κατά τη φόρτωση του data.js)
 (function applyPegasusSplit() {
     const activePlan = localStorage.getItem('pegasus_active_plan') || 'CLASSIC';
 
-    // Αν είναι το CLASSIC, αφήνει το αρχικό window.program ανέπαφο
-    if (activePlan === 'CLASSIC') return;
+    // ⏱️ DEFAULT TIMER CONFIG
+    window.pegasusTimerConfig = { prep: 10, work: 45, rest: 60 };
 
-    // Η Βάση Δεδομένων των Νέων Προγραμμάτων (100% Συμβατή με το videoMap σου)
     const splits = {
+        'CLASSIC': {
+            timers: { prep: 10, work: 45, rest: 60 }
+        },
         'PPL': {
+            timers: { prep: 10, work: 45, rest: 90 }, // Περισσότερο Rest για βαριά Compound
             "Τρίτη": [ 
                 { name: "Chest Press", sets: 4, muscleGroup: "Στήθος", weight: "70" },
                 { name: "Chest Flys", sets: 4, muscleGroup: "Στήθος", weight: "45" },
@@ -157,6 +156,7 @@ document.addEventListener("DOMContentLoaded", function() {
             ]
         },
         'UPPER_LOWER': {
+            timers: { prep: 10, work: 40, rest: 60 }, // Ταχύτερος ρυθμός
             "Τρίτη": [ 
                 { name: "Chest Press", sets: 4, muscleGroup: "Στήθος", weight: "70" },
                 { name: "Wide Pulldowns", sets: 4, muscleGroup: "Πλάτη", weight: "60" },
@@ -180,6 +180,7 @@ document.addEventListener("DOMContentLoaded", function() {
             ]
         },
         'ARNOLD': {
+            timers: { prep: 10, work: 50, rest: 45 }, // Arnold Protocol: Max Volume / Min Rest
             "Τρίτη": [ 
                 { name: "Chest Press", sets: 4, muscleGroup: "Στήθος", weight: "70" },
                 { name: "Chest Flys", sets: 3, muscleGroup: "Στήθος", weight: "45" },
@@ -202,11 +203,16 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
-    // Αντικαθιστούμε δυναμικά το πρόγραμμα ΜΟΝΟ για Τρίτη, Τετάρτη, Παρασκευή
-    if (window.program && splits[activePlan]) {
-        window.program["Τρίτη"] = splits[activePlan]["Τρίτη"];
-        window.program["Τετάρτη"] = splits[activePlan]["Τετάρτη"];
-        window.program["Παρασκευή"] = splits[activePlan]["Παρασκευή"];
-        console.log("🚀 PEGASUS SPLIT ENGINE: Loaded Dynamic Module -> " + activePlan);
+    if (splits[activePlan]) {
+        // Εφαρμογή Χρονικών Ρυθμίσεων
+        window.pegasusTimerConfig = splits[activePlan].timers;
+        
+        // Εφαρμογή Ασκήσεων (εκτός αν είναι Classic)
+        if (activePlan !== 'CLASSIC') {
+            window.program["Τρίτη"] = splits[activePlan]["Τρίτη"];
+            window.program["Τετάρτη"] = splits[activePlan]["Τετάρτη"];
+            window.program["Παρασκευή"] = splits[activePlan]["Παρασκευή"];
+        }
+        console.log("⏱️ TIMER PROTOCOL LOADED:", window.pegasusTimerConfig);
     }
 })();
