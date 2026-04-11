@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.18 (DYNAMIC VOLUME-BASED METABOLICS)
-   Protocol: Strict Data Isolation & Live Weight-Adjusted Burn Rate
+   PEGASUS WORKOUT ENGINE - v10.19 (STRICT DATA ISOLATION & STATIC UI FIX)
+   Protocol: Static Navbar Binding & Case-Insensitive Auto-Select
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
@@ -51,7 +51,6 @@ var timer = null;
 var totalSeconds = 0;
 var remainingSeconds = 0;
 
-// 🎯 ΑΠΟΜΟΝΩΜΕΝΟΣ ΜΕΤΡΗΤΗΣ ΘΕΡΜΙΔΩΝ ΣΥΝΕΔΡΙΑΣ
 var sessionActiveKcal = 0;
 
 var muted = localStorage.getItem(P_M?.system.mute || "pegasus_mute_state") === "true";
@@ -73,16 +72,13 @@ window.updateKcalUI = function() {
     
     if (!kcalDisplay) return;
 
-    // STATE CHECK: Είναι σε εξέλιξη η προπόνηση;
     const isWorkoutActive = running || currentIdx > 0 || phase > 0;
 
     if (isWorkoutActive) {
-        // ACTIVE WORKOUT: Δείξε τον LIVE εσωτερικό μετρητή (Κίτρινο)
         kcalDisplay.textContent = parseFloat(sessionActiveKcal).toFixed(1);
         kcalDisplay.style.color = "#FFC107"; 
         if (kcalLabel) kcalLabel.textContent = "KCAL ΠΡΟΠΟΝΗΣΗΣ";
     } else {
-        // IDLE: Δείξε τις συνολικές εβδομαδιαίες θερμίδες (Πράσινο)
         let weeklyKcal = localStorage.getItem("pegasus_weekly_kcal") || "0.0";
         kcalDisplay.textContent = parseFloat(weeklyKcal).toFixed(1);
         kcalDisplay.style.color = "#4CAF50"; 
@@ -117,6 +113,20 @@ const playBeep = (volume = 1) => {
     }
 };
 
+/* ===== 4. NAVIGATION BINDING (STRICT HTML BRIDGE) ===== */
+function createNavbar() {
+    const days = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"];
+    
+    days.forEach((d) => {
+        const btn = document.getElementById(`nav-${d}`);
+        if (btn) {
+            btn.onclick = () => selectDay(btn, d);
+        } else {
+            console.warn(`[UI ALERT]: Button nav-${d} missing from HTML!`);
+        }
+    });
+    console.log("🛡️ PEGASUS UI: Navbar locked to static HTML.");
+}
 
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) {
@@ -128,16 +138,16 @@ function selectDay(btn, day) {
 
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
-        b.style.setProperty('background-color', '#000', 'important');
-        b.style.color = "#fff";
+        b.style.setProperty('background-color', 'transparent', 'important');
+        b.style.color = "#333"; // Επαναφορά στο σκούρο γκρι όταν δεν είναι επιλεγμένο
     });
     
     if (btn) {
         btn.classList.add("active");
-        btn.style.setProperty('background-color', '#4CAF50', 'important');
+        btn.style.setProperty('background-color', 'rgba(76, 175, 80, 0.1)', 'important');
+        btn.style.color = "#4CAF50"; // Πράσινο όταν επιλέγεται
     }
 
-    // 🎯 HARD RESET
     clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
     sessionActiveKcal = 0; 
     localStorage.setItem("pegasus_session_kcal", "0.0");
@@ -219,28 +229,11 @@ function selectDay(btn, day) {
     }, 150);
 }
 
-/* ===== 4. NAVIGATION BINDING (STRICT HTML BRIDGE) ===== */
-function createNavbar() {
-    // Τα ονόματα ΠΡΕΠΕΙ να ταιριάζουν ακριβώς με τα id="nav-Όνομα" του HTML σου
-    const days = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"];
-    
-    days.forEach((d) => {
-        const btn = document.getElementById(`nav-${d}`);
-        if (btn) {
-            // Δίνουμε "ζωή" στο στατικό κουμπί
-            btn.onclick = () => selectDay(btn, d);
-        } else {
-            console.warn(`[UI ALERT]: Button nav-${d} missing from HTML!`);
-        }
-    });
-}
-
 /* ===== 5. WORKOUT ENGINE CORE ===== */
 function startPause() {
     if (exercises.length === 0) return;
     const vid = document.getElementById("video");
     
-    // ZERO BLEED
     if (!running && currentIdx === 0 && phase === 0) {
         sessionActiveKcal = 0;
         localStorage.setItem("pegasus_session_kcal", "0.0");
@@ -288,24 +281,17 @@ function runPhase() {
     if (!e) return;
     const exName = e.querySelector(".weight-input").getAttribute("data-name");
     
-    // 🎯 ΥΠΟΛΟΓΙΣΜΟΣ ΕΝΤΑΣΗΣ ΒΑΣΕΙ ΒΑΡΟΥΣ (Intensity Multiplier)
     let liftedWeight = parseFloat(e.querySelector(".weight-input").value) || 0;
     
-    // Βασικό MET (Μεταβολικό Ισοδύναμο) για Άρση Βαρών είναι ~3.5
-    // Το προσαρμόζουμε βάσει των κιλών που σηκώνεις (Volume Load)
     let baseMET = 3.5; 
     let intensityMultiplier = 1.0;
 
     if (exName.toLowerCase().includes("cycling") || exName.toLowerCase().includes("ποδηλασία")) {
-        // Η ποδηλασία καίει σταθερά ~8.0 METs αν είναι έντονη
         baseMET = 8.0; 
     } else if (liftedWeight > 0) {
-        // Αν σηκώνεις βάρη, αυξάνουμε την καύση. 
-        // Λογική: Κάθε 10 κιλά προσθέτουν 10% παραπάνω έργο/καύση
         intensityMultiplier = 1 + (liftedWeight / 100); 
     }
 
-    // Τύπος: Kcal/min = (MET * Βάρος Χρήστη * 3.5) / 200
     let kcalPerMin = (baseMET * intensityMultiplier * userWeight * 3.5) / 200;
     let kcalPerSecond = kcalPerMin / 60;
 
@@ -334,11 +320,9 @@ function runPhase() {
             updateTotalBar(); 
         }
 
-        // 🎯 LIVE METABOLIC TICKER (Μόνο κατά τη διάρκεια της Άσκησης - Φάση 1)
         if (phase === 1) {
             sessionActiveKcal += kcalPerSecond;
         } else if (phase === 2) {
-            // Στο Διάλειμμα καίμε λιγότερο (Ενεργητική Ανάρρωση ~2.0 METs)
             let restKcalPerSec = ((2.0 * userWeight * 3.5) / 200) / 60;
             sessionActiveKcal += restKcalPerSec;
         }
@@ -432,7 +416,7 @@ function showVideo(i) {
     if (!vid) return;
 
     const activeBtn = document.querySelector(".navbar button.active");
-    const currentDay = activeBtn ? activeBtn.textContent.trim() : "";
+    const currentDay = activeBtn ? activeBtn.id.replace('nav-', '') : "";
     const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");
 
     if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
@@ -570,7 +554,6 @@ function finishWorkout() {
         try { window.PegasusCloud.push(true); } catch(e) {}
     }
 
-    // 🎯 REPORTING & WEEKLY ACCUMULATION
     setTimeout(() => {
         if (window.PegasusReporting) {
             let sessionKcal = sessionActiveKcal;
@@ -581,7 +564,6 @@ function finishWorkout() {
 
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
             
-            // Μηδενισμός του εσωτερικού μετρητή
             sessionActiveKcal = 0;
             localStorage.setItem("pegasus_session_kcal", "0.0");
         } else {
@@ -596,7 +578,7 @@ function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
-    const currentDay = activeBtn.textContent.trim().split(' ')[0];
+    const currentDay = activeBtn.id.replace('nav-', ''); // 🎯 FIX: Παίρνει το σωστό όνομα από το ID
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
     let rawData = (typeof window.calculateDailyProgram !== 'undefined') ? 
@@ -768,11 +750,13 @@ window.onload = () => {
         }
     });
 
+    // 🎯 FIX: Case-Insensitive Auto-Select
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
-            if (b.textContent.trim().split(' ')[0] === todayName) {
+            // Συγκρίνουμε το ID του κουμπιού (π.χ. nav-Σάββατο) με τη σημερινή μέρα
+            if (b.id.replace('nav-', '') === todayName) {
                 if (typeof selectDay === "function") {
-                    selectDay(b, b.textContent);
+                    selectDay(b, todayName);
                     setTimeout(() => {
                         if (typeof exercises !== 'undefined') {
                             remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
