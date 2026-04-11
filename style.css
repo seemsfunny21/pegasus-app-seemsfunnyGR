@@ -705,7 +705,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ================= PEGASUS SIGNATURE LOADER ================= */
+/* ================= PEGASUS SIGNATURE LOADER (OPTIMIZED HIERARCHY) ================= */
 #pegasus-loader {
     position: fixed;
     top: 0; left: 0;
@@ -722,32 +722,36 @@ input:checked + .slider:before { transform: translateX(26px); }
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
 }
 
+/* 1. Ο ΤΙΤΛΟΣ: Πρέπει να κυριαρχεί */
 .pegasus-logo-anim {
-    font-size: 38px;
+    font-size: 46px; /* 🎯 Αύξηση μεγέθους για επιβολή */
     font-weight: 900;
     color: #4CAF50;
-    text-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
-    margin-bottom: 5px;
+    text-shadow: 0 0 25px rgba(76, 175, 80, 0.7);
+    margin-bottom: 2px;
     text-align: center;
-    letter-spacing: 1px;
-    animation: pulse 1.5s infinite; /* 🎯 Επαναφορά animation παλμού */
+    letter-spacing: -1px; /* Πιο σφιχτό, πιο μοντέρνο */
+    animation: pulse 1.5s infinite;
 }
 
+/* 2. ΤΟ STATUS: Πρέπει να φαίνεται σαν "ψιλά γράμματα" συστήματος */
 .loader-text {
-    color: #888;
-    font-size: 12px;
-    letter-spacing: 2px;
-    margin-bottom: 20px;
-    text-transform: lowercase; /* 🎯 Μικρά γράμματα */
-    font-family: monospace;
+    color: #555; /* Πιο σκούρο γκρι για να μην "χτυπάει" */
+    font-size: 10px; /* 🎯 Μικρό και τεχνικό */
+    letter-spacing: 3px;
+    margin-bottom: 25px;
+    text-transform: lowercase;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
 }
 
 .loader-bar-container {
-    width: 220px;
+    width: 240px;
     height: 2px;
-    background: #1a1a1a;
+    background: #111;
     border-radius: 10px;
     overflow: hidden;
     margin: 0 auto;
@@ -761,26 +765,23 @@ input:checked + .slider:before { transform: translateX(26px); }
     transition: width 0.3s ease; 
 }
 
+/* 3. ΤΟ BRANDING: Η κομψή υπογραφή στο τέλος */
 .loader-branding {
-    margin-top: 35px;
-    color: rgba(76, 175, 80, 0.4); /* 🎯 Αμυδρό "Seemsfunny" Branding */
-    font-size: 13px;
+    margin-top: 40px;
+    color: rgba(76, 175, 80, 0.4); 
+    font-size: 16px; /* 🎯 Μεσαίο μέγεθος, κομψό */
     font-weight: bold;
-    letter-spacing: 4px;
+    letter-spacing: 5px;
     font-style: italic;
     text-transform: none;
+    opacity: 0.8;
 }
 
-/* 🎯 Responsive Scaling για τον Loader */
+/* 🎯 Responsive Scaling για κινητά */
 @media (max-width: 800px) {
-    .pegasus-logo-anim {
-        font-size: 26px;
-        white-space: normal;
-    }
-    .loader-branding {
-        font-size: 11px;
-        letter-spacing: 2px;
-    }
+    .pegasus-logo-anim { font-size: 32px; }
+    .loader-branding { font-size: 13px; letter-spacing: 3px; }
+    .loader-text { font-size: 9px; }
 }
 
 /* --- PEGASUS BOOT ANIMATIONS --- */
