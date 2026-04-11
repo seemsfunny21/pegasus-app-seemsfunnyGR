@@ -705,6 +705,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ================= PEGASUS SIGNATURE LOADER ================= */
 #pegasus-loader {
     position: fixed;
     top: 0; left: 0;
@@ -713,41 +714,38 @@ input:checked + .slider:before { transform: translateX(26px); }
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999; 
-    transition: opacity 0.5s ease-out, visibility 0.5s;
+    z-index: 99999; 
 }
 
-.loader-content { text-align: center; }
+.loader-content { 
+    text-align: center; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
 .pegasus-logo-anim {
-    font-size: 32px; /* 🎯 Σμίκρυνση για να χωρέσει η λέξη Workout */
+    font-size: 38px;
     font-weight: 900;
     color: #4CAF50;
-    text-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
-    animation: pulse 1.5s infinite;
-    margin-bottom: 20px;
-    letter-spacing: 1px; /* 🎯 Μάζεμα των κενών */
+    text-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+    margin-bottom: 5px;
     text-align: center;
-    white-space: nowrap; /* Απαγορεύει την αλλαγή γραμμής σε Desktop */
-}
-
-/* 🎯 Ασφάλεια για μικρότερες οθόνες (Tablets/Mobiles) */
-@media (max-width: 800px) {
-    .pegasus-logo-anim {
-        font-size: 24px;
-        white-space: normal; /* Επιτρέπει αλλαγή γραμμής αν δεν χωράει */
-    }
+    letter-spacing: 1px;
+    animation: pulse 1.5s infinite; /* 🎯 Επαναφορά animation παλμού */
 }
 
 .loader-text {
-    color: #eee;
-    font-size: 10px;
-    letter-spacing: 3px;
-    margin-bottom: 15px;
+    color: #888;
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    text-transform: lowercase; /* 🎯 Μικρά γράμματα */
+    font-family: monospace;
 }
 
 .loader-bar-container {
-    width: 200px;
+    width: 220px;
     height: 2px;
     background: #1a1a1a;
     border-radius: 10px;
@@ -761,6 +759,28 @@ input:checked + .slider:before { transform: translateX(26px); }
     background: #4CAF50;
     box-shadow: 0 0 10px #4CAF50;
     transition: width 0.3s ease; 
+}
+
+.loader-branding {
+    margin-top: 35px;
+    color: rgba(76, 175, 80, 0.4); /* 🎯 Αμυδρό "Seemsfunny" Branding */
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    font-style: italic;
+    text-transform: none;
+}
+
+/* 🎯 Responsive Scaling για τον Loader */
+@media (max-width: 800px) {
+    .pegasus-logo-anim {
+        font-size: 26px;
+        white-space: normal;
+    }
+    .loader-branding {
+        font-size: 11px;
+        letter-spacing: 2px;
+    }
 }
 
 /* --- PEGASUS BOOT ANIMATIONS --- */
