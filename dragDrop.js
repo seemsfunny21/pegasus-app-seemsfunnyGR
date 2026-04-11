@@ -5,7 +5,7 @@
    ========================================================================== */
 
 const PegasusUI = {
-    panels: ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal'],
+    panels: ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel', 'cardioPanel', 'emsModal', 'planModal'],
 
     init() {
         this.initDraggablePanels();
@@ -120,6 +120,9 @@ const PegasusUI = {
             const targetId = btn.id;
 
             switch(targetId) {
+                  case 'btnPlanSelector': 
+                    this.togglePanel('planModal');
+                    break;
                 case 'btnWarmup':
                     this.handleWarmupToggle();
                     break;
