@@ -720,12 +720,23 @@ input:checked + .slider:before { transform: translateX(26px); }
 .loader-content { text-align: center; }
 
 .pegasus-logo-anim {
-    font-size: 80px;
+    font-size: 32px; /* 🎯 Σμίκρυνση για να χωρέσει η λέξη Workout */
     font-weight: 900;
     color: #4CAF50;
-    text-shadow: 0 0 20px #4CAF50;
+    text-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
     animation: pulse 1.5s infinite;
     margin-bottom: 20px;
+    letter-spacing: 1px; /* 🎯 Μάζεμα των κενών */
+    text-align: center;
+    white-space: nowrap; /* Απαγορεύει την αλλαγή γραμμής σε Desktop */
+}
+
+/* 🎯 Ασφάλεια για μικρότερες οθόνες (Tablets/Mobiles) */
+@media (max-width: 800px) {
+    .pegasus-logo-anim {
+        font-size: 24px;
+        white-space: normal; /* Επιτρέπει αλλαγή γραμμής αν δεν χωράει */
+    }
 }
 
 .loader-text {
