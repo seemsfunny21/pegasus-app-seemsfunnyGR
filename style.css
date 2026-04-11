@@ -907,3 +907,23 @@ input:checked + .slider:before { transform: translateX(26px); }
     background: #ff4444 !important;
     color: #000 !important;
 }
+
+/* --- DYNAMIC TIMER VISUAL STATES --- */
+.timer-prep { color: #FFC107 !important; text-shadow: 0 0 20px rgba(255, 193, 7, 0.5); } /* Κίτρινο για Prep */
+.timer-work { color: #4CAF50 !important; text-shadow: 0 0 20px rgba(76, 175, 80, 0.5); }  /* Πράσινο για Work */
+.timer-rest { color: #00bcd4 !important; text-shadow: 0 0 20px rgba(0, 188, 212, 0.5); } /* Γαλάζιο για Rest */
+
+#phaseTimerBar {
+    width: 100%;
+    height: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+#phaseTimerFill {
+    height: 100%;
+    width: 0%;
+    transition: width 1s linear;
+}
