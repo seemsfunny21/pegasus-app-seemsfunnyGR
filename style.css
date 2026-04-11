@@ -273,7 +273,15 @@ body::-webkit-scrollbar { display: none; }
 }
 
 /* ================= VIDEO CONTAINER ================= */
-.video-container { flex: 1; background: #000; border-radius: 12px; border: 1px solid #333; overflow: hidden; position: relative; }
+.video-container { 
+    flex: 1; 
+    background: #000; 
+    border-radius: 12px; 
+    border: 1px solid #4CAF50; /* 🟢 Πράσινο περίγραμμα αντί για γκρι */
+    overflow: hidden; 
+    position: relative; 
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.1); /* 🟢 Αμυδρό πράσινο glow */
+}
 .main-video { width: 100%; height: 100%; object-fit: contain; }
 
 #phaseTimer {
