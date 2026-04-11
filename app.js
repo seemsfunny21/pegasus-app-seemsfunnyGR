@@ -117,23 +117,6 @@ const playBeep = (volume = 1) => {
     }
 };
 
-/* ===== 4. NAVIGATION & SELECTDAY ===== */
-function createNavbar() {
-    const nav = document.getElementById("navbar");
-    if (!nav) return;
-    const days = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"];
-    nav.innerHTML = "";
-    days.forEach((d) => {
-        const b = document.createElement("button");
-        b.textContent = d; 
-        b.id = `nav-${d}`;
-        b.style.backgroundColor = "#000"; 
-        b.style.color = "#fff"; 
-        b.style.border = "none";
-        b.onclick = () => selectDay(b, d);
-        nav.appendChild(b);
-    });
-}
 
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) {
