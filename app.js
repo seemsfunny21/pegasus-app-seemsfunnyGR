@@ -697,11 +697,10 @@ window.onload = () => {
     if (window.updateKoukiBalance) window.updateKoukiBalance();
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
-window.masterUI = {
+// 1. Ορισμός Master UI Orchestrator
+    window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-        
-        // --- ΕΠΑΝΑΦΟΡΑ ΛΕΙΤΟΥΡΓΙΩΝ ΕΡΓΑΛΕΙΩΝ ΠΟΥ ΛΕΙΠΑΝ ---
         "btnWarmup": () => {
             const vid = document.getElementById("video");
             if (!vid) return;
@@ -735,8 +734,6 @@ window.masterUI = {
         "btnImportData": () => { const f = document.getElementById('importFileTools'); if(f) f.click(); },
         "btnExportData": () => { if (window.exportPegasusData) window.exportPegasusData(); },
         "btnMasterVault": () => { const m = document.getElementById('pinModal'); if(m) m.style.display = 'flex'; },
-        // --------------------------------------------------
-
         "btnPlanSelector": { panel: "planModal", init: null },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
@@ -764,6 +761,32 @@ window.masterUI = {
             setTimeout(() => { location.reload(); }, 300);
         }
     };
+
+    // 2. Binding Logic με Tactical Stop Propagation (Η Ασπίδα)
+    Object.keys(window.masterUI).forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation(); // 🛡️ Εμποδίζει το dragDrop.js να κλείσει το παράθυρο αμέσως!
+                const target = window.masterUI[btnId];
+
+                // Κλείσιμο άλλων παραθύρων
+                if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
+                    document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
+                }
+
+                if (typeof target === 'function') {
+                    target();
+                } else if (target && target.panel) {
+                    const el = document.getElementById(target.panel);
+                    if (el) { 
+                        el.style.display = "block"; 
+                        if (target.init) target.init(); 
+                    }
+                }
+            };
+        }
+    });
 
     Object.keys(window.masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
