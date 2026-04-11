@@ -343,32 +343,32 @@
     </div>
 </div>
 
-<div id="planModal" class="pegasus-panel plan-modal-container" style="display: none; width: 460px; max-width: 95vw; padding: 30px 20px; position: relative;">
+<div id="planModal" class="pegasus-panel" style="display: none; width: 480px; max-width: 95vw; padding: 30px; border: 2px solid #4CAF50; box-shadow: 0 0 30px rgba(76, 175, 80, 0.2); background: #0a0a0a; border-radius: 20px;">
     
-    <button onclick="document.getElementById('planModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #666; font-size: 18px; cursor: pointer; font-weight: bold; transition: color 0.2s;" onmouseover="this.style.color='#ff4444'" onmouseout="this.style.color='#666'">✕</button>
+    <button onclick="document.getElementById('planModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #666; font-size: 22px; cursor: pointer; font-weight: bold;">✕</button>
 
-    <h3 class="plan-modal-title" style="text-align: center; color: #4CAF50; font-size: 18px; letter-spacing: 2px; margin-top: 0; margin-bottom: 25px; font-weight: 900;">ΕΠΙΛΟΓΗ ΠΡΟΓΡΑΜΜΑΤΟΣ</h3>
+    <h3 style="text-align: center; color: #4CAF50; font-size: 18px; letter-spacing: 2px; margin-top: 0; margin-bottom: 25px; font-weight: 900; text-transform: uppercase;">Επιλογή Προγράμματος</h3>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
         
-        <button onclick="window.setPegasusPlan('CLASSIC')" class="p-btn plan-btn" id="plan-CLASSIC" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px 10px; background: #111; border: 1px solid #333; border-radius: 12px; cursor: pointer; min-height: 110px;">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">CLASSIC (EMS)</span>
-            <span style="color: #ffffff; font-size: 11px; text-align: center; line-height: 1.5;">Το αρχικό σου πρόγραμμα.</span>
+        <button onclick="window.setPegasusPlan('CLASSIC')" class="p-btn" style="background: #111; border: 1px solid #333; padding: 20px 10px; border-radius: 12px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 8px; letter-spacing: 1px;">CLASSIC (EMS)</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center; opacity: 0.9;">Το αρχικό σου<br>πρόγραμμα.</span>
         </button>
 
-        <button onclick="window.setPegasusPlan('PPL')" class="p-btn plan-btn" id="plan-PPL" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px 10px; background: #111; border: 1px solid #333; border-radius: 12px; cursor: pointer; min-height: 110px;">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">PUSH / PULL / LEGS</span>
-            <span style="color: #ffffff; font-size: 11px; text-align: center; line-height: 1.5;">Τρ: Ώθηση | Τε: Έλξη<br>Πα: Πόδια & Κορμός</span>
+        <button onclick="window.setPegasusPlan('PPL')" class="p-btn" style="background: #111; border: 1px solid #333; padding: 20px 10px; border-radius: 12px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 8px; letter-spacing: 1px;">PUSH / PULL / LEGS</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center; opacity: 0.9;">Τρ: Ώθηση | Τε: Έλξη<br>Πα: Πόδια & Κορμός</span>
         </button>
 
-        <button onclick="window.setPegasusPlan('UPPER_LOWER')" class="p-btn plan-btn" id="plan-UPPER_LOWER" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px 10px; background: #111; border: 1px solid #333; border-radius: 12px; cursor: pointer; min-height: 110px;">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">UPPER / LOWER / FULL</span>
-            <span style="color: #ffffff; font-size: 11px; text-align: center; line-height: 1.5;">Τρ: Άνω | Τε: Κάτω<br>Πα: Full Body</span>
+        <button onclick="window.setPegasusPlan('UPPER_LOWER')" class="p-btn" style="background: #111; border: 1px solid #333; padding: 20px 10px; border-radius: 12px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 8px; letter-spacing: 1px;">UPPER / LOWER / FULL</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center; opacity: 0.9;">Τρ: Άνω | Τε: Κάτω<br>Πα: Full Body</span>
         </button>
 
-        <button onclick="window.setPegasusPlan('ARNOLD')" class="p-btn plan-btn" id="plan-ARNOLD" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px 10px; background: #111; border: 1px solid #333; border-radius: 12px; cursor: pointer; min-height: 110px;">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">ARNOLD SPLIT</span>
-            <span style="color: #ffffff; font-size: 11px; text-align: center; line-height: 1.5;">Τρ: Στήθος-Πλάτη | Τε: Πόδια<br>Πα: Ώμοι-Χέρια</span>
+        <button onclick="window.setPegasusPlan('ARNOLD')" class="p-btn" style="background: #111; border: 1px solid #333; padding: 20px 10px; border-radius: 12px; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="color: #4CAF50; font-weight: 900; font-size: 13px; margin-bottom: 8px; letter-spacing: 1px;">ARNOLD SPLIT</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center; opacity: 0.9;">Τρ: Στήθος-Πλάτη | Τε: Πόδια<br>Πα: Ώμοι-Χέρια</span>
         </button>
 
     </div>
