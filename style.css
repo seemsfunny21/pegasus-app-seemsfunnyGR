@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v6)
-   Protocol: BULLETPROOF LEFT-ALIGNED DASHBOARD (ZERO GAPS FIX)
+   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v7)
+   Protocol: BULLETPROOF LEFT-ALIGNED DASHBOARD & UI POLISH
    ========================================================================== */
 
 /* ================= GLOBAL SETTINGS ================= */
@@ -58,9 +58,9 @@ body::-webkit-scrollbar { display: none; }
     position: relative;
     display: flex;
     flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; /* 🎯 ΤΟ ΚΛΕΙΔΙ: ΟΛΑ ΞΕΚΙΝΑΝΕ ΚΟΛΛΗΤΑ ΑΠΟ ΑΡΙΣΤΕΡΑ */
+    justify-content: flex-start !important; 
     align-items: center;
-    gap: 6px !important; /* 🎯 ΣΤΑΘΕΡΟ ΜΙΚΡΟ ΚΕΝΟ ΑΝΑΜΕΣΑ ΣΕ ΟΛΑ */
+    gap: 6px !important; 
     padding: 0 10px;
     background: #1a1a1a;
     border-bottom: 2px solid #333;
@@ -76,7 +76,7 @@ body::-webkit-scrollbar { display: none; }
 .control-buttons {
     display: flex;
     flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; /* 🎯 ΚΟΛΛΗΤΑ ΑΡΙΣΤΕΡΑ */
+    justify-content: flex-start !important; 
     align-items: center;
     gap: 6px !important;
 }
@@ -84,10 +84,10 @@ body::-webkit-scrollbar { display: none; }
 .info-display {
     display: flex;
     flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; /* 🎯 ΚΟΛΛΗΤΑ ΑΡΙΣΤΕΡΑ */
+    justify-content: flex-start !important; 
     align-items: center;
     gap: 6px !important;
-    margin: 0 !important; /* 🎯 ΑΠΟΤΡΟΠΗ ΑΔΙΚΑΙΟΛΟΓΗΤΩΝ ΚΕΝΩΝ */
+    margin: 0 !important; 
 }
 
 .p-btn, .weather-text, .workout-count-text, #totalProgressContainer {
@@ -785,4 +785,87 @@ input:checked + .slider:before { transform: translateX(26px); }
     50%  { content: '..'; }
     75%  { content: '...'; }
     100% { content: ''; }
+}
+
+/* ==========================================================================
+   UI POLISH: TOOLS PANEL & PLAN SELECTOR MODAL
+   ========================================================================== */
+
+/* --- ΕΡΓΑΛΕΙΑ PEGASUS (ΟΜΟΙΟΜΟΡΦΙΑ) --- */
+.tools-btn {
+    width: 100% !important;
+    justify-content: flex-start !important; 
+    padding: 12px 15px !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px;
+}
+
+/* --- MODAL ΕΠΙΛΟΓΗΣ ΠΡΟΓΡΑΜΜΑΤΟΣ (ΚΑΘΕΤΗ ΔΙΑΤΑΞΗ) --- */
+#planModal {
+    width: 400px !important;
+    max-width: 90vw;
+    padding: 30px 20px !important;
+    text-align: center;
+}
+
+#planModal h3 {
+    color: #FFC107 !important;
+    margin-bottom: 10px !important;
+}
+
+#planModal p {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.plan-options-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.plan-btn {
+    width: 100% !important;
+    height: auto !important; 
+    flex-direction: column !important; 
+    align-items: center !important;
+    padding: 15px !important;
+    background: #111 !important;
+    border: 1px solid #333 !important;
+    white-space: normal !important; 
+}
+
+.plan-btn:hover {
+    border-color: #FFC107 !important;
+    background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.plan-title {
+    font-size: 15px;
+    font-weight: 900;
+    color: #eee;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+
+.plan-subtitle {
+    font-size: 10px;
+    color: #aaa;
+    font-weight: normal;
+    text-transform: none; 
+}
+
+.plan-cancel-btn {
+    margin-top: 20px !important;
+    width: 100% !important;
+    border-color: #ff4444 !important;
+    color: #ff4444 !important;
+}
+
+.plan-cancel-btn:hover {
+    background: #ff4444 !important;
+    color: #000 !important;
 }
