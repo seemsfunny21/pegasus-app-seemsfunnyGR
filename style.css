@@ -848,7 +848,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 #planModal h3 {
-    color: #FFC107 !important;
+    color: #4CAF50 !important; /* 🟢 ΔΙΟΡΘΩΣΗ: ΠΡΑΣΙΝΟ ΑΝΤΙ ΓΙΑ ΚΙΤΡΙΝΟ */
     margin-bottom: 10px !important;
 }
 
@@ -877,8 +877,8 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .plan-btn:hover {
-    border-color: #FFC107 !important;
-    background: rgba(255, 193, 7, 0.1) !important;
+    border-color: #4CAF50 !important; /* 🟢 ΔΙΟΡΘΩΣΗ: ΠΡΑΣΙΝΟ HOVER */
+    background: rgba(76, 175, 80, 0.1) !important; /* 🟢 ΔΙΟΡΘΩΣΗ: ΠΡΑΣΙΝΟ GLOW */
 }
 
 .plan-title {
