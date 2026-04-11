@@ -700,17 +700,51 @@ window.onload = () => {
 window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
-        "btnPlanSelector": { panel: "planModal", init: null }, // 👈 ΑΥΤΗ ΕΙΝΑΙ Η ΛΥΣΗ ΠΟΥ ΛΕΙΠΕΙ!
+        
+        // --- ΕΠΑΝΑΦΟΡΑ ΛΕΙΤΟΥΡΓΙΩΝ ΕΡΓΑΛΕΙΩΝ ΠΟΥ ΛΕΙΠΑΝ ---
+        "btnWarmup": () => {
+            const vid = document.getElementById("video");
+            if (!vid) return;
+            if (!vid.src.includes("warmup.mp4")) {
+                vid.pause(); vid.src = "videos/warmup.mp4"; vid.load(); vid.play().catch(e => console.log(e));
+            } else {
+                vid.pause();
+                if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
+                    window.currentIdx = 0; window.phase = 0; window.showVideo(0);
+                }
+            }
+        },
+        "btnTurboTools": () => {
+            window.TURBO_MODE = !window.TURBO_MODE;
+            window.SPEED = window.TURBO_MODE ? 10 : 1;
+            const btn = document.getElementById('btnTurboTools');
+            if(btn) {
+                btn.textContent = window.TURBO_MODE ? "🚀 TURBO: ΕΝΕΡΓΟ" : "🚀 TURBO: ΑΝΕΝΕΡΓΟ";
+                btn.style.color = window.TURBO_MODE ? "#ff4444" : "#4CAF50";
+            }
+        },
+        "btnMuteTools": () => {
+            window.muted = !window.muted;
+            const btn = document.getElementById('btnMuteTools');
+            if(btn) {
+                btn.textContent = window.muted ? "🔇 ΗΧΟΣ: ΣΙΓΑΣΗ" : "🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ";
+                btn.style.color = window.muted ? "#888" : "#4CAF50";
+            }
+        },
+        "btnPartnerMode": () => { if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode(); },
+        "btnImportData": () => { const f = document.getElementById('importFileTools'); if(f) f.click(); },
+        "btnExportData": () => { if (window.exportPegasusData) window.exportPegasusData(); },
+        "btnMasterVault": () => { const m = document.getElementById('pinModal'); if(m) m.style.display = 'flex'; },
+        // --------------------------------------------------
+
+        "btnPlanSelector": { panel: "planModal", init: null },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
         "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
         "btnProposalsUI": () => {
-            if (window.PegasusDietAdvisor && typeof window.renderAdvisorUI === 'function') {
-                window.renderAdvisorUI();
-            } else {
-                alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.");
-            }
+            if (window.PegasusDietAdvisor && typeof window.renderAdvisorUI === 'function') window.renderAdvisorUI();
+            else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.");
         },
         "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
@@ -724,11 +758,8 @@ window.masterUI = {
         "btnSaveSettings": () => { 
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
             const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
-            if (window.PegasusWeight && typeof window.PegasusWeight.save === "function") {
-                window.PegasusWeight.save(weightVal);
-            } else {
-                localStorage.setItem(weightKey, weightVal);
-            }
+            if (window.PegasusWeight && typeof window.PegasusWeight.save === "function") window.PegasusWeight.save(weightVal);
+            else localStorage.setItem(weightKey, weightVal);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
             setTimeout(() => { location.reload(); }, 300);
         }
