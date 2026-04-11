@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.23 (MAXIMALIST DATA RETENTION & DYNAMIC TIMER)
+   PEGASUS WORKOUT ENGINE - v10.35 (MAXIMALIST DATA RETENTION & DYNAMIC TIMER)
    Protocol: Static Navbar Binding + Diagnostic Logging + Dynamic Phase Intervals
    ========================================================================== */
 
@@ -697,7 +697,7 @@ window.onload = () => {
     if (window.updateKoukiBalance) window.updateKoukiBalance();
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
-// 1. Ορισμός Master UI Orchestrator
+    // 1. Ορισμός Master UI Orchestrator
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -783,24 +783,6 @@ window.onload = () => {
                         el.style.display = "block"; 
                         if (target.init) target.init(); 
                     }
-                }
-            };
-        }
-    });
-
-    Object.keys(window.masterUI).forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                const target = window.masterUI[btnId];
-                if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
-                    document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
-                }
-                if (typeof target === 'function') target();
-                else if (target && target.panel) {
-                    const el = document.getElementById(target.panel);
-                    if (el) { el.style.display = "block"; if (target.init) target.init(); }
                 }
             };
         }
