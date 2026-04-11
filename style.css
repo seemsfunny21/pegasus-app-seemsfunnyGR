@@ -18,7 +18,6 @@ html, body {
 
 body::-webkit-scrollbar { display: none; }
 
-/* ================= NAVIGATION BAR (FLUID DESKTOP) ================= */
 /* ================= NAVIGATION BAR (STRICT STATIC DESKTOP) ================= */
 .navbar {
     display: flex;
@@ -56,18 +55,36 @@ body::-webkit-scrollbar { display: none; }
 .pegasus-control-bar {
     position: relative;
     display: flex;
-    flex-wrap: nowrap !important; /* ΚΛΕΙΔΩΜΑ - ΚΑΜΙΑ ΑΛΛΑΓΗ ΓΡΑΜΜΗΣ */
-    justify-content: flex-start;
+    flex-wrap: wrap; /* 🎯 ΕΠΙΤΡΕΠΕΙ ΑΛΛΑΓΗ ΓΡΑΜΜΗΣ ΑΝ ΔΕΝ ΧΩΡΑΝΕ */
+    justify-content: space-between; /* Σπρώχνει το Χρονόμετρο αριστερά, τα Info δεξιά */
     align-items: center;
-    gap: 12px;
+    gap: 15px;
     padding: 10px 15px;
     background: #1a1a1a;
     border-bottom: 2px solid #333;
-    height: 60px !important; /* ΑΠΟΛΥΤΟ ΚΛΕΙΔΩΜΑ ΥΨΟΥΣ */
+    height: auto !important; /* 🎯 Απελευθέρωση ύψους για να χωράνε διπλές γραμμές */
+    min-height: 60px; /* Κρατάει το βασικό πάχος */
     box-sizing: border-box;
     flex-shrink: 0;
-    overflow-x: auto; /* Επιτρέπει οριζόντιο scroll αν δεν χωράνε */
-    scrollbar-width: none;
+}
+
+/* 🎯 Η Ομάδα των Κεντρικών Κουμπιών (Έναρξη, Ημερολόγιο κλπ) */
+.control-buttons {
+    display: flex;
+    flex-wrap: wrap; /* Επιτρέπει αλλαγή γραμμής αν δεν χωράνε */
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex: 1; /* Καταλαμβάνει όλο τον κεντρικό κενό χώρο */
+}
+
+/* 🎯 Η Ομάδα των Δεξιών Πληροφοριών (Καιρός, Θερμίδες, Εργαλεία) */
+.info-display {
+    display: flex;
+    flex-wrap: wrap; /* Επιτρέπει αλλαγή γραμμής */
+    justify-content: flex-end; /* Τα στοιχίζει στα δεξιά */
+    align-items: center;
+    gap: 8px;
 }
 
 .p-btn, .weather-text, .workout-count-text, #totalProgressContainer {
@@ -142,9 +159,9 @@ body::-webkit-scrollbar { display: none; }
 }
 
 .exercise-skipped {
-    opacity: 0.25 !important;
+    opacity: 0.25 !important; 
     filter: grayscale(1) blur(0.5px);
-    border: 2px dotted #ff4444 !important;
+    border: 2px dotted #ff4444 !important; 
     background: rgba(255, 0, 0, 0.05) !important;
     transition: all 0.3s ease;
 }
