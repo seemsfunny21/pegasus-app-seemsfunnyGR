@@ -112,7 +112,7 @@ window.setPegasusPlan = function(planKey) {
     
     overlay.innerHTML = `
         <div style="font-size: 70px; margin-bottom: 25px;">🟢</div>
-        <div style="color: #4CAF50; font-weight: 900; font-size: 26px; letter-spacing: 2px; text-transform: uppercase; text-align:center; padding: 0 20px;">Προγραμμα Ενεργοποιηθηκε</div>
+        <div style="color: #4CAF50; font-weight: 900; font-size: 26px; letter-spacing: 2px; text-transform: uppercase; text-align:center; padding: 0 20px;">Το Προγραμμα Ενεργοποιηθηκε</div>
         <div style="color: #eee; font-size: 16px; margin-top: 15px; font-weight: bold;">Split: ${planKey}</div>
         <div style="color: #666; font-size: 11px; margin-top: 35px; letter-spacing: 2px; font-weight:800;">PEGASUS OS REBOOT IN 3"</div>
     `;
