@@ -19,20 +19,23 @@ html, body {
 body::-webkit-scrollbar { display: none; }
 
 /* ================= NAVIGATION BAR (FLUID DESKTOP) ================= */
+/* ================= NAVIGATION BAR (STRICT STATIC DESKTOP) ================= */
 .navbar {
     display: flex;
+    flex-wrap: nowrap !important; /* ΑΠΑΓΟΡΕΥΣΗ ΑΛΛΑΓΗΣ ΓΡΑΜΜΗΣ */
     background: #111;
-    min-height: 60px; /* Ελαστικό ύψος για ασφάλεια */
-    height: auto;
+    height: 60px !important; /* ΑΠΟΛΥΤΟ ΚΛΕΙΔΩΜΑ ΥΨΟΥΣ */
     border-bottom: 1px solid #222;
     flex-shrink: 0;
     width: 100%;
-    box-sizing: border-box;
+    overflow-x: auto; /* Αν η οθόνη είναι πολύ μικρή, επιτρέπει σκρολάρισμα δεξιά-αριστερά */
+    scrollbar-width: none;
 }
 
 .navbar button {
-    flex: 1 1 auto; /* Δυναμική κατανομή του χώρου */
-    padding: 12px 10px;
+    flex: 1 0 auto; /* Κρατάει το μέγεθός του, δεν συμπιέζεται */
+    min-width: 100px;
+    padding: 12px;
     font-size: 14px;
     background: none;
     border: none;
@@ -41,7 +44,6 @@ body::-webkit-scrollbar { display: none; }
     transition: 0.3s;
     text-transform: uppercase;
     font-weight: bold;
-    min-width: 80px; /* Αποτρέπει την υπερβολική συρρίκνωση */
 }
 
 .navbar button.active {
@@ -54,16 +56,18 @@ body::-webkit-scrollbar { display: none; }
 .pegasus-control-bar {
     position: relative;
     display: flex;
-    flex-wrap: nowrap; 
+    flex-wrap: nowrap !important; /* ΚΛΕΙΔΩΜΑ - ΚΑΜΙΑ ΑΛΛΑΓΗ ΓΡΑΜΜΗΣ */
     justify-content: flex-start;
     align-items: center;
     gap: 12px;
     padding: 10px 15px;
     background: #1a1a1a;
     border-bottom: 2px solid #333;
-    height: 60px;
+    height: 60px !important; /* ΑΠΟΛΥΤΟ ΚΛΕΙΔΩΜΑ ΥΨΟΥΣ */
     box-sizing: border-box;
     flex-shrink: 0;
+    overflow-x: auto; /* Επιτρέπει οριζόντιο scroll αν δεν χωράνε */
+    scrollbar-width: none;
 }
 
 .p-btn, .weather-text, .workout-count-text, #totalProgressContainer {
