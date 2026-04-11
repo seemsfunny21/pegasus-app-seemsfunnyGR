@@ -219,6 +219,22 @@ function selectDay(btn, day) {
     }, 150);
 }
 
+/* ===== 4. NAVIGATION BINDING (STRICT HTML BRIDGE) ===== */
+function createNavbar() {
+    // Τα ονόματα ΠΡΕΠΕΙ να ταιριάζουν ακριβώς με τα id="nav-Όνομα" του HTML σου
+    const days = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"];
+    
+    days.forEach((d) => {
+        const btn = document.getElementById(`nav-${d}`);
+        if (btn) {
+            // Δίνουμε "ζωή" στο στατικό κουμπί
+            btn.onclick = () => selectDay(btn, d);
+        } else {
+            console.warn(`[UI ALERT]: Button nav-${d} missing from HTML!`);
+        }
+    });
+}
+
 /* ===== 5. WORKOUT ENGINE CORE ===== */
 function startPause() {
     if (exercises.length === 0) return;
