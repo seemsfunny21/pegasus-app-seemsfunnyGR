@@ -697,9 +697,10 @@ window.onload = () => {
     if (window.updateKoukiBalance) window.updateKoukiBalance();
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
-    window.masterUI = {
+window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
+        "btnPlanSelector": { panel: "planModal", init: null }, // 👈 ΑΥΤΗ ΕΙΝΑΙ Η ΛΥΣΗ ΠΟΥ ΛΕΙΠΕΙ!
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
