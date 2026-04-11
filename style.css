@@ -1,5 +1,6 @@
 /* ==========================================================================
-   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION)
+   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v2)
+   Protocol: FLUID NAVBAR (DESKTOP) + MAXIMALIST RETENTION
    ========================================================================== */
 
 /* ================= GLOBAL SETTINGS ================= */
@@ -17,18 +18,21 @@ html, body {
 
 body::-webkit-scrollbar { display: none; }
 
-/* ================= NAVIGATION BAR (DAYS) ================= */
+/* ================= NAVIGATION BAR (FLUID DESKTOP) ================= */
 .navbar {
     display: flex;
     background: #111;
-    height: 60px;
+    min-height: 60px; /* Ελαστικό ύψος για ασφάλεια */
+    height: auto;
     border-bottom: 1px solid #222;
     flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .navbar button {
-    flex: 1;
-    padding: 12px;
+    flex: 1 1 auto; /* Δυναμική κατανομή του χώρου */
+    padding: 12px 10px;
     font-size: 14px;
     background: none;
     border: none;
@@ -37,6 +41,7 @@ body::-webkit-scrollbar { display: none; }
     transition: 0.3s;
     text-transform: uppercase;
     font-weight: bold;
+    min-width: 80px; /* Αποτρέπει την υπερβολική συρρίκνωση */
 }
 
 .navbar button.active {
@@ -133,31 +138,29 @@ body::-webkit-scrollbar { display: none; }
 }
 
 .exercise-skipped {
-    opacity: 0.25 !important; /* Πιο έντονο skip για ευκρίνεια */
+    opacity: 0.25 !important;
     filter: grayscale(1) blur(0.5px);
-    border: 2px dotted #ff4444 !important; /* Κόκκινο διακεκομμένο περίγραμμα */
+    border: 2px dotted #ff4444 !important;
     background: rgba(255, 0, 0, 0.05) !important;
     transition: all 0.3s ease;
 }
 
-/* Διασφάλιση ότι το κλικ για επαναφορά λειτουργεί */
 .exercise-skipped .exercise-info {
     cursor: pointer;
     pointer-events: auto; 
 }
 
-/* Visual cue για το hover στην απενεργοποιημένη άσκηση */
 .exercise-skipped:hover {
     opacity: 0.5 !important;
 }
 
 .exercise-info { 
     display: flex; 
-    gap: 15px; /* Αυξημένο gap για mobile-friendly χρήση */
+    gap: 15px; 
     align-items: center; 
     margin-bottom: 10px; 
     cursor: pointer;
-    width: 100%; /* Για να πιάνει όλο το πλάτος το κλικ */
+    width: 100%; 
 }
 
 .set-counter { min-width: 40px; color: #4CAF50; font-weight: bold; font-size: 17px; }
@@ -198,14 +201,14 @@ body::-webkit-scrollbar { display: none; }
 
 /* ================= FOOD PANEL LAYOUT (v16.6 FIXED) ================= */
 #foodPanel { 
-    width: 1350px !important; /* Αυξάνουμε το πλάτος για 3 στήλες */
+    width: 1350px !important; 
     max-width: 98vw; 
 }
 
 .food-layout { 
     display: flex !important; 
     flex-direction: row !important;
-    flex-wrap: nowrap !important; /* ΑΠΑΓΟΡΕΥΣΗ αλλαγής γραμμής */
+    flex-wrap: nowrap !important; 
     gap: 15px; 
     height: 500px; 
     width: 100%;
@@ -214,12 +217,12 @@ body::-webkit-scrollbar { display: none; }
 
 .food-section { 
     flex: 1 !important; 
-    min-width: 320px; /* Διασφαλίζουμε ελάχιστο πλάτος για κάθε στήλη */
+    min-width: 320px; 
     background: rgba(255,255,255,0.02);
     padding: 10px;
     border-radius: 8px;
     border: 1px solid #222;
-    overflow-y: auto; /* Κάθε στήλη έχει δικό της scroll αν χρειαστεί */
+    overflow-y: auto; 
 }
 
 /* ================= VIDEO CONTAINER ================= */
@@ -271,20 +274,18 @@ button#btnAddFood,
     box-shadow: 0 0 12px rgba(76, 175, 80, 0.5) !important;
 }
 
-/* ================= UTILS - DELETE BUTTONS FIX (The "X" fix) ================= */
 /* ================= UTILS - DELETE BUTTONS FIXED & VISIBLE ================= */
 .delete-btn, 
 .btn-delete, 
 button[onclick*="delete"], 
 button[onclick*="remove"] {
-    /* Επαναφορά βασικών ιδιοτήτων αντί για unset */
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     
-    background: #000 !important; /* Μαύρο φόντο για αντίθεση */
-    border: 1px solid #4CAF50 !important; /* Πράσινο περίγραμμα Pegasus */
-    color: #4CAF50 !important; /* Πράσινο γράμμα */
+    background: #000 !important; 
+    border: 1px solid #4CAF50 !important; 
+    color: #4CAF50 !important; 
     
     width: 22px !important;
     height: 22px !important;
@@ -301,14 +302,12 @@ button[onclick*="remove"] {
     transition: 0.2s ease-in-out !important;
 }
 
-/* Pseudo-element για να εμφανιστεί το X αν έχει χαθεί από το HTML */
 .delete-btn:empty::before, 
 .btn-delete:empty::before, 
 button[onclick*="delete"]:empty::before {
-    content: "×" !important; /* Το σύμβολο του πολλαπλασιασμού που μοιάζει με Χ */
+    content: "×" !important; 
 }
 
-/* Hover State: Γίνεται κόκκινο ΜΟΝΟ όταν το ακουμπάς */
 .delete-btn:hover, 
 .btn-delete:hover, 
 button[onclick*="delete"]:hover {
@@ -317,16 +316,14 @@ button[onclick*="delete"]:hover {
     color: #fff !important;
 }
 
-/* Ευθυγράμμιση Συστηματός Συνεργάτη στο Tools Panel */
 #partnerNameInput, 
 #btnPartnerMode {
-    width: 100%;           /* Να πιάνει όλο το διαθέσιμο πλάτος */
-    box-sizing: border-box; /* Για να μην προσθέτει το padding/border στο συνολικό πλάτος */
-    margin: 5px 0;         /* Ίδιες αποστάσεις με τα άλλα κουμπιά */
-    max-width: 100%;       /* Διασφάλιση ότι δεν θα ξεφύγει */
+    width: 100%;            
+    box-sizing: border-box; 
+    margin: 5px 0;          
+    max-width: 100%;        
 }
 
-/* Αν θέλεις να διορθώσεις και το λευκό πλαίσιο της φωτογραφίας */
 .partner-container {
     display: flex;
     flex-direction: column;
@@ -335,12 +332,13 @@ button[onclick*="delete"]:hover {
 }
 
 .panel-divider {
-    grid-column: span 2;    /* Απλώνεται και στις δύο στήλες */
-    border: 0;              /* Αφαιρεί το προεπιλεγμένο περίγραμμα */
-    border-top: 1px solid #333; /* Δημιουργεί μια σκούρα, κομψή γραμμή */
-    margin: 15px 0;         /* Δίνει λίγο "αέρα" πάνω-κάτω */
+    grid-column: span 2;    
+    border: 0;              
+    border-top: 1px solid #333; 
+    margin: 15px 0;         
     width: 100%;
 }
+
 /* --- Pegasus Weekly Planner Styles --- */
 .planner-btn {
     position: absolute;
@@ -386,15 +384,14 @@ button[onclick*="delete"]:hover {
 }
 
 .planner-content {
-    background: #0a0a0a; /* Πιο βαθύ μαύρο */
+    background: #0a0a0a; 
     border: 1px solid #4CAF50;
-    border-radius: 20px; /* Πιο στρογγυλεμένες γωνίες */
+    border-radius: 20px; 
     width: 100%;
-    max-width: 360px; /* Λίγο πιο φαρδύ για να "αναπνέει" το κείμενο */
+    max-width: 360px; 
     padding: 30px 25px;
     position: relative;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    /* Αφαιρούμε το ύψος για να μεγαλώσει όσο χρειάζεται */
 }
 
 .planner-item {
@@ -445,8 +442,8 @@ button[onclick*="delete"]:hover {
     font-weight: bold;
     font-size: 14px;
     position: absolute;
-bottom: 0px;
-	left:20px;
+    bottom: 0px;
+    left:20px;
 }
 
 /* Ο διακόπτης (Toggle Switch) */
@@ -481,23 +478,17 @@ bottom: 0px;
 input:checked + .slider { background-color: #ff4b2b; }
 input:checked + .slider:before { transform: translateX(26px); }
 
-/* ================= PREVIEW PANEL - COMPACT TACTICAL (v16.0) ================= */
-/* ================= PREVIEW PANEL - COMPACT TACTICAL (v16.7) ================= */
+/* ================= PREVIEW PANEL - COMPACT TACTICAL ================= */
 #previewPanel {
     transform: none;
     position: fixed;
     left: auto;
     right: 20px;
     top: 100px;
-    
-    /* ΠΛΑΤΟΣ: Αυξημένο για να "αναπνέει" το 4-column grid */
     width: 660px !important; 
     min-width: 320px;
-    
-    /* ΥΨΟΣ: Απόλυτα δυναμικό - Μαζεύει αυτόματα */
     height: auto !important; 
     max-height: 85vh; 
-    
     background: #0a0a0a;
     z-index: 10001;
     border: 2px solid #4CAF50;
@@ -505,6 +496,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     display: none;
     flex-direction: column;
     box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 20px rgba(76, 175, 80, 0.1);
+    padding-bottom: 10px;
 }
 
 #previewContent {
@@ -513,20 +505,12 @@ input:checked + .slider:before { transform: translateX(26px); }
     justify-content: flex-start !important;
     gap: 10px;
     padding: 15px;
-    
-    /* ⚡ ΑΥΤΟΜΑΤΟ ΥΨΟΣ ΧΩΡΙΣ SCROLLBAR */
     height: auto !important;
-    max-height: none !important; /* Επιτρέπει στο πλαίσιο να τεντώσει όσο χρειάζεται */
-    overflow: visible !important; /* Εξαφανίζει οριστικά τη μπάρα */
-}
-
-/* Fix για να μην "κολλάνε" οι εικόνες στο κάτω μέρος του πλαισίου */
-#previewPanel {
-    padding-bottom: 10px;
+    max-height: none !important; 
+    overflow: visible !important; 
 }
 
 .preview-item {
-    /* Τέλεια κατανομή 4 στηλών */
     flex: 0 0 calc(25% - 8px) !important;
     max-width: calc(25% - 8px);
     background: #111;
@@ -564,7 +548,6 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 /* ================= UNIVERSAL PEGASUS GREEN OVERRIDE ================= */
-/* Επιβολή πράσινου χρώματος σε ΟΛΕΣ τις μπάρες προόδου της εφαρμογής */
 .progress-fill, 
 .progress-bar, 
 .muscle-bar-fill, 
@@ -577,7 +560,6 @@ input:checked + .slider:before { transform: translateX(26px); }
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.4) !important;
 }
 
-/* Επιβολή πράσινου περιγράμματος σε ΟΛΑ τα αναδυόμενα παράθυρα (Modals) */
 .pegasus-panel, 
 .planner-modal, 
 #emsModal,
@@ -587,17 +569,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     box-shadow: 0 0 30px rgba(0,0,0,1) !important;
 }
 
-/* Ομοιόμορφα Scrollbars για όλο το σύστημα */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #000; }
 ::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 10px; }
 
-/* ==========================================================================
-   PEGASUS KOUKI MENU - UI FIX v2.2 (ZERO-SCROLL & WHITE TEXT)
-   Protocol: Strict Minimalism for Desktop UI
-   ========================================================================== */
-
-/* 1. Καθαρισμός Buttons: Όχι μπάρες, όχι gradients, μόνο Macros */
+/* ================= PEGASUS KOUKI MENU - UI FIX ================= */
 #koukiQuickMenu button {
     background-image: none !important;
     background: #0a0a0a !important;
@@ -607,15 +583,14 @@ input:checked + .slider:before { transform: translateX(26px); }
     justify-content: center !important;
     border: 1px solid #333 !important;
     padding: 12px 10px !important;
-    height: auto !important; /* Αυτόματο ύψος για να χωράνε τα Macros */
+    height: auto !important; 
     overflow: hidden;
 }
 
-/* 2. Color Lock: Όνομα -> Λευκό, Macros -> Πράσινο */
 #koukiQuickMenu strong, 
 #koukiQuickMenu .food-name,
 #koukiQuickMenu div[style*="color"] {
-    color: #eee !important; /* Απόλυτο λευκό Pegasus */
+    color: #eee !important; 
     background: none !important;
     text-shadow: none !important;
     font-size: 12px !important;
@@ -627,13 +602,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     letter-spacing: 0.5px;
 }
 
-/* 3. Αφαίρεση του εσωτερικού Scrollbar (Επιβολή Unified Scroll) */
 #koukiQuickMenu div {
-    max-height: none !important; /* Απελευθέρωση ύψους */
-    overflow: visible !important; /* Κατάργηση εσωτερικού scroll */
+    max-height: none !important; 
+    overflow: visible !important; 
 }
 
-/* 4. Hover State: Πράσινο περίγραμμα κατά την επιλογή */
 #koukiQuickMenu button:hover {
     border-color: #4CAF50 !important;
     background: #111 !important;
@@ -641,11 +614,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     transition: all 0.2s ease;
 }
 
-/* ==========================================================================
-   PEGASUS MUSCLE PROGRESS - UI RENDERING FIX
-   ========================================================================== */
-
-/* 1. Το κουτί που περιέχει όλες τις μπάρες */
+/* ================= PEGASUS MUSCLE PROGRESS ================= */
 #muscleProgressContainer {
     display: block !important;
     width: 100% !important;
@@ -656,13 +625,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     margin-bottom: 20px;
 }
 
-/* 2. Η κάθε γραμμή (Label + Bar) */
 .muscle-progress-row {
     margin-bottom: 12px;
     width: 100%;
 }
 
-/* 3. Το κείμενο (π.χ. ΣΤΗΘΟΣ 6/24) */
 .muscle-label-wrapper {
     display: flex;
     justify-content: space-between;
@@ -674,7 +641,6 @@ input:checked + .slider:before { transform: translateX(26px); }
     letter-spacing: 1px;
 }
 
-/* 4. Η στατική μπάρα (το φόντο) */
 .muscle-bar-bg {
     width: 100%;
     height: 8px;
@@ -684,7 +650,6 @@ input:checked + .slider:before { transform: translateX(26px); }
     border: 1px solid #333;
 }
 
-/* 5. Η γεμάτη μπάρα (το πράσινο) */
 .muscle-bar-fill {
     height: 100%;
     background: #4CAF50 !important;
@@ -701,7 +666,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999; /* Πάνω από όλα */
+    z-index: 9999; 
     transition: opacity 0.5s ease-out, visibility 0.5s;
 }
 
@@ -733,37 +698,32 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .loader-bar-fill {
-    width: 0%; /* Ξεκινάει από το 0 */
+    width: 0%; 
     height: 100%;
     background: #4CAF50;
     box-shadow: 0 0 10px #4CAF50;
-    /* animation: fillBar 2s forwards; <-- ΔΙΑΓΡΑΨΕ Η ΣΧΟΛΙΑΣΕ ΑΥΤΗ ΤΗ ΓΡΑΜΜΗ */
-    transition: width 0.3s ease; /* Πρόσθεσε αυτό για ομαλή κίνηση */
+    transition: width 0.3s ease; 
 }
 
 /* --- PEGASUS BOOT ANIMATIONS --- */
-
-/* 1. Το παλλόμενο "P" */
 @keyframes pulse {
     0% { transform: scale(1); opacity: 0.8; }
     50% { transform: scale(1.1); opacity: 1; }
     100% { transform: scale(1); opacity: 0.8; }
 }
 
-/* 2. Η μπάρα φόρτωσης */
 @keyframes fillBar {
     0% { width: 0%; }
     100% { width: 100%; }
 }
 
-/* 3. Ολοκληρωμένο εφέ για τις Πράσινες Τελείες */
 .dots {
     display: inline-block;
-    width: 25px; /* Αυξήθηκε ελαφρώς για να χωράνε άνετα οι 3 τελείες */
+    width: 25px; 
     text-align: left;
     margin-left: 2px;
-    color: #4CAF50; /* Pegasus Green */
-    text-shadow: 0 0 8px rgba(76, 175, 80, 0.6); /* High-Tech Glow */
+    color: #4CAF50; 
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.6); 
     font-weight: bold;
 }
 
