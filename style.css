@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v2)
-   Protocol: FLUID NAVBAR (DESKTOP) + MAXIMALIST RETENTION
+   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v4)
+   Protocol: BULLETPROOF SINGLE-LINE DASHBOARD (ANTI-OVERLAP FIX)
    ========================================================================== */
 
 /* ================= GLOBAL SETTINGS ================= */
@@ -27,14 +27,15 @@ body::-webkit-scrollbar { display: none; }
     border-bottom: 1px solid #222;
     flex-shrink: 0;
     width: 100%;
-    overflow-x: auto; /* Αν η οθόνη είναι πολύ μικρή, επιτρέπει σκρολάρισμα δεξιά-αριστερά */
+    overflow-x: auto; 
     scrollbar-width: none;
 }
+.navbar::-webkit-scrollbar { display: none; }
 
 .navbar button {
-    flex: 1 0 auto; /* Κρατάει το μέγεθός του, δεν συμπιέζεται */
-    min-width: 100px;
-    padding: 12px;
+    flex: 1 1 auto; 
+    min-width: 80px;
+    padding: 12px 5px;
     font-size: 14px;
     background: none;
     border: none;
@@ -43,6 +44,7 @@ body::-webkit-scrollbar { display: none; }
     transition: 0.3s;
     text-transform: uppercase;
     font-weight: bold;
+    white-space: nowrap;
 }
 
 .navbar button.active {
@@ -55,36 +57,37 @@ body::-webkit-scrollbar { display: none; }
 .pegasus-control-bar {
     position: relative;
     display: flex;
-    flex-wrap: wrap; /* 🎯 ΕΠΙΤΡΕΠΕΙ ΑΛΛΑΓΗ ΓΡΑΜΜΗΣ ΑΝ ΔΕΝ ΧΩΡΑΝΕ */
-    justify-content: space-between; /* Σπρώχνει το Χρονόμετρο αριστερά, τα Info δεξιά */
+    flex-wrap: nowrap !important; /* 🎯 ΑΠΟΛΥΤΟ ΚΛΕΙΔΩΜΑ ΣΕ 1 ΓΡΑΜΜΗ */
+    justify-content: space-between; 
     align-items: center;
-    gap: 15px;
-    padding: 10px 15px;
+    gap: 10px;
+    padding: 0 10px;
     background: #1a1a1a;
     border-bottom: 2px solid #333;
-    height: auto !important; /* 🎯 Απελευθέρωση ύψους για να χωράνε διπλές γραμμές */
-    min-height: 60px; /* Κρατάει το βασικό πάχος */
+    height: 60px !important; /* 🎯 ΚΛΕΙΔΩΜΑ ΥΨΟΥΣ ΓΙΑ ΝΑ ΜΗΝ ΧΑΛΑΕΙ ΤΟ CONTENT */
     box-sizing: border-box;
     flex-shrink: 0;
+    width: 100%;
+    overflow-x: auto; /* Αν δεν χωράνε, επιτρέπει scroll χωρίς να σπάει το layout */
+    scrollbar-width: none;
 }
+.pegasus-control-bar::-webkit-scrollbar { display: none; }
 
-/* 🎯 Η Ομάδα των Κεντρικών Κουμπιών (Έναρξη, Ημερολόγιο κλπ) */
 .control-buttons {
     display: flex;
-    flex-wrap: wrap; /* Επιτρέπει αλλαγή γραμμής αν δεν χωράνε */
+    flex-wrap: nowrap !important; /* 🎯 ΚΛΕΙΔΩΜΑ */
     justify-content: center;
     align-items: center;
-    gap: 8px;
-    flex: 1; /* Καταλαμβάνει όλο τον κεντρικό κενό χώρο */
+    gap: 6px;
+    flex: 1;
 }
 
-/* 🎯 Η Ομάδα των Δεξιών Πληροφοριών (Καιρός, Θερμίδες, Εργαλεία) */
 .info-display {
     display: flex;
-    flex-wrap: wrap; /* Επιτρέπει αλλαγή γραμμής */
-    justify-content: flex-end; /* Τα στοιχίζει στα δεξιά */
+    flex-wrap: nowrap !important; /* 🎯 ΚΛΕΙΔΩΜΑ */
+    justify-content: flex-end;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .p-btn, .weather-text, .workout-count-text, #totalProgressContainer {
@@ -98,21 +101,45 @@ body::-webkit-scrollbar { display: none; }
     border-radius: 6px;
     font-weight: bold;
     font-size: 13px;
-    white-space: nowrap;
+    white-space: nowrap !important; /* 🎯 Απαγόρευση σπασίματος λέξεων */
     transition: all 0.3s ease;
     box-sizing: border-box;
+    padding: 0 12px;
+    flex-shrink: 1; /* Επιτρέπει ελαφριά συμπίεση */
 }
 
-.p-btn { padding: 0 15px; cursor: pointer; min-width: 100px; text-decoration: none; }
+.p-btn { cursor: pointer; text-decoration: none; }
 .p-btn:hover { background: #4CAF50; color: #000; box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
 
-#totalProgressContainer { width: 130px; position: relative; overflow: hidden; flex-shrink: 0; }
+#totalProgressContainer { width: 130px; padding: 0; position: relative; overflow: hidden; flex-shrink: 0; }
 #totalProgress { height: 100%; width: 0%; background: rgba(76, 175, 80, 0.3); transition: width 0.3s ease; }
 #totalProgressTime { position: absolute; width: 100%; text-align: center; line-height: 38px; font-weight: bold; color: #fff; z-index: 1; }
 
+/* 🚀 TACTICAL SCALING: ΕΞΥΠΝΗ ΣΥΜΠΙΕΣΗ ΓΙΑ 1024px & 1280px */
+@media (max-width: 1350px) {
+    .pegasus-control-bar { gap: 5px; padding: 0 5px; }
+    .control-buttons, .info-display { gap: 4px; }
+    .p-btn, .weather-text, .workout-count-text {
+        padding: 0 8px; /* Ρουφάει τον αέρα δεξιά αριστερά */
+        font-size: 11px; /* Μικραίνει λίγο τα γράμματα */
+    }
+    #totalProgressContainer { width: 100px; }
+    .navbar button { font-size: 12px; padding: 12px 2px; }
+}
+
+@media (max-width: 1050px) {
+    /* ΓΙΑ ΟΘΟΝΕΣ 1024x600 - Απόλυτη συμπίεση */
+    .p-btn, .weather-text, .workout-count-text {
+        padding: 0 6px;
+        font-size: 10px;
+    }
+    #totalProgressContainer { width: 85px; }
+    .navbar button { font-size: 11px; }
+}
+
 /* ================= MAIN CONTENT LAYOUT ================= */
 .content {
-    height: calc(100% - 120px); 
+    height: calc(100% - 120px); /* Υπολογίζει ακριβώς 60px (navbar) + 60px (control bar) */
     padding: 15px;
     display: flex;
     box-sizing: border-box;
@@ -220,7 +247,7 @@ body::-webkit-scrollbar { display: none; }
 
 .pegasus-panel h3 { margin-top: 0; color: #4CAF50; text-align: center; text-transform: uppercase; font-size: 17px; letter-spacing: 2px; }
 
-/* ================= FOOD PANEL LAYOUT (v16.6 FIXED) ================= */
+/* ================= FOOD PANEL LAYOUT ================= */
 #foodPanel { 
     width: 1350px !important; 
     max-width: 98vw; 
@@ -295,7 +322,7 @@ button#btnAddFood,
     box-shadow: 0 0 12px rgba(76, 175, 80, 0.5) !important;
 }
 
-/* ================= UTILS - DELETE BUTTONS FIXED & VISIBLE ================= */
+/* ================= UTILS - DELETE BUTTONS ================= */
 .delete-btn, 
 .btn-delete, 
 button[onclick*="delete"], 
