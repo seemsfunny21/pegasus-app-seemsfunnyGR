@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.19 (STRICT DATA ISOLATION & STATIC UI FIX)
-   Protocol: Static Navbar Binding & Case-Insensitive Auto-Select
+   PEGASUS WORKOUT ENGINE - v10.23 (MAXIMALIST DATA RETENTION & DYNAMIC TIMER)
+   Protocol: Static Navbar Binding + Diagnostic Logging + Dynamic Phase Intervals
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
@@ -45,7 +45,7 @@ window.onerror = function(msg, url, line) {
 var exercises = [];
 var remainingSets = [];
 var currentIdx = 0;
-var phase = 0; 
+var phase = 0; // 0: Prep, 1: Work, 2: Rest
 var running = false;
 var timer = null;
 var totalSeconds = 0;
@@ -56,12 +56,6 @@ var sessionActiveKcal = 0;
 var muted = localStorage.getItem(P_M?.system.mute || "pegasus_mute_state") === "true";
 var TURBO_MODE = localStorage.getItem(P_M?.system.turbo || "pegasus_turbo_state") === "true";
 var SPEED = TURBO_MODE ? 10 : 1;
-
-var workoutPhases = [
-    { n: "Προετοιμασία", d: 10 }, 
-    { n: "Άσκηση", d: parseInt(localStorage.getItem(P_M?.user.ex_time || "pegasus_ex_time")) || 45 },     
-    { n: "Διάλειμμα", d: parseInt(localStorage.getItem(P_M?.user.rest_time || "pegasus_rest_time")) || 60 }      
-];
 
 var userWeight = parseFloat(localStorage.getItem(P_M?.user.weight || "pegasus_weight")) || 74;
 
@@ -139,13 +133,13 @@ function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', 'transparent', 'important');
-        b.style.color = "#333"; // Επαναφορά στο σκούρο γκρι όταν δεν είναι επιλεγμένο
+        b.style.color = "#333"; 
     });
     
     if (btn) {
         btn.classList.add("active");
         btn.style.setProperty('background-color', 'rgba(76, 175, 80, 0.1)', 'important');
-        btn.style.color = "#4CAF50"; // Πράσινο όταν επιλέγεται
+        btn.style.color = "#4CAF50"; 
     }
 
     clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
@@ -229,7 +223,7 @@ function selectDay(btn, day) {
     }, 150);
 }
 
-/* ===== 5. WORKOUT ENGINE CORE ===== */
+/* ===== 5. WORKOUT ENGINE CORE (DYNAMIC TIMER PATCH) ===== */
 function startPause() {
     if (exercises.length === 0) return;
     const vid = document.getElementById("video");
@@ -280,18 +274,16 @@ function runPhase() {
     const e = exercises[currentIdx];
     if (!e) return;
     const exName = e.querySelector(".weight-input").getAttribute("data-name");
-    
     let liftedWeight = parseFloat(e.querySelector(".weight-input").value) || 0;
     
+    // Kcal Calculation Logic
     let baseMET = 3.5; 
     let intensityMultiplier = 1.0;
-
     if (exName.toLowerCase().includes("cycling") || exName.toLowerCase().includes("ποδηλασία")) {
         baseMET = 8.0; 
     } else if (liftedWeight > 0) {
         intensityMultiplier = 1 + (liftedWeight / 100); 
     }
-
     let kcalPerMin = (baseMET * intensityMultiplier * userWeight * 3.5) / 200;
     let kcalPerSecond = kcalPerMin / 60;
 
@@ -302,13 +294,19 @@ function runPhase() {
     e.style.borderColor = "#4CAF50"; 
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
-    let t = (phase === 0) ? 10 : (phase === 1 ? workoutPhases[1].d : workoutPhases[2].d);
+    // ⏱️ DYNAMIC TIME CONFIGURATION
+    const config = window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
+    
+    let t = (phase === 0) ? config.prep : (phase === 1 ? config.work : config.rest);
     let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
+    let cssClass = (phase === 0) ? "timer-prep" : (phase === 1 ? "timer-work" : "timer-rest");
 
     const label = document.getElementById("phaseTimer");
+    const barFill = document.getElementById("phaseTimerFill");
+    
     if (label) {
         label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
-        label.style.color = (phase === 1) ? "#4CAF50" : (phase === 2 ? "#FFC107" : "#64B5F6");
+        label.className = "phase-label " + cssClass;
     }
 
     if (phase !== 2) showVideo(currentIdx);
@@ -321,13 +319,18 @@ function runPhase() {
         }
 
         if (phase === 1) {
-            sessionActiveKcal += kcalPerSecond;
+            sessionActiveKcal += (kcalPerSecond * SPEED);
         } else if (phase === 2) {
             let restKcalPerSec = ((2.0 * userWeight * 3.5) / 200) / 60;
-            sessionActiveKcal += restKcalPerSec;
+            sessionActiveKcal += (restKcalPerSec * SPEED);
         }
 
         if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
+        
+        if (barFill) {
+            let totalPhaseTime = (phase === 0) ? config.prep : (phase === 1 ? config.work : config.rest);
+            barFill.style.width = (((totalPhaseTime - t) / totalPhaseTime) * 100) + "%";
+        }
         
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
@@ -347,7 +350,6 @@ function runPhase() {
                 
                 if (window.updateAchievements) window.updateAchievements(exName);
                 if (window.logPegasusSet) window.logPegasusSet(exName);
-
                 if (window.PegasusCloud) window.PegasusCloud.push(true);
 
                 phase = 2; 
@@ -462,13 +464,12 @@ function showVideo(i) {
 }
 
 function calculateTotalTime() {
-    workoutPhases[1].d = parseInt(localStorage.getItem(P_M?.user.ex_time || "pegasus_ex_time")) || 45;
-    workoutPhases[2].d = parseInt(localStorage.getItem(P_M?.user.rest_time || "pegasus_rest_time")) || 60;
+    const config = window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
     
     totalSeconds = exercises.reduce((acc, ex) => {
         if (ex.classList.contains("exercise-skipped")) return acc;
         let sets = parseFloat(ex.dataset.total) || 0;
-        return acc + (sets * (10 + workoutPhases[1].d + workoutPhases[2].d));
+        return acc + (sets * (config.prep + config.work + config.rest));
     }, 0);
 
     remainingSeconds = totalSeconds;
@@ -578,7 +579,7 @@ function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
-    const currentDay = activeBtn.id.replace('nav-', ''); // 🎯 FIX: Παίρνει το σωστό όνομα από το ID
+    const currentDay = activeBtn.id.replace('nav-', ''); 
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     
     let rawData = (typeof window.calculateDailyProgram !== 'undefined') ? 
@@ -750,10 +751,9 @@ window.onload = () => {
         }
     });
 
-    // 🎯 FIX: Case-Insensitive Auto-Select
+    // 🎯 Case-Insensitive Auto-Select
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
-            // Συγκρίνουμε το ID του κουμπιού (π.χ. nav-Σάββατο) με τη σημερινή μέρα
             if (b.id.replace('nav-', '') === todayName) {
                 if (typeof selectDay === "function") {
                     selectDay(b, todayName);
