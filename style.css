@@ -739,13 +739,14 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 /* 2. STATUS TEXT */
 .loader-text {
-    font-size: 28px; /* 🎯 UNIFORM SIZE */
+    font-size: 20px; /* Διατήρηση του Uniform Size Protocol */
     font-weight: 900;
-    color: #4CAF50; /* Ίδιο χρώμα για απόλυτη ομοιομορφία */
+    color: #ffffff; /* 🎯 ΑΛΛΑΓΗ ΣΕ ΑΣΠΡΟ */
     margin: 0;
     text-transform: lowercase;
     letter-spacing: 1px;
-    font-family: inherit; /* Επιστροφή στην κύρια γραμματοσειρά */
+    font-family: inherit;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2); /* Ελαφρύ λευκό glow */
 }
 
 /* Μπάρα Φόρτωσης - Παραμένει διακριτική ανάμεσα στα κείμενα */
