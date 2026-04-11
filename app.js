@@ -668,6 +668,20 @@ window.updateTotalWorkoutCount = function() {
     if (display) display.textContent = `Προπονήσεις: ${count}`;
 };
 
+/* ===== 10.1. 🛡️ MASTER WEIGHT ALIGNMENT PROTOCOL ===== */
+window.alignPegasusWeight = function(cloudWeight) {
+    if (!cloudWeight) return;
+    const localWeight = parseFloat(localStorage.getItem('pegasus_weight'));
+    if (Math.abs(localWeight - cloudWeight) > 0.01) {
+        console.log(`%c ⚖️ PEGASUS: Weight Mismatch Found. Cloud (${cloudWeight}kg) vs Local (${localWeight}kg)`, "color: #ff9800; font-weight: bold;");
+        localStorage.setItem('pegasus_weight', cloudWeight);
+        userWeight = cloudWeight; // Ενημέρωση της ζωντανής μεταβλητής
+        console.log(`%c ✅ PEGASUS: Local weight aligned to Master Profile.`, "color: #4CAF50; font-weight: bold;");
+        if (typeof window.updateKcalUI === "function") window.updateKcalUI();
+    }
+};
+
+
 /* ===== 11. BOOT SEQUENCE ===== */
 window.onload = () => {
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
@@ -690,6 +704,14 @@ window.onload = () => {
             console.error("🛡️ PEGASUS RESET ERROR: Recovery initiated.", e);
         }
     }
+
+   // Έλεγχος βάρους 2 δευτερόλεπτα μετά τη σύνδεση με το Cloud
+setTimeout(() => {
+    if (window.PegasusCloud && window.PegasusCloud.getMasterWeight) {
+        const mWeight = window.PegasusCloud.getMasterWeight();
+        window.alignPegasusWeight(mWeight);
+    }
+}, 2000);
 
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     createNavbar();
