@@ -1,7 +1,8 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER (dragdrop.js) - v4.3 SHIELDED
-   Protocol: Strict Data Analyst - Keyboard Code Validation (Digit Recognition)
+   PEGASUS UI MANAGER (dragdrop.js) - v4.5 CLEAN SHIELDED
+   Protocol: Strict Data Analyst - Keyboard Code Validation & Clean Logic
    Features: Shift+1-9 Shortcuts, Mutation-Aware Dragging, High Z-Index Panels
+   Note: Button logic delegated entirely to app.js (masterUI) to prevent click collisions.
    ========================================================================== */
 
 const PegasusUI = {
@@ -10,12 +11,11 @@ const PegasusUI = {
     init() {
         this.initDraggablePanels();
         this.initClickOutside();
-        this.initButtonBridge(); 
         this.initHotkeys(); 
-        console.log("✅ PEGASUS UI MANAGER: v4.3 Operational (Shielded Numeric Hotkeys Enabled)");
+        console.log("✅ PEGASUS UI MANAGER: v4.5 Operational (Button Bridge Delegated to app.js)");
     },
 
-/**
+    /**
      * ⌨️ PEGASUS TACTICAL HOTKEYS (v4.6 - UNIVERSAL)
      * Supports: Alt + Top Row OR Alt + Numpad
      * Fixes: Numpad Navigation Conflict & Shift Desync
@@ -84,7 +84,7 @@ const PegasusUI = {
 
     /**
      * 🛠️ TACTICAL PANEL TOGGLE
-     * Manages Visibility, Z-Index and Logic Initialization Bridges
+     * Manages Visibility, Z-Index and Logic Initialization Bridges (Triggered by app.js or Hotkeys)
      */
     togglePanel(id) {
         const panel = document.getElementById(id);
@@ -106,101 +106,10 @@ const PegasusUI = {
             document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
             panel.style.zIndex = "2000";
 
-            // Logic Bridges (v4.3)
+            // Logic Bridges
             if (id === 'settingsPanel' && typeof window.initSettingsUI === 'function') window.initSettingsUI();
             if (id === 'galleryPanel' && window.GalleryEngine) window.GalleryEngine.render();
             if (id === 'foodPanel' && typeof window.updateFoodUI === "function") window.updateFoodUI();
-        }
-    },
-
-    initButtonBridge() {
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn || !btn.id) return;
-            const targetId = btn.id;
-
-            switch(targetId) {
-                  case 'btnPlanSelector': 
-                    this.togglePanel('planModal');
-                    break;
-                case 'btnWarmup':
-                    this.handleWarmupToggle();
-                    break;
-                case 'btnTurboTools':
-                    window.TURBO_MODE = !window.TURBO_MODE;
-                    window.SPEED = window.TURBO_MODE ? 10 : 1;
-                    btn.textContent = window.TURBO_MODE ? "Turbo: ΕΝΕΡΓΟ" : "Turbo: ΑΝΕΝΕΡΓΟ";
-                    btn.style.color = window.TURBO_MODE ? "#ff4444" : "#4CAF50";
-                    break;
-                case 'btnMuteTools':
-                    window.muted = !window.muted;
-                    btn.textContent = window.muted ? "Ήχος: ΣΙΓΑΣΗ" : "Ήχος: ΕΝΕΡΓΟΣ";
-                    btn.style.color = window.muted ? "#888" : "#4CAF50";
-                    break;
-                case 'btnPartnerMode':
-                    if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode();
-                    break;
-                case 'btnSettingsUI':
-                    this.togglePanel('settingsPanel');
-                    break;
-                case 'btnImportData':
-                    const fileInput = document.getElementById('importFileTools');
-                    if (fileInput) fileInput.click();
-                    break;
-                case 'btnExportData':
-                    if (window.exportPegasusData) window.exportPegasusData();
-                    break;
-                case 'btnMasterVault':
-                    const modal = document.getElementById('pinModal');
-                    if (modal) modal.style.display = 'flex';
-                    break;
-                case 'btnOpenGallery':
-                    this.togglePanel('galleryPanel');
-                    break;
-                case 'btnEMS':
-                    this.togglePanel('emsModal');
-                    break;
-                case 'btnProposalsUI':
-                    if (window.masterUI && typeof window.masterUI.btnProposalsUI === 'function') {
-                        window.masterUI.btnProposalsUI();
-                    }
-                    break;
-            }
-        });
-
-        const importInput = document.getElementById('importFileTools');
-        if (importInput) {
-            importInput.onchange = (e) => { if (window.importPegasusData) window.importPegasusData(e); };
-        }
-    },
-
-    handleWarmupToggle() {
-        const vid = document.getElementById("video");
-        const label = document.getElementById("phaseTimer");
-        if (!vid) return;
-
-        if (!vid.src.includes("warmup.mp4")) {
-            vid.pause();
-            vid.src = "videos/warmup.mp4";
-            vid.load();
-            vid.play().catch(e => console.log("Play interrupted"));
-            if (label) {
-                label.textContent = "ΠΡΟΘΕΡΜΑΝΣΗ (Manual Mode)";
-                label.style.color = "#64B5F6";
-            }
-        } 
-        else {
-            vid.pause();
-            if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
-                window.currentIdx = 0;
-                window.phase = 0;
-                window.showVideo(0);
-                if (label) {
-                    const firstEx = window.exercises[0].querySelector(".exercise-name")?.textContent || "Έτοιμος";
-                    label.textContent = firstEx;
-                    label.style.color = "#4CAF50";
-                }
-            }
         }
     },
 
@@ -226,18 +135,21 @@ const PegasusUI = {
         let pos3 = e.clientX, pos4 = e.clientY;
         document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
         panel.style.zIndex = "1001";
+        
         const elementDrag = (e) => {
             const pos1 = pos3 - e.clientX; const pos2 = pos4 - e.clientY;
             pos3 = e.clientX; pos4 = e.clientY;
             panel.style.top = (panel.offsetTop - pos2) + "px";
             panel.style.left = (panel.offsetLeft - pos1) + "px";
         };
+        
         const closeDrag = () => { 
             document.onmouseup = null; 
             document.onmousemove = null; 
             header.style.cursor = "grab"; 
             localStorage.setItem(`pegasus_pos_${panel.id}`, JSON.stringify({ top: panel.style.top, left: panel.style.left })); 
         };
+        
         document.onmouseup = closeDrag; 
         document.onmousemove = elementDrag;
     },
@@ -247,6 +159,7 @@ const PegasusUI = {
             this.panels.forEach(id => {
                 const panel = document.getElementById(id);
                 if (panel && panel.style.display === 'block') {
+                    // Δεν κλείνει αν κάνεις κλικ μέσα του, ούτε αν κάνεις κλικ σε κάποιο κουμπί μενού (navbar/p-btn)
                     if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button') && !e.shiftKey) {
                         panel.style.display = 'none';
                         if (window.PegasusCloud) window.PegasusCloud.push(true);
@@ -261,11 +174,13 @@ function initExerciseListDrag() {
     const list = document.getElementById("exList");
     if (!list) return;
     const applyDraggable = () => { list.querySelectorAll(".exercise").forEach(el => el.setAttribute("draggable", "true")); };
+    
     list.addEventListener("dragstart", (e) => {
         const item = e.target.closest(".exercise");
         if (!item || window.running) return;
         item.classList.add("dragging");
     });
+    
     list.addEventListener("dragover", (e) => {
         e.preventDefault();
         const draggingItem = list.querySelector(".dragging");
@@ -274,11 +189,13 @@ function initExerciseListDrag() {
         let nextSibling = siblings.find(sibling => e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2);
         list.insertBefore(draggingItem, nextSibling);
     });
+    
     list.addEventListener("dragend", (e) => {
         const item = e.target.closest(".exercise");
         if (item) item.classList.remove("dragging");
         if (typeof window.exercises !== 'undefined') window.exercises = [...list.querySelectorAll(".exercise")];
     });
+    
     const observer = new MutationObserver(() => applyDraggable());
     observer.observe(list, { childList: true });
     applyDraggable();
