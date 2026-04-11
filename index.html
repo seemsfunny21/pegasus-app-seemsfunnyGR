@@ -109,20 +109,20 @@
                 <datalist id="partnerList"></datalist>
                 <button id="btnPartnerMode" class="p-btn" style="width:100%">ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ</button>
             </div>
-           <div class="settings-grid" style="display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;">
-    
-    <button id="btnPlanSelector" class="p-btn" style="width:100%; border-color:#FFC107; color:#FFC107;">📅 ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ</button>
+            <div class="settings-grid" style="display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;">
+                
+                <button id="btnPlanSelector" class="p-btn btn-plan-selector">📅 ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ</button>
 
-    <button id="btnMuteTools" class="p-btn" style="width:100%">Ήχος: ΕΝΕΡΓΟΣ</button>
-    <button id="btnTurboTools" class="p-btn" style="width:100%">Turbo: ΑΝΕΝΕΡΓΟ</button>
-    <button id="btnExportData" class="p-btn" style="width:100%">Αποθήκευση Αρχείου</button>
-    <button id="btnImportData" class="p-btn" style="width:100%">Φόρτωση Αρχείου</button>
-    <input type="file" id="importFileTools" style="display:none">
-    <button id="btnMasterVault" class="p-btn" style="width:100%; border-color:#00bcd4; color:#00bcd4; font-weight:bold;">🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ</button>
-    <button id="btnOpenGallery" class="p-btn" style="width:100%;">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
-    <button id="btnEMS" class="p-btn" style="width:100%;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</button>
-    
-</div>
+                <button id="btnMuteTools" class="p-btn" style="width:100%">Ήχος: ΕΝΕΡΓΟΣ</button>
+                <button id="btnTurboTools" class="p-btn" style="width:100%">Turbo: ΑΝΕΝΕΡΓΟ</button>
+                <button id="btnExportData" class="p-btn" style="width:100%">Αποθήκευση Αρχείου</button>
+                <button id="btnImportData" class="p-btn" style="width:100%">Φόρτωση Αρχείου</button>
+                <input type="file" id="importFileTools" style="display:none">
+                <button id="btnMasterVault" class="p-btn" style="width:100%; border-color:#00bcd4; color:#00bcd4; font-weight:bold;">🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ</button>
+                <button id="btnOpenGallery" class="p-btn" style="width:100%;">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
+                <button id="btnEMS" class="p-btn" style="width:100%;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</button>
+                
+            </div>
         </div>
     </div> 
 
@@ -336,6 +336,31 @@
             <button id="btnSaveEMS" style="flex: 1; background: #4CAF50; color: black; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">ΑΠΟΘΗΚΕΥΣΗ</button>
             <button id="btnCloseEMS" style="flex: 1; background: #333; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">ΑΚΥΡΟ</button>
         </div>
+    </div>
+
+    <div id="planModal" class="pegasus-panel plan-modal-container" style="display:none;">
+        <h3 class="plan-modal-title">ΕΠΙΛΟΓΗ ΠΡΟΓΡΑΜΜΑΤΟΣ</h3>
+        <p class="plan-modal-desc">Η αλλαγή εφαρμόζεται άμεσα (Τρίτη, Τετάρτη, Παρασκευή). Οι στόχοι μυϊκών ομάδων δεν επηρεάζονται.</p>
+
+        <div class="plan-options-wrapper">
+            <button onclick="window.setPegasusPlan('CLASSIC')" class="p-btn plan-btn" id="plan-CLASSIC">
+                <span class="plan-title">CLASSIC (EMS)</span>
+                <span class="plan-subtitle">Το αρχικό σου πρόγραμμα.</span>
+            </button>
+            <button onclick="window.setPegasusPlan('PPL')" class="p-btn plan-btn" id="plan-PPL">
+                <span class="plan-title">PUSH / PULL / LEGS</span>
+                <span class="plan-subtitle">Τρ: Ώθηση | Τε: Έλξη | Πα: Πόδια & Κορμός</span>
+            </button>
+            <button onclick="window.setPegasusPlan('UPPER_LOWER')" class="p-btn plan-btn" id="plan-UPPER_LOWER">
+                <span class="plan-title">UPPER / LOWER / FULL</span>
+                <span class="plan-subtitle">Τρ: Άνω | Τε: Κάτω | Πα: Full Body</span>
+            </button>
+            <button onclick="window.setPegasusPlan('ARNOLD')" class="p-btn plan-btn" id="plan-ARNOLD">
+                <span class="plan-title">ARNOLD SPLIT</span>
+                <span class="plan-subtitle">Τρ: Στήθος-Πλάτη | Τε: Πόδια | Πα: Ώμοι-Χέρια</span>
+            </button>
+        </div>
+        <button onclick="document.getElementById('planModal').style.display='none'" class="p-btn plan-cancel-btn">ΑΚΥΡΟ</button>
     </div>
 
     <script>
