@@ -793,20 +793,3 @@ window.PegasusDebug = {
     },
     logs: () => window.pegasusLogs
 };
-
-window.addEventListener('mousedown', (e) => {
-    const panels = ['foodPanel', 'calendarPanel', 'achievementsPanel', 'settingsPanel', 'previewPanel', 'toolsPanel', 'galleryPanel'];
-    let closedAny = false; 
-    
-    panels.forEach(id => {
-        const panel = document.getElementById(id);
-        if (panel && panel.style.display === 'block') {
-            if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button')) {
-                panel.style.display = 'none';
-                closedAny = true;
-            }
-        }
-    });
-
-    if (closedAny && window.PegasusCloud) window.PegasusCloud.push(true); 
-});
