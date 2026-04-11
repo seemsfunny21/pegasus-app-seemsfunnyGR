@@ -802,14 +802,18 @@ input:checked + .slider:before { transform: translateX(26px); }
    UI POLISH: TOOLS PANEL & PLAN SELECTOR MODAL
    ========================================================================== */
 
-/* --- ΕΡΓΑΛΕΙΑ PEGASUS (ΟΜΟΙΟΜΟΡΦΙΑ) --- */
+/* --- ΕΡΓΑΛΕΙΑ PEGASUS (ΟΜΟΙΟΜΟΡΦΙΑ & ΚΕΝΤΡΑΡΙΣΜΑ) --- */
 .tools-btn {
     width: 100% !important;
-    justify-content: flex-start !important; 
+    display: flex !important;
+    justify-content: center !important; /* 🎯 ΕΠΑΝΑΦΟΡΑ ΣΤΟ ΚΕΝΤΡΟ */
+    align-items: center !important;
+    gap: 10px !important; /* Κενό ανάμεσα στο emoji και το κείμενο */
     padding: 12px 15px !important;
     font-size: 12px !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px;
+    text-align: center !important;
 }
 
 /* --- MODAL ΕΠΙΛΟΓΗΣ ΠΡΟΓΡΑΜΜΑΤΟΣ (ΚΑΘΕΤΗ ΔΙΑΤΑΞΗ) --- */
