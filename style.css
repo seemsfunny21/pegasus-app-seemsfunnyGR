@@ -739,7 +739,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 /* 2. STATUS TEXT */
 .loader-text {
-    font-size: 20px; /* Διατήρηση του Uniform Size Protocol */
+    font-size: 14px; /* Διατήρηση του Uniform Size Protocol */
     font-weight: 900;
     color: #ffffff; /* 🎯 ΑΛΛΑΓΗ ΣΕ ΑΣΠΡΟ */
     margin: 0;
