@@ -46,7 +46,6 @@
             <div class="tile" onclick="openView('ems_panel')"><span class="tile-icon">⚡</span><span class="tile-label">EMS</span></div>
             <div class="tile" onclick="openView('preview')"><span class="tile-icon">🎯</span><span class="tile-label">Στόχοι</span></div>
             <div class="tile" onclick="openView('profile')"><span class="tile-icon">👤</span><span class="tile-label">Έγγραφα</span></div>
-            <div class="tile" onclick="openView('car')"><span class="tile-icon">🚗</span><span class="tile-label">Όχημα</span></div>
             <div class="tile" onclick="openView('notes')"><span class="tile-icon">📝</span><span class="tile-label">Σημειώσεις</span></div>
 
             <div class="tile" onclick="openView('parking_panel')">
@@ -100,7 +99,7 @@
         <div id="libraryContainer" style="width:100%;"></div>
     </div>
 
-<div id="cardio" class="view">
+    <div id="cardio" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
         <div class="section-title">ΚΑΤΑΓΡΑΦΗ ΠΟΔΗΛΑΣΙΑΣ</div>
         
@@ -260,6 +259,31 @@
             </button>
         </div>
     </div>
+
+    <script>
+        window.registerPegasusModule = function(module) {
+            document.addEventListener("DOMContentLoaded", () => {
+                const grid = document.querySelector('.grid');
+                if (!grid) return;
+                
+                if (document.getElementById('tile-' + module.id)) return;
+
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.id = 'tile-' + module.id;
+                tile.onclick = () => openView(module.id);
+                tile.innerHTML = `<span class="tile-icon">${module.icon}</span><span class="tile-label">${module.label}</span>`;
+
+                const parkingTile = document.querySelector('[onclick="openView(\'parking_panel\')"]');
+                if (parkingTile) {
+                    grid.insertBefore(tile, parkingTile);
+                } else {
+                    grid.appendChild(tile);
+                }
+                console.log(`🔌 PEGASUS UI: Auto-Injected Module [${module.label}]`);
+            });
+        };
+    </script>
 
     <script src="../manifest.js"></script>
     <script src="../data.js"></script>
