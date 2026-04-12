@@ -187,7 +187,7 @@ function selectDay(btn, day) {
 
         const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const savedWeight = localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`) || localStorage.getItem(`weight_${cleanName}`) || "";
+        const savedWeight = window.getSavedWeight(cleanName);
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
@@ -399,17 +399,63 @@ function skipToNextExercise() {
 }
 
 /* ===== 6. SAVE & SKIP ===== */
-function saveWeight(name, val) {
-    const cleanName = name.trim();
-    localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
-    localStorage.setItem(`weight_${cleanName}`, val);
-    console.log(`[PEGASUS LOG]: Weight updated for ${cleanName}: ${val}kg`);
+/* ===== 6. ADVANCED WEIGHT TRACKING (PARTNER AWARE) ===== */
 
-    if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
-        window.MuscleProgressUI.render();
+// 1. Βρίσκει ποιος αθλητής κάνει προπόνηση αυτή τη στιγμή
+window.getActiveLifter = function() {
+    const pBtn = document.getElementById('btnPartnerMode');
+    const pInput = document.getElementById('partnerNameInput');
+    // Αν το κουμπί λέει ΕΝΕΡΓΟΣ και υπάρχει όνομα
+    if (pBtn && pBtn.textContent.includes("ΕΝΕΡΓΟΣ") && pInput && pInput.value.trim() !== "") {
+        return pInput.value.trim().toUpperCase();
     }
-    if (window.PegasusCloud) window.PegasusCloud.push(true);
-}
+    return "ΑΓΓΕΛΟΣ"; // Ο Master User
+};
+
+// 2. Φέρνει τα σωστά κιλά ανάλογα με τον αθλητή
+window.getSavedWeight = function(exerciseName) {
+    const cleanName = exerciseName.trim();
+    const lifter = window.getActiveLifter();
+    let allWeights = JSON.parse(localStorage.getItem(M.workout.exerciseWeights) || "{}");
+
+    // Διαβάζει από το νέο ενιαίο αρχείο
+    if (allWeights[lifter] && allWeights[lifter][cleanName] !== undefined) {
+        return allWeights[lifter][cleanName];
+    }
+
+    // Maximalist Retention: Αν είναι ο Άγγελος, ψάχνει και τα παλιά κιλά (που δεν είχαν ανέβει στο cloud)
+    if (lifter === "ΑΓΓΕΛΟΣ") {
+        let old1 = localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`);
+        let old2 = localStorage.getItem(`weight_${cleanName}`);
+        if (old1) return old1;
+        if (old2) return old2;
+    }
+    return "";
+};
+
+// 3. Η νέα, ασφαλής αποθήκευση στο Cloud
+window.saveWeight = function(name, val) {
+    const cleanName = name.trim();
+    const lifter = window.getActiveLifter();
+
+    // Φορτώνει όλο το λεξικό
+    let allWeights = JSON.parse(localStorage.getItem(M.workout.exerciseWeights) || "{}");
+    
+    // Αν ο αθλητής (ή συνεργάτης) δεν υπάρχει στο λεξικό, τον δημιουργεί
+    if (!allWeights[lifter]) allWeights[lifter] = {};
+
+    // Αποθηκεύει τα κιλά στον φάκελό του
+    allWeights[lifter][cleanName] = val;
+    localStorage.setItem(M.workout.exerciseWeights, JSON.stringify(allWeights));
+
+    console.log(`[PEGASUS DATA]: Weight Saved -> Lifter: ${lifter} | Exercise: ${cleanName} | Weight: ${val}kg`);
+
+    // Maximalist Retention: Κρατάμε το παλιό format προσωρινά για ασφάλεια
+    if (lifter === "ΑΓΓΕΛΟΣ") localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
+
+    if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") window.MuscleProgressUI.render();
+    if (window.PegasusCloud) window.PegasusCloud.push(true); // ☁️ ΠΛΕΟΝ ΤΑ ΚΙΛΑ ΠΑΝΕ CLOUD!
+};
 
 /* ===== 7. VIDEO & UI UTILS ===== */
 function showVideo(i) {
