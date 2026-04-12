@@ -260,7 +260,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         window.registerPegasusModule = function(module) {
             document.addEventListener("DOMContentLoaded", () => {
                 const grid = document.querySelector('.grid');
@@ -274,9 +274,10 @@
                 tile.onclick = () => openView(module.id);
                 tile.innerHTML = `<span class="tile-icon">${module.icon}</span><span class="tile-label">${module.label}</span>`;
 
-                const parkingTile = document.querySelector('[onclick="openView(\'parking_panel\')"]');
-                if (parkingTile) {
-                    grid.insertBefore(tile, parkingTile);
+                // 🔴 ΑΛΛΑΓΗ ΕΔΩ: Ορίζουμε ως στόχο τις Σημειώσεις αντί για το Parking
+                const targetTile = document.querySelector('[onclick="openView(\'notes\')"]');
+                if (targetTile) {
+                    grid.insertBefore(tile, targetTile);
                 } else {
                     grid.appendChild(tile);
                 }
