@@ -213,7 +213,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         window.PegasusMobileUI = {
             coreModules: [
                 { id: 'diet', icon: '🥗', label: 'Διατροφή' },
@@ -229,6 +229,10 @@
             extraModules: [],
 
             registerModule: function(module) {
+                // 🛡️ ΑΣΠΙΔΑ ΔΙΠΛΟΤΥΠΩΝ: Αν υπάρχει ήδη το ID (π.χ. το car), μην το ξαναβάλεις!
+                if (this.coreModules.some(m => m.id === module.id)) return;
+                if (this.extraModules.some(m => m.id === module.id)) return;
+                
                 this.extraModules.push(module);
                 if (document.readyState === "loading") {
                     document.addEventListener("DOMContentLoaded", () => this.render());
@@ -239,35 +243,43 @@
 
             render: function() {
                 const grid = document.getElementById('dynamic-grid');
-                const anchor = document.getElementById('settings-anchor');
-                if (!grid || !anchor) return;
+                if (!grid) return;
 
                 grid.innerHTML = "";
                 
-                // 1. Βασικά Κουμπιά (Εκτός Parking & Supps)
+                // 1. Σχεδίαση Core Modules (Τα 8 βασικά)
                 this.coreModules.forEach(m => this.createTile(grid, m));
 
-                // 2. Ειδικό Κουμπί Parking
+                // 2. Σχεδίαση Ειδικών Modules (Parking, Supps)
                 this.injectParkingTile(grid);
-
-                // 3. Ειδικό Κουμπί Supps
                 this.injectSuppsTile(grid);
 
-                // 4. Νέα Δυναμικά Κουμπιά (π.χ. Supplies)
+                // 3. Σχεδίαση Extra Modules (π.χ. Αποθέματα)
                 this.extraModules.forEach(m => this.createTile(grid, m));
 
-                // 5. Ρυθμίσεις (Υπολογισμός Μονού/Ζυγού)
+                // 4. Υπολογισμός Ρυθμίσεων (ΕΝΤΟΣ ΤΟΥ GRID ΠΛΕΟΝ)
                 const totalTiles = grid.children.length;
-                const isOdd = totalTiles % 2 !== 0;
+                const isEven = totalTiles % 2 === 0;
 
-                anchor.innerHTML = `
-                    <div class="tile" onclick="openView('settings_panel')" style="grid-column: ${isOdd ? 'span 2' : 'auto'}; margin-top: 12px; display: flex; align-items: center; justify-content: center; height: 100px;">
-                        <span class="tile-icon" style="font-size: 20px; margin-right: ${isOdd ? '10px' : '0'};">⚙️</span>
-                        <span class="tile-label" style="color: var(--main); font-weight: 900; ${isOdd ? 'margin-top:0;' : ''}">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
+                const settingsTile = document.createElement('div');
+                settingsTile.className = `tile ${isEven ? 'full-width' : ''}`;
+                settingsTile.onclick = () => openView('settings_panel');
+                settingsTile.style.borderColor = "var(--main)";
+
+                // Αν είναι ζυγός -> Icon δίπλα στο κείμενο (Μπάρα). Αν μονός -> Icon πάνω από το κείμενο (Τετράγωνο)
+                settingsTile.innerHTML = `
+                    <div style="display: flex; flex-direction: ${isEven ? 'row' : 'column'}; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                        <span class="tile-icon" style="font-size: 20px; ${isEven ? 'margin-right: 10px; margin-bottom: 0;' : 'margin-bottom: 6px;'}">⚙️</span>
+                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
                     </div>
                 `;
                 
-                // Επικαιροποίηση UI αν φορτώθηκε αργά
+                grid.appendChild(settingsTile);
+                
+                // Καθαρισμός του παλιού εξωτερικού anchor αν έχει μείνει
+                const anchor = document.getElementById('settings-anchor');
+                if (anchor) anchor.innerHTML = "";
+
                 if (typeof updateSuppUI === "function") updateSuppUI();
             },
 
@@ -283,10 +295,7 @@
                 const tile = document.createElement('div');
                 tile.className = 'tile';
                 tile.onclick = () => openView('parking_panel');
-                tile.innerHTML = `
-                    <span class="tile-icon icon-parking">P</span> 
-                    <span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>
-                `;
+                tile.innerHTML = `<span class="tile-icon icon-parking">P</span><span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>`;
                 container.appendChild(tile);
             },
 
@@ -315,12 +324,10 @@
             }
         };
 
-        // Bridge για παλιά modules (π.χ. car.js)
         window.registerPegasusModule = function(module) {
             window.PegasusMobileUI.registerModule(module);
         };
         
-        // Initial Render
         document.addEventListener("DOMContentLoaded", () => {
             window.PegasusMobileUI.render();
         });
