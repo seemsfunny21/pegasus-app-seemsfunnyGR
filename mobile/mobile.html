@@ -100,11 +100,12 @@
         <div id="libraryContainer" style="width:100%;"></div>
     </div>
 
-    <div id="cardio" class="view">
+<div id="cardio" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΚΑΤΑΓΡΑΦΗ ΑΕΡΟΒΙΑΣ</div>
-        <div class="input-label">ΔΙΑΔΡΟΜΗ / ΤΥΠΟΣ</div>
-        <input type="text" id="cdRoute" placeholder="π.χ. ΠΟΔΗΛΑΣΙΑ">
+        <div class="section-title">ΚΑΤΑΓΡΑΦΗ ΠΟΔΗΛΑΣΙΑΣ</div>
+        
+        <input type="hidden" id="cdRoute" value="ΠΟΔΗΛΑΣΙΑ">
+        
         <div class="compact-grid">
             <div><div class="input-label">ΧΙΛΙΟΜΕΤΡΑ</div><input type="number" id="cdKm" placeholder="Km" step="0.1" inputmode="decimal"></div>
             <div><div class="input-label">KCAL</div><input type="number" id="cdKcalBurned" placeholder="Kcal" inputmode="numeric"></div>
