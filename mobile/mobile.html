@@ -280,7 +280,9 @@
                 const anchor = document.getElementById('settings-anchor');
                 if (anchor) anchor.innerHTML = "";
 
-                if (typeof updateSuppUI === "function") updateSuppUI();
+            if (window.PegasusInventory && typeof window.PegasusInventory.updateUI === "function") {
+    window.PegasusInventory.updateUI();
+}
             },
 
             createTile: function(container, m) {
@@ -363,8 +365,9 @@
             }
         }
 
-        function refreshUIComponent(id) {
+function refreshUIComponent(id) {
             try {
+                // 1. Βασικά Modules
                 if (id === 'diet') window.PegasusDiet?.updateUI();
                 if (id === 'library') window.PegasusDiet?.renderDailyKouki();
                 if (id === 'supps') {
@@ -381,6 +384,15 @@
                 }
                 if (id === 'settings_panel') window.PegasusWeight?.updateUI(); 
                 if (id === 'parking_panel') window.PegasusParking?.updateUI();
+
+                // 🔴 2. ΔΥΝΑΜΙΚΗ ΑΝΑΝΕΩΣΗ (Για Αποθέματα και μελλοντικά Modules)
+                // Αν υπάρχει συνάρτηση render[Id]Content, την τρέχουμε αυτόματα
+                const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
+                if (typeof window[dynamicRenderName] === 'function') {
+                    window[dynamicRenderName]();
+                    console.log(`📡 PEGASUS UI: Dynamically refreshed ${id}`);
+                }
+
             } catch(e) { console.error("Refresh Error:", e); }
         }
 
