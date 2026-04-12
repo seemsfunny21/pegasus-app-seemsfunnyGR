@@ -915,3 +915,15 @@ input:checked + .slider:before { transform: translateX(26px); }
     background: #ff4444 !important;
     color: #000 !important;
 }
+
+/* ================= PEGASUS STATS ALIGNMENT FIX ================= */
+.stat-label-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-weight: 900 !important;
+    font-size: 13px !important;
+    margin-bottom: 5px !important;
+    color: #eee !important;
+    letter-spacing: 1px !important;
+}
