@@ -45,7 +45,7 @@ window.PegasusManifest = {
         notes: "pegasus_notes",
         contacts: "pegasus_contacts"
     },
-    workout: {
+ workout: {
         weekly_history: "pegasus_weekly_history",
         done: "pegasus_workouts_done",
         total: "pegasus_total_workouts",
@@ -53,7 +53,8 @@ window.PegasusManifest = {
         cardio_history: "pegasus_cardio_history",
         activePlan: "pegasus_active_plan",
         muscleTargets: "pegasus_muscle_targets",
-        calendarHistory: "pegasus_calendar_history"
+        calendarHistory: "pegasus_calendar_history",
+        exerciseWeights: "pegasus_exercise_weights" 
     },
     nutrition: { 
         // 🔴 CRITICAL FIX FOR food.js RUNTIME ERROR
