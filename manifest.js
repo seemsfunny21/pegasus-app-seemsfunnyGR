@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.0)
-   Protocol: Centralized Data Governance & Forensic Blueprint
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.1)
+   Protocol: Zero-Orphan Key Governance & Runtime Fixes
    Status: THE SINGLE SOURCE OF TRUTH
    ========================================================================== */
 
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-12",
         logic_protocol: "Zero-Bug Simulation & Maximalist Retention",
-        engine_version: "v18.0 Stable"
+        engine_version: "v18.1 Stable"
     },
 
     // ---------------------------------------------------------
@@ -24,25 +24,54 @@ window.PegasusManifest = {
         mute: "pegasus_mute_state",
         turbo: "pegasus_turbo_state",
         lastReset: "pegasus_last_reset",
-        vaultPin: "pegasus_vault_pin"
+        vaultPin: "pegasus_vault_pin",
+        vaultData: "pegasus_vault_data",
+        vaultTime: "pegasus_vault_time",
+        geminiKey: "pegasus_gemini_key",
+        errorLog: "pegasus_error_log",
+        cmdTrace: "pegasus_command_trace",
+        stats: "pegasus_stats",
+        lastPush: "pegasus_last_push",
+        lastReport: "pegasus_last_auto_report"
     },
     user: {
         weight: "pegasus_weight",
         weightHistory: "pegasus_weight_history",
-        legacyWeight: "weight_ΑΓΓΕΛΟΣ" 
+        legacyWeight: "weight_ΑΓΓΕΛΟΣ",
+        age: "pegasus_age",
+        height: "pegasus_height",
+        gender: "pegasus_gender",
+        specs: "pegasus_user_specs",
+        notes: "pegasus_notes",
+        contacts: "pegasus_contacts"
     },
     workout: {
         weekly_history: "pegasus_weekly_history",
         done: "pegasus_workouts_done",
         total: "pegasus_total_workouts",
         cardio_offset: "pegasus_cardio_offset_sets",
-        cardio_history: "pegasus_cardio_history"
+        cardio_history: "pegasus_cardio_history",
+        activePlan: "pegasus_active_plan",
+        muscleTargets: "pegasus_muscle_targets",
+        calendarHistory: "pegasus_calendar_history"
+    },
+    nutrition: { 
+        // 🔴 CRITICAL FIX FOR food.js RUNTIME ERROR
+        log_prefix: "food_log_" 
     },
     diet: {
         weekly_kcal: "pegasus_weekly_kcal",
         session_kcal: "pegasus_session_kcal",
         inventory: "pegasus_supp_inventory",
-        foodLogPrefix: "food_log_" 
+        foodLibrary: "pegasus_food_library",
+        todayKcal: "pegasus_today_kcal",
+        todayProtein: "pegasus_today_protein"
+    },
+    kouki: {
+        agreement: "kouki_agreement_log",
+        totalMeals: "kouki_meals_total",
+        remaining: "kouki_meals_remaining",
+        totalStock: "kouki_total_stock"
     },
     car: {
         identity: "pegasus_car_identity",
@@ -52,9 +81,13 @@ window.PegasusManifest = {
         legacyService: "peg_car_service",
         legacyDates: "peg_car_dates"
     },
+    parking: {
+        loc: "pegasus_parking_loc",
+        history: "pegasus_parking_history"
+    },
 
     // ---------------------------------------------------------
-    // 3. SYSTEM ARCHITECTURE (Το Σχεδιάγραμμα του Συστήματος)
+    // 3. SYSTEM ARCHITECTURE
     // ---------------------------------------------------------
     architecture: {
         "manifest.js": "Κεντρικός ορισμός LocalStorage keys & System Blueprint.",
@@ -66,14 +99,9 @@ window.PegasusManifest = {
         "optimizer.js": "AI Training Volumizer (Dynamic Set Adjustment).",
         "cloudSync.js": "Security & Persistence Layer (API & Vault PIN).",
         "cardio.js": "Cardio Engine (+18 σετ πόδια & Kcal target modifier).",
-        "car.js": "Vehicle Management Module."
-    },
-
-    logic_gates: {
-        "Midnight_Rollover": "Trigger: 00:00 -> Clearing 'cardio_offset' και ανανέωση Food UI.",
-        "Refill_Stock": "Trigger: 'ΑΓΟΡΑ ΠΡΩΤΕΪΝΗΣ' -> Stock Reset.",
-        "Agreement_Logic": "30 - consumed_meals = Υπόλοιπο (Εμφάνιση στο PC Inventory Panel).",
-        "Auto_Cycling": "Save Cardio με Ποδηλασία -> Αυτόματο +18 Sets στα Πόδια."
+        "car.js": "Vehicle Management Module.",
+        "parking.js": "Geolocation Tracking Module.",
+        "dragDrop.js": "UI Window Positioning Memory."
     },
 
     // ---------------------------------------------------------
@@ -84,8 +112,6 @@ window.PegasusManifest = {
         console.table(this.metadata);
         console.log("%c 📂 ARCHITECTURE:", "color: #f39c12; font-weight: bold;");
         console.table(this.architecture);
-        console.log("%c 🧠 LOGIC GATES:", "color: #00bcd4; font-weight: bold;");
-        console.table(this.logic_gates);
     },
 
     whereIs: function(query) {
@@ -106,13 +132,24 @@ window.PegasusManifest = {
 
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
-            // Δυναμικά κλειδιά
-            if (key.startsWith("food_log_") || key.startsWith("weight_") || key.startsWith("pegasus_cardio_kcal_")) {
-                validKeys.push(key); continue;
+            
+            // 🛡️ Δυναμικά Κλειδιά (Prefixes) που εξαιρούνται:
+            if (key.startsWith("food_log_") || 
+                key.startsWith("weight_") || 
+                key.startsWith("pegasus_weight_") || 
+                key.startsWith("pegasus_cardio_kcal_") ||
+                key.startsWith("pegasus_pos_") || 
+                key.startsWith("pegasus_routine_injected_")) {
+                validKeys.push(key); 
+                continue;
             }
-            // Έλεγχος
-            if (manifestStr.includes(`"${key}"`)) validKeys.push(key);
-            else orphanKeys.push(key);
+            
+            // Έλεγχος στατικού κλειδιού
+            if (manifestStr.includes(`"${key}"`)) {
+                validKeys.push(key);
+            } else {
+                orphanKeys.push(key);
+            }
         }
 
         console.log(`✅ Καταγεγραμμένα & Έγκυρα Κλειδιά: ${validKeys.length}`);
@@ -120,9 +157,9 @@ window.PegasusManifest = {
             console.warn(`⚠️ ΠΡΟΣΟΧΗ: Βρέθηκαν ${orphanKeys.length} Ορφανά Κλειδιά!`);
             console.table(orphanKeys.map(k => ({ "Ορφανό Κλειδί": k })));
         } else {
-            console.log("%c🛡️ ΣΥΣΤΗΜΑ ΚΑΘΑΡΟ. Όλα τα δεδομένα είναι χαρτογραφημένα.", "color: #4CAF50; font-weight: bold;");
+            console.log("%c🛡️ ΣΥΣΤΗΜΑ ΚΑΘΑΡΟ. Όλα τα δεδομένα είναι χαρτογραφημένα στο Manifest.", "color: #4CAF50; font-weight: bold;");
         }
     }
 };
 
-console.log("🏛️ PEGASUS MANIFEST v18.0 LOADED. Type 'PegasusManifest.inspect()' or 'PegasusManifest.auditData()'.");
+console.log("🏛️ PEGASUS MANIFEST v18.1 LOADED. CRITICAL RUNTIME FIX APPLIED.");
