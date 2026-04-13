@@ -164,7 +164,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     width: 100%;
     display: flex;
     justify-content: space-between; 
-    padding: 0 45px; /* Το νούμερο που βρήκες */
+    padding: 0 70px; /* Το νούμερο που βρήκες */
     align-items: center;
     font-size: 24px; 
     color: var(--main);
