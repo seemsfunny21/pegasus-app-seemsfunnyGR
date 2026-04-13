@@ -177,23 +177,22 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 
 .nav-item {
     color: var(--main);
-    font-size: 18px;
-    font-weight: 900;
-    opacity: 0.6;
-    transition: 0.2s;
-    width: 33%;
+    font-size: 20px; /* Ελαφρώς μεγαλύτερα για καλύτερο πάτημα */
+    font-weight: 400; /* Πιο λεπτά για να μοιάζουν με τα εργοστασιακά */
+    opacity: 0.4; /* Πιο αχνά όταν είναι ανενεργά */
+    transition: 0.1s;
+    width: 33.33%;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    text-shadow: 0 0 10px var(--main);
     cursor: pointer;
 }
 
 .nav-item:active {
     opacity: 1;
-    transform: scale(1.2);
-    text-shadow: 0 0 20px var(--main);
+    background: rgba(0, 255, 65, 0.05); /* Feedback πατήματος */
+    text-shadow: 0 0 15px var(--main);
 }
 
 /* Ειδική ευθυγράμμιση για το Back Button */
