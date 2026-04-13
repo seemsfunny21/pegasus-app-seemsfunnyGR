@@ -1,6 +1,6 @@
 /* ==========================================================================
-   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING)
-   Protocol: Cross-Module Data Correlation & Home Dashboard
+   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - FINAL STABLE)
+   Protocol: Cross-Module Data Correlation & Bottom-Docked UI
    ========================================================================== */
 
 (function() {
@@ -8,13 +8,12 @@
         analyzeData: function() {
             let msgGood = "Όλα τα συστήματα λειτουργούν φυσιολογικά.";
             let msgBad = "Καμία κρίσιμη προειδοποίηση.";
-            let msgAction = "Κανένα άμεσο καθήκον.";
+            let msgAction = "⚡ Όλα τα συστήματα συντήρησης και αποθεμάτων είναι ενημερωμένα.";
 
             let hasGood = false;
             let hasBad = false;
             let hasAction = false;
 
-            const today = new Date().toLocaleDateString('el-GR');
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
 
@@ -45,10 +44,9 @@
             let recentEnergy = 10;
             if (bio.length > 0) recentEnergy = bio[0].energy;
 
-            // Έλεγχος εξόδων τελευταίων 3 ημερών
             let recentExpenses = 0;
             finance.forEach(f => {
-                if (f.amount < 0) recentExpenses += Math.abs(f.amount); // Απλοποιημένη λογική
+                if (f.amount < 0) recentExpenses += Math.abs(f.amount);
             });
 
             if (recentEnergy < 5 && recentExpenses > 50) {
@@ -89,36 +87,33 @@
             };
         },
 
-injectDashboard: function() {
+        injectDashboard: function() {
             const grid = document.getElementById('dynamic-grid');
             if (!grid) return;
 
-            // Έλεγχος αν βρισκόμαστε στην Πρώτη Σελίδα (Page 0)
             if (window.PegasusMobileUI && window.PegasusMobileUI.currentPage !== 0) return;
 
-            // Καθαρισμός προηγούμενου Oracle αν υπάρχει
             const existingOracle = document.getElementById('oracle-dashboard');
             if (existingOracle) existingOracle.remove();
 
             const insights = this.analyzeData();
 
-            // Δημιουργία του Dashboard (Ακριβώς ίδια μεγέθη και σχήματα)
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
             
-            // Διατηρούμε το grid-column: 1 / -1 για να πιάνει 4 θέσεις (2x2 width)
+            // 🛠️ CSS OPTIMIZATION: Σταθερό ύψος και μεγάλο margin για να μην κόβεται
             dashboard.style.cssText = `
                 grid-column: 1 / -1; 
                 background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
                 border-radius: 16px;
                 padding: 15px;
-                margin-top: 10px;
-                margin-bottom: 80px; 
+                margin-top: 20px;
+                margin-bottom: 120px; 
                 box-shadow: 0 10px 25px rgba(0,255,65,0.05);
                 position: relative;
-                overflow: hidden;
                 box-sizing: border-box;
+                min-height: 145px;
             `;
 
             dashboard.innerHTML = `
@@ -146,26 +141,21 @@ injectDashboard: function() {
                 </div>
             `;
 
-            // Προσθήκη στο ΤΕΛΟΣ του grid (appendChild αντί για insertBefore)
             grid.appendChild(dashboard);
         }
     };
 
-    // Ενεργοποίηση "Γέφυρας" με το UI Engine (PegasusMobileUI)
-    // Κάνουμε Override την υπάρχουσα render συνάρτηση για να σχεδιάζει πάντα το Oracle!
     document.addEventListener("DOMContentLoaded", () => {
         if (window.PegasusMobileUI) {
             const originalRender = window.PegasusMobileUI.render;
             window.PegasusMobileUI.render = function() {
                 originalRender.apply(this, arguments);
-                setTimeout(() => window.PegasusOracle.injectDashboard(), 50); // Inject after grid builds
+                setTimeout(() => window.PegasusOracle.injectDashboard(), 50);
             };
-            // Force first render
             setTimeout(() => window.PegasusOracle.injectDashboard(), 100);
         }
     });
 
-    // Προσθήκη CSS Animation για το λαμπάκι
     const style = document.createElement('style');
     style.innerHTML = `@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }`;
     document.head.appendChild(style);
