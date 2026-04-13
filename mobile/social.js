@@ -1,6 +1,6 @@
 /* ==========================================================================
    💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.0)
-   Protocol: 1-10 Scale Rating & Entity Management
+   Protocol: 1-10 Scale Rating, Entity Management & Real-Time Sync
    ========================================================================== */
 
 (function() {
@@ -65,8 +65,16 @@
         },
 
         saveAndRender: function(data) {
+            // Τοπική αποθήκευση
             localStorage.setItem(SOCIAL_DATA_KEY, JSON.stringify(data));
+            
+            // Ανανέωση UI
             window.renderSocialContent();
+
+            // ☁️ REAL-TIME CLOUD TRIGGER: Στέλνει τα δεδομένα στο Cloud
+            if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
+                window.PegasusCloud.push(); 
+            }
         }
     };
 
@@ -80,6 +88,7 @@
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="section-title" style="margin: 0;">ΚΟΙΝΩΝΙΚΕΣ ΜΕΤΡΙΚΕΣ</div>
                 <button id="btnAddSocial" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusSocial.toggleAddForm()">
                     + ΝΕΑ ΕΓΓΡΑΦΗ
                 </button>
