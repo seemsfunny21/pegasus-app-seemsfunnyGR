@@ -89,7 +89,7 @@
             };
         },
 
-        injectDashboard: function() {
+injectDashboard: function() {
             const grid = document.getElementById('dynamic-grid');
             if (!grid) return;
 
@@ -102,24 +102,23 @@
 
             const insights = this.analyzeData();
 
-            // Δημιουργία του 2x2 (4 κουτάκια) Dashboard
+            // Δημιουργία του 2x2 Dashboard
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
             
-            // Το style grid-column: 1 / -1 το κάνει να πιάνει όλο το πλάτος στο Grid
             dashboard.style.cssText = `
                 grid-column: 1 / -1; 
                 background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
                 border-radius: 16px;
                 padding: 15px;
-                margin-bottom: 5px;
+                margin-top: 15px; /* Προσθήκη περιθωρίου πάνω αφού θα είναι στο τέλος */
+                margin-bottom: 80px; /* Χώρος για να μην το καλύπτει το κάτω navigation */
                 box-shadow: 0 10px 25px rgba(0,255,65,0.05);
                 position: relative;
                 overflow: hidden;
             `;
 
-            // Εφέ Radar στο background
             dashboard.innerHTML = `
                 <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.03; pointer-events: none;">👁️</div>
                 <div style="font-size: 10px; color: var(--main); font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
@@ -132,12 +131,10 @@
                         <div style="font-size: 16px; margin-top: -2px;">🟢</div>
                         <div style="font-size: 11px; color: #ccc; font-weight: 600; line-height: 1.4;">${insights.good}</div>
                     </div>
-                    
                     <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasBad ? '1' : '0.5'};">
                         <div style="font-size: 16px; margin-top: -2px;">🔴</div>
                         <div style="font-size: 11px; color: ${insights.hasBad ? '#ff4444' : '#ccc'}; font-weight: ${insights.hasBad ? '800' : '600'}; line-height: 1.4;">${insights.bad}</div>
                     </div>
-
                     <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasAction ? '1' : '0.5'};">
                         <div style="font-size: 16px; margin-top: -2px;">⚡</div>
                         <div style="font-size: 11px; color: ${insights.hasAction ? '#00bcd4' : '#ccc'}; font-weight: ${insights.hasAction ? '800' : '600'}; line-height: 1.4;">${insights.action}</div>
@@ -145,8 +142,8 @@
                 </div>
             `;
 
-            // Προσθήκη ΠΑΝΩ από όλα τα άλλα εικονίδια
-            grid.insertBefore(dashboard, grid.firstChild);
+            // Η ΑΛΛΑΓΗ ΕΔΩ: Χρησιμοποιούμε appendChild για να μπει στο τέλος του Grid
+            grid.appendChild(dashboard);
         }
     };
 
