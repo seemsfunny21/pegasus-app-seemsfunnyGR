@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v16.0</title>
+    <title>Pegasus Mobile v17.0</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -37,19 +37,18 @@
     <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;"></div>
 
     <div id="home" class="view active">
-       <div class="header" style="display: flex; align-items: center; justify-content: space-between; padding: 0 10px;">
-    <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:24px; cursor:pointer; opacity:0.3;">◀</button>
-    
-    <div style="text-align:center;">
-        <h1>PEGASUS</h1>
-        <p id="pageIndicator">CORE MODULES</p>
-    </div>
-    
-    <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:24px; cursor:pointer;">▶</button>
-</div>
+        <div class="header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px; position: relative;">
+            <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; margin-left: -15px; z-index: 10; transition: opacity 0.2s;">◀</button>
+            
+            <div style="text-align:center; flex: 1;">
+                <h1 style="font-size: 32px; margin: 0; line-height: 1;">PEGASUS</h1>
+                <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">ΣΕΛΙΔΑ 1</p>
+            </div>
+            
+            <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; margin-right: -15px; z-index: 10; transition: opacity 0.2s;">▶</button>
+        </div>
         
-        <div id="dynamic-grid" class="grid"></div>
-        
+        <div id="dynamic-grid" class="dynamic-grid"></div>
         <div id="settings-anchor"></div>
     </div>
 
@@ -222,9 +221,12 @@
         </div>
     </div>
 
-<script>
+    <script>
         window.PegasusMobileUI = {
-            coreModules: [
+            currentPage: 0,
+            modulesPerPage: 8, // Χωράνε 8 κουτιά + Ρυθμίσεις για να μην κάνει ΚΑΘΟΛΟΥ scroll
+
+            allModules: [
                 { id: 'diet', icon: '🥗', label: 'Διατροφή' },
                 { id: 'library', icon: '🍽️', label: 'Γεύματα' },
                 { id: 'cardio', icon: '🚴', label: 'Αερόβια' },
@@ -232,14 +234,16 @@
                 { id: 'preview', icon: '🎯', label: 'Στόχοι' },
                 { id: 'profile', icon: '👤', label: 'Έγγραφα' },
                 { id: 'car', icon: '🚗', label: 'Όχημα' },
-                { id: 'notes', icon: '📝', label: 'Σημειώσεις' }
+                { id: 'notes', icon: '📝', label: 'Σημειώσεις' },
+                { id: 'parking_panel', type: 'special', name: 'parking' },
+                { id: 'supps', type: 'special', name: 'supps' }
             ],
             
             extraModules: [],
 
             registerModule: function(module) {
-                // 🛡️ ΑΣΠΙΔΑ ΔΙΠΛΟΤΥΠΩΝ: Αν υπάρχει ήδη το ID (π.χ. το car), μην το ξαναβάλεις!
-                if (this.coreModules.some(m => m.id === module.id)) return;
+                // 🛡️ ΑΣΠΙΔΑ ΔΙΠΛΟΤΥΠΩΝ
+                if (this.allModules.some(m => m.id === module.id)) return;
                 if (this.extraModules.some(m => m.id === module.id)) return;
                 
                 this.extraModules.push(module);
@@ -250,48 +254,62 @@
                 }
             },
 
+            changePage: function(direction) {
+                const fullList = [...this.allModules, ...this.extraModules];
+                const maxPages = Math.ceil(fullList.length / this.modulesPerPage);
+                this.currentPage = Math.max(0, Math.min(this.currentPage + direction, maxPages - 1));
+                this.render();
+            },
+
             render: function() {
                 const grid = document.getElementById('dynamic-grid');
+                const pageTxt = document.getElementById('pageIndicator');
+                const btnPrev = document.getElementById('prevPage');
+                const btnNext = document.getElementById('nextPage');
                 if (!grid) return;
+
+                const fullList = [...this.allModules, ...this.extraModules];
+                const maxPages = Math.ceil(fullList.length / this.modulesPerPage);
+
+                // Ασφάλεια αν διαγραφεί κάποιο module
+                if (this.currentPage >= maxPages) this.currentPage = Math.max(0, maxPages - 1);
+
+                const start = this.currentPage * this.modulesPerPage;
+                const end = start + this.modulesPerPage;
+                const pageItems = fullList.slice(start, end);
 
                 grid.innerHTML = "";
                 
-                // 1. Σχεδίαση Core Modules (Τα 8 βασικά)
-                this.coreModules.forEach(m => this.createTile(grid, m));
+                // Render των tiles της τρέχουσας σελίδας
+                pageItems.forEach(m => {
+                    if (m.type === 'special' && m.name === 'parking') this.injectParkingTile(grid);
+                    else if (m.type === 'special' && m.name === 'supps') this.injectSuppsTile(grid);
+                    else this.createTile(grid, m);
+                });
 
-                // 2. Σχεδίαση Ειδικών Modules (Parking, Supps)
-                this.injectParkingTile(grid);
-                this.injectSuppsTile(grid);
+                // Πάντα βάζουμε τις Ρυθμίσεις στο τέλος της σελίδας
+                this.injectSettingsTile(grid, pageItems.length);
 
-                // 3. Σχεδίαση Extra Modules (π.χ. Αποθέματα)
-                this.extraModules.forEach(m => this.createTile(grid, m));
+                // Update UI Βελάκια & Κείμενο Σελίδας
+                if (pageTxt) {
+                    pageTxt.textContent = maxPages > 1 ? `ΣΕΛΙΔΑ ${this.currentPage + 1} / ${maxPages}` : "CORE INTERFACE";
+                }
+                if (btnPrev) {
+                    btnPrev.style.opacity = this.currentPage === 0 ? "0.1" : "1";
+                    btnPrev.style.pointerEvents = this.currentPage === 0 ? "none" : "auto";
+                }
+                if (btnNext) {
+                    btnNext.style.opacity = this.currentPage >= maxPages - 1 ? "0.1" : "1";
+                    btnNext.style.pointerEvents = this.currentPage >= maxPages - 1 ? "none" : "auto";
+                }
 
-                // 4. Υπολογισμός Ρυθμίσεων (ΕΝΤΟΣ ΤΟΥ GRID ΠΛΕΟΝ)
-                const totalTiles = grid.children.length;
-                const isEven = totalTiles % 2 === 0;
-
-                const settingsTile = document.createElement('div');
-                settingsTile.className = `tile ${isEven ? 'full-width' : ''}`;
-                settingsTile.onclick = () => openView('settings_panel');
-                settingsTile.style.borderColor = "var(--main)";
-
-                // Αν είναι ζυγός -> Icon δίπλα στο κείμενο (Μπάρα). Αν μονός -> Icon πάνω από το κείμενο (Τετράγωνο)
-                settingsTile.innerHTML = `
-                    <div style="display: flex; flex-direction: ${isEven ? 'row' : 'column'}; align-items: center; justify-content: center; width: 100%; height: 100%;">
-                        <span class="tile-icon" style="font-size: 20px; ${isEven ? 'margin-right: 10px; margin-bottom: 0;' : 'margin-bottom: 6px;'}">⚙️</span>
-                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
-                    </div>
-                `;
-                
-                grid.appendChild(settingsTile);
-                
                 // Καθαρισμός του παλιού εξωτερικού anchor αν έχει μείνει
                 const anchor = document.getElementById('settings-anchor');
                 if (anchor) anchor.innerHTML = "";
 
-            if (window.PegasusInventory && typeof window.PegasusInventory.updateUI === "function") {
-    window.PegasusInventory.updateUI();
-}
+                if (window.PegasusInventory && typeof window.PegasusInventory.updateUI === "function") {
+                    window.PegasusInventory.updateUI();
+                }
             },
 
             createTile: function(container, m) {
@@ -332,6 +350,22 @@
                     </div>
                 `;
                 container.appendChild(tile);
+            },
+
+            injectSettingsTile: function(container, itemsOnPage) {
+                const isEven = itemsOnPage % 2 === 0;
+                const settingsTile = document.createElement('div');
+                settingsTile.className = `tile ${isEven ? 'full-width' : ''}`;
+                settingsTile.onclick = () => openView('settings_panel');
+                settingsTile.style.borderColor = "var(--main)";
+                
+                settingsTile.innerHTML = `
+                    <div style="display: flex; flex-direction: ${isEven ? 'row' : 'column'}; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                        <span class="tile-icon" style="font-size: 20px; ${isEven ? 'margin-right: 10px; margin-bottom: 0;' : 'margin-bottom: 6px;'}">⚙️</span>
+                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
+                    </div>
+                `;
+                container.appendChild(settingsTile);
             }
         };
 
@@ -374,7 +408,7 @@
             }
         }
 
-function refreshUIComponent(id) {
+        function refreshUIComponent(id) {
             try {
                 // 1. Βασικά Modules
                 if (id === 'diet') window.PegasusDiet?.updateUI();
@@ -394,12 +428,10 @@ function refreshUIComponent(id) {
                 if (id === 'settings_panel') window.PegasusWeight?.updateUI(); 
                 if (id === 'parking_panel') window.PegasusParking?.updateUI();
 
-                // 🔴 2. ΔΥΝΑΜΙΚΗ ΑΝΑΝΕΩΣΗ (Για Αποθέματα και μελλοντικά Modules)
-                // Αν υπάρχει συνάρτηση render[Id]Content, την τρέχουμε αυτόματα
+                // 2. ΔΥΝΑΜΙΚΗ ΑΝΑΝΕΩΣΗ
                 const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
                 if (typeof window[dynamicRenderName] === 'function') {
                     window[dynamicRenderName]();
-                    console.log(`📡 PEGASUS UI: Dynamically refreshed ${id}`);
                 }
 
             } catch(e) { console.error("Refresh Error:", e); }
