@@ -160,7 +160,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 .ghost-nav-overlay {
     position: fixed; 
     bottom: 10px; /* Το νούμερο που βρήκες */
-    width: 50%;
+    width: 750%;
     display: flex;
     justify-content: space-between; 
     padding: 0 50px; /* Το νούμερο που βρήκες */
