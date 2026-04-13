@@ -66,9 +66,20 @@
             }
         },
 
-        saveAndRender: function(data) {
+saveAndRender: function(data) {
+            // 1. Αποθηκεύει τοπικά για ταχύτητα (Offline mode)
             localStorage.setItem(MOVIES_DATA_KEY, JSON.stringify(data));
+            
+            // 2. Ενημερώνει την οθόνη ακαριαία
             window.renderMoviesContent();
+
+            // 3. ☁️ REAL-TIME CLOUD TRIGGER: Στέλνει τα δεδομένα στο Cloud!
+            if (window.PegasusCloud) {
+                if (typeof window.PegasusCloud.upload === 'function') window.PegasusCloud.upload();
+                else if (typeof window.PegasusCloud.sync === 'function') window.PegasusCloud.sync();
+                else if (typeof window.PegasusCloud.save === 'function') window.PegasusCloud.save();
+                else if (typeof window.PegasusCloud.push === 'function') window.PegasusCloud.push();
+            }
         }
     };
 
