@@ -92,7 +92,7 @@
                     <div style="display: flex; gap: 8px;">
                         <button class="secondary-btn" style="flex: 2; padding: 10px; font-size: 10px; border-color: #222;" 
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'consume')">
-                            ΦΑΓΕ -${item.portion}${item.unit}
+                            -${item.portion}${item.unit}
                         </button>
                         <button class="primary-btn" style="flex: 1; padding: 10px; font-size: 10px;" 
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'refill')">
