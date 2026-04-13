@@ -164,7 +164,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     position: fixed; 
     bottom: 4px; 
     left: 0; /* Ευθυγράμμιση αριστερά */
-    width: 100%; /* Πλήρες πλάτος */
+    width: 80%; /* Πλήρες πλάτος */
     display: flex;
     justify-content: space-around; /* ⚖️ Ομοιόμορφη κατανομή χωρίς περιττά margins */
     padding: 0 10px; 
