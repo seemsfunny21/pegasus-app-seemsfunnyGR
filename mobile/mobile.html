@@ -37,16 +37,16 @@
     <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;"></div>
 
     <div id="home" class="view active">
-        <div class="header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px; position: relative;">
-            <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; margin-left: -15px; z-index: 10; transition: opacity 0.2s;">◀</button>
-            
-            <div style="text-align:center; flex: 1;">
-                <h1 style="font-size: 32px; margin: 0; line-height: 1;">PEGASUS</h1>
-                <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">TACTICAL DATA INTERFACE</p>
-            </div>
-            
-            <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; margin-right: -15px; z-index: 10; transition: opacity 0.2s;">▶</button>
-        </div>
+<div class="header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px; position: relative; box-sizing: border-box;">
+    <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">◀</button>
+    
+    <div style="text-align:center; flex: 1;">
+        <h1 style="font-size: 32px; margin: 0; line-height: 1;">PEGASUS</h1>
+        <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">TACTICAL DATA INTERFACE</p>
+    </div>
+    
+    <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">▶</button>
+</div>
         
         <div id="dynamic-grid" class="dynamic-grid"></div>
         <div id="settings-anchor"></div>
