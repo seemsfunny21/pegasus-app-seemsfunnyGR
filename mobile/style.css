@@ -160,10 +160,10 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 .ghost-nav-overlay {
     position: fixed; 
     bottom: 4px; /* ↕️ Πόσο ψηλά από τον πάτο θα είναι τα κουτιά */
-    width: 83%;
+    width: 82%;
     display: flex;
     justify-content: space-between; 
-    padding: 0 50px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
+    padding: 0 51px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
     align-items: center;
     pointer-events: none; /* 🔴 ΕΠΙΤΡΕΠΕΙ ΣΤΟ ΔΑΧΤΥΛΟ ΝΑ ΠΑΤΗΣΕΙ ΤΟ ANDROID */
     z-index: 9999;
