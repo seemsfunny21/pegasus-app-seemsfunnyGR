@@ -102,7 +102,7 @@
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div class="section-title" style="margin: 0;">ΗΜΕΡΗΣΙΟΙ ΣΤΟΧΟΙ</div>
+               <div class="section-title" style="margin: 0;">ΗΜΕΡΗΣΙΕΣ ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ</div>
                 <button id="btnAddMission" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusMissions.toggleAddForm()">
                     + ΝΕΟΣ ΣΤΟΧΟΣ
                 </button>
@@ -185,7 +185,7 @@
             pctTxt.style.textShadow = '0 0 10px rgba(0,255,65,0.2)';
         }
 
-        container.innerHTML = html || '<div style="color:#555; font-size:11px; text-align:center; margin-top:20px;">ΔΕΝ ΕΧΕΙΣ ΟΡΙΣΕΙ ΣΤΟΧΟΥΣ</div>';
+        container.innerHTML = html || '<div style="color:#555; font-size:11px; text-align:center; margin-top:20px;">ΔΕΝ ΕΧΕΙΣ ΟΡΙΣΕΙ ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ</div>';
     };
 
     // 4. Boot Sequence
@@ -193,11 +193,11 @@
         injectViewLayer();
         window.renderMissionsContent();
         
-        if (window.registerPegasusModule) {
+if (window.registerPegasusModule) {
             window.registerPegasusModule({ 
                 id: 'missions', 
-                label: 'Στόχοι', 
-                icon: '🎯' 
+                label: 'Δραστηριότητες', 
+                icon: '📋' 
             });
         }
     });
