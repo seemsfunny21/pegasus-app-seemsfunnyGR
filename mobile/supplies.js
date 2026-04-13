@@ -1,10 +1,11 @@
 /* ==========================================================================
-   📦 PEGASUS MODULE: ADVANCED INVENTORY & STOCK AUDIT (v2.2)
+   📦 PEGASUS MODULE: DYNAMIC INVENTORY & CRUD SYSTEM (v3.0)
    ========================================================================== */
 
 (function() {
     const SUPPLIES_DATA_KEY = 'pegasus_supplies_v1';
 
+    // 1. Αρχικά δεδομένα (Αν η βάση είναι άδεια)
     const defaultSupplies = [
         { id: 'yog', label: 'Γιαούρτι', amount: 1000, unit: 'g', portion: 250, refill: 1000, icon: '🥣' },
         { id: 'ban', label: 'Μπανάνες', amount: 5, unit: 'τεμ', portion: 1, refill: 5, icon: '🍌' },
@@ -13,6 +14,7 @@
         { id: 'eggs', label: 'Αυγά', amount: 30, unit: 'τεμ', portion: 3, refill: 30, icon: '🥚' }
     ];
 
+    // 2. Μηχανή Δεδομένων (CRUD Logic)
     window.PegasusSupplies = {
         updateAmount: function(id, type) {
             let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
@@ -34,10 +36,68 @@
             
             const newVal = prompt(`Ενημέρωση αποθέματος για: ${supplies[idx].label} (${supplies[idx].unit})`, supplies[idx].amount);
             
-            if (newVal !== null && !isNaN(newVal)) {
+            if (newVal !== null && !isNaN(newVal) && newVal.trim() !== '') {
                 supplies[idx].amount = parseFloat(newVal);
                 this.saveAndRender(supplies);
             }
+        },
+
+        deleteItem: function(id) {
+            if(confirm('Διαγραφή αυτού του προϊόντος από τη βάση;')) {
+                let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+                supplies = supplies.filter(i => i.id !== id);
+                this.saveAndRender(supplies);
+            }
+        },
+
+        toggleAddForm: function() {
+            const form = document.getElementById('addSupplyForm');
+            const btn = document.getElementById('btnAddSupply');
+            if(form.style.display === 'none') {
+                form.style.display = 'block';
+                btn.innerHTML = 'Χ ΚΛΕΙΣΙΜΟ';
+                btn.style.background = '#ff4444';
+            } else {
+                form.style.display = 'none';
+                btn.innerHTML = '+ ΝΕΟ ΠΡΟΪΟΝ';
+                btn.style.background = 'var(--main)';
+            }
+        },
+
+        addNewItem: function() {
+            const icon = document.getElementById('newIcon').value || '📦';
+            const label = document.getElementById('newLabel').value;
+            const unit = document.getElementById('newUnit').value || 'τεμ';
+            const refill = parseFloat(document.getElementById('newRefill').value);
+            const portion = parseFloat(document.getElementById('newPortion').value);
+
+            if(!label || isNaN(refill) || isNaN(portion)) {
+                alert('Παρακαλώ συμπληρώστε Όνομα, Σύνολο Αγοράς και Δόση Κατανάλωσης.');
+                return;
+            }
+
+            let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+            
+            const newItem = {
+                id: 'sup_' + Date.now(), // Μοναδικός κωδικός
+                label: label,
+                amount: refill,
+                unit: unit,
+                portion: portion,
+                refill: refill,
+                icon: icon
+            };
+
+            supplies.push(newItem);
+            this.saveAndRender(supplies);
+            this.toggleAddForm();
+
+            // Καθαρισμός πεδίων
+            document.getElementById('newIcon').value = '';
+            document.getElementById('newLabel').value = '';
+            document.getElementById('newUnit').value = '';
+            document.getElementById('newRefill').value = '';
+            document.getElementById('newPortion').value = '';
         },
 
         saveAndRender: function(data) {
@@ -47,19 +107,43 @@
         }
     };
 
+    // 3. Κατασκευαστής Οθόνης (View Injector)
     function injectViewLayer() {
         if (document.getElementById('supplies')) return;
         const viewDiv = document.createElement('div');
         viewDiv.id = 'supplies';
         viewDiv.className = 'view';
+        
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-            <div class="section-title">ΔΙΑΧΕΙΡΙΣΗ ΑΠΟΘΕΜΑΤΩΝ</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="section-title" style="margin: 0;">ΑΠΟΘΕΜΑΤΑ</div>
+                <button id="btnAddSupply" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusSupplies.toggleAddForm()">
+                    + ΝΕΟ ΠΡΟΪΟΝ
+                </button>
+            </div>
+
+            <div id="addSupplyForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
+                <div style="font-size: 11px; font-weight: 900; color: var(--main); margin-bottom: 10px; text-align: center;">ΔΗΜΙΟΥΡΓΙΑ ΝΕΟΥ ΑΠΟΘΕΜΑΤΟΣ</div>
+                <div class="compact-grid" style="margin-bottom: 10px;">
+                    <input type="text" id="newIcon" placeholder="Εικονίδιο (π.χ. 🥛)" maxlength="2">
+                    <input type="text" id="newLabel" placeholder="Όνομα (π.χ. Γάλα)">
+                </div>
+                <div class="compact-grid" style="margin-bottom: 10px;">
+                    <input type="number" id="newRefill" placeholder="Σύνολο Αγοράς (π.χ. 1000)" inputmode="decimal">
+                    <input type="text" id="newUnit" placeholder="Μονάδα (π.χ. ml, g, τεμ)">
+                </div>
+                <input type="number" id="newPortion" placeholder="Αφαίρεση ανά δόση (π.χ. 250)" inputmode="decimal" style="margin-bottom: 10px;">
+                
+                <button class="primary-btn" onclick="window.PegasusSupplies.addNewItem()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΒΑΣΗ</button>
+            </div>
+
             <div id="supplies-content" style="width: 100%; display: flex; flex-direction: column; gap: 12px; padding-bottom: 80px;"></div>
         `;
         document.body.appendChild(viewDiv);
     }
 
+    // 4. Rendering Engine (Σχεδίαση Λίστας)
     window.renderSuppliesContent = function() {
         const container = document.getElementById('supplies-content');
         if (!container) return;
@@ -79,10 +163,16 @@
                                 ΣΥΝΟΛΟ: <span style="color:${statusColor}">${item.amount}${item.unit}</span>
                             </div>
                         </div>
-                        <button onclick="window.PegasusSupplies.setManualAmount('${item.id}')" 
-                                style="background: rgba(255,255,255,0.05); border: 1px solid #333; color: #777; border-radius: 8px; padding: 5px 8px; font-size: 12px;">
-                            ⚙️
-                        </button>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="window.PegasusSupplies.setManualAmount('${item.id}')" 
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid #333; color: #777; border-radius: 8px; padding: 5px 8px; font-size: 12px; cursor: pointer;">
+                                ⚙️
+                            </button>
+                            <button onclick="window.PegasusSupplies.deleteItem('${item.id}')" 
+                                    style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 5px 8px; font-size: 12px; cursor: pointer;">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
 
                     <div class="bar-bg" style="height: 4px; margin-bottom: 12px;">
@@ -92,7 +182,7 @@
                     <div style="display: flex; gap: 8px;">
                         <button class="secondary-btn" style="flex: 2; padding: 10px; font-size: 10px; border-color: #222;" 
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'consume')">
-                            -${item.portion}${item.unit}
+                            ΦΑΓΕ -${item.portion}${item.unit}
                         </button>
                         <button class="primary-btn" style="flex: 1; padding: 10px; font-size: 10px;" 
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'refill')">
@@ -104,6 +194,7 @@
         }).join('');
     };
 
+    // 5. Boot Sequence
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
         window.renderSuppliesContent();
