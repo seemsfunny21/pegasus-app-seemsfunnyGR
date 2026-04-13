@@ -156,3 +156,24 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     border-radius: 8px;
 }
 
+/* 📱 GHOST NAVIGATION OVERLAY */
+.ghost-nav-overlay {
+    position: fixed; 
+    bottom: 10px; /* Το νούμερο που βρήκες */
+    left: 0; 
+    width: 100%;
+    display: flex;
+    justify-content: space-between; 
+    padding: 0 45px; /* Το νούμερο που βρήκες */
+    align-items: center;
+    font-size: 24px; 
+    color: var(--main);
+    opacity: 0.7; 
+    pointer-events: none; 
+    z-index: 9999;
+    box-sizing: border-box;
+}
+
+.ghost-nav-overlay div {
+    text-shadow: 0 0 10px var(--main);
+}
