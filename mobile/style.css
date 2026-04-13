@@ -204,3 +204,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     margin-right: 5px;
     box-shadow: 0 0 8px var(--main);
 }
+
+.system-nav-dock.reversed {
+    flex-direction: row-reverse;
+}
