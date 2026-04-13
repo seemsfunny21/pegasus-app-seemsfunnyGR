@@ -89,7 +89,7 @@
             };
         },
 
-        injectDashboard: function() {
+injectDashboard: function() {
             const grid = document.getElementById('dynamic-grid');
             if (!grid) return;
 
@@ -102,24 +102,25 @@
 
             const insights = this.analyzeData();
 
-            // Δημιουργία του 2x2 (4 κουτάκια) Dashboard
+            // Δημιουργία του Dashboard (Ακριβώς ίδια μεγέθη και σχήματα)
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
             
-            // Το style grid-column: 1 / -1 το κάνει να πιάνει όλο το πλάτος στο Grid
+            // Διατηρούμε το grid-column: 1 / -1 για να πιάνει 4 θέσεις (2x2 width)
             dashboard.style.cssText = `
                 grid-column: 1 / -1; 
                 background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
                 border-radius: 16px;
                 padding: 15px;
-                margin-bottom: 5px;
+                margin-top: 10px;
+                margin-bottom: 80px; 
                 box-shadow: 0 10px 25px rgba(0,255,65,0.05);
                 position: relative;
                 overflow: hidden;
+                box-sizing: border-box;
             `;
 
-            // Εφέ Radar στο background
             dashboard.innerHTML = `
                 <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.03; pointer-events: none;">👁️</div>
                 <div style="font-size: 10px; color: var(--main); font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
@@ -145,8 +146,8 @@
                 </div>
             `;
 
-            // Προσθήκη ΠΑΝΩ από όλα τα άλλα εικονίδια
-            grid.insertBefore(dashboard, grid.firstChild);
+            // Προσθήκη στο ΤΕΛΟΣ του grid (appendChild αντί για insertBefore)
+            grid.appendChild(dashboard);
         }
     };
 
