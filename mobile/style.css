@@ -46,9 +46,12 @@ body {
 
 .tile { 
     background: var(--card); border: 2px solid var(--border); border-radius: 24px; 
-    padding: 18px 10px; backdrop-filter: blur(12px); transition: 0.15s; 
+    padding: 15px 10px; /* Μικρύναμε ελάχιστα το εσωτερικό γέμισμα */
+    backdrop-filter: blur(12px); transition: 0.15s; 
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15); min-height: 100px; box-sizing: border-box;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15); 
+    min-height: 85px; /* 🔴 ΑΛΛΑΓΗ ΕΔΩ: Από 100px έγινε 85px για να κάτσουν τέλεια 6 σειρές */
+    box-sizing: border-box;
 }
 .tile:active { transform: scale(0.94); background: rgba(0,255,65,0.1); }
 .tile-icon { font-size: 26px; margin-bottom: 6px; }
@@ -57,7 +60,17 @@ body {
 /* 🛡️ FULL WIDTH MODIFIER (For odd-numbered grids) */
 .full-width { grid-column: span 2; width: 100%; }
 
-.view { display: none; height: 82vh; flex-direction: column; width: 100%; align-items: center; overflow-y: auto; padding-bottom: 40px; scrollbar-width: none; }
+.view { 
+    display: none; 
+    flex: 1; /* Παίρνει αυτόματα όλο τον διαθέσιμο χώρο, εξαφανίζοντας το μαύρο κουτί */
+    height: 100%; 
+    flex-direction: column; 
+    width: 100%; 
+    align-items: center; 
+    overflow-y: auto; /* Παραμένει auto για ασφάλεια σε πολύ μικρές οθόνες */
+    padding-bottom: 10px; /* Μειώσαμε το άχρηστο κενό των 40px */
+    scrollbar-width: none; 
+}
 .view.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 @keyframes viewIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
