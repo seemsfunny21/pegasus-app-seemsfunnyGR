@@ -394,7 +394,11 @@
             window.PegasusMobileUI.registerModule(module);
         };
         
-        document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
+            // 🔴 Ξυπνάει τη μνήμη για το Navigation Bar τη ΣΩΣΤΗ στιγμή
+            if (window.PegasusSettings && window.PegasusSettings.applyNav) {
+                window.PegasusSettings.applyNav();
+            }
             window.PegasusMobileUI.render();
         });
 
@@ -592,7 +596,6 @@
 
         (async function boot() {
             console.log("⚡ PEGASUS: Fast Boot...");
-            window.PegasusSettings?.applyNav(); // 🔴 ΠΡΟΣΘΗΚΗ: Φορτώνει τη διάταξη αμέσως
             const pin = localStorage.getItem("pegasus_vault_pin"); 
             
             refreshAllUI();
@@ -617,10 +620,10 @@
         })();
     </script>
 
-    <div id="systemNavDock" class="system-nav-dock">
-        <div class="nav-item" onclick="openView('home')"><span class="nav-dot"></span>◀</div>
-        <div class="nav-item" onclick="openView('home')">⬔</div>
-        <div class="nav-item" onclick="location.reload()">☰</div>
+<div id="systemNavDock" class="system-nav-dock">
+        <div class="nav-item"><span class="nav-dot"></span>◀</div>
+        <div class="nav-item">⬔</div>
+        <div class="nav-item">☰</div>
     </div>
 </body>
 </html>
