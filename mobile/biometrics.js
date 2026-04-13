@@ -79,15 +79,64 @@
         document.body.appendChild(viewDiv);
     }
 
-    // 3. Rendering Engine (Σχεδίαση Λίστας & Τριπλής Κλίμακας 1-10)
+   // 3. Rendering Engine & Nexus Data Correlation
     window.renderBioContent = function() {
         const container = document.getElementById('bio-content');
         if (!container) return;
 
         const entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
-        
-        container.innerHTML = entries.map(item => {
-            // Υπολογισμός Μέσου Όρου Ημέρας
+        let html = '';
+
+        // ======================================================================
+        // 🧠 PEGASUS NEXUS: Cross-Data Correlation (Sleep vs Muscle Load)
+        // ======================================================================
+        try {
+            const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+            const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+            
+            let currentLoad = 0;
+            let totalCapacity = 116; // Το άθροισμα όλων των εβδομαδιαίων στόχων σου
+            
+            Object.keys(targets).forEach(k => { currentLoad += (history[k] || 0); });
+            let strainPct = Math.min(100, Math.round((currentLoad / totalCapacity) * 100));
+
+            // Υπολογισμός Μέσου Όρου Ύπνου (Τελευταίες 3 καταγραφές)
+            let sleepSum = 0;
+            let days = Math.min(3, entries.length);
+            for(let i=0; i<days; i++) sleepSum += entries[i].sleep;
+            let avgSleep = days > 0 ? (sleepSum / days).toFixed(1) : 0;
+
+            if (days > 0) {
+                let color = "var(--main)";
+                let msg = "ΒΕΛΤΙΣΤΗ ΑΝΑΛΟΓΙΑ ΠΡΟΠΟΝΗΣΗΣ / ΑΠΟΘΕΡΑΠΕΙΑΣ.";
+
+                if (strainPct > 65 && avgSleep < 6) {
+                    color = "#ff4444";
+                    msg = "🚨 ΚΡΙΣΙΜΟ: Υψηλό μυϊκό φορτίο με κακή ποιότητα ύπνου. Αυξημένος κίνδυνος τραυματισμού. Προτείνεται ημέρα IMS/Αποθεραπείας.";
+                } else if (strainPct < 30 && avgSleep >= 7) {
+                    color = "#00bcd4";
+                    msg = "⚡ ΠΛΗΡΗΣ ΑΝΑΡΡΩΣΗ: Το ΚΝΣ (Κεντρικό Νευρικό Σύστημα) είναι έτοιμο για μέγιστη υπερφόρτωση στα βάρη.";
+                } else if (avgSleep < 5) {
+                    color = "#ffbb33";
+                    msg = "⚠️ Υποβάθμιση Ποιότητας Ύπνου. Μην κυνηγήσεις Personal Records σήμερα.";
+                }
+
+                html += `
+                    <div class="mini-card" style="border: 1px solid ${color}; background: rgba(15,15,15,0.95); margin-bottom: 25px; box-shadow: 0 0 15px ${color}22;">
+                        <div style="font-size: 10px; color: ${color}; font-weight: 900; letter-spacing: 2px; margin-bottom: 10px;">🧠 PEGASUS NEXUS INSIGHT</div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 11px; color: #fff; font-weight: 900;">
+                            <div>ΜΥΪΚΗ ΚΟΠΩΣΗ ΕΒΔΟΜΑΔΑΣ: <span style="color:#ffbb33;">${strainPct}%</span></div>
+                            <div>M.O. ΥΠΝΟΥ (3 ΗΜ): <span style="color:#00bcd4;">${avgSleep}/10</span></div>
+                        </div>
+                        <div style="font-size: 11px; color: #aaa; line-height: 1.5; font-weight: 600;">${msg}</div>
+                    </div>
+                `;
+            }
+        } catch (e) { console.error("Nexus Correlation Failed:", e); }
+        // ======================================================================
+
+        // Δημιουργία των ημερήσιων καρτών (Bio-Cards)
+        html += entries.map(item => {
             let totalScore = 0;
             let divisor = 0;
             if(item.sleep > 0) { totalScore += item.sleep; divisor++; }
@@ -98,9 +147,8 @@
             let avgColor = avg >= 7 ? '#00ff41' : (avg >= 4 ? '#ffbb33' : '#ff4444');
             if(avg == 0) avgColor = '#555';
 
-            // Συνάρτηση Παραγωγής Κλίμακας
             const buildScale = (metricName, currentValue, colorHex) => {
-                let html = '<div style="display: flex; gap: 4px; margin-top: 8px; margin-bottom: 12px;">';
+                let scaleHtml = '<div style="display: flex; gap: 4px; margin-top: 8px; margin-bottom: 12px;">';
                 for (let i = 1; i <= 10; i++) {
                     let isActive = i <= currentValue;
                     let bg = isActive ? colorHex : 'rgba(255,255,255,0.03)';
@@ -108,7 +156,7 @@
                     let border = isActive ? 'none' : '1px solid #333';
                     let shadow = isActive ? `box-shadow: 0 0 8px ${colorHex}88;` : '';
 
-                    html += `
+                    scaleHtml += `
                         <div onclick="window.PegasusBio.setMetric('${item.id}', '${metricName}', ${i})" 
                              style="flex: 1; height: 30px; display: flex; align-items: center; justify-content: center; 
                                     background: ${bg}; color: ${textCol}; border: ${border}; border-radius: 4px; 
@@ -117,8 +165,8 @@
                         </div>
                     `;
                 }
-                html += '</div>';
-                return html;
+                scaleHtml += '</div>';
+                return scaleHtml;
             };
 
             return `
@@ -126,14 +174,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                         <div>
                             <div style="font-weight: 900; font-size: 18px; color: #fff; letter-spacing: 1px;">${item.date}</div>
-                            <div style="font-size: 10px; color: ${avgColor}; font-weight: 900; margin-top: 4px;">
-                                MO ΑΠΟΔΟΣΗΣ: ${avg}/10
-                            </div>
+                            <div style="font-size: 10px; color: ${avgColor}; font-weight: 900; margin-top: 4px;">MO ΑΠΟΔΟΣΗΣ: ${avg}/10</div>
                         </div>
                         <button onclick="window.PegasusBio.deleteEntry('${item.id}')" 
-                                style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">
-                            🗑️
-                        </button>
+                                style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">🗑️</button>
                     </div>
                     
                     <div style="font-size: 10px; color: #00bcd4; font-weight: 900; letter-spacing: 1px;">💤 ΠΟΙΟΤΗΤΑ ΥΠΝΟΥ</div>
@@ -148,9 +192,7 @@
             `;
         }).join('');
         
-        if (entries.length === 0) {
-            container.innerHTML = '<div style="color:#555; font-size:12px; text-align:center; margin-top:30px; font-weight:800;">ΚΑΜΙΑ ΒΙΟΜΕΤΡΙΚΗ ΚΑΤΑΓΡΑΦΗ</div>';
-        }
+        container.innerHTML = html || '<div style="color:#555; font-size:12px; text-align:center; margin-top:30px; font-weight:800;">ΚΑΜΙΑ ΒΙΟΜΕΤΡΙΚΗ ΚΑΤΑΓΡΑΦΗ</div>';
     };
 
     // 4. Boot Sequence
