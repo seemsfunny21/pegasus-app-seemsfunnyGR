@@ -100,10 +100,17 @@
             document.getElementById('newPortion').value = '';
         },
 
-        saveAndRender: function(data) {
+saveAndRender: function(data) {
+            // 🔴 Η σωστή μεταβλητή για το κλειδί αποθήκευσης:
             localStorage.setItem(SUPPLIES_DATA_KEY, JSON.stringify(data));
-            window.renderSuppliesContent();
-            if (window.updateSuppUI) window.updateSuppUI();
+            
+            // 1. Ανανεώνει την οθόνη
+            if (typeof window.renderSuppliesContent === 'function') window.renderSuppliesContent();
+            
+            // 2. ☁️ REAL-TIME CLOUD TRIGGER
+            if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
+                window.PegasusCloud.push(); 
+            }
         }
     };
 
