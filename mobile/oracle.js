@@ -1,6 +1,6 @@
 /* ==========================================================================
-   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - FINAL STABLE)
-   Protocol: Cross-Module Data Correlation & Bottom-Docked UI
+   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - v1.0 ORIGINAL)
+   Protocol: Cross-Module Data Correlation & Top-Dashboard
    ========================================================================== */
 
 (function() {
@@ -8,12 +8,13 @@
         analyzeData: function() {
             let msgGood = "Όλα τα συστήματα λειτουργούν φυσιολογικά.";
             let msgBad = "Καμία κρίσιμη προειδοποίηση.";
-            let msgAction = "⚡ Όλα τα συστήματα συντήρησης και αποθεμάτων είναι ενημερωμένα.";
+            let msgAction = "Κανένα άμεσο καθήκον.";
 
             let hasGood = false;
             let hasBad = false;
             let hasAction = false;
 
+            const today = new Date().toLocaleDateString('el-GR');
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
 
@@ -44,9 +45,10 @@
             let recentEnergy = 10;
             if (bio.length > 0) recentEnergy = bio[0].energy;
 
+            // Έλεγχος εξόδων τελευταίων 3 ημερών
             let recentExpenses = 0;
             finance.forEach(f => {
-                if (f.amount < 0) recentExpenses += Math.abs(f.amount);
+                if (f.amount < 0) recentExpenses += Math.abs(f.amount); 
             });
 
             if (recentEnergy < 5 && recentExpenses > 50) {
@@ -101,19 +103,16 @@
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
             
-            // 🛠️ CSS OPTIMIZATION: Σταθερό ύψος και μεγάλο margin για να μην κόβεται
             dashboard.style.cssText = `
                 grid-column: 1 / -1; 
                 background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
                 border-radius: 16px;
                 padding: 15px;
-                margin-top: 20px;
-                margin-bottom: 120px; 
+                margin-bottom: 5px;
                 box-shadow: 0 10px 25px rgba(0,255,65,0.05);
                 position: relative;
-                box-sizing: border-box;
-                min-height: 145px;
+                overflow: hidden;
             `;
 
             dashboard.innerHTML = `
@@ -141,7 +140,7 @@
                 </div>
             `;
 
-            grid.appendChild(dashboard);
+            grid.insertBefore(dashboard, grid.firstChild);
         }
     };
 
