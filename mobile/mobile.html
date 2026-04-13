@@ -37,7 +37,16 @@
     <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;"></div>
 
     <div id="home" class="view active">
-        <div class="header"><h1>PEGASUS</h1><p>Tactical Data Interface</p></div>
+       <div class="header" style="display: flex; align-items: center; justify-content: space-between; padding: 0 10px;">
+    <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:24px; cursor:pointer; opacity:0.3;">◀</button>
+    
+    <div style="text-align:center;">
+        <h1>PEGASUS</h1>
+        <p id="pageIndicator">CORE MODULES</p>
+    </div>
+    
+    <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:24px; cursor:pointer;">▶</button>
+</div>
         
         <div id="dynamic-grid" class="grid"></div>
         
