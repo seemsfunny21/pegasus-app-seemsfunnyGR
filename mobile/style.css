@@ -163,7 +163,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     width: 85%;
     display: flex;
     justify-content: space-between; 
-    padding: 0 55px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
+    padding: 0 57px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
     align-items: center;
     pointer-events: none; /* 🔴 ΕΠΙΤΡΕΠΕΙ ΣΤΟ ΔΑΧΤΥΛΟ ΝΑ ΠΑΤΗΣΕΙ ΤΟ ANDROID */
     z-index: 9999;
