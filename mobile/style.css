@@ -8,7 +8,10 @@
 }
 
 body, html { 
-    height: 100%; margin: 0; overflow: hidden; background: var(--bg); 
+    height: 100%; margin: 0; 
+    overflow-x: hidden; /* 🔒 ΚΛΕΙΔΩΜΑ ΟΡΙΖΟΝΤΙΑΣ ΚΙΝΗΣΗΣ */
+    overflow-y: hidden; 
+    background: var(--bg); 
     color: #fff; font-family: 'Inter', sans-serif; text-align: center; 
     overscroll-behavior: none; position: fixed; width: 100%; 
 }
@@ -159,13 +162,14 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 /* 📱 GHOST NAVIGATION OVERLAY (Box Highlight Mode) */
 .ghost-nav-overlay {
     position: fixed; 
-    bottom: 4px; /* ↕️ Πόσο ψηλά από τον πάτο θα είναι τα κουτιά */
-    width: 88%;
+    bottom: 4px; 
+    left: 0; /* Ευθυγράμμιση αριστερά */
+    width: 100%; /* Πλήρες πλάτος */
     display: flex;
-    justify-content: space-between; 
-    padding: 0 60px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
+    justify-content: space-around; /* ⚖️ Ομοιόμορφη κατανομή χωρίς περιττά margins */
+    padding: 0 10px; 
     align-items: center;
-    pointer-events: none; /* 🔴 ΕΠΙΤΡΕΠΕΙ ΣΤΟ ΔΑΧΤΥΛΟ ΝΑ ΠΑΤΗΣΕΙ ΤΟ ANDROID */
+    pointer-events: none; 
     z-index: 9999;
     box-sizing: border-box;
 }
