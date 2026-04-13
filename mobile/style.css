@@ -172,10 +172,19 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 
 /* Ο σχεδιασμός των 3 κουτιών */
 .nav-box {
-    width: 45px;  /* Πλάτος του πράσινου κουτιού */
-    height: 35px; /* Ύψος του πράσινου κουτιού */
-    background: rgba(0, 255, 65, 0.15); /* Αχνό πράσινο γέμισμα */
-    border: 1px solid rgba(0, 255, 65, 0.5); /* Πράσινο περίγραμμα */
-    border-radius: 12px; /* Στρογγυλεμένες γωνίες */
-    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); /* Απαλό Glow Effect */
+    width: 45px;
+    height: 35px;
+    background: rgba(0, 255, 65, 0.15);
+    border: 1px solid rgba(0, 255, 65, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+    
+    /* 🔴 ΚΕΝΤΡΑΡΙΣΜΑ ΠΕΡΙΕΧΟΜΕΝΟΥ (Συμβόλων) */
+    display: flex;
+    justify-content: center; /* Οριζόντιο κεντράρισμα */
+    align-items: center;     /* Κάθετο κεντράρισμα */
+    
+    font-size: 18px; /* Ρύθμισε το μέγεθος των συμβόλων αν χρειάζεται */
+    color: var(--main);
+    line-height: 0; /* Αποτρέπει περιττά κενά στο κείμενο */
 }
