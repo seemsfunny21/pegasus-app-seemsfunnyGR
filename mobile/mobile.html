@@ -19,6 +19,41 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=2.0">
+    <link rel="stylesheet" href="style.css?v=2.0">
+    
+    <style id="temp-nav-fix">
+        /* 📱 GHOST NAVIGATION OVERLAY - LIVE EDIT MODE */
+        .ghost-nav-overlay {
+            position: fixed; 
+            bottom: 4px; 
+            left: 50%; /* 🎯 Κεντράρισμα με βάση τον άξονα */
+            transform: translateX(-50%); /* 🎯 Τέλεια ευθυγράμμιση */
+            width: 90%; /* Ρύθμισέ το ανάλογα με την οθόνη σου */
+            display: flex;
+            justify-content: space-around; 
+            padding: 0 10px; 
+            align-items: center;
+            pointer-events: none; 
+            z-index: 9999;
+            box-sizing: border-box;
+        }
+
+        .nav-box {
+            width: 45px;
+            height: 35px;
+            background: rgba(0, 255, 65, 0.15);
+            border: 1px solid rgba(0, 255, 65, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            font-size: 19px;
+            color: var(--main);
+            line-height: 0;
+        }
+    </style>
+</head>
 </head>
 <body>
 
