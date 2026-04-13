@@ -1,6 +1,6 @@
 /* ==========================================================================
-   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.1)
-   Protocol: High-Contrast UI & Transaction Management
+   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.2)
+   Protocol: High-Contrast UI, Transaction Management & Real-Time Sync
    ========================================================================== */
 
 (function() {
@@ -51,6 +51,19 @@
     }
 
     window.PegasusFinance = {
+        saveAndRender: function(data) {
+            // Τοπική αποθήκευση
+            localStorage.setItem(FINANCE_DATA_KEY, JSON.stringify(data));
+            
+            // Ανανέωση UI
+            this.render();
+
+            // ☁️ REAL-TIME CLOUD TRIGGER
+            if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
+                window.PegasusCloud.push(); 
+            }
+        },
+
         addTransaction: function(type) {
             const desc = document.getElementById('finDesc').value;
             const amount = parseFloat(document.getElementById('finAmount').value);
@@ -69,19 +82,21 @@
             };
 
             transactions.unshift(newEntry);
-            localStorage.setItem(FINANCE_DATA_KEY, JSON.stringify(transactions));
             
             document.getElementById('finDesc').value = '';
             document.getElementById('finAmount').value = '';
-            this.render();
+            
+            // Κλήση της νέας ενοποιημένης συνάρτησης
+            this.saveAndRender(transactions);
         },
 
         deleteTransaction: function(id) {
             if(confirm('Οριστική διαγραφή συναλλαγής;')) {
                 let transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
                 transactions = transactions.filter(t => t.id !== id);
-                localStorage.setItem(FINANCE_DATA_KEY, JSON.stringify(transactions));
-                this.render();
+                
+                // Κλήση της νέας ενοποιημένης συνάρτησης
+                this.saveAndRender(transactions);
             }
         },
 
