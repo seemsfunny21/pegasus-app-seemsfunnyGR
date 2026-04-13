@@ -156,23 +156,27 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     border-radius: 8px;
 }
 
-/* 📱 GHOST NAVIGATION OVERLAY */
+/* 📱 GHOST NAVIGATION OVERLAY (Box Highlight Mode) */
 .ghost-nav-overlay {
     position: fixed; 
-    bottom: 10px; /* Το νούμερο που βρήκες */
-    width: 76%;
+    bottom: 4px; /* ↕️ Πόσο ψηλά από τον πάτο θα είναι τα κουτιά */
+    left: 0; 
+    width: 100%;
     display: flex;
     justify-content: space-between; 
-    padding: 0 50px; /* Το νούμερο που βρήκες */
+    padding: 0 50px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
     align-items: center;
-    font-size: 24px; 
-    color: var(--main);
-    opacity: 0.7; 
-    pointer-events: none; 
+    pointer-events: none; /* 🔴 ΕΠΙΤΡΕΠΕΙ ΣΤΟ ΔΑΧΤΥΛΟ ΝΑ ΠΑΤΗΣΕΙ ΤΟ ANDROID */
     z-index: 9999;
     box-sizing: border-box;
 }
 
-.ghost-nav-overlay div {
-    text-shadow: 0 0 10px var(--main);
+/* Ο σχεδιασμός των 3 κουτιών */
+.nav-box {
+    width: 45px;  /* Πλάτος του πράσινου κουτιού */
+    height: 35px; /* Ύψος του πράσινου κουτιού */
+    background: rgba(0, 255, 65, 0.15); /* Αχνό πράσινο γέμισμα */
+    border: 1px solid rgba(0, 255, 65, 0.5); /* Πράσινο περίγραμμα */
+    border-radius: 12px; /* Στρογγυλεμένες γωνίες */
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); /* Απαλό Glow Effect */
 }
