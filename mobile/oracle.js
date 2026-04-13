@@ -89,62 +89,64 @@
             };
         },
 
-injectDashboard: function() {
-            // Επιλογή του main container αντί για το grid αν θέλουμε να είναι τελείως κάτω
-            const viewHome = document.getElementById('home');
-            if (!viewHome) return;
+        injectDashboard: function() {
+            const grid = document.getElementById('dynamic-grid');
+            if (!grid) return;
 
-            // Έλεγχος σελίδας
+            // Έλεγχος αν βρισκόμαστε στην Πρώτη Σελίδα (Page 0)
             if (window.PegasusMobileUI && window.PegasusMobileUI.currentPage !== 0) return;
 
-            // Καθαρισμός προηγούμενου
+            // Καθαρισμός προηγούμενου Oracle αν υπάρχει
             const existingOracle = document.getElementById('oracle-dashboard');
             if (existingOracle) existingOracle.remove();
 
             const insights = this.analyzeData();
 
-            // Δημιουργία Dashboard
+            // Δημιουργία του 2x2 (4 κουτάκια) Dashboard
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
             
-            // UI Optimization: Αφαιρέσαμε το grid-column για να μπει ως αυτόνομο block κάτω από το grid
+            // Το style grid-column: 1 / -1 το κάνει να πιάνει όλο το πλάτος στο Grid
             dashboard.style.cssText = `
-                width: calc(100% - 10px);
-                margin: 20px auto 100px auto; 
-                background: linear-gradient(145deg, rgba(15,15,15,0.98) 0%, rgba(5,5,5,0.98) 100%);
+                grid-column: 1 / -1; 
+                background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
-                border-radius: 20px;
-                padding: 18px;
-                box-shadow: 0 -10px 30px rgba(0,255,65,0.05);
+                border-radius: 16px;
+                padding: 15px;
+                margin-bottom: 5px;
+                box-shadow: 0 10px 25px rgba(0,255,65,0.05);
                 position: relative;
-                box-sizing: border-box;
+                overflow: hidden;
             `;
 
+            // Εφέ Radar στο background
             dashboard.innerHTML = `
-                <div style="position: absolute; top: -15px; right: -15px; font-size: 70px; opacity: 0.03; pointer-events: none;">👁️</div>
-                <div style="font-size: 10px; color: var(--main); font-weight: 900; letter-spacing: 2px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                    <span style="display:inline-block; width:8px; height:8px; background:var(--main); border-radius:50%; box-shadow: 0 0 10px var(--main); animation: pulse 2s infinite;"></span>
+                <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.03; pointer-events: none;">👁️</div>
+                <div style="font-size: 10px; color: var(--main); font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
+                    <span style="display:inline-block; width:8px; height:8px; background:var(--main); border-radius:50%; box-shadow: 0 0 8px var(--main); animation: pulse 2s infinite;"></span>
                     EXECUTIVE BRIEFING
                 </div>
                 
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div style="display: flex; gap: 12px; align-items: flex-start; opacity: ${insights.hasGood ? '1' : '0.4'};">
-                        <div style="font-size: 14px;">🟢</div>
-                        <div style="font-size: 11px; color: #eee; font-weight: 600; line-height: 1.4;">${insights.good}</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasGood ? '1' : '0.5'};">
+                        <div style="font-size: 16px; margin-top: -2px;">🟢</div>
+                        <div style="font-size: 11px; color: #ccc; font-weight: 600; line-height: 1.4;">${insights.good}</div>
                     </div>
-                    <div style="display: flex; gap: 12px; align-items: flex-start; opacity: ${insights.hasBad ? '1' : '0.4'};">
-                        <div style="font-size: 14px;">🔴</div>
-                        <div style="font-size: 11px; color: ${insights.hasBad ? '#ff4444' : '#eee'}; font-weight: ${insights.hasBad ? '800' : '600'}; line-height: 1.4;">${insights.bad}</div>
+                    
+                    <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasBad ? '1' : '0.5'};">
+                        <div style="font-size: 16px; margin-top: -2px;">🔴</div>
+                        <div style="font-size: 11px; color: ${insights.hasBad ? '#ff4444' : '#ccc'}; font-weight: ${insights.hasBad ? '800' : '600'}; line-height: 1.4;">${insights.bad}</div>
                     </div>
-                    <div style="display: flex; gap: 12px; align-items: flex-start; opacity: ${insights.hasAction ? '1' : '0.4'};">
-                        <div style="font-size: 14px;">⚡</div>
-                        <div style="font-size: 11px; color: ${insights.hasAction ? '#00bcd4' : '#eee'}; font-weight: ${insights.hasAction ? '800' : '600'}; line-height: 1.4;">${insights.action}</div>
+
+                    <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasAction ? '1' : '0.5'};">
+                        <div style="font-size: 16px; margin-top: -2px;">⚡</div>
+                        <div style="font-size: 11px; color: ${insights.hasAction ? '#00bcd4' : '#ccc'}; font-weight: ${insights.hasAction ? '800' : '600'}; line-height: 1.4;">${insights.action}</div>
                     </div>
                 </div>
             `;
 
-            // Τοποθέτηση στο τέλος του view "home", μετά το "dynamic-grid" και το "settings-anchor"
-            viewHome.appendChild(dashboard);
+            // Προσθήκη ΠΑΝΩ από όλα τα άλλα εικονίδια
+            grid.insertBefore(dashboard, grid.firstChild);
         }
     };
 
