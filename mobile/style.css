@@ -160,7 +160,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 .ghost-nav-overlay {
     position: fixed; 
     bottom: 4px; /* ↕️ Πόσο ψηλά από τον πάτο θα είναι τα κουτιά */
-    width: 76%;
+    width: 80%;
     display: flex;
     justify-content: space-between; 
     padding: 0 50px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
