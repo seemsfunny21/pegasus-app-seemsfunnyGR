@@ -93,7 +93,7 @@
                 <button class="primary-btn" onclick="window.PegasusMovies.addNewMovie()">ΠΡΟΣΘΗΚΗ</button>
             </div>
 
-            <div class="section-title" style="margin-top: 10px; color: #00bcd4;">👀 ΠΡΟΣΕΧΩΣ (WATCHLIST)</div>
+            <div class="section-title" style="margin-top: 10px; color: var(--main);">👀 ΠΡΟΣΕΧΩΣ (WATCHLIST)</div>
             <div id="movies-watchlist" style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px;"></div>
 
             <div class="section-title" style="color: #555;">✅ ΙΣΤΟΡΙΚΟ ΠΡΟΒΟΛΩΝ</div>
@@ -117,7 +117,7 @@
             if (movie.status === 'pending') {
                 // RENDER: WATCHLIST
                 watchlistHtml += `
-                    <div class="mini-card" style="border-left: 4px solid #00bcd4; padding: 15px; background: rgba(15,15,15,0.95);">
+                    <div class="mini-card" style="border-left: 4px solid var(--main); padding: 15px; background: rgba(15,15,15,0.95);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
                             <div>
                                 <div style="font-weight: 900; font-size: 16px; color: #fff;">${movie.title}</div>
