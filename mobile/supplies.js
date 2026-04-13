@@ -117,7 +117,6 @@
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div class="section-title" style="margin: 0;">ΑΠΟΘΕΜΑΤΑ</div>
                 <button id="btnAddSupply" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusSupplies.toggleAddForm()">
                     + ΝΕΟ ΠΡΟΪΟΝ
                 </button>
@@ -182,7 +181,7 @@
                     <div style="display: flex; gap: 8px;">
                         <button class="secondary-btn" style="flex: 2; padding: 10px; font-size: 10px; border-color: #222;" 
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'consume')">
-                            ΦΑΓΕ -${item.portion}${item.unit}
+                            -${item.portion}${item.unit}
                         </button>
                         <button class="primary-btn" style="flex: 1; padding: 10px; font-size: 10px;" 
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'refill')">
