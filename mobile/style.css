@@ -160,7 +160,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 .ghost-nav-overlay {
     position: fixed; 
     bottom: 4px; /* ↕️ Πόσο ψηλά από τον πάτο θα είναι τα κουτιά */
-    width: 82%;
+    width: 81%;
     display: flex;
     justify-content: space-between; 
     padding: 0 51px; /* ↔️ Απόσταση των πλαϊνών κουτιών από την άκρη (ρύθμισέ το αν χρειαστεί) */
@@ -184,7 +184,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     justify-content: center; /* Οριζόντιο κεντράρισμα */
     align-items: center;     /* Κάθετο κεντράρισμα */
     
-    font-size: 18px; /* Ρύθμισε το μέγεθος των συμβόλων αν χρειάζεται */
+    font-size: 19px; /* Ρύθμισε το μέγεθος των συμβόλων αν χρειάζεται */
     color: var(--main);
     line-height: 0; /* Αποτρέπει περιττά κενά στο κείμενο */
 }
