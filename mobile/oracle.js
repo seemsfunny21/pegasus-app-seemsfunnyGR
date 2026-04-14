@@ -1,6 +1,6 @@
 /* ==========================================================================
-   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - v1.0 ORIGINAL)
-   Protocol: Cross-Module Data Correlation & Top-Dashboard
+   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - v1.1 SYNCED)
+   Protocol: Predictive Warning, Cross-Module Data Correlation
    ========================================================================== */
 
 (function() {
@@ -24,13 +24,23 @@
             
             let actionItems = [];
             
+            // 🎯 PREDICTIVE WARNING PROTOCOL (Sync with supplies.js)
             supplies.forEach(s => {
-                if ((s.amount / s.refill) < 0.15) actionItems.push(`Χαμηλό απόθεμα: ${s.label}`);
+                let pct = s.amount / s.refill;
+                if (pct < 0.15) {
+                    actionItems.push(`🔴 Οριακό: ${s.label}`);
+                } else if (pct < 0.40) {
+                    actionItems.push(`🟠 Χαμηλό: ${s.label}`);
+                }
             });
 
             maint.forEach(t => {
                 const diffDays = Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay);
-                if (diffDays <= 0) actionItems.push(`Λήξη Συντήρησης: ${t.label}`);
+                if (diffDays < 0) {
+                    actionItems.push(`🔴 Ληγμένο: ${t.label}`);
+                } else if (diffDays === 0) {
+                    actionItems.push(`🟠 Σήμερα: ${t.label}`);
+                }
             });
 
             if (actionItems.length > 0) {
