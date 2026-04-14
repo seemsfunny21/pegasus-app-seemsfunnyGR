@@ -89,7 +89,10 @@ window.importPegasusData = function(event) {
     reader.onload = async (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-            
+            if (window.GalleryEngine && window.GalleryEngine.db) {
+            window.GalleryEngine.db.close();
+            console.log("🛡️ PEGASUS GUARD: Gallery DB closed for Restore.");
+        }
             const msg = `🚨 PEGASUS OS: ΕΝΑΡΞΗ ΑΝΑΚΤΗΣΗΣ\n\n` +
                         `Θα γίνει πλήρης επαναφορά δεδομένων και φωτογραφιών.\n` +
                         `Τα τρέχοντα δεδομένα θα διαγραφούν. Συνέχεια;`;
