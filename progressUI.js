@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.1 (STABLE DOM ALIGNMENT)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.2 (DYNAMIC DOM ALIGNMENT PATCH)
    ========================================================================== */
 
 window.MuscleProgressUI = {
@@ -18,9 +18,12 @@ window.MuscleProgressUI = {
 
     calculateStats() {
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-        // 🎯 STRICT TARGET ALIGNMENT
+        
+        // 🎯 STRICT TARGET ALIGNMENT: Explicit Bridge Creation με data.js / settings.js
         const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
-                        { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 20, "Ώμοι": 20, "Κορμός": 15 };
+                        (typeof window.getDynamicTargets === "function" ? window.getDynamicTargets() : 
+                        (typeof DEFAULT_SETTINGS !== "undefined" ? DEFAULT_SETTINGS.muscleTargets : 
+                        { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }));
 
         return Object.keys(targets).map(group => {
             const done = parseInt(history[group]) || 0;
