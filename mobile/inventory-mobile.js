@@ -1,7 +1,7 @@
 /* ==========================================================================
-   📦 PEGASUS INVENTORY SYSTEM (MOBILE v2.1)
-   Protocol: Strict Null-Safe DOM Binding & Manifest Alignment
-   Status: STABLE | RACE-CONDITION PROOF
+   📦 PEGASUS INVENTORY SYSTEM (MOBILE v2.2 MAXIMALIST)
+   Protocol: Strict Null-Safe DOM Binding & Legacy Bridge Integration
+   Status: FINAL STABLE | CROSS-PLATFORM COMPATIBLE
    ========================================================================== */
 
 window.PegasusInventory = {
@@ -42,6 +42,7 @@ window.PegasusInventory = {
         
         this.updateUI();
         
+        // Χρήση true για την παράκαμψη του Debounce στο cloudSync
         if (push && window.PegasusCloud) {
             window.PegasusCloud.push(true);
         }
@@ -57,5 +58,16 @@ window.PegasusInventory = {
         if (window.PegasusCloud) {
             window.PegasusCloud.push(true);
         }
+    }
+};
+
+/**
+ * 🛠️ LEGACY BRIDGE (PC COMPATIBILITY PATCH)
+ * Επιτρέπει στο food.js και cloudSync.js να καλούν τη συνάρτηση 
+ * στην παλιά της μορφή χωρίς να καταρρέει το σύστημα.
+ */
+window.consumeSupp = function(type, amount, push = true) {
+    if (window.PegasusInventory) {
+        window.PegasusInventory.consume(type, amount, push);
     }
 };
