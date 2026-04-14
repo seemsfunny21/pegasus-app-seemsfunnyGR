@@ -24,7 +24,8 @@ window.PegasusCardio = {
 
         // --- 2. ΜΕΤΑΒΟΛΙΚΗ ΣΥΝΔΕΣΗ (ΑΥΞΗΣΗ ΗΜΕΡΗΣΙΟΥ ΣΤΟΧΟΥ ΘΕΡΜΙΔΩΝ) ---
         if(burnedKcal > 0) {
-            const dateStr = new Date().toLocaleDateString('el-GR');
+            const rawDate = new Date();
+            const dateStr = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
             let todayCardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
             
             // Προσθέτει τις νέες θερμίδες
