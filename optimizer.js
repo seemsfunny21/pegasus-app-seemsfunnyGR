@@ -18,7 +18,12 @@ window.PegasusOptimizer = {
        const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
         // 🔥 SATURDAY ANCHOR: Reset αν είναι Σάββατο και δεν έχει γίνει ήδη
-        if (day === "Σάββατο" && lastReset !== todayDate) {
+        const lastResetTime = new Date(lastReset || 0).getTime();
+        const daysSinceReset = (new Date().getTime() - lastResetTime) / (1000 * 3600 * 24);
+        
+        // 🛡️ TACTICAL RESET: Αν είναι Σάββατο, Ή αν χάσαμε το Σάββατο και πέρασε μια εβδομάδα
+        if ((day === "Σάββατο" && lastReset !== todayDate) || daysSinceReset >= 6.5) {
+            console.log("🚀 PEGASUS: Weekly Cycle Start. Resetting History...");
             console.log("🚀 PEGASUS: Saturday Cycle Start. Resetting History...");
             progress = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
         }
