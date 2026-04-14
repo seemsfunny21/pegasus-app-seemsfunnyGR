@@ -1,35 +1,16 @@
 /* ==========================================================================
-   🧠 PEGASUS MODULE: ORACLE (v1.6 - HYBRID STABLE DIMENSIONS)
-   Protocol: Single-Line Horizontal, Auto-Scale Font, Multi-JS Data Fetch
+   🧠 PEGASUS MODULE: ORACLE (v1.7 - SMART GROUPING PROTOCOL)
+   Protocol: Plural/Singular Logic, Vertical Ellipsis, Maintenance Sync
    ========================================================================== */
 
 (function() {
     window.PegasusOracle = {
         analyzeData: function() {
-            let alerts = [];
+            let lines = [];
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
 
-            // 1. DATA FETCH: ΑΠΟΘΕΜΑΤΑ (Supplies Logic)
-            const supplies = JSON.parse(localStorage.getItem('pegasus_supplies_v1')) || [];
-            supplies.forEach(s => {
-                const rem = s.amount / s.portion;
-                if (rem > 0 && rem <= 1.1) {
-                    alerts.push({ color: '#ffbb33', icon: '🟠', txt: `1 ΔΟΣΗ ${s.label}` });
-                } else if (rem <= 0) {
-                    alerts.push({ color: '#ff4444', icon: '🔴', txt: `ΕΞΑΝΤΛΗΘΗΚΕ: ${s.label}` });
-                }
-            });
-
-            // 2. DATA FETCH: ΣΥΝΤΗΡΗΣΗ (Maintenance Logic)
-            const maint = JSON.parse(localStorage.getItem('pegasus_maintenance_v1')) || [];
-            maint.forEach(t => {
-                const diff = Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay);
-                if (diff < 0) alerts.push({ color: '#ff4444', icon: '🔴', txt: `ΛΗΞΗ: ${t.label}` });
-                else if (diff === 0) alerts.push({ color: '#ffbb33', icon: '🟡', txt: `ΣΗΜΕΡΑ: ${t.label}` });
-            });
-
-            // 3. DATA FETCH: ΥΠΝΟΣ & ΣΤΟΧΟΙ (Bio & Missions Logic)
+            // 🟢 1. ΥΠΝΟΣ & ΣΤΟΧΟΙ (Bio & Missions)
             const bio = JSON.parse(localStorage.getItem('pegasus_biometrics_v1')) || [];
             const missions = JSON.parse(localStorage.getItem('pegasus_missions_v1')) || [];
             
@@ -39,17 +20,59 @@
             let pct = total > 0 ? (completed / total) * 100 : 0;
 
             if (sleep >= 9) {
-                alerts.push({ color: '#00ff41', icon: '🟢', txt: `ΥΠΝΟΣ ${sleep}/10 - READY` });
+                lines.push({ color: '#00ff41', icon: '🟢', txt: `ΕΞΑΙΡΕΤΙΚΗ ΑΝΑΡΡΩΣΗ (ΥΠΝΟΣ ${sleep}/10). ΕΤΟΙΜΟΣ ΓΙΑ ΠΡΟΠΟΝΗΣΗ!` });
             } else if (pct >= 80) {
-                alerts.push({ color: '#00ff41', icon: '🟢', txt: `ΣΤΟΧΟΙ: ${Math.round(pct)}%` });
+                lines.push({ color: '#00ff41', icon: '🟢', txt: `ΥΨΗΛΗ ΠΕΙΘΑΡΧΙΑ ΣΤΟΧΩΝ: ${Math.round(pct)}% ΟΛΟΚΛΗΡΩΜΕΝΟΙ` });
             }
 
-            // Fallback αν δεν υπάρχει τίποτα κρίσιμο
-            if (alerts.length === 0) {
-                alerts.push({ color: '#ff4444', icon: '🔴', txt: "ΚΑΜΙΑ ΚΡΙΣΙΜΗ ΠΡΟΕΙΔΟΠΟΙΗΣΗ" });
+            // 🔴/🟠 2. ΑΠΟΘΕΜΑΤΑ (Supplies)
+            const supplies = JSON.parse(localStorage.getItem('pegasus_supplies_v1')) || [];
+            let depleted = [];
+            let low = [];
+            
+            supplies.forEach(s => {
+                const rem = s.amount / s.portion;
+                if (rem <= 0) depleted.push(s.label);
+                else if (rem > 0 && rem <= 1.1) low.push(s.label);
+            });
+
+            if (depleted.length === 1) {
+                lines.push({ color: '#ff4444', icon: '🔴', txt: `ΕΞΑΝΤΛΗΘΗΚΕ: ${depleted[0]}` });
+            } else if (depleted.length > 1) {
+                lines.push({ color: '#ff4444', icon: '🔴', txt: `ΕΞΑΝΤΛΗΘΗΚΑΝ: ${depleted.join(', ')}` });
             }
 
-            return alerts;
+            if (low.length > 0) {
+                lines.push({ color: '#ffbb33', icon: '🟠', txt: `ΟΡΙΑΚΑ (1 ΔΟΣΗ): ${low.join(', ')}` });
+            }
+
+            // 🔴/🟡 3. ΡΟΥΤΙΝΑ ΕΡΓΑΣΙΩΝ (Maintenance)
+            const maint = JSON.parse(localStorage.getItem('pegasus_maintenance_v1')) || [];
+            let overdue = [];
+            let todayMaint = [];
+            
+            maint.forEach(t => {
+                const diff = Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay);
+                if (diff < 0) overdue.push(t.label);
+                else if (diff === 0) todayMaint.push(t.label);
+            });
+
+            if (overdue.length === 1) {
+                lines.push({ color: '#ff4444', icon: '🔴', txt: `ΕΚΤΟΣ ΧΡΟΝΟΥ ΕΡΓΑΣΙΑ: ${overdue[0]}` });
+            } else if (overdue.length > 1) {
+                lines.push({ color: '#ff4444', icon: '🔴', txt: `ΕΚΤΟΣ ΧΡΟΝΟΥ ΕΡΓΑΣΙΕΣ: ${overdue.join(', ')}` });
+            }
+
+            if (todayMaint.length > 0) {
+                lines.push({ color: '#ffbb33', icon: '🟡', txt: `ΕΡΓΑΣΙΕΣ ΣΗΜΕΡΑ: ${todayMaint.join(', ')}` });
+            }
+
+            // 🟢 FALLBACK: Αν δεν υπάρχει τίποτα να δείξει
+            if (lines.length === 0) {
+                lines.push({ color: '#00ff41', icon: '🟢', txt: `ΟΛΑ ΤΑ ΣΥΣΤΗΜΑΤΑ ΛΕΙΤΟΥΡΓΟΥΝ ΚΑΝΟΝΙΚΑ` });
+            }
+
+            return lines;
         },
 
         injectDashboard: function() {
@@ -63,41 +86,29 @@
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
             
-            // 📐 STABLE DIMENSIONS STYLE
+            // 📐 COMPACT STACK STYLE WITH TEXT-OVERFLOW
             dashboard.style.cssText = `
                 grid-column: 1 / -1; 
-                background: rgba(10,10,10,0.9);
+                background: rgba(10,10,10,0.85);
                 border: 1px solid #222;
                 border-radius: 12px;
-                height: 45px; 
-                padding: 0 10px;
-                margin-bottom: 10px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
                 display: flex;
-                align-items: center;
+                flex-direction: column;
+                gap: 6px;
                 justify-content: center;
-                overflow: hidden; 
                 box-sizing: border-box;
             `;
 
-            // ⚡ AUTO-FONT SCALE CALCULATION
-            // Όσο περισσότερες οι πληροφορίες, τόσο μικραίνει το font για να χωρέσει σε μία γραμμή
-            let baseFontSize = 11;
-            const totalChars = insights.reduce((sum, item) => sum + item.txt.length, 0);
-            if (totalChars > 40) baseFontSize = 9;
-            if (totalChars > 60) baseFontSize = 8;
-
-            dashboard.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; white-space: nowrap;">
-                    ${insights.map(item => `
-                        <div style="display: flex; align-items: center; gap: 4px;">
-                            <span style="font-size: 12px;">${item.icon}</span>
-                            <span style="font-size: ${baseFontSize}px; color: ${item.color}; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">
-                                ${item.txt}
-                            </span>
-                        </div>
-                    `).join('<span style="color: #333; font-weight: 900;">|</span>')}
+            dashboard.innerHTML = insights.map(item => `
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <span style="font-size: 11px; flex-shrink: 0;">${item.icon}</span>
+                    <span style="font-size: 10px; color: ${item.color}; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px;">
+                        ${item.txt}
+                    </span>
                 </div>
-            `;
+            `).join('');
 
             grid.insertBefore(dashboard, grid.firstChild);
         }
