@@ -19,7 +19,7 @@ function getTargetWednesday() {
     const month = String(targetDate.getMonth() + 1).padStart(2, '0');
     const day = String(targetDate.getDate()).padStart(2, '0');
     
-    return `${year}-${month}-${day}`;
+   return `${targetDate.getDate()}/${targetDate.getMonth() + 1}/${targetDate.getFullYear()}`;
 }
 
 /**
