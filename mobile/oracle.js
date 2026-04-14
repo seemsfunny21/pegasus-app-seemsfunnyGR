@@ -181,7 +181,7 @@
             setTimeout(() => {
                 promptBox.style.opacity = '0'; // Μετά από 2.5s: Σβήσιμο
                 setTimeout(() => promptBox.remove(), 500); // Καθαρισμός DOM
-            }, 3000); 
+            }, 5500); 
         }
     }
 
