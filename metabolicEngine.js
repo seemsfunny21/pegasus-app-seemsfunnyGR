@@ -91,7 +91,7 @@ const PegasusMetabolic = {
         }
 
         // Β. Mobile UI (txtKcal): Δείχνει το ΣΥΝΟΛΟ της ημέρας (π.χ. Πρωινή + Τρέχουσα)
-        const kcalMobile = document.getElementById("txtKcal");
+       const kcalMobile = (window.innerWidth <= 800) ? document.getElementById("txtKcal") : null;
         if (kcalMobile) {
             kcalMobile.textContent = `${dVal.toFixed(0)} / 2800`;
         }
