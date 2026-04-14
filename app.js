@@ -185,9 +185,12 @@ function selectDay(btn, day) {
         d.dataset.done = 0; 
         d.dataset.index = idx;
 
-        const cleanName = e.name.trim();
+const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const savedWeight = window.getSavedWeight(cleanName);
+
+        // 🎯 TACTICAL FIX: Αν δεν υπάρχει αποθηκευμένο βάρος, τραβάει το Baseline (e.weight) από το data.js
+        const displayWeight = savedWeight !== "" ? savedWeight : (e.weight && e.weight !== "0" ? e.weight : "");
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
@@ -199,7 +202,7 @@ function selectDay(btn, day) {
                        class="weight-input" 
                        data-name="${safeName}" 
                        placeholder="kg" 
-                       value="${savedWeight}" 
+                       value="${displayWeight}" 
                        onclick="event.stopPropagation()" 
                        onchange="saveWeight('${cleanName}', this.value)">
             </div>
