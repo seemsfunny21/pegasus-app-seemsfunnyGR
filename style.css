@@ -927,3 +927,23 @@ input:checked + .slider:before { transform: translateX(26px); }
     color: #eee !important;
     letter-spacing: 1px !important;
 }
+
+/* Καθολικό στυλ για όλα τα Modals */
+.modal, #pinModal, .pegasus-panel {
+    background: rgba(5, 5, 5, 0.98) !important; /* Μαύρο βαθύ */
+    border: 2px solid #00ff41 !important;        /* Πράσινο πλαίσιο */
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);  /* Πράσινη αύρα */
+    border-radius: 12px;
+    color: #fff;
+}
+
+/* Στυλ για τα πεδία εισαγωγής μέσα στα modals */
+.modal input, #pinModal input {
+    background: #000 !important;
+    border: 1px solid #00ff41 !important;
+    color: #00ff41 !important;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    border-radius: 5px;
+    padding: 10px;
+}
