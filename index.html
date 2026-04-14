@@ -372,25 +372,47 @@
 </div>
 
 <script>
-    /* PIN VAULT PROTOCOL */
+    /* PEGASUS SECURITY PROTOCOL - UNIVERSAL ALIGNED (v18.2) */
     function attemptVaultUnlock() {
-        const pin = document.getElementById("pinInput").value;
+        const pinInput = document.getElementById("pinInput");
+        const pin = pinInput.value.trim();
+        
         if (!pin) return;
+
+        // Καλεί τη νέα συνάρτηση στο cloudSync.js που διαχειρίζεται Master Key & Device Trusting
         if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
-            document.getElementById("pinModal").style.display = "none";
-            const vaultBtn = document.getElementById("btnMasterVault");
-            if(vaultBtn) {
-                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-                vaultBtn.style.borderColor = "#00ff41";
-                vaultBtn.style.color = "#00ff41";
+            
+            // Αν η συσκευή είναι ήδη Trusted (επόμενες φορές με το PIN), το modal κλείνει αυτόματα
+            // Αν είναι η πρώτη φορά με Master Key, το cloudSync.js θα δείξει το δικό του Tactical Overlay
+            const isTrusted = localStorage.getItem("pegasus_device_trusted");
+            if (isTrusted) {
+                document.getElementById("pinModal").style.display = "none";
+                
+                const vaultBtn = document.getElementById("btnMasterVault");
+                if(vaultBtn) {
+                    vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+                    vaultBtn.style.borderColor = "#00ff41";
+                    vaultBtn.style.color = "#00ff41";
+                }
+                
+                if (typeof refreshAllUI === 'function') refreshAllUI();
             }
         } else {
-            const errorDiv = document.getElementById("pinError");
-            if(errorDiv) errorDiv.textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN";
-            document.getElementById("pinInput").value = "";
+            // Η αποτυχία διαχειρίζεται πλέον με alerts από το cloudSync.js για λόγους ασφαλείας
+            pinInput.value = "";
         }
     }
-    function skipVault() { document.getElementById("pinModal").style.display = "none"; }
+
+    function skipVault() { 
+        // Offline/Guest Mode: Επιτρέπουμε την είσοδο στο index.html χωρίς Cloud
+        document.getElementById("pinModal").style.display = "none"; 
+        const vaultBtn = document.getElementById("btnMasterVault");
+        if(vaultBtn) {
+            vaultBtn.textContent = "OFFLINE MODE";
+            vaultBtn.style.borderColor = "#666";
+            vaultBtn.style.color = "#666";
+        }
+    }
 </script>
 
 <script src="manifest.js"></script>
