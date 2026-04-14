@@ -29,7 +29,7 @@
             };
 
             logs.unshift(newEntry);
-            
+            logs = logs.slice(0, 200);
             document.getElementById('liftWeight').value = '';
             document.getElementById('liftReps').value = '';
             // Κρατάμε το όνομα της άσκησης στο input γιατί συνήθως κάνουμε πολλαπλά σετ
