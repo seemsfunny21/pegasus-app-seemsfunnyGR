@@ -40,8 +40,16 @@ window.PegasusEMS = {
             let h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
             // Το EMS δίνει 6 σετ σε όλες τις μυϊκές ομάδες λόγω καθολικής διέγερσης
             const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
-            groups.forEach(g => h[g] = (h[g] || 0) + 6);
-            
+const dateStr = new Date().toLocaleDateString('el-GR');
+            const hasCardio = localStorage.getItem("pegasus_cardio_kcal_" + dateStr);
+
+            groups.forEach(g => {
+                if (g === "Πόδια" && hasCardio) {
+                    console.log("⚡ EMS: Παράλειψη ποδιών (Καλύφθηκαν ήδη από το Cardio).");
+                } else {
+                    h[g] = (h[g] || 0) + 6;
+                }
+            });
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(h));
             console.log("⚡ EMS: Full Body Sets Logged.");
             if(window.PegasusCloud) await PegasusCloud.push();
