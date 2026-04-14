@@ -187,10 +187,13 @@ function selectDay(btn, day) {
 
 const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
+        // Φέρνει τα αποθηκευμένα κιλά
         const savedWeight = window.getSavedWeight(cleanName);
 
-        // 🎯 TACTICAL FIX: Αν δεν υπάρχει αποθηκευμένο βάρος, τραβάει το Baseline (e.weight) από το data.js
-        const displayWeight = savedWeight !== "" ? savedWeight : (e.weight && e.weight !== "0" ? e.weight : "");
+        // 🎯 TACTICAL ALIGNMENT:
+        // Αν το savedWeight είναι κενό, χρησιμοποιούμε ΠΑΝΤΑ το e.weight από το data.js
+        const displayWeight = (savedWeight && savedWeight !== "") ? savedWeight : (e.weight || "");
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
@@ -198,7 +201,6 @@ const cleanName = e.name.trim();
                 <div class="exercise-name">${cleanName}</div> 
                 <input type="number" 
                        id="weight-${idx}" 
-                       name="workout-weight" 
                        class="weight-input" 
                        data-name="${safeName}" 
                        placeholder="kg" 
