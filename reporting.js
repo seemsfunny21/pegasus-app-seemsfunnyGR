@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V3.3 (STRICT ANALYST EDITION - DIRECT SYNC)
-   Protocol: Guaranteed Delivery with Explicit Reload Hook
+   PEGASUS REPORTING SYSTEM - V4.0 (MORNING QUEUE EDITION)
+   Protocol: Data Accumulation & Scheduled Morning Dispatch
    ========================================================================== */
 
 const PegasusReporting = {
@@ -9,7 +9,7 @@ const PegasusReporting = {
     historyKey: "pegasus_weekly_history",
 
     saveWorkout: function(kcalVal, memoryData = null) {
-        console.log("PEGASUS: Workout save/sync triggered...");
+        console.log("PEGASUS: Workout save triggered. Queuing for morning...");
         this.prepareAndSaveReport(kcalVal, memoryData);
     },
 
@@ -62,7 +62,7 @@ const PegasusReporting = {
             { msg: "Training Day", nutrition: "High protein intake required" };
 
         const pendingData = {
-            dateSent: dateStr,
+            dateSent: dateStr, // Η ημερομηνία που δημιουργήθηκε η αναφορά
             templateParams: {
                 name: "Άγγελος",
                 workout_date: today.toLocaleDateString('el-GR'),
@@ -77,45 +77,73 @@ const PegasusReporting = {
         };
 
         localStorage.setItem(this.pendingReportKey, JSON.stringify(pendingData));
-        console.log("✅ PEGASUS: Data Committed & Ready for Broadcast.");
+        console.log("✅ PEGASUS: Data Queued. Will be sent tomorrow morning.");
         
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
             window.PegasusCloud.push(true);
         }
 
-        // Ξεκινάει η μετάδοση του Email!
-        this.checkAndSendMorningReport(true); 
+        // 🛑 ΑΦΑΙΡΕΘΗΚΕ Η ΑΜΕΣΗ ΑΠΟΣΤΟΛΗ ΕΔΩ ΓΙΑ ΝΑ ΠΕΡΙΜΕΝΕΙ ΤΟ ΠΡΩΙ
     },
 
     checkAndSendMorningReport: function(forceSend = false) {
         const rawData = localStorage.getItem(this.pendingReportKey);
+        
         if (!rawData) {
             if(forceSend) console.warn("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
-            window.location.reload();
-            return;
+            return; // Αθόρυβη έξοδος αν δεν υπάρχει τίποτα
         }
 
         const pending = JSON.parse(rawData);
+        const today = new Date();
+        const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+        const currentHour = today.getHours();
+
+        // 🚀 LOGIC GATE: Στέλνει μόνο αν το ζητήσεις (force) Ή αν είναι πρωί (05:00 - 11:00) Ή αν είναι παλιά αναφορά
+        const isMorningWindow = currentHour >= 5 && currentHour <= 11;
+        const isOldReport = pending.dateSent !== dateStr;
+
+        if (!forceSend && !isMorningWindow && !isOldReport) {
+            console.log("⏳ PEGASUS: Report pending. Waiting for the morning window (05:00 - 11:00)...");
+            return;
+        }
 
         if (typeof emailjs !== 'undefined') {
-            console.log("⏳ PEGASUS: Transmitting Report to Cloud Server...");
+            console.log("⏳ PEGASUS: Transmitting Morning Report to Cloud Server...");
             
-            // Το σύστημα περιμένει την απάντηση του δικτύου (.then) για να κάνει reload
             emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
                 .then(() => {
-                    console.log("✅ PEGASUS: Email Report Sent Successfully.");
+                    console.log("✅ PEGASUS: Morning Report Sent Successfully.");
                     localStorage.removeItem(this.pendingReportKey);
-                    setTimeout(() => window.location.reload(), 500); // 🚀 Ασφαλής Επανεκκίνηση!
+                    
+                    // Μικρή οπτική επιβεβαίωση χωρίς reload (αφού τρέχει στο παρασκήνιο)
+                    const btn = document.getElementById('btnManualEmail');
+                    if (btn) {
+                        btn.style.background = '#4CAF50';
+                        btn.style.color = '#000';
+                        btn.textContent = 'ΕΠΙΤΥΧΙΑ';
+                        setTimeout(() => { btn.style.background = ''; btn.style.color = ''; btn.textContent = 'EMAIL'; }, 3000);
+                    }
                 })
                 .catch(err => {
                     console.error("❌ PEGASUS: Email Error", err);
-                    setTimeout(() => window.location.reload(), 500); // 🚀 Fail-safe Επανεκκίνηση
                 });
         } else {
             console.warn("PEGASUS: EmailJS not loaded. Sending failed.");
-            window.location.reload();
         }
     }
 };
 
 window.PegasusReporting = PegasusReporting;
+
+// ==========================================================================
+// 🚀 PEGASUS BOOT SEQUENCE: Αυτόματος Έλεγχος Πρωινής Αναφοράς στο άνοιγμα
+// ==========================================================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Καθυστέρηση 3 δευτερολέπτων για να προλάβει να φορτώσει η βιβλιοθήκη EmailJS
+    setTimeout(() => {
+        if (window.PegasusReporting) {
+            window.PegasusReporting.checkAndSendMorningReport(false);
+        }
+    }, 3000);
+});
