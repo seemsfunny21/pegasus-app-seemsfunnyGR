@@ -1,12 +1,11 @@
 /* ==========================================================================
-   PEGASUS OS - VEHICLE MODULE (v15.1 - UNIFIED CLOUD ALIGNED)
-   Protocol: Strict Manifest Governance, Legacy Bridging & Auto-Injection
+   PEGASUS OS - VEHICLE MODULE (v15.2 - UNIFIED CLOUD ALIGNED)
+   Protocol: Strict Manifest Governance, Legacy Bridging & Date Safe Format
    ========================================================================== */
 
 const M = window.PegasusManifest || { car: { identity: "pegasus_car_identity", dates: "pegasus_car_dates", service: "pegasus_car_service", legacySpecs: "pegasus_car_specs", legacyService: "peg_car_service", legacyDates: "peg_car_dates" }};
 
 window.PegasusCar = {
-    // 1. Αποθήκευση με χρήση του Master Manifest (Cloud Fortified)
     saveSpecs: async function() {
         console.log("🚗 CAR: Initiating Save Protocol...");
         
@@ -24,10 +23,8 @@ window.PegasusCar = {
             srv: document.getElementById('carSrv')?.value || ""
         };
 
-        // Αποθήκευση στα επίσημα κλειδιά του Manifest (που τα βλέπει το Cloud)
         localStorage.setItem(M.car.identity, JSON.stringify(identity));
         localStorage.setItem(M.car.dates, JSON.stringify(dates));
-        // Maximalist Retention: Σώζει ΚΑΙ στο παλιό για Desktop Compatibility αν χρειαστεί
         localStorage.setItem(M.car.legacySpecs, JSON.stringify(identity)); 
         
         document.querySelectorAll('#car input').forEach(el => el.setAttribute('readonly', true));
@@ -43,9 +40,7 @@ window.PegasusCar = {
         alert("Τα στοιχεία του οχήματος αποθηκεύτηκαν και συγχρονίστηκαν.");
     },
 
-    // 2. Φόρτωση (Bridge με τα Legacy Data)
     load: function() {
-        // Διαβάζει το νέο κλειδί. Αν είναι άδειο, τραβάει από το παλιό!
         const identity = JSON.parse(localStorage.getItem(M.car.identity)) || 
                          JSON.parse(localStorage.getItem(M.car.legacySpecs)) || {};
         
@@ -66,14 +61,18 @@ window.PegasusCar = {
         this.renderServiceLog();
     },
 
-    // 3. Προσθήκη Service
     addService: async function() {
         const t = document.getElementById('srvTask')?.value;
         const k = document.getElementById('srvKm')?.value;
         if (!t || !k) return;
 
         let logs = JSON.parse(localStorage.getItem(M.car.service)) || [];
-        logs.unshift({ t: t.toUpperCase(), k: k.toLocaleString('el-GR'), d: new Date().toLocaleDateString('el-GR') });
+        
+        // 🛡️ DATE FORMAT FIX: Αποφυγή el-GR format trap
+        const rawDate = new Date();
+        const dateStrSafe = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
+
+        logs.unshift({ t: t.toUpperCase(), k: k.toLocaleString('el-GR'), d: dateStrSafe });
         
         localStorage.setItem(M.car.service, JSON.stringify(logs));
         
@@ -84,11 +83,9 @@ window.PegasusCar = {
         if (window.PegasusCloud) await window.PegasusCloud.push(true);
     },
 
-    // 4. Σχεδίαση Service
     renderServiceLog: function() {
         let logs = JSON.parse(localStorage.getItem(M.car.service));
         
-        // Maximalist Retention: Αν δεν βρει νέα logs, ψάχνει στα παλιά.
         if (!logs || logs.length === 0) {
             logs = JSON.parse(localStorage.getItem(M.car.legacyService)) || [];
             if (logs.length > 0) localStorage.setItem(M.car.service, JSON.stringify(logs));
@@ -115,7 +112,6 @@ window.PegasusCar = {
         `).join('');
     },
 
-    // 5. Διαγραφή Service
     deleteLog: async function(idx) {
         if(!confirm("Οριστική διαγραφή αυτής της εργασίας;")) return;
         let logs = JSON.parse(localStorage.getItem(M.car.service)) || [];
@@ -127,12 +123,10 @@ window.PegasusCar = {
     }
 };
 
-// Περιμένει 1.5s για να κατέβει το αρχείο από το Cloud (αν υπάρχει) πριν ζωγραφίσει την οθόνη.
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => window.PegasusCar.load(), 1500);
 });
 
-// 🔌 AUTO-INJECT UI BUTTON (Mobile Dynamic Tile / Desktop Ignored)
 if (typeof window.registerPegasusModule === "function") {
     window.registerPegasusModule({ id: 'car', icon: '🚗', label: 'Όχημα' });
 }
