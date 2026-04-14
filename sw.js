@@ -31,6 +31,12 @@ const ASSETS_TO_CACHE = [
     './mobile/parking-mobile.js',
     './mobile/inventory-mobile.js',
     './mobile/ems-mobile.js',
+    './mobile/finance-mobile.js',
+    './mobile/movies-mobile.js',
+    './mobile/oracle-mobile.js',
+    './mobile/social-mobile.js',
+    './mobile/supplies-mobile.js',
+    './mobile/maintenance-mobile.js',
     './videos/beep.mp3',
     './videos/warmup.mp4'
 ];
