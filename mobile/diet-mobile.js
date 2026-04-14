@@ -1,11 +1,9 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.7 MAXIMALIST STRICT)
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.8 MAXIMALIST STRICT)
    Protocol: Master Macro Engine Integration & Global Metabolic Sync
-   Status: FINAL STABLE | ZERO-BUG RE-VERIFIED | SINGLE SOURCE OF TRUTH ACTIVE
    ========================================================================== */
 
 window.PegasusDiet = {
-    // Helper function για απόλυτη ταύτιση ημερομηνιών με το Desktop (food.js)
     getStrictDateStr: function() {
         const rawDate = new Date();
         return rawDate.getDate() + "/" + (rawDate.getMonth() + 1) + "/" + rawDate.getFullYear();
@@ -46,7 +44,6 @@ window.PegasusDiet = {
 
         if(!name || name.trim() === "") return;
 
-        // Inventory Guard
         if(name.toLowerCase().includes("whey") && window.PegasusInventory) {
             window.PegasusInventory.consume('prot', 30);
         }
@@ -202,7 +199,6 @@ window.PegasusDiet = {
             tp += parseFloat(item.protein || 0); 
         });
 
-        // 🛡️ GLOBAL METABOLIC SYNC (Κάνει τις θερμίδες ορατές σε όλο το OS)
         localStorage.setItem(window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal", Math.round(tk));
         localStorage.setItem(window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein", Math.round(tp));
 
@@ -238,6 +234,7 @@ window.PegasusDiet = {
         if(window.PegasusCloud) await window.PegasusCloud.push(true);
     },
 
+    // 🛡️ FIX: Αφαίρεση του setItem που προκαλούσε το Crash.
     getLog: function(dateStr) {
         try {
             const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
