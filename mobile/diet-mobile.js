@@ -262,7 +262,8 @@ window.PegasusDiet = {
         const targetKcal = 2800 + cardioKcal;
 
         if(document.getElementById("txtKcal")) document.getElementById("txtKcal").textContent = `${Math.round(tk)} / ${Math.round(targetKcal)}`;
-        if(document.getElementById("txtProt")) document.getElementById("txtProt").textContent = `${Math.round(tp)} / 160g`;
+       const targetProt = localStorage.getItem("pegasus_goal_protein") || 160;
+if(document.getElementById("txtProt")) document.getElementById("txtProt").textContent = `${Math.round(tp)} / ${targetProt}g`;
         
         const listDisplay = document.getElementById("foodHistoryList");
         if(listDisplay) {
