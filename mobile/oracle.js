@@ -1,156 +1,109 @@
 /* ==========================================================================
-   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - MASTER v2.0)
-   Protocol: Classic UI Shell + Smart Data Engine (Portions & Plurals)
+   🧠 PEGASUS MODULE: ORACLE (v2.2 - RADICAL MINIMALISM)
+   Protocol: Color-Synced Text, Left Alignment, No-Header UI
    ========================================================================== */
 
 (function() {
     window.PegasusOracle = {
         analyzeData: function() {
-            // Προεπιλεγμένα Μηνύματα (Αν όλα είναι άδεια/ιδανικά)
-            let msgGood = "Όλα τα συστήματα λειτουργούν φυσιολογικά.";
-            let msgWarning = "Κανένα επικείμενο καθήκον.";
-            let msgCritical = "Καμία κρίσιμη προειδοποίηση.";
-
-            let hasGood = false;
-            let hasWarning = false;
-            let hasCritical = false;
-
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
 
-            // --- 1. ΑΝΤΛΗΣΗ ΔΕΔΟΜΕΝΩΝ ΑΠΟ MODULES ---
             const supplies = JSON.parse(localStorage.getItem('pegasus_supplies_v1')) || [];
             const maint = JSON.parse(localStorage.getItem('pegasus_maintenance_v1')) || [];
             const bio = JSON.parse(localStorage.getItem('pegasus_biometrics_v1')) || [];
             const missions = JSON.parse(localStorage.getItem('pegasus_missions_v1')) || [];
 
-            // --- 2. ΚΑΤΗΓΟΡΙΑ 1: ΠΡΑΣΙΝΟ 🟢 (Ανάρρωση & Στόχοι) ---
+            // --- 1. ΥΠΝΟΣ & ΣΤΟΧΟΙ (🟢 / 🟠 / 🔴) ---
             let sleep = 0; if (bio.length > 0) sleep = bio[0].sleep;
-            let completedMissions = missions.filter(m => m.completed).length;
-            let pct = missions.length > 0 ? (completedMissions / missions.length) * 100 : 0;
+            let completed = missions.filter(m => m.completed).length;
+            let pct = missions.length > 0 ? (completed / missions.length) * 100 : 0;
+            
+            let row1 = { icon: '🟢', color: '#00ff41', txt: "Όλα τα συστήματα λειτουργούν φυσιολογικά." };
 
             if (sleep >= 9) {
-                msgGood = `Εξαιρετική ανάρρωση (Ύπνος ${sleep}/10). Έτοιμος για προπόνηση!`;
-                hasGood = true;
+                row1 = { icon: '🟢', color: '#00ff41', txt: `Εξαιρετική ανάρρωση (Ύπνος ${sleep}/10). Έτοιμος για προπόνηση!` };
+            } else if (sleep >= 6) {
+                row1 = { icon: '🟠', color: '#ffbb33', txt: `Μέτρια ανάρρωση (Ύπνος ${sleep}/10). Προσοχή στην ένταση.` };
+            } else if (sleep > 0) {
+                row1 = { icon: '🔴', color: '#ff4444', txt: `Κακός ύπνος (${sleep}/10). Προτεραιότητα στην ξεκούραση.` };
             } else if (pct >= 80) {
-                msgGood = `Υψηλή πειθαρχία: ${Math.round(pct)}% των στόχων ολοκληρώθηκαν.`;
-                hasGood = true;
+                row1 = { icon: '🟢', color: '#00ff41', txt: `Υψηλή πειθαρχία: ${Math.round(pct)}% των στόχων ολοκληρώθηκαν.` };
             }
 
-            // --- 3. ΚΑΤΗΓΟΡΙΑ 2: ΠΟΡΤΟΚΑΛΙ 🟠 (Οριακά Αποθέματα & Σημερινές Εργασίες) ---
-            let lowSupplies = [];
-            let todayMaint = [];
-            let warningArr = [];
-
-            supplies.forEach(s => {
-                const rem = s.amount / s.portion;
-                if (rem > 0 && rem <= 1.1) lowSupplies.push(s.label); // 1 Δόση
-            });
-
-            maint.forEach(t => {
-                const diffDays = Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay);
-                if (diffDays === 0) todayMaint.push(t.label);
-            });
-
-            if (lowSupplies.length > 0) warningArr.push(`Οριακά (1 Δόση): ${lowSupplies.join(', ')}`);
-            if (todayMaint.length > 0) warningArr.push(`Σήμερα: ${todayMaint.join(', ')}`);
-
-            if (warningArr.length > 0) {
-                msgWarning = warningArr.join(" | ");
-                hasWarning = true;
+            // --- 2. ΕΠΙΚΕΙΜΕΝΑ ΚΑΘΗΚΟΝΤΑ (🟠) ---
+            let low = supplies.filter(s => { const r = s.amount/s.portion; return r > 0 && r <= 1.1; }).map(s => s.label);
+            let todayMaint = maint.filter(t => Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay) === 0).map(t => t.label);
+            
+            let warningTxt = "Κανένα επικείμενο καθήκον.";
+            let hasWarning = low.length > 0 || todayMaint.length > 0;
+            
+            if (hasWarning) {
+                let parts = [];
+                if (low.length > 0) parts.push(`Οριακά: ${low.join(', ')}`);
+                if (todayMaint.length > 0) parts.push(`Σήμερα: ${todayMaint.join(', ')}`);
+                warningTxt = parts.join(" | ");
             }
 
-            // --- 4. ΚΑΤΗΓΟΡΙΑ 3: ΚΟΚΚΙΝΟ 🔴 (Εξαντλημένα & Ληγμένα) ---
-            let depletedSupplies = [];
-            let overdueMaint = [];
-            let criticalArr = [];
+            // --- 3. ΚΡΙΣΙΜΑ (🔴) ---
+            let empty = supplies.filter(s => (s.amount/s.portion) <= 0).map(s => s.label);
+            let overdue = maint.filter(t => Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay) < 0).map(t => t.label);
+            
+            let criticalTxt = "Καμία κρίσιμη προειδοποίηση.";
+            let hasCritical = empty.length > 0 || overdue.length > 0;
 
-            supplies.forEach(s => {
-                const rem = s.amount / s.portion;
-                if (rem <= 0) depletedSupplies.push(s.label); // Τέλος
-            });
-
-            maint.forEach(t => {
-                const diffDays = Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay);
-                if (diffDays < 0) overdueMaint.push(t.label);
-            });
-
-            // Λογική Ενικού / Πληθυντικού
-            if (depletedSupplies.length === 1) {
-                criticalArr.push(`Εξαντλήθηκε: ${depletedSupplies[0]}`);
-            } else if (depletedSupplies.length > 1) {
-                criticalArr.push(`Εξαντλήθηκαν: ${depletedSupplies.join(', ')}`);
+            if (hasCritical) {
+                let parts = [];
+                if (empty.length > 0) {
+                    const verb = empty.length === 1 ? "Εξαντλήθηκε" : "Εξαντλήθηκαν";
+                    parts.push(`${verb}: ${empty.join(', ')}`);
+                }
+                if (overdue.length > 0) {
+                    const verb = overdue.length === 1 ? "Εργασία" : "Εργασίες";
+                    parts.push(`Εκτός χρόνου ${verb}: ${overdue.join(', ')}`);
+                }
+                criticalTxt = parts.join(" | ");
             }
 
-            if (overdueMaint.length === 1) {
-                criticalArr.push(`Εκτός Χρόνου: ${overdueMaint[0]}`);
-            } else if (overdueMaint.length > 1) {
-                criticalArr.push(`Εκτός Χρόνου: ${overdueMaint.join(', ')}`);
-            }
-
-            if (criticalArr.length > 0) {
-                msgCritical = criticalArr.join(" | ");
-                hasCritical = true;
-            }
-
-            return {
-                good: msgGood, hasGood: hasGood,
-                warning: msgWarning, hasWarning: hasWarning,
-                critical: msgCritical, hasCritical: hasCritical
-            };
+            return [
+                row1,
+                { icon: '🟠', color: hasWarning ? '#ffbb33' : '#666', txt: warningTxt, active: hasWarning },
+                { icon: '🔴', color: hasCritical ? '#ff4444' : '#666', txt: criticalTxt, active: hasCritical }
+            ];
         },
 
         injectDashboard: function() {
             const grid = document.getElementById('dynamic-grid');
-            if (!grid) return;
+            if (!grid || (window.PegasusMobileUI && window.PegasusMobileUI.currentPage !== 0)) return;
 
-            if (window.PegasusMobileUI && window.PegasusMobileUI.currentPage !== 0) return;
+            const existing = document.getElementById('oracle-dashboard');
+            if (existing) existing.remove();
 
-            const existingOracle = document.getElementById('oracle-dashboard');
-            if (existingOracle) existingOracle.remove();
-
-            const insights = this.analyzeData();
-
+            const rows = this.analyzeData();
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
             
-            // Κρατάμε το αυθεντικό πράσινο περίγραμμα και gradient UI
             dashboard.style.cssText = `
                 grid-column: 1 / -1; 
                 background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
                 border-radius: 16px;
                 padding: 15px;
-                margin-bottom: 5px;
-                box-shadow: 0 10px 25px rgba(0,255,65,0.05);
-                position: relative;
-                overflow: hidden;
+                margin-bottom: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                box-sizing: border-box;
             `;
 
-            dashboard.innerHTML = `
-                <div style="position: absolute; top: -20px; right: -20px; font-size: 80px; opacity: 0.03; pointer-events: none;">👁️</div>
-                <div style="font-size: 10px; color: var(--main); font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
-                    <span style="display:inline-block; width:8px; height:8px; background:var(--main); border-radius:50%; box-shadow: 0 0 8px var(--main); animation: pulse 2s infinite;"></span>
-                    EXECUTIVE BRIEFING
-                </div>
-                
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasGood ? '1' : '0.5'};">
-                        <div style="font-size: 16px; margin-top: -2px;">🟢</div>
-                        <div style="font-size: 11px; color: #ccc; font-weight: 600; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${insights.good}</div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasWarning ? '1' : '0.5'};">
-                        <div style="font-size: 16px; margin-top: -2px;">🟠</div>
-                        <div style="font-size: 11px; color: ${insights.hasWarning ? '#ffbb33' : '#ccc'}; font-weight: ${insights.hasWarning ? '800' : '600'}; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${insights.warning}</div>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; align-items: flex-start; opacity: ${insights.hasCritical ? '1' : '0.5'};">
-                        <div style="font-size: 16px; margin-top: -2px;">🔴</div>
-                        <div style="font-size: 11px; color: ${insights.hasCritical ? '#ff4444' : '#ccc'}; font-weight: ${insights.hasCritical ? '800' : '600'}; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${insights.critical}</div>
+            dashboard.innerHTML = rows.map(row => `
+                <div style="display: flex; align-items: flex-start; gap: 10px; width: 100%;">
+                    <div style="font-size: 16px; margin-top: -2px; flex-shrink: 0;">${row.icon}</div>
+                    <div style="font-size: 11px; color: ${row.color}; font-weight: 700; line-height: 1.4; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                        ${row.txt.toUpperCase()}
                     </div>
                 </div>
-            `;
+            `).join('');
 
             grid.insertBefore(dashboard, grid.firstChild);
         }
@@ -166,9 +119,4 @@
             setTimeout(() => window.PegasusOracle.injectDashboard(), 100);
         }
     });
-
-    // Δημιουργία του animation pulse αν δεν υπάρχει
-    const style = document.createElement('style');
-    style.innerHTML = `@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }`;
-    document.head.appendChild(style);
 })();
