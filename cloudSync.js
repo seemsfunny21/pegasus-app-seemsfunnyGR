@@ -229,8 +229,14 @@ if (!window.originalSetItem) {
                     let addedItem = newArr[newArr.length - 1]; 
                     if (addedItem && addedItem.name) {
                         let fname = addedItem.name.toLowerCase();
-                        if (fname.includes("πρωτε") || fname.includes("whey")) window.consumeSupp('prot', 30);
-                        if (fname.includes("κρεατ") || fname.includes("creatine")) window.consumeSupp('crea', 5);
+if (fname.includes("πρωτε") || fname.includes("whey")) {
+    if (window.PegasusInventory) window.PegasusInventory.consume('prot', 30, false);
+    else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Whey");
+}
+if (fname.includes("κρεατ") || fname.includes("creatine")) {
+    if (window.PegasusInventory) window.PegasusInventory.consume('crea', 5, false);
+    else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Κρεατίνη");
+}
                     }
                 }
             } catch(e) { console.error("Interceptor Error", e); }
