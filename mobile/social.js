@@ -1,6 +1,6 @@
 /* ==========================================================================
-   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.5)
-   Protocol: Zero-Trust Security, PIN Lock, Edit & Smart Routing
+   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.6)
+   Protocol: Fortress Security, XSS Protection, Anti-Tabnabbing & PIN Lock
    ========================================================================== */
 
 (function() {
@@ -9,12 +9,22 @@
     let currentSortOrder = "DESC"; 
     let isUnlocked = false; // 🔒 GLOBAL SECURITY STATE
 
+    // 🛡️ Data Sanitization Engine (XSS Protection)
+    const sanitizeHTML = (str) => {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag)
+        );
+    };
+
     window.PegasusSocial = {
         // 🛡️ SECURITY ENGINE
         verifyPin: function() {
             const input = document.getElementById('socialPinInput').value;
             let masterPin = localStorage.getItem('pegasus_master_pin');
 
+            // 1. First-Time Setup
             if (!masterPin) {
                 if (input.length < 4) {
                     alert("Το PIN πρέπει να έχει τουλάχιστον 4 ψηφία.");
@@ -25,6 +35,7 @@
                 masterPin = input;
             }
 
+            // 2. Strict Verification
             if (input === masterPin) {
                 isUnlocked = true;
                 document.getElementById('socialLockScreen').style.display = 'none';
@@ -34,8 +45,14 @@
                 
                 this.handleSearch(""); // Reset search and Load Data
             } else {
+                // 🛑 UNAUTHORIZED ACCESS: Lockdown Mode
+                isUnlocked = false;
                 document.getElementById('pinError').style.display = 'block';
                 document.getElementById('socialPinInput').value = '';
+                
+                // Ghost DOM Purge
+                const container = document.getElementById('social-content');
+                if (container) container.innerHTML = '';
             }
         },
 
@@ -46,9 +63,10 @@
             document.getElementById('socialPinInput').value = '';
             document.getElementById('pinError').style.display = 'none';
             
-            // 🛡️ GHOST DOM: Καθαρισμός δεδομένων για να μην φαίνονται στον κώδικα (Inspect)
+            // 🛡️ GHOST DOM PURGE
             const container = document.getElementById('social-content');
             if (container) container.innerHTML = '';
+            currentSearchTerm = ""; // Reset memory
         },
 
         // --- CORE LOGIC ---
@@ -70,7 +88,7 @@
 
             const newVal = prompt("Επεξεργασία (Όνομα & Link):", entities[idx].name);
             if (newVal !== null && newVal.trim() !== '') {
-                entities[idx].name = newVal.trim();
+                entities[idx].name = sanitizeHTML(newVal.trim());
                 this.saveAndRender(entities);
             }
         },
@@ -109,7 +127,7 @@
             
             const newEntry = {
                 id: 'soc_' + Date.now(),
-                name: name.trim(),
+                name: sanitizeHTML(name.trim()), // 🛡️ XSS Check
                 rating: 0,
                 dateAdded: new Date().toLocaleDateString('el-GR')
             };
@@ -155,6 +173,7 @@
                 
                 <input type="password" id="socialPinInput" placeholder="••••" 
                        inputmode="numeric" maxlength="4"
+                       onkeypress="if(event.key === 'Enter') window.PegasusSocial.verifyPin()"
                        style="text-align: center; font-size: 30px; letter-spacing: 8px; width: 150px; background: #0a0a0a; color: #00ff41; border: 2px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
                 
                 <button class="primary-btn" onclick="window.PegasusSocial.verifyPin()" style="width: 150px; padding: 15px; font-size: 14px;">ΞΕΚΛΕΙΔΩΜΑ</button>
@@ -254,8 +273,9 @@
                 displayName = item.name.replace(urlMatch[0], '').trim(); 
                 if (displayName === '') displayName = "Άγνωστη Επαφή"; 
                 
+                // 🛡️ ANTI-TABNABBING: Προστέθηκε rel="noopener noreferrer"
                 linkIconHtml = `
-                    <a href="${hrefUrl}" target="_blank" onclick="event.stopPropagation()" 
+                    <a href="${hrefUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" 
                        style="margin-left: 10px; background: ${platformBg}; color: ${platformTxt}; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; letter-spacing: 0.5px; text-decoration: none; display: inline-flex; align-items: center; vertical-align: middle; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
                         🔗 ${platformName}
                     </a>
@@ -316,7 +336,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
-        // Αρχικά ΔΕΝ καλούμε την renderSocialContent() γιατί το Vault είναι κλειδωμένο.
+        // 🔒 ΣΙΩΠΗΛΗ ΕΚΚΙΝΗΣΗ: Το renderSocialContent ΔΕΝ καλείται εδώ!
         if (window.registerPegasusModule) {
             window.registerPegasusModule({ id: 'social', label: 'Επαφές', icon: '💬' });
         }
