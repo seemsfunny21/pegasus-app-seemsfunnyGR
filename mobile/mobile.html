@@ -603,9 +603,7 @@ function attemptVaultUnlock() {
                             installingWorker.onstatechange = () => {
                                 if (installingWorker.state === 'installed') {
                                     if (navigator.serviceWorker.controller) {
-                                        console.log('🔄 Νέο update βρέθηκε. Επαναφόρτωση...');
-                                        // Αν βρεθεί αλλαγή, αναγκάζουμε το app να κάνει reload
-                                        window.location.reload();
+                                        console.log('🔄 Νέο update στο background. Θα εφαρμοστεί στο επόμενο άνοιγμα.');
                                     }
                                 }
                             };
