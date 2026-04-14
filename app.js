@@ -825,15 +825,23 @@ setTimeout(() => {
             if (window.PegasusReporting) window.PegasusReporting.checkAndSendMorningReport(true);
             else alert("Reporting Engine Offline");
         },
-        "btnSaveSettings": () => { 
+"btnSaveSettings": () => { 
+            // 1. Αποθήκευση Βάρους
             const weightVal = document.getElementById("userWeightInput")?.value || 74;
             const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
             if (window.PegasusWeight && typeof window.PegasusWeight.save === "function") window.PegasusWeight.save(weightVal);
             else localStorage.setItem(weightKey, weightVal);
+
+            // 2. Αποθήκευση Εβδομαδιαίων Στόχων (ΝΕΟ)
+            if (typeof window.saveSettingsUI === "function") {
+                window.saveSettingsUI(); // Καλεί τη συνάρτηση από το settings.js
+            } else {
+                console.warn("🛡️ PEGASUS: saveSettingsUI is missing. Targets not saved.");
+            }
+
             if (window.PegasusCloud) window.PegasusCloud.push(true);
             setTimeout(() => { location.reload(); }, 300);
         }
-    };
 
     // 2. Binding Logic με Tactical Stop Propagation (Η Ασπίδα)
     Object.keys(window.masterUI).forEach(btnId => {
