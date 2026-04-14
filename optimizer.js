@@ -14,7 +14,8 @@ window.PegasusOptimizer = {
     apply: function(day, sessionExercises) {
         let progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         const lastReset = localStorage.getItem('pegasus_last_reset');
-        const todayDate = new Date().toISOString().split('T')[0];
+       const now = new Date();
+       const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
         // 🔥 SATURDAY ANCHOR: Reset αν είναι Σάββατο και δεν έχει γίνει ήδη
         if (day === "Σάββατο" && lastReset !== todayDate) {
