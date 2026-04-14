@@ -1,12 +1,13 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V4.0 (MORNING QUEUE EDITION)
-   Protocol: Data Accumulation & Scheduled Morning Dispatch
+   PEGASUS REPORTING SYSTEM - V4.1 (STRICT SINGLE MORNING DISPATCH)
+   Protocol: Daily Send Lock & Anti-HTML Encoding Date Format
    ========================================================================== */
 
 const PegasusReporting = {
     storageKey: "pegasus_daily_summary",
     pendingReportKey: "pegasus_pending_report",
     historyKey: "pegasus_weekly_history",
+    lastSentKey: "pegasus_last_email_sent_date", // 🔒 Η νέα κλειδαριά ημέρας
 
     saveWorkout: function(kcalVal, memoryData = null) {
         console.log("PEGASUS: Workout save triggered. Queuing for morning...");
@@ -51,10 +52,12 @@ const PegasusReporting = {
 
         let summary = Object.entries(dailyMax).map(([name, weight]) => `• ${name}: ${weight}kg`);
         const today = new Date();
-        const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
         
-        const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStr) || "[]");
-        const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStr) || "null");
+        // 🎯 ΔΙΟΡΘΩΣΗ 1: Χρήση παύλας (-) αντί για κάθετο (/) για να μην χαλάει ο τίτλος στο email
+        const dateStrSafe = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+        
+        const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStrSafe) || "[]");
+        const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStrSafe) || "null");
         
         const isRecovery = (today.getDay() === 1 || today.getDay() === 4);
         const recovery = isRecovery ? 
@@ -62,10 +65,10 @@ const PegasusReporting = {
             { msg: "Training Day", nutrition: "High protein intake required" };
 
         const pendingData = {
-            dateSent: dateStr, // Η ημερομηνία που δημιουργήθηκε η αναφορά
+            dateSent: dateStrSafe, 
             templateParams: {
                 name: "Άγγελος",
-                workout_date: today.toLocaleDateString('el-GR'),
+                workout_date: dateStrSafe, // 🎯 Ασφαλής Ημερομηνία Χωρίς Encode
                 calories: kcal || localStorage.getItem("pegasus_today_kcal") || "0.0",
                 weights_summary: summary.join("\n") || "Workout data committed.",
                 food_summary: targetFood.map(f => `• ${f.name} (${f.kcal}kcal)`).join("\n") || "No food logged",
@@ -82,8 +85,6 @@ const PegasusReporting = {
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
             window.PegasusCloud.push(true);
         }
-
-        // 🛑 ΑΦΑΙΡΕΘΗΚΕ Η ΑΜΕΣΗ ΑΠΟΣΤΟΛΗ ΕΔΩ ΓΙΑ ΝΑ ΠΕΡΙΜΕΝΕΙ ΤΟ ΠΡΩΙ
     },
 
     checkAndSendMorningReport: function(forceSend = false) {
@@ -91,21 +92,31 @@ const PegasusReporting = {
         
         if (!rawData) {
             if(forceSend) console.warn("PEGASUS: Δεν υπάρχουν δεδομένα προς αποστολή.");
-            return; // Αθόρυβη έξοδος αν δεν υπάρχει τίποτα
+            return;
         }
 
         const pending = JSON.parse(rawData);
         const today = new Date();
-        const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+        const dateStrSafe = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
         const currentHour = today.getHours();
+        
+        // 🔒 ΔΙΟΡΘΩΣΗ 2: Έλεγχος Κλειδαριάς Ημέρας
+        const lastSentDate = localStorage.getItem(this.lastSentKey);
 
-        // 🚀 LOGIC GATE: Στέλνει μόνο αν το ζητήσεις (force) Ή αν είναι πρωί (05:00 - 11:00) Ή αν είναι παλιά αναφορά
-        const isMorningWindow = currentHour >= 5 && currentHour <= 11;
-        const isOldReport = pending.dateSent !== dateStr;
+        if (!forceSend) {
+            // Αν έχουμε ήδη στείλει email σήμερα, ΣΤΑΜΑΤΑ!
+            if (lastSentDate === dateStrSafe) {
+                console.log("🛡️ PEGASUS: Morning report already sent today. Dispatch locked.");
+                return;
+            }
 
-        if (!forceSend && !isMorningWindow && !isOldReport) {
-            console.log("⏳ PEGASUS: Report pending. Waiting for the morning window (05:00 - 11:00)...");
-            return;
+            const isMorningWindow = currentHour >= 5 && currentHour <= 11;
+            const isOldReport = pending.dateSent !== dateStrSafe;
+
+            if (!isMorningWindow && !isOldReport) {
+                console.log("⏳ PEGASUS: Report pending. Waiting for the morning window...");
+                return;
+            }
         }
 
         if (typeof emailjs !== 'undefined') {
@@ -114,9 +125,11 @@ const PegasusReporting = {
             emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
                 .then(() => {
                     console.log("✅ PEGASUS: Morning Report Sent Successfully.");
+                    
+                    // 🔒 Κλειδώνουμε το σύστημα για τη σημερινή μέρα
+                    localStorage.setItem(this.lastSentKey, dateStrSafe);
                     localStorage.removeItem(this.pendingReportKey);
                     
-                    // Μικρή οπτική επιβεβαίωση χωρίς reload (αφού τρέχει στο παρασκήνιο)
                     const btn = document.getElementById('btnManualEmail');
                     if (btn) {
                         btn.style.background = '#4CAF50';
@@ -140,7 +153,6 @@ window.PegasusReporting = PegasusReporting;
 // 🚀 PEGASUS BOOT SEQUENCE: Αυτόματος Έλεγχος Πρωινής Αναφοράς στο άνοιγμα
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
-    // Καθυστέρηση 3 δευτερολέπτων για να προλάβει να φορτώσει η βιβλιοθήκη EmailJS
     setTimeout(() => {
         if (window.PegasusReporting) {
             window.PegasusReporting.checkAndSendMorningReport(false);
