@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.1 (ULTIMATE OPTIMIZATION)
-   Protocol: Network-First for Code, Cache-First for Media
-   Status: ZERO-TOUCH DEPLOYMENT ACTIVE (No manual version bumps needed)
+   PEGASUS PWA SERVICE WORKER - v3.2 (ULTIMATE OPTIMIZATION)
+   Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
+   Status: ZERO-TOUCH DEPLOYMENT ACTIVE | SYSTEM LOCKED
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.1-DYNAMIC'; 
+const CACHE_NAME = 'pegasus-shield-v3.2-DYNAMIC'; 
 
 const ASSETS_TO_CACHE = [
     './', 
@@ -45,7 +45,9 @@ const ASSETS_TO_CACHE = [
 
 // ⚡ INSTALL: Caching Assets with Reliable Progress
 self.addEventListener('install', (event) => {
+    // 🛡️ FORCE UPDATE PATCH: Σκοτώνει τον παλιό SW ακαριαία
     self.skipWaiting();
+    
     event.waitUntil(
         caches.open(CACHE_NAME).then(async (cache) => {
             console.log('🛡️ SW: Shielding Pegasus Assets...');
@@ -54,7 +56,7 @@ self.addEventListener('install', (event) => {
                 try {
                     await cache.add(url);
                     downloaded++;
-                    // Tactical Messaging: Στέλνουμε την πρόοδο σε κάθε αρχείο
+                    // Tactical Messaging: Στέλνουμε την πρόοδο στο UI
                     const allClients = await self.clients.matchAll({ includeUncontrolled: true });
                     allClients.forEach(client => {
                         client.postMessage({
@@ -70,12 +72,18 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// 🧹 ACTIVATE: Purge Old Versions
+// 🧹 ACTIVATE: Purge Old Versions & Claim Clients
 self.addEventListener('activate', (event) => {
+    // 🛡️ IMMEDIATE CONTROL PATCH: Αναλαμβάνει τον έλεγχο όλων των ανοιχτών σελίδων αμέσως
+    event.waitUntil(self.clients.claim());
+
     event.waitUntil(
         caches.keys().then(keys => Promise.all(keys.map(key => {
-            if (key !== CACHE_NAME) return caches.delete(key);
-        }))).then(() => self.clients.claim())
+            if (key !== CACHE_NAME) {
+                console.log(`🧹 SW: Purging old cache: ${key}`);
+                return caches.delete(key);
+            }
+        })))
     );
 });
 
@@ -111,16 +119,16 @@ self.addEventListener('fetch', (event) => {
         // 🌐 STRATEGY B: NETWORK-FIRST (Για .js, .html, .css - Πάντα ο πιο πρόσφατος κώδικας)
         event.respondWith(
             fetch(event.request).then(networkResponse => {
-                // Έχουμε ίντερνετ: Κατεβάζουμε τον φρέσκο κώδικα (π.χ. νέο app.js) και ενημερώνουμε σιωπηλά την cache
+                // Έχουμε ίντερνετ: Κατεβάζουμε τον φρέσκο κώδικα και ενημερώνουμε σιωπηλά την cache
                 if (networkResponse.status === 200) {
                     const clonedRes = networkResponse.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedRes));
                 }
                 return networkResponse;
             }).catch(() => {
-                // Είμαστε Offline: Το δίκτυο έπεσε, οπότε τραβάμε την τελευταία έκδοση από την Cache
+                // Είμαστε Offline: Το δίκτυο έπεσε, τραβάμε την τελευταία έκδοση από την Cache
                 console.warn(`[PEGASUS SW]: Offline fallback active for ${cleanUrl}`);
-                return caches.match(event.request, { ignoreSearch: true }); // Το ignoreSearch διαγράφει την ανάγκη για ακριβές ?v=
+                return caches.match(event.request, { ignoreSearch: true }); 
             })
         );
     }
