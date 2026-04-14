@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.3 AUTO-SYNC PATCH)
-   Protocol: Strict Data Analyst - Single Base64 PIN & Maximalist Sync
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.1 FIXED SYNC)
+   Protocol: Strict Data Analyst - Flat Payload & Auto-Sync
    ========================================================================== */
 
 const PegasusCloud = {
@@ -11,7 +11,7 @@ const PegasusCloud = {
     
     isUnlocked: false,
     hasSuccessfullyPulled: false, 
-    isPulling: false, // 🔒 Κλείδωμα για αποφυγή infinite loops κατά το pull
+    isPulling: false, // 🔒 ΠΡΟΣΤΑΣΙΑ: Για να μην μπαίνει σε λούπα ο συγχρονισμός
     userKey: "",
     syncInterval: null,
 
@@ -23,8 +23,8 @@ const PegasusCloud = {
     unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
-
-        // 🛡️ ΜΟΝΑΔΙΚΟΣ ΕΛΕΓΧΟΣ: Απλό PIN (2375)
+        
+        // Έλεγχος PIN
         if (btoa(cleanPin) === "MjM3NQ==") { 
             this.userKey = this.config.encryptedPart;
             this.isUnlocked = true;
@@ -48,7 +48,7 @@ const PegasusCloud = {
         if (!this.isUnlocked) return;
         if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         
-        this.isPulling = true; // 🔒 Ενεργοποίηση προστασίας (το Interceptor δεν θα κάνει Push τώρα)
+        this.isPulling = true; // 🔒 Κλειδώνουμε το αυτόματο Push όσο κατεβάζουμε
 
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`, {
@@ -75,6 +75,28 @@ const PegasusCloud = {
                     }
                 });
 
+                const map = {
+                    'weekly_history': 'pegasus_weekly_history',
+                    'muscle_targets': 'pegasus_muscle_targets',
+                    'supp_inventory': 'pegasus_supp_inventory',
+                    'peg_contacts': 'pegasus_contacts',
+                    'car_dates': 'pegasus_car_dates',
+                    'car_service': 'pegasus_car_service',
+                    'car_specs': 'pegasus_car_specs',
+                    'parking_loc': 'pegasus_parking_loc',
+                    'food_library': 'pegasus_food_library',
+                    'peg_stats': 'pegasus_stats'
+                };
+                Object.entries(map).forEach(([ck, lk]) => {
+                    if(cloud[ck] && !cloud[lk]) localStorage.setItem(lk, JSON.stringify(cloud[ck]));
+                });
+
+                if(cloud.all_food_logs) {
+                    Object.keys(cloud.all_food_logs).forEach(k => {
+                        if(!cloud[k]) localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
+                    });
+                }
+
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
                 if (typeof refreshAllUI === "function") refreshAllUI(); 
@@ -89,7 +111,7 @@ const PegasusCloud = {
             console.error("❌ PEGASUS Pull Error:", e);
             if (typeof setSyncStatus === "function") setSyncStatus('offline');
         } finally {
-            this.isPulling = false; // 🔓 Απελευθέρωση προστασίας
+            this.isPulling = false; // 🔓 Ξεκλειδώνουμε
         }
     },
 
@@ -133,30 +155,36 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// 🎯 SECURITY: Έλεγχος 24 Ωρών
+// 🎯 SECURITY: Έλεγχος 24 Ωρών κατά τη φόρτωση
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     const authTime = localStorage.getItem("pegasus_vault_time");
-    const isMobile = window.location.pathname.includes('mobile/'); 
     
-    if (savedPin && authTime && (Date.now() - parseInt(authTime) < 86400000)) {
-        window.PegasusCloud.unlock(savedPin);
-        const vaultBtn = document.getElementById("btnMasterVault");
-        if (vaultBtn) {
-            vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-            vaultBtn.style.color = "#00ff41";
-            vaultBtn.style.borderColor = "#00ff41";
-        }
-    } else {
-        if (isMobile) {
+    if (savedPin) {
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; 
+        
+        if (!authTime || (now - parseInt(authTime) > TWENTY_FOUR_HOURS)) {
+            console.log("🔒 PEGASUS: Session expired (24h limit). Requiring PIN.");
+            localStorage.removeItem("pegasus_vault_pin");
+            localStorage.removeItem("pegasus_vault_time");
+            
             const pinModal = document.getElementById("pinModal");
             if (pinModal) pinModal.style.display = "flex";
+        } else {
+            window.PegasusCloud.unlock(savedPin);
+            const vaultBtn = document.getElementById("btnMasterVault");
+            if (vaultBtn) {
+                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+                vaultBtn.style.color = "#00ff41";
+                vaultBtn.style.borderColor = "#00ff41";
+            }
         }
     }
 });
 
 /* ==========================================================================
-   DATA INTERCEPTOR (SUPPLEMENT LOGISTICS & AUTO-SYNC)
+   DATA INTERCEPTOR (SUPPLEMENT LOGISTICS & AUTO SYNC)
    ========================================================================== */
 window.consumeSupp = function(type, amount) {
     let val = localStorage.getItem('pegasus_supp_inventory');
@@ -171,6 +199,8 @@ window.consumeSupp = function(type, amount) {
     
     if (typeof updateSuppUI === "function") updateSuppUI();
     if (typeof refreshAllUI === "function") refreshAllUI();
+    
+    // Εδώ το Timeout δεν χρειάζεται πλέον Push, το κάνει ο interceptor κάτω.
 };
 
 if (!window.originalSetItem) {
@@ -183,10 +213,9 @@ if (!window.originalSetItem) {
         
         window.originalSetItem.apply(this, arguments);
 
-        // 🚀 MAXIMALIST AUTO-SYNC: Οποιαδήποτε αλλαγή καταγράφεται, στέλνεται άμεσα στο Cloud
-        const ignoredKeys = ["pegasus_last_push", "pegasus_vault_pin", "pegasus_vault_time"];
-        if (!ignoredKeys.includes(key) && (key.startsWith("food_log_") || key.startsWith("pegasus_") || key.startsWith("kouki_"))) {
-            // Ο έλεγχος !isPulling αποτρέπει το infinite loop όταν κατεβάζουμε δεδομένα
+        // 🚀 ΑΜΕΣΟΣ ΣΥΓΧΡΟΝΙΣΜΟΣ: Κάθε αλλαγή φαγητού ανεβαίνει στο Cloud
+        const ignored = ["pegasus_last_push", "pegasus_vault_pin", "pegasus_vault_time"];
+        if (!ignored.includes(key) && (key.startsWith("food_log_") || key.startsWith("pegasus_") || key.startsWith("kouki_"))) {
             if (window.PegasusCloud && !window.PegasusCloud.isPulling && window.PegasusCloud.hasSuccessfullyPulled) {
                 window.PegasusCloud.push();
             }
@@ -196,7 +225,8 @@ if (!window.originalSetItem) {
             try {
                 let newArr = JSON.parse(value || "[]");
                 if (newArr.length > oldArr.length) {
-                    let addedItem = newArr[newArr.length - 1]; // 🛡️ Διόρθωση: Ανίχνευση του ΤΕΛΕΥΤΑΙΟΥ φαγητού της λίστας
+                    // 🎯 ΔΙΟΡΘΩΣΗ: Ελέγχουμε το τελευταίο φαγητό (όχι το πρώτο)
+                    let addedItem = newArr[newArr.length - 1]; 
                     if (addedItem && addedItem.name) {
                         let fname = addedItem.name.toLowerCase();
                         if (fname.includes("πρωτε") || fname.includes("whey")) window.consumeSupp('prot', 30);
@@ -221,8 +251,9 @@ if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                 console.log("🚀 CLOUD: Strict Push Requested.");
                 return originalPush().then(resolve).catch(reject);
             }
+
             if (pushTimeout) clearTimeout(pushTimeout);
-            
+
             pushTimeout = setTimeout(async () => {
                 console.log("📡 CLOUD: Executing Batch Sync...");
                 try {
