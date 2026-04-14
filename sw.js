@@ -10,7 +10,7 @@ const ASSETS_TO_CACHE = [
     './', 
     './index.html', 
     './mobile/mobile.html', 
-    './mobile/style.css', /* <--- ΠΡΟΣΤΕΘΗΚΕ ΤΟ ΝΕΟ CSS */
+    './mobile/style.css',
     './app.js', 
     './data.js', 
     './manifest.js',
@@ -37,8 +37,10 @@ const ASSETS_TO_CACHE = [
     './mobile/social-mobile.js',
     './mobile/supplies-mobile.js',
     './mobile/maintenance-mobile.js',
-    './videos/beep.mp3',
-    './videos/warmup.mp4'
+    './mobile/missions-mobile.js',
+    './mobile/biometrics-mobile.js',
+    './mobile/lifting-mobile.js',
+    './videos/beep.mp3'
 ];
 
 // ⚡ INSTALL: Caching Assets with Reliable Progress
