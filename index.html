@@ -82,7 +82,7 @@
             <label for="cDate" style="display: block; text-align: center; margin-bottom: 5px;">Ημερομηνία:</label>
             <input type="date" id="cDate" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
             <label for="cRoute" style="display: block; text-align: center; margin-bottom: 5px;">Διαδρομή:</label>
-            <input type="text" id="cRoute" placeholder="Πού πήγες;" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
+            <input type="text" id="cRoute" placeholder="Πού πήγες?" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
             <label for="cKm" style="display: block; text-align: center; margin-bottom: 5px;">Χιλιόμετρα (km):</label>
             <input type="number" id="cKm" name="cKm" step="0.1" style="width:100%; margin-bottom:10px; background:#333; color:white; border:1px solid #444; padding:5px; box-sizing: border-box; text-align: center;">
             <label for="cTime" style="display: block; text-align: center; margin-bottom: 5px;">Χρόνος:</label>
@@ -302,12 +302,11 @@
         <div class="video-container">
             <video id="video" loop muted playsinline class="main-video"></video>
             <video id="webcam" autoplay playsinline class="webcam-overlay"></video>
-            <div id="timerOverlay" style="position: absolute; bottom: 20px; width: 100%; text-align: center; background: rgba(0,0,0,0.6); padding: 10px 0;">
-                <div id="phaseTimer" class="phase-label" style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">ΕΠΙΛΕΞΕ ΗΜΕΡΑ</div>
-                <div id="phaseTimerBar" style="width: 80%; height: 8px; background: rgba(255,255,255,0.1); margin: 0 auto; border-radius: 4px; overflow: hidden; border: 1px solid #333;">
-                    <div id="phaseTimerFill" style="width: 0%; height: 100%; background: #4CAF50; transition: width 0.5s linear;"></div>
-                </div>
+            
+            <div id="timerOverlay" style="position: absolute; bottom: 20px; width: 100%; text-align: center; background: rgba(0,0,0,0.7); padding: 12px 0;">
+                <div id="phaseTimer" class="phase-label" style="font-size: 26px; font-weight: 900; color: #00ff41; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,255,65,0.5);">ΕΠΙΛΕΞΕ ΗΜΕΡΑ</div>
             </div>
+            
         </div>
     </div>
 </div>
