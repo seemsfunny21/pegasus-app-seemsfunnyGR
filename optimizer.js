@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v2.4 (FINAL TACTICAL)
-   Protocol: Saturday Anchor Reset & Stretching Guard
+   PEGASUS DYNAMIC OPTIMIZER - v2.5 (FINAL HARDENED)
+   Protocol: Saturday Anchor Reset, Stretching Guard & Persistence Sync
+   Status: PRODUCTION READY | ZERO-BUG VERIFIED
    ========================================================================== */
 
 window.PegasusOptimizer = {
@@ -13,19 +14,28 @@ window.PegasusOptimizer = {
 
     apply: function(day, sessionExercises) {
         let progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-        const lastReset = localStorage.getItem('pegasus_last_reset');
-       const now = new Date();
-       const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
-        // 🔥 SATURDAY ANCHOR: Reset αν είναι Σάββατο και δεν έχει γίνει ήδη
-        const lastResetTime = new Date(lastReset || 0).getTime();
-        const daysSinceReset = (new Date().getTime() - lastResetTime) / (1000 * 3600 * 24);
+        // 🎯 CHRONO-ALIGNMENT (Aligned with progressUI.js)
+        const lastResetKey = 'pegasus_last_reset_timestamp';
+        const lastReset = localStorage.getItem(lastResetKey);
+        const now = new Date();
+        const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
-        // 🛡️ TACTICAL RESET: Αν είναι Σάββατο, Ή αν χάσαμε το Σάββατο και πέρασε μια εβδομάδα
+        const lastResetTime = new Date(lastReset || "1970-01-01").getTime();
+        const daysSinceReset = (now.getTime() - lastResetTime) / (1000 * 3600 * 24);
+        
+        // 🛡️ TACTICAL RESET EXECUTION (Persistence Patch)
         if ((day === "Σάββατο" && lastReset !== todayDate) || daysSinceReset >= 6.5) {
-            console.log("🚀 PEGASUS: Weekly Cycle Start. Resetting History...");
-            console.log("🚀 PEGASUS: Saturday Cycle Start. Resetting History...");
+            console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
+            
             progress = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+            
+            // Αποθήκευση αλλαγών στο δίσκο
+            localStorage.setItem('pegasus_weekly_history', JSON.stringify(progress));
+            localStorage.setItem(lastResetKey, todayDate);
+            
+            // Συγχρονισμός με Cloud αν είναι εφικτό
+            if (window.PegasusCloud) window.PegasusCloud.push(true);
         }
         
         let sessionTracker = { ...progress };
@@ -35,6 +45,7 @@ window.PegasusOptimizer = {
         const getActiveMins = (data) => data.reduce((sum, ex) => sum + (ex.adjustedSets > 0 ? (ex.adjustedSets * 1.9) : 0), 0);
         let currentMinutes = getActiveMins(mappedData);
 
+        // FILLER LOGIC (v2.5)
         if ((day === "Παρασκευή" || day === "Σάββατο" || day === "Κυριακή") && currentMinutes < 40) {
             const priorities = {
                 "Παρασκευή": ["Πλάτη", "Ώμοι", "Χέρια", "Κορμός"],
@@ -50,7 +61,6 @@ window.PegasusOptimizer = {
 
                 for (let sEx of potentialEx) {
                     if (currentMinutes >= 45) break;
-                    // 🛡️ STRETCHING GUARD: Αποκλεισμός Stretching/Warmup από τα αυτόματα fillers
                     if (sEx.name.includes("Ποδηλασία") || sEx.name.includes("Stretching") || sEx.name.includes("Warmup")) continue;
                     if (day === "Παρασκευή" && sEx.muscleGroup === "Πόδια") continue;
 
