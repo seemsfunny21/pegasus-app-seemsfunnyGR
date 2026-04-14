@@ -1,29 +1,28 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v13.0 (MAXIMALIST PURE IRON PROTOCOL)
-   Protocol: Cycling Externalized | 50-Min Targeted Hypertrophy | 4-Day Split
-   Status: OPERATIONAL | ZERO-BUG VERIFIED
+   📦 PEGASUS DATA ENGINE - v15.0 (THE IRON LOGIC PROTOCOL)
+   Protocol: 5-Day Focus | 50-Min Daily | Dynamic UI | Active Split: IRON_LOGIC
+   Status: PRODUCTION READY | FULL CODE DELIVERY
    ========================================================================== */
 
+// 1. DEFAULT PLAN: IRON_LOGIC (5 Days Active / Mon & Thu Rest)
 window.program = {
-    "Δευτέρα": [{ name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" }],
     "Τρίτη": [ 
-        { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "70" },
+        { name: "Chest Press", sets: 6, muscleGroup: "Στήθος", weight: "72.5" },
         { name: "Chest Flys", sets: 5, muscleGroup: "Στήθος", weight: "45" },
-        { name: "Wide Pulldowns", sets: 5, muscleGroup: "Πλάτη", weight: "60" },
+        { name: "Wide Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "60" },
         { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "55" },
         { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "45" }
     ], 
     "Τετάρτη": [ 
-        { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι", weight: "35" },
-        { name: "Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "15" },
-        { name: "Tricep Pulldowns", sets: 5, muscleGroup: "Χέρια", weight: "20" },
+        { name: "Upright Rows", sets: 6, muscleGroup: "Ώμοι", weight: "35" },
+        { name: "Bicep Curls", sets: 6, muscleGroup: "Χέρια", weight: "15" },
+        { name: "Tricep Pulldowns", sets: 6, muscleGroup: "Χέρια", weight: "20" },
         { name: "Preacher Curls", sets: 5, muscleGroup: "Χέρια", weight: "15" },
         { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
     ],
-    "Πέμπτη": [{ name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" }],
     "Παρασκευή": [ 
-        { name: "Medium Pulldowns", sets: 5, muscleGroup: "Πλάτη", weight: "60" },
-        { name: "Bent Over Rows", sets: 5, muscleGroup: "Πλάτη", weight: "45" },
+        { name: "Medium Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "62.5" },
+        { name: "Bent Over Rows", sets: 6, muscleGroup: "Πλάτη", weight: "45" },
         { name: "Pushups", sets: 5, muscleGroup: "Στήθος", weight: "0" },
         { name: "Reverse Crunch", sets: 5, muscleGroup: "Κορμός", weight: "0" },
         { name: "Lying Knee Raise", sets: 5, muscleGroup: "Κορμός", weight: "0" }
@@ -34,23 +33,24 @@ window.program = {
         { name: "Ab Crunches", sets: 6, muscleGroup: "Κορμός", weight: "45" },
         { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
     ],
-    "Κυριακή": [] 
+    "Κυριακή": [ 
+        { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "70" },
+        { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "55" },
+        { name: "Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "15" },
+        { name: "Tricep Pulldowns", sets: 5, muscleGroup: "Χέρια", weight: "20" },
+        { name: "Leg Raise Hip Lift", sets: 5, muscleGroup: "Κορμός", weight: "0" }
+    ]
 };
 
-// MASTER EXERCISES DATABASE
+// 2. MASTER EXERCISES DATABASE
 window.exercisesDB = [
     { name: "Chest Press", muscleGroup: "Στήθος" },
     { name: "Chest Flys", muscleGroup: "Στήθος" },
     { name: "Pushups", muscleGroup: "Στήθος" },
     { name: "Wide Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Medium Pulldowns", muscleGroup: "Πλάτη" },
-    { name: "Neck Pulldowns", muscleGroup: "Πλάτη" },
-    { name: "Close Grip Pulldowns", muscleGroup: "Πλάτη" }, 
     { name: "Seated Rows", muscleGroup: "Πλάτη" },
-    { name: "Reverse Seated Rows", muscleGroup: "Πλάτη" },
     { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
-    { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
-    { name: "EMS Training", muscleGroup: "Πλάτη" },
     { name: "Upright Rows", muscleGroup: "Ώμοι" },
     { name: "Bicep Curls", muscleGroup: "Χέρια" },
     { name: "Preacher Curls", muscleGroup: "Χέρια" },
@@ -61,29 +61,22 @@ window.exercisesDB = [
     { name: "Reverse Crunch", muscleGroup: "Κορμός" },
     { name: "Lying Knee Raise", muscleGroup: "Κορμός" },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
-    { name: "Leg Extensions", muscleGroup: "Πόδια" },
-    { name: "Stretching", muscleGroup: "None" },
-    { name: "Warmup", muscleGroup: "None" }
+    { name: "Leg Extensions", muscleGroup: "Πόδια" }
 ];
 
-// ASSET MAPPING
+// 3. ASSET MAPPING
 window.videoMap = {
     "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups",
     "Wide Pulldowns": "latpulldowns", "Medium Pulldowns": "latpulldowns",
-    "Neck Pulldowns": "latpulldowns", "Close Grip Pulldowns": "latpulldownsclose", 
-    "Seated Rows": "lowrowsseated", "Reverse Seated Rows": "reverseseatedrows",
-    "Bent Over Rows": "bentoverrows", "Straight Arm Pulldowns": "straightarmpulldowns",
-    "EMS Training": "ems", "Upright Rows": "uprightrows",
-    "Bicep Curls": "bicepcurls", "Preacher Curls": "preacherbicepcurls", 
-    "Tricep Pulldowns": "triceppulldowns", "Ab Crunches": "abcrunches",
-    "Sit Ups": "situps", "Plank": "plank", "Reverse Crunch": "reversecrunch",
-    "Lying Knee Raise": "lyingkneeraise", "Leg Raise Hip Lift": "legraisehiplift",
-    "Leg Extensions": "legextensions", "Stretching": "stretching", "Warmup": "warmup"
+    "Seated Rows": "lowrowsseated", "Bent Over Rows": "bentoverrows",
+    "Upright Rows": "uprightrows", "Bicep Curls": "bicepcurls",
+    "Preacher Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
+    "Ab Crunches": "abcrunches", "Sit Ups": "situps", "Plank": "plank",
+    "Reverse Crunch": "reversecrunch", "Lying Knee Raise": "lyingkneeraise",
+    "Leg Raise Hip Lift": "legraisehiplift", "Leg Extensions": "legextensions"
 };
 
-/* ==========================================================================
-   PEGASUS SPLIT & TIMER ENGINE (AUTO-CONFIRMATION)
-   ========================================================================== */
+// 4. PEGASUS SPLIT & TIMER ENGINE (AUTO-CONFIRMATION)
 window.setPegasusPlan = function(planKey) {
     localStorage.setItem('pegasus_active_plan', planKey);
     console.log(`🎯 PEGASUS: Plan switched to ${planKey}`);
@@ -115,11 +108,12 @@ window.setPegasusPlan = function(planKey) {
 };
 
 (function applyPegasusSplit() {
-    const activePlan = localStorage.getItem('pegasus_active_plan') || 'HYPERTROPHY';
+    // Επιλογή 1 είναι πλέον το "IRON_LOGIC"
+    const activePlan = localStorage.getItem('pegasus_active_plan') || 'IRON_LOGIC';
     window.pegasusTimerConfig = { prep: 10, work: 45, rest: 60 };
 
     const splits = {
-        'HYPERTROPHY': { 
+        'IRON_LOGIC': { // <--- ΕΔΩ ΤΟ ΝΕΟ ΣΟΥ ΟΝΟΜΑ
             timers: { prep: 10, work: 45, rest: 60 } 
         },
         'PPL': { 
@@ -190,31 +184,29 @@ window.setPegasusPlan = function(planKey) {
         }
     };
 
-    if (splits[activePlan] && activePlan !== 'HYPERTROPHY') {
+    // Εφαρμογή του Split (ΜΟΝΟ για τις ενεργές ημέρες - αν δεν είναι το IRON_LOGIC)
+    if (splits[activePlan] && activePlan !== 'IRON_LOGIC') {
         window.pegasusTimerConfig = splits[activePlan].timers;
         ["Τρίτη", "Τετάρτη", "Παρασκευή", "Σάββατο", "Κυριακή"].forEach(day => {
             if (splits[activePlan][day]) window.program[day] = splits[activePlan][day];
         });
     }
     
-    console.log(`🚀 PEGASUS DATA ENGINE: v13.0 Active. Plan: ${activePlan}`);
+    console.log(`🚀 PEGASUS DATA ENGINE: v15.0 Active. Plan: ${activePlan}`);
 
-   // ==========================================================================
-// 🚀 ΔΥΝΑΜΙΚΟΣ ΥΠΟΛΟΓΙΣΜΟΣ ΕΒΔΟΜΑΔΙΑΙΟΥ ΟΓΚΟΥ ΓΙΑ ΤΙΣ ΜΠΑΡΕΣ
-// ==========================================================================
-window.getDynamicTargets = function() {
-    const targets = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
-    
-    // Σαρώνει κάθε μέρα του ενεργού προγράμματος
-    for (const day in window.program) {
-        window.program[day].forEach(ex => {
-            // Αν η άσκηση ανήκει σε βασική ομάδα, προσθέτει τα σετ
-            if (targets[ex.muscleGroup] !== undefined) {
-                targets[ex.muscleGroup] += ex.sets;
-            }
-        });
-    }
-    return targets;
-};
-   
+    // ==========================================================================
+    // 🚀 ΔΥΝΑΜΙΚΟΣ ΥΠΟΛΟΓΙΣΜΟΣ ΕΒΔΟΜΑΔΙΑΙΟΥ ΟΓΚΟΥ ΓΙΑ ΤΙΣ ΜΠΑΡΕΣ (MOBILE UI)
+    // ==========================================================================
+    window.getDynamicTargets = function() {
+        const targets = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+        
+        for (const day in window.program) {
+            window.program[day].forEach(ex => {
+                if (targets[ex.muscleGroup] !== undefined) {
+                    targets[ex.muscleGroup] += ex.sets;
+                }
+            });
+        }
+        return targets;
+    };
 })();
