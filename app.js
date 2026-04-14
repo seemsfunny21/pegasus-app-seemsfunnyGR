@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.35 (MAXIMALIST DATA RETENTION & DYNAMIC TIMER)
+   PEGASUS WORKOUT ENGINE - v10.36 (MAXIMALIST DATA RETENTION & DYNAMIC TIMER)
    Protocol: Static Navbar Binding + Diagnostic Logging + Dynamic Phase Intervals
    ========================================================================== */
 
@@ -185,14 +185,10 @@ function selectDay(btn, day) {
         d.dataset.done = 0; 
         d.dataset.index = idx;
 
-const cleanName = e.name.trim();
+        const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         
-        // Φέρνει τα αποθηκευμένα κιλά
         const savedWeight = window.getSavedWeight(cleanName);
-
-        // 🎯 TACTICAL ALIGNMENT:
-        // Αν το savedWeight είναι κενό, χρησιμοποιούμε ΠΑΝΤΑ το e.weight από το data.js
         const displayWeight = (savedWeight && savedWeight !== "") ? savedWeight : (e.weight || "");
 
         d.innerHTML = `
@@ -403,32 +399,24 @@ function skipToNextExercise() {
     }
 }
 
-/* ===== 6. SAVE & SKIP ===== */
-/* ===== 6. ADVANCED WEIGHT TRACKING (PARTNER AWARE) ===== */
-
-// 1. Βρίσκει ποιος αθλητής κάνει προπόνηση αυτή τη στιγμή
 window.getActiveLifter = function() {
     const pBtn = document.getElementById('btnPartnerMode');
     const pInput = document.getElementById('partnerNameInput');
-    // Αν το κουμπί λέει ΕΝΕΡΓΟΣ και υπάρχει όνομα
     if (pBtn && pBtn.textContent.includes("ΕΝΕΡΓΟΣ") && pInput && pInput.value.trim() !== "") {
         return pInput.value.trim().toUpperCase();
     }
-    return "ΑΓΓΕΛΟΣ"; // Ο Master User
+    return "ΑΓΓΕΛΟΣ";
 };
 
-// 2. Φέρνει τα σωστά κιλά ανάλογα με τον αθλητή
 window.getSavedWeight = function(exerciseName) {
     const cleanName = exerciseName.trim();
     const lifter = window.getActiveLifter();
     let allWeights = JSON.parse(localStorage.getItem(M.workout.exerciseWeights) || "{}");
 
-    // Διαβάζει από το νέο ενιαίο αρχείο
     if (allWeights[lifter] && allWeights[lifter][cleanName] !== undefined) {
         return allWeights[lifter][cleanName];
     }
 
-    // Maximalist Retention: Αν είναι ο Άγγελος, ψάχνει και τα παλιά κιλά (που δεν είχαν ανέβει στο cloud)
     if (lifter === "ΑΓΓΕΛΟΣ") {
         let old1 = localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`);
         let old2 = localStorage.getItem(`weight_${cleanName}`);
@@ -438,31 +426,25 @@ window.getSavedWeight = function(exerciseName) {
     return "";
 };
 
-// 3. Η νέα, ασφαλής αποθήκευση στο Cloud
 window.saveWeight = function(name, val) {
     const cleanName = name.trim();
     const lifter = window.getActiveLifter();
 
-    // Φορτώνει όλο το λεξικό
     let allWeights = JSON.parse(localStorage.getItem(M.workout.exerciseWeights) || "{}");
     
-    // Αν ο αθλητής (ή συνεργάτης) δεν υπάρχει στο λεξικό, τον δημιουργεί
     if (!allWeights[lifter]) allWeights[lifter] = {};
 
-    // Αποθηκεύει τα κιλά στον φάκελό του
     allWeights[lifter][cleanName] = val;
     localStorage.setItem(M.workout.exerciseWeights, JSON.stringify(allWeights));
 
     console.log(`[PEGASUS DATA]: Weight Saved -> Lifter: ${lifter} | Exercise: ${cleanName} | Weight: ${val}kg`);
 
-    // Maximalist Retention: Κρατάμε το παλιό format προσωρινά για ασφάλεια
     if (lifter === "ΑΓΓΕΛΟΣ") localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
 
     if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") window.MuscleProgressUI.render();
-    if (window.PegasusCloud) window.PegasusCloud.push(true); // ☁️ ΠΛΕΟΝ ΤΑ ΚΙΛΑ ΠΑΝΕ CLOUD!
+    if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
-/* ===== 7. VIDEO & UI UTILS ===== */
 function showVideo(i) {
     const vid = document.getElementById("video");
     const label = document.getElementById("phaseTimer");
@@ -614,6 +596,10 @@ function finishWorkout() {
             let newWeekly = currentWeekly + sessionKcal;
             localStorage.setItem("pegasus_weekly_kcal", newWeekly.toFixed(1));
 
+            // 🛡️ FIX: Προσθήκη θερμίδων στο today για να τις βλέπει το Food Panel
+            let todayKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
+            localStorage.setItem("pegasus_today_kcal", (todayKcal + sessionKcal).toFixed(1));
+
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
             
             sessionActiveKcal = 0;
@@ -625,7 +611,6 @@ function finishWorkout() {
     }, 4000);
 }
 
-/* ===== 9. PREVIEW ENGINE ===== */
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
@@ -742,13 +727,12 @@ window.onload = () => {
         }
     }
 
-   // Έλεγχος βάρους 2 δευτερόλεπτα μετά τη σύνδεση με το Cloud
-setTimeout(() => {
-    if (window.PegasusCloud && window.PegasusCloud.getMasterWeight) {
-        const mWeight = window.PegasusCloud.getMasterWeight();
-       window.PegasusWeight.alignWithCloud(mWeight);
-    }
-}, 2000);
+    setTimeout(() => {
+        if (window.PegasusCloud && window.PegasusCloud.getMasterWeight) {
+            const mWeight = window.PegasusCloud.getMasterWeight();
+           window.PegasusWeight.alignWithCloud(mWeight);
+        }
+    }, 2000);
 
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     createNavbar();
@@ -756,7 +740,6 @@ setTimeout(() => {
     if (window.updateKoukiBalance) window.updateKoukiBalance();
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
-    // 1. Ορισμός Master UI Orchestrator
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -821,15 +804,13 @@ setTimeout(() => {
         }
     };
 
-    // 2. Binding Logic με Tactical Stop Propagation (Η Ασπίδα)
     Object.keys(window.masterUI).forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
-                e.stopPropagation(); // 🛡️ Εμποδίζει το dragDrop.js να κλείσει το παράθυρο αμέσως!
+                e.stopPropagation(); 
                 const target = window.masterUI[btnId];
 
-                // Κλείσιμο άλλων παραθύρων
                 if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
                     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
@@ -847,7 +828,6 @@ setTimeout(() => {
         }
     });
 
-    // 🎯 Case-Insensitive Auto-Select
     setTimeout(() => { 
         document.querySelectorAll(".navbar button").forEach(b => { 
             if (b.id.replace('nav-', '') === todayName) {
