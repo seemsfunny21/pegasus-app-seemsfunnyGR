@@ -98,7 +98,8 @@ const PegasusMetabolic = {
     },
 
     validateDay: function() {
-        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         let history = JSON.parse(localStorage.getItem('pegasus_calendar_history') || "{}");
         let workouts = JSON.parse(localStorage.getItem('pegasus_workouts_done') || "{}");
         
