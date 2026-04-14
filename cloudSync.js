@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.2 SIMPLE PIN ROLLBACK)
-   Protocol: Strict Data Analyst - Single Base64 PIN & Interceptors
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.3 AUTO-SYNC PATCH)
+   Protocol: Strict Data Analyst - Single Base64 PIN & Maximalist Sync
    ========================================================================== */
 
 const PegasusCloud = {
@@ -11,6 +11,7 @@ const PegasusCloud = {
     
     isUnlocked: false,
     hasSuccessfullyPulled: false, 
+    isPulling: false, // 🔒 Κλείδωμα για αποφυγή infinite loops κατά το pull
     userKey: "",
     syncInterval: null,
 
@@ -47,6 +48,8 @@ const PegasusCloud = {
         if (!this.isUnlocked) return;
         if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         
+        this.isPulling = true; // 🔒 Ενεργοποίηση προστασίας (το Interceptor δεν θα κάνει Push τώρα)
+
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`, {
                 headers: { 
@@ -85,6 +88,8 @@ const PegasusCloud = {
         } catch (e) {
             console.error("❌ PEGASUS Pull Error:", e);
             if (typeof setSyncStatus === "function") setSyncStatus('offline');
+        } finally {
+            this.isPulling = false; // 🔓 Απελευθέρωση προστασίας
         }
     },
 
@@ -128,14 +133,13 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// 🎯 SECURITY: Έλεγχος κατά τη φόρτωση (Απλό PIN Rollback - PC Friendly)
+// 🎯 SECURITY: Έλεγχος 24 Ωρών
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     const authTime = localStorage.getItem("pegasus_vault_time");
-    const isMobile = window.location.pathname.includes('mobile/'); // Ελέγχουμε αν είμαστε σε mobile
+    const isMobile = window.location.pathname.includes('mobile/'); 
     
     if (savedPin && authTime && (Date.now() - parseInt(authTime) < 86400000)) {
-        // Αν το PIN είναι έγκυρο (24h), ξεκλειδώνουμε αυτόματα
         window.PegasusCloud.unlock(savedPin);
         const vaultBtn = document.getElementById("btnMasterVault");
         if (vaultBtn) {
@@ -144,9 +148,6 @@ window.addEventListener('load', () => {
             vaultBtn.style.borderColor = "#00ff41";
         }
     } else {
-        // 🛡️ ΕΔΩ ΕΙΝΑΙ Η ΑΛΛΑΓΗ:
-        // Αν είμαστε στο Mobile, δείξε το modal αυτόματα (για ευκολία στο γυμναστήριο).
-        // Αν είμαστε στο PC (index), μην κάνεις τίποτα. Θα το ανοίξεις εσύ από τα Εργαλεία.
         if (isMobile) {
             const pinModal = document.getElementById("pinModal");
             if (pinModal) pinModal.style.display = "flex";
@@ -155,7 +156,7 @@ window.addEventListener('load', () => {
 });
 
 /* ==========================================================================
-   DATA INTERCEPTOR (SUPPLEMENT LOGISTICS)
+   DATA INTERCEPTOR (SUPPLEMENT LOGISTICS & AUTO-SYNC)
    ========================================================================== */
 window.consumeSupp = function(type, amount) {
     let val = localStorage.getItem('pegasus_supp_inventory');
@@ -170,10 +171,6 @@ window.consumeSupp = function(type, amount) {
     
     if (typeof updateSuppUI === "function") updateSuppUI();
     if (typeof refreshAllUI === "function") refreshAllUI();
-    
-    setTimeout(() => {
-        if (window.PegasusCloud && window.PegasusCloud.hasSuccessfullyPulled) window.PegasusCloud.push();
-    }, 1000);
 };
 
 if (!window.originalSetItem) {
@@ -186,11 +183,20 @@ if (!window.originalSetItem) {
         
         window.originalSetItem.apply(this, arguments);
 
+        // 🚀 MAXIMALIST AUTO-SYNC: Οποιαδήποτε αλλαγή καταγράφεται, στέλνεται άμεσα στο Cloud
+        const ignoredKeys = ["pegasus_last_push", "pegasus_vault_pin", "pegasus_vault_time"];
+        if (!ignoredKeys.includes(key) && (key.startsWith("food_log_") || key.startsWith("pegasus_") || key.startsWith("kouki_"))) {
+            // Ο έλεγχος !isPulling αποτρέπει το infinite loop όταν κατεβάζουμε δεδομένα
+            if (window.PegasusCloud && !window.PegasusCloud.isPulling && window.PegasusCloud.hasSuccessfullyPulled) {
+                window.PegasusCloud.push();
+            }
+        }
+
         if (key.startsWith("food_log_")) {
             try {
                 let newArr = JSON.parse(value || "[]");
                 if (newArr.length > oldArr.length) {
-                    let addedItem = newArr[0]; 
+                    let addedItem = newArr[newArr.length - 1]; // 🛡️ Διόρθωση: Ανίχνευση του ΤΕΛΕΥΤΑΙΟΥ φαγητού της λίστας
                     if (addedItem && addedItem.name) {
                         let fname = addedItem.name.toLowerCase();
                         if (fname.includes("πρωτε") || fname.includes("whey")) window.consumeSupp('prot', 30);
