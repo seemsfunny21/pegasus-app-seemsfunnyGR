@@ -37,9 +37,9 @@ console.warn = function(...args) {
     originalWarn.apply(console, args);
 };
 
-window.onerror = function(msg, url, line) {
-    console.error(`Runtime Error: ${msg} at ${url}:${line}`);
-};
+window.addEventListener('error', function(event) {
+    console.error(`Runtime Error: ${event.message} at ${event.filename}:${event.lineno}`);
+});
 
 /* ===== 2. CORE VARIABLES (MANIFEST ALIGNED) ===== */
 var exercises = [];
