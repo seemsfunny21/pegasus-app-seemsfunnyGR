@@ -253,7 +253,7 @@ if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
 
     window.PegasusCloud.push = function(force = false) {
         return new Promise((resolve, reject) => {
-            if (force === "STRICT") {
+            if (force === true || force === "STRICT") {
                 console.log("🚀 CLOUD: Strict Push Requested.");
                 return originalPush().then(resolve).catch(reject);
             }
