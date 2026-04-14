@@ -54,7 +54,7 @@ const PegasusReporting = {
         const today = new Date();
         
         // 🎯 ΔΙΟΡΘΩΣΗ 1: Χρήση παύλας (-) αντί για κάθετο (/) για να μην χαλάει ο τίτλος στο email
-        const dateStrSafe = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+       const dateStrSafe = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
         
         const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStrSafe) || "[]");
         const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStrSafe) || "null");
