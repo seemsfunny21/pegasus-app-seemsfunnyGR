@@ -1,62 +1,48 @@
 /* ==========================================================================
-   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - v1.3 SYMMETRY)
-   Protocol: Centered UI, Tri-State Alerts & Smart Portions
+   🧠 PEGASUS MODULE: ORACLE (EXECUTIVE BRIEFING - v1.4 SLIM)
+   Protocol: Compact Symmetry, Zero-Scroll Logic & Tri-State Sync
    ========================================================================== */
 
 (function() {
     window.PegasusOracle = {
         analyzeData: function() {
-            let msgGood = "Όλα τα συστήματα λειτουργούν φυσιολογικά.";
-            let msgBad = "Καμία κρίσιμη προειδοποίηση.";
-            let msgAction = "Κανένα άμεσο καθήκον.";
+            let msgGood = "Συστήματα Nominal.", msgBad = "", msgAction = "";
+            let hasGood = true, hasBad = false, hasAction = false;
 
-            let hasGood = false, hasBad = false, hasAction = false;
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
 
-            // --- 1. SMART INVENTORY ANALYSIS ---
+            // --- 1. SMART INVENTORY ---
             const supplies = JSON.parse(localStorage.getItem('pegasus_supplies_v1')) || [];
-            let actionItems = [];
-            
+            let actions = [];
             supplies.forEach(s => {
                 const rem = s.amount / s.portion;
-                if (rem <= 1.1) {
-                    actionItems.push(`🔴 ΟΡΙΑΚΟ: ${s.label}`); // Κρίσιμο (1 δόση)
-                } else if (rem <= 3.1) {
-                    actionItems.push(`🟡 ΧΑΜΗΛΟ: ${s.label}`); // Ενδιάμεσο (2-3 δόσεις)
-                }
+                if (rem <= 1.1) actions.push(`🔴 ${s.label}`);
+                else if (rem <= 3.1) actions.push(`🟡 ${s.label}`);
             });
 
             const maint = JSON.parse(localStorage.getItem('pegasus_maintenance_v1')) || [];
             maint.forEach(t => {
                 const diff = Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay);
-                if (diff < 0) actionItems.push(`🔴 ΛΗΓΜΕΝΟ: ${t.label}`);
-                else if (diff === 0) actionItems.push(`🟡 ΣΗΜΕΡΑ: ${t.label}`);
+                if (diff < 0) actions.push(`🔴 ${t.label}`);
+                else if (diff === 0) actions.push(`🟡 ${t.label}`);
             });
 
-            if (actionItems.length > 0) {
-                msgAction = actionItems.join(" | ");
+            if (actions.length > 0) {
+                msgAction = actions.join(" | ");
                 hasAction = true;
             }
 
-            // --- 2. BIO & FINANCE ---
+            // --- 2. BIO & MISSIONS ---
             const bio = JSON.parse(localStorage.getItem('pegasus_biometrics_v1')) || [];
-            let energy = 10; if (bio.length > 0) energy = bio[0].energy;
-            
-            if (energy < 5) {
-                msgBad = `Χαμηλή ενέργεια (${energy}/10). Προτεραιότητα στην αποθεραπεία.`;
-                hasBad = true;
-            }
-
-            // --- 3. MISSIONS ---
             const missions = JSON.parse(localStorage.getItem('pegasus_missions_v1')) || [];
+            
+            let energy = 10; if (bio.length > 0) energy = bio[0].energy;
+            if (energy < 5) { msgBad = `🔴 Ενέργεια: ${energy}/10`; hasBad = true; }
+
             let completed = missions.filter(m => m.completed).length;
             let pct = missions.length > 0 ? (completed / missions.length) * 100 : 0;
-
-            if (pct >= 80) {
-                msgGood = `Άριστη πειθαρχία (${Math.round(pct)}% Στόχοι). Βέλτιστη ημέρα!`;
-                hasGood = true;
-            }
+            if (pct >= 80) msgGood = `🟢 Στόχοι: ${Math.round(pct)}%`;
 
             return { good: msgGood, hasGood, bad: msgBad, hasBad, action: msgAction, hasAction };
         },
@@ -74,40 +60,37 @@
             
             dashboard.style.cssText = `
                 grid-column: 1 / -1; 
-                background: linear-gradient(145deg, rgba(15,15,15,0.98) 0%, rgba(5,5,5,1) 100%);
+                background: rgba(10,10,10,0.9);
                 border: 1px solid var(--main);
-                border-radius: 20px;
-                padding: 18px 10px;
-                margin-bottom: 10px;
-                box-shadow: 0 10px 30px rgba(0,255,65,0.1);
-                text-align: center; /* 🎯 CENTER ALIGNMENT */
+                border-radius: 12px;
+                padding: 10px;
+                margin-bottom: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                align-items: center;
+                justify-content: center;
             `;
 
-            dashboard.innerHTML = `
-                <div style="font-size: 9px; color: var(--main); font-weight: 900; letter-spacing: 3px; margin-bottom: 15px; text-transform: uppercase;">
+            let html = `
+                <div style="font-size: 8px; color: var(--main); font-weight: 900; letter-spacing: 2px; opacity: 0.7; margin-bottom: 2px;">
                     — EXECUTIVE BRIEFING —
                 </div>
-                
-                <div style="display: flex; flex-direction: column; gap: 14px; align-items: center;">
-                    
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: ${insights.hasGood ? '1' : '0.3'};">
-                        <div style="font-size: 18px;">🟢</div>
-                        <div style="font-size: 11px; color: #fff; font-weight: 600; max-width: 280px;">${insights.good}</div>
-                    </div>
-                    
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: ${insights.hasAction ? '1' : '0.3'};">
-                        <div style="font-size: 18px;">🟡</div>
-                        <div style="font-size: 11px; color: #ffbb33; font-weight: 700; max-width: 280px; line-height:1.3;">${insights.action}</div>
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: ${insights.hasBad ? '1' : '0.3'};">
-                        <div style="font-size: 18px;">🔴</div>
-                        <div style="font-size: 11px; color: #ff4444; font-weight: 800; max-width: 280px;">${insights.bad}</div>
-                    </div>
-
-                </div>
             `;
 
+            // 🟢 Καλή κατάσταση (Πάντα κεντραρισμένο)
+            html += `<div style="font-size: 11px; font-weight: 700; color: #fff;">${insights.good}</div>`;
+
+            // 🟡/🔴 Ειδοποιήσεις (Μόνο αν υπάρχουν, για οικονομία χώρου)
+            if (insights.hasAction) {
+                html += `<div style="font-size: 10px; color: #ffbb33; font-weight: 800; border-top: 1px solid #222; padding-top: 4px; width: 100%; text-align: center;">${insights.action}</div>`;
+            }
+
+            if (insights.hasBad) {
+                html += `<div style="font-size: 10px; color: #ff4444; font-weight: 900; width: 100%; text-align: center;">${insights.bad}</div>`;
+            }
+
+            dashboard.innerHTML = html;
             grid.insertBefore(dashboard, grid.firstChild);
         }
     };
