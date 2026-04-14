@@ -5,7 +5,7 @@
 
 (function() {
     window.PegasusOracle = {
-        analyzeData: function() {
+analyzeData: function() {
             let msgGood = "Όλα τα συστήματα λειτουργούν φυσιολογικά.";
             let msgBad = "Καμία κρίσιμη προειδοποίηση.";
             let msgAction = "Κανένα άμεσο καθήκον.";
@@ -14,33 +14,34 @@
             let hasBad = false;
             let hasAction = false;
 
-            const today = new Date().toLocaleDateString('el-GR');
             const now = Date.now();
             const oneDay = 24 * 60 * 60 * 1000;
 
-            // --- 1. ΑΝΑΛΥΣΗ ΑΠΟΘΕΜΑΤΩΝ & ΣΥΝΤΗΡΗΣΗΣ (ACTION ITEMS ⚡) ---
+            // --- 1. SMART INVENTORY ANALYSIS (PORTION-BASED) ---
             const supplies = JSON.parse(localStorage.getItem('pegasus_supplies_v1')) || [];
-            const maint = JSON.parse(localStorage.getItem('pegasus_maintenance_v1')) || [];
-            
             let actionItems = [];
             
-            // 🎯 PREDICTIVE WARNING PROTOCOL (Sync with supplies.js)
             supplies.forEach(s => {
-                let pct = s.amount / s.refill;
-                if (pct < 0.15) {
-                    actionItems.push(`🔴 Οριακό: ${s.label}`);
-                } else if (pct < 0.40) {
-                    actionItems.push(`🟠 Χαμηλό: ${s.label}`);
+                // Υπολογισμός μερίδων που απομένουν
+                const remainingPortions = s.amount / s.portion;
+                
+                if (remainingPortions <= 0) {
+                    actionItems.push(`🔴 ΤΕΛΟΣ: ${s.label}`);
+                } else if (remainingPortions <= 1.1) { 
+                    // 🚨 ΚΡΙΣΙΜΟ: Μένει μόνο 1 μερίδα (π.χ. Γιαούρτι 250g)
+                    actionItems.push(`🔴 ΟΡΙΑΚΟ (1 δόση): ${s.label}`);
+                } else if (remainingPortions <= 2.1) {
+                    // 🟠 ΧΑΜΗΛΟ: Μένουν 2 μερίδες
+                    actionItems.push(`🟠 ΧΑΜΗΛΟ (2 δόσεις): ${s.label}`);
                 }
             });
 
+            // --- 2. ΣΥΝΤΗΡΗΣΗ (MAINTENANCE) ---
+            const maint = JSON.parse(localStorage.getItem('pegasus_maintenance_v1')) || [];
             maint.forEach(t => {
                 const diffDays = Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay);
-                if (diffDays < 0) {
-                    actionItems.push(`🔴 Ληγμένο: ${t.label}`);
-                } else if (diffDays === 0) {
-                    actionItems.push(`🟠 Σήμερα: ${t.label}`);
-                }
+                if (diffDays < 0) actionItems.push(`🔴 ΛΗΓΜΕΝΟ: ${t.label}`);
+                else if (diffDays === 0) actionItems.push(`🟠 ΣΗΜΕΡΑ: ${t.label}`);
             });
 
             if (actionItems.length > 0) {
