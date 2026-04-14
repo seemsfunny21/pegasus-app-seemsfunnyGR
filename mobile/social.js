@@ -1,15 +1,59 @@
 /* ==========================================================================
-   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.4)
-   Protocol: Search, Smart Links, Edit & Dynamic Sorting Engine
+   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.5)
+   Protocol: Zero-Trust Security, PIN Lock, Edit & Smart Routing
    ========================================================================== */
 
 (function() {
     const SOCIAL_DATA_KEY = 'pegasus_social_v1';
     let currentSearchTerm = ""; 
-    let currentSortOrder = "DESC"; // 🔄 GLOBAL STATE: Προεπιλογή Φθίνουσα Ταξινόμηση (10 -> 1)
+    let currentSortOrder = "DESC"; 
+    let isUnlocked = false; // 🔒 GLOBAL SECURITY STATE
 
     window.PegasusSocial = {
+        // 🛡️ SECURITY ENGINE
+        verifyPin: function() {
+            const input = document.getElementById('socialPinInput').value;
+            let masterPin = localStorage.getItem('pegasus_master_pin');
+
+            if (!masterPin) {
+                if (input.length < 4) {
+                    alert("Το PIN πρέπει να έχει τουλάχιστον 4 ψηφία.");
+                    return;
+                }
+                localStorage.setItem('pegasus_master_pin', input);
+                alert("✅ Το Master PIN ορίστηκε επιτυχώς! Απομνημόνευσέ το.");
+                masterPin = input;
+            }
+
+            if (input === masterPin) {
+                isUnlocked = true;
+                document.getElementById('socialLockScreen').style.display = 'none';
+                document.getElementById('socialSecureArea').style.display = 'block';
+                document.getElementById('socialPinInput').value = '';
+                document.getElementById('pinError').style.display = 'none';
+                
+                this.handleSearch(""); // Reset search and Load Data
+            } else {
+                document.getElementById('pinError').style.display = 'block';
+                document.getElementById('socialPinInput').value = '';
+            }
+        },
+
+        lockVault: function() {
+            isUnlocked = false;
+            document.getElementById('socialLockScreen').style.display = 'flex';
+            document.getElementById('socialSecureArea').style.display = 'none';
+            document.getElementById('socialPinInput').value = '';
+            document.getElementById('pinError').style.display = 'none';
+            
+            // 🛡️ GHOST DOM: Καθαρισμός δεδομένων για να μην φαίνονται στον κώδικα (Inspect)
+            const container = document.getElementById('social-content');
+            if (container) container.innerHTML = '';
+        },
+
+        // --- CORE LOGIC ---
         setRating: function(id, newRating) {
+            if (!isUnlocked) return;
             let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
             const idx = entities.findIndex(e => e.id === id);
             if (idx === -1) return;
@@ -19,6 +63,7 @@
         },
 
         editEntry: function(id) {
+            if (!isUnlocked) return;
             let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
             const idx = entities.findIndex(e => e.id === id);
             if (idx === -1) return;
@@ -31,6 +76,7 @@
         },
 
         deleteEntry: function(id) {
+            if (!isUnlocked) return;
             if(confirm('Οριστική διαγραφή αυτής της εγγραφής;')) {
                 let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
                 entities = entities.filter(e => e.id !== id);
@@ -55,6 +101,7 @@
         },
 
         addNewEntry: function() {
+            if (!isUnlocked) return;
             const name = document.getElementById('newSocialName').value;
             if(!name || name.trim() === '') return;
 
@@ -78,7 +125,6 @@
             window.renderSocialContent();
         },
 
-        // 🔄 ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Εναλλαγή Ταξινόμησης
         toggleSort: function() {
             currentSortOrder = (currentSortOrder === "DESC") ? "ASC" : "DESC";
             window.renderSocialContent();
@@ -100,55 +146,66 @@
         viewDiv.className = 'view';
         
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="window.PegasusSocial.lockVault(); openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             
-            <div style="margin-bottom: 15px;">
-                <input type="text" id="socialSearchInput" 
-                       placeholder="🔍 Αναζήτηση επαφής..." 
-                       onkeyup="window.PegasusSocial.handleSearch(this.value)"
-                       style="width: 100%; background: #000; color: var(--main); border: 1px solid #333; padding: 12px; border-radius: 12px; font-family: inherit; box-sizing: border-box; text-align: center;">
+            <div id="socialLockScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
+                <div style="font-size: 50px; margin-bottom: 15px;">🔒</div>
+                <h2 style="color: #ff4444; letter-spacing: 2px; margin-bottom: 5px; font-weight: 900;">SECURE VAULT</h2>
+                <p style="color: #666; font-size: 11px; margin-bottom: 25px; max-width: 250px;">Αυστηρά προσωπικά δεδομένα. Απαιτείται επιβεβαίωση ταυτότητας.</p>
+                
+                <input type="password" id="socialPinInput" placeholder="••••" 
+                       inputmode="numeric" maxlength="4"
+                       style="text-align: center; font-size: 30px; letter-spacing: 8px; width: 150px; background: #0a0a0a; color: #00ff41; border: 2px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                
+                <button class="primary-btn" onclick="window.PegasusSocial.verifyPin()" style="width: 150px; padding: 15px; font-size: 14px;">ΞΕΚΛΕΙΔΩΜΑ</button>
+                <p id="pinError" style="color: #ff4444; font-size: 12px; margin-top: 15px; display: none; font-weight: bold;">❌ Λάθος PIN. Προσπαθήστε ξανά.</p>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="btnSortSocial" class="secondary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 10px; border-radius: 8px; background: transparent; border: 1px solid #00ff41; color: #00ff41; font-weight: 900;" onclick="window.PegasusSocial.toggleSort()">
-                    🔽 ΥΨΗΛΗ ΒΑΘΜΟΛΟΓΙΑ
-                </button>
-                <button id="btnAddSocial" class="primary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 11px; border-radius: 8px; color: #000;" onclick="window.PegasusSocial.toggleAddForm()">
-                    + ΝΕΑ ΕΓΓΡΑΦΗ
-                </button>
-            </div>
+            <div id="socialSecureArea" style="display: none;">
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="socialSearchInput" 
+                           placeholder="🔍 Αναζήτηση επαφής..." 
+                           onkeyup="window.PegasusSocial.handleSearch(this.value)"
+                           style="width: 100%; background: #000; color: var(--main); border: 1px solid #333; padding: 12px; border-radius: 12px; font-family: inherit; box-sizing: border-box; text-align: center;">
+                </div>
 
-            <div id="addSocialForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
-                <input type="text" id="newSocialName" placeholder="Όνομα & Link Προφίλ..." style="margin-bottom: 15px; border: 2px solid #444;">
-                <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
-            </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button id="btnSortSocial" class="secondary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 10px; border-radius: 8px; background: transparent; border: 1px solid #00ff41; color: #00ff41; font-weight: 900;" onclick="window.PegasusSocial.toggleSort()">
+                        🔽 ΥΨΗΛΗ ΒΑΘΜΟΛΟΓΙΑ
+                    </button>
+                    <button id="btnAddSocial" class="primary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 11px; border-radius: 8px; color: #000;" onclick="window.PegasusSocial.toggleAddForm()">
+                        + ΝΕΑ ΕΓΓΡΑΦΗ
+                    </button>
+                </div>
 
-            <div id="social-content" style="width: 100%; display: flex; flex-direction: column; gap: 15px; padding-bottom: 80px;"></div>
+                <div id="addSocialForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
+                    <input type="text" id="newSocialName" placeholder="Όνομα & Link Προφίλ..." style="margin-bottom: 15px; border: 2px solid #444;">
+                    <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
+                </div>
+
+                <div id="social-content" style="width: 100%; display: flex; flex-direction: column; gap: 15px; padding-bottom: 80px;"></div>
+            </div>
         `;
         document.body.appendChild(viewDiv);
     }
 
     window.renderSocialContent = function() {
+        if (!isUnlocked) return; // 🛑 Αποτροπή render αν το vault είναι κλειδωμένο
+        
         const container = document.getElementById('social-content');
         if (!container) return;
 
         let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
         
-        // 1. Φιλτράρισμα Αναζήτησης
         if (currentSearchTerm !== "") {
             entities = entities.filter(item => item.name.toLowerCase().includes(currentSearchTerm));
         }
 
-        // 2. 🔄 ΜΗΧΑΝΗ ΤΑΞΙΝΟΜΗΣΗΣ (SORTING ENGINE)
         entities.sort((a, b) => {
-            if (currentSortOrder === "DESC") {
-                return b.rating - a.rating; // Από το 10 στο 1
-            } else {
-                return a.rating - b.rating; // Από το 1 στο 10
-            }
+            if (currentSortOrder === "DESC") return b.rating - a.rating; 
+            else return a.rating - b.rating; 
         });
 
-        // 3. Ενημέρωση του Κουμπιού Ταξινόμησης στο UI
         const sortBtn = document.getElementById('btnSortSocial');
         if (sortBtn) {
             sortBtn.innerHTML = currentSortOrder === "DESC" ? "🔽 ΥΨΗΛΗ ΒΑΘΜΟΛΟΓΙΑ" : "🔼 ΧΑΜΗΛΗ ΒΑΘΜΟΛΟΓΙΑ";
@@ -259,7 +316,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
-        window.renderSocialContent();
+        // Αρχικά ΔΕΝ καλούμε την renderSocialContent() γιατί το Vault είναι κλειδωμένο.
         if (window.registerPegasusModule) {
             window.registerPegasusModule({ id: 'social', label: 'Επαφές', icon: '💬' });
         }
