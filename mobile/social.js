@@ -1,11 +1,12 @@
 /* ==========================================================================
-   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.2)
-   Protocol: Search Integration, Smart Link Parsing & Edit Capabilities
+   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.4)
+   Protocol: Search, Smart Links, Edit & Dynamic Sorting Engine
    ========================================================================== */
 
 (function() {
     const SOCIAL_DATA_KEY = 'pegasus_social_v1';
     let currentSearchTerm = ""; 
+    let currentSortOrder = "DESC"; // 🔄 GLOBAL STATE: Προεπιλογή Φθίνουσα Ταξινόμηση (10 -> 1)
 
     window.PegasusSocial = {
         setRating: function(id, newRating) {
@@ -17,7 +18,6 @@
             this.saveAndRender(entities);
         },
 
-        // ⚙️ ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Επεξεργασία (Edit)
         editEntry: function(id) {
             let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
             const idx = entities.findIndex(e => e.id === id);
@@ -45,10 +45,12 @@
                 form.style.display = 'block';
                 btn.innerHTML = 'Χ ΚΛΕΙΣΙΜΟ';
                 btn.style.background = '#ff4444';
+                btn.style.color = '#fff';
             } else {
                 form.style.display = 'none';
                 btn.innerHTML = '+ ΝΕΑ ΕΓΓΡΑΦΗ';
                 btn.style.background = 'var(--main)';
+                btn.style.color = '#000';
             }
         },
 
@@ -73,6 +75,12 @@
 
         handleSearch: function(term) {
             currentSearchTerm = term.toLowerCase().trim();
+            window.renderSocialContent();
+        },
+
+        // 🔄 ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Εναλλαγή Ταξινόμησης
+        toggleSort: function() {
+            currentSortOrder = (currentSortOrder === "DESC") ? "ASC" : "DESC";
             window.renderSocialContent();
         },
 
@@ -101,8 +109,11 @@
                        style="width: 100%; background: #000; color: var(--main); border: 1px solid #333; padding: 12px; border-radius: 12px; font-family: inherit; box-sizing: border-box; text-align: center;">
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <button id="btnAddSocial" class="primary-btn" style="width: auto; margin: 0; padding: 8px 15px; font-size: 11px; border-radius: 8px;" onclick="window.PegasusSocial.toggleAddForm()">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button id="btnSortSocial" class="secondary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 10px; border-radius: 8px; background: transparent; border: 1px solid #00ff41; color: #00ff41; font-weight: 900;" onclick="window.PegasusSocial.toggleSort()">
+                    🔽 ΥΨΗΛΗ ΒΑΘΜΟΛΟΓΙΑ
+                </button>
+                <button id="btnAddSocial" class="primary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 11px; border-radius: 8px; color: #000;" onclick="window.PegasusSocial.toggleAddForm()">
                     + ΝΕΑ ΕΓΓΡΑΦΗ
                 </button>
             </div>
@@ -123,8 +134,26 @@
 
         let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
         
+        // 1. Φιλτράρισμα Αναζήτησης
         if (currentSearchTerm !== "") {
             entities = entities.filter(item => item.name.toLowerCase().includes(currentSearchTerm));
+        }
+
+        // 2. 🔄 ΜΗΧΑΝΗ ΤΑΞΙΝΟΜΗΣΗΣ (SORTING ENGINE)
+        entities.sort((a, b) => {
+            if (currentSortOrder === "DESC") {
+                return b.rating - a.rating; // Από το 10 στο 1
+            } else {
+                return a.rating - b.rating; // Από το 1 στο 10
+            }
+        });
+
+        // 3. Ενημέρωση του Κουμπιού Ταξινόμησης στο UI
+        const sortBtn = document.getElementById('btnSortSocial');
+        if (sortBtn) {
+            sortBtn.innerHTML = currentSortOrder === "DESC" ? "🔽 ΥΨΗΛΗ ΒΑΘΜΟΛΟΓΙΑ" : "🔼 ΧΑΜΗΛΗ ΒΑΘΜΟΛΟΓΙΑ";
+            sortBtn.style.color = currentSortOrder === "DESC" ? "#00ff41" : "#ff4444";
+            sortBtn.style.borderColor = currentSortOrder === "DESC" ? "#00ff41" : "#ff4444";
         }
         
         container.innerHTML = entities.map(item => {
@@ -137,7 +166,6 @@
                 else { activeColor = '#00ff41'; labelText = 'ΥΨΗΛΗ ΟΜΙΛΗΤΙΚΟΤΗΤΑ'; }
             }
 
-// 🚀 SMART URL PARSING ENGINE (Multi-Platform Routing)
             let displayName = item.name;
             let linkIconHtml = '';
             const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/i;
@@ -147,9 +175,8 @@
                 let hrefUrl = urlMatch[0].startsWith('http') ? urlMatch[0] : 'https://' + urlMatch[0];
                 let lowUrl = hrefUrl.toLowerCase();
                 
-                // --- Platform Routing Logic ---
                 let platformName = "LINK";
-                let platformBg = "#555"; // Default Γκρι
+                let platformBg = "#555"; 
                 let platformTxt = "#fff";
 
                 if (lowUrl.includes("facebook.com") || lowUrl.includes("fb.com")) {
@@ -161,7 +188,7 @@
                 } else if (lowUrl.includes("tiktok.com")) {
                     platformName = "TIKTOK PROFILE";
                     platformBg = "#000000";
-                    platformTxt = "#00f2fe"; // TikTok Cyan Text για αντίθεση
+                    platformTxt = "#00f2fe"; 
                 } else if (lowUrl.includes("linkedin.com")) {
                     platformName = "LINKEDIN";
                     platformBg = "#0A66C2";
