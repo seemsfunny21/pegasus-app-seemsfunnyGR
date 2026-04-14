@@ -11,7 +11,7 @@
         (function() {
             const params = new URLSearchParams(window.location.search);
             const now = Date.now();
-            if (!params.has('v') || (now - parseInt(params.get('v')) > 30000)) {
+if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 30000))) {
                 window.location.replace(window.location.pathname + '?v=' + now + window.location.hash);
             }
         })();
