@@ -137,7 +137,7 @@
                 else { activeColor = '#00ff41'; labelText = 'ΥΨΗΛΗ ΟΜΙΛΗΤΙΚΟΤΗΤΑ'; }
             }
 
-            // 🚀 SMART URL PARSING ENGINE
+// 🚀 SMART URL PARSING ENGINE (Multi-Platform Routing)
             let displayName = item.name;
             let linkIconHtml = '';
             const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/i;
@@ -145,13 +145,35 @@
 
             if (urlMatch) {
                 let hrefUrl = urlMatch[0].startsWith('http') ? urlMatch[0] : 'https://' + urlMatch[0];
-                displayName = item.name.replace(urlMatch[0], '').trim(); // Καθαρίζει το link από το όνομα
-                if (displayName === '') displayName = "Άγνωστη Επαφή"; // Fallback αν έβαλε μόνο URL
+                let lowUrl = hrefUrl.toLowerCase();
+                
+                // --- Platform Routing Logic ---
+                let platformName = "LINK";
+                let platformBg = "#555"; // Default Γκρι
+                let platformTxt = "#fff";
+
+                if (lowUrl.includes("facebook.com") || lowUrl.includes("fb.com")) {
+                    platformName = "FB PROFILE";
+                    platformBg = "#1877F2";
+                } else if (lowUrl.includes("instagram.com")) {
+                    platformName = "INSTA PROFILE";
+                    platformBg = "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)";
+                } else if (lowUrl.includes("tiktok.com")) {
+                    platformName = "TIKTOK PROFILE";
+                    platformBg = "#000000";
+                    platformTxt = "#00f2fe"; // TikTok Cyan Text για αντίθεση
+                } else if (lowUrl.includes("linkedin.com")) {
+                    platformName = "LINKEDIN";
+                    platformBg = "#0A66C2";
+                }
+
+                displayName = item.name.replace(urlMatch[0], '').trim(); 
+                if (displayName === '') displayName = "Άγνωστη Επαφή"; 
                 
                 linkIconHtml = `
                     <a href="${hrefUrl}" target="_blank" onclick="event.stopPropagation()" 
-                       style="margin-left: 10px; background: #1877F2; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-decoration: none; display: inline-block; vertical-align: middle; box-shadow: 0 0 5px rgba(24, 119, 242, 0.4);">
-                        🔗 FB PROFILE
+                       style="margin-left: 10px; background: ${platformBg}; color: ${platformTxt}; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; letter-spacing: 0.5px; text-decoration: none; display: inline-flex; align-items: center; vertical-align: middle; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+                        🔗 ${platformName}
                     </a>
                 `;
             }
