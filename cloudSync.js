@@ -19,7 +19,7 @@ const PegasusCloud = {
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
-unlock: function(pin) {
+    unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
 
@@ -37,7 +37,16 @@ unlock: function(pin) {
                 this.userKey = this.config.encryptedPart;
                 this.isUnlocked = true;
                 localStorage.setItem("pegasus_vault_pin", newLocalPin); 
-                localStorage.setItem("pegasus_vault_time", Date.now());
+                localStorage.setItem("pegasus_vault_time", Date.now().toString());
+                
+                // 🔄 ΕΠΑΝΑΦΟΡΑ ΛΟΓΙΚΗΣ ΣΥΓΧΡΟΝΙΣΜΟΥ (Maximalist Retention)
+                this.pull(true);
+                if (!this.syncInterval) {
+                    this.syncInterval = setInterval(() => {
+                        if (this.isUnlocked) this.pull(true);
+                    }, 30000); 
+                }
+                
                 return true;
             } else {
                 alert("⛔ Η διαδικασία ακυρώθηκε. Απαιτείται έγκυρο PIN.");
@@ -54,7 +63,16 @@ unlock: function(pin) {
                 this.userKey = this.config.encryptedPart;
                 this.isUnlocked = true;
                 localStorage.setItem("pegasus_vault_pin", cleanPin);
-                localStorage.setItem("pegasus_vault_time", Date.now());
+                localStorage.setItem("pegasus_vault_time", Date.now().toString());
+                
+                // 🔄 ΕΠΑΝΑΦΟΡΑ ΛΟΓΙΚΗΣ ΣΥΓΧΡΟΝΙΣΜΟΥ (Maximalist Retention)
+                this.pull(true);
+                if (!this.syncInterval) {
+                    this.syncInterval = setInterval(() => {
+                        if (this.isUnlocked) this.pull(true);
+                    }, 30000); 
+                }
+
                 return true;
             } else {
                 alert("⛔ Λάθος PIN για αυτή τη συσκευή.");
