@@ -40,7 +40,8 @@ window.PegasusEMS = {
             let h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
             // Το EMS δίνει 6 σετ σε όλες τις μυϊκές ομάδες λόγω καθολικής διέγερσης
             const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
-const dateStr = new Date().toLocaleDateString('el-GR');
+const rawDate = new Date();
+            const dateStr = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
             const hasCardio = localStorage.getItem("pegasus_cardio_kcal_" + dateStr);
 
             groups.forEach(g => {
