@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v18.2 TACTICAL SECURITY + OFFLINE MODE)
-   Protocol: Strict Data Analyst - Device Trusting & Custom UI Overlays
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.2 SIMPLE PIN ROLLBACK)
+   Protocol: Strict Data Analyst - Single Base64 PIN & Interceptors
    ========================================================================== */
 
 const PegasusCloud = {
@@ -23,101 +23,28 @@ const PegasusCloud = {
         if (!pin) return false;
         const cleanPin = pin.trim();
 
-        // 🛡️ ΒΗΜΑ 1: ΕΛΕΓΧΟΣ MASTER KEY (Angel21Angel22)
-        if (btoa(cleanPin) === "QW5nZWwyMUFuZ2VsMjI=") {
-            this.showTacticalPinSetup();
+        // 🛡️ ΜΟΝΑΔΙΚΟΣ ΕΛΕΓΧΟΣ: Απλό PIN (2375)
+        if (btoa(cleanPin) === "MjM3NQ==") { 
+            this.userKey = this.config.encryptedPart;
+            this.isUnlocked = true;
+            
+            localStorage.setItem("pegasus_vault_pin", cleanPin);
+            localStorage.setItem("pegasus_vault_time", Date.now().toString());
+            
+            this.pull(true);
+            
+            if (!this.syncInterval) {
+                this.syncInterval = setInterval(() => {
+                    if (this.isUnlocked) this.pull(true);
+                }, 30000); 
+            }
             return true;
         }
-
-        // ⚡ ΒΗΜΑ 2: ΚΑΘΗΜΕΡΙΝΗ ΠΡΟΣΒΑΣΗ ΜΕ ΤΟ ΠΡΟΣΩΠΙΚΟ PIN
-        const trustedPinBase64 = localStorage.getItem("pegasus_device_trusted");
-
-        if (trustedPinBase64) {
-            if (btoa(cleanPin) === trustedPinBase64) {
-                this.activateSession(cleanPin);
-                return true;
-            } else {
-                alert("⛔ Λάθος PIN για αυτή τη συσκευή.");
-                return false;
-            }
-        } else {
-            alert("🔒 ΜΗ ΠΙΣΤΟΠΟΙΗΜΕΝΗ ΣΥΣΚΕΥΗ\nΠαρακαλώ πληκτρολογήστε το Master Key στο πεδίο του PIN για να ενεργοποιήσετε αυτή τη συσκευή.");
-            return false;
-        }
-    },
-
-// 🟢 ΕΝΕΡΓΟΠΟΙΗΣΗ ΣΥΝΕΔΡΙΑΣ & ΣΥΓΧΡΟΝΙΣΜΟΥ (Universal v18.2)
-    activateSession: function(pinValue) {
-        this.userKey = this.config.encryptedPart;
-        this.isUnlocked = true;
-        localStorage.setItem("pegasus_vault_pin", pinValue);
-        localStorage.setItem("pegasus_vault_time", Date.now().toString());
-        
-        this.pull(true);
-        if (!this.syncInterval) {
-            this.syncInterval = setInterval(() => {
-                if (this.isUnlocked) this.pull(true);
-            }, 30000); 
-        }
-        console.log("🛡️ PEGASUS: Session Activated & Sync Breathing.");
-
-        // 🛡️ UNIVERSAL UI REVEAL: Καλύπτει και το Mobile (#main-wrapper) και το PC (#app-container)
-        const wrapper = document.getElementById('main-wrapper') || document.getElementById('app-container');
-        if (wrapper) wrapper.style.display = 'block';
-        
-        const pinModal = document.getElementById('pinModal');
-        if (pinModal) pinModal.style.display = 'none';
-
-        // Ενημέρωση κουμπιού Cloud (αν υπάρχει στο DOM)
-        const vaultBtn = document.getElementById("btnMasterVault");
-        if (vaultBtn) {
-            vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-            vaultBtn.style.color = "#00ff41";
-            vaultBtn.style.borderColor = "#00ff41";
-        }
-    },
-
-    // 🎨 TACTICAL UI OVERLAY: ΔΗΜΙΟΥΡΓΙΑ ΠΡΟΣΩΠΙΚΟΥ PIN
-    showTacticalPinSetup: function() {
-        const overlay = document.createElement('div');
-        overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:10000; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px; box-sizing:border-box; font-family:'Inter', sans-serif;";
-        
-        overlay.innerHTML = `
-            <div style="border:2px solid #00ff41; background:#050505; padding:40px 30px; border-radius:15px; text-align:center; width:100%; max-width:340px; box-shadow:0 0 40px rgba(0,255,65,0.4);">
-                <div style="font-size:40px; margin-bottom:15px;">🛡️</div>
-                <div style="color:#00ff41; font-weight:900; letter-spacing:3px; margin-bottom:10px; font-size:14px;">MASTER KEY ACCEPTED</div>
-                <div style="color:#666; font-size:11px; margin-bottom:25px; line-height:1.4;">ΟΡΙΣΤΕ ΤΟ ΠΡΟΣΩΠΙΚΟ ΣΑΣ PIN ΓΙΑ ΑΥΤΗ ΤΗ ΣΥΣΚΕΥΗ</div>
-                
-                <input type="number" id="customNewPin" placeholder="----" 
-                       style="width:100%; background:#000; border:1px solid #00ff41; color:#00ff41; padding:15px; font-size:32px; border-radius:10px; margin-bottom:25px; text-align:center; font-weight:900; outline:none; box-shadow: inset 0 0 10px rgba(0,255,65,0.1);">
-                
-                <button id="confirmPinBtn" 
-                        style="width:100%; background:#00ff41; color:#000; border:none; padding:18px; border-radius:10px; font-weight:900; cursor:pointer; letter-spacing:1px; transition: 0.3s;">
-                    ΠΙΣΤΟΠΟΙΗΣΗ ΣΥΣΚΕΥΗΣ
-                </button>
-            </div>
-        `;
-        
-        document.body.appendChild(overlay);
-        const input = document.getElementById('customNewPin');
-        input.focus();
-
-        document.getElementById('confirmPinBtn').onclick = () => {
-            const val = input.value;
-            if (val && val.length >= 4) {
-                localStorage.setItem("pegasus_device_trusted", btoa(val));
-                this.activateSession(val);
-                document.body.removeChild(overlay);
-                alert("✅ Η Συσκευή Πιστοποιήθηκε Επιτυχώς!");
-                location.reload();
-            } else {
-                alert("Το PIN πρέπει να είναι τουλάχιστον 4 ψηφία.");
-            }
-        };
+        return false;
     },
 
     pull: async function(silent = false) {
-        if (!this.isUnlocked || !this.userKey) return; // Προστασία για Guest Mode
+        if (!this.isUnlocked) return;
         if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         
         try {
@@ -162,7 +89,7 @@ const PegasusCloud = {
     },
 
     push: async function(silent = true) {
-        if (!this.isUnlocked || !this.hasSuccessfullyPulled || !this.userKey) return; // Προστασία για Guest Mode
+        if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
         if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
 
         const syncTimestamp = Date.now().toString();
@@ -201,40 +128,34 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// 🎯 SECURITY: Έλεγχος Κατά την Φόρτωση (24h Lock + Guest Mode)
+// 🎯 SECURITY: Απλός Έλεγχος 24 Ωρών κατά τη φόρτωση
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     const authTime = localStorage.getItem("pegasus_vault_time");
-    const isTrusted = localStorage.getItem("pegasus_device_trusted");
-    const pinModal = document.getElementById("pinModal");
-    const wrapper = document.getElementById('main-wrapper');
-
-    // 🛡️ ΣΕΝΑΡΙΟ 1: Υπάρχει ενεργή συνεδρία (24h)
-    if (savedPin && authTime && (Date.now() - parseInt(authTime) < 86400000)) {
-        window.PegasusCloud.unlock(savedPin);
-        // Το activateSession θα εμφανίσει το #main-wrapper
-    } 
-    // 🛡️ ΣΕΝΑΡΙΟ 2: Η συσκευή είναι πιστοποιημένη αλλά η συνεδρία έληξε
-    else if (isTrusted) {
-        console.log("🔒 PEGASUS: Session expired. Requiring PIN.");
-        localStorage.removeItem("pegasus_vault_pin");
-        localStorage.removeItem("pegasus_vault_time");
+    
+    if (savedPin) {
+        const now = Date.now();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
         
-        if (pinModal) pinModal.style.display = "flex";
-        if (wrapper) wrapper.style.display = 'none';
-    }
-    // 🛡️ ΣΕΝΑΡΙΟ 3: OFFLINE / GUEST MODE
-    else {
-        console.log("🔓 PEGASUS: Guest Mode Active. Local Storage Only.");
-        if (wrapper) wrapper.style.display = 'block';
-        if (pinModal) pinModal.style.display = "none";
-        
-        const vaultBtn = document.getElementById("btnMasterVault");
-        if (vaultBtn) {
-            vaultBtn.textContent = "OFFLINE (GUEST)";
-            vaultBtn.style.color = "#888";
-            vaultBtn.style.borderColor = "#888";
+        if (!authTime || (now - parseInt(authTime) > TWENTY_FOUR_HOURS)) {
+            console.log("🔒 PEGASUS: Session expired. Requiring PIN.");
+            localStorage.removeItem("pegasus_vault_pin");
+            localStorage.removeItem("pegasus_vault_time");
+            
+            const pinModal = document.getElementById("pinModal");
+            if (pinModal) pinModal.style.display = "flex";
+        } else {
+            window.PegasusCloud.unlock(savedPin);
+            const vaultBtn = document.getElementById("btnMasterVault");
+            if (vaultBtn) {
+                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+                vaultBtn.style.color = "#00ff41";
+                vaultBtn.style.borderColor = "#00ff41";
+            }
         }
+    } else {
+        const pinModal = document.getElementById("pinModal");
+        if (pinModal) pinModal.style.display = "flex";
     }
 });
 
@@ -299,22 +220,16 @@ if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                 console.log("🚀 CLOUD: Strict Push Requested.");
                 return originalPush().then(resolve).catch(reject);
             }
-
-            if (pushTimeout) {
-                clearTimeout(pushTimeout);
-            }
-
+            if (pushTimeout) clearTimeout(pushTimeout);
+            
             pushTimeout = setTimeout(async () => {
                 console.log("📡 CLOUD: Executing Batch Sync...");
                 try {
                     await originalPush();
                     pushTimeout = null;
                     resolve();
-                } catch(e) {
-                    reject(e);
-                }
+                } catch(e) { reject(e); }
             }, 2000); 
         });
     };
-    console.log("🛡️ PEGASUS CLOUD: Fast Promise-Debounce Active.");
 }
