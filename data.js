@@ -1,7 +1,7 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v15.1 (THE IRON LOGIC PROTOCOL - REAL BASELINE)
+   📦 PEGASUS DATA ENGINE - v16.0 (THE IRON LOGIC & UNIFIED DB PROTOCOL)
    Protocol: 5-Day Focus | 50-Min Daily | Dynamic UI | Active Split: IRON_LOGIC
-   Status: PRODUCTION READY | FULL CODE DELIVERY
+   Status: PRODUCTION READY | FULL CODE DELIVERY | ZERO-BUG BRIDGES ACTIVE
    ========================================================================== */
 
 // 1. DEFAULT PLAN: IRON_LOGIC (v15.4 - Absolute Alignment)
@@ -12,7 +12,7 @@ window.program = {
         { name: "Chest Flys", sets: 5, muscleGroup: "Στήθος", weight: "42" },
         { name: "Wide Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
         { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
-        { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "30" } // <-- ΕΔΩ
+        { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "30" }
     ], 
     "Τετάρτη": [ 
         { name: "Upright Rows", sets: 6, muscleGroup: "Ώμοι", weight: "30" },
@@ -32,7 +32,7 @@ window.program = {
     "Σάββατο": [ 
         { name: "Leg Extensions", sets: 8, muscleGroup: "Πόδια", weight: "36" },
         { name: "Sit Ups", sets: 6, muscleGroup: "Κορμός", weight: "0" },
-        { name: "Ab Crunches", sets: 6, muscleGroup: "Κορμός", weight: "30" }, // <-- ΕΠΙΣΗΣ ΕΔΩ
+        { name: "Ab Crunches", sets: 6, muscleGroup: "Κορμός", weight: "30" },
         { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
     ],
     "Κυριακή": [ 
@@ -114,9 +114,7 @@ window.setPegasusPlan = function(planKey) {
     window.pegasusTimerConfig = { prep: 10, work: 45, rest: 60 };
 
     const splits = {
-        'IRON_LOGIC': { 
-            timers: { prep: 10, work: 45, rest: 60 } 
-        },
+        'IRON_LOGIC': { timers: { prep: 10, work: 45, rest: 60 } },
         'PPL': { 
             timers: { prep: 10, work: 45, rest: 75 },
             "Τρίτη": [ 
@@ -192,14 +190,10 @@ window.setPegasusPlan = function(planKey) {
         });
     }
     
-    console.log(`🚀 PEGASUS DATA ENGINE: v15.1 Active. Plan: ${activePlan}`);
+    console.log(`🚀 PEGASUS DATA ENGINE: v16.0 Active. Plan: ${activePlan}`);
 
-    // ==========================================================================
-    // 🚀 ΔΥΝΑΜΙΚΟΣ ΥΠΟΛΟΓΙΣΜΟΣ ΕΒΔΟΜΑΔΙΑΙΟΥ ΟΓΚΟΥ ΓΙΑ ΤΙΣ ΜΠΑΡΕΣ (MOBILE UI)
-    // ==========================================================================
     window.getDynamicTargets = function() {
         const targets = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
-        
         for (const day in window.program) {
             window.program[day].forEach(ex => {
                 if (targets[ex.muscleGroup] !== undefined) {
@@ -210,3 +204,61 @@ window.setPegasusPlan = function(planKey) {
         return targets;
     };
 })();
+
+// ==========================================================================
+// 5. THE KOUKI MENU CONSOLIDATION (THE "SINGLE SOURCE OF TRUTH" PATCH)
+// ==========================================================================
+
+window.PegasusKoukiDB = [
+    { name: "Κοτόπουλο με κάρυ & λαχανικά", type: "poulika", price: 6.50, kcal: 580, protein: 52 },
+    { name: "Κοτόπουλο με χυλοπίτες", type: "poulika", price: 6.00, kcal: 680, protein: 48 },
+    { name: "Κοτόπουλο λεμονάτο", type: "poulika", price: 6.00, kcal: 550, protein: 52 },
+    { name: "Κοτόπουλο με πατάτες", type: "poulika", price: 6.00, kcal: 600, protein: 50 },
+    { name: "Μπάμιες με κοτόπουλο", type: "poulika", price: 6.00, kcal: 520, protein: 45 },
+    { name: "Κοτόσουπα", type: "soup", price: 4.50, kcal: 400, protein: 30 },
+    { name: "Χοιρινό με δαμάσκηνα", type: "kreas", price: 6.50, kcal: 650, protein: 42 },
+    { name: "Χοιρινό πρασοσέλινο", type: "kreas", price: 6.00, kcal: 610, protein: 40 },
+    { name: "Μοσχαράκι κοκκινιστό", type: "kreas", price: 6.50, kcal: 640, protein: 45 },
+    { name: "Μοσχάρι γιουβέτσι", type: "kreas", price: 6.50, kcal: 620, protein: 45 },
+    { name: "Μπιφτέκι μοσχαρίσιο", type: "kreas", price: 6.00, kcal: 600, protein: 45 },
+    { name: "Μπιφτέκια μοσχαρίσια σχάρας", type: "kreas", price: 6.00, kcal: 600, protein: 45 },
+    { name: "Γιουβαρλάκια αυγολέμονο", type: "kreas", price: 6.00, kcal: 550, protein: 38 },
+    { name: "Ρεβύθια με κάρυ", type: "ospro", price: 4.50, kcal: 450, protein: 18 },
+    { name: "Ρεβύθια λεμονάτα", type: "ospro", price: 4.50, kcal: 420, protein: 18 },
+    { name: "Γίγαντες πλακί", type: "ospro", price: 6.00, kcal: 500, protein: 20 },
+    { name: "Φασολάδα", type: "ospro", price: 4.50, kcal: 400, protein: 18 },
+    { name: "Φασολάκια", type: "ladero", price: 4.50, kcal: 350, protein: 8 },
+    { name: "Μουσακάς", type: "carb", price: 6.00, kcal: 830, protein: 26 },
+    { name: "Παστίτσιο", type: "carb", price: 6.00, kcal: 750, protein: 35 },
+    { name: "Μακαρόνια με κιμά", type: "carb", price: 5.50, kcal: 600, protein: 30 },
+    { name: "Βακαλάος σκορδαλιά", type: "psari", price: 6.50, kcal: 550, protein: 35 }
+];
+
+// ==========================================================================
+// 6. LEGACY BRIDGES (ZERO-BUG TOLERANCE)
+// Τροφοδοτούμε τα εξωτερικά αρχεία δυναμικά χωρίς να τα αγγίξουμε!
+// ==========================================================================
+
+// Bridge 1: Για το diet-mobile.js
+window.KOUKI_MASTER = window.PegasusKoukiDB.map(f => ({ name: f.name, type: f.type }));
+
+// Bridge 2: Για το extensions.js
+window.KOUKI_MENU = window.PegasusKoukiDB.map(f => ({ name: f.name, kcal: f.kcal, protein: f.protein, type: f.type }));
+
+// Bridge 3: Για το dietAdvisor.js & food.js
+// Κάνουμε ΟΛΑ τα φαγητά διαθέσιμα ΚΑΘΕ μέρα, για να μην λείπει ποτέ επιλογή
+const dailyFormat = window.PegasusKoukiDB.map(f => ({ n: f.name, p: f.price, t: f.type }));
+window.KOUKI_MASTER_MENU = {
+    "Monday": dailyFormat, "Tuesday": dailyFormat, "Wednesday": dailyFormat,
+    "Thursday": dailyFormat, "Friday": dailyFormat, "Saturday": dailyFormat, "Sunday": dailyFormat
+};
+
+// Bridge 4: UNIFIED MACRO ENGINE (Αποτρέπει διπλές δηλώσεις στο food.js)
+window.getPegasusMacros = function(foodName, fallbackType) {
+    const item = window.PegasusKoukiDB.find(f => f.name === foodName || f.name.includes(foodName));
+    if (item) return { kcal: item.kcal, protein: item.protein };
+    
+    // Safety Fallback (Aν προστεθεί κάτι καινούργιο χειροκίνητα στο μέλλον)
+    let p = (fallbackType === 'kreas' || fallbackType === 'poulika') ? 45 : (fallbackType === 'ospro' ? 18 : 25);
+    return { kcal: 550, protein: p };
+};
