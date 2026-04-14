@@ -468,14 +468,34 @@
             }); 
         }
 
-        function updateMuscleUI() { 
+function updateMuscleUI() { 
             const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-            const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
             const container = document.getElementById("muscle-container");
             if (!container) return;
+
+            // 🚀 ΔΥΝΑΜΙΚΗ ΑΝΤΛΗΣΗ: Παίρνει τους στόχους κατευθείαν από το data.js
+            const targets = typeof window.getDynamicTargets === 'function' 
+                ? window.getDynamicTargets() 
+                : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+
             container.innerHTML = Object.keys(targets).map(g => {
-                const v = h[g] || 0; const p = Math.min((v/targets[g])*100, 100);
-                return `<div class="mini-card"><span class="mini-label">${g}</span><div class="mini-val">${v}/${targets[g]}</div><div class="bar-bg"><div class="bar-fill" style="width:${p}%;"></div></div></div>`;
+                const targetSets = targets[g];
+                
+                // 🛡️ TACTICAL UX: Αν μια ομάδα έχει 0 σετ, η μπάρα εξαφανίζεται
+                if (targetSets === 0) return ''; 
+
+                const v = h[g] || 0; 
+                const p = Math.min((v / targetSets) * 100, 100);
+                
+                return `
+                    <div class="mini-card">
+                        <span class="mini-label">${g}</span>
+                        <div class="mini-val">${v} / ${targetSets}</div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" style="width:${p}%;"></div>
+                        </div>
+                    </div>
+                `;
             }).join('');
         }
 
