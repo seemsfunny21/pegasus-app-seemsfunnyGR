@@ -120,3 +120,73 @@
         }
     });
 })();
+
+/* ==========================================================================
+   ☀️ PEGASUS MODULE: MORNING CHECK-IN PROTOCOL (v1.0)
+   Protocol: Time-Gated Prompt (After 08:00), Auto-Dismiss & Fade Logic
+   ========================================================================== */
+
+(function() {
+    function triggerMorningRoutine() {
+        const now = new Date();
+        const today = now.toLocaleDateString('el-GR');
+        const currentHour = now.getHours();
+        const lastCheckin = localStorage.getItem('pegasus_morning_checkin');
+
+        // 🛑 ΕΛΕΓΧΟΣ: Μετά τις 08:00 ΚΑΙ να μην έχει εμφανιστεί ήδη σήμερα
+        if (currentHour >= 8 && lastCheckin !== today) {
+            
+            // Καταγραφή στο μητρώο για να μην ξαναβγεί
+            localStorage.setItem('pegasus_morning_checkin', today);
+
+            // Δημιουργία του Ghost UI
+            const promptBox = document.createElement('div');
+            promptBox.id = 'morning-prompt-box';
+            promptBox.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 80%;
+                max-width: 300px;
+                background: rgba(10, 10, 10, 0.95);
+                border: 2px solid #00ff41;
+                border-radius: 16px;
+                padding: 25px 20px;
+                text-align: center;
+                box-shadow: 0 0 30px rgba(0, 255, 65, 0.15);
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.5s ease-in-out;
+                pointer-events: none; /* Δεν μπλοκάρει τα κλικ σου από κάτω */
+            `;
+
+            promptBox.innerHTML = `
+                <div style="font-size: 35px; margin-bottom: 12px; filter: drop-shadow(0 0 10px rgba(0,255,65,0.4));">☀️</div>
+                <div style="font-size: 12px; font-weight: 900; color: #00ff41; letter-spacing: 2px; margin-bottom: 8px;">
+                    ΠΡΩΙΝΗ ΑΝΑΦΟΡΑ
+                </div>
+                <div style="font-size: 11px; color: #ddd; font-weight: 600; line-height: 1.5;">
+                    Συστήματα ενεργά. Παρακαλώ μην ξεχάσετε να καταχωρήσετε το 
+                    <span style="color:#00ff41; font-weight:900;">Βάρος</span> και τον 
+                    <span style="color:#00ff41; font-weight:900;">Ύπνο</span> σας.
+                </div>
+            `;
+
+            document.body.appendChild(promptBox);
+
+            // ⏱️ ΧΡΟΝΟΔΙΑΓΡΑΜΜΑ (TIMELINE)
+            setTimeout(() => promptBox.style.opacity = '1', 500); // 0.5s μετά: Εμφάνιση
+            
+            setTimeout(() => {
+                promptBox.style.opacity = '0'; // Μετά από 2.5s: Σβήσιμο
+                setTimeout(() => promptBox.remove(), 500); // Καθαρισμός DOM
+            }, 3000); 
+        }
+    }
+
+    // Εκκίνηση της ρουτίνας 1.5 δευτερόλεπτο αφού φορτώσει η εφαρμογή
+    document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(triggerMorningRoutine, 1500);
+    });
+})();
