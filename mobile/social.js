@@ -1,11 +1,11 @@
 /* ==========================================================================
-   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.1)
-   Protocol: Search Integration, 1-10 Scale Rating & Real-Time Sync
+   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.2)
+   Protocol: Search Integration, Smart Link Parsing & Edit Capabilities
    ========================================================================== */
 
 (function() {
     const SOCIAL_DATA_KEY = 'pegasus_social_v1';
-    let currentSearchTerm = ""; // 🔍 Global state για την αναζήτηση
+    let currentSearchTerm = ""; 
 
     window.PegasusSocial = {
         setRating: function(id, newRating) {
@@ -15,6 +15,19 @@
 
             entities[idx].rating = newRating;
             this.saveAndRender(entities);
+        },
+
+        // ⚙️ ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Επεξεργασία (Edit)
+        editEntry: function(id) {
+            let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
+            const idx = entities.findIndex(e => e.id === id);
+            if (idx === -1) return;
+
+            const newVal = prompt("Επεξεργασία (Όνομα & Link):", entities[idx].name);
+            if (newVal !== null && newVal.trim() !== '') {
+                entities[idx].name = newVal.trim();
+                this.saveAndRender(entities);
+            }
         },
 
         deleteEntry: function(id) {
@@ -58,7 +71,6 @@
             document.getElementById('newSocialName').value = '';
         },
 
-        // 🔍 ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ ΑΝΑΖΗΤΗΣΗΣ
         handleSearch: function(term) {
             currentSearchTerm = term.toLowerCase().trim();
             window.renderSocialContent();
@@ -96,7 +108,7 @@
             </div>
 
             <div id="addSocialForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
-                <input type="text" id="newSocialName" placeholder="Όνομα Επαφής..." style="margin-bottom: 15px; border: 2px solid #444;">
+                <input type="text" id="newSocialName" placeholder="Όνομα & Link Προφίλ..." style="margin-bottom: 15px; border: 2px solid #444;">
                 <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
             </div>
 
@@ -111,7 +123,6 @@
 
         let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
         
-        // 🚀 ΦΙΛΤΡΑΡΙΣΜΑ ΒΑΣΕΙ ΑΝΑΖΗΤΗΣΗΣ
         if (currentSearchTerm !== "") {
             entities = entities.filter(item => item.name.toLowerCase().includes(currentSearchTerm));
         }
@@ -124,6 +135,25 @@
                 if (item.rating <= 3) { activeColor = '#ff4444'; labelText = 'ΧΑΜΗΛΗ ΕΠΙΚΟΙΝΩΝΙΑ'; }
                 else if (item.rating <= 7) { activeColor = '#ffbb33'; labelText = 'ΚΑΝΟΝΙΚΗ ΡΟΗ'; }
                 else { activeColor = '#00ff41'; labelText = 'ΥΨΗΛΗ ΟΜΙΛΗΤΙΚΟΤΗΤΑ'; }
+            }
+
+            // 🚀 SMART URL PARSING ENGINE
+            let displayName = item.name;
+            let linkIconHtml = '';
+            const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/i;
+            const urlMatch = item.name.match(urlRegex);
+
+            if (urlMatch) {
+                let hrefUrl = urlMatch[0].startsWith('http') ? urlMatch[0] : 'https://' + urlMatch[0];
+                displayName = item.name.replace(urlMatch[0], '').trim(); // Καθαρίζει το link από το όνομα
+                if (displayName === '') displayName = "Άγνωστη Επαφή"; // Fallback αν έβαλε μόνο URL
+                
+                linkIconHtml = `
+                    <a href="${hrefUrl}" target="_blank" onclick="event.stopPropagation()" 
+                       style="margin-left: 10px; background: #1877F2; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-decoration: none; display: inline-block; vertical-align: middle; box-shadow: 0 0 5px rgba(24, 119, 242, 0.4);">
+                        🔗 FB PROFILE
+                    </a>
+                `;
             }
 
             let scaleHtml = '<div style="display: flex; gap: 4px; margin-top: 12px;">';
@@ -147,15 +177,24 @@
                 <div class="mini-card" style="border-left: 4px solid ${activeColor}; padding: 15px; background: rgba(15,15,15,0.95);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
-                            <div style="font-weight: 900; font-size: 18px; color: #fff;">${item.name}</div>
+                            <div style="font-weight: 900; font-size: 18px; color: #fff; display: flex; align-items: center; flex-wrap: wrap;">
+                                ${displayName} ${linkIconHtml}
+                            </div>
                             <div style="font-size: 10px; color: ${activeColor}; font-weight: 900; margin-top: 4px; letter-spacing: 1px;">
                                 [ ${labelText} ]
                             </div>
                         </div>
-                        <button onclick="window.PegasusSocial.deleteEntry('${item.id}')" 
-                                style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">
-                            🗑️
-                        </button>
+                        
+                        <div style="display: flex; gap: 6px;">
+                            <button onclick="window.PegasusSocial.editEntry('${item.id}')" 
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid #444; color: #ccc; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">
+                                ⚙️
+                            </button>
+                            <button onclick="window.PegasusSocial.deleteEntry('${item.id}')" 
+                                    style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
                     ${scaleHtml}
                 </div>
