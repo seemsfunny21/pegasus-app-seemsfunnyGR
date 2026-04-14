@@ -1,11 +1,8 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.6 MAXIMALIST STRICT)
-   Protocol: Master Macro Engine Integration & Absolute Data Consistency
-   Status: STABLE | ZERO-BUG RE-VERIFIED | SINGLE SOURCE OF TRUTH ACTIVE
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.7 MAXIMALIST STRICT)
+   Protocol: Master Macro Engine Integration & Global Metabolic Sync
+   Status: FINAL STABLE | ZERO-BUG RE-VERIFIED | SINGLE SOURCE OF TRUTH ACTIVE
    ========================================================================== */
-
-// 🎯 Ο πίνακας KOUKI_MASTER και η συνάρτηση getMobilePegasusMacros ΔΙΑΓΡΑΦΗΚΑΝ.
-// Το σύστημα πλέον διαβάζει αποκλειστικά από το `window.getPegasusMacros` του data.js.
 
 window.PegasusDiet = {
     // Helper function για απόλυτη ταύτιση ημερομηνιών με το Desktop (food.js)
@@ -71,7 +68,7 @@ window.PegasusDiet = {
         this.closeSearch();
 
         this.updateUI();
-        if(window.PegasusCloud) await window.PegasusCloud.push();
+        if(window.PegasusCloud) await window.PegasusCloud.push(true);
     },
 
     askAdvisor: function() {
@@ -90,7 +87,6 @@ window.PegasusDiet = {
         `;
 
         advice.options.forEach(opt => {
-            // 🎯 STRICT ALIGNMENT: Χρήση του data.js Macro Engine
             const macros = (typeof window.getPegasusMacros === "function") 
                            ? window.getPegasusMacros(opt.n, opt.t) 
                            : { kcal: 550, protein: 45 };
@@ -164,7 +160,6 @@ window.PegasusDiet = {
         
         let dailyMenu = [];
         
-        // Σάρωση από το data.js Legacy Bridge
         if (typeof window.KOUKI_MASTER_MENU !== 'undefined' && window.KOUKI_MASTER_MENU[targetDayKey]) {
             dailyMenu = window.KOUKI_MASTER_MENU[targetDayKey];
         } else if (typeof window.KOUKI_MASTER !== 'undefined') {
@@ -176,11 +171,8 @@ window.PegasusDiet = {
             <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
                 <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${targetDayName} (ΚΟΥΚΙ)</span>
             </div>` + dailyMenu.map(item => {
-                
                 const itemName = item.n || item.name;
                 const itemTag = item.t || item.type || "kreas";
-
-                // 🎯 STRICT MACRO OVERRIDE: Διαβάζει αποκλειστικά από την κεντρική μηχανή
                 const macros = (typeof window.getPegasusMacros === "function") 
                                ? window.getPegasusMacros(itemName, itemTag) 
                                : { kcal: 550, protein: 45 };
@@ -209,11 +201,11 @@ window.PegasusDiet = {
             tk += parseFloat(item.kcal || 0); 
             tp += parseFloat(item.protein || 0); 
         });
-// --- ΠΡΟΣΘΕΣΕ ΑΥΤΕΣ ΤΙΣ 3 ΓΡΑΜΜΕΣ ΕΔΩ ---
+
         // 🛡️ GLOBAL METABOLIC SYNC (Κάνει τις θερμίδες ορατές σε όλο το OS)
         localStorage.setItem(window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal", Math.round(tk));
         localStorage.setItem(window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein", Math.round(tp));
-        // ----------------------------------------
+
         const cardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
         const targetKcal = 2800 + cardioKcal;
 
@@ -243,7 +235,7 @@ window.PegasusDiet = {
         localStorage.setItem(prefix + dateStr, JSON.stringify(log));
         
         this.updateUI();
-        if(window.PegasusCloud) await window.PegasusCloud.push();
+        if(window.PegasusCloud) await window.PegasusCloud.push(true);
     },
 
     getLog: function(dateStr) {
