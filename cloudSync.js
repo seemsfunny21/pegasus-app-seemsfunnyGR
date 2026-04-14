@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v18.2 TACTICAL SECURITY)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v18.2 TACTICAL SECURITY + OFFLINE MODE)
    Protocol: Strict Data Analyst - Device Trusting & Custom UI Overlays
    ========================================================================== */
 
@@ -33,7 +33,6 @@ const PegasusCloud = {
         const trustedPinBase64 = localStorage.getItem("pegasus_device_trusted");
 
         if (trustedPinBase64) {
-            // Αν η συσκευή είναι ήδη έμπιστη, ελέγχουμε αν το PIN ταιριάζει
             if (btoa(cleanPin) === trustedPinBase64) {
                 this.activateSession(cleanPin);
                 return true;
@@ -42,7 +41,6 @@ const PegasusCloud = {
                 return false;
             }
         } else {
-            // 🔥 ΑΝ Η ΣΥΣΚΕΥΗ ΕΙΝΑΙ ΑΓΝΩΣΤΗ ΚΑΙ Ο ΧΡΗΣΤΗΣ ΔΕΝ ΕΒΑΛΕ ΤΟ MASTER KEY
             alert("🔒 ΜΗ ΠΙΣΤΟΠΟΙΗΜΕΝΗ ΣΥΣΚΕΥΗ\nΠαρακαλώ πληκτρολογήστε το Master Key στο πεδίο του PIN για να ενεργοποιήσετε αυτή τη συσκευή.");
             return false;
         }
@@ -62,6 +60,20 @@ const PegasusCloud = {
             }, 30000); 
         }
         console.log("🛡️ PEGASUS: Session Activated & Sync Breathing.");
+
+        // 🛡️ ΕΜΦΑΝΙΣΗ UI (Κρύβει το PIN modal, εμφανίζει το App)
+        const wrapper = document.getElementById('main-wrapper');
+        if (wrapper) wrapper.style.display = 'block';
+        
+        const pinModal = document.getElementById('pinModal');
+        if (pinModal) pinModal.style.display = 'none';
+
+        const vaultBtn = document.getElementById("btnMasterVault");
+        if (vaultBtn) {
+            vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+            vaultBtn.style.color = "#00ff41";
+            vaultBtn.style.borderColor = "#00ff41";
+        }
     },
 
     // 🎨 TACTICAL UI OVERLAY: ΔΗΜΙΟΥΡΓΙΑ ΠΡΟΣΩΠΙΚΟΥ PIN
@@ -104,7 +116,7 @@ const PegasusCloud = {
     },
 
     pull: async function(silent = false) {
-        if (!this.isUnlocked) return;
+        if (!this.isUnlocked || !this.userKey) return; // Προστασία για Guest Mode
         if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         
         try {
@@ -125,36 +137,12 @@ const PegasusCloud = {
             if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
                 console.log("☁️ PEGASUS: New Cloud Data Found. Syncing Full Registry...");
 
-                // 1. FLAT SYNC
                 Object.keys(cloud).forEach(key => {
                     if (key.startsWith('pegasus_') || key.startsWith('food_log_') || key.startsWith('kouki_')) {
                         const val = typeof cloud[key] === 'string' ? cloud[key] : JSON.stringify(cloud[key]);
                         localStorage.setItem(key, val);
                     }
                 });
-
-                // 2. LEGACY SUPPORT
-                const map = {
-                    'weekly_history': 'pegasus_weekly_history',
-                    'muscle_targets': 'pegasus_muscle_targets',
-                    'supp_inventory': 'pegasus_supp_inventory',
-                    'peg_contacts': 'pegasus_contacts',
-                    'car_dates': 'pegasus_car_dates',
-                    'car_service': 'pegasus_car_service',
-                    'car_specs': 'pegasus_car_specs',
-                    'parking_loc': 'pegasus_parking_loc',
-                    'food_library': 'pegasus_food_library',
-                    'peg_stats': 'pegasus_stats'
-                };
-                Object.entries(map).forEach(([ck, lk]) => {
-                    if(cloud[ck] && !cloud[lk]) localStorage.setItem(lk, JSON.stringify(cloud[ck]));
-                });
-
-                if(cloud.all_food_logs) {
-                    Object.keys(cloud.all_food_logs).forEach(k => {
-                        if(!cloud[k]) localStorage.setItem(k, JSON.stringify(cloud.all_food_logs[k]));
-                    });
-                }
 
                 localStorage.setItem("pegasus_last_push", cloud.last_update_ts.toString());
                 
@@ -173,7 +161,7 @@ const PegasusCloud = {
     },
 
     push: async function(silent = true) {
-        if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
+        if (!this.isUnlocked || !this.hasSuccessfullyPulled || !this.userKey) return; // Προστασία για Guest Mode
         if (!silent && typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
 
         const syncTimestamp = Date.now().toString();
@@ -212,33 +200,39 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// 🎯 SECURITY: Έλεγχος 24 Ωρών κατά τη φόρτωση
+// 🎯 SECURITY: Έλεγχος Κατά την Φόρτωση (24h Lock + Guest Mode)
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     const authTime = localStorage.getItem("pegasus_vault_time");
-    
-    if (savedPin) {
-        const now = Date.now();
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; // 24 ώρες σε milliseconds
+    const isTrusted = localStorage.getItem("pegasus_device_trusted");
+    const pinModal = document.getElementById("pinModal");
+    const wrapper = document.getElementById('main-wrapper');
+
+    // 🛡️ ΣΕΝΑΡΙΟ 1: Υπάρχει ενεργή συνεδρία (24h)
+    if (savedPin && authTime && (Date.now() - parseInt(authTime) < 86400000)) {
+        window.PegasusCloud.unlock(savedPin);
+        // Το activateSession θα εμφανίσει το #main-wrapper
+    } 
+    // 🛡️ ΣΕΝΑΡΙΟ 2: Η συσκευή είναι πιστοποιημένη αλλά η συνεδρία έληξε
+    else if (isTrusted) {
+        console.log("🔒 PEGASUS: Session expired. Requiring PIN.");
+        localStorage.removeItem("pegasus_vault_pin");
+        localStorage.removeItem("pegasus_vault_time");
         
-        // Έλεγχος αν πέρασαν 24 ώρες ή αν λείπει το timestamp
-        if (!authTime || (now - parseInt(authTime) > TWENTY_FOUR_HOURS)) {
-            console.log("🔒 PEGASUS: Session expired (24h limit). Requiring PIN.");
-            localStorage.removeItem("pegasus_vault_pin");
-            localStorage.removeItem("pegasus_vault_time");
-            
-            // Εμφάνιση του Modal PIN αν υπάρχει στο DOM (Desktop & Mobile)
-            const pinModal = document.getElementById("pinModal");
-            if (pinModal) pinModal.style.display = "flex";
-        } else {
-            // Το PIN είναι ακόμα έγκυρο, ξεκλειδώνουμε
-            window.PegasusCloud.unlock(savedPin);
-            const vaultBtn = document.getElementById("btnMasterVault");
-            if (vaultBtn) {
-                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-                vaultBtn.style.color = "#00ff41";
-                vaultBtn.style.borderColor = "#00ff41";
-            }
+        if (pinModal) pinModal.style.display = "flex";
+        if (wrapper) wrapper.style.display = 'none';
+    }
+    // 🛡️ ΣΕΝΑΡΙΟ 3: OFFLINE / GUEST MODE
+    else {
+        console.log("🔓 PEGASUS: Guest Mode Active. Local Storage Only.");
+        if (wrapper) wrapper.style.display = 'block';
+        if (pinModal) pinModal.style.display = "none";
+        
+        const vaultBtn = document.getElementById("btnMasterVault");
+        if (vaultBtn) {
+            vaultBtn.textContent = "OFFLINE (GUEST)";
+            vaultBtn.style.color = "#888";
+            vaultBtn.style.borderColor = "#888";
         }
     }
 });
