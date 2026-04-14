@@ -19,27 +19,52 @@ const PegasusCloud = {
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
-    unlock: function(pin) {
+unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
-        if (btoa(cleanPin) === "MjM3NQ==") { 
-            this.userKey = this.config.encryptedPart;
-            this.isUnlocked = true;
-            
-            // 🎯 SECURITY: Αποθήκευση PIN και Ώρας ξεκλειδώματος (Timestamp)
-            localStorage.setItem("pegasus_vault_pin", cleanPin);
-            localStorage.setItem("pegasus_vault_time", Date.now().toString());
-            
-            this.pull(true);
-            
-            if (!this.syncInterval) {
-                this.syncInterval = setInterval(() => {
-                    if (this.isUnlocked) this.pull(true);
-                }, 30000); 
+
+        // 🛡️ ΒΗΜΑ 1: ΕΛΕΓΧΟΣ MASTER KEY (Για πιστοποίηση νέας συσκευής)
+        // Κωδικός: Angel21Angel22
+        if (btoa(cleanPin) === "QW5nZWwyMUFuZ2VsMjI=") {
+            // Ζητάμε από τον χρήστη να ορίσει το ΠΡΟΣΩΠΙΚΟ του PIN για αυτή τη συσκευή
+            const newLocalPin = prompt("🔑 MASTER KEY ΑΠΟΔΕΚΤΟ!\nΟρίστε ένα προσωπικό PIN (τουλάχιστον 4 ψηφία) για γρήγορη πρόσβαση σε ΑΥΤΗ τη συσκευή:");
+
+            if (newLocalPin && newLocalPin.length >= 4) {
+                // Αποθηκεύουμε το προσωπικό PIN τοπικά και κρυπτογραφημένα (Base64)
+                localStorage.setItem("pegasus_device_trusted", btoa(newLocalPin));
+                alert(`✅ Συσκευή Πιστοποιήθηκε!\nΤο PIN σας (${newLocalPin}) αποθηκεύτηκε. Χρησιμοποιήστε το για μελλοντική πρόσβαση.`);
+
+                this.userKey = this.config.encryptedPart;
+                this.isUnlocked = true;
+                localStorage.setItem("pegasus_vault_pin", newLocalPin); 
+                localStorage.setItem("pegasus_vault_time", Date.now());
+                return true;
+            } else {
+                alert("⛔ Η διαδικασία ακυρώθηκε. Απαιτείται έγκυρο PIN.");
+                return false;
             }
-            return true;
         }
-        return false;
+
+        // ⚡ ΒΗΜΑ 2: ΚΑΘΗΜΕΡΙΝΗ ΠΡΟΣΒΑΣΗ ΜΕ ΤΟ ΠΡΟΣΩΠΙΚΟ PIN
+        const trustedPinBase64 = localStorage.getItem("pegasus_device_trusted");
+
+        if (trustedPinBase64) {
+            // Αν η συσκευή είναι "έμπιστη", ελέγχουμε αν το PIN ταιριάζει με αυτό που είχε ορίσει
+            if (btoa(cleanPin) === trustedPinBase64) {
+                this.userKey = this.config.encryptedPart;
+                this.isUnlocked = true;
+                localStorage.setItem("pegasus_vault_pin", cleanPin);
+                localStorage.setItem("pegasus_vault_time", Date.now());
+                return true;
+            } else {
+                alert("⛔ Λάθος PIN για αυτή τη συσκευή.");
+                return false;
+            }
+        } else {
+            // Αν δεν υπάρχει trusted PIN, η συσκευή είναι άγνωστη.
+            alert("⛔ Μη αναγνωρισμένη συσκευή.\nΕισάγετε πρώτα το Master Key για να πιστοποιήσετε τη συσκευή και να ορίσετε το δικό σας PIN.");
+            return false;
+        }
     },
 
     pull: async function(silent = false) {
