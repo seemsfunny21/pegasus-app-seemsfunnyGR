@@ -14,7 +14,7 @@ function weatherCodeToEmoji(code) {
 
 window.updateWeatherUI = async function() {
     try {
-        // Ioannina Coordinates (Σταθερά στα Γιάννενα)
+        // Ioannina Coordinates
         const url = "https://api.open-meteo.com/v1/forecast?latitude=39.667&longitude=20.850&current_weather=true";
         const res = await fetch(url);
         const data = await res.json();
@@ -24,12 +24,11 @@ window.updateWeatherUI = async function() {
             const code = data.current_weather.weathercode;
             const emoji = weatherCodeToEmoji(code);
 
-            // Τυπώνει το αποτέλεσμα στο UI
             const weatherEl = document.querySelector('.weather-text');
             if (weatherEl) {
                 weatherEl.innerHTML = `${emoji} ${temp}°C`;
             }
-            console.log(`[WEATHER UI] Updated: ${temp}°C ${emoji}`);
+            console.log(`[WEATHER UI] Sync Complete: ${temp}°C ${emoji}`);
         }
     } catch (err) {
         console.error("PEGASUS WEATHER ERROR:", err);
@@ -40,6 +39,6 @@ window.updateWeatherUI = async function() {
 
 // Εκκίνηση με το φόρτωμα της σελίδας
 document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(window.updateWeatherUI, 1000); 
+    setTimeout(window.updateWeatherUI, 1500); 
     setInterval(window.updateWeatherUI, 30 * 60 * 1000); // Ανανέωση κάθε 30 λεπτά
 });

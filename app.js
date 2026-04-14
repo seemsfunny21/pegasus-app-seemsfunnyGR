@@ -757,12 +757,12 @@ window.onload = () => {
     }
 
    // Έλεγχος βάρους 2 δευτερόλεπτα μετά τη σύνδεση με το Cloud
-    setTimeout(() => {
-        if (window.PegasusCloud && window.PegasusCloud.getMasterWeight) {
-            const mWeight = window.PegasusCloud.getMasterWeight();
-            window.alignPegasusWeight(mWeight);
-        }
-    }, 2000);
+setTimeout(() => {
+    if (window.PegasusCloud && window.PegasusCloud.getMasterWeight) {
+        const mWeight = window.PegasusCloud.getMasterWeight();
+        window.alignPegasusWeight(mWeight);
+    }
+}, 2000);
 
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
     createNavbar();
@@ -826,55 +826,14 @@ window.onload = () => {
             else alert("Reporting Engine Offline");
         },
         "btnSaveSettings": () => { 
-            console.log("⚙️ PEGASUS: Saving Master Settings...");
-            
-            // 1. Αποθήκευση Βασικών Στοιχείων (Βάρος, Ύψος, Ηλικία, Kcal, Prot)
-            const fields = [
-                { id: "userWeightInput", key: "pegasus_weight" },
-                { id: "userHeightInput", key: "pegasus_height" },
-                { id: "userAgeInput", key: "pegasus_age" },
-                { id: "userGenderInput", key: "pegasus_gender" },
-                { id: "goalKcalInput", key: "pegasus_goal_kcal" },
-                { id: "goalProteinInput", key: "pegasus_goal_protein" }
-            ];
-
-            fields.forEach(f => {
-                const el = document.getElementById(f.id);
-                if (el && el.value) localStorage.setItem(f.key, el.value);
-            });
-
-            // 2. Αποθήκευση Weekly Muscle Targets
-            const targets = {};
-            ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
-                const el = document.getElementById(`target${m}Input`);
-                if (el && el.value) {
-                    targets[m] = parseInt(el.value);
-                } else {
-                    // Fallback αν το άφησες άδειο
-                    const defaultTargets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-                    targets[m] = defaultTargets[m];
-                }
-            });
-            localStorage.setItem("pegasus_muscle_targets", JSON.stringify(targets));
-
-            // 3. Ενημέρωση της Class του Βάρους (Αν υπάρχει)
-            const weightVal = document.getElementById("userWeightInput")?.value;
-            if (weightVal && window.PegasusWeight && typeof window.PegasusWeight.save === "function") {
-                window.PegasusWeight.save(weightVal);
-            }
-
-            // 4. Force Sync & Reload
+            const weightVal = document.getElementById("userWeightInput")?.value || 74;
+            const weightKey = window.PegasusManifest?.user.weight || "pegasus_weight";
+            if (window.PegasusWeight && typeof window.PegasusWeight.save === "function") window.PegasusWeight.save(weightVal);
+            else localStorage.setItem(weightKey, weightVal);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
-            
-            const btn = document.getElementById('btnSaveSettings');
-            if (btn) {
-                btn.textContent = "✅ ΑΠΟΘΗΚΕΥΤΗΚΑΝ";
-                btn.style.background = "#fff";
-            }
-            
-            setTimeout(() => { location.reload(); }, 600);
+            setTimeout(() => { location.reload(); }, 300);
         }
-    }; // <--- 🟢 ΑΥΤΟ ΤΟ ΚΛΕΙΣΙΜΟ ΕΛΕΙΠΕ!
+    };
 
     // 2. Binding Logic με Tactical Stop Propagation (Η Ασπίδα)
     Object.keys(window.masterUI).forEach(btnId => {
