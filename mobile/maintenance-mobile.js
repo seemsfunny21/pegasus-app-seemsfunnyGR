@@ -68,7 +68,7 @@
             window.renderMaintenanceContent();
 
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(); 
+                window.PegasusCloud.push(true); // 🛡️ FIX: Aκαριαίο Cloud Sync
             }
         }
     };
@@ -98,7 +98,7 @@
         document.body.appendChild(viewDiv);
     }
 
-// 4. Rendering Engine (Σχεδίαση Λίστας - V1.1 CALENDAR SYNC)
+    // 4. Rendering Engine (Σχεδίαση Λίστας - V1.1 CALENDAR SYNC)
     window.renderMaintenanceContent = function() {
         const container = document.getElementById('maint-content');
         if (!container) return;
