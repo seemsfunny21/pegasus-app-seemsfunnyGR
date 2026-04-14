@@ -57,7 +57,7 @@ window.PegasusLifting = {
 
             // ☁️ REAL-TIME CLOUD TRIGGER
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(); 
+               window.PegasusCloud.push(true);
             }
         }
     };
