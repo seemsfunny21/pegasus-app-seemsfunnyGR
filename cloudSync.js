@@ -128,34 +128,29 @@ const PegasusCloud = {
 
 window.PegasusCloud = PegasusCloud;
 
-// 🎯 SECURITY: Απλός Έλεγχος 24 Ωρών κατά τη φόρτωση
+// 🎯 SECURITY: Έλεγχος κατά τη φόρτωση (Απλό PIN Rollback - PC Friendly)
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     const authTime = localStorage.getItem("pegasus_vault_time");
+    const isMobile = window.location.pathname.includes('mobile/'); // Ελέγχουμε αν είμαστε σε mobile
     
-    if (savedPin) {
-        const now = Date.now();
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-        
-        if (!authTime || (now - parseInt(authTime) > TWENTY_FOUR_HOURS)) {
-            console.log("🔒 PEGASUS: Session expired. Requiring PIN.");
-            localStorage.removeItem("pegasus_vault_pin");
-            localStorage.removeItem("pegasus_vault_time");
-            
-            const pinModal = document.getElementById("pinModal");
-            if (pinModal) pinModal.style.display = "flex";
-        } else {
-            window.PegasusCloud.unlock(savedPin);
-            const vaultBtn = document.getElementById("btnMasterVault");
-            if (vaultBtn) {
-                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-                vaultBtn.style.color = "#00ff41";
-                vaultBtn.style.borderColor = "#00ff41";
-            }
+    if (savedPin && authTime && (Date.now() - parseInt(authTime) < 86400000)) {
+        // Αν το PIN είναι έγκυρο (24h), ξεκλειδώνουμε αυτόματα
+        window.PegasusCloud.unlock(savedPin);
+        const vaultBtn = document.getElementById("btnMasterVault");
+        if (vaultBtn) {
+            vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+            vaultBtn.style.color = "#00ff41";
+            vaultBtn.style.borderColor = "#00ff41";
         }
     } else {
-        const pinModal = document.getElementById("pinModal");
-        if (pinModal) pinModal.style.display = "flex";
+        // 🛡️ ΕΔΩ ΕΙΝΑΙ Η ΑΛΛΑΓΗ:
+        // Αν είμαστε στο Mobile, δείξε το modal αυτόματα (για ευκολία στο γυμναστήριο).
+        // Αν είμαστε στο PC (index), μην κάνεις τίποτα. Θα το ανοίξεις εσύ από τα Εργαλεία.
+        if (isMobile) {
+            const pinModal = document.getElementById("pinModal");
+            if (pinModal) pinModal.style.display = "flex";
+        }
     }
 });
 
