@@ -198,4 +198,23 @@ window.setPegasusPlan = function(planKey) {
     }
     
     console.log(`🚀 PEGASUS DATA ENGINE: v13.0 Active. Plan: ${activePlan}`);
+
+   // ==========================================================================
+// 🚀 ΔΥΝΑΜΙΚΟΣ ΥΠΟΛΟΓΙΣΜΟΣ ΕΒΔΟΜΑΔΙΑΙΟΥ ΟΓΚΟΥ ΓΙΑ ΤΙΣ ΜΠΑΡΕΣ
+// ==========================================================================
+window.getDynamicTargets = function() {
+    const targets = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+    
+    // Σαρώνει κάθε μέρα του ενεργού προγράμματος
+    for (const day in window.program) {
+        window.program[day].forEach(ex => {
+            // Αν η άσκηση ανήκει σε βασική ομάδα, προσθέτει τα σετ
+            if (targets[ex.muscleGroup] !== undefined) {
+                targets[ex.muscleGroup] += ex.sets;
+            }
+        });
+    }
+    return targets;
+};
+   
 })();
