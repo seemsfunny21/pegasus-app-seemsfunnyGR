@@ -1,7 +1,7 @@
 /* ==========================================================================
-   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.3)
-   Protocol: High-Contrast UI, Memory Protection & Real-Time Sync
-   Status: FINAL STABLE | MEMORY PROTECTED
+   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.4)
+   Protocol: High-Contrast UI, Memory Protection, Double-Tap & NaN Guards
+   Status: FINAL STABLE | SYSTEM LOCKED
    ========================================================================== */
 
 (function() {
@@ -52,6 +52,8 @@
     }
 
     window.PegasusFinance = {
+        isLocked: false, // 🛡️ API SPAM GUARD (Double-Tap Protection)
+
         saveAndRender: function(data) {
             // 🛡️ MEMORY CAP: Κρατάμε τις τελευταίες 100 συναλλαγές (Αποτροπή QuotaExceededError)
             if (Array.isArray(data)) {
@@ -64,20 +66,30 @@
             // Ανανέωση UI
             this.render();
 
-            // ☁️ REAL-TIME CLOUD TRIGGER (Bypass debounce για ακαριαία ενημέρωση τραπεζικού υπολοίπου)
+            // ☁️ REAL-TIME CLOUD TRIGGER (Bypass debounce)
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
                 window.PegasusCloud.push(true); 
             }
         },
 
         addTransaction: function(type) {
+            // 🛡️ RACE CONDITION GUARD: Μπλοκάρει τα πολλαπλά γρήγορα κλικ
+            if (this.isLocked) return;
+            this.isLocked = true;
+            setTimeout(() => this.isLocked = false, 1200); // Ξεκλειδώνει μετά από 1.2s
+
             const descInput = document.getElementById('finDesc');
             const amountInput = document.getElementById('finAmount');
+            
             const desc = descInput.value;
-            const amount = parseFloat(amountInput.value);
+            
+            // 🛡️ NaN GUARD: Μετατροπή κόμματος σε τελεία πριν την ανάλυση
+            const safeAmountStr = String(amountInput.value).replace(',', '.');
+            const amount = parseFloat(safeAmountStr);
 
-            if (!desc || isNaN(amount)) {
-                alert("ΣΦΑΛΜΑ: Συμπληρώστε περιγραφή και ποσό.");
+            if (!desc || isNaN(amount) || amount <= 0) {
+                alert("ΣΦΑΛΜΑ: Συμπληρώστε έγκυρη περιγραφή και ποσό.");
+                this.isLocked = false; // Απελευθέρωση κλειδώματος σε περίπτωση σφάλματος
                 return;
             }
 
