@@ -6,8 +6,14 @@
 (function() {
     const LIFTING_DATA_KEY = 'pegasus_lifting_v1';
 
-    window.PegasusLifting = {
+window.PegasusLifting = {
+        isLocked: false, // 🛡️ API SPAM GUARD
+
         addSet: function() {
+            if (this.isLocked) return;
+            this.isLocked = true;
+            setTimeout(() => this.isLocked = false, 1200); // Κλείδωμα για 1.2 δευτερόλεπτα
+
             const exercise = document.getElementById('liftName').value.trim();
             const weight = parseFloat(document.getElementById('liftWeight').value);
             const reps = parseInt(document.getElementById('liftReps').value);
