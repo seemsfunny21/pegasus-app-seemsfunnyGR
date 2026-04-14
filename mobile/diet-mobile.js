@@ -209,7 +209,11 @@ window.PegasusDiet = {
             tk += parseFloat(item.kcal || 0); 
             tp += parseFloat(item.protein || 0); 
         });
-
+// --- ΠΡΟΣΘΕΣΕ ΑΥΤΕΣ ΤΙΣ 3 ΓΡΑΜΜΕΣ ΕΔΩ ---
+        // 🛡️ GLOBAL METABOLIC SYNC (Κάνει τις θερμίδες ορατές σε όλο το OS)
+        localStorage.setItem(window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal", Math.round(tk));
+        localStorage.setItem(window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein", Math.round(tp));
+        // ----------------------------------------
         const cardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
         const targetKcal = 2800 + cardioKcal;
 
