@@ -46,7 +46,7 @@ const PegasusCloud = {
         }
     },
 
-    // 🟢 ΕΝΕΡΓΟΠΟΙΗΣΗ ΣΥΝΕΔΡΙΑΣ & ΣΥΓΧΡΟΝΙΣΜΟΥ
+// 🟢 ΕΝΕΡΓΟΠΟΙΗΣΗ ΣΥΝΕΔΡΙΑΣ & ΣΥΓΧΡΟΝΙΣΜΟΥ (Universal v18.2)
     activateSession: function(pinValue) {
         this.userKey = this.config.encryptedPart;
         this.isUnlocked = true;
@@ -61,13 +61,14 @@ const PegasusCloud = {
         }
         console.log("🛡️ PEGASUS: Session Activated & Sync Breathing.");
 
-        // 🛡️ ΕΜΦΑΝΙΣΗ UI (Κρύβει το PIN modal, εμφανίζει το App)
-        const wrapper = document.getElementById('main-wrapper');
+        // 🛡️ UNIVERSAL UI REVEAL: Καλύπτει και το Mobile (#main-wrapper) και το PC (#app-container)
+        const wrapper = document.getElementById('main-wrapper') || document.getElementById('app-container');
         if (wrapper) wrapper.style.display = 'block';
         
         const pinModal = document.getElementById('pinModal');
         if (pinModal) pinModal.style.display = 'none';
 
+        // Ενημέρωση κουμπιού Cloud (αν υπάρχει στο DOM)
         const vaultBtn = document.getElementById("btnMasterVault");
         if (vaultBtn) {
             vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
