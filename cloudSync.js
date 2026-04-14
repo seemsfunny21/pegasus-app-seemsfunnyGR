@@ -271,3 +271,20 @@ if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
         });
     };
 }
+
+// ==========================================================================
+// 🛡️ PEGASUS SPLIT-BRAIN GUARD (CROSS-TAB SYNC)
+// ==========================================================================
+window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('pegasus_')) {
+        console.log("🔄 PEGASUS GUARD: Εντοπίστηκε αλλαγή δεδομένων από άλλη καρτέλα. Αυτόματος συγχρονισμός UI.");
+        
+        // Ανανέωση UI στο Desktop
+        if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+        if (typeof window.renderLiftingContent === "function") window.renderLiftingContent();
+        
+        // Ανανέωση UI στο Mobile
+        if (window.PegasusDiet && typeof window.PegasusDiet.updateUI === "function") window.PegasusDiet.updateUI();
+        if (window.PegasusFinance && typeof window.PegasusFinance.render === "function") window.PegasusFinance.render();
+    }
+});
