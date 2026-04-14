@@ -106,8 +106,8 @@ const PegasusMetabolic = {
         const currentKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
         if (currentKcal > 100) {
             const entry = { status: "completed", verified: true, kcal: currentKcal };
-            history[today] = entry;
-            workouts[today] = entry;
+history[todayDate] = entry;
+workouts[todayDate] = entry;
             localStorage.setItem('pegasus_calendar_history', JSON.stringify(history));
             localStorage.setItem('pegasus_workouts_done', JSON.stringify(workouts));
         }
