@@ -28,7 +28,7 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
             <div style="font-size:35px; margin-bottom:15px;">🛡️</div>
             <div style="color:#00ff41; font-weight:900; margin-bottom:5px; letter-spacing:1px; font-size: 20px;">PEGASUS OS</div>
             <div style="color:#555; font-size: 10px; font-weight: 800; margin-bottom: 25px; letter-spacing: 2px;">ΑΣΦΑΛΗΣ ΤΑΥΤΟΠΟΙΗΣΗ</div>
-            <input type="password" id="pinInput" style="font-size:32px; letter-spacing:4px; border-color: #333; margin-bottom: 20px;" placeholder="ΕΙΣΑΓΩΓΗ ΚΩΔΙΚΟΥ">
+           <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px; border-color: #333; margin-bottom: 20px;" inputmode="numeric" maxlength="4" placeholder="••••">
             <button class="primary-btn" onclick="attemptVaultUnlock()" style="font-size: 14px; padding: 20px;">ΑΠΑΣΦΑΛΙΣΗ</button>
             <button class="secondary-btn" style="margin-top: 15px; border-color: #222; color: #555;" onclick="skipVault()">ΛΕΙΤΟΥΡΓΙΑ OFFLINE</button>
         </div>
@@ -505,12 +505,15 @@ function updateMuscleUI() {
             else { e.textContent = s.toUpperCase(); e.style.color = "#00bcd4"; }
         }
 
-        function attemptVaultUnlock() { 
+function attemptVaultUnlock() { 
             const pin = document.getElementById("pinInput").value;
             if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { 
                 document.getElementById("pinModal").style.display = "none"; 
                 isUnlocked = true;
                 refreshAllUI();
+            } else {
+                alert("ΛΑΘΟΣ PIN");
+                document.getElementById("pinInput").value = "";
             }
         }
 
