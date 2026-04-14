@@ -231,12 +231,11 @@ window.PegasusGarbageCollector = {
 
 
 // 5. GLOBAL RUNTIME ERROR CATCHER
-window.onerror = function(message, source, lineno, colno, error) {
-    const fileName = source ? source.split('/').pop() : "unknown";
-    const cleanMsg = `Runtime: ${message} at ${fileName}:${lineno}`;
+window.addEventListener('error', function(event) {
+    const fileName = event.filename ? event.filename.split('/').pop() : "unknown";
+    const cleanMsg = `Runtime: ${event.message} at ${fileName}:${event.lineno}`;
     window.PegasusLogger.log(cleanMsg, "RUNTIME_ERROR");
-    return false;
-};
+});
 
 // ΑΥΞΗΣΗ ΚΑΘΥΣΤΕΡΗΣΗΣ ΣΕ 5 ΔΕΥΤΕΡΟΛΕΠΤΑ (Για απόλυτο συγχρονισμό)
 setTimeout(() => {
