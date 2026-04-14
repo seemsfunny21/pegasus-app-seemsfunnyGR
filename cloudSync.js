@@ -19,70 +19,50 @@ const PegasusCloud = {
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
-    unlock: function(pin) {
+unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
 
-        // 🛡️ ΒΗΜΑ 1: ΕΛΕΓΧΟΣ MASTER KEY (Για πιστοποίηση νέας συσκευής)
-        // Κωδικός: Angel21Angel22
+        // 🛡️ ΒΗΜΑ 1: ΕΛΕΓΧΟΣ MASTER KEY (Angel21Angel22)
+        // Αν ο χρήστης πληκτρολογήσει τον μεγάλο κωδικό, ανοίγει το Tactical Setup
         if (btoa(cleanPin) === "QW5nZWwyMUFuZ2VsMjI=") {
-            // Ζητάμε από τον χρήστη να ορίσει το ΠΡΟΣΩΠΙΚΟ του PIN για αυτή τη συσκευή
-            const newLocalPin = prompt("🔑 MASTER KEY ΑΠΟΔΕΚΤΟ!\nΟρίστε ένα προσωπικό PIN (τουλάχιστον 4 ψηφία) για γρήγορη πρόσβαση σε ΑΥΤΗ τη συσκευή:");
-
-            if (newLocalPin && newLocalPin.length >= 4) {
-                // Αποθηκεύουμε το προσωπικό PIN τοπικά και κρυπτογραφημένα (Base64)
-                localStorage.setItem("pegasus_device_trusted", btoa(newLocalPin));
-                alert(`✅ Συσκευή Πιστοποιήθηκε!\nΤο PIN σας (${newLocalPin}) αποθηκεύτηκε. Χρησιμοποιήστε το για μελλοντική πρόσβαση.`);
-
-                this.userKey = this.config.encryptedPart;
-                this.isUnlocked = true;
-                localStorage.setItem("pegasus_vault_pin", newLocalPin); 
-                localStorage.setItem("pegasus_vault_time", Date.now().toString());
-                
-                // 🔄 ΕΠΑΝΑΦΟΡΑ ΛΟΓΙΚΗΣ ΣΥΓΧΡΟΝΙΣΜΟΥ (Maximalist Retention)
-                this.pull(true);
-                if (!this.syncInterval) {
-                    this.syncInterval = setInterval(() => {
-                        if (this.isUnlocked) this.pull(true);
-                    }, 30000); 
-                }
-                
-                return true;
-            } else {
-                alert("⛔ Η διαδικασία ακυρώθηκε. Απαιτείται έγκυρο PIN.");
-                return false;
-            }
+            this.showTacticalPinSetup();
+            return true;
         }
 
         // ⚡ ΒΗΜΑ 2: ΚΑΘΗΜΕΡΙΝΗ ΠΡΟΣΒΑΣΗ ΜΕ ΤΟ ΠΡΟΣΩΠΙΚΟ PIN
         const trustedPinBase64 = localStorage.getItem("pegasus_device_trusted");
 
         if (trustedPinBase64) {
-            // Αν η συσκευή είναι "έμπιστη", ελέγχουμε αν το PIN ταιριάζει με αυτό που είχε ορίσει
+            // Αν η συσκευή είναι ήδη έμπιστη, ελέγχουμε αν το PIN ταιριάζει
             if (btoa(cleanPin) === trustedPinBase64) {
-                this.userKey = this.config.encryptedPart;
-                this.isUnlocked = true;
-                localStorage.setItem("pegasus_vault_pin", cleanPin);
-                localStorage.setItem("pegasus_vault_time", Date.now().toString());
-                
-                // 🔄 ΕΠΑΝΑΦΟΡΑ ΛΟΓΙΚΗΣ ΣΥΓΧΡΟΝΙΣΜΟΥ (Maximalist Retention)
-                this.pull(true);
-                if (!this.syncInterval) {
-                    this.syncInterval = setInterval(() => {
-                        if (this.isUnlocked) this.pull(true);
-                    }, 30000); 
-                }
-
+                this.activateSession(cleanPin);
                 return true;
             } else {
                 alert("⛔ Λάθος PIN για αυτή τη συσκευή.");
                 return false;
             }
         } else {
-            // Αν δεν υπάρχει trusted PIN, η συσκευή είναι άγνωστη.
-            alert("⛔ Μη αναγνωρισμένη συσκευή.\nΕισάγετε πρώτα το Master Key για να πιστοποιήσετε τη συσκευή και να ορίσετε το δικό σας PIN.");
+            // 🔥 ΑΝ Η ΣΥΣΚΕΥΗ ΕΙΝΑΙ ΑΓΝΩΣΤΗ ΚΑΙ Ο ΧΡΗΣΤΗΣ ΔΕΝ ΕΒΑΛΕ ΤΟ MASTER KEY
+            alert("🔒 ΜΗ ΠΙΣΤΟΠΟΙΗΜΕΝΗ ΣΥΣΚΕΥΗ\nΠαρακαλώ πληκτρολογήστε το Master Key στο πεδίο του PIN για να ενεργοποιήσετε αυτή τη συσκευή.");
             return false;
         }
+    },
+
+    // 🟢 ΕΝΕΡΓΟΠΟΙΗΣΗ ΣΥΝΕΔΡΙΑΣ & ΣΥΓΧΡΟΝΙΣΜΟΥ
+    activateSession: function(pinValue) {
+        this.userKey = this.config.encryptedPart;
+        this.isUnlocked = true;
+        localStorage.setItem("pegasus_vault_pin", pinValue);
+        localStorage.setItem("pegasus_vault_time", Date.now().toString());
+        
+        this.pull(true);
+        if (!this.syncInterval) {
+            this.syncInterval = setInterval(() => {
+                if (this.isUnlocked) this.pull(true);
+            }, 30000); 
+        }
+        console.log("🛡️ PEGASUS: Session Activated & Sync Breathing.");
     },
 
     pull: async function(silent = false) {
