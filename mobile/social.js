@@ -1,12 +1,12 @@
 /* ==========================================================================
-   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.0)
-   Protocol: 1-10 Scale Rating, Entity Management & Real-Time Sync
+   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.1)
+   Protocol: Search Integration, 1-10 Scale Rating & Real-Time Sync
    ========================================================================== */
 
 (function() {
     const SOCIAL_DATA_KEY = 'pegasus_social_v1';
+    let currentSearchTerm = ""; // 🔍 Global state για την αναζήτηση
 
-    // 1. Μηχανή Δεδομένων (CRUD Logic)
     window.PegasusSocial = {
         setRating: function(id, newRating) {
             let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
@@ -41,44 +41,38 @@
 
         addNewEntry: function() {
             const name = document.getElementById('newSocialName').value;
-
-            if(!name || name.trim() === '') {
-                alert('Παρακαλώ εισάγετε όνομα.');
-                return;
-            }
+            if(!name || name.trim() === '') return;
 
             let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
             
             const newEntry = {
                 id: 'soc_' + Date.now(),
                 name: name.trim(),
-                rating: 0, // Αρχική βαθμολογία: 0 (Καμία αξιολόγηση)
+                rating: 0,
                 dateAdded: new Date().toLocaleDateString('el-GR')
             };
 
-            entities.unshift(newEntry); // Προσθήκη στην αρχή της λίστας
+            entities.unshift(newEntry);
             this.saveAndRender(entities);
             this.toggleAddForm();
-
-            // Καθαρισμός πεδίου
             document.getElementById('newSocialName').value = '';
         },
 
-        saveAndRender: function(data) {
-            // Τοπική αποθήκευση
-            localStorage.setItem(SOCIAL_DATA_KEY, JSON.stringify(data));
-            
-            // Ανανέωση UI
+        // 🔍 ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ ΑΝΑΖΗΤΗΣΗΣ
+        handleSearch: function(term) {
+            currentSearchTerm = term.toLowerCase().trim();
             window.renderSocialContent();
+        },
 
-            // ☁️ REAL-TIME CLOUD TRIGGER: Στέλνει τα δεδομένα στο Cloud
+        saveAndRender: function(data) {
+            localStorage.setItem(SOCIAL_DATA_KEY, JSON.stringify(data));
+            window.renderSocialContent();
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
                 window.PegasusCloud.push(); 
             }
         }
     };
 
-    // 2. Κατασκευαστής Οθόνης (View Injector)
     function injectViewLayer() {
         if (document.getElementById('social')) return;
         const viewDiv = document.createElement('div');
@@ -87,16 +81,23 @@
         
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="socialSearchInput" 
+                       placeholder="🔍 Αναζήτηση επαφής..." 
+                       onkeyup="window.PegasusSocial.handleSearch(this.value)"
+                       style="width: 100%; background: #000; color: var(--main); border: 1px solid #333; padding: 12px; border-radius: 12px; font-family: inherit; box-sizing: border-box; text-align: center;">
+            </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <button id="btnAddSocial" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusSocial.toggleAddForm()">
+                <button id="btnAddSocial" class="primary-btn" style="width: auto; margin: 0; padding: 8px 15px; font-size: 11px; border-radius: 8px;" onclick="window.PegasusSocial.toggleAddForm()">
                     + ΝΕΑ ΕΓΓΡΑΦΗ
                 </button>
             </div>
 
             <div id="addSocialForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
-                <div style="font-size: 11px; font-weight: 900; color: var(--main); margin-bottom: 10px; text-align: center;">ΝΕΑ ΚΑΤΑΧΩΡΗΣΗ</div>
                 <input type="text" id="newSocialName" placeholder="Όνομα Επαφής..." style="margin-bottom: 15px; border: 2px solid #444;">
-                <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΒΑΣΗ</button>
+                <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
             </div>
 
             <div id="social-content" style="width: 100%; display: flex; flex-direction: column; gap: 15px; padding-bottom: 80px;"></div>
@@ -104,15 +105,18 @@
         document.body.appendChild(viewDiv);
     }
 
-    // 3. Rendering Engine (Σχεδίαση Λίστας & Κλίμακας 1-10)
     window.renderSocialContent = function() {
         const container = document.getElementById('social-content');
         if (!container) return;
 
-        const entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
+        let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
+        
+        // 🚀 ΦΙΛΤΡΑΡΙΣΜΑ ΒΑΣΕΙ ΑΝΑΖΗΤΗΣΗΣ
+        if (currentSearchTerm !== "") {
+            entities = entities.filter(item => item.name.toLowerCase().includes(currentSearchTerm));
+        }
         
         container.innerHTML = entities.map(item => {
-            // Χρωματική Λογική (Heatmap)
             let activeColor = '#555';
             let labelText = 'ΑΞΙΟΛΟΓΗΣΤΕ';
             
@@ -122,20 +126,17 @@
                 else { activeColor = '#00ff41'; labelText = 'ΥΨΗΛΗ ΟΜΙΛΗΤΙΚΟΤΗΤΑ'; }
             }
 
-            // Δημιουργία των 10 κουμπιών βαθμολόγησης
             let scaleHtml = '<div style="display: flex; gap: 4px; margin-top: 12px;">';
             for (let i = 1; i <= 10; i++) {
                 let isActive = i <= item.rating;
                 let bg = isActive ? activeColor : 'rgba(255,255,255,0.03)';
                 let textCol = isActive ? '#000' : '#666';
                 let border = isActive ? 'none' : '1px solid #333';
-                let shadow = isActive ? `box-shadow: 0 0 8px ${activeColor}88;` : '';
-
                 scaleHtml += `
                     <div onclick="window.PegasusSocial.setRating('${item.id}', ${i})" 
                          style="flex: 1; height: 35px; display: flex; align-items: center; justify-content: center; 
                                 background: ${bg}; color: ${textCol}; border: ${border}; border-radius: 6px; 
-                                font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.2s; ${shadow}">
+                                font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.2s;">
                         ${i}
                     </div>
                 `;
@@ -143,10 +144,10 @@
             scaleHtml += '</div>';
 
             return `
-                <div class="mini-card" style="border-left: 4px solid ${activeColor}; padding: 15px; position: relative; background: rgba(15,15,15,0.95);">
+                <div class="mini-card" style="border-left: 4px solid ${activeColor}; padding: 15px; background: rgba(15,15,15,0.95);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
-                            <div style="font-weight: 900; font-size: 18px; color: #fff; letter-spacing: 0.5px;">${item.name}</div>
+                            <div style="font-weight: 900; font-size: 18px; color: #fff;">${item.name}</div>
                             <div style="font-size: 10px; color: ${activeColor}; font-weight: 900; margin-top: 4px; letter-spacing: 1px;">
                                 [ ${labelText} ]
                             </div>
@@ -156,29 +157,23 @@
                             🗑️
                         </button>
                     </div>
-                    
                     ${scaleHtml}
                 </div>
             `;
         }).join('');
         
         if (entities.length === 0) {
-            container.innerHTML = '<div style="color:#555; font-size:12px; text-align:center; margin-top:30px; font-weight:800;">ΚΑΜΙΑ ΕΓΓΡΑΦΗ ΣΤΗ ΒΑΣΗ</div>';
+            container.innerHTML = `<div style="color:#555; font-size:12px; text-align:center; margin-top:30px; font-weight:800;">
+                ${currentSearchTerm === "" ? "ΚΑΜΙΑ ΕΓΓΡΑΦΗ ΣΤΗ ΒΑΣΗ" : "ΔΕΝ ΒΡΕΘΗΚΑΝ ΑΠΟΤΕΛΕΣΜΑΤΑ"}
+            </div>`;
         }
     };
 
-    // 4. Boot Sequence
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
         window.renderSocialContent();
-        
-        // Καταχώρηση του Module στο Κεντρικό Μενού
         if (window.registerPegasusModule) {
-            window.registerPegasusModule({ 
-                id: 'social', 
-                label: 'Επαφές', 
-                icon: '💬' 
-            });
+            window.registerPegasusModule({ id: 'social', label: 'Επαφές', icon: '💬' });
         }
     });
 })();
