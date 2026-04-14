@@ -5,8 +5,10 @@
 
 window.PegasusWeight = {
     // 1. Καταγραφή βάρους (Συμβατό με Mobile & Desktop)
-    save: function(val) {
-        const weight = parseFloat(val);
+save: function(val) {
+        // 🛡️ NaN GUARD: Μετατροπή του κόμματος σε τελεία πριν την ανάλυση
+        const safeVal = String(val).replace(',', '.');
+        const weight = parseFloat(safeVal);
         if (isNaN(weight) || weight <= 0) return;
 
         const now = new Date();
