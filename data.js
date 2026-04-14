@@ -4,17 +4,15 @@
    Status: PRODUCTION READY | FULL CODE DELIVERY
    ========================================================================== */
 
-// 1. DEFAULT PLAN: IRON_LOGIC (5 Days Active / Mon & Thu Rest)
+// 1. DEFAULT PLAN: IRON_LOGIC (v15.4 - Absolute Alignment)
 window.program = {
-    "Δευτέρα": [ 
-        { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" }
-    ],
+    "Δευτέρα": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
     "Τρίτη": [ 
         { name: "Chest Press", sets: 6, muscleGroup: "Στήθος", weight: "54" },
         { name: "Chest Flys", sets: 5, muscleGroup: "Στήθος", weight: "42" },
         { name: "Wide Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
         { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
-        { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "30" }
+        { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "30" } // <-- ΕΔΩ
     ], 
     "Τετάρτη": [ 
         { name: "Upright Rows", sets: 6, muscleGroup: "Ώμοι", weight: "30" },
@@ -23,9 +21,7 @@ window.program = {
         { name: "Preacher Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
         { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
     ],
-    "Πέμπτη": [ 
-        { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" }
-    ],
+    "Πέμπτη": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
     "Παρασκευή": [ 
         { name: "Medium Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
         { name: "Bent Over Rows", sets: 6, muscleGroup: "Πλάτη", weight: "30" },
@@ -36,7 +32,7 @@ window.program = {
     "Σάββατο": [ 
         { name: "Leg Extensions", sets: 8, muscleGroup: "Πόδια", weight: "36" },
         { name: "Sit Ups", sets: 6, muscleGroup: "Κορμός", weight: "0" },
-        { name: "Ab Crunches", sets: 6, muscleGroup: "Κορμός", weight: "30" }, // 🎯 Διορθώθηκε: Τώρα έχει 30kg και το Σάββατο
+        { name: "Ab Crunches", sets: 6, muscleGroup: "Κορμός", weight: "30" }, // <-- ΕΠΙΣΗΣ ΕΔΩ
         { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
     ],
     "Κυριακή": [ 
