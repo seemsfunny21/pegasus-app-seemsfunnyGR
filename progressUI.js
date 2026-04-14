@@ -70,7 +70,7 @@ window.MuscleProgressUI = {
     checkWeeklyReset() {
         const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
         const now = new Date();
-        const todayStr = now.toDateString();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
         if (now.getDay() === 6 && lastResetDate !== todayStr) {
             const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
