@@ -1,27 +1,29 @@
 /* ==========================================================================
-   🎯 PEGASUS MODULE: DAILY MISSION CONTROL (v1.0)
-   Protocol: Habit Tracking & Daily Reset Engine
+   🎯 PEGASUS MODULE: DAILY MISSION CONTROL (v1.2)
+   Protocol: Habit Tracking, Safe Date Formats & Instant Mobile Sync
    ========================================================================== */
 
 (function() {
     const MISSIONS_DATA_KEY = 'pegasus_missions_v1';
     const MISSIONS_DATE_KEY = 'pegasus_missions_date';
 
-    // 1. Μηχανή Δεδομένων & Ημερήσιο Reset
+    // Helper για ασφαλή ημερομηνία
+    const getStrictDateStr = () => {
+        const d = new Date();
+        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    };
+
     window.PegasusMissions = {
         checkDailyReset: function() {
-            const today = new Date().toLocaleDateString('el-GR');
+            const today = getStrictDateStr();
             const lastSavedDate = localStorage.getItem(MISSIONS_DATE_KEY);
 
             if (lastSavedDate !== today) {
-                // Είναι νέα μέρα! Ξε-τσεκάρουμε όλους τους στόχους
                 let missions = JSON.parse(localStorage.getItem(MISSIONS_DATA_KEY)) || [];
                 missions.forEach(m => m.completed = false);
                 
                 localStorage.setItem(MISSIONS_DATA_KEY, JSON.stringify(missions));
                 localStorage.setItem(MISSIONS_DATE_KEY, today);
-                // Δεν κάνουμε Cloud Sync εδώ για να μην το βαραίνουμε στο boot, 
-                // θα γίνει με το πρώτο κλικ της ημέρας.
             }
         },
 
@@ -64,7 +66,7 @@
                 completed: false
             };
 
-            missions.push(newEntry); // Προσθήκη στο τέλος
+            missions.push(newEntry);
             this.saveAndRender(missions);
             this.toggleAddForm();
 
@@ -81,18 +83,17 @@
 
         saveAndRender: function(data) {
             localStorage.setItem(MISSIONS_DATA_KEY, JSON.stringify(data));
-            localStorage.setItem(MISSIONS_DATE_KEY, new Date().toLocaleDateString('el-GR')); // Ανανέωση ημερομηνίας
+            localStorage.setItem(MISSIONS_DATE_KEY, getStrictDateStr());
             
             window.renderMissionsContent();
 
-            // ☁️ REAL-TIME CLOUD TRIGGER
+            // 🛡️ FIX: Aκαριαίο Cloud Sync για το Mobile Interface
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(); 
+                window.PegasusCloud.push(true); 
             }
         }
     };
 
-    // 2. Κατασκευαστής Οθόνης (View Injector)
     function injectViewLayer() {
         if (document.getElementById('missions')) return;
         const viewDiv = document.createElement('div');
@@ -124,7 +125,6 @@
         document.body.appendChild(viewDiv);
     }
 
-    // 3. Rendering Engine
     window.renderMissionsContent = function() {
         const container = document.getElementById('missions-content');
         const pctTxt = document.getElementById('missionPctTxt');
@@ -133,11 +133,11 @@
         
         if (!container) return;
 
-        window.PegasusMissions.checkDailyReset(); // Έλεγχος αν άλλαξε η μέρα πριν σχεδιάσουμε
+        window.PegasusMissions.checkDailyReset(); 
 
         const missions = JSON.parse(localStorage.getItem(MISSIONS_DATA_KEY)) || [];
         
-        if (dateTxt) dateTxt.textContent = new Date().toLocaleDateString('el-GR');
+        if (dateTxt) dateTxt.textContent = getStrictDateStr();
 
         let completedCount = 0;
         let html = '';
@@ -165,7 +165,6 @@
             `;
         });
 
-        // Υπολογισμός Ποσοστού
         const total = missions.length;
         let percentage = 0;
         if (total > 0) {
@@ -175,7 +174,6 @@
         if (pctTxt) pctTxt.textContent = `${percentage}%`;
         if (progressBar) progressBar.style.width = `${percentage}%`;
         
-        // Αλλαγή χρώματος αν φτάσει το 100%
         if (percentage === 100 && total > 0) {
             pctTxt.style.color = '#00ff41';
             pctTxt.style.textShadow = '0 0 20px rgba(0,255,65,0.6)';
@@ -187,12 +185,11 @@
         container.innerHTML = html || '<div style="color:#555; font-size:11px; text-align:center; margin-top:20px;">ΔΕΝ ΕΧΕΙΣ ΟΡΙΣΕΙ ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ</div>';
     };
 
-    // 4. Boot Sequence
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
         window.renderMissionsContent();
         
-if (window.registerPegasusModule) {
+        if (window.registerPegasusModule) {
             window.registerPegasusModule({ 
                 id: 'missions', 
                 label: 'Δραστηριότητες', 
