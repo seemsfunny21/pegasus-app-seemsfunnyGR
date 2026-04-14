@@ -1,61 +1,83 @@
 /* ==========================================================================
-   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.0)
-   Protocol: Auto-Cycling Protocol, Metabolic Sync & Calendar Integration
+   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.2 MAXIMALIST)
+   Protocol: Auto-Cycling, Metabolic Sync, XP Alignment & History Logging
+   Status: FINAL STABLE | INTEGRATED DATA SHIELD
    ========================================================================== */
 
 window.PegasusCardio = {
     save: async function() {
-        const km = parseFloat(document.getElementById('cdKm').value) || 0; 
-        const burnedKcal = parseFloat(document.getElementById('cdKcalBurned').value) || 0;
+        const kmEl = document.getElementById('cdKm');
+        const kcalEl = document.getElementById('cdKcalBurned');
         
-        // 🛡️ ΑΥΤΟΜΑΤΟΠΟΙΗΣΗ: Ορίζεται μόνιμα ως Ποδηλασία
-        const route = "ΠΟΔΗΛΑΣΙΑ";
+        const km = parseFloat(kmEl.value) || 0; 
+        const burnedKcal = parseFloat(kcalEl.value) || 0;
         
-        if (km === 0 && burnedKcal === 0) return; // Ακύρωση αν πατηθεί άδειο
+        if (km === 0 && burnedKcal === 0) return;
 
-        // --- 1. ΕΚΤΙΜΗΣΗ ΚΟΠΩΣΗΣ (ΠΙΣΤΩΣΗ 18 ΣΕΤ ΣΤΑ ΠΟΔΙΑ) ---
+        // --- 0. DATE PREPARATION (UNIFIED PROTOCOL) ---
+        const rawDate = new Date();
+        const dateStr = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
+        const workoutKey = `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${String(rawDate.getDate()).padStart(2, '0')}`;
+
+        // --- 1. ΕΚΤΙΜΗΣΗ ΚΟΠΩΣΗΣ & LIFETIME STATS (XP) ---
         if(km > 0) { 
+            // Weekly Progress Update
             let history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-            const credit = 18; // Σταθερά 18 σετ
+            const credit = 18; // Σταθερά 18 σετ (Cycling Protocol)
             history["Πόδια"] = (history["Πόδια"] || 0) + credit;
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(history)); 
-            console.log(`🚴 CARDIO: Credited ${credit} sets to Legs.`);
+
+            // 🏆 ACHIEVEMENT SYNC: Πίστωση σετ στο Lifetime Stats για XP
+            let stats = JSON.parse(localStorage.getItem('pegasus_stats')) || { totalSets: 0, exerciseHistory: {} };
+            stats.totalSets = (stats.totalSets || 0) + credit;
+            localStorage.setItem('pegasus_stats', JSON.stringify(stats));
+            
+            // 💾 DETAILED HISTORY LOGGING: Για την καρτέλα Cardio History
+            let cardioLog = JSON.parse(localStorage.getItem("pegasus_cardio_history") || "[]");
+            cardioLog.unshift({ 
+                date: dateStr, 
+                type: "Ποδηλασία", 
+                km: km, 
+                kcal: burnedKcal 
+            });
+            localStorage.setItem("pegasus_cardio_history", JSON.stringify(cardioLog.slice(0, 50)));
+            
+            console.log(`🚴 CARDIO: ${km}km logged. ${credit} sets credited to Legs & XP.`);
         }
 
-        // --- 2. ΜΕΤΑΒΟΛΙΚΗ ΣΥΝΔΕΣΗ (ΑΥΞΗΣΗ ΗΜΕΡΗΣΙΟΥ ΣΤΟΧΟΥ ΘΕΡΜΙΔΩΝ) ---
+        // --- 2. ΜΕΤΑΒΟΛΙΚΗ ΣΥΝΔΕΣΗ (TARGET & DASHBOARD SYNC) ---
         if(burnedKcal > 0) {
-            const rawDate = new Date();
-            const dateStr = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
+            // A. Daily Target Offset (Για το Diet Module)
             let todayCardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
-            
-            // Προσθέτει τις νέες θερμίδες
             localStorage.setItem("pegasus_cardio_kcal_" + dateStr, todayCardioKcal + burnedKcal);
+
+            // B. Weekly Dashboard Sync (Για την κεντρική οθόνη PC/Mobile)
+            let weeklyKcal = parseFloat(localStorage.getItem("pegasus_weekly_kcal")) || 0;
+            localStorage.setItem("pegasus_weekly_kcal", (weeklyKcal + burnedKcal).toFixed(1));
             
-            // Update UI Διατροφής
+            // C. Live UI Refresh
             if(window.PegasusDiet && typeof window.PegasusDiet.updateUI === "function") {
                 window.PegasusDiet.updateUI();
             }
-            console.log(`🔥 CARDIO: Target increased by ${burnedKcal} kcal.`);
+            console.log(`🔥 METABOLIC: Dashboard & Daily target increased by ${burnedKcal} kcal.`);
         }
 
-        // --- 3. 🎯 CALENDAR SYNC: Πρασίνισμα στο Ημερολόγιο ---
+        // --- 3. 🎯 CALENDAR SYNC: Πρασίνισμα Ημέρας ---
         if (km >= 15 || burnedKcal >= 400) {
-            const now = new Date();
-            const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             let doneKey = "pegasus_workouts_done";
-            let data = JSON.parse(localStorage.getItem(doneKey) || "{}");
-            
-            data[workoutKey] = true;
-            localStorage.setItem(doneKey, JSON.stringify(data));
+            let calendarData = JSON.parse(localStorage.getItem(doneKey) || "{}");
+            calendarData[workoutKey] = true;
+            localStorage.setItem(doneKey, JSON.stringify(calendarData));
             console.log(`✅ CALENDAR: Day marked as completed (${workoutKey}).`);
         }
         
-        // Καθαρισμός ΜΟΝΟ των ορατών πεδίων (το κρυφό route δεν πειράζεται)
-        document.getElementById('cdKm').value = "";
-        document.getElementById('cdKcalBurned').value = "";
+        // --- 4. CLEANUP & SYNC ---
+        kmEl.value = "";
+        kcalEl.value = "";
         
-        // Επιστροφή στην αρχική οθόνη και Συγχρονισμός
         if (typeof openView === "function") openView('home');
+        
+        // Execution of Strict Cloud Push
         if (window.PegasusCloud) await window.PegasusCloud.push(true);
     }
 };
