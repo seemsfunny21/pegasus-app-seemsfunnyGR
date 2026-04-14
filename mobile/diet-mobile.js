@@ -1,77 +1,21 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.5 STRICT MACROS)
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.6 MAXIMALIST STRICT)
    Protocol: Master Macro Engine Integration & Absolute Data Consistency
-   Status: STABLE | ZERO-BUG RE-VERIFIED
+   Status: STABLE | ZERO-BUG RE-VERIFIED | SINGLE SOURCE OF TRUTH ACTIVE
    ========================================================================== */
 
-const KOUKI_MASTER = [
-    { name: "Κοτόπουλο με κάρυ & λαχανικά", type: "poulika" },
-    { name: "Κοτόπουλο με χυλοπίτες", type: "poulika" },
-    { name: "Κοτόπουλο λεμονάτο", type: "poulika" },
-    { name: "Χοιρινό με δαμάσκηνα", type: "kreas" },
-    { name: "Χοιρινό πρασοσέλινο", type: "kreas" },
-    { name: "Μοσχαράκι κοκκινιστό", type: "kreas" },
-    { name: "Μοσχάρι γιουβέτσι", type: "kreas" },
-    { name: "Μπιφτέκια μοσχαρίσια σχάρας", type: "kreas" },
-    { name: "Γιουβαρλάκια αυγολέμονο", type: "kreas" },
-    { name: "Ρεβύθια με κάρυ", type: "ospro" },
-    { name: "Ρεβύθια λεμονάτα", type: "ospro" },
-    { name: "Γίγαντες φούρνου", type: "ospro" },
-    { name: "Φασολάκια πράσινα", type: "ladero" },
-    { name: "Σουπιές με σπανάκι", type: "psari" },
-    { name: "Τσιπούρα ψητή", type: "psari" },
-    { name: "Παστίτσιο", type: "carb" },
-    { name: "Μουσακάς", type: "carb" }
-];
-
-// 🎯 INTERNAL MOBILE MACRO ENGINE (Mirrors Desktop dietAdvisor.js)
-function getMobilePegasusMacros(name, tag) {
-    let baseK = 0, baseP = 0;
-    const n = name.toLowerCase();
-
-    // 1. OUTLIERS & HEAVY CARBS (Χωρίς ρύζι)
-    if (n.includes("μουσακάς")) return { kcal: 830, protein: 26 };
-    if (n.includes("παστίτσιο") && !n.includes("λαχανικών")) return { kcal: 750, protein: 35 };
-    if (n.includes("μακαρόνια") || n.includes("λαζάνια") || n.includes("κανελόνια") || n.includes("χυλοπίτες")) return { kcal: 650, protein: 30 };
-    if (n.includes("πίτα") || n.includes("μπατσαριά") || n.includes("μπριάμ")) return { kcal: 450, protein: (n.includes("κοτό") ? 25 : 12) };
-
-    // 2. BASE MEAL MACROS (Καθαρό Βάρος χωρίς συνοδευτικό)
-    if (tag === 'kreas') {
-        if (n.includes("μοσχάρι") || n.includes("μοσχαράκι")) { baseK = 480; baseP = 42; }
-        else if (n.includes("χοιριν") || n.includes("αρνί")) { baseK = 580; baseP = 45; }
-        else { baseK = 500; baseP = 40; }
-    }
-    else if (tag === 'poulika') {
-        if (n.includes("αλά κρεμ") || n.includes("γλυκόξινο")) { baseK = 550; baseP = 40; }
-        else { baseK = 420; baseP = 48; } 
-    }
-    else if (tag === 'psari') {
-        if (n.includes("τηγαν") || n.includes("σκορδαλιά")) { baseK = 550; baseP = 30; }
-        else { baseK = 380; baseP = 38; }
-    }
-    else if (tag === 'ospro') {
-        baseK = 420; baseP = 18;
-    }
-    else if (tag === 'ladero' || tag === 'veggies') {
-        if (n.includes("γεμιστά με κιμά")) { baseK = 500; baseP = 25; }
-        else { baseK = 420; baseP = 8; }
-    }
-    else if (tag === 'soup') {
-        baseK = 380; baseP = 30;
-    } else {
-        baseK = 450; baseP = 20; 
-    }
-
-    // 3. THE RICE OFFSET PROTOCOL
-    return { 
-        kcal: baseK + 280, // Προσθήκη Μερίδας Ρυζιού
-        protein: baseP + 6 
-    };
-}
+// 🎯 Ο πίνακας KOUKI_MASTER και η συνάρτηση getMobilePegasusMacros ΔΙΑΓΡΑΦΗΚΑΝ.
+// Το σύστημα πλέον διαβάζει αποκλειστικά από το `window.getPegasusMacros` του data.js.
 
 window.PegasusDiet = {
+    // Helper function για απόλυτη ταύτιση ημερομηνιών με το Desktop (food.js)
+    getStrictDateStr: function() {
+        const rawDate = new Date();
+        return rawDate.getDate() + "/" + (rawDate.getMonth() + 1) + "/" + rawDate.getFullYear();
+    },
+
     checkDailyRoutine: function() {
-        const dateStr = new Date().toLocaleDateString('el-GR');
+        const dateStr = this.getStrictDateStr();
         const flagKey = "pegasus_routine_injected_" + dateStr;
 
         if (localStorage.getItem(flagKey) === "true") return false;
@@ -90,7 +34,8 @@ window.PegasusDiet = {
                 window.PegasusInventory.consume('prot', 30);
             }
 
-            localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
+            const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
+            localStorage.setItem(prefix + dateStr, JSON.stringify(log));
             return true;
         }
         
@@ -104,6 +49,7 @@ window.PegasusDiet = {
 
         if(!name || name.trim() === "") return;
 
+        // Inventory Guard
         if(name.toLowerCase().includes("whey") && window.PegasusInventory) {
             window.PegasusInventory.consume('prot', 30);
         }
@@ -114,11 +60,12 @@ window.PegasusDiet = {
             localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
         }
 
-        const dateStr = new Date().toLocaleDateString('el-GR');
+        const dateStr = this.getStrictDateStr();
         let log = this.getLog(dateStr);
         log.unshift({ name: name, kcal: kcal, protein: prot, ts: Date.now() });
         
-        localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
+        const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
+        localStorage.setItem(prefix + dateStr, JSON.stringify(log));
         
         if(document.getElementById("fName")) document.getElementById("fName").value = "";
         this.closeSearch();
@@ -143,8 +90,10 @@ window.PegasusDiet = {
         `;
 
         advice.options.forEach(opt => {
-            // Δυναμικός υπολογισμός μέσα στον Advisor
-            const macros = getMobilePegasusMacros(opt.n, opt.t);
+            // 🎯 STRICT ALIGNMENT: Χρήση του data.js Macro Engine
+            const macros = (typeof window.getPegasusMacros === "function") 
+                           ? window.getPegasusMacros(opt.n, opt.t) 
+                           : { kcal: 550, protein: 45 };
             
             html += `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
@@ -175,7 +124,7 @@ window.PegasusDiet = {
             return; 
         }
 
-        const lib = JSON.parse(localStorage.getItem("pegasus_food_library")) || [];
+        const lib = JSON.parse(localStorage.getItem(window.PegasusManifest?.diet?.foodLibrary || "pegasus_food_library")) || [];
         const matches = lib.filter(i => i.name.toLowerCase().includes(term.toLowerCase())).slice(0, 5);
 
         if(matches.length > 0) {
@@ -215,11 +164,12 @@ window.PegasusDiet = {
         
         let dailyMenu = [];
         
-        if (typeof KOUKI_MASTER_MENU !== 'undefined' && KOUKI_MASTER_MENU[targetDayKey]) {
-            dailyMenu = KOUKI_MASTER_MENU[targetDayKey];
-        } else {
+        // Σάρωση από το data.js Legacy Bridge
+        if (typeof window.KOUKI_MASTER_MENU !== 'undefined' && window.KOUKI_MASTER_MENU[targetDayKey]) {
+            dailyMenu = window.KOUKI_MASTER_MENU[targetDayKey];
+        } else if (typeof window.KOUKI_MASTER !== 'undefined') {
             const offset = targetDate.getDay() * 2; 
-            dailyMenu = KOUKI_MASTER.slice(offset, offset + 8);
+            dailyMenu = window.KOUKI_MASTER.slice(offset, offset + 8);
         }
 
         container.innerHTML = `
@@ -230,8 +180,10 @@ window.PegasusDiet = {
                 const itemName = item.n || item.name;
                 const itemTag = item.t || item.type || "kreas";
 
-                // 🎯 STRICT MACRO OVERRIDE: Διαβάζει από την κεντρική μηχανή
-                const macros = getMobilePegasusMacros(itemName, itemTag);
+                // 🎯 STRICT MACRO OVERRIDE: Διαβάζει αποκλειστικά από την κεντρική μηχανή
+                const macros = (typeof window.getPegasusMacros === "function") 
+                               ? window.getPegasusMacros(itemName, itemTag) 
+                               : { kcal: 550, protein: 45 };
 
                 return `
             <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${itemName} (Κούκι)', ${macros.kcal}, ${macros.protein})" 
@@ -249,7 +201,7 @@ window.PegasusDiet = {
     updateUI: function() {
         this.checkDailyRoutine();
 
-        const dateStr = new Date().toLocaleDateString('el-GR');
+        const dateStr = this.getStrictDateStr();
         const log = this.getLog(dateStr);
         let tk = 0, tp = 0;
         
@@ -262,8 +214,9 @@ window.PegasusDiet = {
         const targetKcal = 2800 + cardioKcal;
 
         if(document.getElementById("txtKcal")) document.getElementById("txtKcal").textContent = `${Math.round(tk)} / ${Math.round(targetKcal)}`;
-       const targetProt = localStorage.getItem("pegasus_goal_protein") || 160;
-if(document.getElementById("txtProt")) document.getElementById("txtProt").textContent = `${Math.round(tp)} / ${targetProt}g`;
+        
+        const targetProt = localStorage.getItem("pegasus_goal_protein") || 160;
+        if(document.getElementById("txtProt")) document.getElementById("txtProt").textContent = `${Math.round(tp)} / ${targetProt}g`;
         
         const listDisplay = document.getElementById("foodHistoryList");
         if(listDisplay) {
@@ -278,17 +231,21 @@ if(document.getElementById("txtProt")) document.getElementById("txtProt").textCo
     },
 
     delete: async function(idx) {
-        const dateStr = new Date().toLocaleDateString('el-GR');
+        const dateStr = this.getStrictDateStr();
         let log = this.getLog(dateStr);
         log.splice(idx, 1);
-        localStorage.setItem("food_log_" + dateStr, JSON.stringify(log));
+        
+        const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
+        localStorage.setItem(prefix + dateStr, JSON.stringify(log));
+        
         this.updateUI();
         if(window.PegasusCloud) await window.PegasusCloud.push();
     },
 
     getLog: function(dateStr) {
         try {
-            const data = localStorage.getItem("food_log_" + dateStr);
+            const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
+            const data = localStorage.getItem(prefix + dateStr);
             return data ? JSON.parse(data) : [];
         } catch (e) { return []; }
     },
