@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.1 TTL SECURITY PATCH)
-   Protocol: Strict Data Analyst - Flat Payload & 24h Auto-Lock
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v18.2 TACTICAL SECURITY)
+   Protocol: Strict Data Analyst - Device Trusting & Custom UI Overlays
    ========================================================================== */
 
 const PegasusCloud = {
@@ -19,12 +19,11 @@ const PegasusCloud = {
         return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
     },
 
-unlock: function(pin) {
+    unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
 
         // 🛡️ ΒΗΜΑ 1: ΕΛΕΓΧΟΣ MASTER KEY (Angel21Angel22)
-        // Αν ο χρήστης πληκτρολογήσει τον μεγάλο κωδικό, ανοίγει το Tactical Setup
         if (btoa(cleanPin) === "QW5nZWwyMUFuZ2VsMjI=") {
             this.showTacticalPinSetup();
             return true;
@@ -63,6 +62,45 @@ unlock: function(pin) {
             }, 30000); 
         }
         console.log("🛡️ PEGASUS: Session Activated & Sync Breathing.");
+    },
+
+    // 🎨 TACTICAL UI OVERLAY: ΔΗΜΙΟΥΡΓΙΑ ΠΡΟΣΩΠΙΚΟΥ PIN
+    showTacticalPinSetup: function() {
+        const overlay = document.createElement('div');
+        overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:10000; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:20px; box-sizing:border-box; font-family:'Inter', sans-serif;";
+        
+        overlay.innerHTML = `
+            <div style="border:2px solid #00ff41; background:#050505; padding:40px 30px; border-radius:15px; text-align:center; width:100%; max-width:340px; box-shadow:0 0 40px rgba(0,255,65,0.4);">
+                <div style="font-size:40px; margin-bottom:15px;">🛡️</div>
+                <div style="color:#00ff41; font-weight:900; letter-spacing:3px; margin-bottom:10px; font-size:14px;">MASTER KEY ACCEPTED</div>
+                <div style="color:#666; font-size:11px; margin-bottom:25px; line-height:1.4;">ΟΡΙΣΤΕ ΤΟ ΠΡΟΣΩΠΙΚΟ ΣΑΣ PIN ΓΙΑ ΑΥΤΗ ΤΗ ΣΥΣΚΕΥΗ</div>
+                
+                <input type="number" id="customNewPin" placeholder="----" 
+                       style="width:100%; background:#000; border:1px solid #00ff41; color:#00ff41; padding:15px; font-size:32px; border-radius:10px; margin-bottom:25px; text-align:center; font-weight:900; outline:none; box-shadow: inset 0 0 10px rgba(0,255,65,0.1);">
+                
+                <button id="confirmPinBtn" 
+                        style="width:100%; background:#00ff41; color:#000; border:none; padding:18px; border-radius:10px; font-weight:900; cursor:pointer; letter-spacing:1px; transition: 0.3s;">
+                    ΠΙΣΤΟΠΟΙΗΣΗ ΣΥΣΚΕΥΗΣ
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        const input = document.getElementById('customNewPin');
+        input.focus();
+
+        document.getElementById('confirmPinBtn').onclick = () => {
+            const val = input.value;
+            if (val && val.length >= 4) {
+                localStorage.setItem("pegasus_device_trusted", btoa(val));
+                this.activateSession(val);
+                document.body.removeChild(overlay);
+                alert("✅ Η Συσκευή Πιστοποιήθηκε Επιτυχώς!");
+                location.reload();
+            } else {
+                alert("Το PIN πρέπει να είναι τουλάχιστον 4 ψηφία.");
+            }
+        };
     },
 
     pull: async function(silent = false) {
