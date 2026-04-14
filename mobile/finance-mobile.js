@@ -1,6 +1,7 @@
 /* ==========================================================================
-   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.2)
-   Protocol: High-Contrast UI, Transaction Management & Real-Time Sync
+   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.3)
+   Protocol: High-Contrast UI, Memory Protection & Real-Time Sync
+   Status: FINAL STABLE | MEMORY PROTECTED
    ========================================================================== */
 
 (function() {
@@ -52,21 +53,28 @@
 
     window.PegasusFinance = {
         saveAndRender: function(data) {
+            // 🛡️ MEMORY CAP: Κρατάμε τις τελευταίες 100 συναλλαγές (Αποτροπή QuotaExceededError)
+            if (Array.isArray(data)) {
+                data = data.slice(0, 100);
+            }
+
             // Τοπική αποθήκευση
             localStorage.setItem(FINANCE_DATA_KEY, JSON.stringify(data));
             
             // Ανανέωση UI
             this.render();
 
-            // ☁️ REAL-TIME CLOUD TRIGGER
+            // ☁️ REAL-TIME CLOUD TRIGGER (Bypass debounce για ακαριαία ενημέρωση τραπεζικού υπολοίπου)
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(); 
+                window.PegasusCloud.push(true); 
             }
         },
 
         addTransaction: function(type) {
-            const desc = document.getElementById('finDesc').value;
-            const amount = parseFloat(document.getElementById('finAmount').value);
+            const descInput = document.getElementById('finDesc');
+            const amountInput = document.getElementById('finAmount');
+            const desc = descInput.value;
+            const amount = parseFloat(amountInput.value);
 
             if (!desc || isNaN(amount)) {
                 alert("ΣΦΑΛΜΑ: Συμπληρώστε περιγραφή και ποσό.");
@@ -77,16 +85,15 @@
             const newEntry = {
                 id: Date.now(),
                 date: new Date().toLocaleDateString('el-GR'),
-                desc: desc,
+                desc: desc.trim(),
                 amount: type === 'expense' ? -amount : amount
             };
 
             transactions.unshift(newEntry);
             
-            document.getElementById('finDesc').value = '';
-            document.getElementById('finAmount').value = '';
+            descInput.value = '';
+            amountInput.value = '';
             
-            // Κλήση της νέας ενοποιημένης συνάρτησης
             this.saveAndRender(transactions);
         },
 
@@ -94,8 +101,6 @@
             if(confirm('Οριστική διαγραφή συναλλαγής;')) {
                 let transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
                 transactions = transactions.filter(t => t.id !== id);
-                
-                // Κλήση της νέας ενοποιημένης συνάρτησης
                 this.saveAndRender(transactions);
             }
         },
