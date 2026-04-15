@@ -4,11 +4,14 @@
    Status: FINAL STABLE | FIXED: SYNTAX STRUCTURE & LOG KEY MATCHING
    ========================================================================== */
 
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
+
 const PegasusReporting = {
-    storageKey: "pegasus_daily_summary",
-    pendingReportKey: "pegasus_pending_report",
-    historyKey: "pegasus_weekly_history",
-    lastSentKey: "pegasus_last_email_sent_date", // 🔒 Η νέα κλειδαριά ημέρας
+    storageKey: M?.system?.dailySummary || "pegasus_daily_summary",
+    pendingReportKey: M?.system?.pendingReport || "pegasus_pending_report",
+    historyKey: M?.workout?.weekly_history || "pegasus_weekly_history",
+    lastSentKey: M?.system?.lastEmailSentDate || "pegasus_last_email_sent_date",
 
     saveWorkout: function(kcalVal, memoryData = null) {
         console.log("PEGASUS: Workout save triggered. Queuing for morning...");
@@ -75,7 +78,7 @@ const PegasusReporting = {
             templateParams: {
                 name: "Άγγελος",
                 workout_date: dateStrSafe,
-                calories: kcal || localStorage.getItem("pegasus_today_kcal") || "0.0",
+              calories: kcal || localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal") || "0.0",
                 weights_summary: summary.length > 0 ? summary.join("\n") : "Workout data committed.",
                 food_summary: targetFood.length > 0 ? targetFood.map(f => `• ${f.name} (${f.kcal}kcal)`).join("\n") : "No food logged",
                 cardio_activity: cardioData ? `🚲 ${cardioData.km}km (${cardioData.route})` : "No cardio",
