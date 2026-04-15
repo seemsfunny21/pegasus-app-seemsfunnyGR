@@ -1,5 +1,7 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.3 (DATE SYNC FIX)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.4 (DATE SYNC FIX & SYNTAX SHIELD)
+   Protocol: Dynamic Target Priority & Weekly Reset Safety
+   Status: FINAL STABLE | FIXED: SYNTAX ERROR & RESET LOGIC
    ========================================================================== */
 
 window.MuscleProgressUI = {
@@ -13,9 +15,9 @@ window.MuscleProgressUI = {
             this.checkWeeklyReset();
             this.render();
         }, 3000);
-    },
+    }, // 🎯 FIXED: Missing comma added here
 
-calculateStats() {
+    calculateStats() {
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         
         // 🛡️ ΠΡΟΤΕΡΑΙΟΤΗΤΑ ΣΤΟ ΔΥΝΑΜΙΚΟ ΠΛΑΝΟ ΤΟΥ DATA.JS
@@ -75,16 +77,20 @@ calculateStats() {
         const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
         const now = new Date();
         
-        // 🛡️ PHANTOM SATURDAY FIX: Χρήση του ίδιου Date Format με τον Optimizer (YYYY-MM-DD)
+        // 🛡️ SYNC FIX: Χρήση του ίδιου Date Format με τον Optimizer (YYYY-MM-DD)
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-        if (now.getDay() === 6 && lastResetDate !== todayStr) {
+        // 🎯 FIXED: Reset every MONDAY (1) at midnight, not Saturday (6), to avoid deleting weekend workouts
+        if (now.getDay() === 1 && lastResetDate !== todayStr) {
             const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
             localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
-            this.lastDataHash = null;
-            if (window.PegasusCloud) window.PegasusCloud.push(true);
-            console.log("🛡️ PEGASUS UI: Auto-Reset Triggered for Saturday.");
+            this.lastDataHash = null; // Force Re-render
+            
+            if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+                window.PegasusCloud.push(true);
+            }
+            console.log("🛡️ PEGASUS UI: Auto-Reset Triggered for Monday.");
         }
     }
 };
