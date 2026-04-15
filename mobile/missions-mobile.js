@@ -1,16 +1,19 @@
 /* ==========================================================================
-   🎯 PEGASUS MODULE: DAILY MISSION CONTROL (v1.2)
+   🎯 PEGASUS MODULE: DAILY MISSION CONTROL (v1.3 MAXIMALIST)
    Protocol: Habit Tracking, Safe Date Formats & Instant Mobile Sync
+   Status: FINAL STABLE | FIXED: UNIFIED DATE PADDING FOR RESET LOGIC
    ========================================================================== */
 
 (function() {
     const MISSIONS_DATA_KEY = 'pegasus_missions_v1';
     const MISSIONS_DATE_KEY = 'pegasus_missions_date';
 
-    // Helper για ασφαλή ημερομηνία
+    // 🎯 FIXED: Strict Date Padding Protocol (DD/MM/YYYY)
     const getStrictDateStr = () => {
         const d = new Date();
-        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${day}/${month}/${d.getFullYear()}`;
     };
 
     window.PegasusMissions = {
@@ -18,7 +21,9 @@
             const today = getStrictDateStr();
             const lastSavedDate = localStorage.getItem(MISSIONS_DATE_KEY);
 
+            // Αν η ημερομηνία άλλαξε, μηδενίζουμε τις αποστολές για τη νέα μέρα
             if (lastSavedDate !== today) {
+                console.log("🎯 MISSIONS: New day detected. Resetting progress...");
                 let missions = JSON.parse(localStorage.getItem(MISSIONS_DATA_KEY)) || [];
                 missions.forEach(m => m.completed = false);
                 
@@ -39,6 +44,8 @@
         toggleAddForm: function() {
             const form = document.getElementById('addMissionForm');
             const btn = document.getElementById('btnAddMission');
+            if(!form || !btn) return;
+
             if(form.style.display === 'none') {
                 form.style.display = 'block';
                 btn.innerHTML = 'Χ ΚΛΕΙΣΙΜΟ';
@@ -51,7 +58,8 @@
         },
 
         addNewMission: function() {
-            const title = document.getElementById('newMissionTitle').value;
+            const titleInput = document.getElementById('newMissionTitle');
+            const title = titleInput ? titleInput.value : "";
 
             if(!title || title.trim() === '') {
                 alert('Παρακαλώ εισάγετε τον τίτλο του στόχου.');
@@ -70,7 +78,7 @@
             this.saveAndRender(missions);
             this.toggleAddForm();
 
-            document.getElementById('newMissionTitle').value = '';
+            if(titleInput) titleInput.value = '';
         },
 
         deleteMission: function(id) {
@@ -81,15 +89,15 @@
             }
         },
 
-        saveAndRender: function(data) {
+        saveAndRender: async function(data) {
             localStorage.setItem(MISSIONS_DATA_KEY, JSON.stringify(data));
             localStorage.setItem(MISSIONS_DATE_KEY, getStrictDateStr());
             
             window.renderMissionsContent();
 
-            // 🛡️ FIX: Aκαριαίο Cloud Sync για το Mobile Interface
+            // 🛡️ Instant Cloud Sync για το Mobile Interface
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(true); 
+                await window.PegasusCloud.push(true); 
             }
         }
     };
@@ -166,20 +174,21 @@
         });
 
         const total = missions.length;
-        let percentage = 0;
-        if (total > 0) {
-            percentage = Math.round((completedCount / total) * 100);
-        }
+        let percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
         if (pctTxt) pctTxt.textContent = `${percentage}%`;
         if (progressBar) progressBar.style.width = `${percentage}%`;
         
         if (percentage === 100 && total > 0) {
-            pctTxt.style.color = '#00ff41';
-            pctTxt.style.textShadow = '0 0 20px rgba(0,255,65,0.6)';
+            if(pctTxt) {
+                pctTxt.style.color = '#00ff41';
+                pctTxt.style.textShadow = '0 0 20px rgba(0,255,65,0.6)';
+            }
         } else {
-            pctTxt.style.color = 'var(--main)';
-            pctTxt.style.textShadow = '0 0 10px rgba(0,255,65,0.2)';
+            if(pctTxt) {
+                pctTxt.style.color = 'var(--main)';
+                pctTxt.style.textShadow = '0 0 10px rgba(0,255,65,0.2)';
+            }
         }
 
         container.innerHTML = html || '<div style="color:#555; font-size:11px; text-align:center; margin-top:20px;">ΔΕΝ ΕΧΕΙΣ ΟΡΙΣΕΙ ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ</div>';
