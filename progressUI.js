@@ -15,24 +15,27 @@ window.MuscleProgressUI = {
         }, 3000);
     },
 
-    calculateStats() {
+calculateStats() {
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         
-        const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
-                        (typeof window.getDynamicTargets === "function" ? window.getDynamicTargets() : 
-                        (typeof DEFAULT_SETTINGS !== "undefined" ? DEFAULT_SETTINGS.muscleTargets : 
-                        { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }));
+        // 🛡️ ΠΡΟΤΕΡΑΙΟΤΗΤΑ ΣΤΟ ΔΥΝΑΜΙΚΟ ΠΛΑΝΟ ΤΟΥ DATA.JS
+        const targets = (typeof window.getDynamicTargets === "function") 
+            ? window.getDynamicTargets() 
+            : (JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
+              { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 });
 
         return Object.keys(targets).map(group => {
-            const done = parseInt(history[group]) || 0;
             const target = targets[group];
+            if (target === 0) return null; // Φιλτράρισμα κενών στόχων
+
+            const done = parseInt(history[group]) || 0;
             return {
                 name: group,
                 done: done,
                 target: target,
                 percent: Math.min((done / target) * 100, 100)
             };
-        });
+        }).filter(item => item !== null);
     },
 
     render(force = false) {
