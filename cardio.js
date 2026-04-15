@@ -4,6 +4,9 @@
    Status: FINAL STABLE | FIXED: CALENDAR MARKING & XP ALIGNMENT
    ========================================================================== */
 
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
+
 window.PegasusCardio = {
     open: function() {
         document.getElementById('cardioPanel').style.display = 'block';
@@ -53,34 +56,37 @@ window.saveCardioData = async function() {
     const dateStr = `${d}/${m}/${y}`;
     const workoutKey = `${y}-${m}-${d}`;
 
-    // --- 1. ΜΥΪΚΗ ΟΜΑΔΑ & XP (LIFETIME STATS) ---
-    const credit = 18; // 18 σετ Πόδια βάσει πρωτοκόλλου Pegasus
+// --- 1. ΜΥΪΚΗ ΟΜΑΔΑ & XP (LIFETIME STATS) ---
+    const credit = 18; 
+    const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+    const statsKey = M?.system?.stats || 'pegasus_stats';
 
     // A. Weekly History Update
-    let historySets = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+    let historySets = JSON.parse(localStorage.getItem(historyKey)) || {};
     historySets["Πόδια"] = (historySets["Πόδια"] || 0) + credit;
-    localStorage.setItem('pegasus_weekly_history', JSON.stringify(historySets));
+    localStorage.setItem(historyKey, JSON.stringify(historySets));
 
-    // B. Lifetime Stats / XP Update (Achievement Sync)
-    let stats = JSON.parse(localStorage.getItem('pegasus_stats')) || { totalSets: 0, exerciseHistory: {} };
+    // B. Lifetime Stats / XP Update
+    let stats = JSON.parse(localStorage.getItem(statsKey)) || { totalSets: 0, exerciseHistory: {} };
     stats.totalSets = (stats.totalSets || 0) + credit;
     if (!stats.exerciseHistory["Ποδηλασία"]) stats.exerciseHistory["Ποδηλασία"] = 0;
     stats.exerciseHistory["Ποδηλασία"] += credit;
-    localStorage.setItem('pegasus_stats', JSON.stringify(stats));
+    localStorage.setItem(statsKey, JSON.stringify(stats));
 
     // --- 2. ΕΝΕΡΓΕΙΑΚΟ ΙΣΟΖΥΓΙΟ (METABOLIC SYNC) ---
+    const weeklyKcalKey = M?.diet?.weeklyKcal || "pegasus_weekly_kcal";
+    
     // A. Weekly Dashboard Kcal
-    let currentWeekly = parseFloat(localStorage.getItem("pegasus_weekly_kcal")) || 0;
-    localStorage.setItem("pegasus_weekly_kcal", (currentWeekly + kcal).toFixed(1));
+    let currentWeekly = parseFloat(localStorage.getItem(weeklyKcalKey)) || 0;
+    localStorage.setItem(weeklyKcalKey, (currentWeekly + kcal).toFixed(1));
 
-    // B. Daily Mobile Buffer (For EMS Cardio Guard)
-    let dailyCardio = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
-    localStorage.setItem("pegasus_cardio_kcal_" + dateStr, (dailyCardio + kcal).toFixed(1));
+    // B. Daily Mobile Buffer
+    const cardioOffsetKey = M?.workout?.cardio_offset || "pegasus_cardio_kcal";
+    localStorage.setItem(cardioOffsetKey + "_" + dateStr, (kcal).toFixed(1));
 
     // --- 3. CALENDAR SYNC (MARK AS COMPLETED) ---
-    // Αν τα χιλιόμετρα είναι >= 15 ή οι θερμίδες >= 400, η μέρα πρασινίζει
     if (km >= 15 || kcal >= 400) {
-        let doneKey = "pegasus_workouts_done";
+        let doneKey = M?.workout?.done || "pegasus_workouts_done";
         let calendarData = JSON.parse(localStorage.getItem(doneKey) || "{}");
         calendarData[workoutKey] = true;
         localStorage.setItem(doneKey, JSON.stringify(calendarData));
