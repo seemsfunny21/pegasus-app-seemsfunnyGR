@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.4 (DATE SYNC FIX & SYNTAX SHIELD)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.5 (FINAL SHIELD)
    Protocol: Dynamic Target Priority & Weekly Reset Safety
-   Status: FINAL STABLE | FIXED: SYNTAX ERROR & RESET LOGIC
+   Status: FINAL STABLE | FIXED: REFERENCE ERRORS & SCOPE LEAK
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -11,28 +11,33 @@ window.MuscleProgressUI = {
     lastDataHash: null,
 
     init() {
-        this.checkWeeklyReset();
-        setTimeout(() => this.render(true), 500);
-        
-        setInterval(() => {
+        // Αρχικοποίηση με ασφάλεια
+        try {
             this.checkWeeklyReset();
-            this.render();
-        }, 3000);
-    }, // 🎯 FIXED: Missing comma added here
+            setTimeout(() => this.render(true), 500);
+            
+            setInterval(() => {
+                this.checkWeeklyReset();
+                this.render();
+            }, 3000);
+        } catch (e) {
+            console.error("❌ PEGASUS UI: Initialization failed", e);
+        }
+    },
 
     calculateStats() {
-      const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
-const history = JSON.parse(localStorage.getItem(historyKey)) || {};
+        const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+        const history = JSON.parse(localStorage.getItem(historyKey)) || {};
         
         // 🛡️ ΠΡΟΤΕΡΑΙΟΤΗΤΑ ΣΤΟ ΔΥΝΑΜΙΚΟ ΠΛΑΝΟ ΤΟΥ DATA.JS
         const targets = (typeof window.getDynamicTargets === "function") 
             ? window.getDynamicTargets() 
-          : (JSON.parse(localStorage.getItem(M?.workout?.muscleTargets || "pegasus_muscle_targets")) ||
+            : (JSON.parse(localStorage.getItem(M?.workout?.muscleTargets || "pegasus_muscle_targets")) || 
               { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 });
 
         return Object.keys(targets).map(group => {
             const target = targets[group];
-            if (target === 0) return null; // Φιλτράρισμα κενών στόχων
+            if (target === 0) return null;
 
             const done = parseInt(history[group]) || 0;
             return {
@@ -55,8 +60,7 @@ const history = JSON.parse(localStorage.getItem(historyKey)) || {};
         this.lastDataHash = currentHash;
 
         let htmlString = `<div style="display:flex; flex-direction:column; gap:15px; width:100%;">`;
-        
-        const pegasusGreen = "var(--main, #00ff41)";
+        const pegasusGreen = "#00ff41";
 
         stats.forEach(s => {
             const isDone = s.done >= s.target;
@@ -78,19 +82,19 @@ const history = JSON.parse(localStorage.getItem(historyKey)) || {};
     },
 
     checkWeeklyReset() {
-       const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
-const lastResetDate = localStorage.getItem(lastResetKey);
-        const now = new Date();
+        const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
+        const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history'; // 🎯 FIXED: Προσθήκη ορισμού εδώ
         
-        // 🛡️ SYNC FIX: Χρήση του ίδιου Date Format με τον Optimizer (YYYY-MM-DD)
+        const lastResetDate = localStorage.getItem(lastResetKey);
+        const now = new Date();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-        // 🎯 FIXED: Reset every MONDAY (1) at midnight, not Saturday (6), to avoid deleting weekend workouts
+        // 🎯 FIXED: Reset κάθε Δευτέρα (1)
         if (now.getDay() === 1 && lastResetDate !== todayStr) {
             const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
-localStorage.setItem(historyKey, JSON.stringify(emptyHistory));
-localStorage.setItem(lastResetKey, todayStr);
-            this.lastDataHash = null; // Force Re-render
+            localStorage.setItem(historyKey, JSON.stringify(emptyHistory));
+            localStorage.setItem(lastResetKey, todayStr);
+            this.lastDataHash = null; 
             
             if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                 window.PegasusCloud.push(true);
@@ -100,6 +104,9 @@ localStorage.setItem(lastResetKey, todayStr);
     }
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+// 🚀 Εκκίνηση
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => window.MuscleProgressUI.init());
+} else {
     window.MuscleProgressUI.init();
-});
+}
