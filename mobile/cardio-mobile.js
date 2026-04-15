@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.2 MAXIMALIST)
+   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.3 MAXIMALIST)
    Protocol: Auto-Cycling, Metabolic Sync, XP Alignment & History Logging
-   Status: FINAL STABLE | INTEGRATED DATA SHIELD
+   Status: FINAL STABLE | FIXED: UNIFIED DATE PADDING & HISTORY RETENTION
    ========================================================================== */
 
 window.PegasusCardio = {
@@ -14,10 +14,15 @@ window.PegasusCardio = {
         
         if (km === 0 && burnedKcal === 0) return;
 
-        // --- 0. DATE PREPARATION (UNIFIED PROTOCOL) ---
+        // --- 0. DATE PREPARATION (UNIFIED PADDING PROTOCOL) ---
         const rawDate = new Date();
-        const dateStr = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
-        const workoutKey = `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${String(rawDate.getDate()).padStart(2, '0')}`;
+        const d = String(rawDate.getDate()).padStart(2, '0');
+        const m = String(rawDate.getMonth() + 1).padStart(2, '0');
+        const y = rawDate.getFullYear();
+        
+        // 🎯 FIXED: Padding applied to match Calendar, PC & EMS Guard
+        const dateStr = `${d}/${m}/${y}`;
+        const workoutKey = `${y}-${m}-${d}`;
 
         // --- 1. ΕΚΤΙΜΗΣΗ ΚΟΠΩΣΗΣ & LIFETIME STATS (XP) ---
         if(km > 0) { 
@@ -49,7 +54,7 @@ window.PegasusCardio = {
         if(burnedKcal > 0) {
             // A. Daily Target Offset (Για το Diet Module)
             let todayCardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
-            localStorage.setItem("pegasus_cardio_kcal_" + dateStr, todayCardioKcal + burnedKcal);
+            localStorage.setItem("pegasus_cardio_kcal_" + dateStr, (todayCardioKcal + burnedKcal).toFixed(1));
 
             // B. Weekly Dashboard Sync (Για την κεντρική οθόνη PC/Mobile)
             let weeklyKcal = parseFloat(localStorage.getItem("pegasus_weekly_kcal")) || 0;
@@ -72,8 +77,8 @@ window.PegasusCardio = {
         }
         
         // --- 4. CLEANUP & SYNC ---
-        kmEl.value = "";
-        kcalEl.value = "";
+        if(kmEl) kmEl.value = "";
+        if(kcalEl) kcalEl.value = "";
         
         if (typeof openView === "function") openView('home');
         
