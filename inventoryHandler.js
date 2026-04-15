@@ -1,7 +1,8 @@
 /* ==========================================================================
-   PEGASUS SMART INVENTORY HANDLER - STRICT EDITION (v11.2 SYNC)
+   PEGASUS SMART INVENTORY HANDLER - STRICT EDITION (v11.3 SYNC)
    INCLUDES MUSCLE TRACKING & SUPPLEMENT LOGISTICS
-   Protocol: Dynamic Targets Injection
+   Protocol: Dynamic Targets Injection & Zero-Bug Key Alignment
+   Status: FINAL STABLE | FIXED: SET EXPLOSION & INVENTORY KEYS
    ========================================================================== */
 
 /* --- 1. MUSCLE INVENTORY ENGINE --- */
@@ -12,30 +13,27 @@ function getSortedMuscleGroups() {
     const history = JSON.parse(localStorage.getItem(historyKey)) || {};
 
     // 2. ΔΥΝΑΜΙΚΗ ΑΝΑΚΤΗΣΗ ΣΤΟΧΩΝ (Targets)
-    // Διορθώνουμε το mapping ώστε να διαβάζει ΠΑΝΤΑ από το επίσημο κλειδί των ρυθμίσεων
     const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
                     { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
     
     let stats = Object.keys(targets).map(group => {
         let done = parseInt(history[group]) || 0;
-        let target = parseInt(targets[group]) || 1; // Fallback στο 1 για αποφυγή διαίρεσης με το 0
+        let target = parseInt(targets[group]) || 1; 
         
         return {
             name: group,
-            // Υπολογισμός ποσοστού με ακρίβεια
             percent: Math.min(100, Math.round((done / target) * 100)),
             remaining: Math.max(0, target - done)
         };
     });
 
-    // Ταξινόμηση: Αυτά που λείπουν περισσότερο (χαμηλότερο %) εμφανίζονται πρώτα
     return stats.sort((a, b) => a.percent - b.percent);
 }
 
 function getSmartDailyProgram(day) {
     if (day === "Τετάρτη") return [
-        { name: "EMS Full Body", sets: 1 },
-        { name: "Core Stabilization", sets: 3 }
+        { name: "EMS Training", sets: 1 },
+        { name: "Plank", sets: 3 }
     ];
     if (day === "Πέμπτη" || day === "Δευτέρα") return []; 
 
@@ -47,12 +45,20 @@ function getSmartDailyProgram(day) {
     availableGroups.slice(0, 2).forEach(group => {
         if (typeof exercisesDB !== 'undefined') {
             const availableEx = exercisesDB.filter(ex => ex.muscleGroup === group.name);
-            availableEx.forEach(ex => {
+            let remainingForGroup = group.remaining;
+
+            // 🎯 FIXED: Αποτροπή Set Explosion (Μειώνει το υπόλοιπο σε κάθε άσκηση)
+            for (let ex of availableEx) {
+                if (remainingForGroup <= 0) break;
+                let setsToDo = Math.min(4, remainingForGroup);
+                
                 program.push({
                     name: ex.name,
-                    sets: Math.min(4, group.remaining)
+                    sets: setsToDo
                 });
-            });
+                
+                remainingForGroup -= setsToDo;
+            }
         }
     });
 
@@ -61,7 +67,6 @@ function getSmartDailyProgram(day) {
 
 function findMuscleGroup(exerciseName) {
     if (!exerciseName) return null;
-    
     const cleanName = exerciseName.trim().toLowerCase();
 
     if (typeof exercisesDB !== 'undefined') {
@@ -80,7 +85,7 @@ function findMuscleGroup(exerciseName) {
         "bicep curls": "Χέρια",
         "plank": "Κορμός",
         "leg press": "Πόδια",
-        "ems full body": "Κορμός",
+        "ems training": "Πλάτη", // 🎯 FIXED: Aligned with data.js
         "ποδηλασία": "Πόδια" 
     };
 
@@ -113,7 +118,7 @@ function resetWeeklyInventory() {
 
 const SUPPLEMENT_CONFIG = {
     doses: {
-        protein: 60,
+        protein: 30, // Ανά scoop
         creatine: 5  
     },
     thresholdDays: 12,
@@ -126,17 +131,18 @@ const SUPPLEMENT_CONFIG = {
 };
 
 function initSupplementInventory() {
+    // 🎯 FIXED: Aligned keys with cloudSync.js & extensions.js (prot/crea)
     return JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {
-        protein: 0,
-        creatine: 0
+        prot: 0,
+        crea: 0
     };
 }
 
 function consumeDailySupplements() {
     let inv = initSupplementInventory();
 
-    inv.protein = Math.max(0, inv.protein - SUPPLEMENT_CONFIG.doses.protein);
-    inv.creatine = Math.max(0, inv.creatine - SUPPLEMENT_CONFIG.doses.creatine);
+    inv.prot = Math.max(0, inv.prot - SUPPLEMENT_CONFIG.doses.protein);
+    inv.crea = Math.max(0, inv.crea - SUPPLEMENT_CONFIG.doses.creatine);
 
     localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
     return checkSupplementAlerts(inv);
@@ -147,11 +153,11 @@ function checkSupplementAlerts(inv) {
     const creatineThreshold = SUPPLEMENT_CONFIG.doses.creatine * SUPPLEMENT_CONFIG.thresholdDays; 
 
     let alerts = [];
-    if (inv.protein <= proteinThreshold && inv.protein > 0) {
-        alerts.push(`⚠️ Πρωτεΐνη: Χαμηλό απόθεμα (${inv.protein}g).`);
+    if (inv.prot <= proteinThreshold && inv.prot > 0) {
+        alerts.push(`⚠️ Πρωτεΐνη: Χαμηλό απόθεμα (${inv.prot}g).`);
     }
-    if (inv.creatine <= creatineThreshold && inv.creatine > 0) {
-        alerts.push(`⚠️ Κρεατίνη: Χαμηλό απόθεμα (${inv.creatine}g).`);
+    if (inv.crea <= creatineThreshold && inv.crea > 0) {
+        alerts.push(`⚠️ Κρεατίνη: Χαμηλό απόθεμα (${inv.crea}g).`);
     }
 
     return alerts;
@@ -180,8 +186,11 @@ function calculateOrderTotals(cartItems, isHoliday = false) {
 
 function restockSupplement(type, grams) {
     let inv = initSupplementInventory();
-    if (inv[type] !== undefined) {
-        inv[type] += grams;
+    // Support legacy naming in restock calls, mapping to new keys
+    const actualKey = type === 'protein' ? 'prot' : (type === 'creatine' ? 'crea' : type);
+    
+    if (inv[actualKey] !== undefined) {
+        inv[actualKey] += grams;
         localStorage.setItem('pegasus_supp_inventory', JSON.stringify(inv));
     }
     return inv;
