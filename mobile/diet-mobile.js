@@ -4,9 +4,13 @@
    ========================================================================== */
 
 window.PegasusDiet = {
+    // 🎯 FIX: ΑΥΣΤΗΡΟ PADDING ΗΜΕΡΟΜΗΝΙΑΣ ΓΙΑ ΝΑ ΣΥΜΦΩΝΕΙ ΜΕ ΤΟ ΗΜΕΡΟΛΟΓΙΟ
     getStrictDateStr: function() {
         const rawDate = new Date();
-        return rawDate.getDate() + "/" + (rawDate.getMonth() + 1) + "/" + rawDate.getFullYear();
+        const d = String(rawDate.getDate()).padStart(2, '0');
+        const m = String(rawDate.getMonth() + 1).padStart(2, '0');
+        const y = rawDate.getFullYear();
+        return `${d}/${m}/${y}`;
     },
 
     checkDailyRoutine: function() {
@@ -231,7 +235,8 @@ window.PegasusDiet = {
         localStorage.setItem(prefix + dateStr, JSON.stringify(log));
         
         this.updateUI();
-        if(window.PegasusCloud) await window.PegasusCloud.push(true);
+        // 🎯 FIX: ΑΦΑΙΡΕΣΗ ΤΟΥ `true` ΓΙΑ ΝΑ ΕΝΕΡΓΟΠΟΙΗΘΕΙ ΤΟ DEBOUNCE
+        if(window.PegasusCloud) await window.PegasusCloud.push();
     },
 
     // 🛡️ FIX: Αφαίρεση του setItem που προκαλούσε το Crash.
