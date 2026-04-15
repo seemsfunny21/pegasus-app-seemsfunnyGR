@@ -1,20 +1,23 @@
 /* ==========================================================================
-   PEGASUS PARTNER ENGINE - ULTIMATE SMART LIST (STRICT v16.1 PATCHED)
+   PEGASUS PARTNER ENGINE - ULTIMATE SMART LIST (STRICT v16.2 PATCHED)
+   Protocol: Global Scope Shielding, State Reset & Cloud Sync
+   Status: FINAL STABLE | FIXED: STATE BLEED & REFERENCE ERRORS
    ========================================================================== */
 
-let partnerData = {
+// 🎯 FIXED: Σύνδεση στο window για να είναι προσβάσιμο από παντού (app.js)
+window.partnerData = {
     isActive: false,
     currentPartner: "", 
     isUser1Turn: true
 };
 
 // 1. ΕΝΕΡΓΟΠΟΙΗΣΗ / ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
-function togglePartnerMode() {
+window.togglePartnerMode = function() {
     const nameInput = document.getElementById('partnerNameInput');
     const btn = document.getElementById('btnPartnerMode');
     
-    if (!partnerData.isActive) {
-        let rawName = nameInput.value.trim();
+    if (!window.partnerData.isActive) {
+        let rawName = nameInput ? nameInput.value.trim() : "";
         let upperName = rawName.toLocaleUpperCase('el-GR');
 
         if (rawName === "" || upperName === "ANGELOS" || upperName === "ΑΓΓΕΛΟΣ" || upperName === "ZZ") {
@@ -22,39 +25,59 @@ function togglePartnerMode() {
             return;
         }
 
-        partnerData.isActive = true;
-        partnerData.currentPartner = upperName;
+        window.partnerData.isActive = true;
+        window.partnerData.currentPartner = upperName;
+        window.partnerData.isUser1Turn = true; // Ο Άγγελος ξεκινάει πάντα πρώτος
         
         // ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΛΙΣΤΑ ΟΝΟΜΑΤΩΝ
-        savePartnerNameToList(upperName);
+        window.savePartnerNameToList(upperName);
+        window.updatePartnerDatalist();
         
-        updatePartnerDatalist();
+        if (btn) {
+            btn.textContent = `ΣΥΝΕΡΓΑΤΗΣ: ${upperName} (ON)`;
+            btn.style.background = "#4CAF50";
+            btn.style.color = "#000";
+        }
+        if (nameInput) nameInput.disabled = true;
         
-        btn.textContent = `ΣΥΝΕΡΓΑΤΗΣ: ${upperName} (ON)`;
-        btn.style.background = "#4CAF50";
-        btn.style.color = "#000";
-        nameInput.disabled = true;
+        console.log(`🤝 PARTNER MODE: Activated with ${upperName}`);
+
     } else {
-        partnerData.isActive = false;
-        btn.textContent = "ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ";
-        btn.style.background = "#222";
-        btn.style.color = "#4CAF50";
-        nameInput.disabled = false;
-        nameInput.value = ""; 
+        // 🎯 FIXED: Πλήρες State Reset για αποφυγή Data Bleed
+        window.partnerData.isActive = false;
+        window.partnerData.currentPartner = "";
+        window.partnerData.isUser1Turn = true; // Κλείδωμα πίσω στον Άγγελο
+        
+        if (btn) {
+            btn.textContent = "ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ";
+            btn.style.background = "#222";
+            btn.style.color = "#4CAF50";
+        }
+        if (nameInput) {
+            nameInput.disabled = false;
+            nameInput.value = ""; 
+        }
+        
+        console.log("🤝 PARTNER MODE: Deactivated. System reverted to Master User.");
     }
-}
+};
 
 // 2. ΑΠΟΘΗΚΕΥΣΗ ΟΝΟΜΑΤΟΣ ΣΕ ΕΙΔΙΚΗ ΛΙΣΤΑ
-function savePartnerNameToList(name) {
+window.savePartnerNameToList = function(name) {
     let list = JSON.parse(localStorage.getItem("pegasus_partners_list") || "[]");
     if (!list.includes(name)) {
         list.push(name);
         localStorage.setItem("pegasus_partners_list", JSON.stringify(list));
+        
+        // 🎯 FIXED: Cloud Sync για μεταφορά των ονομάτων στο κινητό
+        if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+            window.PegasusCloud.push(true);
+        }
     }
-}
+};
 
 // 3. ΑΝΑΝΕΩΣΗ ΤΗΣ ΛΙΣΤΑΣ ΠΡΟΤΑΣΕΩΝ
-function updatePartnerDatalist() {
+window.updatePartnerDatalist = function() {
     const dataList = document.getElementById('partnerList');
     if (!dataList) return;
 
@@ -86,25 +109,36 @@ function updatePartnerDatalist() {
         option.value = name;
         dataList.appendChild(option);
     });
-}
+};
 
 // 4. ΑΠΟΘΗΚΕΥΣΗ / ΦΟΡΤΩΣΗ ΚΙΛΩΝ
-function savePartnerWeight(exerciseName, weight) {
-    // 🎯 FIXED: Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
-    const userKey = partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : partnerData.currentPartner;
+window.savePartnerWeight = function(exerciseName, weight) {
+    if (!exerciseName) return;
+    
+    // 🎯 Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
+    const userKey = window.partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : window.partnerData.currentPartner;
     localStorage.setItem(`weight_${userKey}_${exerciseName.trim()}`, weight);
-    if (partnerData.isUser1Turn) localStorage.setItem(`weight_${exerciseName.trim()}`, weight);
-}
+    
+    // Legacy support: Αποθηκεύουμε και στο γενικό κλειδί αν είναι ο Άγγελος
+    if (window.partnerData.isUser1Turn) {
+        localStorage.setItem(`weight_${exerciseName.trim()}`, weight);
+    }
+};
 
-function loadPartnerWeight(exerciseName) {
-    // 🎯 FIXED: Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
-    const userKey = partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : partnerData.currentPartner;
-    return localStorage.getItem(`weight_${userKey}_${exerciseName.trim()}`) || localStorage.getItem(`weight_${exerciseName.trim()}`) || "";
-}
+window.loadPartnerWeight = function(exerciseName) {
+    if (!exerciseName) return "";
+    
+    // 🎯 Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
+    const userKey = window.partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : window.partnerData.currentPartner;
+    
+    // Διαβάζει πρώτα από το Partner Key, μετά από το Legacy Key
+    return localStorage.getItem(`weight_${userKey}_${exerciseName.trim()}`) || 
+           localStorage.getItem(`weight_${exerciseName.trim()}`) || "";
+};
 
 // 5. INITIALIZATION
 window.addEventListener('DOMContentLoaded', () => {
     const nameInput = document.getElementById('partnerNameInput');
     if (nameInput) nameInput.value = ""; 
-    updatePartnerDatalist();
+    window.updatePartnerDatalist();
 });
