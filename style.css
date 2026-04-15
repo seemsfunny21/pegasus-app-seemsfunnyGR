@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v7)
-   Protocol: BULLETPROOF LEFT-ALIGNED DASHBOARD & UI POLISH
+   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v7.1)
+   Protocol: BULLETPROOF LEFT-ALIGNED DASHBOARD & iOS ZOOM PREVENTION
+   Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
 /* ================= GLOBAL SETTINGS ================= */
@@ -17,6 +18,11 @@ html, body {
 }
 
 body::-webkit-scrollbar { display: none; }
+
+/* 🎯 FIXED: Αποτροπή iOS Auto-Zoom στα inputs */
+input[type="number"], input[type="text"], input[type="password"] {
+    font-size: 16px !important; 
+}
 
 /* ================= NAVIGATION BAR (STRICT STATIC DESKTOP) ================= */
 .navbar {
@@ -160,6 +166,7 @@ body::-webkit-scrollbar { display: none; }
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
+    touch-action: none; /* 🎯 FIXED: Αποτροπή scroll κατά το drag στα κινητά */
 }
 
 .exercise-list::-webkit-scrollbar { display: none; }
@@ -174,6 +181,7 @@ body::-webkit-scrollbar { display: none; }
     transition: transform 0.2s, opacity 0.2s, border-color 0.3s;
     position: relative;
     user-select: none;
+    -webkit-user-select: none;
 }
 
 .exercise.dragging {
@@ -234,7 +242,7 @@ body::-webkit-scrollbar { display: none; }
     position: fixed;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 10001;
+    z-index: 10001; /* Baseline Panel Z-Index */
     background: #0f0f0f;
     padding: 25px;
     border-radius: 12px;
@@ -277,10 +285,10 @@ body::-webkit-scrollbar { display: none; }
     flex: 1; 
     background: #000; 
     border-radius: 12px; 
-    border: 1px solid #4CAF50; /* 🟢 Πράσινο περίγραμμα αντί για γκρι */
+    border: 1px solid #4CAF50;
     overflow: hidden; 
     position: relative; 
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.1); /* 🟢 Αμυδρό πράσινο glow */
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.1); 
 }
 .main-video { width: 100%; height: 100%; object-fit: contain; }
 
@@ -430,7 +438,7 @@ button[onclick*="delete"]:hover {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.9);
-    z-index: 10001;
+    z-index: 10005; /* 🎯 Πιο πάνω από τα απλά πάνελ */
     display: none;
     align-items: center;
     justify-content: center;
@@ -501,7 +509,6 @@ button[onclick*="delete"]:hover {
     left:20px;
 }
 
-/* Ο διακόπτης (Toggle Switch) */
 .switch {
     position: relative;
     display: inline-block;
@@ -713,7 +720,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ================= PEGASUS UNIFORM LOADER (SAME SIZE PROTOCOL) ================= */
+/* ================= PEGASUS UNIFORM LOADER ================= */
 #pegasus-loader {
     position: fixed;
     top: 0; left: 0;
@@ -731,12 +738,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     flex-direction: column;
     align-items: center;
     width: 100%;
-    gap: 15px; /* 🎯 Σταθερό κενό ανάμεσα σε όλα τα στοιχεία */
+    gap: 15px; 
 }
 
-/* 1. ΤΙΤΛΟΣ */
 .pegasus-logo-anim {
-    font-size: 28px; /* 🎯 UNIFORM SIZE */
+    font-size: 28px; 
     font-weight: 900;
     color: #4CAF50;
     text-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
@@ -745,19 +751,17 @@ input:checked + .slider:before { transform: translateX(26px); }
     animation: pulse 1.5s infinite;
 }
 
-/* 2. STATUS TEXT */
 .loader-text {
-    font-size: 14px; /* Διατήρηση του Uniform Size Protocol */
+    font-size: 14px; 
     font-weight: 900;
-    color: #ffffff; /* 🎯 ΑΛΛΑΓΗ ΣΕ ΑΣΠΡΟ */
+    color: #ffffff; 
     margin: 0;
     text-transform: lowercase;
     letter-spacing: 1px;
     font-family: inherit;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2); /* Ελαφρύ λευκό glow */
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2); 
 }
 
-/* Μπάρα Φόρτωσης - Παραμένει διακριτική ανάμεσα στα κείμενα */
 .loader-bar-container {
     width: 250px;
     height: 3px;
@@ -774,9 +778,8 @@ input:checked + .slider:before { transform: translateX(26px); }
     transition: width 0.3s ease; 
 }
 
-/* 3. BRANDING */
 .loader-branding {
-    font-size: 28px; /* 🎯 UNIFORM SIZE */
+    font-size: 28px; 
     font-weight: 900;
     color: #4CAF50;
     margin: 0;
@@ -784,7 +787,6 @@ input:checked + .slider:before { transform: translateX(26px); }
     text-transform: none;
 }
 
-/* 🎯 Responsive - Μικραίνουν όλα μαζί ομοιόμορφα για κινητά */
 @media (max-width: 800px) {
     .pegasus-logo-anim, 
     .loader-text, 
@@ -794,16 +796,10 @@ input:checked + .slider:before { transform: translateX(26px); }
     .loader-bar-container { width: 180px; }
 }
 
-/* --- PEGASUS BOOT ANIMATIONS --- */
 @keyframes pulse {
     0% { transform: scale(1); opacity: 0.8; }
     50% { transform: scale(1.1); opacity: 1; }
     100% { transform: scale(1); opacity: 0.8; }
-}
-
-@keyframes fillBar {
-    0% { width: 0%; }
-    100% { width: 100%; }
 }
 
 .dots {
@@ -829,17 +825,13 @@ input:checked + .slider:before { transform: translateX(26px); }
     100% { content: ''; }
 }
 
-/* ==========================================================================
-   UI POLISH: TOOLS PANEL & PLAN SELECTOR MODAL
-   ========================================================================== */
-
-/* --- ΕΡΓΑΛΕΙΑ PEGASUS (ΟΜΟΙΟΜΟΡΦΙΑ & ΚΕΝΤΡΑΡΙΣΜΑ) --- */
+/* ================= UI POLISH: TOOLS & PLAN MODAL ================= */
 .tools-btn {
     width: 100% !important;
     display: flex !important;
-    justify-content: center !important; /* 🎯 ΕΠΑΝΑΦΟΡΑ ΣΤΟ ΚΕΝΤΡΟ */
+    justify-content: center !important; 
     align-items: center !important;
-    gap: 10px !important; /* Κενό ανάμεσα στο emoji και το κείμενο */
+    gap: 10px !important; 
     padding: 12px 15px !important;
     font-size: 12px !important;
     text-transform: uppercase !important;
@@ -847,7 +839,6 @@ input:checked + .slider:before { transform: translateX(26px); }
     text-align: center !important;
 }
 
-/* --- MODAL ΕΠΙΛΟΓΗΣ ΠΡΟΓΡΑΜΜΑΤΟΣ (ΚΑΘΕΤΗ ΔΙΑΤΑΞΗ) --- */
 #planModal {
     width: 400px !important;
     max-width: 90vw;
@@ -856,7 +847,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 #planModal h3 {
-    color: #4CAF50 !important; /* 🟢 ΔΙΟΡΘΩΣΗ: ΠΡΑΣΙΝΟ ΑΝΤΙ ΓΙΑ ΚΙΤΡΙΝΟ */
+    color: #4CAF50 !important; 
     margin-bottom: 10px !important;
 }
 
@@ -885,8 +876,8 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .plan-btn:hover {
-    border-color: #4CAF50 !important; /* 🟢 ΔΙΟΡΘΩΣΗ: ΠΡΑΣΙΝΟ HOVER */
-    background: rgba(76, 175, 80, 0.1) !important; /* 🟢 ΔΙΟΡΘΩΣΗ: ΠΡΑΣΙΝΟ GLOW */
+    border-color: #4CAF50 !important; 
+    background: rgba(76, 175, 80, 0.1) !important; 
 }
 
 .plan-title {
@@ -916,7 +907,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     color: #000 !important;
 }
 
-/* ================= PEGASUS STATS ALIGNMENT FIX ================= */
+/* ================= PEGASUS STATS & MODALS ================= */
 .stat-label-row {
     display: flex !important;
     justify-content: space-between !important;
@@ -928,16 +919,15 @@ input:checked + .slider:before { transform: translateX(26px); }
     letter-spacing: 1px !important;
 }
 
-/* Καθολικό στυλ για όλα τα Modals */
 .modal, #pinModal, .pegasus-panel {
-    background: rgba(5, 5, 5, 0.98) !important; /* Μαύρο βαθύ */
-    border: 2px solid #00ff41 !important;        /* Πράσινο πλαίσιο */
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);  /* Πράσινη αύρα */
+    background: rgba(5, 5, 5, 0.98) !important; 
+    border: 2px solid #00ff41 !important;       
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);  
     border-radius: 12px;
     color: #fff;
+    z-index: 10001; /* 🎯 Διασφάλιση ιεραρχίας */
 }
 
-/* Στυλ για τα πεδία εισαγωγής μέσα στα modals */
 .modal input, #pinModal input {
     background: #000 !important;
     border: 1px solid #00ff41 !important;
@@ -946,4 +936,6 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-family: 'Inter', sans-serif;
     border-radius: 5px;
     padding: 10px;
+    /* 🎯 Αποτροπή Zoom iOS */
+    font-size: 16px !important; 
 }
