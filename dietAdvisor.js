@@ -184,13 +184,19 @@ window.addKoukiToLog = function(name, tag) {
         window.addFoodItem(name + " (Κούκι)", macros.kcal, macros.protein);
     } else {
         // Fallback ΜΟΝΟ αν το food.js δεν υπάρχει (απίθανο)
-        const today = new Date();
-        const dateKey = (typeof window.getStrictDateStr === "function") ? window.getStrictDateStr() : today.toLocaleDateString('el-GR');
+        // 🎯 FIX: ΑΥΣΤΗΡΟ PADDING ΗΜΕΡΟΜΗΝΙΑΣ ΓΙΑ ΤΟ FALLBACK BRIDGE
+        const rawDate = new Date();
+        const d = String(rawDate.getDate()).padStart(2, '0');
+        const m = String(rawDate.getMonth() + 1).padStart(2, '0');
+        const y = rawDate.getFullYear();
+        const fallbackDateStr = `${d}/${m}/${y}`;
+
+        const dateKey = (typeof window.getStrictDateStr === "function") ? window.getStrictDateStr() : fallbackDateStr;
         const logPrefix = (typeof M !== 'undefined' && M.nutrition) ? M.nutrition.log_prefix : "food_log_";
         const logKey = logPrefix + dateKey;
         
         let log = JSON.parse(localStorage.getItem(logKey)) || [];
-        log.push({ name: name + " (Κούκι)", kcal: macros.kcal, protein: macros.protein, time: today.toLocaleTimeString() });
+        log.push({ name: name + " (Κούκι)", kcal: macros.kcal, protein: macros.protein, time: rawDate.toLocaleTimeString() });
         localStorage.setItem(logKey, JSON.stringify(log));
         
         if (window.updateFoodUI) window.updateFoodUI();
