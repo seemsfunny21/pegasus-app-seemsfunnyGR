@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v2.5 (FINAL HARDENED)
+   PEGASUS DYNAMIC OPTIMIZER - v2.6 (FINAL HARDENED)
    Protocol: Saturday Anchor Reset, Stretching Guard & Persistence Sync
-   Status: PRODUCTION READY | ZERO-BUG VERIFIED
+   Status: PRODUCTION READY | ZERO-BUG VERIFIED | MAPPING FIX (RAISE)
    ========================================================================== */
 
 window.PegasusOptimizer = {
@@ -15,7 +15,7 @@ window.PegasusOptimizer = {
     apply: function(day, sessionExercises) {
         let progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         
-        // 🎯 CHRONO-ALIGNMENT (Aligned with progressUI.js)
+        // 🎯 CHRONO-ALIGNMENT (Aligned with progressUI.js & cloudSync.js)
         const lastResetKey = 'pegasus_last_reset_timestamp';
         const lastReset = localStorage.getItem(lastResetKey);
         const now = new Date();
@@ -25,16 +25,12 @@ window.PegasusOptimizer = {
         const daysSinceReset = (now.getTime() - lastResetTime) / (1000 * 3600 * 24);
         
         // 🛡️ TACTICAL RESET EXECUTION (Persistence Patch)
+        // Reset αν είναι Σάββατο ή αν πέρασε μια εβδομάδα (σε περίπτωση που το Σάββατο δεν ανοίχτηκε το App)
         if ((day === "Σάββατο" && lastReset !== todayDate) || daysSinceReset >= 6.5) {
             console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
-            
             progress = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-            
-            // Αποθήκευση αλλαγών στο δίσκο
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(progress));
             localStorage.setItem(lastResetKey, todayDate);
-            
-            // Συγχρονισμός με Cloud αν είναι εφικτό
             if (window.PegasusCloud) window.PegasusCloud.push(true);
         }
         
@@ -45,7 +41,7 @@ window.PegasusOptimizer = {
         const getActiveMins = (data) => data.reduce((sum, ex) => sum + (ex.adjustedSets > 0 ? (ex.adjustedSets * 1.9) : 0), 0);
         let currentMinutes = getActiveMins(mappedData);
 
-        // FILLER LOGIC (v2.5)
+        // 填充逻辑 (FILLER LOGIC v2.6)
         if ((day === "Παρασκευή" || day === "Σάββατο" || day === "Κυριακή") && currentMinutes < 40) {
             const priorities = {
                 "Παρασκευή": ["Πλάτη", "Ώμοι", "Χέρια", "Κορμός"],
@@ -57,6 +53,7 @@ window.PegasusOptimizer = {
             for (let groupName of searchGroups) {
                 if (currentMinutes >= 45) break;
                 if (!window.exercisesDB) break;
+                
                 const potentialEx = window.exercisesDB.filter(ex => ex.muscleGroup === groupName);
 
                 for (let sEx of potentialEx) {
@@ -85,25 +82,48 @@ window.PegasusOptimizer = {
         const group = this.getGroup(ex.name);
         const target = currentTargets[group] || 24;
         const remaining = target - (tracker[group] || 0);
+        
         let finalSets = (remaining <= 0) ? 0 : (ex.sets > remaining ? remaining : ex.sets);
-        if (ex.name.includes("Ποδηλασία")) { finalSets = (remaining >= 18) ? 1 : 0; }
-        if (finalSets > 0) { tracker[group] += (ex.name.includes("Ποδηλασία") ? 18 : finalSets); }
+        
+        // 🚴 Special Rule: Cycling Credits 18 sets
+        if (ex.name.includes("Ποδηλασία")) { 
+            finalSets = (remaining >= 18) ? 1 : 0; 
+        }
+        
+        if (finalSets > 0) { 
+            // Αν είναι ποδηλασία πιστώνουμε 18, αλλιώς τα σετ που έγιναν
+            tracker[group] += (ex.name.includes("Ποδηλασία") ? 18 : finalSets); 
+        }
+
         return { ...ex, adjustedSets: finalSets, isCompleted: remaining <= 0, muscleGroup: group };
     },
 
     getGroup: function(name) {
         const cleanName = name.trim().replace(" ☀️", "");
+        
+        // 1. Προτεραιότητα στη Βάση Δεδομένων (αν υπάρχει)
         if (window.exercisesDB) {
             const match = window.exercisesDB.find(ex => ex.name === cleanName);
             if (match) return match.muscleGroup;
         }
+
         const n = cleanName.toLowerCase();
+
+        // 2. Tactical Keyword Mapping (v2.6 Fixed Logic Sequence)
         if (n.includes("στήθος") || n.includes("chest") || n.includes("pushups")) return "Στήθος";
         if (n.includes("πλάτη") || n.includes("row") || n.includes("pulldown") || n.includes("back")) return "Πλάτη";
+        
+        // 🎯 FIXED: Το "leg raise" πρέπει να πηγαίνει Κορμό, ενώ το "lateral raise" Ώμους
+        if (n.includes("leg raise")) return "Κορμός"; 
+        
         if (n.includes("πόδια") || n.includes("leg") || n.includes("kickbacks") || n.includes("cycling")) return "Πόδια";
         if (n.includes("χέρια") || n.includes("bicep") || n.includes("tricep") || n.includes("curls")) return "Χέρια";
-        if (n.includes("ώμοι") || n.includes("shoulder") || n.includes("upright")) return "Ώμοι";
+        
+        // 🎯 FIXED: Shoulder check πριν το γενικό "raise"
+        if (n.includes("ώμοι") || n.includes("shoulder") || n.includes("upright") || n.includes("lateral")) return "Ώμοι";
+        
         if (n.includes("κορμός") || n.includes("abs") || n.includes("crunch") || n.includes("plank") || n.includes("raise")) return "Κορμός";
+        
         return "Άλλο";
     }
 };
