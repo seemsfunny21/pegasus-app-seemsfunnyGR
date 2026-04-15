@@ -1,12 +1,12 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.38 (THE MASTER PROTOCOL & CLOUD SYNC FIX)
-   Protocol: Static Navbar Binding + Diagnostic Logging + Partner/Settings Patch
+   PEGASUS WORKOUT ENGINE - v10.40 (ASYNC MEMORY & CIRCUIT SORT PATCH)
+   Protocol: Partial Session Memory + Auto-Sort + Smart Sync Logic
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
 var M = M || window.PegasusManifest;
-var P_M = M; // Διατηρούμε το P_M ως alias για να μη σπάσει ο υπόλοιπος κώδικας του αρχείου
+var P_M = M; 
 
 window.masterUI = window.masterUI || {}; 
 
@@ -85,7 +85,6 @@ document.addEventListener('click', function() {
             sysAudio.currentTime = 0;
             audioUnlocked = true;
             console.log("🔊 PEGASUS OS: Audio Unlocked & Ready.");
-            // We removed Cloud Pull from here to prevent loops.
         }).catch(err => console.warn("PEGASUS OS: Audio unlock pending user action", err));
     }
 }, { once: true });
@@ -98,6 +97,32 @@ const playBeep = (volume = 1) => {
     }
 };
 
+/* ===== 3.5 SMART SYNC (AUTO-SKIP COMPLETED TARGETS) ===== */
+window.syncSessionWithHistory = function() {
+    console.log("🔄 PEGASUS SMART SYNC: Executing...");
+    const historyKey = P_M?.workout?.weekly_history || 'pegasus_weekly_history';
+    const history = JSON.parse(localStorage.getItem(historyKey)) || {};
+    const targets = (typeof window.getDynamicTargets === "function")
+        ? window.getDynamicTargets()
+        : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+
+    exercises.forEach((exDiv, i) => {
+        const exName = exDiv.querySelector(".exercise-name").textContent.trim();
+        const muscle = (window.exercisesDB?.find(e => e.name.trim() === exName))?.muscleGroup;
+
+        if (muscle) {
+            const doneWeekly = parseInt(history[muscle]) || 0;
+            const targetWeekly = parseInt(targets[muscle]) || 0;
+            
+            if (targetWeekly > 0 && doneWeekly >= targetWeekly) {
+                if (!exDiv.classList.contains("exercise-skipped") && remainingSets[i] > 0) {
+                    window.toggleSkipExercise(i, true);
+                }
+            }
+        }
+    });
+};
+
 /* ===== 4. NAVIGATION BINDING (STRICT HTML BRIDGE) ===== */
 function createNavbar() {
     const days = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"];
@@ -107,25 +132,18 @@ function createNavbar() {
         if (btn) {
             btn.onclick = (e) => {
                 if (e && e.isTrusted) {
-                    // Manual Click by User -> Force Cloud Save (Αποτρέπουμε το Loop)
                     if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                         window.PegasusCloud.push();
                     }
                 }
                 selectDay(btn, d);
             };
-        } else {
-            console.warn(`[UI ALERT]: Button nav-${d} missing from HTML!`);
         }
     });
-    console.log("🛡️ PEGASUS UI: Navbar locked to static HTML.");
 }
 
 function selectDay(btn, day) {
-    if (typeof window.program === 'undefined' || !window.program) {
-        console.error("❌ PEGASUS CRITICAL: window.program is missing! Check data.js");
-        return; 
-    }
+    if (typeof window.program === 'undefined' || !window.program) return;
 
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
@@ -165,6 +183,9 @@ function selectDay(btn, day) {
                      window.PegasusOptimizer.apply(day, rawBaseData) : 
                      rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
 
+    // 🎯 SORTING PATCH: Βάζουμε πρώτες τις ασκήσεις με τα περισσότερα σετ για σωστό Circuit!
+    mappedData.sort((a, b) => parseFloat(b.adjustedSets || b.sets) - parseFloat(a.adjustedSets || a.sets));
+
     const list = document.getElementById("exList");
     if (!list) return;
     list.innerHTML = ""; 
@@ -172,25 +193,33 @@ function selectDay(btn, day) {
     exercises = []; 
     remainingSets = []; 
 
+    // 💾 DAILY PROGRESS MEMORY FETCH
+    const todayStr = new Date().toISOString().split('T')[0];
+    let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
+    if(dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
+
     mappedData.forEach((e, idx) => {
         if (!e.name || e.name === "αα" || e.adjustedSets < 0.1) return;
-
-        let finalSets = parseFloat(e.adjustedSets);
-        const d = document.createElement("div");
-        d.className = "exercise"; 
-        d.dataset.total = finalSets; 
-        d.dataset.done = 0; 
-        d.dataset.index = idx;
 
         const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         
+        let finalSets = parseFloat(e.adjustedSets);
+        let doneSoFar = dailyProg.exercises[cleanName] || 0; 
+        let remSets = Math.max(0, finalSets - doneSoFar);
+
+        const d = document.createElement("div");
+        d.className = "exercise"; 
+        d.dataset.total = finalSets; 
+        d.dataset.done = doneSoFar; 
+        d.dataset.index = idx;
+
         const savedWeight = window.getSavedWeight(cleanName);
         const displayWeight = (savedWeight && savedWeight !== "") ? savedWeight : (e.weight || "");
 
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
-                <div class="set-counter">0/${finalSets}</div>
+                <div class="set-counter">${doneSoFar}/${finalSets}</div>
                 <div class="exercise-name">${cleanName}</div> 
                 <input type="number" 
                        id="weight-${idx}" 
@@ -205,16 +234,26 @@ function selectDay(btn, day) {
                 <div class="progress-bar"></div>
             </div>
         `;
+        
         list.appendChild(d);
         exercises.push(d);
-        remainingSets.push(finalSets);
+        remainingSets.push(remSets);
+
+        // Αν έγινε ολοκληρωτικά (π.χ. 6/6), κάντη γκρι αμέσως
+        if (remSets === 0) {
+            d.classList.add("exercise-skipped");
+            d.style.setProperty('opacity', '0.2', 'important');
+            d.style.setProperty('filter', 'grayscale(100%)', 'important');
+        }
     });
 
     if (typeof calculateTotalTime === "function") calculateTotalTime(false);
     
+    // Εφαρμογή Smart Sync
+    setTimeout(() => { window.syncSessionWithHistory(); }, 50);
+
     setTimeout(() => {
         if (typeof showVideo === "function") showVideo(0);
-        
         if (exercises.length === 0) {
             list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
         }
@@ -226,6 +265,16 @@ function startPause() {
     if (exercises.length === 0) return;
     const vid = document.getElementById("video");
     
+    // 🎯 SMART START: Βρες την πρώτη διαθέσιμη (μη-γκρι) άσκηση!
+    if (!running) {
+        let firstAvailable = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx].classList.contains("exercise-skipped"));
+        if (currentIdx === 0 && phase === 0 && totalSeconds === remainingSeconds) {
+            if (firstAvailable !== -1) currentIdx = firstAvailable;
+        } else if (exercises[currentIdx] && exercises[currentIdx].classList.contains("exercise-skipped")) {
+            if (firstAvailable !== -1) currentIdx = firstAvailable;
+        }
+    }
+
     if (!running && currentIdx === 0 && phase === 0) {
         sessionActiveKcal = 0;
         localStorage.setItem("pegasus_session_kcal", "0.0");
@@ -234,16 +283,6 @@ function startPause() {
     if (vid && vid.src.includes("warmup")) { 
         vid.loop = false; 
         vid.pause(); 
-    }
-
-    if (!running && exercises[currentIdx].classList.contains("exercise-skipped")) {
-        let firstAvailable = exercises.findIndex(ex => !ex.classList.contains("exercise-skipped") && remainingSets[exercises.indexOf(ex)] > 0);
-        if (firstAvailable !== -1) { 
-            currentIdx = firstAvailable; 
-            showVideo(currentIdx); 
-        } else {
-            return;
-        }
     }
 
     running = !running;
@@ -274,7 +313,7 @@ function runPhase() {
     const exName = e.querySelector(".weight-input").getAttribute("data-name");
     let liftedWeight = parseFloat(e.querySelector(".weight-input").value) || 0;
     
-    // Kcal Calculation Logic
+    // Kcal Logic
     let baseMET = 3.5; 
     let intensityMultiplier = 1.0;
     if (exName.toLowerCase().includes("cycling") || exName.toLowerCase().includes("ποδηλασία")) {
@@ -292,7 +331,6 @@ function runPhase() {
     e.style.borderColor = "#4CAF50"; 
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
-    // ⏱️ DYNAMIC TIME CONFIGURATION
     const config = window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
     
     let t = (phase === 0) ? config.prep : (phase === 1 ? config.work : config.rest);
@@ -340,12 +378,19 @@ function runPhase() {
                 phase = 1; 
                 runPhase(); 
             } else if (phase === 1) {
+                // 🎯 SESSION MEMORY: Αποθήκευση του Σετ ΑΜΕΣΩΣ μόλις τελειώσει!
                 let done = parseInt(e.dataset.done) || 0;
                 done++;
                 e.dataset.done = done;
                 remainingSets[currentIdx] = parseFloat(e.dataset.total) - done;
                 e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
                 
+                const todayStr = new Date().toISOString().split('T')[0];
+                let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
+                if(dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
+                dailyProg.exercises[exName] = done;
+                localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
+
                 if (window.updateAchievements) window.updateAchievements(exName);
                 if (window.logPegasusSet) window.logPegasusSet(exName);
                 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
@@ -380,6 +425,14 @@ function skipToNextExercise() {
         remainingSets[currentIdx]--;
         
         currentExNode.querySelector(".set-counter").textContent = `${done}/${currentExNode.dataset.total}`;
+        
+        // 🎯 SESSION MEMORY UPDATE
+        const todayStr = new Date().toISOString().split('T')[0];
+        let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
+        if(dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
+        dailyProg.exercises[exName] = done;
+        localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
+
         if (window.logPegasusSet) window.logPegasusSet(exName);
     }
 
@@ -396,8 +449,49 @@ function skipToNextExercise() {
     }
 }
 
+function getNextIndexCircuit() {
+    for (let i = 1; i <= remainingSets.length; i++) {
+        let idx = (currentIdx + i) % remainingSets.length;
+        if (remainingSets[idx] > 0 && !exercises[idx].classList.contains("exercise-skipped")) return idx;
+    }
+    return -1;
+}
+
+window.toggleSkipExercise = function(idx, auto = false) {
+    const exDiv = exercises[idx];
+    if (!exDiv) return;
+    
+    const originalSets = parseFloat(exDiv.dataset.total);
+    const isSkipped = exDiv.classList.toggle("exercise-skipped");
+    let done = parseInt(exDiv.dataset.done) || 0;
+
+    if (isSkipped) {
+        exDiv.style.setProperty('opacity', '0.2', 'important');
+        exDiv.style.setProperty('filter', 'grayscale(100%)', 'important');
+        remainingSets[idx] = 0;
+        
+        // 🎯 AUTO-JUMP LOGIC: Αν ακυρώσω την άσκηση ενώ την κάνω, πήδα στην επόμενη!
+        if (!auto && currentIdx === idx && running) {
+            clearInterval(timer);
+            let nextIdx = getNextIndexCircuit();
+            if (nextIdx !== -1) {
+                currentIdx = nextIdx;
+                phase = 0;
+                runPhase();
+            } else {
+                finishWorkout();
+            }
+        }
+    } else {
+        exDiv.style.setProperty('opacity', '1', 'important');
+        exDiv.style.setProperty('filter', 'none', 'important');
+        remainingSets[idx] = originalSets - done;
+    }
+    calculateTotalTime(true);
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
+};
+
 window.getActiveLifter = function() {
-    // 🎯 FIXED: The "Phantom Partner" Bug
     const btn = document.getElementById('btnPartnerMode');
     const input = document.getElementById('partnerNameInput');
     if (window.partnerData && window.partnerData.isActive && window.partnerData.currentPartner !== "") {
@@ -535,35 +629,6 @@ function updateTotalBar() {
         timeText.textContent = `${m}:${String(s).padStart(2, "0")}`;
     }
 }
-
-function getNextIndexCircuit() {
-    for (let i = 1; i <= remainingSets.length; i++) {
-        let idx = (currentIdx + i) % remainingSets.length;
-        if (remainingSets[idx] > 0 && !exercises[idx].classList.contains("exercise-skipped")) return idx;
-    }
-    return -1;
-}
-
-window.toggleSkipExercise = function(idx) {
-    const exDiv = exercises[idx];
-    if (!exDiv) return;
-    
-    const originalSets = parseFloat(exDiv.dataset.total);
-    const isSkipped = exDiv.classList.toggle("exercise-skipped");
-    let done = parseInt(exDiv.dataset.done) || 0;
-
-    if (isSkipped) {
-        exDiv.style.setProperty('opacity', '0.2', 'important');
-        exDiv.style.setProperty('filter', 'grayscale(100%)', 'important');
-        remainingSets[idx] = 0;
-    } else {
-        exDiv.style.setProperty('opacity', '1', 'important');
-        exDiv.style.setProperty('filter', 'none', 'important');
-        remainingSets[idx] = originalSets - done;
-    }
-    calculateTotalTime(true);
-    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
-};
 
 /* ===== 8. FINISH & REPORTING (AUTO-SUMMARY PATCH) ===== */
 function finishWorkout() {
@@ -825,10 +890,9 @@ window.onload = () => {
                 alert("Reporting Engine Offline");
             }
         },
-        // 🎯 FIXED: The Settings Override Bug
         "btnSaveSettings": () => { 
             if (typeof window.savePegasusSettingsGlobal === "function") {
-                window.savePegasusSettingsGlobal(); // Calls the complete function from settings.js
+                window.savePegasusSettingsGlobal(); 
             } else {
                 console.error("Settings engine not found! Proceeding with fallback.");
                 const weightVal = document.getElementById("userWeightInput")?.value || 74;
