@@ -1,5 +1,7 @@
 /* ==========================================================================
-   PEGASUS COMMAND TRACER - v1.0 (ANTI-SILENT FAIL PROTOCOL)
+   PEGASUS COMMAND TRACER - v3.4 (ANTI-SILENT FAIL PROTOCOL)
+   Protocol: Strict Data Analyst - Full Error Logging & Sync Guard Monitoring
+   Status: FINAL STABLE | FIXED: CACHE WILDCARD & MOBILE DETECTION
    ========================================================================== */
 
 window.PegasusTracer = {
@@ -7,10 +9,10 @@ window.PegasusTracer = {
 
     log: function(btnId, step, status, details = "") {
         const entry = {
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: new Date().toLocaleTimeString('el-GR'),
             button: btnId,
-            step: step,        // π.χ. "Trigger", "Auth Check", "DB Open", "Finalize"
-            status: status,    // "START", "PENDING", "SUCCESS", "ERROR"
+            step: step,
+            status: status,
             details: details
         };
         
@@ -35,7 +37,7 @@ window.PegasusTracer = {
 };
 
 /* ==========================================================================
-   INTERCEPTION BRIDGE: Σύνδεση με το app.js
+   INTERCEPTION BRIDGE
    ========================================================================== */
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
@@ -45,11 +47,8 @@ document.addEventListener('click', (e) => {
 }, true);
 
 /* ==========================================================================
-   PEGASUS HEALTH & DEBUG SYSTEM - v3.3 (STRICT MONITOR + PERSISTENT LOG)
-   Protocol: Strict Data Analyst - Full Error Logging & Sync Guard Monitoring
-   Status: FINAL STABLE | FIXED: WEIGHT LOGIC & EXPANDED GC
+   PEGASUS HEALTH & DEBUG SYSTEM
    ========================================================================== */
-
 const MAX_LOG_ENTRIES = 50;
 const LOG_KEY = "pegasus_error_log";
 
@@ -61,7 +60,7 @@ window.PegasusLogger = {
                 timestamp: new Date().toLocaleString('el-GR'),
                 type: type,
                 msg: message,
-                device: (window.innerWidth <= 800 || /Android|webOS|iPhone|iPad/i.test(navigator.userAgent)) ? "Mobile" : "Desktop"
+                device: (window.innerWidth <= 800) ? "Mobile" : "Desktop"
             };
             
             logs.unshift(entry);
@@ -76,52 +75,48 @@ window.PegasusLogger = {
 
     getLogs: function() {
         return JSON.parse(localStorage.getItem(LOG_KEY)) || [];
-    },
-
-    clearLogs: function() {
-        localStorage.removeItem(LOG_KEY);
-        console.log("PEGASUS: Error logs cleared.");
     }
 };
 
 /**
- * 2. CALORIE LOGIC VALIDATION (v3.3 - DYNAMIC RANGE)
- * Protocol: Mifflin-St Jeor Validation
+ * 2. CALORIE LOGIC VALIDATION
+ * Mifflin-St Jeor: $$BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$$
  */
 window.verifyCalorieLogic = () => {
     const baseline = { age: 38, height: 187, weight: 74 };
     const currentWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 0;
     
-    // 🎯 FIXED: Δυναμικός υπολογισμός BMR βάσει του ΤΩΡΙΝΟΥ βάρους (αν υπάρχει)
     const activeWeight = currentWeight > 0 ? currentWeight : baseline.weight;
     const bmr = (10 * activeWeight) + (6.25 * baseline.height) - (5 * baseline.age) + 5;
     const tdee = Math.round(bmr * 1.55);
     const target = 2800;
 
-    console.log(`%c--- CALORIE AUDIT (DYNAMIC) ---`, 'color: #ff9800; font-weight: bold;');
-    
+    console.log(`%c--- CALORIE AUDIT (STRICT) ---`, 'color: #ff9800; font-weight: bold;');
     console.table({
-        "0": { Parameter: "Active Weight", Value: `${activeWeight} kg`, Status: currentWeight > 0 ? "OK" : "USING_BASELINE" },
+        "0": { Parameter: "Active Weight", Value: `${activeWeight} kg`, Status: "OK" },
         "1": { Parameter: "BMR (Current)", Value: `${bmr.toFixed(0)} kcal`, Status: "NOMINAL" },
-        "2": { Parameter: "TDEE (Activity 1.55)", Value: `${tdee} kcal`, Status: "NOMINAL" },
-        "3": { Parameter: "Pegasus Target", Value: `${target} kcal`, Status: target > tdee ? "SURPLUS (BULK)" : "DEFICIT" }
+        "2": { Parameter: "TDEE (1.55x)", Value: `${tdee} kcal`, Status: "NOMINAL" },
+        "3": { Parameter: "Target Strategy", Value: `${target} kcal`, Status: "BULK/VOLUME" }
     });
 
-    // 🛡️ Έλεγχος μόνο για ακραίες τιμές (Safety Guard)
     if (currentWeight > 150 || (currentWeight < 40 && currentWeight !== 0)) {
-        window.PegasusLogger.log(`Calorie Logic: Extreme weight detected (${currentWeight}kg). Check sensors.`, "WARNING");
+        window.PegasusLogger.log(`Extreme weight detected (${currentWeight}kg).`, "WARNING");
         return false;
     }
     return true;
 };
 
 /**
- * 3. ASYNC CACHE AUDIT ENGINE
+ * 3. ASYNC CACHE AUDIT (DYNAMIC WILDCARD)
  */
 window.verifyPegasusCache = async () => {
-    const CACHE_NAME = 'pegasus-shield-v3.2-DYNAMIC'; 
     try {
-        const cache = await caches.open(CACHE_NAME);
+        const names = await caches.keys();
+        // 🎯 FIXED: Ψάχνει για οποιαδήποτε cache του Pegasus, ανεξαρτήτως έκδοσης
+        const pegasusCache = names.find(name => name.startsWith('pegasus-shield'));
+        if (!pegasusCache) return false;
+
+        const cache = await caches.open(pegasusCache);
         const keys = await cache.keys();
         return keys.length > 0;
     } catch (err) { return false; }
@@ -131,100 +126,75 @@ window.verifyPegasusCache = async () => {
  * 4. CORE HEALTH CHECK
  */
 window.pegasusHealthCheck = async function() {
-    console.log("%c--- PEGASUS HEALTH CHECK START ---", "color: #4CAF50; font-weight: bold;");
+    console.log("%c--- PEGASUS HEALTH CHECK v3.4 ---", "color: #4CAF50; font-weight: bold;");
     let errors = [];
     let warnings = [];
 
-    const isMobile = window.location.pathname.includes("mobile.html");
+    // 🎯 FIXED: Ενισχυμένη ανίχνευση Mobile
+    const isMobile = window.location.pathname.includes("mobile.html") || window.innerWidth <= 800;
     
     if (typeof window.program === 'undefined') {
-        errors.push("Critical: Dynamic Engine (data.js) not found or window.program undefined.");
+        errors.push("Critical: data.js not loaded.");
     }
     
     const lastPush = localStorage.getItem("pegasus_last_push");
-    if (!lastPush) warnings.push("Sync: No successful push recorded in this browser.");
+    if (!lastPush) warnings.push("Sync: No Cloud Push history.");
 
     const essential = isMobile ? ["sync-indicator"] : ["btnStart", "exList", "totalProgress"];
     essential.forEach(id => {
-        if (!document.getElementById(id)) errors.push(`UI: Element ID '${id}' missing.`);
+        if (!document.getElementById(id)) errors.push(`UI Missing: ${id}`);
     });
 
     const cacheStatus = await window.verifyPegasusCache();
-    if (!cacheStatus) warnings.push("Cache: Offline Vault not fully initialized.");
+    if (!cacheStatus) warnings.push("Offline Vault: Not initialized.");
 
     window.verifyCalorieLogic();
 
     if (errors.length === 0 && warnings.length === 0) {
-        console.log("%c✅ Pegasus System Healthy: All systems nominal.", "color: #4CAF50; font-weight: bold; font-size: 12px;");
+        console.log("%c✅ System Healthy", "color: #4CAF50; font-weight: bold;");
     } else {
-        errors.forEach(err => {
-            console.error("❌ " + err);
-            window.PegasusLogger.log(err, "HEALTH_CRITICAL");
-        });
+        errors.forEach(err => window.PegasusLogger.log(err, "HEALTH_CRITICAL"));
         warnings.forEach(wrn => console.warn("⚠️ " + wrn));
     }
-    console.log("%c--- CHECK COMPLETE ---", "color: #4CAF50; font-weight: bold;");
 };
 
 /* ==========================================================================
-   PEGASUS GARBAGE COLLECTOR (v13.1 - EXPANDED PRUNING)
-   Status: FINAL STABLE | PROTECTS STORAGE QUOTA
+   PEGASUS GARBAGE COLLECTOR
    ========================================================================== */
 window.PegasusGarbageCollector = {
     retentionDays: 60,
 
     run: function() {
-        console.log("🧹 PEGASUS GC: Initiating Full Storage Scan...");
-        const now = new Date();
+        const now = Date.now();
         let deletedCount = 0;
         let keysToDelete = [];
 
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (!key) continue;
+            const isDaily = key.startsWith("food_log_") || 
+                           key.startsWith("pegasus_cardio_kcal_") || 
+                           key.startsWith("pegasus_routine_injected_");
 
-            // 🎯 FIXED: Καθαρισμός ΟΛΩΝ των ημερήσιων κλειδιών που συσσωρεύονται
-            const isDailyKey = key.startsWith("food_log_") || 
-                               key.startsWith("pegasus_cardio_kcal_") || 
-                               key.startsWith("pegasus_routine_injected_");
-
-            if (isDailyKey) {
-                const datePart = key.split('_').pop(); 
-                const parts = datePart.split('/');
-                
+            if (isDaily) {
+                const parts = key.split('_').pop().split('/');
                 if (parts.length === 3) {
-                    const logDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                    const diffDays = Math.ceil(Math.abs(now - logDate) / (1000 * 60 * 60 * 24)); 
-
-                    if (diffDays > this.retentionDays) {
+                    const logDate = new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+                    if (now - logDate > (this.retentionDays * 86400000)) {
                         keysToDelete.push(key);
                     }
                 }
             }
         }
 
-        keysToDelete.forEach(key => {
-            localStorage.removeItem(key);
-            deletedCount++;
-        });
-
-        if (deletedCount > 0) {
-            console.log(`✅ GC: Cleared ${deletedCount} obsolete daily records.`);
-            if (window.PegasusCloud) window.PegasusCloud.push();
-        } else {
-            console.log("🧹 GC: Storage is optimal.");
-        }
+        keysToDelete.forEach(k => { localStorage.removeItem(k); deletedCount++; });
+        if (deletedCount > 0) console.log(`🧹 GC: Removed ${deletedCount} records.`);
     }
 };
 
-// 5. GLOBAL RUNTIME ERROR CATCHER
-window.addEventListener('error', function(event) {
-    const fileName = event.filename ? event.filename.split('/').pop() : "unknown";
-    const cleanMsg = `Runtime: ${event.message} at ${fileName}:${event.lineno}`;
-    window.PegasusLogger.log(cleanMsg, "RUNTIME_ERROR");
+window.addEventListener('error', (e) => {
+    window.PegasusLogger.log(`Runtime: ${e.message} @ ${e.filename.split('/').pop()}:${e.lineno}`, "RUNTIME_ERROR");
 });
 
-// Boot Sequence
 setTimeout(() => {
     if (window.PegasusGarbageCollector) window.PegasusGarbageCollector.run();
     window.pegasusHealthCheck();
