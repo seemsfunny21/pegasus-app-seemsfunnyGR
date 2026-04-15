@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.2 (DYNAMIC DOM ALIGNMENT PATCH)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.3 (DATE SYNC FIX)
    ========================================================================== */
 
 window.MuscleProgressUI = {
@@ -7,7 +7,6 @@ window.MuscleProgressUI = {
 
     init() {
         this.checkWeeklyReset();
-        // Μικρό delay για να σιγουρευτούμε ότι το Panel έχει ανοίξει
         setTimeout(() => this.render(true), 500);
         
         setInterval(() => {
@@ -19,7 +18,6 @@ window.MuscleProgressUI = {
     calculateStats() {
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         
-        // 🎯 STRICT TARGET ALIGNMENT: Explicit Bridge Creation με data.js / settings.js
         const targets = JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
                         (typeof window.getDynamicTargets === "function" ? window.getDynamicTargets() : 
                         (typeof DEFAULT_SETTINGS !== "undefined" ? DEFAULT_SETTINGS.muscleTargets : 
@@ -28,30 +26,33 @@ window.MuscleProgressUI = {
         return Object.keys(targets).map(group => {
             const done = parseInt(history[group]) || 0;
             const target = targets[group];
-            const percent = Math.min(100, Math.round((done / target) * 100));
-            return { name: group, done, target, percent };
+            return {
+                name: group,
+                done: done,
+                target: target,
+                percent: Math.min((done / target) * 100, 100)
+            };
         });
     },
 
     render(force = false) {
-        // 🎯 ΕΠΙΒΕΒΑΙΩΣΗ CONTAINER
-        const container = document.getElementById('muscleProgressContainer');
+        const container = document.getElementById("muscleProgressContainer");
         if (!container) return;
 
         const stats = this.calculateStats();
-        const currentDataHash = JSON.stringify(stats);
+        const currentHash = JSON.stringify(stats);
 
-        // Αν δεν έχουν αλλάξει τα δεδομένα και δεν είναι force, μην κάνεις τίποτα
-        if (!force && this.lastDataHash === currentDataHash) return; 
-        this.lastDataHash = currentDataHash;
+        if (!force && this.lastDataHash === currentHash) return;
+        this.lastDataHash = currentHash;
 
-        const pegasusGreen = "#4CAF50";
-        let htmlString = `<div style="width: 100%; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border: 1px solid #333;">
-            <h3 style="color:${pegasusGreen}; text-align:center; font-size:11px; margin-bottom:12px; text-transform:uppercase; margin-top:0; letter-spacing:1px; font-weight:900;">Weekly Muscle Coverage</h3>`;
+        let htmlString = `<div style="display:flex; flex-direction:column; gap:15px; width:100%;">`;
         
+        const pegasusGreen = "var(--main, #00ff41)";
+
         stats.forEach(s => {
-            const isDone = s.percent >= 100;
-            htmlString += `<div style="margin-bottom: 10px; width: 100%;">
+            const isDone = s.done >= s.target;
+            htmlString += `
+            <div style="background: rgba(0,0,0,0.5); border:1px solid #222; border-radius:8px; padding:10px; width:100%; box-sizing:border-box;">
                 <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px; color:#eee; font-weight:bold;">
                     <span>${s.name.toUpperCase()}</span>
                     <span>${s.done}/${s.target} ${isDone ? "🎯" : ""}</span>
@@ -70,20 +71,21 @@ window.MuscleProgressUI = {
     checkWeeklyReset() {
         const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
         const now = new Date();
+        
+        // 🛡️ PHANTOM SATURDAY FIX: Χρήση του ίδιου Date Format με τον Optimizer (YYYY-MM-DD)
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
         if (now.getDay() === 6 && lastResetDate !== todayStr) {
             const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
             localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
-            this.render(true);
+            this.lastDataHash = null;
+            if (window.PegasusCloud) window.PegasusCloud.push(true);
+            console.log("🛡️ PEGASUS UI: Auto-Reset Triggered for Saturday.");
         }
     }
 };
 
-// Αυτόματη εκκίνηση
-if (document.readyState === 'complete') {
+document.addEventListener("DOMContentLoaded", () => {
     window.MuscleProgressUI.init();
-} else {
-    window.addEventListener('load', () => window.MuscleProgressUI.init());
-}
+});
