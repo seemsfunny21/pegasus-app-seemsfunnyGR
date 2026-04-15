@@ -4,18 +4,23 @@
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
+
 window.PegasusOptimizer = {
     getTargets: function() {
         try {
-            const stored = localStorage.getItem("pegasus_muscle_targets");
+           const targetsKey = M?.workout?.muscleTargets || "pegasus_muscle_targets";
+           const stored = localStorage.getItem(targetsKey);
             return stored ? JSON.parse(stored) : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
         } catch (e) { return { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }; }
     },
 
     apply: function(day, sessionExercises) {
-        let progress = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
         
-        const lastResetKey = 'pegasus_last_reset_timestamp';
+       const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
         const lastReset = localStorage.getItem(lastResetKey);
         const now = new Date();
         const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -27,7 +32,7 @@ window.PegasusOptimizer = {
         if ((day === "Σάββατο" && lastReset !== todayDate) || daysSinceReset >= 6.5) {
             console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
             progress = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(progress));
+           localStorage.setItem(historyKey, JSON.stringify(progress));
             localStorage.setItem(lastResetKey, todayDate);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
         }
