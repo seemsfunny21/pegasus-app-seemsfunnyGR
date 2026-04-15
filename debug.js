@@ -1,8 +1,10 @@
 /* ==========================================================================
-   PEGASUS COMMAND TRACER - v3.4 (ANTI-SILENT FAIL PROTOCOL)
-   Protocol: Strict Data Analyst - Full Error Logging & Sync Guard Monitoring
-   Status: FINAL STABLE | FIXED: CACHE WILDCARD & MOBILE DETECTION
+   PEGASUS COMMAND TRACER & HEALTH - v5.1 (MASTER SYNC)
+   Protocol: Strict Data Analyst - Anti-Silent Fail & Universal GC
+   Status: FINAL STABLE | FIXED: MULTI-FORMAT DATE GC & MANIFEST ALIGNMENT
    ========================================================================== */
+
+const M_DBG = window.PegasusManifest;
 
 window.PegasusTracer = {
     logs: JSON.parse(localStorage.getItem("pegasus_command_trace") || "[]"),
@@ -32,25 +34,15 @@ window.PegasusTracer = {
     clear: function() {
         this.logs = [];
         localStorage.removeItem("pegasus_command_trace");
-        console.log("PEGASUS: Trace Log Cleared.");
+        console.log("🛡️ PEGASUS: Trace Log Cleared.");
     }
 };
 
 /* ==========================================================================
-   INTERCEPTION BRIDGE
-   ========================================================================== */
-document.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (btn && btn.id) {
-        window.PegasusTracer.log(btn.id, "DOM_CLICK", "START", `Button Text: ${btn.textContent}`);
-    }
-}, true);
-
-/* ==========================================================================
-   PEGASUS HEALTH & DEBUG SYSTEM
+   PEGASUS HEALTH & LOGGER SYSTEM
    ========================================================================== */
 const MAX_LOG_ENTRIES = 50;
-const LOG_KEY = "pegasus_error_log";
+const LOG_KEY = M_DBG?.system?.errorLog || "pegasus_error_log";
 
 window.PegasusLogger = {
     log: function(message, type = "ERROR") {
@@ -80,11 +72,12 @@ window.PegasusLogger = {
 
 /**
  * 2. CALORIE LOGIC VALIDATION
- * Mifflin-St Jeor: $$BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$$
+ * Mifflin-St Jeor: $BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$
  */
 window.verifyCalorieLogic = () => {
     const baseline = { age: 38, height: 187, weight: 74 };
-    const currentWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 0;
+    const weightKey = M_DBG?.user?.weight || "pegasus_weight";
+    const currentWeight = parseFloat(localStorage.getItem(weightKey)) || 0;
     
     const activeWeight = currentWeight > 0 ? currentWeight : baseline.weight;
     const bmr = (10 * activeWeight) + (6.25 * baseline.height) - (5 * baseline.age) + 5;
@@ -107,51 +100,30 @@ window.verifyCalorieLogic = () => {
 };
 
 /**
- * 3. ASYNC CACHE AUDIT (DYNAMIC WILDCARD)
- */
-window.verifyPegasusCache = async () => {
-    try {
-        const names = await caches.keys();
-        // 🎯 FIXED: Ψάχνει για οποιαδήποτε cache του Pegasus, ανεξαρτήτως έκδοσης
-        const pegasusCache = names.find(name => name.startsWith('pegasus-shield'));
-        if (!pegasusCache) return false;
-
-        const cache = await caches.open(pegasusCache);
-        const keys = await cache.keys();
-        return keys.length > 0;
-    } catch (err) { return false; }
-};
-
-/**
- * 4. CORE HEALTH CHECK
+ * 3. CORE HEALTH CHECK
  */
 window.pegasusHealthCheck = async function() {
-    console.log("%c--- PEGASUS HEALTH CHECK v3.4 ---", "color: #4CAF50; font-weight: bold;");
+    console.log("%c--- PEGASUS HEALTH CHECK v5.1 ---", "color: #4CAF50; font-weight: bold;");
     let errors = [];
     let warnings = [];
 
-    // 🎯 FIXED: Ενισχυμένη ανίχνευση Mobile
     const isMobile = window.location.pathname.includes("mobile.html") || window.innerWidth <= 800;
     
-    if (typeof window.program === 'undefined') {
-        errors.push("Critical: data.js not loaded.");
-    }
+    if (typeof window.program === 'undefined') errors.push("Critical: data.js not loaded.");
+    if (!window.PegasusManifest) errors.push("Critical: manifest.js missing.");
     
     const lastPush = localStorage.getItem("pegasus_last_push");
     if (!lastPush) warnings.push("Sync: No Cloud Push history.");
 
-    const essential = isMobile ? ["sync-indicator"] : ["btnStart", "exList", "totalProgress"];
+    const essential = isMobile ? ["sync-indicator"] : ["btnStart", "exList", "totalProgress", "muscleProgressContainer"];
     essential.forEach(id => {
         if (!document.getElementById(id)) errors.push(`UI Missing: ${id}`);
     });
 
-    const cacheStatus = await window.verifyPegasusCache();
-    if (!cacheStatus) warnings.push("Offline Vault: Not initialized.");
-
     window.verifyCalorieLogic();
 
     if (errors.length === 0 && warnings.length === 0) {
-        console.log("%c✅ System Healthy", "color: #4CAF50; font-weight: bold;");
+        console.log("%c✅ System Healthy & Aligned", "color: #4CAF50; font-weight: bold;");
     } else {
         errors.forEach(err => window.PegasusLogger.log(err, "HEALTH_CRITICAL"));
         warnings.forEach(wrn => console.warn("⚠️ " + wrn));
@@ -159,7 +131,7 @@ window.pegasusHealthCheck = async function() {
 };
 
 /* ==========================================================================
-   PEGASUS GARBAGE COLLECTOR
+   PEGASUS GARBAGE COLLECTOR (UNIVERSAL)
    ========================================================================== */
 window.PegasusGarbageCollector = {
     retentionDays: 60,
@@ -173,26 +145,44 @@ window.PegasusGarbageCollector = {
             const key = localStorage.key(i);
             const isDaily = key.startsWith("food_log_") || 
                            key.startsWith("pegasus_cardio_kcal_") || 
+                           key.startsWith("pegasus_history_") ||
                            key.startsWith("pegasus_routine_injected_");
 
             if (isDaily) {
-                const parts = key.split('_').pop().split('/');
-                if (parts.length === 3) {
-                    const logDate = new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-                    if (now - logDate > (this.retentionDays * 86400000)) {
-                        keysToDelete.push(key);
-                    }
+                const datePart = key.split('_').pop();
+                let logDate;
+
+                // 🎯 FIXED: Υποστήριξη και για DD/MM/YYYY και για YYYY-MM-DD
+                if (datePart.includes('/')) {
+                    const p = datePart.split('/');
+                    logDate = new Date(p[2], p[1] - 1, p[0]).getTime();
+                } else if (datePart.includes('-')) {
+                    logDate = new Date(datePart).getTime();
+                }
+
+                if (logDate && (now - logDate > (this.retentionDays * 86400000))) {
+                    keysToDelete.push(key);
                 }
             }
         }
 
         keysToDelete.forEach(k => { localStorage.removeItem(k); deletedCount++; });
-        if (deletedCount > 0) console.log(`🧹 GC: Removed ${deletedCount} records.`);
+        if (deletedCount > 0) console.log(`🧹 GC: Removed ${deletedCount} legacy records.`);
     }
 };
 
+/* ==========================================================================
+   EVENT BRIDGES
+   ========================================================================== */
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (btn && btn.id) {
+        window.PegasusTracer.log(btn.id, "DOM_CLICK", "START", `Button Text: ${btn.textContent.trim()}`);
+    }
+}, true);
+
 window.addEventListener('error', (e) => {
-    window.PegasusLogger.log(`Runtime: ${e.message} @ ${e.filename.split('/').pop()}:${e.lineno}`, "RUNTIME_ERROR");
+    window.PegasusLogger.log(`Runtime: ${e.message} @ ${e.filename?.split('/').pop()}:${e.lineno}`, "RUNTIME_ERROR");
 });
 
 setTimeout(() => {
