@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS SETTINGS ENGINE - v4.5 (GLOBAL SHIELD ACTIVE)
-   Protocol: Strict Data Analyst - Zero Logic Loss - Cross-File Sync
-   Status: FINAL STABLE | FIXED: IDENTIFIER M REDECLARATION & KEY SYNC
+   📦 PEGASUS SETTINGS ENGINE - v4.6 (4-PILLAR ALIGNMENT)
+   Protocol: Strict Data Analyst | Zero Logic Loss | Split Integration
+   Status: FINAL STABLE | FIXED: SPLIT SELECTION SYNC
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -10,11 +10,12 @@ var M = M || window.PegasusManifest;
 const DEFAULT_SETTINGS = {
     weight: 74, height: 187, age: 38, gender: 'male',
     goalKcal: 2800, goalProtein: 160, exTime: 45, restTime: 60,
+    activeSplit: 'IRON', // Default Pillar
     muscleTargets: { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }
 };
 
 /**
- * 1. GLOBAL ACCESSOR (Safe Load via Manifest)
+ * 1. GLOBAL ACCESSOR
  */
 window.getPegasusSettings = function() {
     try {
@@ -22,9 +23,7 @@ window.getPegasusSettings = function() {
         const d = M?.diet || {};
         const w = M?.workout || {};
         
-        const targetsKey = w.muscleTargets || "pegasus_muscle_targets";
-        const storedTargetsStr = localStorage.getItem(targetsKey);
-        
+        const storedTargetsStr = localStorage.getItem(w.muscleTargets || "pegasus_muscle_targets");
         let storedTargets = null;
         if (storedTargetsStr) {
             try { storedTargets = JSON.parse(storedTargetsStr); } catch (e) { }
@@ -39,17 +38,17 @@ window.getPegasusSettings = function() {
             goalProtein: parseInt(localStorage.getItem(d.todayProtein || "pegasus_today_protein")) || DEFAULT_SETTINGS.goalProtein,
             exTime: parseInt(localStorage.getItem(w.ex_time || "pegasus_ex_time")) || DEFAULT_SETTINGS.exTime,
             restTime: parseInt(localStorage.getItem(w.rest_time || "pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
+            activeSplit: localStorage.getItem('pegasus_active_plan') || DEFAULT_SETTINGS.activeSplit,
             muscleTargets: storedTargets || DEFAULT_SETTINGS.muscleTargets
         };
     } catch (e) { 
-        console.warn("PEGASUS: Settings corruption detected, using defaults.", e);
+        console.warn("PEGASUS: Settings corruption detected.", e);
         return DEFAULT_SETTINGS; 
     }
 };
 
 /**
- * 2. LIVE BMR CALCULATOR (Mifflin-St Jeor)
- * $$BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$$
+ * 2. LIVE BMR CALCULATOR
  */
 window.calculateBMR = function() {
     const w = parseFloat(document.getElementById("userWeightInput")?.value);
@@ -64,16 +63,13 @@ window.calculateBMR = function() {
     bmr = (g === "male") ? bmr + 5 : bmr - 161;
     const tdee = Math.round(bmr * 1.55);
     
-    if (bmrDisplay) {
-        bmrDisplay.textContent = `Συντήρηση (TDEE): ${tdee} kcal`;
-    }
+    if (bmrDisplay) bmrDisplay.textContent = `Συντήρηση (TDEE): ${tdee} kcal`;
 };
 
 /**
- * 3. UI INITIALIZER
+ * 3. UI INITIALIZER (With Split Mapping)
  */
 window.initSettingsUI = function() {
-    console.log("⚙️ PEGASUS: Filling UI from Manifest keys...");
     const s = window.getPegasusSettings();
     
     const fields = {
@@ -84,7 +80,8 @@ window.initSettingsUI = function() {
         "goalKcalInput": s.goalKcal, 
         "goalProteinInput": s.goalProtein,
         "exerciseTimeInput": s.exTime, 
-        "restTimeInput": s.restTime
+        "restTimeInput": s.restTime,
+        "activeSplitSelector": s.activeSplit // 🎯 New Select Element in UI
     };
 
     for (let id in fields) {
@@ -104,12 +101,10 @@ window.initSettingsUI = function() {
 };
 
 /**
- * 4. MASTER SAVE LOGIC
+ * 4. MASTER SAVE LOGIC (Cross-File Impact Audit Compliant)
  */
 window.savePegasusSettingsGlobal = function() {
     try {
-        console.log("🛡️ PEGASUS: Syncing DOM to LocalStorage & Cloud...");
-
         const u = M?.user || {};
         const d = M?.diet || {};
         const w = M?.workout || {};
@@ -119,17 +114,23 @@ window.savePegasusSettingsGlobal = function() {
             return (el && el.value !== "") ? el.value : fallback;
         };
 
+        // Core Identity
         localStorage.setItem(u.weight || "pegasus_weight", getValue("userWeightInput", DEFAULT_SETTINGS.weight));
         localStorage.setItem(u.height || "pegasus_height", getValue("userHeightInput", DEFAULT_SETTINGS.height));
         localStorage.setItem(u.age || "pegasus_age", getValue("userAgeInput", DEFAULT_SETTINGS.age));
         localStorage.setItem(u.gender || "pegasus_gender", getValue("userGenderInput", DEFAULT_SETTINGS.gender));
         
+        // Nutrition & Time
         localStorage.setItem(d.todayKcal || "pegasus_today_kcal", getValue("goalKcalInput", DEFAULT_SETTINGS.goalKcal));
         localStorage.setItem(d.todayProtein || "pegasus_today_protein", getValue("goalProteinInput", DEFAULT_SETTINGS.goalProtein));
-        
         localStorage.setItem(w.ex_time || "pegasus_ex_time", getValue("exerciseTimeInput", DEFAULT_SETTINGS.exTime));
         localStorage.setItem(w.rest_time || "pegasus_rest_time", getValue("restTimeInput", DEFAULT_SETTINGS.restTime));
 
+        // 🎯 Active Split (Unified Bridge with data.js v16.4)
+        const newSplit = getValue("activeSplitSelector", DEFAULT_SETTINGS.activeSplit);
+        localStorage.setItem('pegasus_active_plan', newSplit);
+
+        // Muscle Targets
         const targets = {};
         ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
             const el = document.getElementById(`target${m}Input`);
@@ -138,9 +139,7 @@ window.savePegasusSettingsGlobal = function() {
         });
         localStorage.setItem(w.muscleTargets || "pegasus_muscle_targets", JSON.stringify(targets));
 
-        if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-            window.PegasusCloud.push(true);
-        }
+        if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
 
         alert("✅ Pegasus Settings: Συγχρονισμός ολοκληρώθηκε!");
         location.reload();
