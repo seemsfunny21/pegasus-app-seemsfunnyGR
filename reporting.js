@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V4.1 (STRICT SINGLE MORNING DISPATCH)
-   Protocol: Daily Send Lock & Anti-HTML Encoding Date Format
+   PEGASUS REPORTING SYSTEM - V4.2 (STRICT SINGLE MORNING DISPATCH)
+   Protocol: Daily Send Lock, Syntax Validation & Date Padding Alignment
+   Status: FINAL STABLE | FIXED: SYNTAX STRUCTURE & LOG KEY MATCHING
    ========================================================================== */
 
 const PegasusReporting = {
@@ -37,7 +38,7 @@ const PegasusReporting = {
                     const exDb = window.exercisesDB.find(db => db.name === ex.name);
                     if (exDb) group = exDb.muscleGroup;
                 }
-                if (!group && typeof getMuscleGroup === "function") group = getMuscleGroup(ex.name);
+                if (!group && typeof window.getMuscleGroup === "function") group = window.getMuscleGroup(ex.name);
                 if (!group) group = "Άλλο";
 
                 if (weeklyHistory[group] !== undefined) {
@@ -53,13 +54,18 @@ const PegasusReporting = {
         let summary = Object.entries(dailyMax).map(([name, weight]) => `• ${name}: ${weight}kg`);
         const today = new Date();
         
-        // 🎯 ΔΙΟΡΘΩΣΗ 1: Χρήση παύλας (-) αντί για κάθετο (/) για να μην χαλάει ο τίτλος στο email
-       const dateStrSafe = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+        // 🎯 FIXED: Aligned Padding Protocol (Match with food.js & cardio.js)
+        const d = String(today.getDate()).padStart(2, '0');
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const y = today.getFullYear();
+        const dateStrSafe = `${d}/${m}/${y}`; 
         
         const targetFood = JSON.parse(localStorage.getItem("food_log_" + dateStrSafe) || "[]");
         const cardioData = JSON.parse(localStorage.getItem("cardio_log_" + dateStrSafe) || "null");
         
         const isRecovery = (today.getDay() === 1 || today.getDay() === 4);
+        
+        // 🎯 FIXED: Object Structure Corrected
         const recovery = isRecovery ? 
             { msg: "Recovery Day Active", nutrition: "Focus on hydration & stretching" } : 
             { msg: "Training Day", nutrition: "High protein intake required" };
@@ -68,10 +74,10 @@ const PegasusReporting = {
             dateSent: dateStrSafe, 
             templateParams: {
                 name: "Άγγελος",
-                workout_date: dateStrSafe, // 🎯 Ασφαλής Ημερομηνία Χωρίς Encode
+                workout_date: dateStrSafe,
                 calories: kcal || localStorage.getItem("pegasus_today_kcal") || "0.0",
-                weights_summary: summary.join("\n") || "Workout data committed.",
-                food_summary: targetFood.map(f => `• ${f.name} (${f.kcal}kcal)`).join("\n") || "No food logged",
+                weights_summary: summary.length > 0 ? summary.join("\n") : "Workout data committed.",
+                food_summary: targetFood.length > 0 ? targetFood.map(f => `• ${f.name} (${f.kcal}kcal)`).join("\n") : "No food logged",
                 cardio_activity: cardioData ? `🚲 ${cardioData.km}km (${cardioData.route})` : "No cardio",
                 total_food_kcal: targetFood.reduce((sum, f) => sum + parseFloat(f.kcal || 0), 0),
                 recovery_status: recovery.msg || "Updated",
@@ -97,10 +103,13 @@ const PegasusReporting = {
 
         const pending = JSON.parse(rawData);
         const today = new Date();
-        const dateStrSafe = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+        const d = String(today.getDate()).padStart(2, '0');
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const y = today.getFullYear();
+        const dateStrSafe = `${d}-${m}-${y}`; // Custom format for lock key if needed
         const currentHour = today.getHours();
         
-        // 🔒 ΔΙΟΡΘΩΣΗ 2: Έλεγχος Κλειδαριάς Ημέρας
+        // 🔒 Έλεγχος Κλειδαριάς Ημέρας
         const lastSentDate = localStorage.getItem(this.lastSentKey);
 
         if (!forceSend) {
@@ -111,7 +120,7 @@ const PegasusReporting = {
             }
 
             const isMorningWindow = currentHour >= 5 && currentHour <= 11;
-            const isOldReport = pending.dateSent !== dateStrSafe;
+            const isOldReport = pending.dateSent !== `${d}/${m}/${y}`; // Matches generation format
 
             if (!isMorningWindow && !isOldReport) {
                 console.log("⏳ PEGASUS: Report pending. Waiting for the morning window...");
