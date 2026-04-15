@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS EXTENSIONS - ULTIMATE PLANNER & ROLLING AGREEMENT (v13.3 STRICT)
+   PEGASUS EXTENSIONS - ULTIMATE PLANNER & ROLLING AGREEMENT (v13.4 STRICT)
    Protocol: Maximalist Retention - Logic Mirroring & Variable Persistence
+   Status: FINAL STABLE | FIXED: DOUBLE DEPLETION & DATE PADDING
    ========================================================================== */
 
 // --- 1. DATA CONSTANTS: KOUKI MENU ---
@@ -30,16 +31,22 @@ const KOUKI_MENU = [
     { name: "Σουπιές με σπανάκι", kcal: 420, protein: 38, type: "fish" },
     { name: "Ψάρι φιλέτο (Γλώσσα) με λαχανικά", kcal: 400, protein: 42, type: "fish" },
     { name: "Τσιπούρα ψητή", kcal: 420, protein: 45, type: "fish" },
-    { name: "Παστίτσιο", kcal: 720, protein: 22, type: "cheat" }, // 🎯 Ευθυγράμμιση με Carb Tag
-    { name: "Μουσακάς", kcal: 830, protein: 26, type: "cheat" } // 🎯 FIXED: Το Χειρουργικό Visual Patch
+    { name: "Παστίτσιο", kcal: 720, protein: 22, type: "cheat" }, 
+    { name: "Μουσακάς", kcal: 830, protein: 26, type: "cheat" } 
 ];
 
 // --- 2. UI: WEEKLY PLANNER MODAL ---
 function showWeeklyPlanner() {
     let history = [];
     for (let i = 0; i < 7; i++) {
-        let d = new Date(); d.setDate(d.getDate() - i);
-        const dateStr = d.toLocaleDateString('el-GR');
+        let d = new Date(); 
+        d.setDate(d.getDate() - i);
+        // 🎯 FIXED: Unified Date Padding
+        const pd = String(d.getDate()).padStart(2, '0');
+        const pm = String(d.getMonth() + 1).padStart(2, '0');
+        const py = d.getFullYear();
+        const dateStr = `${pd}/${pm}/${py}`;
+        
         const data = JSON.parse(localStorage.getItem(`food_log_${dateStr}`) || "[]");
         data.forEach(item => history.push(item.name.toLowerCase()));
     }
@@ -86,7 +93,8 @@ function showWeeklyPlanner() {
 }
 
 window.closePlannerOnly = function() {
-    document.getElementById('pegasusModal').style.display = 'none';
+    const modal = document.getElementById('pegasusModal');
+    if (modal) modal.style.display = 'none';
 };
 
 // --- 3. LOGIC: ADD MEAL & UPDATE AGREEMENT ---
@@ -96,7 +104,11 @@ window.addFromPlanner = function(n, k, p) {
         window.addFoodItem(n, k, p);
         
         // 2. Καταγραφή στη Συμφωνία (Agreement Log)
-        const today = new Date().toLocaleDateString('el-GR');
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, '0');
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const today = `${d}/${m}/${now.getFullYear()}`; // 🎯 FIXED PADDING
+        
         let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
         agreementLog.push({ date: today, food: n });
         localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
@@ -112,38 +124,30 @@ window.addFromPlanner = function(n, k, p) {
 };
 
 /* ==========================================================================
-   PEGASUS KOUKI AGREEMENT MONITOR (v13.2 - ROLLING STOCK)
+   PEGASUS KOUKI AGREEMENT MONITOR (v13.4 - ROLLING STOCK)
    ========================================================================== */
 
-// Ενημέρωση του UI στο Sidebar
 window.updateKoukiBalance = function() {
-    // Διαβάζουμε το συνολικό Stock (Αγορασμένα γεύματα)
     let totalStock = parseInt(localStorage.getItem('kouki_total_stock') || "30");
-    
-    // Διαβάζουμε το Ιστορικό Κατανάλωσης
     const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
     const consumed = log.length;
-
-    // ΥΠΟΛΟΙΠΟ = Συνολικό Stock - Κατανάλωση
     const remaining = totalStock - consumed;
 
     const display = document.getElementById("agreementStatus");
     if (display) {
         display.textContent = remaining;
         
-        // Χρωματική κωδικοποίηση βάσει υπολοίπου
         if (remaining <= 0) {
-            display.style.color = "#ff4444"; // Κόκκινο (Χρέος / 0)
+            display.style.color = "#ff4444"; 
         } else if (remaining <= 5) {
-            display.style.color = "#f39c12"; // Πορτοκαλί (Κοντά στη λήξη)
+            display.style.color = "#f39c12"; 
         } else {
-            display.style.color = "#eee";    // Λευκό (Nominal)
+            display.style.color = "#eee";    
         }
         console.log(`📊 KOUKI TRACKER: ${remaining} meals remaining of ${totalStock}`);
     }
 };
 
-// Συνάρτηση του κουμπιού (+) για ανανέωση 30 γευμάτων
 window.addThirtyMeals = function() {
     let currentStock = parseInt(localStorage.getItem('kouki_total_stock') || "30");
     let newStock = currentStock + 30;
@@ -154,21 +158,19 @@ window.addThirtyMeals = function() {
     console.log(`📡 PEGASUS: Agreement Renewed. New Stock Limit: ${newStock}`);
 };
 
-// Βοηθητική συνάρτηση για χειροκίνητη διόρθωση αποθέματος (π.χ. για τα +7 που χρωστούσαν)
 window.setKoukiStock = function(amount) {
     localStorage.setItem('kouki_total_stock', amount.toString());
     window.updateKoukiBalance();
     return `Stock updated to: ${amount}`;
 };
 
-// 🔥 FORCE INITIALIZATION: Διασφάλιση εμφάνισης στο UI
+// 🔥 FORCE INITIALIZATION
 [100, 500, 2000].forEach(delay => {
     setTimeout(() => {
         if (window.updateKoukiBalance) window.updateKoukiBalance();
     }, delay);
 });
 
-// Ιστορικό στην κονσόλα
 window.showHistory = function() {
     const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
     const stock = localStorage.getItem('kouki_total_stock') || "30";
@@ -181,30 +183,28 @@ window.showHistory = function() {
    PEGASUS OS - PC ZERO-CLICK DAILY ROUTINE (Cross-Device Sync)
    ========================================================================== */
 window.checkDailyRoutinePC = function() {
-    const dateStr = new Date().toLocaleDateString('el-GR');
+    const now = new Date();
+    const dStr = String(now.getDate()).padStart(2, '0');
+    const mStr = String(now.getMonth() + 1).padStart(2, '0');
+    const dateStr = `${dStr}/${mStr}/${now.getFullYear()}`; // 🎯 FIXED PADDING
     const flagKey = "pegasus_routine_injected_" + dateStr;
 
-    // Αν δεν έχει μπει η ρουτίνα ούτε από το κινητό ούτε από το PC σήμερα...
     if (!localStorage.getItem(flagKey)) {
         
-        // 1. Εισαγωγή των γευμάτων χρησιμοποιώντας τη βασική συνάρτηση του υπολογιστή
+        // 1. Εισαγωγή γευμάτων 
         if (typeof window.addFoodItem === "function") {
-            // Χρησιμοποιούμε setTimeout για να διασφαλίσουμε σωστή σειρά εγγραφής
             setTimeout(() => window.addFoodItem("Γιαούρτι 2% + Whey (Ρουτίνα)", 250, 35), 100);
             setTimeout(() => window.addFoodItem("3 Αυγά (Ρουτίνα)", 210, 18), 300);
         }
 
-        // 2. Αφαίρεση 30g πρωτεΐνης από το Inventory
-        let s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || { prot: 2500, crea: 1000 };
-        s.prot = Math.max(0, s.prot - 30);
-        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+        // 🎯 FIXED: Αφαιρέθηκε η χειροκίνητη μείωση (s.prot -= 30) 
+        // Η λογική μεταφέρθηκε στο cloudSync.js Interceptor (Double-Depletion Prevention)
 
-        // 3. Ενεργοποίηση της σημαίας (ώστε να μην ξαναμπούν αν ανοίξεις το κινητό)
+        // 3. Ενεργοποίηση σημαίας
         localStorage.setItem(flagKey, "true");
+        console.log("🌅 PEGASUS PC: Daily Routine auto-injected. Protein depleted via global interceptor.");
 
-        console.log("🌅 PEGASUS PC: Daily Routine auto-injected successfully.");
-
-        // 4. Ανανέωση των Bars στον υπολογιστή (αν υπάρχουν οι συναρτήσεις)
+        // 4. Ανανέωση UI
         setTimeout(() => {
             if (typeof updateInventoryUI === "function") updateInventoryUI();
             if (typeof updateKoukiBalance === "function") window.updateKoukiBalance();
@@ -212,7 +212,6 @@ window.checkDailyRoutinePC = function() {
     }
 };
 
-// Εκτέλεση του ελέγχου 2 δευτερόλεπτα μετά το άνοιγμα του Pegasus στον υπολογιστή
 setTimeout(() => {
     if (window.checkDailyRoutinePC) window.checkDailyRoutinePC();
 }, 2000);
