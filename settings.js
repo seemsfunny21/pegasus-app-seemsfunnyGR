@@ -1,11 +1,11 @@
 /* ==========================================================================
-   PEGASUS SETTINGS ENGINE - v4.4 (STRICT AUDIT & MANIFEST SYNC)
+   PEGASUS SETTINGS ENGINE - v4.5 (GLOBAL SHIELD ACTIVE)
    Protocol: Strict Data Analyst - Zero Logic Loss - Cross-File Sync
-   Status: FINAL STABLE | FIXED: MANIFEST INTEGRATION & BMR OVERWRITE
+   Status: FINAL STABLE | FIXED: IDENTIFIER M REDECLARATION & KEY SYNC
    ========================================================================== */
 
-const M = window.PegasusManifest;
-if (!M) console.error("❌ CRITICAL: PegasusManifest missing in settings.js");
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
 
 const DEFAULT_SETTINGS = {
     weight: 74, height: 187, age: 38, gender: 'male',
@@ -15,15 +15,16 @@ const DEFAULT_SETTINGS = {
 
 /**
  * 1. GLOBAL ACCESSOR (Safe Load via Manifest)
- * Διασφαλίζει ότι καμία τιμή δεν θα επιστρέψει null στο UI
  */
 window.getPegasusSettings = function() {
     try {
         const u = M?.user || {};
-        const p = M?.performance || {};
-        const storedTargetsStr = localStorage.getItem(M?.workout?.muscle_targets || "pegasus_muscle_targets");
+        const d = M?.diet || {};
+        const w = M?.workout || {};
         
-        // 🎯 FIXED: Ασφαλής Parse του JSON
+        const targetsKey = w.muscleTargets || "pegasus_muscle_targets";
+        const storedTargetsStr = localStorage.getItem(targetsKey);
+        
         let storedTargets = null;
         if (storedTargetsStr) {
             try { storedTargets = JSON.parse(storedTargetsStr); } catch (e) { }
@@ -34,10 +35,10 @@ window.getPegasusSettings = function() {
             height: parseFloat(localStorage.getItem(u.height || "pegasus_height")) || DEFAULT_SETTINGS.height,
             age: parseInt(localStorage.getItem(u.age || "pegasus_age")) || DEFAULT_SETTINGS.age,
             gender: localStorage.getItem(u.gender || "pegasus_gender") || DEFAULT_SETTINGS.gender,
-            goalKcal: parseInt(localStorage.getItem(p.target_kcal || "pegasus_goal_kcal")) || DEFAULT_SETTINGS.goalKcal,
-            goalProtein: parseInt(localStorage.getItem(p.target_protein || "pegasus_goal_protein")) || DEFAULT_SETTINGS.goalProtein,
-            exTime: parseInt(localStorage.getItem(M?.workout?.ex_time || "pegasus_ex_time")) || DEFAULT_SETTINGS.exTime,
-            restTime: parseInt(localStorage.getItem(M?.workout?.rest_time || "pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
+            goalKcal: parseInt(localStorage.getItem(d.todayKcal || "pegasus_today_kcal")) || DEFAULT_SETTINGS.goalKcal,
+            goalProtein: parseInt(localStorage.getItem(d.todayProtein || "pegasus_today_protein")) || DEFAULT_SETTINGS.goalProtein,
+            exTime: parseInt(localStorage.getItem(w.ex_time || "pegasus_ex_time")) || DEFAULT_SETTINGS.exTime,
+            restTime: parseInt(localStorage.getItem(w.rest_time || "pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
             muscleTargets: storedTargets || DEFAULT_SETTINGS.muscleTargets
         };
     } catch (e) { 
@@ -48,13 +49,14 @@ window.getPegasusSettings = function() {
 
 /**
  * 2. LIVE BMR CALCULATOR (Mifflin-St Jeor)
+ * $$BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$$
  */
 window.calculateBMR = function() {
     const w = parseFloat(document.getElementById("userWeightInput")?.value);
     const h = parseFloat(document.getElementById("userHeightInput")?.value);
     const a = parseInt(document.getElementById("userAgeInput")?.value);
     const g = document.getElementById("userGenderInput")?.value;
-    const bmrDisplay = document.getElementById("maintenanceKcalDisplay"); // Υποθετικό UI στοιχείο αν προστεθεί
+    const bmrDisplay = document.getElementById("maintenanceKcalDisplay");
 
     if (!w || !h || !a) return;
 
@@ -62,19 +64,16 @@ window.calculateBMR = function() {
     bmr = (g === "male") ? bmr + 5 : bmr - 161;
     const tdee = Math.round(bmr * 1.55);
     
-    // 🎯 FIXED: Δεν κάνουμε overwrite τον στόχο θερμίδων (γιατί κάνεις όγκο 2800)
-    // Εμφανίζουμε απλά την TDEE αν υπάρχει αντίστοιχο στοιχείο στο UI
     if (bmrDisplay) {
-        bmrDisplay.textContent = `Maintenance (TDEE): ${tdee} kcal`;
+        bmrDisplay.textContent = `Συντήρηση (TDEE): ${tdee} kcal`;
     }
 };
 
 /**
- * 3. UI INITIALIZER (The "Bridge" Fix)
- * Γεμίζει τα πεδία όταν ανοίγει το Panel
+ * 3. UI INITIALIZER
  */
 window.initSettingsUI = function() {
-    console.log("⚙️ PEGASUS: Forcing Settings UI Auto-Fill...");
+    console.log("⚙️ PEGASUS: Filling UI from Manifest keys...");
     const s = window.getPegasusSettings();
     
     const fields = {
@@ -90,9 +89,7 @@ window.initSettingsUI = function() {
 
     for (let id in fields) {
         const el = document.getElementById(id);
-        if (el) {
-            el.value = fields[id];
-        }
+        if (el) el.value = fields[id];
     }
 
     ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
@@ -108,20 +105,18 @@ window.initSettingsUI = function() {
 
 /**
  * 4. MASTER SAVE LOGIC
- * Καλείται από το app.js και κάνει Push στο Cloud
  */
 window.savePegasusSettingsGlobal = function() {
     try {
-        console.log("🛡️ PEGASUS: Executing Tactical Settings Save...");
+        console.log("🛡️ PEGASUS: Syncing DOM to LocalStorage & Cloud...");
 
         const u = M?.user || {};
-        const p = M?.performance || {};
+        const d = M?.diet || {};
         const w = M?.workout || {};
 
-        // 🎯 FIXED: Ασφαλής ανάγνωση τιμών από το DOM
         const getValue = (id, fallback) => {
             const el = document.getElementById(id);
-            return el && el.value ? el.value : fallback;
+            return (el && el.value !== "") ? el.value : fallback;
         };
 
         localStorage.setItem(u.weight || "pegasus_weight", getValue("userWeightInput", DEFAULT_SETTINGS.weight));
@@ -129,8 +124,8 @@ window.savePegasusSettingsGlobal = function() {
         localStorage.setItem(u.age || "pegasus_age", getValue("userAgeInput", DEFAULT_SETTINGS.age));
         localStorage.setItem(u.gender || "pegasus_gender", getValue("userGenderInput", DEFAULT_SETTINGS.gender));
         
-        localStorage.setItem(p.target_kcal || "pegasus_goal_kcal", getValue("goalKcalInput", DEFAULT_SETTINGS.goalKcal));
-        localStorage.setItem(p.target_protein || "pegasus_goal_protein", getValue("goalProteinInput", DEFAULT_SETTINGS.goalProtein));
+        localStorage.setItem(d.todayKcal || "pegasus_today_kcal", getValue("goalKcalInput", DEFAULT_SETTINGS.goalKcal));
+        localStorage.setItem(d.todayProtein || "pegasus_today_protein", getValue("goalProteinInput", DEFAULT_SETTINGS.goalProtein));
         
         localStorage.setItem(w.ex_time || "pegasus_ex_time", getValue("exerciseTimeInput", DEFAULT_SETTINGS.exTime));
         localStorage.setItem(w.rest_time || "pegasus_rest_time", getValue("restTimeInput", DEFAULT_SETTINGS.restTime));
@@ -141,16 +136,16 @@ window.savePegasusSettingsGlobal = function() {
             const val = el ? parseInt(el.value) : NaN;
             targets[m] = isNaN(val) ? DEFAULT_SETTINGS.muscleTargets[m] : val;
         });
-        localStorage.setItem(w.muscle_targets || "pegasus_muscle_targets", JSON.stringify(targets));
+        localStorage.setItem(w.muscleTargets || "pegasus_muscle_targets", JSON.stringify(targets));
 
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
             window.PegasusCloud.push(true);
         }
 
-        alert("✅ Ρυθμίσεις Αποθηκεύτηκαν Επιτυχώς!");
+        alert("✅ Pegasus Settings: Συγχρονισμός ολοκληρώθηκε!");
         location.reload();
     } catch (err) {
-        console.error("❌ CRITICAL ERROR IN SAVE:", err);
-        alert("Σφάλμα κατά την αποθήκευση των ρυθμίσεων.");
+        console.error("❌ PEGASUS SAVE FAILURE:", err);
+        alert("Κρίσιμο σφάλμα κατά την αποθήκευση.");
     }
 };
