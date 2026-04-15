@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.36 (MAXIMALIST DATA RETENTION & DYNAMIC TIMER)
-   Protocol: Static Navbar Binding + Diagnostic Logging + Dynamic Phase Intervals
+   PEGASUS WORKOUT ENGINE - v10.37 (MAXIMALIST DATA RETENTION & DYNAMIC TIMER)
+   Protocol: Static Navbar Binding + Diagnostic Logging + Auto-Summary Patch
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
@@ -213,7 +213,7 @@ function selectDay(btn, day) {
         remainingSets.push(finalSets);
     });
 
-    if (typeof calculateTotalTime === "function") calculateTotalTime();
+    if (typeof calculateTotalTime === "function") calculateTotalTime(false);
     
     setTimeout(() => {
         if (typeof showVideo === "function") showVideo(0);
@@ -496,20 +496,28 @@ function showVideo(i) {
     }
 }
 
-function calculateTotalTime() {
+function calculateTotalTime(isUpdate = false) {
     const config = window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
     
-    totalSeconds = exercises.reduce((acc, ex) => {
+    let newTotal = exercises.reduce((acc, ex) => {
         if (ex.classList.contains("exercise-skipped")) return acc;
         let sets = parseFloat(ex.dataset.total) || 0;
         return acc + (sets * (config.prep + config.work + config.rest));
     }, 0);
 
-    remainingSeconds = totalSeconds;
+    if (isUpdate === true) {
+        let diff = totalSeconds - newTotal;
+        totalSeconds = newTotal;
+        remainingSeconds = Math.max(0, remainingSeconds - diff);
+    } else {
+        totalSeconds = newTotal;
+        remainingSeconds = newTotal;
+    }
+
     const timeDisplay = document.getElementById("totalProgressTime"); 
     if (timeDisplay) {
-        const m = Math.floor(totalSeconds / 60);
-        const s = totalSeconds % 60;
+        const m = Math.floor(remainingSeconds / 60);
+        const s = remainingSeconds % 60;
         timeDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`;
     }
     updateTotalBar();
@@ -555,16 +563,20 @@ window.toggleSkipExercise = function(idx) {
         exDiv.style.setProperty('filter', 'none', 'important');
         remainingSets[idx] = originalSets - done;
     }
-    calculateTotalTime();
+    calculateTotalTime(true);
     if (window.PegasusCloud) window.PegasusCloud.push(true);
 };
 
-/* ===== 8. FINISH & REPORTING ===== */
+/* ===== 8. FINISH & REPORTING (AUTO-SUMMARY PATCH) ===== */
 function finishWorkout() {
     if (!running && !timer && phase === 0) return; 
     
     clearInterval(timer); 
     running = false;
+
+    // 🛡️ TACTICAL FIX: Βίαιος μηδενισμός χρόνου για να μην "παγώνει" στο 01:00
+    remainingSeconds = 0;
+    updateTotalBar();
 
     const label = document.getElementById("phaseTimer");
     if (label) { 
@@ -584,9 +596,13 @@ function finishWorkout() {
 
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
 
+    // 🛡️ TACTICAL FIX: Βίαιο STRICT Push στο Cloud
     if (window.PegasusCloud) {
-        try { window.PegasusCloud.push(true); } catch(e) {}
+        try { window.PegasusCloud.push('STRICT'); } catch(e) {}
     }
+
+    // 🛡️ TACTICAL FIX: Αυτόματο άνοιγμα της Επισκόπησης
+    if (typeof openExercisePreview === 'function') openExercisePreview();
 
     setTimeout(() => {
         if (window.PegasusReporting) {
@@ -596,7 +612,6 @@ function finishWorkout() {
             let newWeekly = currentWeekly + sessionKcal;
             localStorage.setItem("pegasus_weekly_kcal", newWeekly.toFixed(1));
 
-            // 🛡️ FIX: Προσθήκη θερμίδων στο today για να τις βλέπει το Food Panel
             let todayKcal = parseFloat(localStorage.getItem("pegasus_today_kcal")) || 0;
             localStorage.setItem("pegasus_today_kcal", (todayKcal + sessionKcal).toFixed(1));
 
@@ -604,11 +619,30 @@ function finishWorkout() {
             
             sessionActiveKcal = 0;
             localStorage.setItem("pegasus_session_kcal", "0.0");
-        } else {
-            console.log("PEGASUS OS: Session Terminated. Reloading...");
-            window.location.reload(); 
+        } 
+        
+        // 🛡️ TACTICAL FIX: Καθαρισμός του UI χωρίς Refresh! 
+        const list = document.getElementById("exList");
+        if (list) list.innerHTML = `<div style="padding:20px; color:#4CAF50; text-align:center; font-weight:bold; font-size:16px;">✅ Η ΠΡΟΠΟΝΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ ΕΠΙΤΥΧΩΣ</div>`;
+        
+        const vid = document.getElementById("video");
+        if (vid) {
+            vid.pause();
+            vid.src = "videos/stretching.mp4";
+            vid.load();
+            vid.play().catch(e => console.log("Auto-play prevented by browser."));
         }
-    }, 4000);
+
+        const sBtn = document.getElementById("btnStart");
+        if (sBtn) sBtn.innerHTML = "Έναρξη";
+
+        if (label) {
+            label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
+            label.style.color = "#00bcd4";
+        }
+
+        console.log("🎯 PEGASUS OS: Session Successfully Terminated and UI Cleaned.");
+    }, 3000);
 }
 
 function openExercisePreview() {
