@@ -4,6 +4,9 @@
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
+
 const allExercises = [
     "Seated Chest Press", "Pec Deck", "Pushups", 
     "Lat Pulldown", "Low Seated Row", "Close Grip Pulldown", "Behind the Neck Pulldown", "Reverse Row",
@@ -17,7 +20,8 @@ const allExercises = [
  * Διασφαλίζει ότι διαβάζουμε ΠΑΝΤΑ την τελευταία τιμή από το δίσκο (αποφυγή Desync)
  */
 function getFreshStats() {
-    let raw = localStorage.getItem('pegasus_stats');
+  const statsKey = M?.system?.stats || 'pegasus_stats';
+let raw = localStorage.getItem(statsKey);
     let stats = { totalSets: 0, exerciseHistory: {} };
     try {
         if (raw) {
@@ -48,7 +52,8 @@ window.updateAchievements = async function(exerciseName) {
     }
     userStats.exerciseHistory[cleanName]++;
 
-    localStorage.setItem('pegasus_stats', JSON.stringify(userStats));
+   const statsKey = M?.system?.stats || 'pegasus_stats';
+localStorage.setItem(statsKey, JSON.stringify(userStats));
     
     // Trigger Milestones
     checkMilestones(cleanName, userStats);
