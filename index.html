@@ -349,24 +349,24 @@
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         
-        <button onclick="window.setPegasusPlan('CLASSIC')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;" onmouseover="this.style.borderColor='#4CAF50'; this.style.background='rgba(76, 175, 80, 0.1)';" onmouseout="this.style.borderColor='#333'; this.style.background='#111';">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;">Classic (EMS)</span>
-            <span style="color: #ffffff; font-size: 12px; text-align: center; opacity: 0.9; line-height: 1.6;">Το αρχικό σου πρόγραμμα.<br><span style="color:#aaa; font-size:11px;">Ιδανικό για πλήρη διέγερση.</span></span>
+        <button onclick="window.setPegasusPlan('IRON')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;">
+            <span style="color: #4CAF50; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px;">IRON</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center;">5 Ημέρες Βάρη</span>
         </button>
 
-        <button onclick="window.setPegasusPlan('PPL')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;" onmouseover="this.style.borderColor='#4CAF50'; this.style.background='rgba(76, 175, 80, 0.1)';" onmouseout="this.style.borderColor='#333'; this.style.background='#111';">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;">Push / Pull / Legs</span>
-            <span style="color: #ffffff; font-size: 12px; text-align: center; opacity: 0.9; line-height: 1.6;">Τρίτη:(Στήθος/Ώμοι/Τρικ)<br>Τετάρτη:(Πλάτη/Δικέφαλοι)<br>Παρασκευή: Πόδια & Κορμός</span>
+        <button onclick="window.setPegasusPlan('EMS_ONLY')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;">
+            <span style="color: #00bcd4; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px;">EMS ONLY</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center;">Βάρη + IMS Τετάρτη</span>
         </button>
 
-        <button onclick="window.setPegasusPlan('UPPER_LOWER')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;" onmouseover="this.style.borderColor='#4CAF50'; this.style.background='rgba(76, 175, 80, 0.1)';" onmouseout="this.style.borderColor='#333'; this.style.background='#111';">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;">Upper / Lower / Full</span>
-            <span style="color: #ffffff; font-size: 12px; text-align: center; opacity: 0.9; line-height: 1.6;">Τρίτη: Άνω Κορμός<br>Τετάρτη: Κάτω Κορμός<br>Παρασκευή: Full Body</span>
+        <button onclick="window.setPegasusPlan('BIKE_ONLY')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;">
+            <span style="color: #ff9800; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px;">BIKE ONLY</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center;">Βάρη + Ποδήλατο ΣΚ</span>
         </button>
 
-        <button onclick="window.setPegasusPlan('ARNOLD')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;" onmouseover="this.style.borderColor='#4CAF50'; this.style.background='rgba(76, 175, 80, 0.1)';" onmouseout="this.style.borderColor='#333'; this.style.background='#111';">
-            <span style="color: #4CAF50; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase;">Arnold Split</span>
-            <span style="color: #ffffff; font-size: 12px; text-align: center; opacity: 0.9; line-height: 1.6;">Τρίτη: Στήθος & Πλάτη<br>Τετάρτη: Πόδια & Κορμός<br>Παρασκευή: Ώμοι & Χέρια</span>
+        <button onclick="window.setPegasusPlan('HYBRID')" style="background: #111; border: 1px solid #333; padding: 25px 15px; border-radius: 12px; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s ease;">
+            <span style="color: #e91e63; font-weight: 900; font-size: 15px; margin-bottom: 12px; letter-spacing: 1px;">HYBRID</span>
+            <span style="color: #ffffff; font-size: 11px; text-align: center;">Βάρη + ems + ποδήλατο</span>
         </button>
 
     </div>
