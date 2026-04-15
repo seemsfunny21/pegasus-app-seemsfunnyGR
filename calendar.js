@@ -4,7 +4,10 @@
    Status: FINAL STABLE | FIXED: TIMEZONE TRAP & MANIFEST SYNC
    ========================================================================== */
 
-const M_CAL = window.PegasusManifest;
+
+
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 window.selectedCalendarDate = null; 
@@ -14,7 +17,7 @@ window.renderCalendar = function() {
     if (!el) return;
 
     // 🎯 FIXED: Δυναμική ανάκτηση από Manifest
-    const doneKey = M_CAL?.workout?.done || "pegasus_workouts_done";
+  const doneKey = M?.workout?.done || "pegasus_workouts_done";
     const data = JSON.parse(localStorage.getItem(doneKey) || "{}");
     
     const now = new Date();
