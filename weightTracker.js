@@ -1,50 +1,68 @@
 /* ==========================================================================
-   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.3 - CLOUD ALIGNED)
+   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.4 - MANIFEST ALIGNED)
    Protocol: Daily Weight Logging, Moving Average & Master Variable Sync
-   Status: FINAL STABLE | FIXED: CHRONO-SORTING & RANGE GUARD
+   Status: FINAL STABLE | FIXED: MANIFEST DESYNC & EVENT FALLBACKS
    ========================================================================== */
+
+const M = window.PegasusManifest;
+const WEIGHT_KEY = M?.user?.weight || 'pegasus_weight';
+const HISTORY_KEY = M?.user?.weight_history || 'pegasus_weight_history';
 
 window.PegasusWeight = {
     // 1. Καταγραφή βάρους (Συμβατό με Mobile & Desktop)
     save: function(val) {
+        // 🎯 FIXED: Αν κληθεί χωρίς τιμή (ή με Event object από το UI), ψάχνει αυτόματα τα inputs
+        let rawVal = val;
+        if (rawVal === undefined || typeof rawVal === 'object') {
+            const inputEl = document.getElementById('mobileWeightInput') || document.getElementById('userWeightInput');
+            rawVal = inputEl ? inputEl.value : null;
+        }
+
+        if (!rawVal) return;
+
         // 🛡️ RANGE & NaN GUARD: Μετατροπή και αυστηρός έλεγχος
-        const safeVal = String(val).replace(',', '.');
+        const safeVal = String(rawVal).replace(',', '.');
         const weight = parseFloat(safeVal);
         
-        // Αποκλεισμός εξωπραγματικών τιμών (π.χ. λάθος πληκτρολόγηση <30 ή >250)
+        // Αποκλεισμός εξωπραγματικών τιμών
         if (isNaN(weight) || weight < 30 || weight > 250) {
-            console.error("⚖️ PEGASUS: Invalid weight range rejected.");
+            if (window.PegasusLogger) window.PegasusLogger.log(`Invalid weight input: ${rawVal}`, "WARNING");
+            alert("PEGASUS STRICT: Παρακαλώ εισάγετε ένα έγκυρο βάρος (30-250 kg).");
             return;
         }
 
         const now = new Date();
         const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
-        let history = JSON.parse(localStorage.getItem('pegasus_weight_history') || "{}");
+        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
         history[dateKey] = weight;
         
-        // Αποθήκευση τοπικά
-        localStorage.setItem('pegasus_weight_history', JSON.stringify(history));
-        localStorage.setItem('pegasus_weight', weight);
+        // Αποθήκευση τοπικά μέσω Manifest Keys
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        localStorage.setItem(WEIGHT_KEY, weight);
         
         // 🟢 FORCE UPDATE: Ενημέρωση της κεντρικής μεταβλητής του app.js και της μηχανής μεταβολισμού
         if (typeof window !== 'undefined') {
             window.userWeight = weight;
             if (window.PegasusMetabolic) window.PegasusMetabolic.renderUI();
+            if (typeof window.verifyCalorieLogic === "function") window.verifyCalorieLogic(); // 🎯 Health Check Sync
         }
         
         console.log(`⚖️ PEGASUS DATA: Weight logged: ${weight}kg`);
         
         // Αποστολή στο Cloud
-        if (window.PegasusCloud) window.PegasusCloud.push(true);
+        if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+            window.PegasusCloud.push(true);
+        }
+        
         this.updateUI();
+        alert(`✅ Βάρος καταγράφηκε: ${weight} kg`);
     },
 
     // 2. Υπολογισμός μέσου όρου με Χρονολογική Ταξινόμηση
     getWeeklyAverage: function() {
-        const history = JSON.parse(localStorage.getItem('pegasus_weight_history') || "{}");
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
         
-        // 🎯 FIXED: Ταξινόμηση κλειδιών για διασφάλιση χρονολογικής σειράς
         const sortedKeys = Object.keys(history).sort();
         if (sortedKeys.length === 0) return null;
 
@@ -61,7 +79,7 @@ window.PegasusWeight = {
         const display = document.getElementById('mobileWeightAvg') || document.getElementById('weeklyWeightAvg');
         const inputEl = document.getElementById('mobileWeightInput') || document.getElementById('userWeightInput');
         
-        const history = JSON.parse(localStorage.getItem('pegasus_weight_history') || "{}");
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
         const sortedKeys = Object.keys(history).sort();
 
         // Ενημέρωση ένδειξης Μέσου Όρου
@@ -82,20 +100,27 @@ window.PegasusWeight = {
         const weight = parseFloat(cloudWeight);
         if (isNaN(weight)) return;
 
-        const localWeight = parseFloat(localStorage.getItem('pegasus_weight')) || 0;
+        const localWeight = parseFloat(localStorage.getItem(WEIGHT_KEY)) || 0;
         
         if (Math.abs(localWeight - weight) > 0.01) {
             console.log(`%c ⚖️ PEGASUS ALIGNMENT: Cloud (${weight}kg) overrides Local (${localWeight}kg)`, "color: #ff9800; font-weight: bold;");
             
-            localStorage.setItem('pegasus_weight', weight);
+            localStorage.setItem(WEIGHT_KEY, weight);
             if (typeof window !== 'undefined') window.userWeight = weight; 
             
             this.updateUI();
-            // Ενημέρωση UI θερμίδων αν υπάρχει η συνάρτηση
+            
+            // Ενημέρωση UI θερμίδων & Health Check
             if (typeof window.updateKcalUI === "function") window.updateKcalUI();
             if (window.PegasusMetabolic) window.PegasusMetabolic.renderUI();
+            if (typeof window.verifyCalorieLogic === "function") window.verifyCalorieLogic();
         }
     }
 };
 
-console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v1.3).");
+// 5. AUTO-BOOT BRIDGE
+document.addEventListener('DOMContentLoaded', () => {
+    window.PegasusWeight.updateUI();
+});
+
+console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v1.4).");
