@@ -45,7 +45,7 @@ window.PegasusManifest = {
         notes: "pegasus_notes",
         contacts: "pegasus_contacts"
     },
- workout: {
+    workout: {
         weekly_history: "pegasus_weekly_history",
         done: "pegasus_workouts_done",
         total: "pegasus_total_workouts",
