@@ -5,7 +5,6 @@
 window.PegasusTracer = {
     logs: JSON.parse(localStorage.getItem("pegasus_command_trace") || "[]"),
 
-    // Καταγραφή ενέργειας
     log: function(btnId, step, status, details = "") {
         const entry = {
             timestamp: new Date().toLocaleTimeString(),
@@ -16,17 +15,14 @@ window.PegasusTracer = {
         };
         
         this.logs.push(entry);
-        // Κρατάμε μόνο τα τελευταία 100 βήματα για οικονομία χώρου
         if (this.logs.length > 100) this.logs.shift();
         
         localStorage.setItem("pegasus_command_trace", JSON.stringify(this.logs));
         
-        // Output στην κονσόλα με χρώμα για άμεση διάγνωση
         const color = status === "ERROR" ? "#FF5252" : (status === "SUCCESS" ? "#4CAF50" : "#FFC107");
         console.log(`%c[TRACER] ${btnId} > ${step} > ${status}`, `color: ${color}; font-weight: bold;`, details);
     },
 
-    // Εμφάνιση της διαδρομής του τελευταίου κουμπιού που πατήθηκε
     printLastTrace: function() {
         console.table(this.logs.slice(-10));
     },
@@ -41,7 +37,6 @@ window.PegasusTracer = {
 /* ==========================================================================
    INTERCEPTION BRIDGE: Σύνδεση με το app.js
    ========================================================================== */
-// Αυτό το κομμάτι "τυλίγει" τα υπάρχοντα κουμπιά για να ξέρουμε πότε πατήθηκαν
 document.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
     if (btn && btn.id) {
@@ -50,17 +45,14 @@ document.addEventListener('click', (e) => {
 }, true);
 
 /* ==========================================================================
-   PEGASUS HEALTH & DEBUG SYSTEM - v3.1 (STRICT MONITOR + PERSISTENT LOG)
+   PEGASUS HEALTH & DEBUG SYSTEM - v3.3 (STRICT MONITOR + PERSISTENT LOG)
    Protocol: Strict Data Analyst - Full Error Logging & Sync Guard Monitoring
+   Status: FINAL STABLE | FIXED: WEIGHT LOGIC & EXPANDED GC
    ========================================================================== */
 
 const MAX_LOG_ENTRIES = 50;
 const LOG_KEY = "pegasus_error_log";
 
-/**
- * 1. PERSISTENT LOGGER
- * Καταγράφει σφάλματα που παραμένουν στο LocalStorage και μετά το refresh.
- */
 window.PegasusLogger = {
     log: function(message, type = "ERROR") {
         try {
@@ -72,8 +64,8 @@ window.PegasusLogger = {
                 device: (window.innerWidth <= 800 || /Android|webOS|iPhone|iPad/i.test(navigator.userAgent)) ? "Mobile" : "Desktop"
             };
             
-            logs.unshift(entry); // Προσθήκη στην αρχή (νεότερο πρώτο)
-            if (logs.length > MAX_LOG_ENTRIES) logs.pop(); // Διατήρηση τελευταίων 50
+            logs.unshift(entry);
+            if (logs.length > MAX_LOG_ENTRIES) logs.pop();
             
             localStorage.setItem(LOG_KEY, JSON.stringify(logs));
             console.log(`%c[PEGASUS ${type}]: ${message}`, "color: #ff4444; font-weight: bold;");
@@ -93,30 +85,31 @@ window.PegasusLogger = {
 };
 
 /**
- * 2. CALORIE LOGIC VALIDATION
- * Protocol: Mifflin-St Jeor Validation for 74kg / 1.87m / 38y Male
+ * 2. CALORIE LOGIC VALIDATION (v3.3 - DYNAMIC RANGE)
+ * Protocol: Mifflin-St Jeor Validation
  */
 window.verifyCalorieLogic = () => {
-    const stats = { age: 38, height: 187, weight: 74, gender: 'male' };
-    
-    // Mifflin-St Jeor Formula
-    const bmr = (10 * stats.weight) + (6.25 * stats.height) - (5 * stats.age) + 5;
-    const tdee = Math.round(bmr * 1.55); // Moderate activity factor
-    const target = 2800; // Pegasus Target for Bulk/Volume
-
-    console.log(`%c--- CALORIE AUDIT (STRICT) ---`, 'color: #ff9800; font-weight: bold;');
-    
+    const baseline = { age: 38, height: 187, weight: 74 };
     const currentWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 0;
     
+    // 🎯 FIXED: Δυναμικός υπολογισμός BMR βάσει του ΤΩΡΙΝΟΥ βάρους (αν υπάρχει)
+    const activeWeight = currentWeight > 0 ? currentWeight : baseline.weight;
+    const bmr = (10 * activeWeight) + (6.25 * baseline.height) - (5 * baseline.age) + 5;
+    const tdee = Math.round(bmr * 1.55);
+    const target = 2800;
+
+    console.log(`%c--- CALORIE AUDIT (DYNAMIC) ---`, 'color: #ff9800; font-weight: bold;');
+    
     console.table({
-        "0": { Parameter: "BMR (Base)", Value: `${bmr} kcal`, Status: "NOMINAL" },
-        "1": { Parameter: "TDEE (Maintenance)", Value: `${tdee} kcal`, Status: "NOMINAL" },
-        "2": { Parameter: "Pegasus Target", Value: `${target} kcal`, Status: target > tdee ? "SURPLUS (BULK)" : "DEFICIT" },
-        "3": { Parameter: "User Weight", Value: `${currentWeight} kg`, Status: currentWeight === stats.weight ? "MATCH" : "MISMATCH" }
+        "0": { Parameter: "Active Weight", Value: `${activeWeight} kg`, Status: currentWeight > 0 ? "OK" : "USING_BASELINE" },
+        "1": { Parameter: "BMR (Current)", Value: `${bmr.toFixed(0)} kcal`, Status: "NOMINAL" },
+        "2": { Parameter: "TDEE (Activity 1.55)", Value: `${tdee} kcal`, Status: "NOMINAL" },
+        "3": { Parameter: "Pegasus Target", Value: `${target} kcal`, Status: target > tdee ? "SURPLUS (BULK)" : "DEFICIT" }
     });
 
-    if (currentWeight !== stats.weight && currentWeight !== 0) {
-        window.PegasusLogger.log(`Calorie Logic: Local weight (${currentWeight}kg) mismatch with Master Profile.`, "WARNING");
+    // 🛡️ Έλεγχος μόνο για ακραίες τιμές (Safety Guard)
+    if (currentWeight > 150 || (currentWeight < 40 && currentWeight !== 0)) {
+        window.PegasusLogger.log(`Calorie Logic: Extreme weight detected (${currentWeight}kg). Check sensors.`, "WARNING");
         return false;
     }
     return true;
@@ -126,18 +119,16 @@ window.verifyCalorieLogic = () => {
  * 3. ASYNC CACHE AUDIT ENGINE
  */
 window.verifyPegasusCache = async () => {
-    const CACHE_NAME = 'pegasus-media-vault-v1';
+    const CACHE_NAME = 'pegasus-shield-v3.2-DYNAMIC'; 
     try {
         const cache = await caches.open(CACHE_NAME);
         const keys = await cache.keys();
-        if (keys.length === 0) return false;
-        return true;
+        return keys.length > 0;
     } catch (err) { return false; }
 };
 
 /**
  * 4. CORE HEALTH CHECK
- * Εκτελείται αυτόματα στην εκκίνηση και χειροκίνητα στην κονσόλα: pegasusHealthCheck()
  */
 window.pegasusHealthCheck = async function() {
     console.log("%c--- PEGASUS HEALTH CHECK START ---", "color: #4CAF50; font-weight: bold;");
@@ -146,8 +137,6 @@ window.pegasusHealthCheck = async function() {
 
     const isMobile = window.location.pathname.includes("mobile.html");
     
-    // ΕΛΕΓΧΟΣ ΔΕΔΟΜΕΝΩΝ (DATA ENGINE)
-    // Ελέγχουμε αν υπάρχει το window.program (το νέο format του data.js)
     if (typeof window.program === 'undefined') {
         errors.push("Critical: Dynamic Engine (data.js) not found or window.program undefined.");
     }
@@ -178,33 +167,35 @@ window.pegasusHealthCheck = async function() {
 };
 
 /* ==========================================================================
-   PEGASUS GARBAGE COLLECTOR (v13.0 AUTO-PRUNING)
+   PEGASUS GARBAGE COLLECTOR (v13.1 - EXPANDED PRUNING)
+   Status: FINAL STABLE | PROTECTS STORAGE QUOTA
    ========================================================================== */
 window.PegasusGarbageCollector = {
-    retentionDays: 60, // Όριο: 2 Μήνες
+    retentionDays: 60,
 
     run: function() {
-        console.log("🧹 PEGASUS GC: Initiating Storage Scan...");
+        console.log("🧹 PEGASUS GC: Initiating Full Storage Scan...");
         const now = new Date();
         let deletedCount = 0;
         let keysToDelete = [];
 
-        // 1. Σάρωση όλου του LocalStorage
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
+            if (!key) continue;
 
-            // Εντοπισμός των Food Logs (Μορφή: food_log_DD/MM/YYYY)
-            if (key && key.startsWith("food_log_")) {
-                const dateStr = key.replace("food_log_", ""); 
-                const parts = dateStr.split('/');
+            // 🎯 FIXED: Καθαρισμός ΟΛΩΝ των ημερήσιων κλειδιών που συσσωρεύονται
+            const isDailyKey = key.startsWith("food_log_") || 
+                               key.startsWith("pegasus_cardio_kcal_") || 
+                               key.startsWith("pegasus_routine_injected_");
+
+            if (isDailyKey) {
+                const datePart = key.split('_').pop(); 
+                const parts = datePart.split('/');
                 
-                // Αν η ημερομηνία είναι έγκυρη (DD/MM/YYYY)
                 if (parts.length === 3) {
                     const logDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                    const diffTime = Math.abs(now - logDate);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    const diffDays = Math.ceil(Math.abs(now - logDate) / (1000 * 60 * 60 * 24)); 
 
-                    // Αν πέρασαν 60+ μέρες, βάλτο στη λίστα διαγραφής
                     if (diffDays > this.retentionDays) {
                         keysToDelete.push(key);
                     }
@@ -212,23 +203,19 @@ window.PegasusGarbageCollector = {
             }
         }
 
-        // 2. Μαζική Διαγραφή & Απελευθέρωση Μνήμης
         keysToDelete.forEach(key => {
             localStorage.removeItem(key);
             deletedCount++;
         });
 
-        // 3. System Feedback
         if (deletedCount > 0) {
-            console.log(`🧹 PEGASUS GC: Cleared ${deletedCount} obsolete logs. Memory freed.`);
-            // Προαιρετικό: Ενημέρωση του Cloud για τον καθαρισμό
-            if (window.PegasusCloud) window.PegasusCloud.push(true);
+            console.log(`✅ GC: Cleared ${deletedCount} obsolete daily records.`);
+            if (window.PegasusCloud) window.PegasusCloud.push();
         } else {
-            console.log("🧹 PEGASUS GC: Storage is optimal. No action required.");
+            console.log("🧹 GC: Storage is optimal.");
         }
     }
 };
-
 
 // 5. GLOBAL RUNTIME ERROR CATCHER
 window.addEventListener('error', function(event) {
@@ -237,12 +224,8 @@ window.addEventListener('error', function(event) {
     window.PegasusLogger.log(cleanMsg, "RUNTIME_ERROR");
 });
 
-// ΑΥΞΗΣΗ ΚΑΘΥΣΤΕΡΗΣΗΣ ΣΕ 5 ΔΕΥΤΕΡΟΛΕΠΤΑ (Για απόλυτο συγχρονισμό)
+// Boot Sequence
 setTimeout(() => {
-    // 🧹 Εκτέλεση Καθαρισμού Μνήμης στο Παρασκήνιο
-    if (window.PegasusGarbageCollector) {
-        window.PegasusGarbageCollector.run();
-    }
-    
+    if (window.PegasusGarbageCollector) window.PegasusGarbageCollector.run();
     window.pegasusHealthCheck();
 }, 5000);
