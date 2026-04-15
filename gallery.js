@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS GALLERY ENGINE - INDEXEDDB EDITION (v5.1 GLOBAL SYNC)
-   Protocol: Strict Data Analyst - Global Scope Export
+   PEGASUS GALLERY ENGINE - INDEXEDDB EDITION (v5.2 GLOBAL SYNC)
+   Protocol: Strict Data Analyst - IndexedDB Promise Wrapper & Date Padding
+   Status: FINAL STABLE | FIXED: PROMISE RESOLUTION & CLOUD DELETE SYNC
    ========================================================================== */
 
 window.GalleryEngine = {
@@ -19,11 +20,11 @@ window.GalleryEngine = {
         };
         request.onsuccess = (e) => {
             this.db = e.target.result;
-            console.log("PEGASUS: Gallery Engine (IndexedDB) Online.");
+            console.log("📸 PEGASUS: Gallery Engine (IndexedDB) Online.");
             this.setupUI();
         };
         request.onerror = (e) => {
-            console.error("PEGASUS: Gallery Database Error", e);
+            console.error("❌ PEGASUS: Gallery Database Error", e);
         };
     },
 
@@ -49,16 +50,30 @@ window.GalleryEngine = {
 
         const reader = new FileReader();
         reader.onload = async (e) => {
-            const tx = this.db.transaction("photos", "readwrite");
-            const store = tx.objectStore("photos");
-            await store.add({
-                id: Date.now(),
-                date: new Date().toLocaleDateString('el-GR'),
-                src: e.target.result // Base64
+            // 🎯 FIXED: Unified Date Padding Protocol
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const dateStr = `${d}/${m}/${now.getFullYear()}`;
+
+            // 🎯 FIXED: Proper Promise wrapper for IndexedDB operations
+            await new Promise((resolve, reject) => {
+                const tx = this.db.transaction("photos", "readwrite");
+                const store = tx.objectStore("photos");
+                const request = store.add({
+                    id: Date.now(),
+                    date: dateStr,
+                    src: e.target.result // Base64
+                });
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
             });
+
             this.render();
-            // Αυτόματο Push στο Cloud μετά το upload αν είναι ενεργό
-            if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
+            
+            // Αυτόματο Push στο Cloud μετά το upload
+            if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                 window.PegasusCloud.push(true);
             }
         };
@@ -69,30 +84,32 @@ window.GalleryEngine = {
         const container = document.getElementById('progressTimeline');
         if (!container || !this.db) return;
 
-        const tx = this.db.transaction("photos", "readonly");
-        const store = tx.objectStore("photos");
-        const photos = await new Promise(res => {
+        const photos = await new Promise((resolve) => {
+            const tx = this.db.transaction("photos", "readonly");
+            const store = tx.objectStore("photos");
             const req = store.getAll();
-            req.onsuccess = () => res(req.result.reverse());
+            req.onsuccess = () => resolve(req.result.reverse());
+            req.onerror = () => resolve([]); // Ασφαλής επιστροφή κενού πίνακα σε σφάλμα
         });
 
         if (photos.length === 0) {
-            container.innerHTML = `<p style="text-align:center; padding:20px; opacity:0.5;">Καμία φωτογραφία.</p>`;
+            container.innerHTML = `<p style="text-align:center; padding:20px; opacity:0.5;">Καμία φωτογραφία προόδου.</p>`;
             return;
         }
 
+        // 🎯 FIXED: Προσθήκη "window." στις inline κλήσεις (Scope Shielding)
         container.innerHTML = `
             <div id="comparisonZone" style="display:none; margin-bottom:20px; padding:10px; background:#1a1a1a; border-radius:8px; border:1px solid #4CAF50;">
-                <h4 style="margin:0 0 10px 0; font-size:12px; color:#4CAF50; text-align:center;">ΣΥΓΚΡΙΣΗ PROGRESS</h4>
+                <h4 style="margin:0 0 10px 0; font-size:12px; color:#4CAF50; text-align:center; letter-spacing:1px;">ΣΥΓΚΡΙΣΗ PROGRESS</h4>
                 <div id="comparisonFlex" style="display:flex; gap:5px;"></div>
-                <button onclick="GalleryEngine.clearComparison()" style="width:100%; margin-top:10px; background:none; border:1px solid #555; color:#aaa; cursor:pointer; font-size:10px; padding:5px;">ΑΚΥΡΩΣΗ ΣΥΓΚΡΙΣΗΣ</button>
+                <button onclick="window.GalleryEngine.clearComparison()" style="width:100%; margin-top:10px; background:none; border:1px solid #555; color:#aaa; cursor:pointer; font-size:10px; padding:8px; border-radius:4px; transition: 0.2s;">ΑΚΥΡΩΣΗ ΣΥΓΚΡΙΣΗΣ</button>
             </div>
             <div class="photos-grid" style="display: grid; grid-template-columns: 1fr; gap: 15px;">
                 ${photos.map(p => `
-                    <div class="timeline-item" style="border-left: 2px solid #4CAF50; padding-left: 15px; margin-bottom: 25px; position:relative;">
-                        <div style="font-size:11px; color:#4CAF50; font-weight:bold; margin-bottom:8px;">📅 ${p.date}</div>
-                        <img src="${p.src}" style="width:100%; border-radius:8px; cursor:pointer;" onclick="GalleryEngine.selectForComparison('${p.src}', '${p.date}')">
-                        <button onclick="GalleryEngine.delete(${p.id})" style="position:absolute; top:25px; right:5px; background:rgba(0,0,0,0.6); border:none; color:#ff4444; cursor:pointer; font-weight:bold; padding:5px; border-radius:50%; width:25px; height:25px;">✕</button>
+                    <div class="timeline-item" style="border-left: 2px solid #4CAF50; padding-left: 15px; margin-bottom: 25px; position:relative; background: #111; padding: 10px; border-radius: 0 8px 8px 0;">
+                        <div style="font-size:12px; color:#4CAF50; font-weight:bold; margin-bottom:8px; letter-spacing:1px;">📅 ${p.date}</div>
+                        <img src="${p.src}" style="width:100%; border-radius:8px; cursor:pointer; border: 1px solid #333;" onclick="window.GalleryEngine.selectForComparison('${p.src}', '${p.date}')">
+                        <button onclick="window.GalleryEngine.delete(${p.id})" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); border:1px solid #ff4444; color:#ff4444; cursor:pointer; font-weight:bold; padding:5px; border-radius:5px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; transition:0.2s;">✕</button>
                     </div>
                 `).join('')}
             </div>
@@ -104,7 +121,7 @@ window.GalleryEngine = {
             this.selectedPhotos.push({ src, date });
             this.updateComparisonUI();
         } else {
-            alert("Επίλεξε μέχρι 2 φωτογραφίες.");
+            alert("PEGASUS STRICT: Μπορείς να συγκρίνεις μόνο 2 φωτογραφίες τη φορά.");
         }
     },
 
@@ -112,25 +129,52 @@ window.GalleryEngine = {
         const zone = document.getElementById('comparisonZone');
         const flex = document.getElementById('comparisonFlex');
         if (!zone || !flex) return;
+        
         zone.style.display = 'block';
-        flex.innerHTML = this.selectedPhotos.map((p, i) => `
-            <div style="flex:1; text-align:center;">
-                <div style="font-size:10px; color:${i===0?'#aaa':'#4CAF50'}">${i===0?'BEFORE':'AFTER'}</div>
-                <img src="${p.src}" style="width:100%; height:200px; object-fit:cover; border:1px solid #444;">
-            </div>
-        `).join('');
+        
+        let html = '';
+        this.selectedPhotos.forEach((p, i) => {
+            const label = i === 0 ? 'BEFORE' : 'AFTER';
+            const color = i === 0 ? '#aaa' : '#4CAF50';
+            html += `
+                <div style="flex:1; text-align:center;">
+                    <div style="font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:5px; color:${color}">${label}</div>
+                    <img src="${p.src}" style="width:100%; height:200px; object-fit:cover; border:1px solid ${color}; border-radius:6px;">
+                    <div style="font-size:9px; color:#666; margin-top:4px;">${p.date}</div>
+                </div>
+            `;
+        });
+        flex.innerHTML = html;
     },
 
-    clearComparison() { this.selectedPhotos = []; this.render(); },
+    clearComparison() { 
+        this.selectedPhotos = []; 
+        this.render(); 
+    },
 
     async delete(id) {
-        if (!confirm("Διαγραφή;")) return;
-        const tx = this.db.transaction("photos", "readwrite");
-        tx.objectStore("photos").delete(id);
+        if (!confirm("🚨 ΕΠΙΒΕΒΑΙΩΣΗ: Οριστική διαγραφή φωτογραφίας;")) return;
+        
+        // 🎯 FIXED: Proper Promise wrapper for IndexedDB Delete
+        await new Promise((resolve, reject) => {
+            const tx = this.db.transaction("photos", "readwrite");
+            const request = tx.objectStore("photos").delete(id);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+
         this.render();
+
+        // 🎯 FIXED: Missing Cloud Sync on Delete (Anti-Zombie Protocol)
+        if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+            window.PegasusCloud.push(true);
+        }
     }
 };
 
 // Global Handlers
 window.handlePhotoUpload = (e) => window.GalleryEngine.handleUpload(e);
-document.addEventListener('DOMContentLoaded', () => window.GalleryEngine.init());
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.GalleryEngine.init();
+});
