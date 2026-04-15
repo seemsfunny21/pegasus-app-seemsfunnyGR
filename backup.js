@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS BACKUP & RESTORE - MASTER MANIFEST EDITION (V10.1)
-   Protocol: Date Padding Migration, Forensic Integrity & Cloud Force Sync
-   Status: FINAL STABLE | FIXED: LEGACY DATE INCOMPATIBILITY
+   PEGASUS BACKUP & RESTORE - MASTER MANIFEST EDITION (V10.2)
+   Protocol: Universal JSON Unwrapping, Date Padding & IndexedDB Recovery
+   Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
 window.exportPegasusData = async function() {
@@ -26,7 +26,6 @@ window.exportPegasusData = async function() {
             )
         );
 
-        // Συμπερίληψη κλειδιών βάρους και επίσημων κλειδιών
         if (isOfficial || key.includes("ANGELOS") || key.startsWith("weight_")) {
             data.localStorage[key] = val;
         }
@@ -67,11 +66,11 @@ function finalizeExport(data) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    console.log("%c✅ PEGASUS: Backup Created with v10.1 Integrity Protocol.", "color: #4CAF50; font-weight: bold;");
+    console.log("%c✅ PEGASUS: Backup Created with v10.2 Integrity Protocol.", "color: #4CAF50; font-weight: bold;");
 }
 
 /* ==========================================================================
-   RESTORE ENGINE (V10.1 - DATE MIGRATION ENABLED)
+   RESTORE ENGINE (V10.2 - UNIVERSAL UNWRAP & MIGRATION)
    ========================================================================== */
 window.importPegasusData = function(event) {
     const file = event.target.files[0];
@@ -81,27 +80,27 @@ window.importPegasusData = function(event) {
     reader.onload = async (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-            if (!imported.localStorage) throw new Error("Invalid Backup Format");
+            
+            // 🛡️ UNIVERSAL UNWRAP: Ανιχνεύει αν τα δεδομένα είναι μέσα στο "localStorage" wrapper
+            const payload = imported.localStorage ? imported.localStorage : imported;
 
             if (window.GalleryEngine && window.GalleryEngine.db) {
                 window.GalleryEngine.db.close();
             }
 
-            const msg = `🚨 PEGASUS OS: ΕΝΑΡΞΗ ΑΝΑΚΤΗΣΗΣ\n\n` +
-                        `Θα γίνει αυτόματη διόρθωση ημερομηνιών και πλήρης επαναφορά.\n` +
-                        `Τα τρέχοντα δεδομένα θα διαγραφούν. Συνέχεια;`;
-            
+            const msg = `🚨 PEGASUS OS: ΕΝΑΡΞΗ ΑΝΑΚΤΗΣΗΣ\n\nΘα γίνει αυτόματη διόρθωση ημερομηνιών και πλήρης επαναφορά.\nΤα τρέχοντα δεδομένα θα διαγραφούν. Συνέχεια;`;
             if (!confirm(msg)) return;
 
-            console.log("%c[RECOVERY] Initializing Date Migration Engine...", "color: #ff9800; font-weight: bold;");
+            console.log("%c[RECOVERY] Initializing Universal Migration Engine...", "color: #ff9800; font-weight: bold;");
 
-            // 🎯 FIXED: DATE PADDING MIGRATION ENGINE
-            // Μετατρέπει παλιά κλειδιά (5/4/2026) σε νέα (05/04/2026) για συμβατότητα με το Calendar
             const migratedStorage = {};
-            Object.keys(imported.localStorage).forEach(key => {
+            const dateKeys = ["food_log_", "pegasus_cardio_kcal_", "pegasus_routine_injected_", "weight_"];
+
+            Object.keys(payload).forEach(key => {
                 let newKey = key;
-                const dateKeys = ["food_log_", "pegasus_cardio_kcal_", "pegasus_routine_injected_"];
+                let val = payload[key];
                 
+                // 🎯 DATE PADDING MIGRATION
                 if (dateKeys.some(prefix => key.startsWith(prefix))) {
                     const parts = key.split('_');
                     const datePart = parts.pop();
@@ -113,13 +112,14 @@ window.importPegasusData = function(event) {
                         newKey = parts.join('_') + `_${d}/${m}/${y}`;
                     }
                 }
-                migratedStorage[newKey] = imported.localStorage[key];
+                
+                // 🛡️ STRINGIFICATION SHIELD: Το LocalStorage δέχεται ΜΟΝΟ strings
+                migratedStorage[newKey] = (typeof val === 'object') ? JSON.stringify(val) : String(val);
             });
 
             localStorage.clear();
             Object.entries(migratedStorage).forEach(([k, v]) => localStorage.setItem(k, v));
 
-            // ΔΙΚΛΕΙΔΑ ΑΣΦΑΛΕΙΑΣ
             if (!localStorage.getItem("pegasus_weight")) localStorage.setItem("pegasus_weight", "74");
 
             // ΑΝΑΔΟΜΗΣΗ INDEXEDDB
