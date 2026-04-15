@@ -4,7 +4,7 @@
    Status: FINAL STABLE | FIXED: MANIFEST DESYNC & EVENT FALLBACKS
    ========================================================================== */
 
-const M = window.PegasusManifest;
+var M = M || window.PegasusManifest;
 const WEIGHT_KEY = M?.user?.weight || 'pegasus_weight';
 const HISTORY_KEY = M?.user?.weight_history || 'pegasus_weight_history';
 
