@@ -4,7 +4,7 @@
    Status: FINAL STABLE | RUNTIME ERRORS FIXED
    ========================================================================== */
 
-const M = window.PegasusManifest;
+var M = M || window.PegasusManifest;
 if (!M) console.error("❌ CRITICAL: PegasusManifest missing in food.js");
 
 if (!(window.currentFoodDate instanceof Date) || isNaN(window.currentFoodDate.getTime())) {
