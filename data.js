@@ -3,6 +3,8 @@
    Protocol: 5-Day Focus | 50-Min Daily | Dynamic UI | Active Split: IRON_LOGIC
    Status: PRODUCTION READY | FULL CODE DELIVERY | ZERO-BUG BRIDGES ACTIVE
    ========================================================================== */
+// 🛡️ Global Safe Declaration (Align with Manifest v18.3)
+var M = M || window.PegasusManifest;
 
 // 1. DEFAULT PLAN: IRON_LOGIC (v15.4 - Absolute Alignment)
 window.program = {
