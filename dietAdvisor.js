@@ -4,6 +4,8 @@
    Status: FINAL STABLE | ZERO-BUG VERIFIED | CACHE WILDCARD ACTIVE
    ========================================================================== */
 
+var M = M || window.PegasusManifest;
+
 window.PegasusTracer = {
     logs: JSON.parse(localStorage.getItem("pegasus_command_trace") || "[]"),
 
@@ -49,13 +51,16 @@ document.addEventListener('click', (e) => {
 /* ==========================================================================
    PEGASUS HEALTH & DEBUG SYSTEM
    ========================================================================== */
-const MAX_LOG_ENTRIES = 50;
-const LOG_KEY = "pegasus_error_log";
 
 window.PegasusLogger = {
+    // 🎯 Ρυθμίσεις κλεισμένες μέσα στο αντικείμενο (Collision Shield)
+    CONFIG: {
+        MAX: 50,
+        KEY: "pegasus_error_log"
+    },
     log: function(message, type = "ERROR") {
         try {
-            let logs = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+            let logs = JSON.parse(localStorage.getItem(this.CONFIG.KEY)) || [];
             const entry = {
                 timestamp: new Date().toLocaleString('el-GR'),
                 type: type,
@@ -64,21 +69,19 @@ window.PegasusLogger = {
             };
             
             logs.unshift(entry);
-            if (logs.length > MAX_LOG_ENTRIES) logs.pop();
+            if (logs.length > this.CONFIG.MAX) logs.pop();
             
-            localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+            localStorage.setItem(this.CONFIG.KEY, JSON.stringify(logs));
             console.log(`%c[PEGASUS ${type}]: ${message}`, "color: #ff4444; font-weight: bold;");
         } catch (e) { 
             console.error("Logger Internal Failure:", e); 
         }
     },
-
     getLogs: function() { 
-        return JSON.parse(localStorage.getItem(LOG_KEY)) || []; 
+        return JSON.parse(localStorage.getItem(this.CONFIG.KEY)) || []; 
     },
-    
     clearLogs: function() {
-        localStorage.removeItem(LOG_KEY);
+        localStorage.removeItem(this.CONFIG.KEY);
         console.log("🛡️ PEGASUS: Error Logs Cleared.");
     }
 };
