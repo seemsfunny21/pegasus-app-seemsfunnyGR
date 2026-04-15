@@ -4,6 +4,9 @@
    Status: FINAL STABLE | FIXED: STATE BLEED & REFERENCE ERRORS
    ========================================================================== */
 
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
+
 // 🎯 FIXED: Σύνδεση στο window για να είναι προσβάσιμο από παντού (app.js)
 window.partnerData = {
     isActive: false,
@@ -64,10 +67,11 @@ window.togglePartnerMode = function() {
 
 // 2. ΑΠΟΘΗΚΕΥΣΗ ΟΝΟΜΑΤΟΣ ΣΕ ΕΙΔΙΚΗ ΛΙΣΤΑ
 window.savePartnerNameToList = function(name) {
-    let list = JSON.parse(localStorage.getItem("pegasus_partners_list") || "[]");
+  const listKey = M?.workout?.partnersList || "pegasus_partners_list";
+let list = JSON.parse(localStorage.getItem(listKey) || "[]");
     if (!list.includes(name)) {
         list.push(name);
-        localStorage.setItem("pegasus_partners_list", JSON.stringify(list));
+     localStorage.setItem(listKey, JSON.stringify(list));
         
         // 🎯 FIXED: Cloud Sync για μεταφορά των ονομάτων στο κινητό
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
@@ -85,7 +89,8 @@ window.updatePartnerDatalist = function() {
     let partnerNames = new Set();
 
     // Φίλτρο Α: Από την ειδική λίστα ονομάτων (Μπλοκάρει Λατινικά & Ελληνικά)
-    let list = JSON.parse(localStorage.getItem("pegasus_partners_list") || "[]");
+    const listKey = M?.workout?.partnersList || "pegasus_partners_list";
+let list = JSON.parse(localStorage.getItem(listKey) || "[]");
     list.forEach(n => {
         if(n !== "ZZ" && n !== "ANGELOS" && n !== "ΑΓΓΕΛΟΣ") partnerNames.add(n);
     });
