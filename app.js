@@ -5,20 +5,13 @@
    ========================================================================== */
 
 // 0. GLOBAL SCOPE BRIDGE
-var P_M = window.PegasusManifest; 
+var M = M || window.PegasusManifest;
+var P_M = M; // Διατηρούμε το P_M ως alias για να μη σπάσει ο υπόλοιπος κώδικας του αρχείου
 
 window.masterUI = window.masterUI || {}; 
 
-if (typeof M === 'undefined') {
-    window.M = P_M;
-} else {
-    console.log("🛡️ PEGASUS BRIDGE: M is already linked globally.");
-}
-
-if (!P_M) {
-    console.warn("⚠️ Manifest not found. Initializing Emergency Link...");
-    P_M = window.PegasusManifest;
-    if (typeof M === 'undefined') window.M = P_M;
+if (!M) {
+    console.warn("⚠️ PEGASUS CRITICAL: Manifest not found during app.js boot.");
 }
 
 /* ===== 1. ISSUE LOGGER (DIAGNOSTIC MODE) ===== */
