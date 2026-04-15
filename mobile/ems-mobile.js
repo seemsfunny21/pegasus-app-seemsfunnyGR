@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - EMS MODULE (MOBILE EDITION v14.2 MAXIMALIST)
+   PEGASUS OS - EMS MODULE (MOBILE EDITION v14.3 MAXIMALIST)
    Protocol: Full Body Stimulation, Cardio Guard & Achievement Sync
-   Status: FINAL STABLE | INTEGRATED DATA SHIELD
+   Status: FINAL STABLE | FIXED: CROSS-PLATFORM CARDIO GUARD & DATE PADDING
    ========================================================================== */
 
 window.PegasusEMS = {
@@ -36,56 +36,57 @@ window.PegasusEMS = {
         const sec = String(this.seconds%60).padStart(2,'0');
         
         const timerEl = document.getElementById('phaseTimer');
-        const barEl = document.getElementById('mainProgressBar');
-        const pctEl = document.getElementById('totalProgress');
-
-        if (timerEl) timerEl.textContent = `${min}:${sec}`;
+        const fillEl = document.getElementById('phaseProgressFill');
         
-        const progress = ((1500 - this.seconds) / 1500) * 100;
-        if (barEl) barEl.style.width = progress + '%';
-        if (pctEl) pctEl.textContent = Math.round(progress) + '%';
+        if (timerEl) timerEl.textContent = `${min}:${sec}`;
+        if (fillEl) {
+            const pct = (this.seconds / 1500) * 100;
+            fillEl.style.width = `${100 - pct}%`;
+        }
     },
 
     complete: async function() {
-        const kcal = prompt("ΣΥΝΟΛΙΚΑ KCAL ΣΥΝΕΔΡΙΑΣ:", "747");
-        if (kcal) {
-            console.log("⚡ EMS: Finalizing Session & Syncing Data...");
-            
-            let h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-            const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
-            
-            // --- 0. DATE PREPARATION (UNIFIED PROTOCOL) ---
-            const rawDate = new Date();
-            const dateStr = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
-            
-            // --- 1. CARDIO GUARD: Έλεγχος αν έγινε ποδήλατο σήμερα ---
-            const hasCardio = localStorage.getItem("pegasus_cardio_kcal_" + dateStr);
+        console.log("⚡ EMS: Session Completed. Running Final Pulse Protocol...");
+        
+        // --- 0. DATA SOURCE RECOVERY ---
+        let h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+        
+        // --- 0.1 DATE PREPARATION (UNIFIED PADDING PROTOCOL) ---
+        const rawDate = new Date();
+        const dStr = String(rawDate.getDate()).padStart(2, '0');
+        const mStr = String(rawDate.getMonth() + 1).padStart(2, '0');
+        const dateStr = `${dStr}/${mStr}/${rawDate.getFullYear()}`;
+        
+        // --- 1. CARDIO GUARD: Έλεγχος αν έγινε ποδήλατο σήμερα (PC ή Mobile) ---
+        const hasCardio = localStorage.getItem("pegasus_cardio_kcal_" + dateStr);
 
-            groups.forEach(g => {
-                if (g === "Πόδια" && hasCardio) {
-                    console.log("⚡ EMS: Skipping Legs (Already covered by Cardio).");
-                } else {
-                    h[g] = (h[g] || 0) + 6; // Πίστωση 6 σετ ανά ομάδα
-                }
-            });
-
-            // --- 2. 🏆 ACHIEVEMENT SYNC (XP/LIFETIME STATS) ---
-            // Το EMS θεωρείται Full Body Session (36 sets total)
-            let stats = JSON.parse(localStorage.getItem('pegasus_stats')) || { totalSets: 0, exerciseHistory: {} };
-            stats.totalSets = (stats.totalSets || 0) + 36;
-            localStorage.setItem('pegasus_stats', JSON.stringify(stats));
-
-            // --- 3. FINAL SAVE & SYNC ---
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(h));
-            
-            console.log("✅ EMS: History & XP Synced Successfully.");
-            
-            if (window.PegasusCloud) {
-                // Χρήση true για παράκαμψη του debounce freeze
-                await window.PegasusCloud.push(true);
+        groups.forEach(g => {
+            if (g === "Πόδια" && hasCardio) {
+                console.log("⚡ EMS: Skipping Legs (Already covered by Cardio today).");
+                // Αν έχει γίνει cardio, το EMS πιστώνει 0 στα πόδια για αποφυγή Overtraining
+            } else {
+                h[g] = (h[g] || 0) + 6; // Πίστωση 6 σετ ανά ομάδα (Σύνολο 36 ή 30)
             }
-            
-            location.reload();
+        });
+
+        // --- 2. 🏆 ACHIEVEMENT SYNC (XP/LIFETIME STATS) ---
+        // Το EMS θεωρείται Full Body Session (36 sets total)
+        let stats = JSON.parse(localStorage.getItem('pegasus_stats')) || { totalSets: 0, exerciseHistory: {} };
+        stats.totalSets = (stats.totalSets || 0) + 36;
+        localStorage.setItem('pegasus_stats', JSON.stringify(stats));
+
+        // --- 3. FINAL SAVE & SYNC ---
+        localStorage.setItem('pegasus_weekly_history', JSON.stringify(h));
+        
+        alert("⚡ EMS SESSION COMPLETE!\n36 Sets added to XP.\nLeg sets skipped if cardio was detected.");
+        
+        if (window.PegasusCloud) {
+            // Χρήση true για άμεσο συγχρονισμό μετά από μεγάλο session
+            await window.PegasusCloud.push(true);
         }
+        
+        if (typeof openView === "function") openView('home');
+        location.reload(); // Refresh για ενημέρωση των progress bars
     }
 };
