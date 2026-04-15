@@ -1,6 +1,6 @@
 /* ==========================================================================
    PEGASUS CLOUD VAULT - UNIVERSAL CORE (v16.1 FIXED SYNC)
-   Protocol: Strict Data Analyst - Flat Payload & Auto-Sync
+   Protocol: Strict Data Analyst - Flat Payload, Auto-Sync & Unified Date Guard
    ========================================================================== */
 
 const PegasusCloud = {
@@ -15,9 +15,12 @@ const PegasusCloud = {
     userKey: "",
     syncInterval: null,
 
+    // 🎯 FIXED: Strict Date Padding (e.g. 05/04/2026 instead of 5/4/2026)
     getTodayKey: () => {
         const d = new Date();
-        return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear();
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${day}/${month}/${d.getFullYear()}`;
     },
 
     unlock: function(pin) {
@@ -199,8 +202,6 @@ window.consumeSupp = function(type, amount) {
     
     if (typeof updateSuppUI === "function") updateSuppUI();
     if (typeof refreshAllUI === "function") refreshAllUI();
-    
-    // Εδώ το Timeout δεν χρειάζεται πλέον Push, το κάνει ο interceptor κάτω.
 };
 
 if (!window.originalSetItem) {
@@ -213,7 +214,7 @@ if (!window.originalSetItem) {
         
         window.originalSetItem.apply(this, arguments);
 
-        // 🚀 ΑΜΕΣΟΣ ΣΥΓΧΡΟΝΙΣΜΟΣ: Κάθε αλλαγή φαγητού ανεβαίνει στο Cloud
+        // 🚀 ΑΜΕΣΟΣ ΣΥΓΧΡΟΝΙΣΜΟΣ: Κάθε αλλαγή ανεβαίνει στο Cloud
         const ignored = ["pegasus_last_push", "pegasus_vault_pin", "pegasus_vault_time"];
         if (!ignored.includes(key) && (key.startsWith("food_log_") || key.startsWith("pegasus_") || key.startsWith("kouki_"))) {
             if (window.PegasusCloud && !window.PegasusCloud.isPulling && window.PegasusCloud.hasSuccessfullyPulled) {
@@ -229,14 +230,14 @@ if (!window.originalSetItem) {
                     let addedItem = newArr[newArr.length - 1]; 
                     if (addedItem && addedItem.name) {
                         let fname = addedItem.name.toLowerCase();
-if (fname.includes("πρωτε") || fname.includes("whey")) {
-    if (window.PegasusInventory) window.PegasusInventory.consume('prot', 30, false);
-    else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Whey");
-}
-if (fname.includes("κρεατ") || fname.includes("creatine")) {
-    if (window.PegasusInventory) window.PegasusInventory.consume('crea', 5, false);
-    else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Κρεατίνη");
-}
+                        if (fname.includes("πρωτε") || fname.includes("whey")) {
+                            if (window.PegasusInventory) window.PegasusInventory.consume('prot', 30, false);
+                            else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Whey");
+                        }
+                        if (fname.includes("κρεατ") || fname.includes("creatine")) {
+                            if (window.PegasusInventory) window.PegasusInventory.consume('crea', 5, false);
+                            else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Κρεατίνη");
+                        }
                     }
                 }
             } catch(e) { console.error("Interceptor Error", e); }
