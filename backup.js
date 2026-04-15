@@ -1,12 +1,12 @@
 /* ==========================================================================
-   PEGASUS BACKUP & RESTORE - MASTER MANIFEST EDITION (V9.0)
-   Protocol: Strict Data Mapping, Forensic Integrity & Anti-Silent Fail
+   PEGASUS BACKUP & RESTORE - MASTER MANIFEST EDITION (V10.1)
+   Protocol: Date Padding Migration, Forensic Integrity & Cloud Force Sync
+   Status: FINAL STABLE | FIXED: LEGACY DATE INCOMPATIBILITY
    ========================================================================== */
 
 window.exportPegasusData = async function() {
-    // Έλεγχος ύπαρξης Μανιφέστου
     if (!window.PegasusManifest) {
-        console.error("❌ CRITICAL: PegasusManifest not found. Export aborted.");
+        console.error("❌ CRITICAL: PegasusManifest not found.");
         alert("ΣΦΑΛΜΑ: Λείπει το manifest.js. Η εξαγωγή ακυρώθηκε.");
         return;
     }
@@ -16,31 +16,25 @@ window.exportPegasusData = async function() {
     
     console.log("%c[BACKUP] Starting Manifest-Based Scan...", "color: #00bcd4; font-weight: bold;");
 
-    // 1. ΔΥΝΑΜΙΚΗ ΣΥΛΛΟΓΗ ΒΑΣΕΙ ΜΑΝΙΦΕΣΤΟΥ
-    // Σαρώνουμε όλο το LocalStorage και κρατάμε μόνο ό,τι ορίζει το Μανιφέστο
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         const val = localStorage.getItem(key);
 
-        // Έλεγχος αν το κλειδί είναι επίσημο ή ξεκινάει με εγκεκριμένο πρόθεμα (prefix)
         const isOfficial = Object.values(M).some(category => 
             Object.values(category).some(manifestKey => 
                 key === manifestKey || (typeof manifestKey === 'string' && key.startsWith(manifestKey))
             )
         );
 
-        // Συμπερίληψη κλειδιών βάρους (Legacy support) και επίσημων κλειδιών
+        // Συμπερίληψη κλειδιών βάρους και επίσημων κλειδιών
         if (isOfficial || key.includes("ANGELOS") || key.startsWith("weight_")) {
             data.localStorage[key] = val;
         }
     }
 
-    // 2. ΕΞΑΓΩΓΗ INDEXEDDB (Φωτογραφίες Προόδου)
     const dbRequest = indexedDB.open("PegasusLevels", 1);
     dbRequest.onsuccess = (e) => {
         const db = e.target.result;
-        
-        // Αν δεν υπάρχει το store των φωτογραφιών, κλείνουμε και εξάγουμε μόνο LS
         if (!db.objectStoreNames.contains("photos")) {
             db.close();
             finalizeExport(data);
@@ -49,9 +43,8 @@ window.exportPegasusData = async function() {
 
         const tx = db.transaction("photos", "readonly");
         const store = tx.objectStore("photos");
-        
         store.getAll().onsuccess = (ev) => {
-            data.indexedDB = ev.target.result;
+            data.indexedDB = ev.result || ev.target.result;
             db.close();
             finalizeExport(data);
         };
@@ -64,22 +57,21 @@ window.exportPegasusData = async function() {
 };
 
 function finalizeExport(data) {
-    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const timestamp = new Date().toISOString().slice(0,10);
     
     a.href = url;
-    a.download = `PEGASUS_V9_MASTER_${timestamp}.json`;
+    a.download = `PEGASUS_MASTER_BACKUP_${timestamp}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    
-    console.log("%c✅ PEGASUS: Manifest-Based Backup Created Successfully.", "color: #4CAF50; font-weight: bold;");
+    console.log("%c✅ PEGASUS: Backup Created with v10.1 Integrity Protocol.", "color: #4CAF50; font-weight: bold;");
 }
 
 /* ==========================================================================
-   RESTORE ENGINE (V9.0 - CRASH-PROOF ISOLATION)
+   RESTORE ENGINE (V10.1 - DATE MIGRATION ENABLED)
    ========================================================================== */
 window.importPegasusData = function(event) {
     const file = event.target.files[0];
@@ -89,47 +81,53 @@ window.importPegasusData = function(event) {
     reader.onload = async (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-            if (window.GalleryEngine && window.GalleryEngine.db) {
-            window.GalleryEngine.db.close();
-            console.log("🛡️ PEGASUS GUARD: Gallery DB closed for Restore.");
-        }
-            const msg = `🚨 PEGASUS OS: ΕΝΑΡΞΗ ΑΝΑΚΤΗΣΗΣ\n\n` +
-                        `Θα γίνει πλήρης επαναφορά δεδομένων και φωτογραφιών.\n` +
-                        `Τα τρέχοντα δεδομένα θα διαγραφούν. Συνέχεια;`;
-            
-            if (!confirm(msg)) return;
+            if (!imported.localStorage) throw new Error("Invalid Backup Format");
 
-            console.log("%c[RECOVERY] Initializing Manifest Sync...", "color: #ff9800; font-weight: bold;");
-
-            // 1. ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ ΣΥΝΔΕΣΕΩΝ GALLERY
             if (window.GalleryEngine && window.GalleryEngine.db) {
                 window.GalleryEngine.db.close();
             }
 
-            // 2. ΚΑΘΑΡΙΣΜΟΣ & ΕΓΧΥΣΗ LOCALSTORAGE
-            localStorage.clear();
-            Object.keys(imported.localStorage).forEach(k => {
-                localStorage.setItem(k, imported.localStorage[k]);
+            const msg = `🚨 PEGASUS OS: ΕΝΑΡΞΗ ΑΝΑΚΤΗΣΗΣ\n\n` +
+                        `Θα γίνει αυτόματη διόρθωση ημερομηνιών και πλήρης επαναφορά.\n` +
+                        `Τα τρέχοντα δεδομένα θα διαγραφούν. Συνέχεια;`;
+            
+            if (!confirm(msg)) return;
+
+            console.log("%c[RECOVERY] Initializing Date Migration Engine...", "color: #ff9800; font-weight: bold;");
+
+            // 🎯 FIXED: DATE PADDING MIGRATION ENGINE
+            // Μετατρέπει παλιά κλειδιά (5/4/2026) σε νέα (05/04/2026) για συμβατότητα με το Calendar
+            const migratedStorage = {};
+            Object.keys(imported.localStorage).forEach(key => {
+                let newKey = key;
+                const dateKeys = ["food_log_", "pegasus_cardio_kcal_", "pegasus_routine_injected_"];
+                
+                if (dateKeys.some(prefix => key.startsWith(prefix))) {
+                    const parts = key.split('_');
+                    const datePart = parts.pop();
+                    const dateParts = datePart.split('/');
+                    if (dateParts.length === 3) {
+                        const d = dateParts[0].padStart(2, '0');
+                        const m = dateParts[1].padStart(2, '0');
+                        const y = dateParts[2];
+                        newKey = parts.join('_') + `_${d}/${m}/${y}`;
+                    }
+                }
+                migratedStorage[newKey] = imported.localStorage[key];
             });
 
-            // 3. ΔΙΚΛΕΙΔΑ ΑΣΦΑΛΕΙΑΣ (Weight Protection)
-            if (!localStorage.getItem("pegasus_weight")) {
-                localStorage.setItem("pegasus_weight", "74");
-            }
+            localStorage.clear();
+            Object.entries(migratedStorage).forEach(([k, v]) => localStorage.setItem(k, v));
 
-            console.log("%c[RECOVERY] LocalStorage Synchronized.", "color: #4CAF50");
+            // ΔΙΚΛΕΙΔΑ ΑΣΦΑΛΕΙΑΣ
+            if (!localStorage.getItem("pegasus_weight")) localStorage.setItem("pegasus_weight", "74");
 
-            // 4. ΑΝΑΔΟΜΗΣΗ INDEXEDDB (Με καθυστέρηση 600ms για αποδέσμευση Locks)
+            // ΑΝΑΔΟΜΗΣΗ INDEXEDDB
             setTimeout(() => {
                 const delReq = indexedDB.deleteDatabase("PegasusLevels");
-                
                 delReq.onsuccess = () => {
                     const dbReq = indexedDB.open("PegasusLevels", 1);
-                    
-                    dbReq.onupgradeneeded = (ev) => {
-                        ev.target.result.createObjectStore("photos", { keyPath: "id" });
-                    };
-                    
+                    dbReq.onupgradeneeded = (ev) => ev.target.result.createObjectStore("photos", { keyPath: "id" });
                     dbReq.onsuccess = (ev) => {
                         const db = ev.target.result;
                         if (imported.indexedDB && imported.indexedDB.length > 0) {
@@ -145,11 +143,6 @@ window.importPegasusData = function(event) {
                         }
                     };
                 };
-
-                delReq.onblocked = () => {
-                    alert("🚨 ΣΦΑΛΜΑ: Η βάση δεδομένων είναι μπλοκαρισμένη.\nΚλείσε άλλα tabs του Pegasus και δοκίμασε ξανά.");
-                    location.reload();
-                };
             }, 600);
 
         } catch (err) {
@@ -160,12 +153,15 @@ window.importPegasusData = function(event) {
     reader.readAsText(file);
 };
 
-function finalizeRecovery() {
-    alert("✅ Η ΑΝΑΚΤΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!\n\nΌλες οι προπονήσεις και οι φωτογραφίες επανήλθαν.");
+async function finalizeRecovery() {
+    console.log("📡 PEGASUS: Forcing Cloud Sync after recovery...");
+    if (window.PegasusCloud && window.PegasusCloud.push) {
+        await window.PegasusCloud.push(true);
+    }
+    alert("✅ Η ΑΝΑΚΤΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!\n\nΌλα τα δεδομένα διορθώθηκαν και συγχρονίστηκαν.");
     window.location.reload();
 }
 
-// Global Trigger για το UI
 window.triggerPegasusImport = () => {
     const input = document.createElement('input');
     input.type = 'file';
