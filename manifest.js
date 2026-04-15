@@ -35,7 +35,8 @@ window.PegasusManifest = {
         lastPush: "pegasus_last_push",
         lastReport: "pegasus_last_auto_report",
         lastEmailSent: "pegasus_last_email_sent_date",
-        weatherCode: "pegasus_weather_code"
+        weatherCode: "pegasus_weather_code",
+       "auditUI.js": "Real-time System Integrity Monitor & Diagnostic Tool."       
     },
     user: {
         weight: "pegasus_weight",
