@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.1)
-   Protocol: Zero-Orphan Key Governance & Runtime Fixes
-   Status: THE SINGLE SOURCE OF TRUTH
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.2)
+   Protocol: Zero-Orphan Key Governance & Full System Alignment
+   Status: THE SINGLE SOURCE OF TRUTH | FIXED: WEATHER, PARTNER & TIME-LOCKS
    ========================================================================== */
 
 window.PegasusManifest = {
@@ -11,9 +11,9 @@ window.PegasusManifest = {
     metadata: {
         os: "Pegasus OS",
         author: "Angelos & Gemini",
-        last_update: "2026-04-12",
+        last_update: "2026-04-15", // Updated
         logic_protocol: "Zero-Bug Simulation & Maximalist Retention",
-        engine_version: "v18.1 Stable"
+        engine_version: "v18.2 Stable"
     },
 
     // ---------------------------------------------------------
@@ -24,6 +24,7 @@ window.PegasusManifest = {
         mute: "pegasus_mute_state",
         turbo: "pegasus_turbo_state",
         lastReset: "pegasus_last_reset",
+        lastResetTimestamp: "pegasus_last_reset_timestamp", // 🎯 ADDED
         vaultPin: "pegasus_vault_pin",
         vaultData: "pegasus_vault_data",
         vaultTime: "pegasus_vault_time",
@@ -32,7 +33,9 @@ window.PegasusManifest = {
         cmdTrace: "pegasus_command_trace",
         stats: "pegasus_stats",
         lastPush: "pegasus_last_push",
-        lastReport: "pegasus_last_auto_report"
+        lastReport: "pegasus_last_auto_report",
+        lastEmailSent: "pegasus_last_email_sent_date", // 🎯 ADDED
+        weatherCode: "pegasus_weather_code" // 🎯 ADDED
     },
     user: {
         weight: "pegasus_weight",
@@ -43,7 +46,8 @@ window.PegasusManifest = {
         gender: "pegasus_gender",
         specs: "pegasus_user_specs",
         notes: "pegasus_notes",
-        contacts: "pegasus_contacts"
+        contacts: "pegasus_contacts",
+        partners: "pegasus_partners_list" // 🎯 ADDED
     },
     workout: {
         weekly_history: "pegasus_weekly_history",
@@ -54,10 +58,11 @@ window.PegasusManifest = {
         activePlan: "pegasus_active_plan",
         muscleTargets: "pegasus_muscle_targets",
         calendarHistory: "pegasus_calendar_history",
-        exerciseWeights: "pegasus_exercise_weights" 
+        exerciseWeights: "pegasus_exercise_weights",
+        ex_time: "pegasus_ex_time", // 🎯 ADDED from settings.js
+        rest_time: "pegasus_rest_time" // 🎯 ADDED from settings.js
     },
     nutrition: { 
-        // 🔴 CRITICAL FIX FOR food.js RUNTIME ERROR
         log_prefix: "food_log_" 
     },
     diet: {
@@ -102,7 +107,10 @@ window.PegasusManifest = {
         "cardio.js": "Cardio Engine (+18 σετ πόδια & Kcal target modifier).",
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
-        "dragDrop.js": "UI Window Positioning Memory."
+        "dragDrop.js": "UI Window Positioning Memory.",
+        "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
+        "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
+        "reporting.js": "EmailJS Automated Morning Dispatcher."
     },
 
     // ---------------------------------------------------------
@@ -140,7 +148,10 @@ window.PegasusManifest = {
                 key.startsWith("pegasus_weight_") || 
                 key.startsWith("pegasus_cardio_kcal_") ||
                 key.startsWith("pegasus_pos_") || 
-                key.startsWith("pegasus_routine_injected_")) {
+                key.startsWith("pegasus_routine_injected_") ||
+                key.startsWith("pegasus_history_") || // 🎯 ADDED: EMS/Calendar dynamic history
+                key.startsWith("pegasus_day_status_") || // 🎯 ADDED: Calendar daily status
+                key.startsWith("cardio_log_")) { // 🎯 ADDED: Cardio dynamic logs
                 validKeys.push(key); 
                 continue;
             }
@@ -163,4 +174,4 @@ window.PegasusManifest = {
     }
 };
 
-console.log("🏛️ PEGASUS MANIFEST v18.1 LOADED. CRITICAL RUNTIME FIX APPLIED.");
+console.log("🏛️ PEGASUS MANIFEST v18.2 LOADED. SYSTEM FULLY ALIGNED.");
