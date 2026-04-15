@@ -1,8 +1,9 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER (dragdrop.js) - v4.5 CLEAN SHIELDED
+   PEGASUS UI MANAGER (dragdrop.js) - v4.6 CLEAN SHIELDED
    Protocol: Strict Data Analyst - Keyboard Code Validation & Clean Logic
    Features: Shift+1-9 Shortcuts, Mutation-Aware Dragging, High Z-Index Panels
    Note: Button logic delegated entirely to app.js (masterUI) to prevent click collisions.
+   Status: FINAL STABLE | FIXED: SYNTAX & DRAG BOUNDARIES
    ========================================================================== */
 
 const PegasusUI = {
@@ -12,7 +13,7 @@ const PegasusUI = {
         this.initDraggablePanels();
         this.initClickOutside();
         this.initHotkeys(); 
-        console.log("✅ PEGASUS UI MANAGER: v4.5 Operational (Button Bridge Delegated to app.js)");
+        console.log("✅ PEGASUS UI MANAGER: v4.6 Operational (Button Bridge Delegated to app.js)");
     },
 
     /**
@@ -118,11 +119,14 @@ const PegasusUI = {
             const panel = document.getElementById(panelId);
             if (!panel) return;
             const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
+            
             if (savedPos) {
                 Object.assign(panel.style, { transform: "none", margin: "0", position: "fixed", top: savedPos.top, left: savedPos.left, right: "auto", bottom: "auto" });
             }
+            
             const header = panel.querySelector(".panel-header") || panel.querySelector("h3");
             if (!header) return;
+            
             header.style.cursor = "grab";
             header.onmousedown = (e) => this.startDrag(e, panel, header);
         });
@@ -132,13 +136,26 @@ const PegasusUI = {
         if (e.button !== 0) return;
         e.preventDefault();
         header.style.cursor = "grabbing";
+        
+        // 🎯 FIXED: Αρχικοποίηση θέσης αν το πάνελ δεν έχει κουνηθεί ποτέ
+        if (!panel.style.top || !panel.style.left) {
+            const rect = panel.getBoundingClientRect();
+            panel.style.top = rect.top + "px";
+            panel.style.left = rect.left + "px";
+            panel.style.position = "fixed";
+            panel.style.margin = "0";
+            panel.style.transform = "none";
+        }
+
         let pos3 = e.clientX, pos4 = e.clientY;
         document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
-        panel.style.zIndex = "1001";
+        panel.style.zIndex = "2001"; // Πάνω από το toggle
         
         const elementDrag = (e) => {
-            const pos1 = pos3 - e.clientX; const pos2 = pos4 - e.clientY;
-            pos3 = e.clientX; pos4 = e.clientY;
+            const pos1 = pos3 - e.clientX; 
+            const pos2 = pos4 - e.clientY;
+            pos3 = e.clientX; 
+            pos4 = e.clientY;
             panel.style.top = (panel.offsetTop - pos2) + "px";
             panel.style.left = (panel.offsetLeft - pos1) + "px";
         };
@@ -160,9 +177,8 @@ const PegasusUI = {
                 const panel = document.getElementById(id);
                 if (panel && panel.style.display === 'block') {
                     // Δεν κλείνει αν κάνεις κλικ μέσα του, ούτε αν κάνεις κλικ σε κάποιο κουμπί μενού (navbar/p-btn)
-                    if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button') && !e.shiftKey) {
+                    if (!panel.contains(e.target) && !e.target.closest('.p-btn') && !e.target.closest('.navbar button') && !e.altKey) {
                         panel.style.display = 'none';
-                        if (window.PegasusCloud) window.PegasusCloud.push(true);
                     }
                 }
             });
@@ -179,6 +195,7 @@ function initExerciseListDrag() {
         const item = e.target.closest(".exercise");
         if (!item || window.running) return;
         item.classList.add("dragging");
+        item.style.opacity = '0.5'; // Visual feedback
     });
     
     list.addEventListener("dragover", (e) => {
@@ -192,7 +209,10 @@ function initExerciseListDrag() {
     
     list.addEventListener("dragend", (e) => {
         const item = e.target.closest(".exercise");
-        if (item) item.classList.remove("dragging");
+        if (item) {
+            item.classList.remove("dragging");
+            item.style.opacity = '1';
+        }
         if (typeof window.exercises !== 'undefined') window.exercises = [...list.querySelectorAll(".exercise")];
     });
     
