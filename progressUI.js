@@ -4,6 +4,9 @@
    Status: FINAL STABLE | FIXED: SYNTAX ERROR & RESET LOGIC
    ========================================================================== */
 
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
+
 window.MuscleProgressUI = {
     lastDataHash: null,
 
@@ -18,12 +21,13 @@ window.MuscleProgressUI = {
     }, // 🎯 FIXED: Missing comma added here
 
     calculateStats() {
-        const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+      const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+const history = JSON.parse(localStorage.getItem(historyKey)) || {};
         
         // 🛡️ ΠΡΟΤΕΡΑΙΟΤΗΤΑ ΣΤΟ ΔΥΝΑΜΙΚΟ ΠΛΑΝΟ ΤΟΥ DATA.JS
         const targets = (typeof window.getDynamicTargets === "function") 
             ? window.getDynamicTargets() 
-            : (JSON.parse(localStorage.getItem("pegasus_muscle_targets")) || 
+          : (JSON.parse(localStorage.getItem(M?.workout?.muscleTargets || "pegasus_muscle_targets")) ||
               { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 });
 
         return Object.keys(targets).map(group => {
@@ -74,7 +78,8 @@ window.MuscleProgressUI = {
     },
 
     checkWeeklyReset() {
-        const lastResetDate = localStorage.getItem('pegasus_last_reset_timestamp');
+       const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
+const lastResetDate = localStorage.getItem(lastResetKey);
         const now = new Date();
         
         // 🛡️ SYNC FIX: Χρήση του ίδιου Date Format με τον Optimizer (YYYY-MM-DD)
@@ -83,8 +88,8 @@ window.MuscleProgressUI = {
         // 🎯 FIXED: Reset every MONDAY (1) at midnight, not Saturday (6), to avoid deleting weekend workouts
         if (now.getDay() === 1 && lastResetDate !== todayStr) {
             const emptyHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(emptyHistory));
-            localStorage.setItem('pegasus_last_reset_timestamp', todayStr);
+localStorage.setItem(historyKey, JSON.stringify(emptyHistory));
+localStorage.setItem(lastResetKey, todayStr);
             this.lastDataHash = null; // Force Re-render
             
             if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
