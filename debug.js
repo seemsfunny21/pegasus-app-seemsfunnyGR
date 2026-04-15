@@ -1,10 +1,11 @@
 /* ==========================================================================
-   PEGASUS COMMAND TRACER & HEALTH - v5.1 (MASTER SYNC)
-   Protocol: Strict Data Analyst - Anti-Silent Fail & Universal GC
-   Status: FINAL STABLE | FIXED: MULTI-FORMAT DATE GC & MANIFEST ALIGNMENT
+   PEGASUS COMMAND TRACER & HEALTH - v5.2 (COLLISION SHIELDED)
+   Protocol: Scope Isolation & Global Var Protection
+   Status: FINAL STABLE | FIXED: IDENTIFIER ALREADY DECLARED ERRORS
    ========================================================================== */
 
-const M_DBG = window.PegasusManifest;
+// 🛡️ Χρήση var για να μην "σκάει" αν δηλωθεί σε πολλά αρχεία
+var M = M || window.PegasusManifest;
 
 window.PegasusTracer = {
     logs: JSON.parse(localStorage.getItem("pegasus_command_trace") || "[]"),
@@ -41,13 +42,17 @@ window.PegasusTracer = {
 /* ==========================================================================
    PEGASUS HEALTH & LOGGER SYSTEM
    ========================================================================== */
-const MAX_LOG_ENTRIES = 50;
-const LOG_KEY = M_DBG?.system?.errorLog || "pegasus_error_log";
-
 window.PegasusLogger = {
+    // 🎯 Ρυθμίσεις κλεισμένες μέσα στο αντικείμενο για αποφυγή collisions
+    CONFIG: {
+        MAX_ENTRIES: 50,
+        getKey: function() { return window.PegasusManifest?.system?.errorLog || "pegasus_error_log"; }
+    },
+
     log: function(message, type = "ERROR") {
+        const key = this.CONFIG.getKey();
         try {
-            let logs = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+            let logs = JSON.parse(localStorage.getItem(key)) || [];
             const entry = {
                 timestamp: new Date().toLocaleString('el-GR'),
                 type: type,
@@ -56,9 +61,9 @@ window.PegasusLogger = {
             };
             
             logs.unshift(entry);
-            if (logs.length > MAX_LOG_ENTRIES) logs.pop();
+            if (logs.length > this.CONFIG.MAX_ENTRIES) logs.pop();
             
-            localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+            localStorage.setItem(key, JSON.stringify(logs));
             console.log(`%c[PEGASUS ${type}]: ${message}`, "color: #ff4444; font-weight: bold;");
         } catch (e) {
             console.error("Logger Internal Failure:", e);
@@ -66,17 +71,18 @@ window.PegasusLogger = {
     },
 
     getLogs: function() {
-        return JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+        return JSON.parse(localStorage.getItem(this.CONFIG.getKey())) || [];
     }
 };
 
 /**
  * 2. CALORIE LOGIC VALIDATION
- * Mifflin-St Jeor: $BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$
+ * Mifflin-St Jeor Formula:
+ * $$BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$$
  */
 window.verifyCalorieLogic = () => {
     const baseline = { age: 38, height: 187, weight: 74 };
-    const weightKey = M_DBG?.user?.weight || "pegasus_weight";
+    const weightKey = window.PegasusManifest?.user?.weight || "pegasus_weight";
     const currentWeight = parseFloat(localStorage.getItem(weightKey)) || 0;
     
     const activeWeight = currentWeight > 0 ? currentWeight : baseline.weight;
@@ -103,7 +109,7 @@ window.verifyCalorieLogic = () => {
  * 3. CORE HEALTH CHECK
  */
 window.pegasusHealthCheck = async function() {
-    console.log("%c--- PEGASUS HEALTH CHECK v5.1 ---", "color: #4CAF50; font-weight: bold;");
+    console.log("%c--- PEGASUS HEALTH CHECK v5.2 ---", "color: #4CAF50; font-weight: bold;");
     let errors = [];
     let warnings = [];
 
@@ -152,7 +158,6 @@ window.PegasusGarbageCollector = {
                 const datePart = key.split('_').pop();
                 let logDate;
 
-                // 🎯 FIXED: Υποστήριξη και για DD/MM/YYYY και για YYYY-MM-DD
                 if (datePart.includes('/')) {
                     const p = datePart.split('/');
                     logDate = new Date(p[2], p[1] - 1, p[0]).getTime();
