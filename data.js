@@ -1,5 +1,5 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v16.0 (THE IRON LOGIC & UNIFIED DB PROTOCOL)
+   📦 PEGASUS DATA ENGINE - v16.3 (THE IRON LOGIC & UNIFIED DB PROTOCOL)
    Protocol: 5-Day Focus | 50-Min Daily | Dynamic UI | Active Split: IRON_LOGIC
    Status: PRODUCTION READY | FULL CODE DELIVERY | ZERO-BUG BRIDGES ACTIVE
    ========================================================================== */
@@ -63,19 +63,28 @@ window.exercisesDB = [
     { name: "Reverse Crunch", muscleGroup: "Κορμός" },
     { name: "Lying Knee Raise", muscleGroup: "Κορμός" },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
-    { name: "Leg Extensions", muscleGroup: "Πόδια" }
+    { name: "Leg Extensions", muscleGroup: "Πόδια" },
+    // 🎯 Προσθήκες για αποφυγή Orphan errors
+    { name: "Pec Deck", muscleGroup: "Στήθος" },
+    { name: "Lat Pulldown", muscleGroup: "Πλάτη" },
+    { name: "Low Seated Row", muscleGroup: "Πλάτη" },
+    { name: "Standing Bicep Curl", muscleGroup: "Χέρια" },
+    { name: "Leg Extension", muscleGroup: "Πόδια" },
+    { name: "EMS Training", muscleGroup: "Πλάτη" },
+    { name: "Stretching", muscleGroup: "None" }
 ];
 
 // 3. ASSET MAPPING
 window.videoMap = {
-    "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups",
-    "Wide Pulldowns": "latpulldowns", "Medium Pulldowns": "latpulldowns",
-    "Seated Rows": "lowrowsseated", "Bent Over Rows": "bentoverrows",
-    "Upright Rows": "uprightrows", "Bicep Curls": "bicepcurls",
+    "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups", "Pec Deck": "chestflys",
+    "Wide Pulldowns": "latpulldowns", "Medium Pulldowns": "latpulldowns", "Lat Pulldown": "latpulldowns",
+    "Seated Rows": "lowrowsseated", "Bent Over Rows": "bentoverrows", "Low Seated Row": "lowrowsseated",
+    "Upright Rows": "uprightrows", "Bicep Curls": "bicepcurls", "Standing Bicep Curl": "bicepcurls",
     "Preacher Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
     "Ab Crunches": "abcrunches", "Sit Ups": "situps", "Plank": "plank",
     "Reverse Crunch": "reversecrunch", "Lying Knee Raise": "lyingkneeraise",
-    "Leg Raise Hip Lift": "legraisehiplift", "Leg Extensions": "legextensions"
+    "Leg Raise Hip Lift": "legraisehiplift", "Leg Extensions": "legextensions", "Leg Extension": "legextensions",
+    "EMS Training": "ems_general", "Stretching": "stretching_base"
 };
 
 // 4. PEGASUS SPLIT & TIMER ENGINE (AUTO-CONFIRMATION)
@@ -190,7 +199,7 @@ window.setPegasusPlan = function(planKey) {
         });
     }
     
-    console.log(`🚀 PEGASUS DATA ENGINE: v16.0 Active. Plan: ${activePlan}`);
+    console.log(`🚀 PEGASUS DATA ENGINE: v16.3 Active. Plan: ${activePlan}`);
 
     window.getDynamicTargets = function() {
         const targets = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
@@ -246,19 +255,27 @@ window.KOUKI_MASTER = window.PegasusKoukiDB.map(f => ({ name: f.name, type: f.ty
 window.KOUKI_MENU = window.PegasusKoukiDB.map(f => ({ name: f.name, kcal: f.kcal, protein: f.protein, type: f.type }));
 
 // Bridge 3: Για το dietAdvisor.js & food.js
-// Κάνουμε ΟΛΑ τα φαγητά διαθέσιμα ΚΑΘΕ μέρα, για να μην λείπει ποτέ επιλογή
 const dailyFormat = window.PegasusKoukiDB.map(f => ({ n: f.name, p: f.price, t: f.type }));
 window.KOUKI_MASTER_MENU = {
     "Monday": dailyFormat, "Tuesday": dailyFormat, "Wednesday": dailyFormat,
     "Thursday": dailyFormat, "Friday": dailyFormat, "Saturday": dailyFormat, "Sunday": dailyFormat
 };
 
-// Bridge 4: UNIFIED MACRO ENGINE (Αποτρέπει διπλές δηλώσεις στο food.js)
+// 🎯 Bridge 4: UNIFIED MACRO ENGINE (WITH RICE PROTOCOL SYNC)
 window.getPegasusMacros = function(foodName, fallbackType) {
     const item = window.PegasusKoukiDB.find(f => f.name === foodName || f.name.includes(foodName));
-    if (item) return { kcal: item.kcal, protein: item.protein };
+    const type = item ? item.type : fallbackType;
+    
+    // RICE PROTOCOL: Αν δεν είναι "βαριά" υδατανθρακούχα ή σούπα, πρόσθεσε Ρύζι (280kcal)
+    const needsRice = !["carb", "soup"].includes(type);
+    const riceKcal = needsRice ? 280 : 0;
+    const riceProt = needsRice ? 6 : 0;
+
+    if (item) {
+        return { kcal: item.kcal + riceKcal, protein: item.protein + riceProt };
+    }
     
     // Safety Fallback (Aν προστεθεί κάτι καινούργιο χειροκίνητα στο μέλλον)
-    let p = (fallbackType === 'kreas' || fallbackType === 'poulika') ? 45 : (fallbackType === 'ospro' ? 18 : 25);
-    return { kcal: 550, protein: p };
+    let p = (type === 'kreas' || type === 'poulika') ? 45 : (type === 'ospro' ? 18 : 25);
+    return { kcal: 550 + riceKcal, protein: p + riceProt };
 };
