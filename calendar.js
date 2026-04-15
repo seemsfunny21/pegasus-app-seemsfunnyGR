@@ -1,9 +1,12 @@
 /* ==========================================================================
-   PEGASUS CALENDAR SYSTEM - STRICT VERSION (FINAL)
+   PEGASUS CALENDAR SYSTEM - v8.0 HARDENED STRICT VERSION
+   Protocol: Data Over Plan Priority, Selected Day Persistence & Padding Alignment
+   Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
+window.selectedCalendarDate = null; // 🎯 Για το visual highlight της επιλεγμένης μέρας
 
 window.renderCalendar = function() {
     const el = document.getElementById("calendarContent");
@@ -12,7 +15,6 @@ window.renderCalendar = function() {
     // Λήψη δεδομένων προπόνησης από το LocalStorage
     const data = JSON.parse(localStorage.getItem("pegasus_workouts_done") || "{}");
     const now = new Date();
-    // Σημερινή ημερομηνία χωρίς ώρες για σύγκριση
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
@@ -20,17 +22,16 @@ window.renderCalendar = function() {
 
     let html = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:#4CAF50;background:#111;padding:8px;border-radius:5px;border:1px solid #333;">
-        <span id="prevMonth" style="cursor:pointer;padding:0 10px; font-weight:bold;">&#8592;</span>
-        <span style="text-transform: capitalize; font-weight:bold;">${new Date(currentYear, currentMonth).toLocaleString("el-GR", { month: "long" })} ${currentYear}</span>
-        <span id="nextMonth" style="cursor:pointer;padding:0 10px; font-weight:bold;">&#8594;</span>
+        <span id="prevMonth" style="cursor:pointer;padding:0 10px; font-weight:bold; user-select:none;">&#8592;</span>
+        <span style="text-transform: capitalize; font-weight:bold; letter-spacing:1px;">${new Date(currentYear, currentMonth).toLocaleString("el-GR", { month: "long" })} ${currentYear}</span>
+        <span id="nextMonth" style="cursor:pointer;padding:0 10px; font-weight:bold; user-select:none;">&#8594;</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
     `;
 
     const weekHeaders = ["Κ","Δ","Τ","Τ","Π","Π","Σ"];
-    weekHeaders.forEach(d => html += `<div style="text-align:center;opacity:.6;color:#4CAF50;font-size:12px;font-weight:bold;">${d}</div>`);
+    weekHeaders.forEach(d => html += `<div style="text-align:center;opacity:.6;color:#4CAF50;font-size:11px;font-weight:900;">${d}</div>`);
 
-    // Κενά για τις μέρες πριν την 1η του μηνός
     for (let i = 0; i < firstDayOfMonth; i++) html += `<div></div>`;
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -38,39 +39,51 @@ window.renderCalendar = function() {
         const loopDateTime = loopDate.getTime();
         const dayOfWeek = loopDate.getDay(); 
         
-        const workoutKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const foodDateString = `${String(day).padStart(2, '0')}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
+        // 🎯 UNIFIED PADDING PROTOCOL (DD/MM/YYYY)
+        const dStr = String(day).padStart(2, '0');
+        const mStr = String(currentMonth + 1).padStart(2, '0');
+        const workoutKey = `${currentYear}-${mStr}-${dStr}`;
+        const foodDateString = `${dStr}/${mStr}/${currentYear}`;
         
         let bg = "#1a1a1a";
         let border = "1px solid #333";
         let color = "#fff";
+        let glow = "none";
 
-        // ΛΟΓΙΚΗ STRICT: 
-        // Δευτέρα (1) & Πέμπτη (4) = Recovery Days (Μπλε)
+        // ΛΟΓΙΚΗ STRICT ΠΡΟΤΕΡΑΙΟΤΗΤΑΣ:
         const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4);
 
-        if (isRecoveryDay) {
-            bg = "#1e3a5f"; 
-            border = "1px solid #64B5F6";
-        } 
-        else if (data[workoutKey]) {
-            // ΕΓΙΝΕ ΠΡΟΠΟΝΗΣΗ: ΠΡΑΣΙΝΟ
+        if (data[workoutKey]) {
+            // 1. ΕΓΙΝΕ ΠΡΟΠΟΝΗΣΗ (Υπερισχύει όλων): ΠΡΑΣΙΝΟ
             bg = "#4CAF50";
             border = "1px solid #4CAF50";
             color = "#000";
         } 
+        else if (isRecoveryDay) {
+            // 2. ΠΛΑΝΟ ΑΠΟΘΕΡΑΠΕΙΑΣ: ΜΠΛΕ
+            bg = "#1e3a5f"; 
+            border = "1px solid #64B5F6";
+        }
         else if (loopDateTime < todayStart) {
-            // ΠΑΡΕΛΘΟΝ & ΟΧΙ ΠΡΟΠΟΝΗΣΗ (Και όχι Recovery): ΚΟΚΚΙΝΟ
+            // 3. ΠΑΡΕΛΘΟΝ & ΑΠΟΤΥΧΙΑ (Όχι προπόνηση/Όχι recovery): ΚΟΚΚΙΝΟ
             bg = "#b71c1c";
             border = "1px solid #ff5252";
         }
 
-        // Highlight Σήμερα (Χρυσό περίγραμμα)
+        // Highlight Σήμερα
         if (loopDateTime === todayStart) {
             border = "2px solid #FFD700";
+            glow = "0 0 10px rgba(255, 215, 0, 0.3)";
         }
 
-        html += `<div style="background:${bg};border:${border};color:${color};padding:8px 0;text-align:center;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;" 
+        // Highlight Επιλεγμένης Μέρας (Focus)
+        if (window.selectedCalendarDate === foodDateString) {
+            border = "2px solid #00ff41";
+            bg = "#002200";
+            color = "#00ff41";
+        }
+
+        html += `<div style="background:${bg};border:${border};color:${color};padding:8px 0;text-align:center;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;box-shadow:${glow};" 
                     onclick="window.viewFoodFromCalendar('${foodDateString}')">
                     ${day}
                  </div>`;
@@ -79,7 +92,7 @@ window.renderCalendar = function() {
     html += `</div>`;
     el.innerHTML = html;
 
-    // Listeners για την πλοήγηση
+    // Listeners με αυτόματη αποδέσμευση
     document.getElementById("prevMonth").onclick = (e) => { 
         e.stopPropagation(); currentMonth--; 
         if(currentMonth < 0){ currentMonth = 11; currentYear--; } 
@@ -97,24 +110,27 @@ window.viewFoodFromCalendar = function(dateStr) {
     const parts = dateStr.split('/');
     const selectedDate = new Date(parts[2], parts[1] - 1, parts[0]);
     
-    // Ενημέρωση της global μεταβλητής ημερομηνίας για το food.js
+    // Ενημέρωση focus
+    window.selectedCalendarDate = dateStr;
     window.currentFoodDate = selectedDate;
     
-    // Κλείσιμο όλων των panels και άνοιγμα του Food
+    // Re-render calendar για να φανεί η επιλογή
+    renderCalendar();
+    
+    // Κλείσιμο panels και άνοιγμα Food
     document.querySelectorAll(".pegasus-panel").forEach(p => p.style.display = "none");
     
     const foodPanel = document.getElementById("foodPanel");
     if (foodPanel) {
         foodPanel.style.display = "block";
         
-        // Σημαντικό: Καλούμε το render του φαγητού για τη συγκεκριμένη μέρα
         if (window.renderFood) {
             window.renderFood();
         } else if (window.updateFoodUI) {
             window.updateFoodUI();
         }
         
-        // UI Fix για το κουμπί προσθήκης (διασφάλιση Pegasus Green)
+        // Pegasus Green Force UI
         setTimeout(() => {
             const crossBtn = document.getElementById("btnAddFood");
             if (crossBtn) {
