@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.2)
-   Protocol: Zero-Orphan Key Governance & Full System Alignment
-   Status: THE SINGLE SOURCE OF TRUTH | FIXED: WEATHER, PARTNER & TIME-LOCKS
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.3)
+   Protocol: Global Variable Re-declaration (Unlock M)
+   Status: THE SINGLE SOURCE OF TRUTH | FIXED: REDECLARATION ERRORS
    ========================================================================== */
 
 window.PegasusManifest = {
@@ -11,9 +11,9 @@ window.PegasusManifest = {
     metadata: {
         os: "Pegasus OS",
         author: "Angelos & Gemini",
-        last_update: "2026-04-15", // Updated
-        logic_protocol: "Zero-Bug Simulation & Maximalist Retention",
-        engine_version: "v18.2 Stable"
+        last_update: "2026-04-15",
+        logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
+        engine_version: "v18.3 Stable"
     },
 
     // ---------------------------------------------------------
@@ -24,7 +24,7 @@ window.PegasusManifest = {
         mute: "pegasus_mute_state",
         turbo: "pegasus_turbo_state",
         lastReset: "pegasus_last_reset",
-        lastResetTimestamp: "pegasus_last_reset_timestamp", // 🎯 ADDED
+        lastResetTimestamp: "pegasus_last_reset_timestamp",
         vaultPin: "pegasus_vault_pin",
         vaultData: "pegasus_vault_data",
         vaultTime: "pegasus_vault_time",
@@ -34,8 +34,8 @@ window.PegasusManifest = {
         stats: "pegasus_stats",
         lastPush: "pegasus_last_push",
         lastReport: "pegasus_last_auto_report",
-        lastEmailSent: "pegasus_last_email_sent_date", // 🎯 ADDED
-        weatherCode: "pegasus_weather_code" // 🎯 ADDED
+        lastEmailSent: "pegasus_last_email_sent_date",
+        weatherCode: "pegasus_weather_code"
     },
     user: {
         weight: "pegasus_weight",
@@ -47,7 +47,7 @@ window.PegasusManifest = {
         specs: "pegasus_user_specs",
         notes: "pegasus_notes",
         contacts: "pegasus_contacts",
-        partners: "pegasus_partners_list" // 🎯 ADDED
+        partners: "pegasus_partners_list"
     },
     workout: {
         weekly_history: "pegasus_weekly_history",
@@ -59,8 +59,8 @@ window.PegasusManifest = {
         muscleTargets: "pegasus_muscle_targets",
         calendarHistory: "pegasus_calendar_history",
         exerciseWeights: "pegasus_exercise_weights",
-        ex_time: "pegasus_ex_time", // 🎯 ADDED from settings.js
-        rest_time: "pegasus_rest_time" // 🎯 ADDED from settings.js
+        ex_time: "pegasus_ex_time",
+        rest_time: "pegasus_rest_time"
     },
     nutrition: { 
         log_prefix: "food_log_" 
@@ -114,7 +114,7 @@ window.PegasusManifest = {
     },
 
     // ---------------------------------------------------------
-    // 4. CONSOLE FORENSIC TOOLS (Τα Εργαλεία του Analyst)
+    // 4. CONSOLE FORENSIC TOOLS
     // ---------------------------------------------------------
     inspect: function() {
         console.log("%c 🏛️ PEGASUS OS FULL SYSTEM INSPECTION", "color: #00ff41; font-size: 20px; font-weight: bold;");
@@ -141,37 +141,31 @@ window.PegasusManifest = {
 
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
-            
-            // 🛡️ Δυναμικά Κλειδιά (Prefixes) που εξαιρούνται:
-            if (key.startsWith("food_log_") || 
-                key.startsWith("weight_") || 
-                key.startsWith("pegasus_weight_") || 
-                key.startsWith("pegasus_cardio_kcal_") ||
-                key.startsWith("pegasus_pos_") || 
-                key.startsWith("pegasus_routine_injected_") ||
-                key.startsWith("pegasus_history_") || // 🎯 ADDED: EMS/Calendar dynamic history
-                key.startsWith("pegasus_day_status_") || // 🎯 ADDED: Calendar daily status
-                key.startsWith("cardio_log_")) { // 🎯 ADDED: Cardio dynamic logs
+            if (key.startsWith("food_log_") || key.startsWith("weight_") || key.startsWith("pegasus_weight_") || 
+                key.startsWith("pegasus_cardio_kcal_") || key.startsWith("pegasus_pos_") || 
+                key.startsWith("pegasus_routine_injected_") || key.startsWith("pegasus_history_") || 
+                key.startsWith("pegasus_day_status_") || key.startsWith("cardio_log_")) {
                 validKeys.push(key); 
                 continue;
             }
-            
-            // Έλεγχος στατικού κλειδιού
             if (manifestStr.includes(`"${key}"`)) {
                 validKeys.push(key);
             } else {
                 orphanKeys.push(key);
             }
         }
-
         console.log(`✅ Καταγεγραμμένα & Έγκυρα Κλειδιά: ${validKeys.length}`);
         if (orphanKeys.length > 0) {
             console.warn(`⚠️ ΠΡΟΣΟΧΗ: Βρέθηκαν ${orphanKeys.length} Ορφανά Κλειδιά!`);
             console.table(orphanKeys.map(k => ({ "Ορφανό Κλειδί": k })));
         } else {
-            console.log("%c🛡️ ΣΥΣΤΗΜΑ ΚΑΘΑΡΟ. Όλα τα δεδομένα είναι χαρτογραφημένα στο Manifest.", "color: #4CAF50; font-weight: bold;");
+            console.log("%c🛡️ ΣΥΣΤΗΜΑ ΚΑΘΑΡΟ.", "color: #4CAF50; font-weight: bold;");
         }
     }
 };
 
-console.log("🏛️ PEGASUS MANIFEST v18.2 LOADED. SYSTEM FULLY ALIGNED.");
+// 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK:
+// Ορίζουμε το M ως var στην κορυφή του παγκόσμιου scope.
+var M = window.PegasusManifest;
+
+console.log("🏛️ PEGASUS MANIFEST v18.3 LOADED. GLOBAL UNLOCK ACTIVE.");
