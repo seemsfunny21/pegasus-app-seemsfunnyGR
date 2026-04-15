@@ -1,7 +1,8 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v1.1 (TIME-BOXED)
-   Protocol: Strict 60-Minute Window Enforcement
+   PEGASUS DYNAMIC OPTIMIZER - v1.2 (TIME-BOXED HARDENED)
+   Protocol: Strict 60-Minute Window Enforcement & DOM Shielding
    Strategy: Deficit Prioritization with Volume Capping
+   Status: FINAL STABLE | FIXED: REFLOW THRASHING & NULL TARGETING
    ========================================================================== */
 
 window.PegasusDynamic = {
@@ -23,42 +24,66 @@ window.PegasusDynamic = {
 
         if (window.exercises && window.exercises.length > 0) {
             // 2. Ταξινόμηση βάσει ελλείψεων (Προτεραιότητα στα 0)
+            // 🎯 FIXED: Ασφαλής εξαγωγή δεδομένων χωρίς εξάρτηση από το .weight-input
             window.exercises.sort((a, b) => {
-                let mA = a.querySelector(".weight-input")?.getAttribute("data-muscle");
-                let mB = b.querySelector(".weight-input")?.getAttribute("data-muscle");
+                let mA = a.getAttribute("data-muscle") || a.querySelector("[data-muscle]")?.getAttribute("data-muscle") || "None";
+                let mB = b.getAttribute("data-muscle") || b.querySelector("[data-muscle]")?.getAttribute("data-muscle") || "None";
                 return (deficits[mB] || 0) - (deficits[mA] || 0);
             });
 
             // 3. TIME AUDIT: Υπολογισμός και Περικοπή
             let totalSets = 0;
-            let allowedExercises = [];
+            const fragment = document.createDocumentFragment(); // 🎯 FIXED: Αποτροπή DOM Reflow Thrashing
             
             window.exercises.forEach(ex => {
-                let sets = parseInt(ex.dataset.total) || 4;
-                // Αν το τρέχον σύνολο + τα νέα σετ < 60 λεπτά (περίπου 40 σετ max)
-                if ((totalSets + sets) * this.setDuration <= this.maxMinutes) {
-                    totalSets += sets;
-                    ex.style.display = "flex"; // Εμφάνιση
+                // Υποστήριξη πολλαπλών attributes σε περίπτωση αλλαγής δομής στο app.js
+                let sets = parseInt(ex.dataset.total || ex.dataset.sets || ex.getAttribute('data-sets')) || 4;
+                
+                // Εξαίρεση: Το Stretching δεν κοστίζει τον ίδιο χρόνο
+                const isStretching = ex.innerHTML.includes("Stretching");
+                const cost = isStretching ? 2 : (sets * this.setDuration);
+
+                // Αν το τρέχον σύνολο + ο νέος χρόνος <= 60 λεπτά
+                if ((totalSets * this.setDuration) + cost <= this.maxMinutes) {
+                    if (!isStretching) totalSets += sets;
+                    ex.style.display = "flex"; 
+                    ex.setAttribute("data-active", "true"); // Safety flag
+                    ex.style.opacity = "1";
+                    fragment.appendChild(ex);
                 } else {
-                    // Αν ξεπερνάμε το χρόνο, η άσκηση κρύβεται ή μειώνονται τα σετ της
+                    // Περικοπή
                     ex.style.display = "none"; 
-                    console.log(`✂️ Time Cap: Removed ${ex.querySelector(".weight-input")?.getAttribute("data-name")}`);
+                    ex.setAttribute("data-active", "false"); 
+                    console.log(`✂️ Time Cap: Removed exercise to enforce 60-min window.`);
+                    fragment.appendChild(ex); // Το κρατάμε στο DOM αλλά κρυφό
                 }
             });
 
-            // 4. Re-render στο UI
+            // 4. Re-render στο UI με μία κίνηση (Batch Update)
             const container = document.getElementById("exList");
             if (container) {
-                window.exercises.forEach(ex => container.appendChild(ex));
+                container.innerHTML = ""; // Καθαρισμός παλιών
+                container.appendChild(fragment); // Εισαγωγή νέων ταξινομημένων
             }
-            console.log(`✅ DYNAMIC UI: Final Plan - ${totalSets} sets (~${Math.round(totalSets * this.setDuration)} mins)`);
+            
+            const totalMins = Math.round(totalSets * this.setDuration);
+            console.log(`✅ DYNAMIC UI: Final Plan - ${totalSets} sets (~${totalMins} mins)`);
+            
+            // Οπτική ειδοποίηση στο UI αν ξεπεράσαμε το όριο
+            if (window.PegasusLogger && totalMins > 55) {
+                window.PegasusLogger.log(`Time Budget Critical: ${totalMins}/60 mins allocated.`, "INFO");
+            }
         }
     }
 };
 
-// Listener για αλλαγή ημέρας
+// Listener για αλλαγή ημέρας (Αυστηρός περιορισμός πολλαπλών κλήσεων - Debounce)
+let optimizeTimeout;
 document.addEventListener('click', (e) => {
-    if (e.target.closest('.navbar button')) {
-        setTimeout(() => window.PegasusDynamic.optimize(), 300);
+    if (e.target.closest('.navbar button') || e.target.closest('.day-selector')) {
+        clearTimeout(optimizeTimeout);
+        optimizeTimeout = setTimeout(() => {
+            if (typeof window.PegasusDynamic !== "undefined") window.PegasusDynamic.optimize();
+        }, 300);
     }
 });
