@@ -24,7 +24,11 @@ window.PegasusInventoryPC = {
 
     processEntry: function(name) {
         const d = new Date();
-        const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+        // 🎯 FIX: ΑΥΣΤΗΡΟ PADDING ΗΜΕΡΟΜΗΝΙΑΣ ΓΙΑ ΝΑ ΣΥΜΦΩΝΕΙ ΜΕ ΤΟ ΗΜΕΡΟΛΟΓΙΟ
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const dateStr = `${day}/${month}/${d.getFullYear()}`;
+        
         const logKey = "food_log_" + dateStr;
         let log = JSON.parse(localStorage.getItem(logKey)) || [];
         
