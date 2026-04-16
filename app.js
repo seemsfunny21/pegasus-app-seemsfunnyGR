@@ -555,6 +555,10 @@ window.calculatePegasusDailyTarget = function() {
     const dayName = greekDays[new Date().getDay()];
     const activePlan = localStorage.getItem('pegasus_active_plan') || 'IRON';
     
+    // --- 7.6 INTEGRATED BIO-METRIC CALCULATION ---
+    // Καλούμε τη συνάρτηση για να έχουμε πάντα φρέσκα δεδομένα πρωτεΐνης
+    const dynamicProtein = window.calculatePegasusBioMetrics();
+    
     const KCAL_REST = 2100;    // Δευτέρα & Πέμπτη
     const KCAL_WEIGHTS = 2800; // Τυπική προπόνηση
     const KCAL_EMS = 2700;     // Ειδική Τετάρτη
@@ -590,13 +594,33 @@ window.calculatePegasusDailyTarget = function() {
         }
     }
 
+    // Αποθήκευση θερμίδων
     localStorage.setItem(P_M?.diet?.todayKcal || 'pegasus_today_kcal', target);
-    console.log(`🏛️ PEGASUS OS [${activePlan}]: Στόχος (${dayName}): ${target} kcal.`);
+    
+    console.log(`🏛️ PEGASUS OS [${activePlan}]: Στόχος (${dayName}): ${target} kcal | Πρωτεΐνη: ${dynamicProtein}g.`);
     
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
     
-    // Zero-Bug: Απελευθέρωση του Lock μετά την ολοκλήρωση
+    // Zero-Bug: Απελευθέρωση του Lock
     window._isCalculatingTarget = false; 
+};
+
+/* ===== 7.6 AUTOMATED BIO-METRIC CALCULATOR ===== */
+window.calculatePegasusBioMetrics = function() {
+    const user = {
+        weight: 74,
+        height: 187,
+        age: 38,
+        multiplier: 2.17 // 74 * 2.17 = ~160.5 -> 161g
+    };
+
+    // Αυτόματος υπολογισμός πρωτεΐνης
+    const autoProtein = Math.round(user.weight * user.multiplier); 
+    
+    // Αποθήκευση στο σύστημα (για να το διαβάζει το UI)
+    localStorage.setItem('pegasus_protein_target', autoProtein);
+    
+    return autoProtein;
 };
 
 /* ===== 8. FINISH & REPORTING ===== */
