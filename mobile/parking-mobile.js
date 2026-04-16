@@ -94,6 +94,19 @@ window.PegasusParking = {
 };
 
 // Αυτόματη φόρτωση
+/* === PEGASUS SYNC ALIGNMENT === */
+
+// 1. Listen για το σήμα από το Cloud (cloudSync.js)
+window.addEventListener('pegasus_sync_complete', () => {
+    console.log("📍 Parking: Cloud Sync Complete. Refreshing UI...");
+    window.PegasusParking.updateUI();
+});
+
+// 2. Fallback για το άνοιγμα της εφαρμογής
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => window.PegasusParking.updateUI(), 500);
+    // Πρώτο update με ό,τι υπάρχει ήδη τοπικά
+    window.PegasusParking.updateUI();
+    
+    // Δεύτερο update στα 2 δευτερόλεπτα (δικλείδα ασφαλείας αν το cloud αργήσει)
+    setTimeout(() => window.PegasusParking.updateUI(), 2000);
 });
