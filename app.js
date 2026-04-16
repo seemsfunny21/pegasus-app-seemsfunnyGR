@@ -155,9 +155,11 @@ const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
     // 🛡️ PROTECTED METABOLIC ADJUSTER BRIDGE (Anti-Loop)
+    // Προσθέτουμε έναν έλεγχο για να μην ξανακαλείται η συνάρτηση αν τρέχει ήδη
     if (typeof window.calculatePegasusDailyTarget === "function") {
         if (!window.isCalculatingTarget) {
             window.isCalculatingTarget = true; 
+            
             window.calculatePegasusDailyTarget();
             
             // Ξεκλειδώνει μετά από 100ms για να επιτρέψει την επόμενη ΧΕΙΡΟΚΙΝΗΤΗ αλλαγή
