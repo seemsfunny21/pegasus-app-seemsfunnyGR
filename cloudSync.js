@@ -71,51 +71,57 @@ const PegasusCloud = {
             const cloud = cloudData.record || cloudData;
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
 
-            if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
-                console.log("☁️ PEGASUS: New Cloud Data Found. Syncing Full Registry...");
+/* === ΣΩΣΤΟ PULL LOGIC === */
+if (cloud.last_update_ts && cloud.last_update_ts.toString() !== lastPush) {
+    console.log("☁️ PEGASUS: New Cloud Data Found. Syncing Full Registry...");
 
-                Object.keys(cloud).forEach(key => {
-                    if (key.startsWith('pegasus_') || key.startsWith('food_log_') || key.startsWith('kouki_')) {
-                        const val = typeof cloud[key] === 'string' ? cloud[key] : JSON.stringify(cloud[key]);
-                        // 🎯 Χρήση originalSetItem για να μην πυροδοτηθεί η λούπα του Interceptor
-                        window.originalSetItem.call(localStorage, key, val);
-                    }
-                });
+    // 1. Sync για όλα τα κλειδιά που ξεκινούν με pegasus_, food_, kouki_
+    Object.keys(cloud).forEach(key => {
+        if (key.startsWith('pegasus_') || key.startsWith('food_log_') || key.startsWith('kouki_')) {
+            const val = typeof cloud[key] === 'string' ? cloud[key] : JSON.stringify(cloud[key]);
+            window.originalSetItem.call(localStorage, key, val);
+        }
+    });
 
-                const map = {
-                    'weekly_history': 'pegasus_weekly_history',
-                    'muscle_targets': 'pegasus_muscle_targets',
-                    'supp_inventory': 'pegasus_supp_inventory',
-                    'peg_contacts': 'pegasus_contacts',
-                    'car_dates': 'pegasus_car_dates',
-                    'car_service': 'pegasus_car_service',
-                    'car_specs': 'pegasus_car_specs',
-                    'parking_loc': 'pegasus_parking_loc',
-                    'parking_loc': 'pegasus_parking_loc',
-                    'food_library': 'pegasus_food_library',
-                    'peg_stats': 'pegasus_stats'
-                };
-                Object.entries(map).forEach(([ck, lk]) => {
-                    if(cloud[ck] && !localStorage.getItem(lk)) {
-                        window.originalSetItem.call(localStorage, lk, JSON.stringify(cloud[ck]));
-                    }
-                });
+    // 2. Mapping για τα "ειδικά" κλειδιά (ΠΡΟΣΟΧΗ: Αφαίρεσα το !localStorage check)
+    const map = {
+        'weekly_history': 'pegasus_weekly_history',
+        'muscle_targets': 'pegasus_muscle_targets',
+        'supp_inventory': 'pegasus_supp_inventory',
+        'peg_contacts': 'pegasus_contacts',
+        'car_dates': 'pegasus_car_dates',
+        'car_service': 'pegasus_car_service',
+        'car_specs': 'pegasus_car_specs',
+        'parking_loc': 'pegasus_parking_loc', 
+        'food_library': 'pegasus_food_library',
+        'peg_stats': 'pegasus_stats'
+    };
 
-                if(cloud.all_food_logs) {
-                    Object.keys(cloud.all_food_logs).forEach(k => {
-                        if(!localStorage.getItem(k)) {
-                            window.originalSetItem.call(localStorage, k, JSON.stringify(cloud.all_food_logs[k]));
-                        }
-                    });
-                }
+    Object.entries(map).forEach(([ck, lk]) => {
+        if(cloud[ck]) { // Αν υπάρχει στο cloud, το περνάμε ΠΑΝΤΑ στο κινητό
+            window.originalSetItem.call(localStorage, lk, JSON.stringify(cloud[ck]));
+        }
+    });
 
-                window.originalSetItem.call(localStorage, "pegasus_last_push", cloud.last_update_ts.toString());
-                
-                if (typeof refreshAllUI === "function") refreshAllUI(); 
-                if (typeof window.updateFoodUI === "function") window.updateFoodUI(); 
-                if (typeof window.updateSuppUI === "function") window.updateSuppUI(); 
-                if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") window.MuscleProgressUI.render();
-            }
+    // 3. Ιστορικό φαγητού (όμοια διόρθωση)
+    if(cloud.all_food_logs) {
+        Object.keys(cloud.all_food_logs).forEach(k => {
+            window.originalSetItem.call(localStorage, k, JSON.stringify(cloud.all_food_logs[k]));
+        });
+    }
+
+    // 4. Ενημέρωση Timestamp & UI Events
+    window.originalSetItem.call(localStorage, "pegasus_last_push", cloud.last_update_ts.toString());
+    
+    if (typeof refreshAllUI === "function") refreshAllUI(); 
+    
+    // 🎯 SYNC EVENT: Εδώ το βάλαμε σωστά για να το ακούσει το parking-mobile.js
+    window.dispatchEvent(new CustomEvent('pegasus_sync_complete'));
+
+    if (typeof window.updateFoodUI === "function") window.updateFoodUI(); 
+    if (typeof window.updateSuppUI === "function") window.updateSuppUI(); 
+    if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") window.MuscleProgressUI.render();
+}
 
             if (typeof setSyncStatus === "function") setSyncStatus('online');
             
