@@ -91,6 +91,7 @@ const PegasusCloud = {
                     'car_service': 'pegasus_car_service',
                     'car_specs': 'pegasus_car_specs',
                     'parking_loc': 'pegasus_parking_loc',
+                    'parking_loc': 'pegasus_parking_loc',
                     'food_library': 'pegasus_food_library',
                     'peg_stats': 'pegasus_stats'
                 };
