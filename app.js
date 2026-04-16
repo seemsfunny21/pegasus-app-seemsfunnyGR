@@ -544,7 +544,13 @@ function updateTotalBar() {
 }
 
 /* ===== 7.5 STRICT METABOLIC AUTO-ADJUSTER (MULTI-PLAN) ===== */
+window._isCalculatingTarget = false; // Zero-Bug: Execution Lock
+
 window.calculatePegasusDailyTarget = function() {
+    // Zero-Bug: Αποτροπή άπειρου βρόχου (Infinite Recursion Guard)
+    if (window._isCalculatingTarget) return; 
+    window._isCalculatingTarget = true;
+
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const dayName = greekDays[new Date().getDay()];
     const activePlan = localStorage.getItem('pegasus_active_plan') || 'IRON';
@@ -586,7 +592,11 @@ window.calculatePegasusDailyTarget = function() {
 
     localStorage.setItem(P_M?.diet?.todayKcal || 'pegasus_today_kcal', target);
     console.log(`🏛️ PEGASUS OS [${activePlan}]: Στόχος (${dayName}): ${target} kcal.`);
+    
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
+    
+    // Zero-Bug: Απελευθέρωση του Lock μετά την ολοκλήρωση
+    window._isCalculatingTarget = false; 
 };
 
 /* ===== 8. FINISH & REPORTING ===== */
