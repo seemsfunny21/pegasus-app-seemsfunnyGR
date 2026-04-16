@@ -53,12 +53,23 @@ window.PegasusAuditUI = {
             }
         });
 
-        // --- 3. METABOLIC PULSE ---
+// --- 3. METABOLIC PULSE (ADAPTIVE) ---
         const weight = parseFloat(localStorage.getItem(M?.user?.weight || "pegasus_weight")) || 74;
         const targetKcal = parseInt(localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal")) || 2800;
-        if (targetKcal < 1500 || targetKcal > 5000) {
-            report.warnings.push("Metabolic Outlier: Kcal target suspicious.");
+        
+        // Δυναμικός έλεγχος βάσει προγράμματος (Recovery: 2000+ | Training/Bike: έως 3500)
+        const isRecoveryDay = ["Δευτέρα", "Πέμπτη"].includes(new Intl.DateTimeFormat('el-GR', { weekday: 'long' }).format(new Date()));
+        
+        let isAnomalous = false;
+        if (isRecoveryDay && (targetKcal < 1800 || targetKcal > 2500)) isAnomalous = true;
+        if (!isRecoveryDay && (targetKcal < 2300 || targetKcal > 3600)) isAnomalous = true;
+
+        if (isAnomalous) {
+            report.warnings.push(`Metabolic Shift: Kcal (${targetKcal}) outside daily protocol.`);
             report.score -= 10;
+        } else {
+            // Αν είναι εντός ορίων, θεωρείται Nominal
+            console.log(`%c 🟢 AUDIT: Metabolic Alignment OK (${targetKcal} kcal)`, "color: #4CAF50");
         }
 
         // --- 4. DOM INTEGRITY ---
