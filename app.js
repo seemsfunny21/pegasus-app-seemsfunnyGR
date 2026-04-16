@@ -553,11 +553,16 @@ window.calculatePegasusDailyTarget = function() {
 
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const dayName = greekDays[new Date().getDay()];
-    const activePlan = localStorage.getItem('pegasus_active_plan') || 'IRON';
+    
+    // Ανάκτηση όλων των ρυθμίσεων (Active Plan, Weight, κλπ.) από το κεντρικό αρχείο
+    const settings = typeof window.getPegasusSettings === "function" 
+        ? window.getPegasusSettings() 
+        : { activeSplit: 'IRON' }; 
+        
+    const activePlan = settings.activeSplit;
     
     // --- 7.6 INTEGRATED BIO-METRIC CALCULATION ---
-    // Καλούμε τη συνάρτηση για να έχουμε πάντα φρέσκα δεδομένα πρωτεΐνης
-    const dynamicProtein = window.calculatePegasusBioMetrics();
+    const dynamicProtein = window.calculatePegasusBioMetrics(settings);
     
     const KCAL_REST = 2100;    // Δευτέρα & Πέμπτη
     const KCAL_WEIGHTS = 2800; // Τυπική προπόνηση
@@ -584,7 +589,7 @@ window.calculatePegasusDailyTarget = function() {
                 if (dayName === "Σάββατο" || dayName === "Κυριακή") { target = KCAL_BIKE; currentActivity = "ΠΟΔΗΛΑΤΟ"; }
                 else { target = KCAL_WEIGHTS; currentActivity = "ΒΑΡΗ"; }
                 break;
-            case 'HYBRID': // Το MIX σου
+            case 'HYBRID': // Το MIX
                 if (dayName === "Τετάρτη") { target = KCAL_EMS; currentActivity = "EMS"; }
                 else if (dayName === "Σάββατο" || dayName === "Κυριακή") { target = KCAL_BIKE; currentActivity = "ΠΟΔΗΛΑΤΟ"; }
                 else { target = KCAL_WEIGHTS; currentActivity = "ΒΑΡΗ"; }
@@ -595,9 +600,9 @@ window.calculatePegasusDailyTarget = function() {
     }
 
     // Αποθήκευση θερμίδων
-    localStorage.setItem(P_M?.diet?.todayKcal || 'pegasus_today_kcal', target);
+    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', target);
     
-    console.log(`🏛️ PEGASUS OS [${activePlan}]: Στόχος (${dayName}): ${target} kcal | Πρωτεΐνη: ${dynamicProtein}g.`);
+    console.log(`🏛️ PEGASUS OS [${activePlan}]: Στόχος (${dayName}): ${target} kcal | Πρωτεΐνη: ${dynamicProtein}g (Dynamic).`);
     
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
     
@@ -606,19 +611,19 @@ window.calculatePegasusDailyTarget = function() {
 };
 
 /* ===== 7.6 AUTOMATED BIO-METRIC CALCULATOR ===== */
-window.calculatePegasusBioMetrics = function() {
-    const user = {
-        weight: 74,
-        height: 187,
-        age: 38,
-        multiplier: 2.17 // 74 * 2.17 = ~160.5 -> 161g
-    };
+window.calculatePegasusBioMetrics = function(settingsObj) {
+    // Αν δεν δοθεί το αντικείμενο, προσπαθούμε να το τραβήξουμε
+    const currentSettings = settingsObj || (typeof window.getPegasusSettings === "function" ? window.getPegasusSettings() : null);
+    
+    // Default Fallbacks σε περίπτωση που το settings.js δεν είναι φορτωμένο
+    const weight = currentSettings ? currentSettings.weight : 74; 
+    const multiplier = 2.17; // Αθλητικός συντελεστής (Bulk/Maintain)
 
-    // Αυτόματος υπολογισμός πρωτεΐνης
-    const autoProtein = Math.round(user.weight * user.multiplier); 
+    // Αυτόματος υπολογισμός πρωτεΐνης βάσει του ΔΥΝΑΜΙΚΟΥ βάρους
+    const autoProtein = Math.round(weight * multiplier); 
     
     // Αποθήκευση στο σύστημα (για να το διαβάζει το UI)
-    localStorage.setItem('pegasus_protein_target', autoProtein);
+    localStorage.setItem(M?.diet?.todayProtein || 'pegasus_today_protein', autoProtein);
     
     return autoProtein;
 };
