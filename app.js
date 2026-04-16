@@ -151,11 +151,18 @@ function selectDay(btn, day) {
     clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
     sessionActiveKcal = 0; localStorage.setItem("pegasus_session_kcal", "0.0");
     
-    const sBtn = document.getElementById("btnStart");
+const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
-  // 🎯 METABOLIC ADJUSTER BRIDGE
+
+    // 🛡️ PROTECTED METABOLIC ADJUSTER BRIDGE (Anti-Loop)
     if (typeof window.calculatePegasusDailyTarget === "function") {
-        window.calculatePegasusDailyTarget();
+        if (!window.isCalculatingTarget) {
+            window.isCalculatingTarget = true; 
+            window.calculatePegasusDailyTarget();
+            
+            // Ξεκλειδώνει μετά από 100ms για να επιτρέψει την επόμενη ΧΕΙΡΟΚΙΝΗΤΗ αλλαγή
+            setTimeout(() => { window.isCalculatingTarget = false; }, 100);
+        }
     } else if (typeof window.updateKcalUI === "function") {
         window.updateKcalUI();
     }
