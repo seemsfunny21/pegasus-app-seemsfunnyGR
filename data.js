@@ -186,3 +186,20 @@ window.getPegasusMacros = function(foodName, fallbackType) {
     let p = (type === 'kreas' || type === 'poulika') ? 45 : (type === 'ospro' ? 18 : 25);
     return { kcal: 550 + riceKcal, protein: p + riceProt };
 };
+
+window.getDynamicTargets = function() {
+    const targets = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Πόδια": 0, "Κορμός": 0 };
+    
+    // Σκανάρισμα όλων των ημερών στο window.program
+    Object.values(window.program).forEach(dayExercises => {
+        dayExercises.forEach(ex => {
+            if (targets.hasOwnProperty(ex.muscleGroup)) {
+                targets[ex.muscleGroup] += parseInt(ex.sets);
+            }
+        });
+    });
+    
+    // Αν ένα target βγει 0 (π.χ. δεν έχεις βάλει ακόμα ασκήσεις), 
+    // βάζουμε ένα ελάχιστο safety limit ή το αφήνουμε 0
+    return targets;
+};
