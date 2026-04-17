@@ -26,30 +26,20 @@ window.MuscleProgressUI = {
     },
 
 calculateStats() {
-    const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
-    const history = JSON.parse(localStorage.getItem(historyKey)) || {};
-    
-    // Καλούμε τη δυναμική συνάρτηση από το data.js
-    const targets = window.getDynamicTargets();
+        const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+        const history = JSON.parse(localStorage.getItem(historyKey)) || {};
         
         // 🛡️ ΠΡΟΤΕΡΑΙΟΤΗΤΑ ΣΤΟ ΔΥΝΑΜΙΚΟ ΠΛΑΝΟ ΤΟΥ DATA.JS
-        const targets = (typeof window.getDynamicTargets === "function") 
-            ? window.getDynamicTargets() 
-            : (JSON.parse(localStorage.getItem(M?.workout?.muscleTargets || "pegasus_muscle_targets")) || 
-              { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 });
-
-        return Object.keys(targets).map(group => {
-            const target = targets[group];
-            if (target === 0) return null;
-
-            const done = parseInt(history[group]) || 0;
-            return {
-                name: group,
-                done: done,
-                target: target,
-                percent: Math.min((done / target) * 100, 100)
-            };
-        }).filter(item => item !== null);
+        let targets;
+        if (typeof window.getDynamicTargets === "function") {
+            targets = window.getDynamicTargets();
+        } else {
+            // Fallback αν δεν βρει τη συνάρτηση
+            const stored = localStorage.getItem(M?.workout?.muscleTargets || "pegasus_muscle_targets");
+            targets = stored ? JSON.parse(stored) : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        }
+        
+        return { history, targets };
     },
 
     render(force = false) {
