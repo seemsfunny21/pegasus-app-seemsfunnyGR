@@ -1,12 +1,12 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v16.4 (THE 4-PILLAR PROTOCOL)
+   📦 PEGASUS DATA ENGINE - v16.5 (DYNAMIC KOUKI WEEKLY)
    Protocol: Strict 4-Split Architecture | EMS & Bike Integration
-   Status: PRODUCTION READY | ZERO-BUG BRIDGES ACTIVE
+   Status: PRODUCTION READY | WEEKLY MENU SYNC ACTIVE
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
 
-// 1. DEFAULT PLAN: BASE TEMPLATE (Θα υπερκαλυφθεί από την επιλογή σου)
+// 1. DEFAULT PLAN
 window.program = {
     "Δευτέρα": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
     "Τρίτη": [], "Τετάρτη": [], "Πέμπτη": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
@@ -21,7 +21,6 @@ window.exercisesDB = [
     { name: "Bicep Curls", muscleGroup: "Χέρια" }, { name: "Preacher Curls", muscleGroup: "Χέρια" }, { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
     { name: "Ab Crunches", muscleGroup: "Κορμός" }, { name: "Sit Ups", muscleGroup: "Κορμός" }, { name: "Plank", muscleGroup: "Κορμός" }, { name: "Reverse Crunch", muscleGroup: "Κορμός" }, { name: "Lying Knee Raise", muscleGroup: "Κορμός" }, { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
     { name: "Leg Extensions", muscleGroup: "Πόδια" },
-    // 🎯 Legacy & System Matches
     { name: "Pec Deck", muscleGroup: "Στήθος" }, { name: "Lat Pulldown", muscleGroup: "Πλάτη" }, { name: "Low Seated Row", muscleGroup: "Πλάτη" },
     { name: "Standing Bicep Curl", muscleGroup: "Χέρια" }, { name: "Leg Extension", muscleGroup: "Πόδια" },
     { name: "EMS Training", muscleGroup: "Πλάτη" }, { name: "Ποδηλασία", muscleGroup: "Πόδια" }, { name: "Cycling", muscleGroup: "Πόδια" },
@@ -44,33 +43,11 @@ window.videoMap = {
 // 4. PEGASUS 4-PILLAR SPLIT ENGINE
 window.setPegasusPlan = function(planKey) {
     localStorage.setItem('pegasus_active_plan', planKey);
-    console.log(`🎯 PEGASUS: Plan switched to ${planKey}`);
-
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        z-index: 999999; opacity: 0; transition: opacity 0.4s ease;
-    `;
-    overlay.innerHTML = `
-        <div style="font-size: 70px; margin-bottom: 25px;">🟢</div>
-        <div style="color: #4CAF50; font-weight: 900; font-size: 26px; letter-spacing: 2px; text-transform: uppercase; text-align:center; padding: 0 20px;">Το Προγραμμα Ενεργοποιηθηκε</div>
-        <div style="color: #eee; font-size: 16px; margin-top: 15px; font-weight: bold;">Split: ${planKey}</div>
-        <div style="color: #666; font-size: 11px; margin-top: 35px; letter-spacing: 2px; font-weight:800;">PEGASUS OS REBOOT IN 1"</div>
-    `;
-    document.body.appendChild(overlay);
-    setTimeout(() => overlay.style.opacity = '1', 50);
-
-    if (window.PegasusCloud) window.PegasusCloud.push(true);
-    setTimeout(() => { overlay.style.opacity = '0'; setTimeout(() => window.location.reload(), 500); }, 1000);
+    setTimeout(() => window.location.reload(), 1000);
 };
 
 (function applyPegasusSplit() {
     const activePlan = localStorage.getItem('pegasus_active_plan') || 'IRON';
-    window.pegasusTimerConfig = { prep: 10, work: 45, rest: 60 };
-
-    // 🧱 ΤΑ BUILDING BLOCKS ΤΩΝ ΗΜΕΡΩΝ ΣΟΥ
     const days = {
         iron_tuesday: [
             { name: "Chest Press", sets: 6, muscleGroup: "Στήθος", weight: "54" },
@@ -118,88 +95,85 @@ window.setPegasusPlan = function(planKey) {
         ]
     };
 
-    // 🏆 ΤΑ 4 ΠΡΩΤΟΚΟΛΛΑ ΣΟΥ
     if (activePlan === 'IRON') {
-        window.program["Τρίτη"] = days.iron_tuesday;
-        window.program["Τετάρτη"] = days.iron_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday;
-        window.program["Σάββατο"] = days.iron_saturday;
-        window.program["Κυριακή"] = days.iron_sunday;
-    } 
-    else if (activePlan === 'EMS_ONLY') {
-        window.program["Τρίτη"] = days.iron_tuesday;
-        window.program["Τετάρτη"] = days.ems_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday;
-        window.program["Σάββατο"] = days.iron_saturday;
-        window.program["Κυριακή"] = days.iron_sunday;
-    } 
-    else if (activePlan === 'BIKE_ONLY') {
-        window.program["Τρίτη"] = days.iron_tuesday;
-        window.program["Τετάρτη"] = days.iron_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday;
-        window.program["Σάββατο"] = days.bike_weekend;
-        window.program["Κυριακή"] = days.bike_weekend;
-    } 
-    else if (activePlan === 'HYBRID') { // EMS + Bike
-        window.program["Τρίτη"] = days.iron_tuesday;
-        window.program["Τετάρτη"] = days.ems_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday;
-        window.program["Σάββατο"] = days.bike_weekend;
-        window.program["Κυριακή"] = days.bike_weekend;
+        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.iron_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.iron_saturday; window.program["Κυριακή"] = days.iron_sunday;
+    } else if (activePlan === 'EMS_ONLY') {
+        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.ems_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.iron_saturday; window.program["Κυριακή"] = days.iron_sunday;
+    } else if (activePlan === 'BIKE_ONLY') {
+        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.iron_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.bike_weekend; window.program["Κυριακή"] = days.bike_weekend;
+    } else if (activePlan === 'HYBRID') {
+        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.ems_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.bike_weekend; window.program["Κυριακή"] = days.bike_weekend;
     }
-    
-    console.log(`🚀 PEGASUS DATA ENGINE: v16.4 Active. Plan: ${activePlan}`);
-
-    window.getDynamicTargets = function() {
-        const targets = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
-        for (const day in window.program) {
-            window.program[day].forEach(ex => {
-                if (targets[ex.muscleGroup] !== undefined) targets[ex.muscleGroup] += ex.sets;
-            });
-        }
-        return targets;
-    };
 })();
 
 // ==========================================================================
-// 5. THE KOUKI MENU CONSOLIDATION 
+// 5. THE KOUKI MENU CONSOLIDATION (WEEKLY SYNC)
 // ==========================================================================
 window.PegasusKoukiDB = [
-    { name: "Κοτόπουλο με κάρυ & λαχανικά", type: "poulika", price: 6.50, kcal: 580, protein: 52 },
-    { name: "Κοτόπουλο με χυλοπίτες", type: "poulika", price: 6.00, kcal: 680, protein: 48 },
-    { name: "Κοτόπουλο λεμονάτο", type: "poulika", price: 6.00, kcal: 550, protein: 52 },
-    { name: "Κοτόπουλο με πατάτες", type: "poulika", price: 6.00, kcal: 600, protein: 50 },
-    { name: "Μπάμιες με κοτόπουλο", type: "poulika", price: 6.00, kcal: 520, protein: 45 },
-    { name: "Κοτόσουπα", type: "soup", price: 4.50, kcal: 400, protein: 30 },
-    { name: "Χοιρινό με δαμάσκηνα", type: "kreas", price: 6.50, kcal: 650, protein: 42 },
-    { name: "Χοιρινό πρασοσέλινο", type: "kreas", price: 6.00, kcal: 610, protein: 40 },
-    { name: "Μοσχαράκι κοκκινιστό", type: "kreas", price: 6.50, kcal: 640, protein: 45 },
+    { name: "Κοτόπουλο αλά κρεμ", type: "poulika", price: 6.00, kcal: 620, protein: 50 },
+    { name: "Κοτόπουλο γλυκόξινο", type: "poulika", price: 6.00, kcal: 580, protein: 48 },
+    { name: "Κοτόπουλο φούρνου", type: "poulika", price: 6.00, kcal: 600, protein: 52 },
+    { name: "Μοσχάρι κοκκινιστό", type: "kreas", price: 6.50, kcal: 640, protein: 45 },
     { name: "Μοσχάρι γιουβέτσι", type: "kreas", price: 6.50, kcal: 620, protein: 45 },
-    { name: "Μπιφτέκι μοσχαρίσιο", type: "kreas", price: 6.00, kcal: 600, protein: 45 },
-    { name: "Μπιφτέκια μοσχαρίσια σχάρας", type: "kreas", price: 6.00, kcal: 600, protein: 45 },
-    { name: "Γιουβαρλάκια αυγολέμονο", type: "kreas", price: 6.00, kcal: 550, protein: 38 },
-    { name: "Ρεβύθια με κάρυ", type: "ospro", price: 4.50, kcal: 450, protein: 18 },
-    { name: "Ρεβύθια λεμονάτα", type: "ospro", price: 4.50, kcal: 420, protein: 18 },
-    { name: "Γίγαντες πλακί", type: "ospro", price: 6.00, kcal: 500, protein: 20 },
-    { name: "Φασολάδα", type: "ospro", price: 4.50, kcal: 400, protein: 18 },
-    { name: "Φασολάκια", type: "ladero", price: 4.50, kcal: 350, protein: 8 },
+    { name: "Μακαρόνια με κιμά", type: "carb", price: 5.50, kcal: 600, protein: 30 },
     { name: "Μουσακάς", type: "carb", price: 6.00, kcal: 830, protein: 26 },
     { name: "Παστίτσιο", type: "carb", price: 6.00, kcal: 750, protein: 35 },
-    { name: "Μακαρόνια με κιμά", type: "carb", price: 5.50, kcal: 600, protein: 30 },
-    { name: "Βακαλάος σκορδαλιά", type: "psari", price: 6.50, kcal: 550, protein: 35 }
+    { name: "Κοτόσουπα", type: "soup", price: 4.50, kcal: 400, protein: 30 },
+    { name: "Φασολάδα", type: "ospro", price: 4.50, kcal: 400, protein: 18 },
+    { name: "Γίγαντες πλακί", type: "ospro", price: 6.00, kcal: 500, protein: 20 },
+    { name: "Μπάμιες με κοτόπουλο", type: "poulika", price: 6.00, kcal: 520, protein: 45 },
+    { name: "Φασολάκια", type: "ladero", price: 4.50, kcal: 350, protein: 8 },
+    { name: "Μπακαλιάρος σκορδαλιά", type: "psari", price: 6.50, kcal: 550, protein: 35 },
+    { name: "Μπιφτέκι μοσχαρίσιο", type: "kreas", price: 6.00, kcal: 500, protein: 45 },
+    { name: "Μπριζόλα χοιρινή", type: "kreas", price: 6.00, kcal: 550, protein: 42 },
+    { name: "Μπριζόλα μοσχαρίσια", type: "kreas", price: 8.50, kcal: 600, protein: 50 },
+    { name: "Γεμιστά με ρύζι", type: "ladero", price: 5.00, kcal: 450, protein: 10 },
+    { name: "Κανελόνια", type: "carb", price: 6.00, kcal: 700, protein: 28 },
+    { name: "Αρακάς", type: "ladero", price: 4.50, kcal: 380, protein: 12 },
+    { name: "Ρεβύθια πλακί", type: "ospro", price: 5.00, kcal: 480, protein: 19 },
+    { name: "Γεμιστά με κιμά", type: "kreas", price: 6.00, kcal: 550, protein: 30 },
+    { name: "Κεφτεδάκια τηγανητά", type: "kreas", price: 6.50, kcal: 600, protein: 35 },
+    { name: "Γιουβαρλάκια", type: "kreas", price: 5.50, kcal: 520, protein: 32 },
+    { name: "Σνίτσελ κοτόπουλο", type: "poulika", price: 6.00, kcal: 650, protein: 45 },
+    { name: "Λαζάνια με κιμά", type: "carb", price: 6.00, kcal: 720, protein: 32 },
+    { name: "Μπιφτέκι κοτόπουλο", type: "poulika", price: 6.00, kcal: 480, protein: 45 },
+    { name: "Σολομός φούρνου", type: "psari", price: 8.00, kcal: 550, protein: 40 },
+    { name: "Σουπιές με σπανάκι", type: "psari", price: 7.00, kcal: 450, protein: 35 },
+    { name: "Γαριδομακαρονάδα", type: "psari", price: 6.50, kcal: 650, protein: 30 },
+    { name: "Παπουτσάκια", type: "ladero", price: 6.00, kcal: 580, protein: 20 },
+    { name: "Σουτζουκάκια", type: "kreas", price: 6.50, kcal: 620, protein: 35 },
+    { name: "Αρνί με πατάτες", type: "kreas", price: 7.50, kcal: 750, protein: 45 },
+    { name: "Πέρκα φούρνου", type: "psari", price: 7.00, kcal: 500, protein: 40 }
 ];
 
 // ==========================================================================
-// 6. LEGACY BRIDGES (ZERO-BUG TOLERANCE)
+// 6. DYNAMIC WEEKLY BRIDGE (MAPPED TO YOUR MENU)
 // ==========================================================================
-window.KOUKI_MASTER = window.PegasusKoukiDB.map(f => ({ name: f.name, type: f.type }));
-window.KOUKI_MENU = window.PegasusKoukiDB.map(f => ({ name: f.name, kcal: f.kcal, protein: f.protein, type: f.type }));
+(function buildWeeklyMenu() {
+    const rawMenu = {
+        "Monday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Κοτόσουπα", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Γεμιστά με ρύζι", "Φασολάδα", "Γίγαντες πλακί", "Μπάμιες με κοτόπουλο", "Μακαρόνια με κιμά", "Φασολάκια", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Μπιφτέκι μοσχαρίσιο", "Μπριάμ"],
+        "Tuesday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Αρακάς", "Ρεβύθια πλακί", "Γεμιστά με κιμά", "Μοσχάρι κοκκινιστό", "Κεφτεδάκια τηγανητά", "Γιουβαρλάκια", "Μακαρόνια με κιμά", "Σνίτσελ κοτόπουλο", "Κοντοσούβλι κοτόπουλο", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"],
+        "Wednesday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κιμά", "Μοσχάρι βραστό", "Μπιφτέκι κοτόπουλο", "Γίγαντες με χόρτα", "Χταπόδι με κοφτό μακαρονάκι", "Μακαρόνια με κιμά", "Γεμιστά με ρύζι", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Σακές", "Σολομός φούρνου", "Κοτόπουλο φούρνου", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
+        "Thursday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Κεφτεδάκια τηγανητά", "Μοσχάρι με μελιτζάνες", "Γεμιστά με κιμά", "Σουπιές με σπανάκι", "Φασολάκια", "Μελιτζάνες ιμάμ", "Κοτόσουπα", "Γαριδομακαρονάδα", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Φιλέτο κοτόπουλο με καρότα"],
+        "Friday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κοτόπουλο", "Μπακαλιάρος σκορδαλιά", "Παπουτσάκια", "Φασολάδα", "Σπανακόρυζο", "Γεμιστά με ρύζι", "Μπιφτέκι γεμιστό", "Γίγαντες πλακί", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόπουλο φούρνου", "Μακαρόνια με κιμά", "Σουτζουκάκια", "Κοτόσουπα", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
+        "Saturday": ["Μουσακάς", "Παστίτσιο", "Ογκρατέν ζυμαρικών", "Μπακαλιάρος με κρεμμύδια", "Μπάμιες", "Γεμιστά με ρύζι", "Μπιφτέκι κοτόπουλο", "Γεμιστά κολοκυθάκια", "Γιουβαρλάκια", "Τσιπούρα φούρνου", "Αρνί με πατάτες", "Μοσχάρι γιουβέτσι", "Κοτόπουλο φούρνου", "Μοσχάρι κοκκινιστό", "Κοντοσούβλι χοιρινό", "Μακαρόνια με κιμά"],
+        "Sunday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Γίγαντες με χόρτα", "Κοτόσουπα", "Πέρκα φούρνου", "Μπιφτέκι γεμιστό", "Κεφτεδάκια τηγανητά", "Γαριδομακαρονάδα", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"]
+    };
 
-const dailyFormat = window.PegasusKoukiDB.map(f => ({ n: f.name, p: f.price, t: f.type }));
-window.KOUKI_MASTER_MENU = {
-    "Monday": dailyFormat, "Tuesday": dailyFormat, "Wednesday": dailyFormat,
-    "Thursday": dailyFormat, "Friday": dailyFormat, "Saturday": dailyFormat, "Sunday": dailyFormat
-};
+    window.KOUKI_MASTER_MENU = {};
+    for (const day in rawMenu) {
+        window.KOUKI_MASTER_MENU[day] = rawMenu[day].map(foodName => {
+            const data = window.PegasusKoukiDB.find(f => f.name === foodName) || { price: 6.00, type: "kreas" };
+            return { n: foodName, p: data.price, t: data.type };
+        });
+    }
+    
+    window.KOUKI_MENU = window.PegasusKoukiDB.map(f => ({ name: f.name, kcal: f.kcal, protein: f.protein, type: f.type }));
+})();
 
 window.getPegasusMacros = function(foodName, fallbackType) {
     const item = window.PegasusKoukiDB.find(f => f.name === foodName || f.name.includes(foodName));
