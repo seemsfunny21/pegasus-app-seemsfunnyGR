@@ -16,7 +16,7 @@ window.program = {
 // 2. MASTER EXERCISES DATABASE
 window.exercisesDB = [
     { name: "Chest Press", muscleGroup: "Στήθος" }, { name: "Chest Flys", muscleGroup: "Στήθος" }, { name: "Pushups", muscleGroup: "Στήθος" },
-    { name: "Wide Pulldowns", muscleGroup: "Πλάτη" }, { name: "Medium Pulldowns", muscleGroup: "Πλάτη" }, { name: "Seated Rows", muscleGroup: "Πλάτη" }, { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
+    { name: "Wide Pulldowns (Ανοιχτή)", muscleGroup: "Πλάτη" }, { name: "Medium Pulldowns (Κλειστή)", muscleGroup: "Πλάτη" }, { name: "Behind Neck Pulldowns", muscleGroup: "Πλάτη" }, { name: "Seated Rows", muscleGroup: "Πλάτη" }, { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
     { name: "Upright Rows", muscleGroup: "Ώμοι" },
     { name: "Bicep Curls", muscleGroup: "Χέρια" }, { name: "Preacher Curls", muscleGroup: "Χέρια" }, { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
     { name: "Ab Crunches", muscleGroup: "Κορμός" }, { name: "Sit Ups", muscleGroup: "Κορμός" }, { name: "Plank", muscleGroup: "Κορμός" }, { name: "Reverse Crunch", muscleGroup: "Κορμός" }, { name: "Lying Knee Raise", muscleGroup: "Κορμός" }, { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
@@ -30,7 +30,7 @@ window.exercisesDB = [
 // 3. ASSET MAPPING
 window.videoMap = {
     "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups", "Pec Deck": "chestflys",
-    "Wide Pulldowns": "latpulldowns", "Medium Pulldowns": "latpulldowns", "Lat Pulldown": "latpulldowns",
+    "Wide Pulldowns (Ανοιχτή)": "latpulldowns", "Medium Pulldowns (Κλειστή)": "latpulldowns", "Behind Neck Pulldowns": "latpulldowns", "Lat Pulldown": "latpulldowns",
     "Seated Rows": "lowrowsseated", "Bent Over Rows": "bentoverrows", "Low Seated Row": "lowrowsseated",
     "Upright Rows": "uprightrows", "Bicep Curls": "bicepcurls", "Standing Bicep Curl": "bicepcurls",
     "Preacher Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
@@ -52,7 +52,7 @@ window.setPegasusPlan = function(planKey) {
         iron_tuesday: [
             { name: "Chest Press", sets: 6, muscleGroup: "Στήθος", weight: "54" },
             { name: "Chest Flys", sets: 5, muscleGroup: "Στήθος", weight: "42" },
-            { name: "Wide Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Wide Pulldowns (Ανοιχτή)", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
             { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
             { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "30" }
         ],
@@ -70,11 +70,11 @@ window.setPegasusPlan = function(planKey) {
             { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
         ],
         iron_friday: [
-            { name: "Medium Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Wide Pulldowns (Ανοιχτή)", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Medium Pulldowns (Κλειστή)", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Behind Neck Pulldowns", sets: 5, muscleGroup: "Πλάτη", weight: "30" },
             { name: "Bent Over Rows", sets: 6, muscleGroup: "Πλάτη", weight: "30" },
-            { name: "Pushups", sets: 5, muscleGroup: "Στήθος", weight: "0" },
-            { name: "Reverse Crunch", sets: 5, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Lying Knee Raise", sets: 5, muscleGroup: "Κορμός", weight: "0" }
+            { name: "Pushups", sets: 5, muscleGroup: "Στήθος", weight: "0" }
         ],
         iron_saturday: [
             { name: "Leg Extensions", sets: 8, muscleGroup: "Πόδια", weight: "36" },
