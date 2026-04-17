@@ -59,7 +59,7 @@ render(force = false) {
         let htmlString = `
         <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
             <h4 style="color:${pegasusGreen}; font-size:10px; text-align:center; margin:0 0 10px 0; text-transform:uppercase; letter-spacing:1.5px; font-weight:900; opacity:0.9;">
-                Weekly Coverage
+                Κάλυψη Μυϊκών Ομάδων
             </h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
 
