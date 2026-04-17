@@ -465,16 +465,13 @@
 
     /* 🛡️ SERVICE WORKER & LOADER PROTOCOL */
     if ('serviceWorker' in navigator) {
-        // Listener για το progress bar του loader
         navigator.serviceWorker.addEventListener('message', event => {
             if (event.data && event.data.type === 'CACHE_PROGRESS') {
                 const percent = event.data.percent;
                 const loaderBar = document.querySelector('.loader-bar-fill');
                 const loaderText = document.querySelector('.loader-text');
-                
                 if (loaderBar) loaderBar.style.width = percent + '%';
                 if (loaderText) loaderText.textContent = `STORAGE INITIALIZATION: ${percent}%`;
-                
                 if (percent === 100) {
                     setTimeout(() => {
                         if (loaderText) loaderText.textContent = "SYSTEM READY - ENCRYPTED";
