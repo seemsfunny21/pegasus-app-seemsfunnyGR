@@ -43,64 +43,46 @@ calculateStats() {
     },
 
 render(force = false) {
-        const container = document.getElementById('muscleProgressContainer');
+        const container = document.getElementById("muscleProgressContainer");
         if (!container) return;
 
+        // 1. Λήψη των δεδομένων (Object {history, targets})
         const { history, targets } = this.calculateStats();
         
-        // 1. Λήψη τρέχουσας ημέρας και ασκήσεων
-        const days = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-        const todayName = days[new Date().getDay()];
-        const todayExercises = window.program[todayName] || [];
-
-        // Hash Check για αποφυγή περιττών renders
-        const currentHash = JSON.stringify(history) + JSON.stringify(targets) + todayName;
+        // 2. Hash check για βελτιστοποίηση
+        const currentHash = JSON.stringify(history) + JSON.stringify(targets);
         if (!force && this.lastDataHash === currentHash) return;
         this.lastDataHash = currentHash;
 
-        // 2. ΤΟ ΜΠΛΕ/NEON ΠΛΑΙΣΙΟ (Clean Layout)
-        let htmlString = `<div style="padding:15px; background:rgba(0,255,65,0.03); border:1px solid #4CAF50; border-radius:12px;">
-                            <h4 style="color:#4CAF50; font-size:11px; text-align:center; margin:0 0 12px 0; font-weight:bold; text-transform:uppercase;">Weekly Muscle Coverage</h4>`;
+        let htmlString = `<div style="display:flex; flex-direction:column; gap:15px; width:100%;">`;
+        const pegasusGreen = "#00ff41";
 
-        // 3. WEEKLY BARS (Δυναμικές Τιμές)
+        // 3. Ορισμός των ομάδων προς εμφάνιση
         const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
-        groups.forEach(m => {
-            const target = targets[m] || 0;
-            if (target === 0) return;
 
-            const done = parseInt(history[m]) || 0;
+        groups.forEach(name => {
+            const target = targets[name] || 0;
+            if (target === 0) return; // Μην δείχνεις ομάδες χωρίς στόχο
+
+            const done = parseInt(history[name]) || 0;
             const percent = Math.min(100, Math.round((done / target) * 100));
+            const isDone = done >= target;
 
+            // Διατήρηση ακριβώς του ίδιου HTML/Style
             htmlString += `
-                <div style="margin-bottom:8px;">
-                    <div style="display:flex; justify-content:space-between; color:#eee; font-size:10px; margin-bottom:2px; font-weight:bold;">
-                        <span>${m.toUpperCase()}</span><span>${done}/${target}</span>
-                    </div>
-                    <div style="width:100%; height:6px; background:#111; border-radius:3px; overflow:hidden; border:1px solid #222;">
-                        <div style="width:${percent}%; height:100%; background:#4CAF50; box-shadow:0 0 8px #4CAF50; transition:width 0.5s ease-out;"></div>
-                    </div>
-                </div>`;
+            <div style="background: rgba(0,0,0,0.5); border:1px solid #222; border-radius:8px; padding:10px; width:100%; box-sizing:border-box;">
+                <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:3px; color:#eee; font-weight:bold;">
+                    <span>${name.toUpperCase()}</span>
+                    <span>${done}/${target} ${isDone ? "🎯" : ""}</span>
+                </div>
+                <div style="width:100%; height:6px; background:#111; border-radius:3px; overflow:hidden; border:1px solid #222;">
+                    <div style="width:${percent}%; height:100%; background:${pegasusGreen}; box-shadow: 0 0 8px ${pegasusGreen}88; transition: width 0.8s ease-in-out;"></div>
+                </div>
+            </div>`;
         });
 
-        // 4. DAILY ACTION (Μόνο οι ασκήσεις της ημέρας - Clean List)
-        htmlString += `<div style="margin-top:15px; padding-top:10px; border-top:1px dashed rgba(76, 175, 80, 0.4);">
-                        <h4 style="color:#4CAF50; font-size:10px; margin:0 0 8px 0; font-weight:bold; text-transform:uppercase; text-align:center;">Today's Session: ${todayName}</h4>`;
+        htmlString += `</div>`;
 
-        if (todayExercises.length > 0 && todayExercises[0].name !== "Stretching") {
-            todayExercises.forEach(ex => {
-                htmlString += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); margin-bottom:4px; padding:6px 10px; border-radius:4px; border-left:2px solid #4CAF50;">
-                        <span style="color:#fff; font-size:11px;">${ex.name}</span>
-                        <span style="color:#4CAF50; font-size:10px; font-weight:bold;">${ex.sets} SETS</span>
-                    </div>`;
-            });
-        } else {
-            const statusMsg = todayExercises[0]?.name === "Stretching" ? "Active Recovery: Stretching" : "Rest Day";
-            htmlString += `<div style="color:#888; font-size:10px; font-style:italic; text-align:center; padding:5px;">${statusMsg}</div>`;
-        }
-
-        htmlString += `</div></div>`;
-        
         container.innerHTML = htmlString;
         container.style.display = "block";
     },
