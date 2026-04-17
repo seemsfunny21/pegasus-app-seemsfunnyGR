@@ -46,25 +46,36 @@ render(force = false) {
         const container = document.getElementById('muscleProgressContainer');
         if (!container) return;
 
-        // 1. Λήψη των δεδομένων (Object)
+        // 1. Λήψη δεδομένων και τρέχουσας ημέρας
         const { history, targets } = this.calculateStats();
+        const days = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+        const todayName = days[new Date().getDay()];
         
-        // 2. Δημιουργία Hash για αποφυγή περιττών renders
-        const currentHash = JSON.stringify(history) + JSON.stringify(targets);
+        // 2. Εύρεση των μυϊκών ομάδων που προπονούνται ΣΗΜΕΡΑ από το data.js
+        const todayExercises = window.program[todayName] || [];
+        const todayGroups = [...new Set(todayExercises.map(ex => {
+            // Χρησιμοποιούμε τον Optimizer για να βρούμε την ομάδα αν δεν υπάρχει στο object
+            return ex.muscleGroup || (window.PegasusOptimizer ? window.PegasusOptimizer.getGroup(ex.name) : "None");
+        }))];
+
+        // 3. Hash Check για αποφυγή περιττών ανανεώσεων
+        const currentHash = JSON.stringify(history) + JSON.stringify(targets) + todayName;
         if (!force && this.lastDataHash === currentHash) return;
         this.lastDataHash = currentHash;
 
-        const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
         let htmlString = `<div style="padding:10px; background:rgba(0,255,65,0.03); border:1px solid #4CAF50; border-radius:10px;">
-                            <h4 style="color:#4CAF50; font-size:11px; text-align:center; margin:0 0 10px 0; font-weight:bold;">WEEKLY MUSCLE COVERAGE</h4>`;
+                            <h4 style="color:#4CAF50; font-size:11px; text-align:center; margin:0 0 5px 0; font-weight:bold;">TODAY'S FOCUS & WEEKLY PROGRESS</h4>
+                            <div style="color:#888; font-size:9px; text-align:center; margin-bottom:10px; text-transform:uppercase;">${todayName} Session</div>`;
 
-        // 3. Loop πάνω στους ορισμένους μυϊκούς ομίλους (groups)
-        groups.forEach(m => {
+        // 4. Εμφάνιση ΜΟΝΟ των ομάδων της ημέρας
+        let hasContent = false;
+        todayGroups.forEach(m => {
+            if (m === "None" || m === "Stretching") return;
+            
             const target = targets[m] || 0;
-            if (target === 0) return; // Tactical: Μην δείχνεις ομάδες χωρίς στόχο
-
             const done = parseInt(history[m]) || 0;
             const percent = Math.min(100, Math.round((done / target) * 100));
+            hasContent = true;
 
             htmlString += `
                 <div style="margin-bottom:8px;">
@@ -76,6 +87,11 @@ render(force = false) {
                     </div>
                 </div>`;
         });
+
+        // Fallback αν σήμερα δεν υπάρχει προπόνηση (π.χ. Stretching)
+        if (!hasContent) {
+            htmlString += `<div style="color:#666; font-size:10px; text-align:center; padding:10px;">No major muscle groups targeted today.</div>`;
+        }
 
         htmlString += `</div>`;
         container.innerHTML = htmlString;
