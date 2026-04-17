@@ -64,10 +64,10 @@ window.MuscleProgressUI = {
 
         const pegasusGreen = "#00ff41";
         
-        // 3. ΕΒΔΟΜΑΔΙΑΙΑ ΚΑΛΥΨΗ (Grid 2 στηλών)
+// 3. ΕΒΔΟΜΑΔΙΑΙΑ ΚΑΛΥΨΗ (Grid 2 στηλών - Διορθωμένο Padding)
         let htmlString = `
-        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">`;
+        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
 
@@ -89,9 +89,9 @@ window.MuscleProgressUI = {
             </div>`;
         });
 
-        htmlString += `</div>`; // Κλείσιμο Grid
+        htmlString += `</div>`; // Κλείσιμο Grid με μπάρες
 
-        // 4. ΡΟΗ ΠΡΟΠΟΝΗΣΗΣ (Οι ασκήσεις που βλέπεις αριστερά)
+        // 4. ΡΟΗ ΠΡΟΠΟΝΗΣΗΣ (Δυναμική στοίχιση)
         htmlString += `
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; justify-items: center;">`;
 
@@ -110,7 +110,7 @@ window.MuscleProgressUI = {
             </div>`;
         });
 
-        htmlString += `</div></div></div>`; 
+        htmlString += `</div></div>`; // Κλείσιμο main container
 
         container.innerHTML = htmlString;
         container.style.display = "block";
