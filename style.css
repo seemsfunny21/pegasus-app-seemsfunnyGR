@@ -907,25 +907,14 @@ input:checked + .slider:before { transform: translateX(26px); }
     color: #000 !important;
 }
 
-/* ================= PEGASUS STATS & MODALS ================= */
-.stat-label-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    font-weight: 900 !important;
-    font-size: 13px !important;
-    margin-bottom: 5px !important;
-    color: #eee !important;
-    letter-spacing: 1px !important;
-}
-
+/* ================= PEGASUS STATS & MODALS (FIXED SIZES) ================= */
 .modal, #pinModal, .pegasus-panel {
     background: rgba(5, 5, 5, 0.98) !important; 
-    border: 2px solid #00ff41 !important;       
+    border: 2px solid #00ff41 !important;        
     box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);  
     border-radius: 12px;
     color: #fff;
-    z-index: 10001; /* 🎯 Διασφάλιση ιεραρχίας */
+    z-index: 10001;
 }
 
 .modal input, #pinModal input {
@@ -936,6 +925,34 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-family: 'Inter', sans-serif;
     border-radius: 5px;
     padding: 10px;
-    /* 🎯 Αποτροπή Zoom iOS */
     font-size: 16px !important; 
+}
+
+/* 🎯 ΣΤΗΘΟΣ, ΠΛΑΤΗ, ΠΟΔΙΑ: Μέγεθος 12 & Ομοιόμορφα Κενά */
+#previewPanel .stat-label-row, 
+#previewPanel .muscle-label-wrapper,
+.stats-container .stat-label-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 5px !important;
+}
+
+#previewPanel .stat-label-row span, 
+#previewPanel .muscle-label-wrapper span,
+.stats-container span {
+    font-size: 12px !important; /* Το μέγεθος που ζήτησες */
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #eee !important;
+}
+
+/* 🎯 Διόρθωση κενού (Πάνω-Κάτω Ίσα) στο Box των Stats */
+.stats-container, .muscle-groups-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 12px !important; /* Απόσταση μεταξύ των γραμμών για να γεμίσει το box */
+    padding: 20px 0 !important; /* Ίσο κενό πάνω και κάτω */
 }
