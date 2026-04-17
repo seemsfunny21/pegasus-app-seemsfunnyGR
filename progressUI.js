@@ -79,13 +79,13 @@ window.MuscleProgressUI = {
 
             htmlString += `
             <div style="background: rgba(255,255,255,0.03); padding: 6px 8px; border-radius: 6px; border: 1px solid #222; display: flex; flex-direction: column; justify-content: center;">
-                <div style="display: flex; justify-content: space-between; font-size: 8px; color: #aaa; margin-bottom: 3px; font-weight: 800; text-transform: uppercase;">
-                    <span>${name}</span>
+               <div class="stat-label-row">
+    <span>${name}</span>
                     <span style="color: ${pegasusGreen};">${done}/${target}${isDone ? "🎯" : ""}</span>
                 </div>
-                <div style="width: 100%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; border: 0.5px solid #333;">
-                    <div style="width: ${percent}%; height: 100%; background: ${pegasusGreen}; box-shadow: 0 0 6px ${pegasusGreen}aa; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
-                </div>
+<div class="muscle-bar-bg">
+    <div class="muscle-bar-fill" style="width: ${percent}%;"></div>
+</div>
             </div>`;
         });
 
