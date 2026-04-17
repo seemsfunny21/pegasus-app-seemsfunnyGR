@@ -25,9 +25,12 @@ window.MuscleProgressUI = {
         }
     },
 
-    calculateStats() {
-        const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
-        const history = JSON.parse(localStorage.getItem(historyKey)) || {};
+calculateStats() {
+    const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+    const history = JSON.parse(localStorage.getItem(historyKey)) || {};
+    
+    // Καλούμε τη δυναμική συνάρτηση από το data.js
+    const targets = window.getDynamicTargets();
         
         // 🛡️ ΠΡΟΤΕΡΑΙΟΤΗΤΑ ΣΤΟ ΔΥΝΑΜΙΚΟ ΠΛΑΝΟ ΤΟΥ DATA.JS
         const targets = (typeof window.getDynamicTargets === "function") 
