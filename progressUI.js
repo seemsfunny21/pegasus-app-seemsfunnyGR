@@ -46,36 +46,30 @@ render(force = false) {
         const container = document.getElementById('muscleProgressContainer');
         if (!container) return;
 
-        // 1. Λήψη δεδομένων και τρέχουσας ημέρας
         const { history, targets } = this.calculateStats();
+        
+        // 1. Εύρεση της τρέχουσας ημέρας και των ασκήσεών της
         const days = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const todayName = days[new Date().getDay()];
-        
-        // 2. Εύρεση των μυϊκών ομάδων που προπονούνται ΣΗΜΕΡΑ από το data.js
         const todayExercises = window.program[todayName] || [];
-        const todayGroups = [...new Set(todayExercises.map(ex => {
-            // Χρησιμοποιούμε τον Optimizer για να βρούμε την ομάδα αν δεν υπάρχει στο object
-            return ex.muscleGroup || (window.PegasusOptimizer ? window.PegasusOptimizer.getGroup(ex.name) : "None");
-        }))];
 
-        // 3. Hash Check για αποφυγή περιττών ανανεώσεων
+        // Hash Check για αποφυγή περιττών renders
         const currentHash = JSON.stringify(history) + JSON.stringify(targets) + todayName;
         if (!force && this.lastDataHash === currentHash) return;
         this.lastDataHash = currentHash;
 
-        let htmlString = `<div style="padding:10px; background:rgba(0,255,65,0.03); border:1px solid #4CAF50; border-radius:10px;">
-                            <h4 style="color:#4CAF50; font-size:11px; text-align:center; margin:0 0 5px 0; font-weight:bold;">TODAY'S FOCUS & WEEKLY PROGRESS</h4>
-                            <div style="color:#888; font-size:9px; text-align:center; margin-bottom:10px; text-transform:uppercase;">${todayName} Session</div>`;
+        // ΚΕΦΑΛΙΔΑ PANEL
+        let htmlString = `<div style="padding:12px; background:rgba(0,255,65,0.03); border:1px solid #4CAF50; border-radius:10px; font-family:sans-serif;">
+                            <h4 style="color:#4CAF50; font-size:12px; text-align:center; margin:0 0 10px 0; font-weight:bold; letter-spacing:1px;">WEEKLY STATUS</h4>`;
 
-        // 4. Εμφάνιση ΜΟΝΟ των ομάδων της ημέρας
-        let hasContent = false;
-        todayGroups.forEach(m => {
-            if (m === "None" || m === "Stretching") return;
-            
+        // 2. WEEKLY BARS: Loop σε όλες τις ομάδες που έχουν στόχο (>0)
+        const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+        groups.forEach(m => {
             const target = targets[m] || 0;
+            if (target === 0) return;
+
             const done = parseInt(history[m]) || 0;
             const percent = Math.min(100, Math.round((done / target) * 100));
-            hasContent = true;
 
             htmlString += `
                 <div style="margin-bottom:8px;">
@@ -88,12 +82,25 @@ render(force = false) {
                 </div>`;
         });
 
-        // Fallback αν σήμερα δεν υπάρχει προπόνηση (π.χ. Stretching)
-        if (!hasContent) {
-            htmlString += `<div style="color:#666; font-size:10px; text-align:center; padding:10px;">No major muscle groups targeted today.</div>`;
+        // 3. DAILY ACTION LIST: Διαχωριστική γραμμή και ασκήσεις ημέρας
+        htmlString += `<div style="margin-top:15px; padding-top:10px; border-top:1px dashed #4CAF50;">
+                        <h4 style="color:#4CAF50; font-size:11px; margin:0 0 8px 0; font-weight:bold; text-transform:uppercase;">ΣΗΜΕΡΑ (${todayName.toUpperCase()})</h4>`;
+
+        if (todayExercises.length > 0 && todayExercises[0].name !== "Stretching") {
+            todayExercises.forEach(ex => {
+                htmlString += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); margin-bottom:4px; padding:5px 8px; border-radius:4px; border-left:2px solid #4CAF50;">
+                        <span style="color:#fff; font-size:11px; font-weight:500;">${ex.name}</span>
+                        <span style="color:#4CAF50; font-size:10px; font-weight:bold;">${ex.sets} SETS</span>
+                    </div>`;
+            });
+        } else {
+            const statusMsg = todayExercises[0]?.name === "Stretching" ? "Active Recovery: Stretching" : "Rest Day";
+            htmlString += `<div style="color:#888; font-size:11px; font-style:italic; text-align:center; padding:5px;">${statusMsg}</div>`;
         }
 
-        htmlString += `</div>`;
+        htmlString += `</div></div>`;
+        
         container.innerHTML = htmlString;
         container.style.display = "block";
     },
