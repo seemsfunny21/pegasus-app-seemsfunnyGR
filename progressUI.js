@@ -114,7 +114,7 @@ render(force = false) {
 
         container.innerHTML = htmlString;
         container.style.display = "block";
-    }
+    },
 
     checkWeeklyReset() {
         const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
