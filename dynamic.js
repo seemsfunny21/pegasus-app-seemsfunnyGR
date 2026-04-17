@@ -9,11 +9,15 @@ window.PegasusDynamic = {
     maxMinutes: 60,
     setDuration: 1.5, // 90 δευτερόλεπτα ανά σετ (άσκηση + rest)
 
-    optimize: function() {
+optimize: function() {
         console.log("⏱️ DYNAMIC ENGINE: Calculating Time Budget...");
         
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-        const targets = { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Πόδια": 24, "Κορμός": 12 };
+        
+        // 🔄 Σύνδεση με τον Optimizer για κοινούς στόχους
+        const targets = (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === "function")
+            ? window.PegasusOptimizer.getTargets()
+            : { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Πόδια": 24, "Κορμός": 12 };
         
         // 1. Υπολογισμός Ελλείψεων
         let deficits = {};
