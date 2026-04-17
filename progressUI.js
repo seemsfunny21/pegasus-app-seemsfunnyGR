@@ -66,7 +66,7 @@ window.MuscleProgressUI = {
         
 // 3. ΕΒΔΟΜΑΔΙΑΙΑ ΚΑΛΥΨΗ (Grid 2 στηλών - Διορθωμένο Padding)
         let htmlString = `
-        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px;">
+        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
