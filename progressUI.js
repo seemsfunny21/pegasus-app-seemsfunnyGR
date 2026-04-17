@@ -49,13 +49,17 @@ window.MuscleProgressUI = {
         // 1. Λήψη δεδομένων (Ιστορικό & Στόχοι)
         const { history, targets } = this.calculateStats();
         
-        // 2. Λήψη ΕΝΕΡΓΩΝ ασκήσεων από την οθόνη (Αριστερή λίστα)
-        const activeExerciseElements = document.querySelectorAll('.exercise-item');
+// 2. Λήψη ΕΝΕΡΓΩΝ ασκήσεων από την οθόνη (Αριστερή λίστα)
+        // Χρησιμοποιούμε την κλάση .exercise που υπάρχει στο CSS σου
+        const activeExerciseElements = document.querySelectorAll('.exercise');
+        
         const activeExercises = Array.from(activeExerciseElements).map(el => {
+            // Παίρνουμε το κείμενο από την κλάση .exercise-name
+            const nameElement = el.querySelector('.exercise-name');
             return { 
-                name: el.querySelector('.ex-name')?.innerText || "" 
+                name: nameElement ? nameElement.innerText.trim() : "" 
             };
-        });
+        }).filter(ex => ex.name !== ""); // Φιλτράρουμε τυχόν κενά
 
         // Hash Check για αποφυγή περιττών renders (περιλαμβάνει και τις ασκήσεις)
         const currentHash = JSON.stringify(history) + JSON.stringify(targets) + JSON.stringify(activeExercises);
