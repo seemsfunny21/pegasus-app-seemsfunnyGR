@@ -3,7 +3,7 @@
    Protocol: Strict Manifest Governance, Legacy Bridging & Date Safe Format
    ========================================================================== */
 
-const M = window.PegasusManifest || { car: { identity: "pegasus_car_identity", dates: "pegasus_car_dates", service: "pegasus_car_service", legacySpecs: "pegasus_car_specs", legacyService: "peg_car_service", legacyDates: "peg_car_dates" }};
+const CAR_M = window.PegasusManifest || { car: { identity: "pegasus_car_identity", dates: "pegasus_car_dates", service: "pegasus_car_service", legacySpecs: "pegasus_car_specs", legacyService: "peg_car_service", legacyDates: "peg_car_dates" }};
 
 window.PegasusCar = {
     saveSpecs: async function() {
@@ -23,9 +23,9 @@ window.PegasusCar = {
             srv: document.getElementById('carSrv')?.value || ""
         };
 
-        localStorage.setItem(M.car.identity, JSON.stringify(identity));
-        localStorage.setItem(M.car.dates, JSON.stringify(dates));
-        localStorage.setItem(M.car.legacySpecs, JSON.stringify(identity)); 
+        localStorage.setItem(CAR_M.car.identity, JSON.stringify(identity));
+        localStorage.setItem(CAR_M.car.dates, JSON.stringify(dates));
+        localStorage.setItem(CAR_M.car.legacySpecs, JSON.stringify(identity)); 
         
         document.querySelectorAll('#car input').forEach(el => el.setAttribute('readonly', true));
         
@@ -41,11 +41,11 @@ window.PegasusCar = {
     },
 
     load: function() {
-        const identity = JSON.parse(localStorage.getItem(M.car.identity)) || 
-                         JSON.parse(localStorage.getItem(M.car.legacySpecs)) || {};
+        const identity = JSON.parse(localStorage.getItem(CAR_M.car.identity)) || 
+                         JSON.parse(localStorage.getItem(CAR_M.car.legacySpecs)) || {};
         
-        const dates = JSON.parse(localStorage.getItem(M.car.dates)) || 
-                      JSON.parse(localStorage.getItem(M.car.legacyDates)) || {};
+        const dates = JSON.parse(localStorage.getItem(CAR_M.car.dates)) || 
+                      JSON.parse(localStorage.getItem(CAR_M.car.legacyDates)) || {};
         
         const fields = {
             'carPlate': identity.plate, 'carModel': identity.model,
@@ -66,7 +66,7 @@ window.PegasusCar = {
         const k = document.getElementById('srvKm')?.value;
         if (!t || !k) return;
 
-        let logs = JSON.parse(localStorage.getItem(M.car.service)) || [];
+        let logs = JSON.parse(localStorage.getItem(CAR_M.car.service)) || [];
         
         // 🛡️ DATE FORMAT FIX: Αποφυγή el-GR format trap
         const rawDate = new Date();
@@ -74,7 +74,7 @@ window.PegasusCar = {
 
         logs.unshift({ t: t.toUpperCase(), k: k.toLocaleString('el-GR'), d: dateStrSafe });
         
-        localStorage.setItem(M.car.service, JSON.stringify(logs));
+        localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
         
         if(document.getElementById('srvTask')) document.getElementById('srvTask').value = "";
         if(document.getElementById('srvKm')) document.getElementById('srvKm').value = "";
@@ -84,11 +84,11 @@ window.PegasusCar = {
     },
 
     renderServiceLog: function() {
-        let logs = JSON.parse(localStorage.getItem(M.car.service));
+        let logs = JSON.parse(localStorage.getItem(CAR_M.car.service));
         
         if (!logs || logs.length === 0) {
-            logs = JSON.parse(localStorage.getItem(M.car.legacyService)) || [];
-            if (logs.length > 0) localStorage.setItem(M.car.service, JSON.stringify(logs));
+            logs = JSON.parse(localStorage.getItem(CAR_M.car.legacyService)) || [];
+            if (logs.length > 0) localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
         }
 
         const container = document.getElementById("serviceLogList");
@@ -114,9 +114,9 @@ window.PegasusCar = {
 
     deleteLog: async function(idx) {
         if(!confirm("Οριστική διαγραφή αυτής της εργασίας;")) return;
-        let logs = JSON.parse(localStorage.getItem(M.car.service)) || [];
+        let logs = JSON.parse(localStorage.getItem(CAR_M.car.service)) || [];
         logs.splice(idx, 1);
-        localStorage.setItem(M.car.service, JSON.stringify(logs));
+        localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
         
         this.renderServiceLog();
         if (window.PegasusCloud) await window.PegasusCloud.push(true);
