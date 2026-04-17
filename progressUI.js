@@ -49,17 +49,13 @@ window.MuscleProgressUI = {
         // 1. Λήψη δεδομένων (Ιστορικό & Στόχοι)
         const { history, targets } = this.calculateStats();
         
-// 2. Λήψη ΕΝΕΡΓΩΝ ασκήσεων από την οθόνη (Αριστερή λίστα)
-        // Χρησιμοποιούμε την κλάση .exercise που υπάρχει στο CSS σου
-        const activeExerciseElements = document.querySelectorAll('.exercise');
-        
+        // 2. Λήψη ΕΝΕΡΓΩΝ ασκήσεων από την οθόνη (Αριστερή λίστα)
+        const activeExerciseElements = document.querySelectorAll('.exercise-item');
         const activeExercises = Array.from(activeExerciseElements).map(el => {
-            // Παίρνουμε το κείμενο από την κλάση .exercise-name
-            const nameElement = el.querySelector('.exercise-name');
             return { 
-                name: nameElement ? nameElement.innerText.trim() : "" 
+                name: el.querySelector('.ex-name')?.innerText || "" 
             };
-        }).filter(ex => ex.name !== ""); // Φιλτράρουμε τυχόν κενά
+        });
 
         // Hash Check για αποφυγή περιττών renders (περιλαμβάνει και τις ασκήσεις)
         const currentHash = JSON.stringify(history) + JSON.stringify(targets) + JSON.stringify(activeExercises);
@@ -68,10 +64,10 @@ window.MuscleProgressUI = {
 
         const pegasusGreen = "#00ff41";
         
-// 3. ΕΒΔΟΜΑΔΙΑΙΑ ΚΑΛΥΨΗ (Grid 2 στηλών - Διορθωμένο Padding)
+        // 3. ΕΒΔΟΜΑΔΙΑΙΑ ΚΑΛΥΨΗ (Grid 2 στηλών)
         let htmlString = `
-        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 12px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">`;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
 
@@ -83,19 +79,19 @@ window.MuscleProgressUI = {
 
             htmlString += `
             <div style="background: rgba(255,255,255,0.03); padding: 6px 8px; border-radius: 6px; border: 1px solid #222; display: flex; flex-direction: column; justify-content: center;">
-               <div class="stat-label-row">
-    <span>${name}</span>
+                <div style="display: flex; justify-content: space-between; font-size: 8px; color: #aaa; margin-bottom: 3px; font-weight: 800; text-transform: uppercase;">
+                    <span>${name}</span>
                     <span style="color: ${pegasusGreen};">${done}/${target}${isDone ? "🎯" : ""}</span>
                 </div>
-<div class="muscle-bar-bg">
-    <div class="muscle-bar-fill" style="width: ${percent}%;"></div>
-</div>
+                <div style="width: 100%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; border: 0.5px solid #333;">
+                    <div style="width: ${percent}%; height: 100%; background: ${pegasusGreen}; box-shadow: 0 0 6px ${pegasusGreen}aa; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
+                </div>
             </div>`;
         });
 
-        htmlString += `</div>`; // Κλείσιμο Grid με μπάρες
+        htmlString += `</div>`; // Κλείσιμο Grid
 
-        // 4. ΡΟΗ ΠΡΟΠΟΝΗΣΗΣ (Δυναμική στοίχιση)
+        // 4. ΡΟΗ ΠΡΟΠΟΝΗΣΗΣ (Οι ασκήσεις που βλέπεις αριστερά)
         htmlString += `
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; justify-items: center;">`;
 
@@ -114,7 +110,7 @@ window.MuscleProgressUI = {
             </div>`;
         });
 
-        htmlString += `</div></div>`; // Κλείσιμο main container
+        htmlString += `</div></div></div>`; 
 
         container.innerHTML = htmlString;
         container.style.display = "block";
