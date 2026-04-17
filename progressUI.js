@@ -93,6 +93,7 @@ window.MuscleProgressUI = {
 
         // 4. ΡΟΗ ΠΡΟΠΟΝΗΣΗΣ (Οι ασκήσεις που βλέπεις αριστερά)
         htmlString += `
+       <div style="padding-top: 12px;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; justify-items: center;">`;
 
         activeExercises.forEach(ex => {
