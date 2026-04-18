@@ -309,3 +309,5 @@ window.addEventListener('storage', (e) => {
         if (window.PegasusFinance && typeof window.PegasusFinance.render === "function") window.PegasusFinance.render();
     }
 });
+
+window.PegasusCloud = PegasusCloud;
