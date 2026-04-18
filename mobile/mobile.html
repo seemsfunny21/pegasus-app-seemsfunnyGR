@@ -417,6 +417,7 @@
         window._pegasusMobileSyncTimer = null;
         window._pegasusMobileSyncBusy = false;
         window._pegasusLastUiRefreshTs = 0;
+        window._pegasusBootDone = false;
 
         function openView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -544,16 +545,16 @@
 
         async function runMobileSyncHeartbeat() {
             if (window._pegasusMobileSyncBusy) return false;
-
             if (!window.PegasusCloud?.isUnlocked) {
                 setSyncStatus('locked');
                 return false;
             }
-
             if (document.hidden) return false;
-
             if (!navigator.onLine) {
                 setSyncStatus('offline');
+                return false;
+            }
+            if (window.PegasusCloud.isPulling || window.PegasusCloud.isPushing) {
                 return false;
             }
 
@@ -562,6 +563,18 @@
             try {
                 const changed = await window.PegasusCloud.pull(true);
                 if (changed) refreshAllUI();
+
+                setTimeout(() => {
+                    if (
+                        window.PegasusCloud?.isUnlocked &&
+                        !window.PegasusCloud.isPulling &&
+                        !window.PegasusCloud.isPushing &&
+                        navigator.onLine
+                    ) {
+                        setSyncStatus('online');
+                    }
+                }, 150);
+
                 return !!changed;
             } catch (e) {
                 console.error("📡 Mobile Heartbeat Error:", e);
@@ -601,16 +614,24 @@
         window.addEventListener("pegasus_sync_status", (e) => {
             const status = e.detail?.status;
 
-            if (!isUnlocked && status !== "locked") {
+            if (!window.PegasusCloud?.isUnlocked && status !== "locked") {
                 setSyncStatus("locked");
                 return;
             }
 
-            if (status === "online") setSyncStatus("online");
-            else if (status === "offline") setSyncStatus("offline");
-            else if (status === "syncing") setSyncStatus("syncing");
-            else if (status === "error") setSyncStatus("error");
-            else if (status === "locked") setSyncStatus("locked");
+            if (status === "online") {
+                if (!window.PegasusCloud.isPulling && !window.PegasusCloud.isPushing) {
+                    setSyncStatus("online");
+                }
+            } else if (status === "offline") {
+                setSyncStatus("offline");
+            } else if (status === "syncing") {
+                setSyncStatus("syncing");
+            } else if (status === "error") {
+                setSyncStatus("error");
+            } else if (status === "locked") {
+                setSyncStatus("locked");
+            }
         });
 
         window.addEventListener("focus", () => {
@@ -640,11 +661,22 @@
 
         window.addEventListener("offline", () => {
             stopMobileSyncHeartbeat();
-            setSyncStatus(isUnlocked ? 'offline' : 'locked');
+            setSyncStatus(window.PegasusCloud?.isUnlocked ? 'offline' : 'locked');
         });
 
         window.addEventListener("pegasus_sync_complete", () => {
             refreshAllUI();
+
+            setTimeout(() => {
+                if (
+                    window.PegasusCloud?.isUnlocked &&
+                    !window.PegasusCloud.isPulling &&
+                    !window.PegasusCloud.isPushing &&
+                    navigator.onLine
+                ) {
+                    setSyncStatus('online');
+                }
+            }, 120);
         });
 
         async function attemptVaultUnlock() {
@@ -653,9 +685,12 @@
             if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
                 document.getElementById("pinModal").style.display = "none";
                 isUnlocked = true;
+                setSyncStatus('syncing');
 
-                await runMobileSyncHeartbeat();
-                startMobileSyncHeartbeat();
+                setTimeout(async () => {
+                    await runMobileSyncHeartbeat();
+                    startMobileSyncHeartbeat();
+                }, 120);
             } else {
                 alert("ΛΑΘΟΣ PIN");
                 document.getElementById("pinInput").value = "";
@@ -734,21 +769,36 @@
         }
 
         (async function boot() {
+            if (window._pegasusBootDone) return;
+            window._pegasusBootDone = true;
+
             console.log("⚡ PEGASUS: Fast Boot...");
             const pin = localStorage.getItem("pegasus_vault_pin");
 
             refreshAllUI();
 
+            if (window.PegasusCloud?.isUnlocked) {
+                isUnlocked = true;
+                setSyncStatus(navigator.onLine ? 'syncing' : 'offline');
+                await runMobileSyncHeartbeat();
+                startMobileSyncHeartbeat();
+                return;
+            }
+
             if (pin && window.PegasusCloud) {
                 try {
                     const success = await window.PegasusCloud.unlock(pin);
 
-                    if (success) {
+                    if (success || window.PegasusCloud.isUnlocked) {
                         console.log("📡 Cloud Sync: Fully Connected.");
                         isUnlocked = true;
-                        await runMobileSyncHeartbeat();
-                        startMobileSyncHeartbeat();
-                        setTimeout(() => refreshAllUI(), 500);
+                        setSyncStatus(navigator.onLine ? 'syncing' : 'offline');
+
+                        setTimeout(async () => {
+                            await runMobileSyncHeartbeat();
+                            startMobileSyncHeartbeat();
+                            setTimeout(() => refreshAllUI(), 500);
+                        }, 120);
                     } else {
                         isUnlocked = false;
                         setSyncStatus('locked');
