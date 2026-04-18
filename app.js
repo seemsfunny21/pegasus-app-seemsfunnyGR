@@ -114,7 +114,7 @@ window.updateKcalUI = function() {
     const kcalLabel = document.querySelector(".kcal-label");
     if (!kcalDisplay) return;
 
-    const isWorkoutActive = running || currentIdx > 0 || phase > 0;
+   const isWorkoutActive = running;
 
     if (isWorkoutActive) {
         kcalDisplay.textContent = parseFloat(sessionActiveKcal).toFixed(1);
