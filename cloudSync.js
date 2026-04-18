@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v17.0 ULTRA-STABLE)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v17.1 HARDENED)
    Protocol: Strict Data Analyst - Anti-Loop, Retry-Logic & Priority Pull
-   Status: FINAL REPAIR | FIXED: PC OVERWRITE & INTERCEPTOR CONFLICTS
+   Status: FINAL STABLE | FIXED: API CONNECTION & TIMEOUT FAILURES
    ========================================================================== */
 
 const PegasusCloud = {
@@ -22,21 +22,33 @@ const PegasusCloud = {
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
-    // 🛡️ 1. PULL ΜΕ RETRY LOGIC
+    // 🛡️ 1. PULL ΜΕ RETRY & CACHE BUSTING
     pull: async function(retryCount = 0) {
         if (this.isPulling) return;
+        
+        const currentKey = this.userKey || localStorage.getItem("pegasus_vault_pin");
+        if (!currentKey) {
+            console.warn("🔐 PEGASUS: No PIN available for sync.");
+            return;
+        }
+
         this.isPulling = true;
         if (typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`, {
+                method: 'GET',
                 headers: { 
-                    'X-Master-Key': this.userKey || localStorage.getItem("pegasus_vault_pin"), 
-                    'X-Bin-Meta': 'false'
+                    'X-Master-Key': currentKey, 
+                    'X-Bin-Meta': 'false',
+                    'Cache-Control': 'no-cache'
                 }
             });
             
-            if (!res.ok) throw new Error("Cloud pull failed");
+            if (!res.ok) {
+                if (res.status === 401) throw new Error("INVALID_PIN");
+                throw new Error(`HTTP_${res.status}`);
+            }
             
             const cloud = await res.json();
             const lastPush = localStorage.getItem("pegasus_last_push") || "0";
@@ -62,7 +74,14 @@ const PegasusCloud = {
             }
             if (typeof setSyncStatus === "function") setSyncStatus('online');
         } catch (e) {
-            console.error(`❌ PEGASUS Pull Attempt ${retryCount + 1} Failed:`, e);
+            console.error(`❌ PEGASUS Pull Attempt ${retryCount + 1} Failed:`, e.message);
+            
+            if (e.message === "INVALID_PIN") {
+                console.error("🚨 PEGASUS: PIN mismatch. Clearing session.");
+                localStorage.removeItem("pegasus_vault_pin");
+                return;
+            }
+
             if (retryCount < 2) {
                 setTimeout(() => this.pull(retryCount + 1), 2000);
             } else {
@@ -77,9 +96,13 @@ const PegasusCloud = {
     push: async function(force = false) {
         if (!this.isUnlocked || !this.hasSuccessfullyPulled || this.isPushing) return;
 
+        const currentKey = this.userKey || localStorage.getItem("pegasus_vault_pin");
+        if (!currentKey) return;
+
         this.isPushing = true;
         if (typeof setSyncStatus === "function") setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
         const syncTimestamp = Date.now().toString();
+        
         const payload = {
             last_update_date: this.getTodayKey(),
             last_update_ts: syncTimestamp
@@ -97,7 +120,7 @@ const PegasusCloud = {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json', 
-                    'X-Master-Key': this.userKey || localStorage.getItem("pegasus_vault_pin"),
+                    'X-Master-Key': currentKey,
                     'X-Bin-Meta': 'false' 
                 },
                 body: JSON.stringify(payload)
@@ -123,10 +146,11 @@ const PegasusCloud = {
         this.userKey = cleanPin;
         this.isUnlocked = true;
         localStorage.setItem('pegasus_vault_unlocked', 'true');
+        localStorage.setItem('pegasus_vault_pin', cleanPin);
+        localStorage.setItem('pegasus_vault_time', Date.now().toString());
         
         console.log("🔄 PEGASUS: Initializing Priority Sync...");
         
-        // Priority Wait
         this.pull().then(() => {
             if (typeof window.checkDailyRoutinePC === "function") {
                 window.checkDailyRoutinePC();
@@ -144,22 +168,6 @@ window.PegasusCloud = PegasusCloud;
 /* ==========================================================================
    DATA INTERCEPTOR (SUPPLEMENT LOGISTICS & AUTO SYNC)
    ========================================================================== */
-window.consumeSupp = function(type, amount) {
-    let val = localStorage.getItem('pegasus_supp_inventory');
-    let s = val ? JSON.parse(val) : { prot: 2500, crea: 1000 };
-    s[type] = Math.max(0, s[type] - amount);
-    
-    if (window.originalSetItem) {
-        window.originalSetItem.call(localStorage, 'pegasus_supp_inventory', JSON.stringify(s));
-    } else {
-        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
-    }
-    
-    if (typeof updateSuppUI === "function") updateSuppUI();
-    if (typeof refreshAllUI === "function") refreshAllUI();
-};
-
-// 🛡️ 3. ΕΝΙΑΙΟΣ INTERCEPTOR (Χωρίς Loops & Conflict)
 if (!window.originalSetItem) {
     window.originalSetItem = localStorage.setItem;
     
@@ -171,16 +179,13 @@ if (!window.originalSetItem) {
 
         window.originalSetItem.apply(this, arguments);
 
-        // SYNC LOGIC - Ακαριαίο Push για αλλαγές
         const internalKeys = ["pegasus_last_push", "pegasus_vault_pin", "pegasus_vault_time", "pegasus_vault_unlocked"];
         if (!internalKeys.includes(key) && (key.startsWith("food_log_") || key.startsWith("pegasus_") || key.startsWith("kouki_"))) {
             if (window.PegasusCloud && window.PegasusCloud.isUnlocked && window.PegasusCloud.hasSuccessfullyPulled) {
-                // Ακαριαία αποστολή για φαγητό, αλλιώς μικρό debounce
-                const delay = (key.startsWith('food_log_') || key.startsWith('pegasus_routine_')) ? 500 : 1500;
+                const delay = (key.startsWith('food_log_') || key.startsWith('pegasus_routine_')) ? 500 : 2000;
                 
                 clearTimeout(window.pegasusPushTimer);
                 window.pegasusPushTimer = setTimeout(() => {
-                    console.log(`🚀 PEGASUS: Real-time Sync triggered by ${key}`);
                     window.PegasusCloud.push(true);
                 }, delay);
             }
@@ -195,12 +200,10 @@ if (!window.originalSetItem) {
                     if (added && added.name) {
                         let fname = added.name.toLowerCase();
                         if (fname.includes("πρωτε") || fname.includes("whey")) {
-                            if (window.consumeSupp) window.consumeSupp('prot', 30, false);
-                            else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Whey");
+                            if (window.consumeSupp) window.consumeSupp('prot', 30);
                         }
                         if (fname.includes("κρεατ") || fname.includes("creatine")) {
-                            if (window.consumeSupp) window.consumeSupp('crea', 5, false);
-                            else if (window.PegasusInventoryPC) window.PegasusInventoryPC.processEntry("Κρεατίνη");
+                            if (window.consumeSupp) window.consumeSupp('crea', 5);
                         }
                     }
                 }
@@ -209,30 +212,18 @@ if (!window.originalSetItem) {
     };
 }
 
-// 🏛️ 4. AUTO-LOAD SESSION & 24H GUARD
 window.addEventListener('load', () => {
     const savedPin = localStorage.getItem("pegasus_vault_pin");
     const authTime = localStorage.getItem("pegasus_vault_time");
     
     if (savedPin) {
         const now = Date.now();
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; 
-        
-        if (!authTime || (now - parseInt(authTime) > TWENTY_FOUR_HOURS)) {
-            console.log("🔒 PEGASUS: Session expired (24h limit). Requiring PIN.");
+        if (!authTime || (now - parseInt(authTime) > 86400000)) {
             localStorage.removeItem("pegasus_vault_pin");
-            localStorage.removeItem("pegasus_vault_time");
-            
             const pinModal = document.getElementById("pinModal");
             if (pinModal) pinModal.style.display = "flex";
         } else {
             window.PegasusCloud.unlock(savedPin);
-            const vaultBtn = document.getElementById("btnMasterVault");
-            if (vaultBtn) {
-                vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
-                vaultBtn.style.color = "#00ff41";
-                vaultBtn.style.borderColor = "#00ff41";
-            }
         }
     }
 });
