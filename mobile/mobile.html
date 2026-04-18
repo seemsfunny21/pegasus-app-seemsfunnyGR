@@ -577,6 +577,15 @@
             }
         }
 
+
+        window.addEventListener("pegasus_sync_status", (e) => {
+    const status = e.detail?.status;
+    if (status === "online") setSyncStatus("online");
+    else if (status === "offline") setSyncStatus("offline");
+    else if (status === "syncing") setSyncStatus("syncing");
+    else if (status === "error") setSyncStatus("offline");
+});
+
         window.addEventListener("focus", () => {
             if (window.PegasusCloud?.isUnlocked) {
                 runMobileSyncHeartbeat();
