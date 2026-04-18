@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.43 (SYNC & MUSCLE FIX PATCH)
+   PEGASUS WORKOUT ENGINE - v10.44 (EFFECTIVE TARGET UI PATCH)
    Protocol: Partial Session Memory + Auto-Sort + Smart Sync Logic
-   Status: FINAL STABLE | DESKTOP/MOBILE DIET SYNC FIXED
+   Status: FINAL STABLE | EFFECTIVE KCAL TARGET UNIFIED
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
@@ -49,6 +49,65 @@ var TURBO_MODE = localStorage.getItem(P_M?.system?.turbo || "pegasus_turbo_state
 var SPEED = TURBO_MODE ? 10 : 1;
 var userWeight = parseFloat(localStorage.getItem(P_M?.user?.weight || "pegasus_weight")) || 74;
 
+/* ===== 2.4 KCAL HELPERS ===== */
+window.getPegasusTodayDateStr = function() {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+};
+
+window.getPegasusTodayCardioOffset = function() {
+    const dateStr = window.getPegasusTodayDateStr();
+
+    const unified = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr));
+    if (!isNaN(unified)) return unified;
+
+    const legacy = parseFloat(localStorage.getItem((M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr));
+    if (!isNaN(legacy)) return legacy;
+
+    return 0;
+};
+
+window.getPegasusBaseDailyTarget = function(settingsObj) {
+    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const dayName = greekDays[new Date().getDay()];
+
+    const settings = settingsObj || (
+        typeof window.getPegasusSettings === "function"
+            ? window.getPegasusSettings()
+            : { activeSplit: "IRON" }
+    );
+
+    const activePlan = settings?.activeSplit || "IRON";
+
+    const KCAL_REST = 2100;
+    const KCAL_WEIGHTS = 2800;
+    const KCAL_EMS = 2700;
+    const KCAL_BIKE = 3100;
+
+    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return KCAL_REST;
+
+    switch (activePlan) {
+        case "EMS_ONLY":
+            return dayName === "Τετάρτη" ? KCAL_EMS : KCAL_WEIGHTS;
+        case "BIKE_ONLY":
+            return (dayName === "Σάββατο" || dayName === "Κυριακή") ? KCAL_BIKE : KCAL_WEIGHTS;
+        case "HYBRID":
+            if (dayName === "Τετάρτη") return KCAL_EMS;
+            if (dayName === "Σάββατο" || dayName === "Κυριακή") return KCAL_BIKE;
+            return KCAL_WEIGHTS;
+        case "IRON":
+        case "UPPER_LOWER":
+        default:
+            return KCAL_WEIGHTS;
+    }
+};
+
+window.getPegasusEffectiveDailyTarget = function(settingsObj) {
+    const baseTarget = window.getPegasusBaseDailyTarget(settingsObj);
+    const cardioOffset = window.getPegasusTodayCardioOffset();
+    return Math.round(baseTarget + cardioOffset);
+};
+
 /* ===== 2.5 DYNAMIC UI KCAL CONTROLLER ===== */
 window.updateKcalUI = function() {
     const kcalDisplay = document.querySelector(".kcal-value");
@@ -62,8 +121,8 @@ window.updateKcalUI = function() {
         kcalDisplay.style.color = "#FFC107";
         if (kcalLabel) kcalLabel.textContent = "KCAL ΠΡΟΠΟΝΗΣΗΣ";
     } else {
-        const dailyTarget = (typeof window.calculatePegasusDailyTarget === "function")
-            ? window.calculatePegasusDailyTarget()
+        const dailyTarget = (typeof window.getPegasusEffectiveDailyTarget === "function")
+            ? window.getPegasusEffectiveDailyTarget()
             : (localStorage.getItem('pegasus_today_kcal') || "2100");
 
         kcalDisplay.textContent = dailyTarget;
@@ -638,62 +697,31 @@ function updateTotalBar() {
 window._isCalculatingTarget = false;
 
 window.calculatePegasusDailyTarget = function() {
+    const storedEffective = window.getPegasusEffectiveDailyTarget
+        ? window.getPegasusEffectiveDailyTarget()
+        : parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal')) || 2100;
+
     if (window._isCalculatingTarget) {
-        const storedTarget = parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal'));
-        return isNaN(storedTarget) ? 2100 : storedTarget;
+        return storedEffective;
     }
 
     window._isCalculatingTarget = true;
-
-    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const dayName = greekDays[new Date().getDay()];
 
     const settings = typeof window.getPegasusSettings === "function"
         ? window.getPegasusSettings()
         : { activeSplit: 'IRON' };
 
-    const activePlan = settings.activeSplit;
     const dynamicProtein = window.calculatePegasusBioMetrics(settings);
+    const baseTarget = window.getPegasusBaseDailyTarget(settings);
+    const cardioOffset = window.getPegasusTodayCardioOffset();
+    const effectiveTarget = Math.round(baseTarget + cardioOffset);
 
-    const KCAL_REST = 2100;
-    const KCAL_WEIGHTS = 2800;
-    const KCAL_EMS = 2700;
-    const KCAL_BIKE = 3100;
+    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', baseTarget);
 
-    let target = KCAL_REST;
-
-    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
-        target = KCAL_REST;
-    } else {
-        switch (activePlan) {
-            case 'IRON':
-            case 'UPPER_LOWER':
-                target = KCAL_WEIGHTS;
-                break;
-            case 'EMS_ONLY':
-                target = (dayName === "Τετάρτη") ? KCAL_EMS : KCAL_WEIGHTS;
-                break;
-            case 'BIKE_ONLY':
-                target = (dayName === "Σάββατο" || dayName === "Κυριακή") ? KCAL_BIKE : KCAL_WEIGHTS;
-                break;
-            case 'HYBRID':
-                if (dayName === "Τετάρτη") target = KCAL_EMS;
-                else if (dayName === "Σάββατο" || dayName === "Κυριακή") target = KCAL_BIKE;
-                else target = KCAL_WEIGHTS;
-                break;
-            default:
-                target = KCAL_WEIGHTS;
-        }
-    }
-
-    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', target);
-
-    console.log(`🏛️ PEGASUS OS [${activePlan}]: Στόχος (${dayName}): ${target} kcal | Πρωτεΐνη: ${dynamicProtein}g (Dynamic).`);
-
-    if (typeof window.updateKcalUI === "function") window.updateKcalUI();
+    console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Στόχος Βάσης: ${baseTarget} kcal | Cardio: +${cardioOffset} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
 
     window._isCalculatingTarget = false;
-    return target;
+    return effectiveTarget;
 };
 
 /* ===== 7.6 AUTOMATED BIO-METRIC CALCULATOR ===== */
@@ -769,6 +797,7 @@ function finishWorkout() {
 
         if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
         if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+        if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
         console.log("🎯 PEGASUS OS: Session Successfully Terminated.");
     }, 3000);
@@ -866,7 +895,6 @@ window.onload = () => {
     const todayObj = new Date();
     const todayName = greekDays[todayObj.getDay()];
 
-    // ✅ FIX: Weekly reset Monday ώστε να συμφωνεί με progressUI.js
     if (todayName === "Δευτέρα") {
         try {
             const lastReset = localStorage.getItem('pegasus_last_reset');
