@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.9 STATUS FLOW LOCK-SAFE)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v20.0 STATUS RELEASE PATCH)
    STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
-   FIXES: LOCK-SAFE STATUS FLOW + DEDUPED UI REFRESH + CLEAN ONLINE/OFFLINE/SYNCING
+   FIXES: PULL RELEASE BEFORE ONLINE STATUS + SAFE UI UPDATE + CLEAN STATUS FLOW
    ========================================================================== */
 
 const PegasusCloud = {
@@ -58,6 +58,22 @@ const PegasusCloud = {
         }));
     },
 
+    safeSetLocal(key, value) {
+        if (window.originalSetItem) {
+            window.originalSetItem.call(localStorage, key, value);
+        } else {
+            localStorage.setItem(key, value);
+        }
+    },
+
+    safeCall(fn) {
+        try {
+            if (typeof fn === "function") fn();
+        } catch (e) {
+            console.warn("⚠️ UI SAFE CALL ERROR:", e);
+        }
+    },
+
     /* =========================
        🔓 UNLOCK
     ========================= */
@@ -76,13 +92,8 @@ const PegasusCloud = {
         this.userKey = this.config.encryptedPart;
         this.isUnlocked = true;
 
-        if (window.originalSetItem) {
-            window.originalSetItem.call(localStorage, "pegasus_vault_pin", clean);
-            window.originalSetItem.call(localStorage, "pegasus_vault_time", Date.now().toString());
-        } else {
-            localStorage.setItem("pegasus_vault_pin", clean);
-            localStorage.setItem("pegasus_vault_time", Date.now().toString());
-        }
+        this.safeSetLocal("pegasus_vault_pin", clean);
+        this.safeSetLocal("pegasus_vault_time", Date.now().toString());
 
         console.log("🔓 CLOUD: Unlocked");
         this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
@@ -109,6 +120,9 @@ const PegasusCloud = {
         this.isPulling = true;
         this.emitSyncStatus("syncing", true);
 
+        let changed = false;
+        let finalStatus = "online";
+
         try {
             const res = await fetch(
                 `https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`,
@@ -128,17 +142,16 @@ const PegasusCloud = {
 
             if (!cloud.last_update_ts) {
                 this.hasSuccessfullyPulled = true;
-                this.emitSyncStatus("online", true);
                 return false;
             }
 
             if (cloud.last_update_ts.toString() === lastLocal) {
                 this.hasSuccessfullyPulled = true;
-                this.emitSyncStatus("online", true);
                 return false;
             }
 
             console.log("☁️ CLOUD: Syncing latest version...");
+            changed = true;
 
             const keys = Object.keys(cloud);
             for (let i = 0; i < keys.length; i++) {
@@ -149,7 +162,7 @@ const PegasusCloud = {
                         ? cloud[k]
                         : JSON.stringify(cloud[k]);
 
-                    window.originalSetItem.call(localStorage, k, val);
+                    this.safeSetLocal(k, val);
                 }
             }
 
@@ -169,28 +182,30 @@ const PegasusCloud = {
                 }
             }
 
-            window.originalSetItem.call(
-                localStorage,
-                "pegasus_last_push",
-                cloud.last_update_ts.toString()
-            );
-
+            this.safeSetLocal("pegasus_last_push", cloud.last_update_ts.toString());
             this.hasSuccessfullyPulled = true;
-            this.triggerUIUpdate();
 
             if (!silent) {
                 console.log("📥 CLOUD: Pull OK");
             }
 
-            this.emitSyncStatus("online", true);
             return true;
 
         } catch (e) {
             console.error("❌ PULL ERROR:", e);
-            this.emitSyncStatus(navigator.onLine ? "error" : "offline", true);
+            finalStatus = navigator.onLine ? "error" : "offline";
             return false;
+
         } finally {
             this.isPulling = false;
+
+            if (changed) {
+                setTimeout(() => {
+                    this.triggerUIUpdate();
+                }, 0);
+            }
+
+            this.emitSyncStatus(finalStatus, true);
         }
     },
 
@@ -234,30 +249,30 @@ const PegasusCloud = {
         this.isPushing = true;
         this.emitSyncStatus("syncing", true);
 
-        const ts = Date.now().toString();
-
-        if (this.lastPushTs === ts) {
-            this.isPushing = false;
-            this.emitSyncStatus("online", true);
-            return true;
-        }
-
-        this.lastPushTs = ts;
-
-        const payload = {
-            last_update_ts: ts,
-            last_update_date: this.getTodayKey(),
-            __events__: this.engine?.getEventBuffer?.() || []
-        };
-
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (this.isAllowedStorageKey(k)) {
-                payload[k] = localStorage.getItem(k);
-            }
-        }
+        let finalStatus = "online";
 
         try {
+            const ts = Date.now().toString();
+
+            if (this.lastPushTs === ts) {
+                return true;
+            }
+
+            this.lastPushTs = ts;
+
+            const payload = {
+                last_update_ts: ts,
+                last_update_date: this.getTodayKey(),
+                __events__: this.engine?.getEventBuffer?.() || []
+            };
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (this.isAllowedStorageKey(k)) {
+                    payload[k] = localStorage.getItem(k);
+                }
+            }
+
             const res = await fetch(
                 `https://api.jsonbin.io/v3/b/${this.config.binId}`,
                 {
@@ -273,18 +288,18 @@ const PegasusCloud = {
 
             if (!res.ok) throw new Error("Push failed");
 
-            window.originalSetItem.call(localStorage, "pegasus_last_push", ts);
+            this.safeSetLocal("pegasus_last_push", ts);
             console.log("📤 CLOUD: Sync OK");
-
-            this.emitSyncStatus("online", true);
             return true;
 
         } catch (e) {
             console.error("❌ PUSH ERROR:", e);
-            this.emitSyncStatus(navigator.onLine ? "error" : "offline", true);
+            finalStatus = navigator.onLine ? "error" : "offline";
             return false;
+
         } finally {
             this.isPushing = false;
+            this.emitSyncStatus(finalStatus, true);
         }
     },
 
@@ -298,22 +313,56 @@ const PegasusCloud = {
         if (now - this.lastUiRefreshTs < 250) return;
         this.lastUiRefreshTs = now;
 
-        window.dispatchEvent(new CustomEvent("pegasus_sync_complete"));
+        try {
+            window.dispatchEvent(new CustomEvent("pegasus_sync_complete"));
+        } catch (e) {
+            console.warn("⚠️ SYNC COMPLETE EVENT ERROR:", e);
+        }
 
-        if (typeof refreshAllUI === "function") refreshAllUI();
-        if (typeof updateFoodUI === "function") updateFoodUI();
-        if (typeof renderFood === "function") renderFood();
-        if (typeof updateSuppUI === "function") updateSuppUI();
-        if (typeof renderLiftingContent === "function") renderLiftingContent();
-        if (typeof updateKcalUI === "function") updateKcalUI();
-        if (typeof renderCalendar === "function") renderCalendar();
+        this.safeCall(() => {
+            if (typeof refreshAllUI === "function") refreshAllUI();
+        });
 
-        if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
-        if (window.PegasusDiet?.updateUI) window.PegasusDiet.updateUI();
-        if (window.PegasusFinance?.render) window.PegasusFinance.render();
+        this.safeCall(() => {
+            if (typeof updateFoodUI === "function") updateFoodUI();
+        });
+
+        this.safeCall(() => {
+            if (typeof renderFood === "function") renderFood();
+        });
+
+        this.safeCall(() => {
+            if (typeof updateSuppUI === "function") updateSuppUI();
+        });
+
+        this.safeCall(() => {
+            if (typeof renderLiftingContent === "function") renderLiftingContent();
+        });
+
+        this.safeCall(() => {
+            if (typeof updateKcalUI === "function") updateKcalUI();
+        });
+
+        this.safeCall(() => {
+            if (typeof renderCalendar === "function") renderCalendar();
+        });
+
+        this.safeCall(() => {
+            if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
+        });
+
+        this.safeCall(() => {
+            if (window.PegasusDiet?.updateUI) window.PegasusDiet.updateUI();
+        });
+
+        this.safeCall(() => {
+            if (window.PegasusFinance?.render) window.PegasusFinance.render();
+        });
 
         setTimeout(() => {
-            if (typeof updateKcalUI === "function") updateKcalUI();
+            this.safeCall(() => {
+                if (typeof updateKcalUI === "function") updateKcalUI();
+            });
         }, 120);
     },
 
