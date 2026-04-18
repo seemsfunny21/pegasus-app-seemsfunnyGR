@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.6 STATUS COLOR PATCH)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.7 STATUS COLOR HARDENED)
    STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
-   FIXES: SAFE UI REFRESH + SYNC STATUS EVENTS + ONLINE/OFFLINE COLOR SUPPORT
+   FIXES: SAFE UI REFRESH + SYNC STATUS EVENTS + ONLINE/OFFLINE/ERROR COLOR FLOW
    ========================================================================== */
 
 const PegasusCloud = {
@@ -22,6 +22,7 @@ const PegasusCloud = {
     pushTimeout: null,
     lastPushTs: null,
     lastUiRefreshTs: 0,
+    lastStatus: null,
 
     engine: null,
 
@@ -38,6 +39,11 @@ const PegasusCloud = {
 
     emitSyncStatus(status) {
         if (typeof window === "undefined") return;
+        if (!status) return;
+
+        if (this.lastStatus === status) return;
+        this.lastStatus = status;
+
         window.dispatchEvent(new CustomEvent("pegasus_sync_status", {
             detail: { status: status }
         }));
@@ -187,6 +193,7 @@ const PegasusCloud = {
     push(force = false) {
         if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
         if (this.isPulling || this.isPushing) return;
+
         if (!navigator.onLine) {
             this.emitSyncStatus("offline");
             return;
@@ -270,6 +277,7 @@ const PegasusCloud = {
 
             window.originalSetItem.call(localStorage, "pegasus_last_push", ts);
             console.log("📤 CLOUD: Sync OK");
+
             this.emitSyncStatus("online");
             return true;
 
@@ -306,7 +314,6 @@ const PegasusCloud = {
         if (window.PegasusDiet?.updateUI) window.PegasusDiet.updateUI();
         if (window.PegasusFinance?.render) window.PegasusFinance.render();
 
-        // δεύτερο ελαφρύ refresh μόνο για καθυστερημένα UI bindings
         setTimeout(() => {
             if (typeof updateKcalUI === "function") updateKcalUI();
         }, 120);
@@ -322,6 +329,7 @@ const PegasusCloud = {
             if (!this.isUnlocked) return;
             if (this.isPulling || this.isPushing) return;
             if (document.hidden) return;
+
             if (!navigator.onLine) {
                 this.emitSyncStatus("offline");
                 return;
@@ -423,6 +431,8 @@ window.addEventListener("load", () => {
 
         if (age < 86400000) {
             PegasusCloud.unlock(pin);
+        } else {
+            PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline");
         }
     } else {
         PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline");
