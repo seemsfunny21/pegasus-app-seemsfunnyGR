@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.2 STABLE FIXED)
-   STATUS: PRODUCTION SAFE | NO LOOP BUGS | MOBILE SAFE | SYNC STABLE
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.3 HYBRID ENGINE BRIDGE)
+   STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
    ========================================================================== */
 
 const PegasusCloud = {
@@ -20,6 +20,14 @@ const PegasusCloud = {
     syncInterval: null,
     pushTimeout: null,
     lastPushTs: null,
+
+    // 🧠 ENGINE BRIDGE (NEW)
+    engine: null,
+
+    attachEngine(engineInstance) {
+        this.engine = engineInstance;
+        console.log("🧠 CLOUD: Engine attached");
+    },
 
     getTodayKey: () => {
         const d = new Date();
@@ -58,7 +66,7 @@ const PegasusCloud = {
     },
 
     /* =========================
-       📥 PULL
+       📥 PULL (HYBRID SAFE)
     ========================= */
     async pull(silent = false) {
         if (!this.isUnlocked || this.isPulling) return;
@@ -117,37 +125,18 @@ const PegasusCloud = {
                 }
             }
 
-            const map = {
-                weekly_history: "pegasus_weekly_history",
-                muscle_targets: "pegasus_muscle_targets",
-                supp_inventory: "pegasus_supp_inventory",
-                peg_contacts: "pegasus_contacts",
-                car_dates: "pegasus_car_dates",
-                car_service: "pegasus_car_service",
-                car_specs: "pegasus_car_specs",
-                parking_loc: "pegasus_parking_loc",
-                food_library: "pegasus_food_library",
-                peg_stats: "pegasus_stats"
-            };
+            // 🧠 HYBRID ENGINE BRIDGE (NEW SAFE LAYER)
+            if (this.engine && cloud.__events__) {
+                try {
+                    const events = cloud.__events__;
 
-            Object.entries(map).forEach(([ck, lk]) => {
-                if (cloud[ck]) {
-                    window.originalSetItem.call(
-                        localStorage,
-                        lk,
-                        JSON.stringify(cloud[ck])
-                    );
+                    for (const event of events) {
+                        this.engine.dispatch(event);
+                    }
+
+                } catch (e) {
+                    console.warn("⚠️ ENGINE BRIDGE ERROR:", e);
                 }
-            });
-
-            if (cloud.all_food_logs) {
-                Object.keys(cloud.all_food_logs).forEach(k => {
-                    window.originalSetItem.call(
-                        localStorage,
-                        k,
-                        JSON.stringify(cloud.all_food_logs[k])
-                    );
-                });
             }
 
             window.originalSetItem.call(
@@ -167,7 +156,7 @@ const PegasusCloud = {
     },
 
     /* =========================
-       📤 PUSH (DEBOUNCED)
+       📤 PUSH (EVENT READY)
     ========================= */
     push(force = false) {
         if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
@@ -198,7 +187,10 @@ const PegasusCloud = {
 
         const payload = {
             last_update_ts: ts,
-            last_update_date: this.getTodayKey()
+            last_update_date: this.getTodayKey(),
+
+            // 🧠 EVENT STREAM (NEW)
+            __events__: this.engine?.getEventBuffer?.() || []
         };
 
         for (let i = 0; i < localStorage.length; i++) {
