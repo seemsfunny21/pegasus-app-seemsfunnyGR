@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.8 STATUS FLOW HARDENED)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.9 STATUS FLOW LOCK-SAFE)
    STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
-   FIXES: SAFE STATUS FLOW + DEDUPED UI REFRESH + CLEAN ONLINE/OFFLINE/SYNCING
+   FIXES: LOCK-SAFE STATUS FLOW + DEDUPED UI REFRESH + CLEAN ONLINE/OFFLINE/SYNCING
    ========================================================================== */
 
 const PegasusCloud = {
@@ -76,8 +76,13 @@ const PegasusCloud = {
         this.userKey = this.config.encryptedPart;
         this.isUnlocked = true;
 
-        localStorage.setItem("pegasus_vault_pin", clean);
-        localStorage.setItem("pegasus_vault_time", Date.now().toString());
+        if (window.originalSetItem) {
+            window.originalSetItem.call(localStorage, "pegasus_vault_pin", clean);
+            window.originalSetItem.call(localStorage, "pegasus_vault_time", Date.now().toString());
+        } else {
+            localStorage.setItem("pegasus_vault_pin", clean);
+            localStorage.setItem("pegasus_vault_time", Date.now().toString());
+        }
 
         console.log("🔓 CLOUD: Unlocked");
         this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
@@ -97,7 +102,7 @@ const PegasusCloud = {
         if (!this.isUnlocked || this.isPulling) return false;
 
         if (!navigator.onLine) {
-            this.emitSyncStatus("offline");
+            this.emitSyncStatus("offline", true);
             return false;
         }
 
@@ -197,7 +202,7 @@ const PegasusCloud = {
         if (this.isPulling || this.isPushing) return;
 
         if (!navigator.onLine) {
-            this.emitSyncStatus("offline");
+            this.emitSyncStatus("offline", true);
             return;
         }
 
@@ -324,7 +329,7 @@ const PegasusCloud = {
             if (document.hidden) return;
 
             if (!navigator.onLine) {
-                this.emitSyncStatus("offline");
+                this.emitSyncStatus("offline", true);
                 return;
             }
 
@@ -386,7 +391,6 @@ document.addEventListener("visibilitychange", () => {
 });
 
 window.addEventListener("online", () => {
-    PegasusCloud.emitSyncStatus("online", true);
     if (window.PegasusCloud?.isUnlocked) {
         window.PegasusCloud.pull(true);
     }
@@ -412,11 +416,7 @@ window.addEventListener("load", () => {
 
         if (age < 86400000) {
             PegasusCloud.unlock(pin);
-        } else {
-            PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
         }
-    } else {
-        PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
     }
 });
 
