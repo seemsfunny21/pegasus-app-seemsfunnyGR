@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.4 (CACHE SANITY PATCH)
+   PEGASUS PWA SERVICE WORKER - v3.5 (FINAL HARDENED)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
-   Status: FINAL STABLE | FIXED: MOBILE ROUTING + CLEAN ACTIVATE + VERSION BUMP
+   Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + CLEAN FALLBACK
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.4-DYNAMIC';
+const CACHE_NAME = 'pegasus-shield-v3.5-DYNAMIC';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -36,6 +36,33 @@ const ASSETS_TO_CACHE = [
 ];
 
 /* =========================
+   HELPERS
+========================= */
+function isSameOrigin(url) {
+    return url.origin === self.location.origin;
+}
+
+function isBypassHost(url) {
+    return (
+        url.hostname.includes('jsonbin.io') ||
+        url.hostname.includes('googleapis.com') ||
+        url.hostname.includes('emailjs.com')
+    );
+}
+
+function isMediaAsset(pathname) {
+    return /\.(mp4|mp3|png|jpg|jpeg|svg|woff2|gif|webp)$/i.test(pathname);
+}
+
+async function putInCache(request, response) {
+    if (!response || response.status !== 200) return;
+    if (response.type !== 'basic') return;
+
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+}
+
+/* =========================
    INSTALL
 ========================= */
 self.addEventListener('install', (event) => {
@@ -51,8 +78,8 @@ self.addEventListener('install', (event) => {
                 try {
                     const response = await fetch(url, { cache: 'no-cache' });
                     if (!response.ok) throw new Error(`Bad response status: ${response.status}`);
-                    await cache.put(url, response.clone());
 
+                    await cache.put(url, response.clone());
                     downloaded++;
 
                     const allClients = await self.clients.matchAll({ includeUncontrolled: true });
@@ -100,79 +127,85 @@ self.addEventListener('activate', (event) => {
    FETCH ENGINE
 ========================= */
 self.addEventListener('fetch', (event) => {
-    if (!event.request.url.startsWith('http')) return;
+    const request = event.request;
 
-    const url = new URL(event.request.url);
-    const cleanUrl = url.origin + url.pathname;
+    // Μόνο GET requests
+    if (request.method !== 'GET') return;
+    if (!request.url.startsWith('http')) return;
 
-    // API / cloud bypass
-    if (
-        url.hostname.includes('jsonbin.io') ||
-        url.hostname.includes('googleapis.com') ||
-        url.hostname.includes('emailjs.com')
-    ) {
-        return;
-    }
+    const url = new URL(request.url);
 
-    const isMediaAsset = cleanUrl.match(/\.(mp4|mp3|png|jpg|jpeg|svg|woff2|gif|webp)$/i);
+    // Μην επεμβαίνεις σε τρίτα origins ή API hosts
+    if (!isSameOrigin(url) || isBypassHost(url)) return;
 
-    if (isMediaAsset) {
-        // CACHE-FIRST for media
+    const pathname = url.pathname.toLowerCase();
+
+    // CACHE-FIRST for media
+    if (isMediaAsset(pathname)) {
         event.respondWith(
-            caches.match(event.request, { ignoreSearch: true }).then((cachedRes) => {
+            (async () => {
+                const cachedRes = await caches.match(request, { ignoreSearch: true });
                 if (cachedRes) return cachedRes;
 
-                return fetch(event.request).then(networkResponse => {
-                    if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-                        const clonedRes = networkResponse.clone();
-                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedRes));
-                    }
+                try {
+                    const networkResponse = await fetch(request);
+                    await putInCache(request, networkResponse);
                     return networkResponse;
-                }).catch(() => {
-                    console.warn(`SW: Media fetch failed for ${cleanUrl}`);
+                } catch (err) {
+                    console.warn(`SW: Media fetch failed for ${url.pathname}`, err);
                     return new Response('', { status: 404 });
-                });
-            })
+                }
+            })()
         );
         return;
     }
 
-    // NETWORK-FIRST for code/html/css
+    // NETWORK-FIRST for html/css/js
     event.respondWith(
-        fetch(event.request).then(networkResponse => {
-            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-                const clonedRes = networkResponse.clone();
-                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clonedRes));
-            }
-            return networkResponse;
-        }).catch(async () => {
-            console.warn(`[PEGASUS SW]: Offline fallback active for ${cleanUrl}`);
+        (async () => {
+            try {
+                const networkResponse = await fetch(request);
+                await putInCache(request, networkResponse);
+                return networkResponse;
+            } catch (err) {
+                console.warn(`[PEGASUS SW]: Offline fallback active for ${url.pathname}`, err);
 
-            const cachedResponse = await caches.match(event.request, { ignoreSearch: true });
-            if (cachedResponse) return cachedResponse;
+                const cachedResponse = await caches.match(request, { ignoreSearch: true });
+                if (cachedResponse) return cachedResponse;
 
-            if (event.request.mode === 'navigate') {
-                const path = url.pathname.toLowerCase();
+                if (request.mode === 'navigate') {
+                    const isMobileRoute =
+                        pathname.includes('/mobile') ||
+                        pathname.endsWith('/mobile.html');
 
-                if (path.includes('/mobile') || path.endsWith('/mobile.html')) {
+                    if (isMobileRoute) {
+                        return (
+                            await caches.match('./mobile/mobile.html') ||
+                            await caches.match('./mobile.html') ||
+                            await caches.match('./index.html') ||
+                            new Response('Offline', {
+                                status: 503,
+                                headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+                            })
+                        );
+                    }
+
                     return (
+                        await caches.match('./index.html') ||
                         await caches.match('./mobile/mobile.html') ||
                         await caches.match('./mobile.html') ||
-                        await caches.match('./index.html')
+                        new Response('Offline', {
+                            status: 503,
+                            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+                        })
                     );
                 }
 
-                return (
-                    await caches.match('./index.html') ||
-                    await caches.match('./mobile/mobile.html') ||
-                    await caches.match('./mobile.html')
-                );
+                return new Response('Network Error', {
+                    status: 408,
+                    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+                });
             }
-
-            return new Response('Network Error', {
-                status: 408,
-                headers: { 'Content-Type': 'text/plain' }
-            });
-        })
+        })()
     );
 });
