@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS EXTENSIONS - ULTIMATE PLANNER & ROLLING AGREEMENT (v13.4 STRICT)
+   PEGASUS EXTENSIONS - ULTIMATE PLANNER & ROLLING AGREEMENT (v13.5 STRICT)
    Protocol: Maximalist Retention - Logic Mirroring & Variable Persistence
-   Status: FINAL STABLE | FIXED: DOUBLE DEPLETION & DATE PADDING
+   Status: FIXED: OVERWRITE RACE CONDITION VIA CLOUD SYNC CHECK
    ========================================================================== */
 
 // --- 1. DATA CONSTANTS: KOUKI MENU ---
@@ -41,7 +41,6 @@ function showWeeklyPlanner() {
     for (let i = 0; i < 7; i++) {
         let d = new Date(); 
         d.setDate(d.getDate() - i);
-        // 🎯 FIXED: Unified Date Padding
         const pd = String(d.getDate()).padStart(2, '0');
         const pm = String(d.getMonth() + 1).padStart(2, '0');
         const py = d.getFullYear();
@@ -100,20 +99,16 @@ window.closePlannerOnly = function() {
 // --- 3. LOGIC: ADD MEAL & UPDATE AGREEMENT ---
 window.addFromPlanner = function(n, k, p) {
     if (window.addFoodItem) {
-        // 1. Καταγραφή στο Pegasus (Macros/Inventory)
         window.addFoodItem(n, k, p);
-        
-        // 2. Καταγραφή στη Συμφωνία (Agreement Log)
         const now = new Date();
         const d = String(now.getDate()).padStart(2, '0');
         const m = String(now.getMonth() + 1).padStart(2, '0');
-        const today = `${d}/${m}/${now.getFullYear()}`; // 🎯 FIXED PADDING
+        const today = `${d}/${m}/${now.getFullYear()}`; 
         
         let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
         agreementLog.push({ date: today, food: n });
         localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
         
-        // 3. Ενημέρωση UI & User Feedback
         window.updateKoukiBalance();
         const totalStock = parseInt(localStorage.getItem('kouki_total_stock') || "30");
         const remaining = totalStock - agreementLog.length;
@@ -136,14 +131,9 @@ window.updateKoukiBalance = function() {
     const display = document.getElementById("agreementStatus");
     if (display) {
         display.textContent = remaining;
-        
-        if (remaining <= 0) {
-            display.style.color = "#ff4444"; 
-        } else if (remaining <= 5) {
-            display.style.color = "#f39c12"; 
-        } else {
-            display.style.color = "#eee";    
-        }
+        if (remaining <= 0) display.style.color = "#ff4444"; 
+        else if (remaining <= 5) display.style.color = "#f39c12"; 
+        else display.style.color = "#eee";    
         console.log(`📊 KOUKI TRACKER: ${remaining} meals remaining of ${totalStock}`);
     }
 };
@@ -151,11 +141,8 @@ window.updateKoukiBalance = function() {
 window.addThirtyMeals = function() {
     let currentStock = parseInt(localStorage.getItem('kouki_total_stock') || "30");
     let newStock = currentStock + 30;
-    
     localStorage.setItem('kouki_total_stock', newStock.toString());
     window.updateKoukiBalance();
-    
-    console.log(`📡 PEGASUS: Agreement Renewed. New Stock Limit: ${newStock}`);
 };
 
 window.setKoukiStock = function(amount) {
@@ -164,51 +151,47 @@ window.setKoukiStock = function(amount) {
     return `Stock updated to: ${amount}`;
 };
 
-// 🔥 FORCE INITIALIZATION
 [100, 500, 2000].forEach(delay => {
     setTimeout(() => {
         if (window.updateKoukiBalance) window.updateKoukiBalance();
     }, delay);
 });
 
-window.showHistory = function() {
-    const log = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
-    const stock = localStorage.getItem('kouki_total_stock') || "30";
-    console.log("--- PEGASUS AGREEMENT AUDIT ---");
-    console.table(log);
-    console.log(`Συνολικό Stock: ${stock} | Κατανάλωση: ${log.length} | Υπόλοιπο: ${stock - log.length}`);
-};
-
 /* ==========================================================================
-   PEGASUS OS - PC ZERO-CLICK DAILY ROUTINE (Cross-Device Sync)
+   PEGASUS OS - PC ZERO-CLICK DAILY ROUTINE (v13.5 HARDENED)
    ========================================================================== */
 window.checkDailyRoutinePC = function() {
+    // 🛡️ RACE CONDITION GUARD: 
+    // Περιμένουμε μέχρι το Cloud να κάνει το πρώτο επιτυχές Pull 
+    // πριν ελέγξουμε αν πρέπει να μπει η ρουτίνα.
+    if (!window.PegasusCloud || !window.PegasusCloud.hasSuccessfullyPulled) {
+        console.log("⏳ PEGASUS PC: Waiting for Cloud Sync before routine check...");
+        setTimeout(window.checkDailyRoutinePC, 1000);
+        return;
+    }
+
     const now = new Date();
     const dStr = String(now.getDate()).padStart(2, '0');
     const mStr = String(now.getMonth() + 1).padStart(2, '0');
-    const dateStr = `${dStr}/${mStr}/${now.getFullYear()}`; // 🎯 FIXED PADDING
+    const dateStr = `${dStr}/${mStr}/${now.getFullYear()}`; 
     const flagKey = "pegasus_routine_injected_" + dateStr;
 
+    // Τώρα που έγινε το Pull, το localStorage έχει τα δεδομένα από το κινητό.
     if (!localStorage.getItem(flagKey)) {
-        
-        // 1. Εισαγωγή γευμάτων 
         if (typeof window.addFoodItem === "function") {
             setTimeout(() => window.addFoodItem("Γιαούρτι 2% + Whey (Ρουτίνα)", 250, 35), 100);
             setTimeout(() => window.addFoodItem("3 Αυγά (Ρουτίνα)", 210, 18), 300);
         }
 
-        // 🎯 FIXED: Αφαιρέθηκε η χειροκίνητη μείωση (s.prot -= 30) 
-        // Η λογική μεταφέρθηκε στο cloudSync.js Interceptor (Double-Depletion Prevention)
-
-        // 3. Ενεργοποίηση σημαίας
         localStorage.setItem(flagKey, "true");
-        console.log("🌅 PEGASUS PC: Daily Routine auto-injected. Protein depleted via global interceptor.");
+        console.log("🌅 PEGASUS PC: Daily Routine auto-injected AFTER Cloud Sync.");
 
-        // 4. Ανανέωση UI
         setTimeout(() => {
             if (typeof updateInventoryUI === "function") updateInventoryUI();
             if (typeof updateKoukiBalance === "function") window.updateKoukiBalance();
         }, 800);
+    } else {
+        console.log("✅ PEGASUS PC: Routine already exists in Cloud data. Skipping.");
     }
 };
 
