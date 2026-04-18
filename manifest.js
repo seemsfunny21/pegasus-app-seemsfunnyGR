@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.4)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.5)
    Protocol: Global Variable Re-declaration (Unlock M)
-   Status: THE SINGLE SOURCE OF TRUTH | CLEANED: KEY CONSISTENCY PATCH
+   Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
 
 window.PegasusManifest = {
@@ -11,9 +11,9 @@ window.PegasusManifest = {
     metadata: {
         os: "Pegasus OS",
         author: "Angelos & Gemini",
-        last_update: "2026-04-18",
+        last_update: "2026-04-19",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.4 Stable"
+        engine_version: "v18.5 Stable"
     },
 
     // ---------------------------------------------------------
@@ -55,8 +55,13 @@ window.PegasusManifest = {
         weekly_history: "pegasus_weekly_history",
         done: "pegasus_workouts_done",
         total: "pegasus_total_workouts",
-        cardio_offset: "pegasus_cardio_offset_sets",   // legacy compatibility key base
-        cardio_daily_prefix: "pegasus_cardio_kcal_",   // canonical per-day cardio key
+
+        // legacy compatibility key base
+        cardio_offset: "pegasus_cardio_offset_sets",
+
+        // canonical per-day cardio key prefix
+        cardio_daily_prefix: "pegasus_cardio_kcal_",
+
         cardio_history: "pegasus_cardio_history",
         activePlan: "pegasus_active_plan",
         muscleTargets: "pegasus_muscle_targets",
@@ -73,8 +78,10 @@ window.PegasusManifest = {
     diet: {
         weekly_kcal: "pegasus_weekly_kcal",
         weeklyKcal: "pegasus_weekly_kcal",      // alias compatibility
+
         session_kcal: "pegasus_session_kcal",
         sessionKcal: "pegasus_session_kcal",    // alias compatibility
+
         inventory: "pegasus_supp_inventory",
         foodLibrary: "pegasus_food_library",
         todayKcal: "pegasus_today_kcal",
@@ -136,29 +143,37 @@ window.PegasusManifest = {
     },
 
     whereIs: function(query) {
-        const q = query.toLowerCase();
+        const q = String(query || "").toLowerCase();
+
         for (let file in this.architecture) {
             if (this.architecture[file].toLowerCase().includes(q)) {
                 return `📍 Η λογική '${query}' βρίσκεται στο: ${file}`;
             }
         }
+
         return "❌ Δεν βρέθηκε αναφορά στο System Blueprint.";
     },
 
     auditData: function() {
         console.log("%c🔍 PEGASUS DATA AUDIT STARTING...", "color: #00bcd4; font-weight: bold; font-size: 14px;");
+
         const manifestStr = JSON.stringify(this);
+        const legacyCardioPrefix = (this.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_";
+        const canonicalCardioPrefix = this.workout?.cardio_daily_prefix || "pegasus_cardio_kcal_";
+
         let orphanKeys = [];
         let validKeys = [];
 
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
+            if (!key) continue;
 
             if (
                 key.startsWith("food_log_") ||
                 key.startsWith("weight_") ||
                 key.startsWith("pegasus_weight_") ||
-                key.startsWith("pegasus_cardio_kcal_") ||
+                key.startsWith(canonicalCardioPrefix) ||
+                key.startsWith(legacyCardioPrefix) ||
                 key.startsWith("pegasus_pos_") ||
                 key.startsWith("pegasus_routine_injected_") ||
                 key.startsWith("pegasus_history_") ||
@@ -190,4 +205,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.4 LOADED. GLOBAL UNLOCK ACTIVE.");
+console.log("🏛️ PEGASUS MANIFEST v18.5 LOADED. GLOBAL UNLOCK ACTIVE.");
