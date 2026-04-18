@@ -1,8 +1,8 @@
 /* =============================================================
-   PEGASUS UNIFIED METABOLIC ENGINE - v16.6 (SAFE SHARED TARGET CORE)
+   PEGASUS UNIFIED METABOLIC ENGINE - v16.7 (SAFE SHARED TARGET CORE)
    Merged: calories.js + metabolic.js
    Protocol: Strict Session Isolation, Midnight Guard & Shared Target Logic
-   Status: FINAL STABLE | FIXED: MANIFEST KEY SAFETY + UI ALIGNMENT + STORAGE GUARDS
+   Status: FINAL STABLE | FIXED: ACTIVE INPUT TARGETING + STORAGE SAFETY
    ============================================================= */
 
 const PegasusMetabolic = {
@@ -101,6 +101,17 @@ const PegasusMetabolic = {
     },
 
     /* =========================================================
+       INTERNAL HELPERS
+       ========================================================= */
+    getActiveWeightInput: function() {
+        return (
+            document.querySelector(".exercise[style*='76, 175, 80'] .weight-input") ||
+            document.querySelector(".exercise .weight-input") ||
+            document.querySelector(".weight-input")
+        );
+    },
+
+    /* =========================================================
        SESSION TRACKING
        ========================================================= */
     resetSession: function() {
@@ -130,7 +141,7 @@ const PegasusMetabolic = {
         const safeExerciseName = String(exerciseName || "").trim();
         const keys = this.getKeys();
 
-        const weightInput = document.querySelector(".weight-input");
+        const weightInput = this.getActiveWeightInput();
         let liftedWeight = weightInput ? parseFloat(weightInput.value) : 0;
 
         if (liftedWeight > 0 && safeExerciseName) {
@@ -148,10 +159,10 @@ const PegasusMetabolic = {
 
         this.sessionKcal += addedKcal;
 
-        let currentSession = parseFloat(localStorage.getItem(keys.sessionKcal)) || 0;
+        const currentSession = parseFloat(localStorage.getItem(keys.sessionKcal)) || 0;
         localStorage.setItem(keys.sessionKcal, (currentSession + addedKcal).toFixed(4));
 
-        let currentWeekly = parseFloat(localStorage.getItem(keys.weeklyKcal)) || 0;
+        const currentWeekly = parseFloat(localStorage.getItem(keys.weeklyKcal)) || 0;
         localStorage.setItem(keys.weeklyKcal, (currentWeekly + addedKcal).toFixed(4));
 
         this.renderUI(this.sessionKcal);
@@ -170,8 +181,6 @@ const PegasusMetabolic = {
 
         const effectiveTarget = this.getEffectiveDailyTarget();
 
-        // Desktop top widget:
-        // δείχνει session kcal μόνο όταν τρέχει workout, αλλιώς το app.js/updateKcalUI αναλαμβάνει το ημερήσιο target
         const kcalDesktop = document.querySelector(".kcal-value");
         const engineRunning = !!window.PegasusEngine?.getState?.().running;
 
@@ -179,8 +188,6 @@ const PegasusMetabolic = {
             kcalDesktop.textContent = sVal.toFixed(1);
         }
 
-        // Mobile diet card:
-        // consumed / effective target
         const kcalMobile = document.getElementById("txtKcal");
         if (kcalMobile && window.PegasusDiet?.getLog) {
             const dateStr = (typeof window.PegasusDiet.getStrictDateStr === "function")
@@ -205,29 +212,28 @@ const PegasusMetabolic = {
         const now = new Date();
         const keys = this.getKeys();
 
-        // Midnight guard
         if (now.getHours() >= 0 && now.getHours() < 4) {
             return;
         }
 
         const todayDate = this.getTodayWorkoutKey();
+        const currentBurn = parseFloat(localStorage.getItem(keys.sessionKcal)) || 0;
+
+        if (currentBurn <= 100) return;
+
         let history = JSON.parse(localStorage.getItem(keys.calendarHistory) || "{}");
         let workouts = JSON.parse(localStorage.getItem(keys.workoutDone) || "{}");
 
-        const currentBurn = parseFloat(localStorage.getItem(keys.sessionKcal)) || 0;
+        history[todayDate] = {
+            status: "completed",
+            verified: true,
+            kcal: currentBurn
+        };
 
-        if (currentBurn > 100) {
-            history[todayDate] = {
-                status: "completed",
-                verified: true,
-                kcal: currentBurn
-            };
+        workouts[todayDate] = true;
 
-            workouts[todayDate] = true;
-
-            localStorage.setItem(keys.calendarHistory, JSON.stringify(history));
-            localStorage.setItem(keys.workoutDone, JSON.stringify(workouts));
-        }
+        localStorage.setItem(keys.calendarHistory, JSON.stringify(history));
+        localStorage.setItem(keys.workoutDone, JSON.stringify(workouts));
     }
 };
 
@@ -237,7 +243,6 @@ const PegasusMetabolic = {
 window.PegasusMetabolic = PegasusMetabolic;
 window.trackSetCalories = PegasusMetabolic.updateTracking.bind(PegasusMetabolic);
 
-// Canonical shared helpers for all modules
 window.getPegasusTodayDateStr = PegasusMetabolic.getTodayDateStr.bind(PegasusMetabolic);
 window.getPegasusTodayCardioOffset = PegasusMetabolic.getTodayCardioOffset.bind(PegasusMetabolic);
 window.getPegasusBaseDailyTarget = PegasusMetabolic.getBaseDailyTarget.bind(PegasusMetabolic);
