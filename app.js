@@ -95,10 +95,15 @@ const playBeep = (volume = 1) => {
 };
 
 /* ===== PEGASUS ENGINE BRIDGE (SAFE WRAPPER) ===== */
+window._pegasusEventBuffer = [];
+
 window.PegasusEngine = {
     dispatch: function (action) {
-        console.log("📨 PEGASUS ENGINE DISPATCH:", action);
-        // future reducer logic εδώ
+        window._pegasusEventBuffer.push({
+            action,
+            time: Date.now()
+        });
+        console.log("📨 PEGASUS ENGINE EVENT:", action);
     },
 
     getEventBuffer: function () {
