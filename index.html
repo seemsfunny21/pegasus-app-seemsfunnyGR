@@ -14,7 +14,7 @@
         const isSmallScreen = window.innerWidth <= 800;
 
         if (isMobileAgent || isSmallScreen) {
-            window.location.replace("mobile/mobile.html");
+           window.location.replace("mobile/mobile.html" + window.location.search + window.location.hash);
         }
     </script>
 </head>
