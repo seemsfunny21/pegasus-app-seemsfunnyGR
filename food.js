@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v9.9 (DESKTOP/MOBILE SYNC PATCH)
-   Protocol: Unified Cardio Offset + Strict Date Mapping + Safe Diet Targets
-   Status: FINAL STABLE | CROSS-DEVICE DIET SYNC FIXED
+   PEGASUS FOOD ENGINE - v10.0 (SHARED CORE PATCH)
+   Protocol: Shared Metabolic Helpers + Strict Date Mapping + Safe Diet Targets
+   Status: FINAL STABLE | DESKTOP/MOBILE TARGET CORE UNIFIED
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
@@ -78,23 +78,14 @@ function getWorkoutDateKey(dateObj) {
     return `${parts.y}-${parts.m}-${parts.d}`;
 }
 
-// 🎯 FIXED: Unified Date Padding Protocol & Midnight Rollover
+/* ===== STRICT DATE BRIDGE ===== */
 window.getStrictDateStr = function() {
     const currentSystemDate = new Date().toDateString();
 
     if (window.lastKnownSystemDate !== currentSystemDate) {
         window.currentFoodDate = new Date();
-
-        if (M && M.workout && M.workout.cardio_offset) {
-            const raw = window.currentFoodDate || new Date();
-            const dateStr = getPegasusDateStr(raw);
-
-            localStorage.removeItem("pegasus_cardio_kcal_" + dateStr);
-            localStorage.removeItem((M.workout.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr);
-        }
-
         window.lastKnownSystemDate = currentSystemDate;
-        console.log("🛡️ PEGASUS GUARD: Midnight Rollover & Metabolic Reset Executed.");
+        console.log("🛡️ PEGASUS GUARD: Midnight Rollover Executed.");
     }
 
     const d = window.currentFoodDate || new Date();
@@ -118,10 +109,17 @@ function getDynamicBMR() {
 
 /* ===== UNIFIED DIET TARGET HELPERS ===== */
 function getCardioOffsetForDate(dateObj) {
-    const dateStr = getPegasusDateStr(dateObj);
+    const targetDate = dateObj || new Date();
 
-    const unifiedKey = "pegasus_cardio_kcal_" + dateStr;
-    const legacyKey = (M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr;
+    const todayStr = getPegasusDateStr(new Date());
+    const requestedStr = getPegasusDateStr(targetDate);
+
+    if (requestedStr === todayStr && typeof window.getPegasusTodayCardioOffset === "function") {
+        return window.getPegasusTodayCardioOffset();
+    }
+
+    const unifiedKey = "pegasus_cardio_kcal_" + requestedStr;
+    const legacyKey = (M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + requestedStr;
 
     const unifiedVal = parseFloat(localStorage.getItem(unifiedKey));
     if (!isNaN(unifiedVal)) return unifiedVal;
@@ -133,8 +131,17 @@ function getCardioOffsetForDate(dateObj) {
 }
 
 function getBaseDietTargetForDate(dateObj) {
+    const targetDate = dateObj || new Date();
+
+    const todayStr = getPegasusDateStr(new Date());
+    const requestedStr = getPegasusDateStr(targetDate);
+
+    if (requestedStr === todayStr && typeof window.getPegasusBaseDailyTarget === "function") {
+        return window.getPegasusBaseDailyTarget();
+    }
+
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const dayName = greekDays[dateObj.getDay()];
+    const dayName = greekDays[targetDate.getDay()];
 
     const settings = (typeof window.getPegasusSettings === "function")
         ? window.getPegasusSettings()
@@ -169,8 +176,17 @@ function getBaseDietTargetForDate(dateObj) {
 }
 
 function calculateDailyCalorieTarget(dateObj) {
-    const baseTarget = getBaseDietTargetForDate(dateObj);
-    const cardioBurn = getCardioOffsetForDate(dateObj);
+    const targetDate = dateObj || new Date();
+
+    const todayStr = getPegasusDateStr(new Date());
+    const requestedStr = getPegasusDateStr(targetDate);
+
+    if (requestedStr === todayStr && typeof window.getPegasusEffectiveDailyTarget === "function") {
+        return window.getPegasusEffectiveDailyTarget();
+    }
+
+    const baseTarget = getBaseDietTargetForDate(targetDate);
+    const cardioBurn = getCardioOffsetForDate(targetDate);
     return Math.round(baseTarget + cardioBurn);
 }
 
@@ -287,7 +303,7 @@ function updateProgressBars(kcal, protein) {
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
 
-/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v9.9) === */
+/* === PEGASUS FOOD ENGINE: DYNAMIC KOUKI INTEGRATION (v10.0) === */
 window.renderKoukiMenu = function() {
     const container = document.getElementById('koukiQuickMenu');
     if (!container) return;
@@ -351,7 +367,6 @@ window.addQuickFood = function(name, kcal, protein) {
     }
 };
 
-// 🎯 FIXED: Attached to window to avoid scope leaks in inline HTML event handlers
 window.filterLibrary = function() {
     const searchTerm = document.getElementById('librarySearch')?.value.toLowerCase() || "";
     const libKey = M?.diet?.foodLibrary || "pegasus_food_library";
@@ -380,7 +395,6 @@ window.filterLibrary = function() {
         });
 };
 
-// 🎯 FIXED: Window Scope Attachment
 window.addToLibrary = function(name, kcal, protein) {
     const libKey = M?.diet?.foodLibrary || "pegasus_food_library";
     let library = JSON.parse(localStorage.getItem(libKey) || "[]");
@@ -395,7 +409,6 @@ window.addToLibrary = function(name, kcal, protein) {
     }
 };
 
-// 🎯 FIXED: Window Scope Attachment
 window.removeFromLibrary = function(name) {
     const libKey = M?.diet?.foodLibrary || "pegasus_food_library";
     let library = JSON.parse(localStorage.getItem(libKey) || "[]");
