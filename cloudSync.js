@@ -1,6 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.3 HYBRID ENGINE BRIDGE)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.4 SYNC PATCH)
    STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
+   FIXES: FOCUS PULL + VISIBILITY PULL + SAFER ENGINE ATTACH + BETTER UI SYNC
    ========================================================================== */
 
 const PegasusCloud = {
@@ -21,17 +22,17 @@ const PegasusCloud = {
     pushTimeout: null,
     lastPushTs: null,
 
-    // 🧠 ENGINE BRIDGE (NEW)
     engine: null,
 
     attachEngine(engineInstance) {
+        if (!engineInstance) return;
         this.engine = engineInstance;
         console.log("🧠 CLOUD: Engine attached");
     },
 
-    getTodayKey: () => {
+    getTodayKey() {
         const d = new Date();
-        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
     /* =========================
@@ -41,7 +42,7 @@ const PegasusCloud = {
         if (!pin) return false;
         if (this.isUnlocked) return true;
 
-        const clean = pin.trim();
+        const clean = String(pin).trim();
 
         try {
             if (btoa(clean) !== "MjM3NQ==") return false;
@@ -88,18 +89,15 @@ const PegasusCloud = {
 
             const data = await res.json();
             const cloud = data.record || data;
-
             const lastLocal = localStorage.getItem("pegasus_last_push") || "0";
 
             if (!cloud.last_update_ts) {
                 this.hasSuccessfullyPulled = true;
-                this.isPulling = false;
                 return;
             }
 
             if (cloud.last_update_ts.toString() === lastLocal) {
                 this.hasSuccessfullyPulled = true;
-                this.isPulling = false;
                 return;
             }
 
@@ -125,15 +123,19 @@ const PegasusCloud = {
                 }
             }
 
-            // 🧠 HYBRID ENGINE BRIDGE (NEW SAFE LAYER)
-            if (this.engine && cloud.__events__) {
+            if (this.engine && Array.isArray(cloud.__events__)) {
                 try {
-                    const events = cloud.__events__;
+                    const existingBuffer = this.engine.getEventBuffer?.() || [];
+                    const existingHashes = new Set(
+                        existingBuffer.map(ev => JSON.stringify(ev))
+                    );
 
-                    for (const event of events) {
-                        this.engine.dispatch(event);
+                    for (const event of cloud.__events__) {
+                        const eventHash = JSON.stringify(event);
+                        if (!existingHashes.has(eventHash)) {
+                            this.engine.dispatch(event);
+                        }
                     }
-
                 } catch (e) {
                     console.warn("⚠️ ENGINE BRIDGE ERROR:", e);
                 }
@@ -147,6 +149,10 @@ const PegasusCloud = {
 
             this.hasSuccessfullyPulled = true;
             this.triggerUIUpdate();
+
+            if (!silent) {
+                console.log("📥 CLOUD: Pull OK");
+            }
 
         } catch (e) {
             console.error("❌ PULL ERROR:", e);
@@ -188,8 +194,6 @@ const PegasusCloud = {
         const payload = {
             last_update_ts: ts,
             last_update_date: this.getTodayKey(),
-
-            // 🧠 EVENT STREAM (NEW)
             __events__: this.engine?.getEventBuffer?.() || []
         };
 
@@ -197,12 +201,15 @@ const PegasusCloud = {
             const k = localStorage.key(i);
 
             if (
-                k.startsWith("pegasus_") ||
-                k.startsWith("food_log_") ||
-                k.startsWith("kouki_") ||
-                k.startsWith("peg_") ||
-                k.startsWith("weight_") ||
-                k.startsWith("finance_")
+                k &&
+                (
+                    k.startsWith("pegasus_") ||
+                    k.startsWith("food_log_") ||
+                    k.startsWith("kouki_") ||
+                    k.startsWith("peg_") ||
+                    k.startsWith("weight_") ||
+                    k.startsWith("finance_")
+                )
             ) {
                 payload[k] = localStorage.getItem(k);
             }
@@ -223,13 +230,10 @@ const PegasusCloud = {
             );
 
             if (res.ok) {
-                window.originalSetItem.call(
-                    localStorage,
-                    "pegasus_last_push",
-                    ts
-                );
-
+                window.originalSetItem.call(localStorage, "pegasus_last_push", ts);
                 console.log("📤 CLOUD: Sync OK");
+            } else {
+                throw new Error("Push failed");
             }
 
         } catch (e) {
@@ -245,23 +249,19 @@ const PegasusCloud = {
     triggerUIUpdate() {
         if (typeof window === "undefined") return;
 
-        window.dispatchEvent(
-            new CustomEvent("pegasus_sync_complete")
-        );
+        window.dispatchEvent(new CustomEvent("pegasus_sync_complete"));
 
         if (typeof refreshAllUI === "function") refreshAllUI();
         if (typeof updateFoodUI === "function") updateFoodUI();
+        if (typeof renderFood === "function") renderFood();
         if (typeof updateSuppUI === "function") updateSuppUI();
         if (typeof renderLiftingContent === "function") renderLiftingContent();
+        if (typeof updateKcalUI === "function") updateKcalUI();
+        if (typeof renderCalendar === "function") renderCalendar();
 
-        if (window.MuscleProgressUI?.render)
-            window.MuscleProgressUI.render(true);
-
-        if (window.PegasusDiet?.updateUI)
-            window.PegasusDiet.updateUI();
-
-        if (window.PegasusFinance?.render)
-            window.PegasusFinance.render();
+        if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
+        if (window.PegasusDiet?.updateUI) window.PegasusDiet.updateUI();
+        if (window.PegasusFinance?.render) window.PegasusFinance.render();
     },
 
     /* =========================
@@ -273,7 +273,6 @@ const PegasusCloud = {
         this.syncInterval = setInterval(() => {
             if (!this.isUnlocked) return;
             if (this.isPulling || this.isPushing) return;
-
             this.pull(true);
         }, this.config.pullInterval);
     }
@@ -282,12 +281,10 @@ const PegasusCloud = {
 /* =========================
    STORAGE INTERCEPTOR
 ========================= */
-
 if (!window.originalSetItem) {
     window.originalSetItem = localStorage.setItem;
 
     localStorage.setItem = function(key, value) {
-
         window.originalSetItem.apply(this, arguments);
 
         if (!window.PegasusCloud?.isUnlocked) return;
@@ -317,29 +314,47 @@ if (!window.originalSetItem) {
 /* =========================
    CROSS TAB SYNC
 ========================= */
-
 window.addEventListener("storage", (e) => {
     if (!e.key) return;
 
     if (
         e.key.startsWith("pegasus_") ||
         e.key.startsWith("food_log_") ||
-        e.key.startsWith("weight_")
+        e.key.startsWith("weight_") ||
+        e.key.startsWith("kouki_")
     ) {
         PegasusCloud.triggerUIUpdate();
     }
 });
 
 /* =========================
+   FOCUS / VISIBILITY SYNC
+========================= */
+window.addEventListener("focus", () => {
+    if (window.PegasusCloud?.isUnlocked) {
+        window.PegasusCloud.pull(true);
+    }
+});
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && window.PegasusCloud?.isUnlocked) {
+        window.PegasusCloud.pull(true);
+    }
+});
+
+/* =========================
    AUTO LOGIN
 ========================= */
-
 window.addEventListener("load", () => {
+    if (window.PegasusEngine && !PegasusCloud.engine) {
+        PegasusCloud.attachEngine(window.PegasusEngine);
+    }
+
     const pin = localStorage.getItem("pegasus_vault_pin");
     const time = localStorage.getItem("pegasus_vault_time");
 
     if (pin && time) {
-        const age = Date.now() - parseInt(time);
+        const age = Date.now() - parseInt(time, 10);
 
         if (age < 86400000) {
             PegasusCloud.unlock(pin);
