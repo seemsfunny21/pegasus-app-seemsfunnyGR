@@ -1,11 +1,15 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.9 SYNC PATCH)
-   Protocol: Unified Cardio Offset, Safe Daily Targets & Cross-Device Consistency
-   Status: FINAL STABLE | FIXED: MOBILE ↔ DESKTOP DIET TARGET SYNC
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.0 SHARED CORE PATCH)
+   Protocol: Shared Metabolic Helpers, Safe Daily Targets & Cross-Device Consistency
+   Status: FINAL STABLE | FIXED: DUPLICATE TARGET LOGIC REMOVED
    ========================================================================== */
 
 window.PegasusDiet = {
     getStrictDateStr: function() {
+        if (typeof window.getPegasusTodayDateStr === "function") {
+            return window.getPegasusTodayDateStr();
+        }
+
         const rawDate = new Date();
         const d = String(rawDate.getDate()).padStart(2, '0');
         const m = String(rawDate.getMonth() + 1).padStart(2, '0');
@@ -14,6 +18,10 @@ window.PegasusDiet = {
     },
 
     getBaseTarget: function() {
+        if (typeof window.getPegasusBaseDailyTarget === "function") {
+            return window.getPegasusBaseDailyTarget();
+        }
+
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const dayName = greekDays[new Date().getDay()];
 
@@ -50,16 +58,30 @@ window.PegasusDiet = {
     },
 
     getCardioOffset: function(dateStr) {
-        const unifiedOffset = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr));
+        if (typeof window.getPegasusTodayCardioOffset === "function") {
+            return window.getPegasusTodayCardioOffset();
+        }
+
+        const targetDate = dateStr || this.getStrictDateStr();
+
+        const unifiedOffset = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + targetDate));
         const legacyOffset = parseFloat(
             localStorage.getItem(
-                (window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr
+                (window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + targetDate
             )
         );
 
         if (!isNaN(unifiedOffset)) return unifiedOffset;
         if (!isNaN(legacyOffset)) return legacyOffset;
         return 0;
+    },
+
+    getEffectiveTarget: function() {
+        if (typeof window.getPegasusEffectiveDailyTarget === "function") {
+            return window.getPegasusEffectiveDailyTarget();
+        }
+
+        return Math.round(this.getBaseTarget() + this.getCardioOffset(this.getStrictDateStr()));
     },
 
     checkDailyRoutine: function() {
@@ -254,27 +276,27 @@ window.PegasusDiet = {
 
         const dateStr = this.getStrictDateStr();
         const log = this.getLog(dateStr);
-        let tk = 0, tp = 0;
+        let tk = 0;
+        let tp = 0;
 
         log.forEach(item => {
             tk += parseFloat(item.kcal || 0);
             tp += parseFloat(item.protein || 0);
         });
 
-        // Αποθηκεύουμε μόνο protein global. Το kcal intake μένει στο ημερήσιο food log.
         localStorage.setItem(window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein", Math.round(tp));
 
-        const cardioKcal = this.getCardioOffset(dateStr);
-        const baseTarget = this.getBaseTarget();
-        const targetKcal = Math.round(baseTarget + cardioKcal);
+        const targetKcal = this.getEffectiveTarget();
 
-        if (document.getElementById("txtKcal")) {
-            document.getElementById("txtKcal").textContent = `${Math.round(tk)} / ${targetKcal}`;
+        const txtKcal = document.getElementById("txtKcal");
+        if (txtKcal) {
+            txtKcal.textContent = `${Math.round(tk)} / ${targetKcal}`;
         }
 
         const targetProt = localStorage.getItem("pegasus_goal_protein") || 160;
-        if (document.getElementById("txtProt")) {
-            document.getElementById("txtProt").textContent = `${Math.round(tp)} / ${targetProt}g`;
+        const txtProt = document.getElementById("txtProt");
+        if (txtProt) {
+            txtProt.textContent = `${Math.round(tp)} / ${targetProt}g`;
         }
 
         const listDisplay = document.getElementById("foodHistoryList");
