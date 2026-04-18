@@ -1,7 +1,7 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v17.0 (ULTIMATE IRON - 45' PRECISION)
-   Protocol: 10" Prep | 45" Work (TUT) | 60" Rest | Total: 1'55" / Set
-   Status: PRODUCTION READY - FULL RECONCILIATION
+   📦 PEGASUS DATA ENGINE - v17.3 (IRON - FINAL RECONCILIATION)
+   Protocol: 10" Prep | 45" Work | 60" Rest 
+   Status: PRODUCTION READY (Space Optimized & Video Sync)
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
@@ -14,7 +14,7 @@ window.program = {
     "Παρασκευή": [], "Σάββατο": [], "Κυριακή": []
 };
 
-// 2. MASTER EXERCISES DATABASE (26 UNIQUE ENTRIES)
+// 2. MASTER EXERCISES DATABASE (25 UNIQUE ENTRIES - REVERSE FLYS REMOVED)
 window.exercisesDB = [
     { name: "Chest Press", muscleGroup: "Στήθος" }, 
     { name: "Chest Flys", muscleGroup: "Στήθος" }, 
@@ -26,7 +26,6 @@ window.exercisesDB = [
     { name: "Reverse Grip Cable Row", muscleGroup: "Πλάτη" },
     { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Upright Rows", muscleGroup: "Ώμοι" },
-    { name: "Reverse Flys", muscleGroup: "Ώμοι" },
     { name: "Bicep Curls", muscleGroup: "Χέρια" }, 
     { name: "Standing Bicep Curls", muscleGroup: "Χέρια" }, 
     { name: "Preacher Bicep Curls", muscleGroup: "Χέρια" }, 
@@ -47,9 +46,10 @@ window.exercisesDB = [
 window.videoMap = {
     "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns", "Lat Pulldowns Close": "latpulldownsclose",
-    "Low Rows Seated": "lowrowsseated", "Bent Over Rows": "bentoverrows", 
+    "Low Rows Seated": "reverseseatedrows", // Map to your uploaded video
+    "Bent Over Rows": "bentoverrows", 
     "Reverse Grip Cable Row": "reversegripcablerow", "Straight Arm Pulldowns": "straightarmpulldowns",
-    "Upright Rows": "uprightrows", "Reverse Flys": "chestflys", 
+    "Upright Rows": "uprightrows", 
     "Bicep Curls": "bicepcurls", "Standing Bicep Curls": "bicepcurls", 
     "Preacher Bicep Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
     "Ab Crunches": "abcrunches", "Situps": "situps", "Plank": "plank",
@@ -58,7 +58,7 @@ window.videoMap = {
     "Cycling": "cycling", "EMS Training": "ems", "Stretching": "stretching"
 };
 
-// 4. PEGASUS 4-PILLAR SPLIT ENGINE
+// 4. PEGASUS ENGINE (IRON SPLIT - REVERSE FLYS REPLACED BY REVERSE GRIP ROW)
 window.setPegasusPlan = function(planKey) {
     localStorage.setItem('pegasus_active_plan', planKey);
     setTimeout(() => window.location.reload(), 1000);
@@ -76,7 +76,7 @@ window.setPegasusPlan = function(planKey) {
         ],
         iron_wednesday: [
             { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι", weight: "30" },
-            { name: "Reverse Flys", sets: 4, muscleGroup: "Ώμοι", weight: "24" },
+            { name: "Reverse Grip Cable Row", sets: 4, muscleGroup: "Πλάτη", weight: "36" }, 
             { name: "Bicep Curls", sets: 6, muscleGroup: "Χέρια", weight: "30" },
             { name: "Tricep Pulldowns", sets: 6, muscleGroup: "Χέρια", weight: "20" },
             { name: "Preacher Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
@@ -168,7 +168,7 @@ window.PegasusKoukiDB = [
     { name: "Πέρκα φούρνου", type: "psari", price: 7.00, kcal: 500, protein: 40 }
 ];
 
-// 6. DYNAMIC WEEKLY BRIDGE
+// 6. DYNAMIC WEEKLY BRIDGE & HELPERS
 (function buildWeeklyMenu() {
     const rawMenu = {
         "Monday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Κοτόσουπα", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Γεμιστά με ρύζι", "Φασολάδα", "Γίγαντες πλακί", "Μπάμιες με κοτόπουλο", "Μακαρόνια με κιμά", "Φασολάκια", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Μπιφτέκι μοσχαρίσιο"],
@@ -187,7 +187,6 @@ window.PegasusKoukiDB = [
             return { n: foodName, p: data.price, t: data.type };
         });
     }
-    window.KOUKI_MENU = window.PegasusKoukiDB.map(f => ({ name: f.name, kcal: f.kcal, protein: f.protein, type: f.type }));
 })();
 
 window.getPegasusMacros = function(foodName, fallbackType) {
@@ -196,7 +195,6 @@ window.getPegasusMacros = function(foodName, fallbackType) {
     const needsRice = !["carb", "soup"].includes(type);
     const riceKcal = needsRice ? 280 : 0;
     const riceProt = needsRice ? 6 : 0;
-
     if (item) return { kcal: item.kcal + riceKcal, protein: item.protein + riceProt };
     let p = (type === 'kreas' || type === 'poulika') ? 45 : (type === 'ospro' ? 18 : 25);
     return { kcal: 550 + riceKcal, protein: p + riceProt };
@@ -206,9 +204,7 @@ window.getDynamicTargets = function() {
     const targets = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Πόδια": 0, "Κορμός": 0 };
     Object.values(window.program).forEach(dayExercises => {
         dayExercises.forEach(ex => {
-            if (targets.hasOwnProperty(ex.muscleGroup)) {
-                targets[ex.muscleGroup] += parseInt(ex.sets);
-            }
+            if (targets.hasOwnProperty(ex.muscleGroup)) targets[ex.muscleGroup] += parseInt(ex.sets);
         });
     });
     return targets;
