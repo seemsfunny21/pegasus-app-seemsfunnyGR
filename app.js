@@ -94,6 +94,31 @@ const playBeep = (volume = 1) => {
     }
 };
 
+/* ===== PEGASUS ENGINE BRIDGE (SAFE WRAPPER) ===== */
+window.PegasusEngine = window.PegasusEngine || {
+    dispatch: typeof dispatch === "function" ? dispatch : function () {
+        console.warn("⚠️ PegasusEngine.dispatch not ready yet");
+    },
+
+    getEventBuffer: function () {
+        try {
+            return typeof getEventBuffer === "function" ? getEventBuffer() : [];
+        } catch (e) {
+            console.warn("⚠️ getEventBuffer error:", e);
+            return [];
+        }
+    },
+
+    getState: function () {
+        try {
+            return typeof getState === "function" ? getState() : {};
+        } catch (e) {
+            console.warn("⚠️ getState error:", e);
+            return {};
+        }
+    }
+};
+
 /* ===== 3.5 SMART SYNC (AUTO-SKIP COMPLETED TARGETS) ===== */
 window.syncSessionWithHistory = function() {
     console.log("🔄 PEGASUS SMART SYNC: Executing...");
