@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.5 UI REFRESH PATCH)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.6 STATUS COLOR PATCH)
    STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
-   FIXES: FOCUS PULL + VISIBILITY PULL + SAFER ENGINE ATTACH + DOUBLE UI KCAL REFRESH
+   FIXES: SAFE UI REFRESH + SYNC STATUS EVENTS + ONLINE/OFFLINE COLOR SUPPORT
    ========================================================================== */
 
 const PegasusCloud = {
@@ -21,6 +21,7 @@ const PegasusCloud = {
     syncInterval: null,
     pushTimeout: null,
     lastPushTs: null,
+    lastUiRefreshTs: 0,
 
     engine: null,
 
@@ -33,6 +34,13 @@ const PegasusCloud = {
     getTodayKey() {
         const d = new Date();
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    },
+
+    emitSyncStatus(status) {
+        if (typeof window === "undefined") return;
+        window.dispatchEvent(new CustomEvent("pegasus_sync_status", {
+            detail: { status: status }
+        }));
     },
 
     /* =========================
@@ -57,6 +65,7 @@ const PegasusCloud = {
         localStorage.setItem("pegasus_vault_time", Date.now().toString());
 
         console.log("🔓 CLOUD: Unlocked");
+        this.emitSyncStatus(navigator.onLine ? "syncing" : "offline");
 
         setTimeout(() => {
             this.pull(true);
@@ -70,9 +79,15 @@ const PegasusCloud = {
        📥 PULL (HYBRID SAFE)
     ========================= */
     async pull(silent = false) {
-        if (!this.isUnlocked || this.isPulling) return;
+        if (!this.isUnlocked || this.isPulling) return false;
+
+        if (!navigator.onLine) {
+            this.emitSyncStatus("offline");
+            return false;
+        }
 
         this.isPulling = true;
+        this.emitSyncStatus("syncing");
 
         try {
             const res = await fetch(
@@ -93,12 +108,14 @@ const PegasusCloud = {
 
             if (!cloud.last_update_ts) {
                 this.hasSuccessfullyPulled = true;
-                return;
+                this.emitSyncStatus("online");
+                return true;
             }
 
             if (cloud.last_update_ts.toString() === lastLocal) {
                 this.hasSuccessfullyPulled = true;
-                return;
+                this.emitSyncStatus("online");
+                return true;
             }
 
             console.log("☁️ CLOUD: Syncing latest version...");
@@ -126,9 +143,7 @@ const PegasusCloud = {
             if (this.engine && Array.isArray(cloud.__events__)) {
                 try {
                     const existingBuffer = this.engine.getEventBuffer?.() || [];
-                    const existingHashes = new Set(
-                        existingBuffer.map(ev => JSON.stringify(ev))
-                    );
+                    const existingHashes = new Set(existingBuffer.map(ev => JSON.stringify(ev)));
 
                     for (const event of cloud.__events__) {
                         const eventHash = JSON.stringify(event);
@@ -154,8 +169,13 @@ const PegasusCloud = {
                 console.log("📥 CLOUD: Pull OK");
             }
 
+            this.emitSyncStatus("online");
+            return true;
+
         } catch (e) {
             console.error("❌ PULL ERROR:", e);
+            this.emitSyncStatus(navigator.onLine ? "error" : "offline");
+            return false;
         } finally {
             this.isPulling = false;
         }
@@ -167,26 +187,43 @@ const PegasusCloud = {
     push(force = false) {
         if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
         if (this.isPulling || this.isPushing) return;
+        if (!navigator.onLine) {
+            this.emitSyncStatus("offline");
+            return;
+        }
 
         if (force) return this._doPush();
 
         if (this.pushTimeout) clearTimeout(this.pushTimeout);
 
         this.pushTimeout = setTimeout(() => {
-            if (this.isUnlocked && this.hasSuccessfullyPulled) {
+            if (
+                this.isUnlocked &&
+                this.hasSuccessfullyPulled &&
+                !this.isPulling &&
+                !this.isPushing &&
+                navigator.onLine
+            ) {
                 this._doPush();
             }
         }, this.config.syncThrottle);
     },
 
     async _doPush() {
+        if (!navigator.onLine) {
+            this.emitSyncStatus("offline");
+            return false;
+        }
+
         this.isPushing = true;
+        this.emitSyncStatus("syncing");
 
         const ts = Date.now().toString();
 
         if (this.lastPushTs === ts) {
             this.isPushing = false;
-            return;
+            this.emitSyncStatus("online");
+            return true;
         }
 
         this.lastPushTs = ts;
@@ -229,15 +266,17 @@ const PegasusCloud = {
                 }
             );
 
-            if (res.ok) {
-                window.originalSetItem.call(localStorage, "pegasus_last_push", ts);
-                console.log("📤 CLOUD: Sync OK");
-            } else {
-                throw new Error("Push failed");
-            }
+            if (!res.ok) throw new Error("Push failed");
+
+            window.originalSetItem.call(localStorage, "pegasus_last_push", ts);
+            console.log("📤 CLOUD: Sync OK");
+            this.emitSyncStatus("online");
+            return true;
 
         } catch (e) {
             console.error("❌ PUSH ERROR:", e);
+            this.emitSyncStatus(navigator.onLine ? "error" : "offline");
+            return false;
         } finally {
             this.isPushing = false;
         }
@@ -249,6 +288,10 @@ const PegasusCloud = {
     triggerUIUpdate() {
         if (typeof window === "undefined") return;
 
+        const now = Date.now();
+        if (now - this.lastUiRefreshTs < 250) return;
+        this.lastUiRefreshTs = now;
+
         window.dispatchEvent(new CustomEvent("pegasus_sync_complete"));
 
         if (typeof refreshAllUI === "function") refreshAllUI();
@@ -259,13 +302,14 @@ const PegasusCloud = {
         if (typeof updateKcalUI === "function") updateKcalUI();
         if (typeof renderCalendar === "function") renderCalendar();
 
-        setTimeout(() => {
-            if (typeof updateKcalUI === "function") updateKcalUI();
-        }, 150);
-
         if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
         if (window.PegasusDiet?.updateUI) window.PegasusDiet.updateUI();
         if (window.PegasusFinance?.render) window.PegasusFinance.render();
+
+        // δεύτερο ελαφρύ refresh μόνο για καθυστερημένα UI bindings
+        setTimeout(() => {
+            if (typeof updateKcalUI === "function") updateKcalUI();
+        }, 120);
     },
 
     /* =========================
@@ -277,6 +321,12 @@ const PegasusCloud = {
         this.syncInterval = setInterval(() => {
             if (!this.isUnlocked) return;
             if (this.isPulling || this.isPushing) return;
+            if (document.hidden) return;
+            if (!navigator.onLine) {
+                this.emitSyncStatus("offline");
+                return;
+            }
+
             this.pull(true);
         }, this.config.pullInterval);
     }
@@ -332,18 +382,29 @@ window.addEventListener("storage", (e) => {
 });
 
 /* =========================
-   FOCUS / VISIBILITY SYNC
+   FOCUS / VISIBILITY / NETWORK SYNC
 ========================= */
 window.addEventListener("focus", () => {
-    if (window.PegasusCloud?.isUnlocked) {
+    if (window.PegasusCloud?.isUnlocked && navigator.onLine) {
         window.PegasusCloud.pull(true);
     }
 });
 
 document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && window.PegasusCloud?.isUnlocked) {
+    if (!document.hidden && window.PegasusCloud?.isUnlocked && navigator.onLine) {
         window.PegasusCloud.pull(true);
     }
+});
+
+window.addEventListener("online", () => {
+    PegasusCloud.emitSyncStatus("online");
+    if (window.PegasusCloud?.isUnlocked) {
+        window.PegasusCloud.pull(true);
+    }
+});
+
+window.addEventListener("offline", () => {
+    PegasusCloud.emitSyncStatus("offline");
 });
 
 /* =========================
@@ -363,6 +424,8 @@ window.addEventListener("load", () => {
         if (age < 86400000) {
             PegasusCloud.unlock(pin);
         }
+    } else {
+        PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline");
     }
 });
 
