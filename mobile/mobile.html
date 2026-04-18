@@ -11,7 +11,16 @@
         (function() {
             const params = new URLSearchParams(window.location.search);
             const now = Date.now();
-            if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 30000))) {
+            const hasVersion = params.has('v');
+            const versionTs = hasVersion ? parseInt(params.get('v'), 10) : 0;
+            const hasSwController = !!navigator.serviceWorker?.controller;
+
+            // ΜΟΝΟ αν είμαστε online, δεν έχουμε active SW controller και το version stamp είναι παλιό
+            if (
+                navigator.onLine &&
+                !hasSwController &&
+                (!hasVersion || isNaN(versionTs) || (now - versionTs > 600000))
+            ) {
                 window.location.replace(window.location.pathname + '?v=' + now + window.location.hash);
             }
         })();
@@ -402,6 +411,10 @@
         const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
         let isUnlocked = false;
 
+        window._pegasusMobileSyncTimer = null;
+        window._pegasusMobileSyncBusy = false;
+        window._pegasusLastUiRefreshTs = 0;
+
         function openView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             const targetView = document.getElementById(id);
@@ -441,12 +454,17 @@
         }
 
         function refreshAllUI() {
+            const now = Date.now();
+            if (now - window._pegasusLastUiRefreshTs < 250) return;
+            window._pegasusLastUiRefreshTs = now;
+
             window.PegasusDiet?.updateUI();
             window.PegasusInventory?.updateUI();
             window.PegasusWeight?.updateUI();
             window.PegasusParking?.updateUI();
             window.PegasusCar?.load();
             window.PegasusProfile?.load();
+
             if (typeof updateMuscleUI === "function") updateMuscleUI();
             if (typeof updateSuppUI === "function") updateSuppUI();
         }
@@ -455,6 +473,7 @@
             const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || { prot: 2500, crea: 1000 };
             const pPct = (s.prot / 2500) * 100;
             const cPct = (s.crea / 1000) * 100;
+
             if (document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
             if (document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
             if (document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
@@ -506,28 +525,35 @@
             } else if (s === 'offline') {
                 e.textContent = "OFFLINE";
                 e.style.color = "#ff4444";
+            } else if (s === 'syncing') {
+                e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ...";
+                e.style.color = "#00bcd4";
             } else {
-                e.textContent = s.toUpperCase();
+                e.textContent = String(s).toUpperCase();
                 e.style.color = "#00bcd4";
             }
         }
 
-        window._pegasusMobileSyncTimer = null;
-
         async function runMobileSyncHeartbeat() {
-            try {
-                if (!window.PegasusCloud?.isUnlocked) {
-                    setSyncStatus('offline');
-                    return;
-                }
+            if (window._pegasusMobileSyncBusy) return;
+            if (!window.PegasusCloud?.isUnlocked) {
+                setSyncStatus('offline');
+                return;
+            }
+            if (document.hidden) return;
 
-                setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
+            window._pegasusMobileSyncBusy = true;
+
+            try {
+                setSyncStatus('syncing');
                 await window.PegasusCloud.pull(true);
                 refreshAllUI();
                 setSyncStatus('online');
             } catch (e) {
                 console.error("📡 Mobile Heartbeat Error:", e);
                 setSyncStatus('offline');
+            } finally {
+                window._pegasusMobileSyncBusy = false;
             }
         }
 
@@ -538,7 +564,7 @@
             if (document.hidden) return;
 
             window._pegasusMobileSyncTimer = setInterval(() => {
-                if (!document.hidden && window.PegasusCloud?.isUnlocked) {
+                if (!document.hidden && window.PegasusCloud?.isUnlocked && !window.PegasusCloud.isPulling && !window.PegasusCloud.isPushing) {
                     runMobileSyncHeartbeat();
                 }
             }, 10000);
@@ -567,6 +593,27 @@
             }
         });
 
+        window.addEventListener("online", () => {
+            if (window.PegasusCloud?.isUnlocked) {
+                runMobileSyncHeartbeat();
+                startMobileSyncHeartbeat();
+            } else {
+                setSyncStatus('online');
+            }
+        });
+
+        window.addEventListener("offline", () => {
+            stopMobileSyncHeartbeat();
+            setSyncStatus('offline');
+        });
+
+        window.addEventListener("pegasus_sync_complete", () => {
+            refreshAllUI();
+            if (window.PegasusCloud?.isUnlocked) {
+                setSyncStatus('online');
+            }
+        });
+
         async function attemptVaultUnlock() {
             const pin = document.getElementById("pinInput").value;
 
@@ -589,8 +636,26 @@
             refreshAllUI();
         }
 
-        function hardResetSystem() {
+        async function hardResetSystem() {
             if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
+                try {
+                    stopMobileSyncHeartbeat();
+
+                    if ('serviceWorker' in navigator) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        for (const reg of regs) {
+                            await reg.unregister();
+                        }
+                    }
+
+                    if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map(key => caches.delete(key)));
+                    }
+                } catch (e) {
+                    console.error("Hard Reset Cleanup Error:", e);
+                }
+
                 localStorage.removeItem("pegasus_vault_pin");
                 location.replace(location.pathname + '?v=' + Date.now());
             }
@@ -600,10 +665,11 @@
             const backup = {};
             for (let i = 0; i < localStorage.length; i++) {
                 let k = localStorage.key(i);
-                if (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_")) {
+                if (k && (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_"))) {
                     backup[k] = localStorage.getItem(k);
                 }
             }
+
             const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
@@ -616,6 +682,7 @@
         function importData(e) {
             const file = e.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
@@ -648,6 +715,8 @@
                         await runMobileSyncHeartbeat();
                         startMobileSyncHeartbeat();
                         setTimeout(() => refreshAllUI(), 500);
+                    } else {
+                        setSyncStatus('offline');
                     }
                 } catch (e) {
                     console.error("📡 Cloud Boot Error:", e);
@@ -656,6 +725,7 @@
             } else {
                 const modal = document.getElementById("pinModal");
                 if (modal) modal.style.display = "flex";
+                setSyncStatus(navigator.onLine ? 'online' : 'offline');
             }
         })();
     </script>
@@ -666,7 +736,6 @@
                 navigator.serviceWorker.register('../sw.js')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
-
                         reg.update();
 
                         reg.onupdatefound = () => {
