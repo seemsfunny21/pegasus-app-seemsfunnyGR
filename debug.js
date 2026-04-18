@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS COMMAND TRACER & HEALTH - v5.3 (DYNAMIC TARGET PATCH)
+   PEGASUS COMMAND TRACER & HEALTH - v5.4 (DOUBLE-CARDIO FIX)
    Protocol: Scope Isolation, Global Var Protection & Dynamic Metabolic Audit
-   Status: FINAL STABLE | FIXED: STATIC 2800 AUDIT MISMATCH
+   Status: FINAL STABLE | FIXED: EFFECTIVE TARGET DOUBLE COUNT
    ========================================================================== */
 
 // 🛡️ Χρήση var για να μην "σκάει" αν δηλωθεί σε πολλά αρχεία
@@ -131,18 +131,19 @@ window.PegasusDebugHelpers = {
     },
 
     getEffectiveTarget: function() {
-        const base = (typeof window.calculatePegasusDailyTarget === "function")
-            ? parseFloat(window.calculatePegasusDailyTarget())
-            : parseFloat(localStorage.getItem(window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal"));
+        if (typeof window.calculatePegasusDailyTarget === "function") {
+            const target = parseFloat(window.calculatePegasusDailyTarget());
+            return Math.round(isNaN(target) ? 2800 : target);
+        }
 
+        const base = this.getBaseTarget();
         const cardio = this.getTodayCardioOffset();
-        return Math.round((isNaN(base) ? 2800 : base) + cardio);
+        return Math.round(base + cardio);
     }
 };
 
 /**
  * 2. CALORIE LOGIC VALIDATION
- * Mifflin-St Jeor Formula:
  * BMR = (10 × weight) + (6.25 × height) - (5 × age) + 5
  */
 window.verifyCalorieLogic = () => {
@@ -180,7 +181,7 @@ window.verifyCalorieLogic = () => {
  * 3. CORE HEALTH CHECK
  */
 window.pegasusHealthCheck = async function() {
-    console.log("%c--- PEGASUS HEALTH CHECK v5.3 ---", "color: #4CAF50; font-weight: bold;");
+    console.log("%c--- PEGASUS HEALTH CHECK v5.4 ---", "color: #4CAF50; font-weight: bold;");
     let errors = [];
     let warnings = [];
 
