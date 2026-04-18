@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.5 (FINAL HARDENED)
+   PEGASUS PWA SERVICE WORKER - v3.6 (FINAL SAFE STABLE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
-   Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + CLEAN FALLBACK
+   Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.5-DYNAMIC';
+const CACHE_NAME = 'pegasus-shield-v3.6-DYNAMIC';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -54,12 +54,43 @@ function isMediaAsset(pathname) {
     return /\.(mp4|mp3|png|jpg|jpeg|svg|woff2|gif|webp)$/i.test(pathname);
 }
 
+function isCacheableResponse(response) {
+    return !!response && response.status === 200 && response.type === 'basic';
+}
+
 async function putInCache(request, response) {
-    if (!response || response.status !== 200) return;
-    if (response.type !== 'basic') return;
+    if (!isCacheableResponse(response)) return;
 
     const cache = await caches.open(CACHE_NAME);
     await cache.put(request, response.clone());
+}
+
+async function getOfflineNavigationFallback(pathname) {
+    const isMobileRoute =
+        pathname.includes('/mobile') ||
+        pathname.endsWith('/mobile.html');
+
+    if (isMobileRoute) {
+        return (
+            await caches.match('./mobile/mobile.html') ||
+            await caches.match('./mobile.html') ||
+            await caches.match('./index.html') ||
+            new Response('Offline', {
+                status: 503,
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+            })
+        );
+    }
+
+    return (
+        await caches.match('./index.html') ||
+        await caches.match('./mobile/mobile.html') ||
+        await caches.match('./mobile.html') ||
+        new Response('Offline', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        })
+    );
 }
 
 /* =========================
@@ -74,12 +105,12 @@ self.addEventListener('install', (event) => {
             console.log('🛡️ SW: Shielding Pegasus Assets...');
             let downloaded = 0;
 
-            for (const url of ASSETS_TO_CACHE) {
+            for (const assetUrl of ASSETS_TO_CACHE) {
                 try {
-                    const response = await fetch(url, { cache: 'no-cache' });
+                    const response = await fetch(assetUrl, { cache: 'no-cache' });
                     if (!response.ok) throw new Error(`Bad response status: ${response.status}`);
 
-                    await cache.put(url, response.clone());
+                    await cache.put(assetUrl, response.clone());
                     downloaded++;
 
                     const allClients = await self.clients.matchAll({ includeUncontrolled: true });
@@ -90,7 +121,7 @@ self.addEventListener('install', (event) => {
                         });
                     });
                 } catch (err) {
-                    console.warn(`SW: Failed to cache asset: ${url}`, err);
+                    console.warn(`SW: Failed to cache asset: ${assetUrl}`, err);
                 }
             }
 
@@ -129,18 +160,18 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const request = event.request;
 
-    // Μόνο GET requests
     if (request.method !== 'GET') return;
     if (!request.url.startsWith('http')) return;
 
     const url = new URL(request.url);
 
-    // Μην επεμβαίνεις σε τρίτα origins ή API hosts
     if (!isSameOrigin(url) || isBypassHost(url)) return;
 
     const pathname = url.pathname.toLowerCase();
 
-    // CACHE-FIRST for media
+    /* -------------------------
+       CACHE-FIRST for media
+    ------------------------- */
     if (isMediaAsset(pathname)) {
         event.respondWith(
             (async () => {
@@ -160,7 +191,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // NETWORK-FIRST for html/css/js
+    /* -------------------------
+       NETWORK-FIRST for code/html/css
+    ------------------------- */
     event.respondWith(
         (async () => {
             try {
@@ -174,31 +207,7 @@ self.addEventListener('fetch', (event) => {
                 if (cachedResponse) return cachedResponse;
 
                 if (request.mode === 'navigate') {
-                    const isMobileRoute =
-                        pathname.includes('/mobile') ||
-                        pathname.endsWith('/mobile.html');
-
-                    if (isMobileRoute) {
-                        return (
-                            await caches.match('./mobile/mobile.html') ||
-                            await caches.match('./mobile.html') ||
-                            await caches.match('./index.html') ||
-                            new Response('Offline', {
-                                status: 503,
-                                headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-                            })
-                        );
-                    }
-
-                    return (
-                        await caches.match('./index.html') ||
-                        await caches.match('./mobile/mobile.html') ||
-                        await caches.match('./mobile.html') ||
-                        new Response('Offline', {
-                            status: 503,
-                            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-                        })
-                    );
+                    return getOfflineNavigationFallback(pathname);
                 }
 
                 return new Response('Network Error', {
