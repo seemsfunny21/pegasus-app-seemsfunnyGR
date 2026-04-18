@@ -406,416 +406,380 @@
     <script src="oracle-mobile.js"></script>
     <script src="lifting-mobile.js"></script>
 
-    <script>
-        const PEGASUS = {
-            key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
-            bin: "69b6757ab7ec241ddc6d7230"
-        };
+<script>
+    const PEGASUS = {
+        key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
+        bin: "69b6757ab7ec241ddc6d7230"
+    };
 
-        let isUnlocked = false;
+    let isUnlocked = false;
 
-        window._pegasusMobileSyncTimer = null;
-        window._pegasusMobileSyncBusy = false;
-        window._pegasusLastUiRefreshTs = 0;
-        window._pegasusBootDone = false;
+    window._pegasusMobileSyncTimer = null;
+    window._pegasusMobileSyncBusy = false;
+    window._pegasusLastUiRefreshTs = 0;
 
-        function openView(id) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            const targetView = document.getElementById(id);
-            if (targetView) {
-                targetView.classList.add('active');
-                refreshUIComponent(id);
+    function openView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        const targetView = document.getElementById(id);
+        if (targetView) {
+            targetView.classList.add('active');
+            refreshUIComponent(id);
+        }
+    }
+
+    function refreshUIComponent(id) {
+        try {
+            if (id === 'diet') window.PegasusDiet?.updateUI();
+            if (id === 'library') window.PegasusDiet?.renderDailyKouki();
+            if (id === 'supps') {
+                window.PegasusInventory?.updateUI();
+                updateSuppUI();
             }
-        }
-
-        function refreshUIComponent(id) {
-            try {
-                if (id === 'diet') window.PegasusDiet?.updateUI();
-                if (id === 'library') window.PegasusDiet?.renderDailyKouki();
-                if (id === 'supps') {
-                    window.PegasusInventory?.updateUI();
-                    updateSuppUI();
-                }
-                if (id === 'preview') updateMuscleUI();
-                if (id === 'profile') window.PegasusProfile?.load();
-                if (id === 'car') window.PegasusCar?.load();
-                if (id === 'notes') {
-                    const nDate = document.getElementById('nDate');
-                    if (nDate) nDate.value = new Date().toLocaleDateString('el-GR');
-                    window.PegasusProfile?.renderNotes();
-                }
-                if (id === 'settings_panel') window.PegasusWeight?.updateUI();
-                if (id === 'parking_panel') window.PegasusParking?.updateUI();
-
-                const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
-                if (typeof window[dynamicRenderName] === 'function') {
-                    window[dynamicRenderName]();
-                }
-            } catch (e) {
-                console.error("Refresh Error:", e);
+            if (id === 'preview') updateMuscleUI();
+            if (id === 'profile') window.PegasusProfile?.load();
+            if (id === 'car') window.PegasusCar?.load();
+            if (id === 'notes') {
+                const nDate = document.getElementById('nDate');
+                if (nDate) nDate.value = new Date().toLocaleDateString('el-GR');
+                window.PegasusProfile?.renderNotes();
             }
+            if (id === 'settings_panel') window.PegasusWeight?.updateUI();
+            if (id === 'parking_panel') window.PegasusParking?.updateUI();
+
+            const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
+            if (typeof window[dynamicRenderName] === 'function') {
+                window[dynamicRenderName]();
+            }
+        } catch (e) {
+            console.error("Refresh Error:", e);
         }
+    }
 
-        function refreshAllUI() {
-            const now = Date.now();
-            if (now - window._pegasusLastUiRefreshTs < 250) return;
-            window._pegasusLastUiRefreshTs = now;
+    function refreshAllUI() {
+        const now = Date.now();
+        if (now - window._pegasusLastUiRefreshTs < 250) return;
+        window._pegasusLastUiRefreshTs = now;
 
-            window.PegasusDiet?.updateUI();
-            window.PegasusInventory?.updateUI();
-            window.PegasusWeight?.updateUI();
-            window.PegasusParking?.updateUI();
-            window.PegasusCar?.load();
-            window.PegasusProfile?.load();
+        window.PegasusDiet?.updateUI();
+        window.PegasusInventory?.updateUI();
+        window.PegasusWeight?.updateUI();
+        window.PegasusParking?.updateUI();
+        window.PegasusCar?.load();
+        window.PegasusProfile?.load();
 
-            if (typeof updateMuscleUI === "function") updateMuscleUI();
-            if (typeof updateSuppUI === "function") updateSuppUI();
-        }
+        if (typeof updateMuscleUI === "function") updateMuscleUI();
+        if (typeof updateSuppUI === "function") updateSuppUI();
+    }
 
-        function updateSuppUI() {
-            const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || { prot: 2500, crea: 1000 };
-            const pPct = (s.prot / 2500) * 100;
-            const cPct = (s.crea / 1000) * 100;
+    function updateSuppUI() {
+        const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || { prot: 2500, crea: 1000 };
+        const pPct = (s.prot / 2500) * 100;
+        const cPct = (s.crea / 1000) * 100;
 
-            if (document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
-            if (document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
-            if (document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
-            if (document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
-        }
+        if (document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
+        if (document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
+        if (document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
+        if (document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
+    }
 
-        function unlockFields(v) {
-            document.querySelectorAll(`#${v} input[readonly]`).forEach(el => {
-                el.removeAttribute('readonly');
-                el.style.border = "1px solid #00ff41";
-            });
-        }
+    function unlockFields(v) {
+        document.querySelectorAll(`#${v} input[readonly]`).forEach(el => {
+            el.removeAttribute('readonly');
+            el.style.border = "1px solid #00ff41";
+        });
+    }
 
-        function updateMuscleUI() {
-            const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-            const container = document.getElementById("muscle-container");
-            if (!container) return;
+    function updateMuscleUI() {
+        const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        const container = document.getElementById("muscle-container");
+        if (!container) return;
 
-            const targets = typeof window.getDynamicTargets === 'function'
-                ? window.getDynamicTargets()
-                : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        const targets = typeof window.getDynamicTargets === 'function'
+            ? window.getDynamicTargets()
+            : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
 
-            container.innerHTML = Object.keys(targets).map(g => {
-                const targetSets = targets[g];
-                if (targetSets === 0) return '';
+        container.innerHTML = Object.keys(targets).map(g => {
+            const targetSets = targets[g];
+            if (targetSets === 0) return '';
 
-                const v = h[g] || 0;
-                const p = Math.min((v / targetSets) * 100, 100);
+            const v = h[g] || 0;
+            const p = Math.min((v / targetSets) * 100, 100);
 
-                return `
-                    <div class="mini-card">
-                        <span class="mini-label">${g}</span>
-                        <div class="mini-val">${v} / ${targetSets}</div>
-                        <div class="bar-bg">
-                            <div class="bar-fill" style="width:${p}%;"></div>
-                        </div>
+            return `
+                <div class="mini-card">
+                    <span class="mini-label">${g}</span>
+                    <div class="mini-val">${v} / ${targetSets}</div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" style="width:${p}%;"></div>
                     </div>
-                `;
-            }).join('');
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setSyncStatus(status) {
+        const e = document.getElementById("sync-indicator");
+        if (!e) return;
+
+        if (status === 'online') {
+            e.textContent = "ONLINE";
+            e.style.color = "#00ff41";
+        } else if (status === 'offline') {
+            e.textContent = "OFFLINE";
+            e.style.color = "#ff4444";
+        } else if (status === 'syncing') {
+            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ...";
+            e.style.color = "#00bcd4";
+        } else if (status === 'error') {
+            e.textContent = "ΣΦΑΛΜΑ SYNC";
+            e.style.color = "#ff9800";
+        } else if (status === 'locked') {
+            e.textContent = "LOCKED";
+            e.style.color = "#888";
+        } else {
+            e.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
+            e.style.color = "#00bcd4";
+        }
+    }
+
+    async function runMobileSyncHeartbeat() {
+        if (window._pegasusMobileSyncBusy) return false;
+
+        if (!window.PegasusCloud?.isUnlocked) {
+            setSyncStatus('locked');
+            return false;
         }
 
-        function setSyncStatus(status) {
-            const e = document.getElementById("sync-indicator");
-            if (!e) return;
+        if (document.hidden) return false;
 
-            if (status === 'online') {
-                e.textContent = "ONLINE";
-                e.style.color = "#00ff41";
-            } else if (status === 'offline') {
-                e.textContent = "OFFLINE";
-                e.style.color = "#ff4444";
-            } else if (status === 'syncing') {
-                e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ...";
-                e.style.color = "#00bcd4";
-            } else if (status === 'error') {
-                e.textContent = "ΣΦΑΛΜΑ SYNC";
-                e.style.color = "#ff9800";
-            } else if (status === 'locked') {
-                e.textContent = "LOCKED";
-                e.style.color = "#888";
+        if (!navigator.onLine) {
+            setSyncStatus('offline');
+            return false;
+        }
+
+        window._pegasusMobileSyncBusy = true;
+        setSyncStatus('syncing');
+
+        try {
+            const changed = await window.PegasusCloud.pull(true);
+
+            if (changed) {
+                refreshAllUI();
+            }
+
+            if (window.PegasusCloud?.isUnlocked) {
+                setSyncStatus('online');
             } else {
-                e.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
-                e.style.color = "#00bcd4";
+                setSyncStatus('locked');
             }
+
+            return !!changed;
+        } catch (e) {
+            console.error("📡 Mobile Heartbeat Error:", e);
+            setSyncStatus('error');
+            return false;
+        } finally {
+            window._pegasusMobileSyncBusy = false;
+        }
+    }
+
+    function startMobileSyncHeartbeat() {
+        stopMobileSyncHeartbeat();
+
+        if (!window.PegasusCloud?.isUnlocked) return;
+        if (document.hidden) return;
+
+        window._pegasusMobileSyncTimer = setInterval(() => {
+            if (
+                !document.hidden &&
+                window.PegasusCloud?.isUnlocked &&
+                !window.PegasusCloud.isPulling &&
+                !window.PegasusCloud.isPushing &&
+                !window._pegasusMobileSyncBusy
+            ) {
+                runMobileSyncHeartbeat();
+            }
+        }, 10000);
+    }
+
+    function stopMobileSyncHeartbeat() {
+        if (window._pegasusMobileSyncTimer) {
+            clearInterval(window._pegasusMobileSyncTimer);
+            window._pegasusMobileSyncTimer = null;
+        }
+    }
+
+    window.addEventListener("pegasus_sync_status", (e) => {
+        const status = e.detail?.status;
+
+        if (!isUnlocked && status !== "locked") {
+            setSyncStatus("locked");
+            return;
         }
 
-        async function runMobileSyncHeartbeat() {
-            if (window._pegasusMobileSyncBusy) return false;
-            if (!window.PegasusCloud?.isUnlocked) {
-                setSyncStatus('locked');
-                return false;
-            }
-            if (document.hidden) return false;
-            if (!navigator.onLine) {
-                setSyncStatus('offline');
-                return false;
-            }
-            if (window.PegasusCloud.isPulling || window.PegasusCloud.isPushing) {
-                return false;
-            }
+        if (status === "online") setSyncStatus("online");
+        else if (status === "offline") setSyncStatus("offline");
+        else if (status === "syncing") setSyncStatus("syncing");
+        else if (status === "error") setSyncStatus("error");
+        else if (status === "locked") setSyncStatus("locked");
+    });
 
-            window._pegasusMobileSyncBusy = true;
+    window.addEventListener("focus", () => {
+        if (window.PegasusCloud?.isUnlocked) {
+            runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        }
+    });
 
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            stopMobileSyncHeartbeat();
+        } else if (window.PegasusCloud?.isUnlocked) {
+            runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        }
+    });
+
+    window.addEventListener("online", () => {
+        if (window.PegasusCloud?.isUnlocked) {
+            runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        } else {
+            setSyncStatus('locked');
+        }
+    });
+
+    window.addEventListener("offline", () => {
+        stopMobileSyncHeartbeat();
+        setSyncStatus(isUnlocked ? 'offline' : 'locked');
+    });
+
+    window.addEventListener("pegasus_sync_complete", () => {
+        refreshAllUI();
+        if (window.PegasusCloud?.isUnlocked && !window.PegasusCloud?.isPulling && !window.PegasusCloud?.isPushing) {
+            setSyncStatus('online');
+        }
+    });
+
+    async function attemptVaultUnlock() {
+        const pin = document.getElementById("pinInput").value;
+
+        if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
+            document.getElementById("pinModal").style.display = "none";
+            isUnlocked = true;
+
+            await runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        } else {
+            alert("ΛΑΘΟΣ PIN");
+            document.getElementById("pinInput").value = "";
+        }
+    }
+
+    function skipVault() {
+        document.getElementById("pinModal").style.display = "none";
+        stopMobileSyncHeartbeat();
+        isUnlocked = false;
+        setSyncStatus('locked');
+        refreshAllUI();
+    }
+
+    async function hardResetSystem() {
+        if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
             try {
-                const changed = await window.PegasusCloud.pull(true);
-                if (changed) refreshAllUI();
-
-                setTimeout(() => {
-                    if (
-                        window.PegasusCloud?.isUnlocked &&
-                        !window.PegasusCloud.isPulling &&
-                        !window.PegasusCloud.isPushing &&
-                        navigator.onLine
-                    ) {
-                        setSyncStatus('online');
-                    }
-                }, 150);
-
-                return !!changed;
-            } catch (e) {
-                console.error("📡 Mobile Heartbeat Error:", e);
-                setSyncStatus('error');
-                return false;
-            } finally {
-                window._pegasusMobileSyncBusy = false;
-            }
-        }
-
-        function startMobileSyncHeartbeat() {
-            stopMobileSyncHeartbeat();
-
-            if (!window.PegasusCloud?.isUnlocked) return;
-            if (document.hidden) return;
-
-            window._pegasusMobileSyncTimer = setInterval(() => {
-                if (
-                    !document.hidden &&
-                    window.PegasusCloud?.isUnlocked &&
-                    !window.PegasusCloud.isPulling &&
-                    !window.PegasusCloud.isPushing &&
-                    !window._pegasusMobileSyncBusy
-                ) {
-                    runMobileSyncHeartbeat();
-                }
-            }, 10000);
-        }
-
-        function stopMobileSyncHeartbeat() {
-            if (window._pegasusMobileSyncTimer) {
-                clearInterval(window._pegasusMobileSyncTimer);
-                window._pegasusMobileSyncTimer = null;
-            }
-        }
-
-        window.addEventListener("pegasus_sync_status", (e) => {
-            const status = e.detail?.status;
-
-            if (!window.PegasusCloud?.isUnlocked && status !== "locked") {
-                setSyncStatus("locked");
-                return;
-            }
-
-            if (status === "online") {
-                if (!window.PegasusCloud.isPulling && !window.PegasusCloud.isPushing) {
-                    setSyncStatus("online");
-                }
-            } else if (status === "offline") {
-                setSyncStatus("offline");
-            } else if (status === "syncing") {
-                setSyncStatus("syncing");
-            } else if (status === "error") {
-                setSyncStatus("error");
-            } else if (status === "locked") {
-                setSyncStatus("locked");
-            }
-        });
-
-        window.addEventListener("focus", () => {
-            if (window.PegasusCloud?.isUnlocked) {
-                runMobileSyncHeartbeat();
-                startMobileSyncHeartbeat();
-            }
-        });
-
-        document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
                 stopMobileSyncHeartbeat();
-            } else if (window.PegasusCloud?.isUnlocked) {
-                runMobileSyncHeartbeat();
-                startMobileSyncHeartbeat();
-            }
-        });
 
-        window.addEventListener("online", () => {
-            if (window.PegasusCloud?.isUnlocked) {
-                runMobileSyncHeartbeat();
-                startMobileSyncHeartbeat();
-            } else {
-                setSyncStatus('locked');
-            }
-        });
-
-        window.addEventListener("offline", () => {
-            stopMobileSyncHeartbeat();
-            setSyncStatus(window.PegasusCloud?.isUnlocked ? 'offline' : 'locked');
-        });
-
-        window.addEventListener("pegasus_sync_complete", () => {
-            refreshAllUI();
-
-            setTimeout(() => {
-                if (
-                    window.PegasusCloud?.isUnlocked &&
-                    !window.PegasusCloud.isPulling &&
-                    !window.PegasusCloud.isPushing &&
-                    navigator.onLine
-                ) {
-                    setSyncStatus('online');
+                if ('serviceWorker' in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of regs) {
+                        await reg.unregister();
+                    }
                 }
-            }, 120);
-        });
 
-        async function attemptVaultUnlock() {
-            const pin = document.getElementById("pinInput").value;
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+            } catch (e) {
+                console.error("Hard Reset Cleanup Error:", e);
+            }
 
-            if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
-                document.getElementById("pinModal").style.display = "none";
-                isUnlocked = true;
-                setSyncStatus('syncing');
+            localStorage.removeItem("pegasus_vault_pin");
+            location.replace(location.pathname + '?v=' + Date.now());
+        }
+    }
 
-                setTimeout(async () => {
+    function exportData() {
+        const backup = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_"))) {
+                backup[k] = localStorage.getItem(k);
+            }
+        }
+
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `PEGASUS_MOBILE_BKP.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function importData(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (confirm("🚨 Επαναφορά δεδομένων;")) {
+                    localStorage.clear();
+                    Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                    location.reload();
+                }
+            } catch (err) {
+                alert("❌ Μη έγκυρο αρχείο.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    (async function boot() {
+        console.log("⚡ PEGASUS: Fast Boot...");
+        const pin = localStorage.getItem("pegasus_vault_pin");
+
+        refreshAllUI();
+
+        if (pin && window.PegasusCloud) {
+            try {
+                const success = await window.PegasusCloud.unlock(pin);
+
+                if (success) {
+                    console.log("📡 Cloud Sync: Fully Connected.");
+                    isUnlocked = true;
                     await runMobileSyncHeartbeat();
                     startMobileSyncHeartbeat();
-                }, 120);
-            } else {
-                alert("ΛΑΘΟΣ PIN");
-                document.getElementById("pinInput").value = "";
-            }
-        }
-
-        function skipVault() {
-            document.getElementById("pinModal").style.display = "none";
-            stopMobileSyncHeartbeat();
-            isUnlocked = false;
-            setSyncStatus('locked');
-            refreshAllUI();
-        }
-
-        async function hardResetSystem() {
-            if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
-                try {
-                    stopMobileSyncHeartbeat();
-
-                    if ('serviceWorker' in navigator) {
-                        const regs = await navigator.serviceWorker.getRegistrations();
-                        for (const reg of regs) {
-                            await reg.unregister();
-                        }
-                    }
-
-                    if ('caches' in window) {
-                        const keys = await caches.keys();
-                        await Promise.all(keys.map(key => caches.delete(key)));
-                    }
-                } catch (e) {
-                    console.error("Hard Reset Cleanup Error:", e);
-                }
-
-                localStorage.removeItem("pegasus_vault_pin");
-                location.replace(location.pathname + '?v=' + Date.now());
-            }
-        }
-
-        function exportData() {
-            const backup = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (k && (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_"))) {
-                    backup[k] = localStorage.getItem(k);
-                }
-            }
-
-            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `PEGASUS_MOBILE_BKP.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        function importData(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    if (confirm("🚨 Επαναφορά δεδομένων;")) {
-                        localStorage.clear();
-                        Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-                        location.reload();
-                    }
-                } catch (err) {
-                    alert("❌ Μη έγκυρο αρχείο.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        (async function boot() {
-            if (window._pegasusBootDone) return;
-            window._pegasusBootDone = true;
-
-            console.log("⚡ PEGASUS: Fast Boot...");
-            const pin = localStorage.getItem("pegasus_vault_pin");
-
-            refreshAllUI();
-
-            if (window.PegasusCloud?.isUnlocked) {
-                isUnlocked = true;
-                setSyncStatus(navigator.onLine ? 'syncing' : 'offline');
-                await runMobileSyncHeartbeat();
-                startMobileSyncHeartbeat();
-                return;
-            }
-
-            if (pin && window.PegasusCloud) {
-                try {
-                    const success = await window.PegasusCloud.unlock(pin);
-
-                    if (success || window.PegasusCloud.isUnlocked) {
-                        console.log("📡 Cloud Sync: Fully Connected.");
-                        isUnlocked = true;
-                        setSyncStatus(navigator.onLine ? 'syncing' : 'offline');
-
-                        setTimeout(async () => {
-                            await runMobileSyncHeartbeat();
-                            startMobileSyncHeartbeat();
-                            setTimeout(() => refreshAllUI(), 500);
-                        }, 120);
-                    } else {
-                        isUnlocked = false;
-                        setSyncStatus('locked');
-                    }
-                } catch (e) {
-                    console.error("📡 Cloud Boot Error:", e);
+                    setTimeout(() => refreshAllUI(), 500);
+                } else {
                     isUnlocked = false;
                     setSyncStatus('locked');
                 }
-            } else {
-                const modal = document.getElementById("pinModal");
-                if (modal) modal.style.display = "flex";
+            } catch (e) {
+                console.error("📡 Cloud Boot Error:", e);
                 isUnlocked = false;
                 setSyncStatus('locked');
             }
-        })();
-    </script>
+        } else {
+            const modal = document.getElementById("pinModal");
+            if (modal) modal.style.display = "flex";
+            isUnlocked = false;
+            setSyncStatus('locked');
+        }
+    })();
+</script>
 
     <script>
         if ('serviceWorker' in navigator) {
