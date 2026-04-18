@@ -1,7 +1,7 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v17.3 (IRON - FINAL RECONCILIATION)
+   📦 PEGASUS DATA ENGINE - v17.4 (IRON - NOMENCLATURE & VIDEO RECONCILIATION)
    Protocol: 10" Prep | 45" Work | 60" Rest 
-   Status: PRODUCTION READY (Space Optimized & Video Sync)
+   Status: PRODUCTION READY (Final Mapping)
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
@@ -14,16 +14,16 @@ window.program = {
     "Παρασκευή": [], "Σάββατο": [], "Κυριακή": []
 };
 
-// 2. MASTER EXERCISES DATABASE (25 UNIQUE ENTRIES - REVERSE FLYS REMOVED)
+// 2. MASTER EXERCISES DATABASE (RE-MAPPED)
 window.exercisesDB = [
     { name: "Chest Press", muscleGroup: "Στήθος" }, 
     { name: "Chest Flys", muscleGroup: "Στήθος" }, 
     { name: "Pushups", muscleGroup: "Στήθος" },
     { name: "Lat Pulldowns", muscleGroup: "Πλάτη" }, 
     { name: "Lat Pulldowns Close", muscleGroup: "Πλάτη" }, 
-    { name: "Low Rows Seated", muscleGroup: "Πλάτη" }, 
+    { name: "Seated Rows", muscleGroup: "Πλάτη" }, // Πρώην Low Rows Seated
+    { name: "Low Rows Seated", muscleGroup: "Πλάτη" }, // Πρώην Reverse Grip Cable Row
     { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
-    { name: "Reverse Grip Cable Row", muscleGroup: "Πλάτη" },
     { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Upright Rows", muscleGroup: "Ώμοι" },
     { name: "Bicep Curls", muscleGroup: "Χέρια" }, 
@@ -42,13 +42,14 @@ window.exercisesDB = [
     { name: "Stretching", muscleGroup: "None" }
 ];
 
-// 3. ASSET MAPPING (Video & Icon Linking)
+// 3. ASSET MAPPING (VIDEO SYNC)
 window.videoMap = {
     "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups",
     "Lat Pulldowns": "latpulldowns", "Lat Pulldowns Close": "latpulldownsclose",
-    "Low Rows Seated": "reverseseatedrows", // Map to your uploaded video
+    "Seated Rows": "reverseseatedrows", // Παίζει το βίντεο reverseseatedrows
+    "Low Rows Seated": "lowrowsseated", // Παίζει το βίντεο lowrowsseated
     "Bent Over Rows": "bentoverrows", 
-    "Reverse Grip Cable Row": "reversegripcablerow", "Straight Arm Pulldowns": "straightarmpulldowns",
+    "Straight Arm Pulldowns": "straightarmpulldowns",
     "Upright Rows": "uprightrows", 
     "Bicep Curls": "bicepcurls", "Standing Bicep Curls": "bicepcurls", 
     "Preacher Bicep Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
@@ -58,7 +59,7 @@ window.videoMap = {
     "Cycling": "cycling", "EMS Training": "ems", "Stretching": "stretching"
 };
 
-// 4. PEGASUS ENGINE (IRON SPLIT - REVERSE FLYS REPLACED BY REVERSE GRIP ROW)
+// 4. PEGASUS ENGINE (IRON SPLIT UPDATED)
 window.setPegasusPlan = function(planKey) {
     localStorage.setItem('pegasus_active_plan', planKey);
     setTimeout(() => window.location.reload(), 1000);
@@ -71,12 +72,12 @@ window.setPegasusPlan = function(planKey) {
             { name: "Chest Press", sets: 6, muscleGroup: "Στήθος", weight: "54" },
             { name: "Chest Flys", sets: 5, muscleGroup: "Στήθος", weight: "42" },
             { name: "Lat Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Low Rows Seated", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
+            { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
             { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "30" }
         ],
         iron_wednesday: [
             { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι", weight: "30" },
-            { name: "Reverse Grip Cable Row", sets: 4, muscleGroup: "Πλάτη", weight: "36" }, 
+            { name: "Low Rows Seated", sets: 4, muscleGroup: "Πλάτη", weight: "36" }, 
             { name: "Bicep Curls", sets: 6, muscleGroup: "Χέρια", weight: "30" },
             { name: "Tricep Pulldowns", sets: 6, muscleGroup: "Χέρια", weight: "20" },
             { name: "Preacher Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
@@ -85,7 +86,7 @@ window.setPegasusPlan = function(planKey) {
         iron_friday: [
             { name: "Lat Pulldowns Close", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
             { name: "Straight Arm Pulldowns", sets: 5, muscleGroup: "Πλάτη", weight: "30" },
-            { name: "Reverse Grip Cable Row", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Low Rows Seated", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
             { name: "Bent Over Rows", sets: 5, muscleGroup: "Πλάτη", weight: "30" },
             { name: "Pushups", sets: 5, muscleGroup: "Στήθος", weight: "0" },
             { name: "Reverse Crunch", sets: 4, muscleGroup: "Κορμός", weight: "0" }
@@ -98,7 +99,7 @@ window.setPegasusPlan = function(planKey) {
         ],
         iron_sunday: [
             { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
-            { name: "Low Rows Seated", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
+            { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
             { name: "Standing Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
             { name: "Tricep Pulldowns", sets: 5, muscleGroup: "Χέρια", weight: "20" },
             { name: "Leg Raise Hip Lift", sets: 5, muscleGroup: "Κορμός", weight: "0" }
