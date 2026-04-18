@@ -1,16 +1,65 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.8 MAXIMALIST STRICT)
-   Protocol: Master Macro Engine Integration & Global Metabolic Sync
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v14.9 SYNC PATCH)
+   Protocol: Unified Cardio Offset, Safe Daily Targets & Cross-Device Consistency
+   Status: FINAL STABLE | FIXED: MOBILE ↔ DESKTOP DIET TARGET SYNC
    ========================================================================== */
 
 window.PegasusDiet = {
-    // 🎯 FIX: ΑΥΣΤΗΡΟ PADDING ΗΜΕΡΟΜΗΝΙΑΣ ΓΙΑ ΝΑ ΣΥΜΦΩΝΕΙ ΜΕ ΤΟ ΗΜΕΡΟΛΟΓΙΟ
     getStrictDateStr: function() {
         const rawDate = new Date();
         const d = String(rawDate.getDate()).padStart(2, '0');
         const m = String(rawDate.getMonth() + 1).padStart(2, '0');
         const y = rawDate.getFullYear();
         return `${d}/${m}/${y}`;
+    },
+
+    getBaseTarget: function() {
+        const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+        const dayName = greekDays[new Date().getDay()];
+
+        const settings = (typeof window.getPegasusSettings === "function")
+            ? window.getPegasusSettings()
+            : { activeSplit: "IRON" };
+
+        const activePlan = settings?.activeSplit || "IRON";
+
+        const KCAL_REST = 2100;
+        const KCAL_WEIGHTS = 2800;
+        const KCAL_EMS = 2700;
+        const KCAL_BIKE = 3100;
+
+        if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return KCAL_REST;
+
+        switch (activePlan) {
+            case "EMS_ONLY":
+                return dayName === "Τετάρτη" ? KCAL_EMS : KCAL_WEIGHTS;
+
+            case "BIKE_ONLY":
+                return (dayName === "Σάββατο" || dayName === "Κυριακή") ? KCAL_BIKE : KCAL_WEIGHTS;
+
+            case "HYBRID":
+                if (dayName === "Τετάρτη") return KCAL_EMS;
+                if (dayName === "Σάββατο" || dayName === "Κυριακή") return KCAL_BIKE;
+                return KCAL_WEIGHTS;
+
+            case "UPPER_LOWER":
+            case "IRON":
+            default:
+                return KCAL_WEIGHTS;
+        }
+    },
+
+    getCardioOffset: function(dateStr) {
+        const unifiedOffset = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr));
+        const legacyOffset = parseFloat(
+            localStorage.getItem(
+                (window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr
+            )
+        );
+
+        if (!isNaN(unifiedOffset)) return unifiedOffset;
+        if (!isNaN(legacyOffset)) return legacyOffset;
+        return 0;
     },
 
     checkDailyRoutine: function() {
@@ -24,7 +73,7 @@ window.PegasusDiet = {
 
         let log = this.getLog(dateStr);
         const hasRoutine = log.some(i => i.name.includes("(Ρουτίνα)"));
-        
+
         if (!hasRoutine) {
             log.push({ name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, ts: Date.now() - 1000 });
             log.push({ name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, ts: Date.now() - 2000 });
@@ -37,22 +86,22 @@ window.PegasusDiet = {
             localStorage.setItem(prefix + dateStr, JSON.stringify(log));
             return true;
         }
-        
+
         return false;
     },
 
     add: async function(n, k, p) {
         const name = n || document.getElementById("fName")?.value;
-        const kcal = k || 0;
-        const prot = p || 0;
+        const kcal = parseFloat(k || 0) || 0;
+        const prot = parseFloat(p || 0) || 0;
 
-        if(!name || name.trim() === "") return;
+        if (!name || name.trim() === "") return;
 
-        if(name.toLowerCase().includes("whey") && window.PegasusInventory) {
+        if (name.toLowerCase().includes("whey") && window.PegasusInventory) {
             window.PegasusInventory.consume('prot', 30);
         }
-        
-        if(name.includes("(Κούκι)")) {
+
+        if (name.includes("(Κούκι)")) {
             let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
             agreementLog.push({ date: new Date().toLocaleDateString('el-GR'), food: name });
             localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
@@ -61,23 +110,23 @@ window.PegasusDiet = {
         const dateStr = this.getStrictDateStr();
         let log = this.getLog(dateStr);
         log.unshift({ name: name, kcal: kcal, protein: prot, ts: Date.now() });
-        
+
         const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
         localStorage.setItem(prefix + dateStr, JSON.stringify(log));
-        
-        if(document.getElementById("fName")) document.getElementById("fName").value = "";
+
+        if (document.getElementById("fName")) document.getElementById("fName").value = "";
         this.closeSearch();
 
         this.updateUI();
-        if(window.PegasusCloud) await window.PegasusCloud.push(true);
+        if (window.PegasusCloud) await window.PegasusCloud.push(true);
     },
 
     askAdvisor: function() {
         if (!window.PegasusDietAdvisor) return alert("Advisor Offline");
-        
+
         const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
-        const container = document.getElementById("advisorMobileResult"); 
-        
+        const container = document.getElementById("advisorMobileResult");
+
         if (!container) return;
 
         let html = `
@@ -88,17 +137,19 @@ window.PegasusDiet = {
         `;
 
         advice.options.forEach(opt => {
-            const macros = (typeof window.getPegasusMacros === "function") 
-                           ? window.getPegasusMacros(opt.n, opt.t) 
-                           : { kcal: 550, protein: 45 };
-            
+            const macros = (typeof window.getPegasusMacros === "function")
+                ? window.getPegasusMacros(opt.n, opt.t)
+                : { kcal: 550, protein: 45 };
+
+            const safeName = String(opt.n).replace(/'/g, "\\'");
+
             html += `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
                     <div style="text-align:left;">
                         <div style="color:#fff; font-weight:bold; font-size:14px;">${opt.n}</div>
                         <div style="color:#4CAF50; font-size:12px; font-weight:900;">🔥 ${macros.kcal} kcal | 🍗 ${macros.protein}g</div>
                     </div>
-                    <button onclick="window.PegasusDiet.quickAdd('${opt.n} (Κούκι)', ${macros.kcal}, ${macros.protein}); document.getElementById('advisorMobileResult').innerHTML='';" 
+                    <button onclick="window.PegasusDiet.quickAdd('${safeName} (Κούκι)', ${macros.kcal}, ${macros.protein}); document.getElementById('advisorMobileResult').innerHTML='';"
                             style="background:#f39c12; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:900; font-size:11px;">
                         ΠΡΟΣΘΗΚΗ
                     </button>
@@ -113,58 +164,63 @@ window.PegasusDiet = {
     handleSearch: function(term) {
         const resBox = document.getElementById("searchSuggestions");
         const fNameInput = document.getElementById("fName");
-        
-        if(!resBox) return;
-        if(!term || term.length < 2) { 
-            resBox.style.display = "none"; 
-            if(fNameInput) fNameInput.style.borderRadius = "16px";
-            return; 
+
+        if (!resBox) return;
+        if (!term || term.length < 2) {
+            resBox.style.display = "none";
+            if (fNameInput) fNameInput.style.borderRadius = "16px";
+            return;
         }
 
-        const lib = JSON.parse(localStorage.getItem(window.PegasusManifest?.diet?.foodLibrary || "pegasus_food_library")) || [];
+        const lib = JSON.parse(localStorage.getItem(window.PegasusManifest?.diet?.foodLibrary || "pegasus_food_library") || "[]");
         const matches = lib.filter(i => i.name.toLowerCase().includes(term.toLowerCase())).slice(0, 5);
 
-        if(matches.length > 0) {
-            resBox.innerHTML = matches.map(i => `
-                <div class="search-item" onclick="window.PegasusDiet.selectSuggested('${i.name}', ${i.kcal}, ${i.protein})">
-                    <span class="search-item-name">${i.name}</span>
-                    <span class="search-item-macros">${i.kcal} kcal | ${i.protein}g</span>
-                </div>
-            `).join('');
+        if (matches.length > 0) {
+            resBox.innerHTML = matches.map(i => {
+                const safeName = String(i.name).replace(/'/g, "\\'");
+                return `
+                    <div class="search-item" onclick="window.PegasusDiet.selectSuggested('${safeName}', ${i.kcal}, ${i.protein})">
+                        <span class="search-item-name">${i.name}</span>
+                        <span class="search-item-macros">${i.kcal} kcal | ${i.protein}g</span>
+                    </div>
+                `;
+            }).join('');
             resBox.style.display = "block";
-            if(fNameInput) fNameInput.style.borderRadius = "16px";
+            if (fNameInput) fNameInput.style.borderRadius = "16px";
         } else {
             resBox.style.display = "none";
-            if(fNameInput) fNameInput.style.borderRadius = "16px";
+            if (fNameInput) fNameInput.style.borderRadius = "16px";
         }
     },
 
-    selectSuggested: function(n, k, p) { this.add(n, k, p); },
-    
-    closeSearch: function() { 
-        if(document.getElementById("searchSuggestions")) {
-            document.getElementById("searchSuggestions").style.display = "none"; 
-            if(document.getElementById("fName")) document.getElementById("fName").style.borderRadius = "16px";
+    selectSuggested: function(n, k, p) {
+        this.add(n, k, p);
+    },
+
+    closeSearch: function() {
+        if (document.getElementById("searchSuggestions")) {
+            document.getElementById("searchSuggestions").style.display = "none";
+            if (document.getElementById("fName")) document.getElementById("fName").style.borderRadius = "16px";
         }
     },
 
     renderDailyKouki: function() {
         const container = document.getElementById('libraryContainer');
-        if(!container) return;
-        
+        if (!container) return;
+
         const targetDate = new Date();
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const targetDayName = greekDays[targetDate.getDay()];
-        
+
         const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const targetDayKey = daysMap[targetDate.getDay()];
-        
+
         let dailyMenu = [];
-        
+
         if (typeof window.KOUKI_MASTER_MENU !== 'undefined' && window.KOUKI_MASTER_MENU[targetDayKey]) {
             dailyMenu = window.KOUKI_MASTER_MENU[targetDayKey];
         } else if (typeof window.KOUKI_MASTER !== 'undefined') {
-            const offset = targetDate.getDay() * 2; 
+            const offset = targetDate.getDay() * 2;
             dailyMenu = window.KOUKI_MASTER.slice(offset, offset + 8);
         }
 
@@ -174,12 +230,14 @@ window.PegasusDiet = {
             </div>` + dailyMenu.map(item => {
                 const itemName = item.n || item.name;
                 const itemTag = item.t || item.type || "kreas";
-                const macros = (typeof window.getPegasusMacros === "function") 
-                               ? window.getPegasusMacros(itemName, itemTag) 
-                               : { kcal: 550, protein: 45 };
+                const macros = (typeof window.getPegasusMacros === "function")
+                    ? window.getPegasusMacros(itemName, itemTag)
+                    : { kcal: 550, protein: 45 };
+
+                const safeName = String(itemName).replace(/'/g, "\\'");
 
                 return `
-            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${itemName} (Κούκι)', ${macros.kcal}, ${macros.protein})" 
+            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${safeName} (Κούκι)', ${macros.kcal}, ${macros.protein})"
                  style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
                 <div style="text-align:left;">
                     <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΠΡΟΣΘΗΚΗ ΣΤΟ LOG</span>
@@ -187,7 +245,7 @@ window.PegasusDiet = {
                     <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${macros.protein}G PROTEIN</div>
                 </div>
                 <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${macros.kcal} KCAL</div>
-            </div>`
+            </div>`;
             }).join('');
     },
 
@@ -197,25 +255,30 @@ window.PegasusDiet = {
         const dateStr = this.getStrictDateStr();
         const log = this.getLog(dateStr);
         let tk = 0, tp = 0;
-        
-        log.forEach(item => { 
-            tk += parseFloat(item.kcal || 0); 
-            tp += parseFloat(item.protein || 0); 
+
+        log.forEach(item => {
+            tk += parseFloat(item.kcal || 0);
+            tp += parseFloat(item.protein || 0);
         });
 
-        localStorage.setItem(window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal", Math.round(tk));
+        // Αποθηκεύουμε μόνο protein global. Το kcal intake μένει στο ημερήσιο food log.
         localStorage.setItem(window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein", Math.round(tp));
 
-        const cardioKcal = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr)) || 0;
-        const targetKcal = 2800 + cardioKcal;
+        const cardioKcal = this.getCardioOffset(dateStr);
+        const baseTarget = this.getBaseTarget();
+        const targetKcal = Math.round(baseTarget + cardioKcal);
 
-        if(document.getElementById("txtKcal")) document.getElementById("txtKcal").textContent = `${Math.round(tk)} / ${Math.round(targetKcal)}`;
-        
+        if (document.getElementById("txtKcal")) {
+            document.getElementById("txtKcal").textContent = `${Math.round(tk)} / ${targetKcal}`;
+        }
+
         const targetProt = localStorage.getItem("pegasus_goal_protein") || 160;
-        if(document.getElementById("txtProt")) document.getElementById("txtProt").textContent = `${Math.round(tp)} / ${targetProt}g`;
-        
+        if (document.getElementById("txtProt")) {
+            document.getElementById("txtProt").textContent = `${Math.round(tp)} / ${targetProt}g`;
+        }
+
         const listDisplay = document.getElementById("foodHistoryList");
-        if(listDisplay) {
+        if (listDisplay) {
             listDisplay.innerHTML = log.map((i, idx) => `
                 <div class="log-item">
                     <button class="btn-del" onclick="window.PegasusDiet.delete(${idx})">✕</button>
@@ -230,22 +293,22 @@ window.PegasusDiet = {
         const dateStr = this.getStrictDateStr();
         let log = this.getLog(dateStr);
         log.splice(idx, 1);
-        
+
         const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
         localStorage.setItem(prefix + dateStr, JSON.stringify(log));
-        
+
         this.updateUI();
-        // 🎯 FIX: ΑΦΑΙΡΕΣΗ ΤΟΥ `true` ΓΙΑ ΝΑ ΕΝΕΡΓΟΠΟΙΗΘΕΙ ΤΟ DEBOUNCE
-        if(window.PegasusCloud) await window.PegasusCloud.push();
+        if (window.PegasusCloud) await window.PegasusCloud.push();
     },
 
-    // 🛡️ FIX: Αφαίρεση του setItem που προκαλούσε το Crash.
     getLog: function(dateStr) {
         try {
             const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
             const data = localStorage.getItem(prefix + dateStr);
             return data ? JSON.parse(data) : [];
-        } catch (e) { return []; }
+        } catch (e) {
+            return [];
+        }
     },
 
     quickAdd: function(n, k, p) {
