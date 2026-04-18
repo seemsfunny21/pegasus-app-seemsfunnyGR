@@ -1,13 +1,13 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.42 (THE CLEAN ENGINE)
+   PEGASUS WORKOUT ENGINE - v10.43 (SYNC & MUSCLE FIX PATCH)
    Protocol: Partial Session Memory + Auto-Sort + Smart Sync Logic
-   Status: FINAL STABLE | ZERO-BUG VERIFIED
+   Status: FINAL STABLE | DESKTOP/MOBILE DIET SYNC FIXED
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
-var P_M = M; 
+var P_M = M;
 
-window.masterUI = window.masterUI || {}; 
+window.masterUI = window.masterUI || {};
 
 if (!M) {
     console.warn("⚠️ PEGASUS CRITICAL: Manifest not found during app.js boot.");
@@ -52,24 +52,22 @@ var userWeight = parseFloat(localStorage.getItem(P_M?.user?.weight || "pegasus_w
 /* ===== 2.5 DYNAMIC UI KCAL CONTROLLER ===== */
 window.updateKcalUI = function() {
     const kcalDisplay = document.querySelector(".kcal-value");
-    const kcalLabel = document.querySelector(".kcal-label"); 
+    const kcalLabel = document.querySelector(".kcal-label");
     if (!kcalDisplay) return;
 
     const isWorkoutActive = running || currentIdx > 0 || phase > 0;
 
     if (isWorkoutActive) {
-        // Κατά την προπόνηση δείχνει τι καίμε εκείνη τη στιγμή
         kcalDisplay.textContent = parseFloat(sessionActiveKcal).toFixed(1);
-        kcalDisplay.style.color = "#FFC107"; 
+        kcalDisplay.style.color = "#FFC107";
         if (kcalLabel) kcalLabel.textContent = "KCAL ΠΡΟΠΟΝΗΣΗΣ";
     } else {
-        // Όταν είναι κλειστό, δείχνει τον Στόχο Ημέρας βάσει Πλάνου (IRON, HYBRID κλπ)
-        const dailyTarget = (typeof window.calculatePegasusDailyTarget === "function") 
-                            ? window.calculatePegasusDailyTarget() 
-                            : (localStorage.getItem('pegasus_today_kcal') || "2100");
-        
+        const dailyTarget = (typeof window.calculatePegasusDailyTarget === "function")
+            ? window.calculatePegasusDailyTarget()
+            : (localStorage.getItem('pegasus_today_kcal') || "2100");
+
         kcalDisplay.textContent = dailyTarget;
-        kcalDisplay.style.color = "#4CAF50"; 
+        kcalDisplay.style.color = "#4CAF50";
         if (kcalLabel) kcalLabel.textContent = "ΣΤΟΧΟΣ ΗΜΕΡΑΣ (KCAL)";
     }
 };
@@ -81,7 +79,9 @@ let audioUnlocked = false;
 document.addEventListener('click', function() {
     if (!audioUnlocked) {
         sysAudio.play().then(() => {
-            sysAudio.pause(); sysAudio.currentTime = 0; audioUnlocked = true;
+            sysAudio.pause();
+            sysAudio.currentTime = 0;
+            audioUnlocked = true;
             console.log("🔊 PEGASUS OS: Audio Unlocked & Ready.");
         }).catch(err => console.warn("PEGASUS OS: Audio unlock pending user action", err));
     }
@@ -89,40 +89,41 @@ document.addEventListener('click', function() {
 
 const playBeep = (volume = 1) => {
     if (!muted) {
-        sysAudio.volume = volume; sysAudio.currentTime = 0; 
+        sysAudio.volume = volume;
+        sysAudio.currentTime = 0;
         sysAudio.play().catch(e => console.log("Audio execution blocked by browser policy", e));
     }
 };
 
 /* ===== PEGASUS ENGINE BRIDGE (SAFE WRAPPER) ===== */
-window._pegasusEventBuffer = [];
+window._pegasusEventBuffer = window._pegasusEventBuffer || [];
 
 window.PegasusEngine = {
-    dispatch: function (action) {
+    dispatch: function(action) {
         window._pegasusEventBuffer.push({
-            action,
+            action: action,
             time: Date.now()
         });
         console.log("📨 PEGASUS ENGINE EVENT:", action);
     },
 
-    getEventBuffer: function () {
+    getEventBuffer: function() {
         return window._pegasusEventBuffer || [];
     },
 
-    getState: function () {
+    getState: function() {
         return {
-            exercises,
-            remainingSets,
-            currentIdx,
-            phase,
-            running,
-            totalSeconds,
-            remainingSeconds,
-            sessionActiveKcal,
-            TURBO_MODE,
-            SPEED,
-            userWeight
+            exercises: exercises,
+            remainingSets: remainingSets,
+            currentIdx: currentIdx,
+            phase: phase,
+            running: running,
+            totalSeconds: totalSeconds,
+            remainingSeconds: remainingSeconds,
+            sessionActiveKcal: sessionActiveKcal,
+            TURBO_MODE: TURBO_MODE,
+            SPEED: SPEED,
+            userWeight: userWeight
         };
     }
 };
@@ -131,11 +132,11 @@ window.PegasusEngine = {
 window.syncSessionWithHistory = function() {
     console.log("🔄 PEGASUS SMART SYNC: Executing...");
     const historyKey = P_M?.workout?.weekly_history || 'pegasus_weekly_history';
-    const history = JSON.parse(localStorage.getItem(historyKey)) || {};
+    const history = JSON.parse(localStorage.getItem(historyKey) || "{}");
     const targets = (typeof window.getDynamicTargets === "function") ? window.getDynamicTargets() : {};
 
     exercises.forEach((exDiv, i) => {
-        const exName = exDiv.querySelector(".exercise-name").textContent.trim();
+        const exName = exDiv.querySelector(".exercise-name")?.textContent?.trim();
         const muscle = (window.exercisesDB?.find(e => e.name.trim() === exName))?.muscleGroup;
 
         if (muscle) {
@@ -172,30 +173,30 @@ function selectDay(btn, day) {
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', 'transparent', 'important');
-        b.style.color = "#333"; 
+        b.style.color = "#333";
     });
-    
+
     if (btn) {
         btn.classList.add("active");
         btn.style.setProperty('background-color', 'rgba(76, 175, 80, 0.1)', 'important');
-        btn.style.color = "#4CAF50"; 
+        btn.style.color = "#4CAF50";
     }
 
-    clearInterval(timer); timer = null; running = false; phase = 0; currentIdx = 0;
-    sessionActiveKcal = 0; localStorage.setItem("pegasus_session_kcal", "0.0");
-    
-const sBtn = document.getElementById("btnStart");
+    clearInterval(timer);
+    timer = null;
+    running = false;
+    phase = 0;
+    currentIdx = 0;
+    sessionActiveKcal = 0;
+    localStorage.setItem("pegasus_session_kcal", "0.0");
+
+    const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = "Έναρξη";
 
-    // 🛡️ PROTECTED METABOLIC ADJUSTER BRIDGE (Anti-Loop)
-    // Προσθέτουμε έναν έλεγχο για να μην ξανακαλείται η συνάρτηση αν τρέχει ήδη
     if (typeof window.calculatePegasusDailyTarget === "function") {
         if (!window.isCalculatingTarget) {
-            window.isCalculatingTarget = true; 
-            
+            window.isCalculatingTarget = true;
             window.calculatePegasusDailyTarget();
-            
-            // Ξεκλειδώνει μετά από 100ms για να επιτρέψει την επόμενη ΧΕΙΡΟΚΙΝΗΤΗ αλλαγή
             setTimeout(() => { window.isCalculatingTarget = false; }, 100);
         }
     } else if (typeof window.updateKcalUI === "function") {
@@ -204,7 +205,7 @@ const sBtn = document.getElementById("btnStart");
 
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     let rawBaseData = [];
-    
+
     if ((day === "Σάββατο" || day === "Κυριακή") && isRainy) {
         rawBaseData = [
             { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
@@ -215,36 +216,36 @@ const sBtn = document.getElementById("btnStart");
         rawBaseData = (window.program[day]) ? [...window.program[day]] : [];
     }
 
-    let mappedData = window.PegasusOptimizer ? 
-                     window.PegasusOptimizer.apply(day, rawBaseData) : 
-                     rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
+    let mappedData = window.PegasusOptimizer
+        ? window.PegasusOptimizer.apply(day, rawBaseData)
+        : rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
 
-    // 🎯 SORTING PATCH: Βάζουμε πρώτες τις ασκήσεις με τα περισσότερα σετ
     mappedData.sort((a, b) => parseFloat(b.adjustedSets || b.sets) - parseFloat(a.adjustedSets || a.sets));
 
     const list = document.getElementById("exList");
     if (!list) return;
-    list.innerHTML = ""; 
-    exercises = []; remainingSets = []; 
+    list.innerHTML = "";
+    exercises = [];
+    remainingSets = [];
 
-    // 💾 DAILY PROGRESS MEMORY FETCH
     const todayStr = new Date().toISOString().split('T')[0];
     let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
-    if(dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
+    if (dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
 
     mappedData.forEach((e, idx) => {
         if (!e.name || e.name === "αα" || e.adjustedSets < 0.1) return;
+
         const cleanName = e.name.trim();
         const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        
+
         let finalSets = parseFloat(e.adjustedSets);
-        let doneSoFar = dailyProg.exercises[cleanName] || 0; 
+        let doneSoFar = dailyProg.exercises[cleanName] || 0;
         let remSets = Math.max(0, finalSets - doneSoFar);
 
         const d = document.createElement("div");
-        d.className = "exercise"; 
-        d.dataset.total = finalSets; 
-        d.dataset.done = doneSoFar; 
+        d.className = "exercise";
+        d.dataset.total = finalSets;
+        d.dataset.done = doneSoFar;
         d.dataset.index = idx;
 
         const savedWeight = window.getSavedWeight(cleanName);
@@ -253,13 +254,15 @@ const sBtn = document.getElementById("btnStart");
         d.innerHTML = `
             <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
                 <div class="set-counter">${doneSoFar}/${finalSets}</div>
-                <div class="exercise-name">${cleanName}</div> 
+                <div class="exercise-name">${cleanName}</div>
                 <input type="number" id="weight-${idx}" class="weight-input" data-name="${safeName}" placeholder="kg" value="${displayWeight}" onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
         `;
-        
-        list.appendChild(d); exercises.push(d); remainingSets.push(remSets);
+
+        list.appendChild(d);
+        exercises.push(d);
+        remainingSets.push(remSets);
 
         if (remSets === 0) {
             d.classList.add("exercise-skipped");
@@ -273,7 +276,9 @@ const sBtn = document.getElementById("btnStart");
 
     setTimeout(() => {
         if (typeof showVideo === "function") showVideo(0);
-        if (exercises.length === 0) list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
+        if (exercises.length === 0) {
+            list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
+        }
     }, 150);
 }
 
@@ -281,8 +286,7 @@ const sBtn = document.getElementById("btnStart");
 function startPause() {
     if (exercises.length === 0) return;
     const vid = document.getElementById("video");
-    
-    // 🎯 SMART START
+
     if (!running) {
         let firstAvailable = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx].classList.contains("exercise-skipped"));
         if (currentIdx === 0 && phase === 0 && totalSeconds === remainingSeconds) {
@@ -293,19 +297,24 @@ function startPause() {
     }
 
     if (!running && currentIdx === 0 && phase === 0) {
-        sessionActiveKcal = 0; localStorage.setItem("pegasus_session_kcal", "0.0");
+        sessionActiveKcal = 0;
+        localStorage.setItem("pegasus_session_kcal", "0.0");
     }
 
-    if (vid && vid.src.includes("warmup")) { vid.loop = false; vid.pause(); }
+    if (vid && vid.src.includes("warmup")) {
+        vid.loop = false;
+        vid.pause();
+    }
 
     running = !running;
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
-    
+
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
-    if (running) runPhase(); 
-    else {
+    if (running) {
+        runPhase();
+    } else {
         clearInterval(timer);
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
     }
@@ -315,22 +324,34 @@ function runPhase() {
     if (!running) return;
     if (timer) clearInterval(timer);
 
-    if (remainingSets.every(s => s <= 0)) { finishWorkout(); return; }
+    if (remainingSets.every(s => s <= 0)) {
+        finishWorkout();
+        return;
+    }
 
     const e = exercises[currentIdx];
     if (!e) return;
+
     const exName = e.querySelector(".weight-input").getAttribute("data-name");
     let liftedWeight = parseFloat(e.querySelector(".weight-input").value) || 0;
-    
-    let baseMET = 3.5; let intensityMultiplier = 1.0;
-    if (exName.toLowerCase().includes("cycling") || exName.toLowerCase().includes("ποδηλασία")) baseMET = 8.0; 
-    else if (liftedWeight > 0) intensityMultiplier = 1 + (liftedWeight / 100); 
-    
+
+    let baseMET = 3.5;
+    let intensityMultiplier = 1.0;
+    if (exName.toLowerCase().includes("cycling") || exName.toLowerCase().includes("ποδηλασία")) {
+        baseMET = 8.0;
+    } else if (liftedWeight > 0) {
+        intensityMultiplier = 1 + (liftedWeight / 100);
+    }
+
     let kcalPerMin = (baseMET * intensityMultiplier * userWeight * 3.5) / 200;
     let kcalPerSecond = kcalPerMin / 60;
 
-    exercises.forEach(ex => { ex.style.borderColor = "#222"; ex.style.background = "transparent"; });
-    e.style.borderColor = "#4CAF50"; e.style.background = "rgba(76, 175, 80, 0.1)";
+    exercises.forEach(ex => {
+        ex.style.borderColor = "#222";
+        ex.style.background = "transparent";
+    });
+    e.style.borderColor = "#4CAF50";
+    e.style.background = "rgba(76, 175, 80, 0.1)";
 
     const config = window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
     let t = (phase === 0) ? config.prep : (phase === 1 ? config.work : config.rest);
@@ -339,7 +360,7 @@ function runPhase() {
 
     const label = document.getElementById("phaseTimer");
     const barFill = document.getElementById("phaseTimerFill");
-    
+
     if (label) {
         label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
         label.className = "phase-label " + cssClass;
@@ -349,36 +370,44 @@ function runPhase() {
 
     timer = setInterval(() => {
         t -= 1;
-        if (remainingSeconds > 0) { remainingSeconds -= 1; updateTotalBar(); }
+        if (remainingSeconds > 0) {
+            remainingSeconds -= 1;
+            updateTotalBar();
+        }
 
-        if (phase === 1) sessionActiveKcal += (kcalPerSecond * SPEED);
-        else if (phase === 2) {
+        if (phase === 1) {
+            sessionActiveKcal += (kcalPerSecond * SPEED);
+        } else if (phase === 2) {
             let restKcalPerSec = ((2.0 * userWeight * 3.5) / 200) / 60;
             sessionActiveKcal += (restKcalPerSec * SPEED);
         }
 
         if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
-        
+
         if (barFill) {
             let totalPhaseTime = (phase === 0) ? config.prep : (phase === 1 ? config.work : config.rest);
             barFill.style.width = (((totalPhaseTime - t) / totalPhaseTime) * 100) + "%";
         }
+
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
         if (t <= 0) {
-            clearInterval(timer); playBeep();
-            
-            if (phase === 0) { phase = 1; runPhase(); } 
-            else if (phase === 1) {
-                // 🎯 SESSION MEMORY UPDATE
+            clearInterval(timer);
+            playBeep();
+
+            if (phase === 0) {
+                phase = 1;
+                runPhase();
+            } else if (phase === 1) {
                 let done = parseInt(e.dataset.done) || 0;
-                done++; e.dataset.done = done;
+                done++;
+                e.dataset.done = done;
                 remainingSets[currentIdx] = parseFloat(e.dataset.total) - done;
                 e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
-                
+
                 const todayStr = new Date().toISOString().split('T')[0];
                 let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
-                if(dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
+                if (dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
                 dailyProg.exercises[exName] = done;
                 localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
 
@@ -386,11 +415,17 @@ function runPhase() {
                 if (window.logPegasusSet) window.logPegasusSet(exName);
                 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 
-                phase = 2; runPhase();
+                phase = 2;
+                runPhase();
             } else {
                 let next = getNextIndexCircuit();
-                if (next !== -1) { currentIdx = next; phase = 0; runPhase(); } 
-                else finishWorkout();
+                if (next !== -1) {
+                    currentIdx = next;
+                    phase = 0;
+                    runPhase();
+                } else {
+                    finishWorkout();
+                }
             }
         }
     }, 1000 / SPEED);
@@ -403,16 +438,16 @@ function skipToNextExercise() {
     if ((phase === 1 || phase === 2) && running) {
         const currentExNode = exercises[currentIdx];
         const exName = currentExNode.querySelector(".weight-input").getAttribute("data-name");
-        
+
         let done = parseInt(currentExNode.dataset.done) || 0;
-        done++; currentExNode.dataset.done = done;
+        done++;
+        currentExNode.dataset.done = done;
         remainingSets[currentIdx]--;
         currentExNode.querySelector(".set-counter").textContent = `${done}/${currentExNode.dataset.total}`;
-        
-        // 🎯 SESSION MEMORY UPDATE
+
         const todayStr = new Date().toISOString().split('T')[0];
         let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
-        if(dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
+        if (dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
         dailyProg.exercises[exName] = done;
         localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
 
@@ -423,9 +458,13 @@ function skipToNextExercise() {
 
     let nextIdx = getNextIndexCircuit();
     if (nextIdx !== -1) {
-        currentIdx = nextIdx; phase = 0; 
-        if (running) runPhase(); else showVideo(currentIdx);
-    } else finishWorkout();
+        currentIdx = nextIdx;
+        phase = 0;
+        if (running) runPhase();
+        else showVideo(currentIdx);
+    } else {
+        finishWorkout();
+    }
 }
 
 function getNextIndexCircuit() {
@@ -439,7 +478,7 @@ function getNextIndexCircuit() {
 window.toggleSkipExercise = function(idx, auto = false) {
     const exDiv = exercises[idx];
     if (!exDiv) return;
-    
+
     const originalSets = parseFloat(exDiv.dataset.total);
     const isSkipped = exDiv.classList.toggle("exercise-skipped");
     let done = parseInt(exDiv.dataset.done) || 0;
@@ -448,25 +487,29 @@ window.toggleSkipExercise = function(idx, auto = false) {
         exDiv.style.setProperty('opacity', '0.2', 'important');
         exDiv.style.setProperty('filter', 'grayscale(100%)', 'important');
         remainingSets[idx] = 0;
-        
-        // 🎯 AUTO-JUMP LOGIC
+
         if (!auto && currentIdx === idx && running) {
             clearInterval(timer);
             let nextIdx = getNextIndexCircuit();
-            if (nextIdx !== -1) { currentIdx = nextIdx; phase = 0; runPhase(); } 
-            else finishWorkout();
+            if (nextIdx !== -1) {
+                currentIdx = nextIdx;
+                phase = 0;
+                runPhase();
+            } else {
+                finishWorkout();
+            }
         }
     } else {
         exDiv.style.setProperty('opacity', '1', 'important');
         exDiv.style.setProperty('filter', 'none', 'important');
         remainingSets[idx] = originalSets - done;
     }
+
     calculateTotalTime(true);
     if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 };
 
 window.getActiveLifter = function() {
-    const btn = document.getElementById('btnPartnerMode');
     if (window.partnerData && window.partnerData.isActive && window.partnerData.currentPartner !== "") {
         return window.partnerData.currentPartner;
     }
@@ -483,7 +526,8 @@ window.getSavedWeight = function(exerciseName) {
     if (lifter === "ΑΓΓΕΛΟΣ") {
         let old1 = localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`);
         let old2 = localStorage.getItem(`weight_${cleanName}`);
-        if (old1) return old1; if (old2) return old2;
+        if (old1) return old1;
+        if (old2) return old2;
     }
     return "";
 };
@@ -492,11 +536,14 @@ window.saveWeight = function(name, val) {
     const cleanName = name.trim();
     const lifter = window.getActiveLifter();
     let allWeights = JSON.parse(localStorage.getItem(M?.workout?.exerciseWeights || "pegasus_exercise_weights") || "{}");
-    
+
     if (!allWeights[lifter]) allWeights[lifter] = {};
     allWeights[lifter][cleanName] = val;
     localStorage.setItem(M?.workout?.exerciseWeights || "pegasus_exercise_weights", JSON.stringify(allWeights));
-    if (lifter === "ΑΓΓΕΛΟΣ") localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
+
+    if (lifter === "ΑΓΓΕΛΟΣ") {
+        localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
+    }
 
     if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render();
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
@@ -514,8 +561,14 @@ function showVideo(i) {
     if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
         const recoverySrc = "videos/stretching.mp4";
         if (vid.getAttribute('src') !== recoverySrc) {
-            vid.pause(); vid.src = recoverySrc; vid.load(); vid.play().catch(e => console.log("Waiting for user..."));
-            if (label && isRecoveryDay) { label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING"; label.style.color = "#00bcd4"; }
+            vid.pause();
+            vid.src = recoverySrc;
+            vid.load();
+            vid.play().catch(e => console.log("Waiting for user..."));
+            if (label && isRecoveryDay) {
+                label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
+                label.style.color = "#00bcd4";
+            }
         }
         return;
     }
@@ -529,9 +582,13 @@ function showVideo(i) {
 
     const newSrc = `videos/${mappedVal}.mp4`;
     if (vid.getAttribute('src') !== newSrc) {
-        vid.pause(); vid.src = newSrc; vid.load(); 
-        vid.play().catch(err => {
-            vid.src = "videos/warmup.mp4"; vid.load(); vid.play();
+        vid.pause();
+        vid.src = newSrc;
+        vid.load();
+        vid.play().catch(() => {
+            vid.src = "videos/warmup.mp4";
+            vid.load();
+            vid.play().catch(() => {});
         });
     }
 }
@@ -549,10 +606,11 @@ function calculateTotalTime(isUpdate = false) {
         totalSeconds = newTotal;
         remainingSeconds = Math.max(0, remainingSeconds - diff);
     } else {
-        totalSeconds = newTotal; remainingSeconds = newTotal;
+        totalSeconds = newTotal;
+        remainingSeconds = newTotal;
     }
 
-    const timeDisplay = document.getElementById("totalProgressTime"); 
+    const timeDisplay = document.getElementById("totalProgressTime");
     if (timeDisplay) {
         const m = Math.floor(remainingSeconds / 60);
         const s = remainingSeconds % 60;
@@ -577,98 +635,94 @@ function updateTotalBar() {
 }
 
 /* ===== 7.5 STRICT METABOLIC AUTO-ADJUSTER (MULTI-PLAN) ===== */
-window._isCalculatingTarget = false; // Zero-Bug: Execution Lock
+window._isCalculatingTarget = false;
 
 window.calculatePegasusDailyTarget = function() {
-    // Zero-Bug: Αποτροπή άπειρου βρόχου (Infinite Recursion Guard)
-    if (window._isCalculatingTarget) return; 
+    if (window._isCalculatingTarget) {
+        const storedTarget = parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal'));
+        return isNaN(storedTarget) ? 2100 : storedTarget;
+    }
+
     window._isCalculatingTarget = true;
 
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const dayName = greekDays[new Date().getDay()];
-    
-    // Ανάκτηση όλων των ρυθμίσεων (Active Plan, Weight, κλπ.) από το κεντρικό αρχείο
-    const settings = typeof window.getPegasusSettings === "function" 
-        ? window.getPegasusSettings() 
-        : { activeSplit: 'IRON' }; 
-        
+
+    const settings = typeof window.getPegasusSettings === "function"
+        ? window.getPegasusSettings()
+        : { activeSplit: 'IRON' };
+
     const activePlan = settings.activeSplit;
-    
-    // --- 7.6 INTEGRATED BIO-METRIC CALCULATION ---
     const dynamicProtein = window.calculatePegasusBioMetrics(settings);
-    
-    const KCAL_REST = 2100;    // Δευτέρα & Πέμπτη
-    const KCAL_WEIGHTS = 2800; // Τυπική προπόνηση
-    const KCAL_EMS = 2700;     // Ειδική Τετάρτη
-    const KCAL_BIKE = 3100;    // Σαββατοκύριακο
+
+    const KCAL_REST = 2100;
+    const KCAL_WEIGHTS = 2800;
+    const KCAL_EMS = 2700;
+    const KCAL_BIKE = 3100;
 
     let target = KCAL_REST;
-    let currentActivity = "ΑΠΟΘΕΡΑΠΕΙΑ";
 
     if (dayName === "Δευτέρα" || dayName === "Πέμπτη") {
         target = KCAL_REST;
-        currentActivity = "ΑΠΟΘΕΡΑΠΕΙΑ";
     } else {
-        switch(activePlan) {
+        switch (activePlan) {
             case 'IRON':
+            case 'UPPER_LOWER':
                 target = KCAL_WEIGHTS;
-                currentActivity = "ΒΑΡΗ";
                 break;
             case 'EMS_ONLY':
-                if (dayName === "Τετάρτη") { target = KCAL_EMS; currentActivity = "EMS"; }
-                else { target = KCAL_WEIGHTS; currentActivity = "ΒΑΡΗ"; }
+                target = (dayName === "Τετάρτη") ? KCAL_EMS : KCAL_WEIGHTS;
                 break;
             case 'BIKE_ONLY':
-                if (dayName === "Σάββατο" || dayName === "Κυριακή") { target = KCAL_BIKE; currentActivity = "ΠΟΔΗΛΑΤΟ"; }
-                else { target = KCAL_WEIGHTS; currentActivity = "ΒΑΡΗ"; }
+                target = (dayName === "Σάββατο" || dayName === "Κυριακή") ? KCAL_BIKE : KCAL_WEIGHTS;
                 break;
-            case 'HYBRID': // Το MIX
-                if (dayName === "Τετάρτη") { target = KCAL_EMS; currentActivity = "EMS"; }
-                else if (dayName === "Σάββατο" || dayName === "Κυριακή") { target = KCAL_BIKE; currentActivity = "ΠΟΔΗΛΑΤΟ"; }
-                else { target = KCAL_WEIGHTS; currentActivity = "ΒΑΡΗ"; }
+            case 'HYBRID':
+                if (dayName === "Τετάρτη") target = KCAL_EMS;
+                else if (dayName === "Σάββατο" || dayName === "Κυριακή") target = KCAL_BIKE;
+                else target = KCAL_WEIGHTS;
                 break;
             default:
                 target = KCAL_WEIGHTS;
         }
     }
 
-    // Αποθήκευση θερμίδων
     localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', target);
-    
+
     console.log(`🏛️ PEGASUS OS [${activePlan}]: Στόχος (${dayName}): ${target} kcal | Πρωτεΐνη: ${dynamicProtein}g (Dynamic).`);
-    
+
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
-    
-    // Zero-Bug: Απελευθέρωση του Lock
-    window._isCalculatingTarget = false; 
+
+    window._isCalculatingTarget = false;
+    return target;
 };
 
 /* ===== 7.6 AUTOMATED BIO-METRIC CALCULATOR ===== */
 window.calculatePegasusBioMetrics = function(settingsObj) {
-    // Αν δεν δοθεί το αντικείμενο, προσπαθούμε να το τραβήξουμε
     const currentSettings = settingsObj || (typeof window.getPegasusSettings === "function" ? window.getPegasusSettings() : null);
-    
-    // Default Fallbacks σε περίπτωση που το settings.js δεν είναι φορτωμένο
-    const weight = currentSettings ? currentSettings.weight : 74; 
-    const multiplier = 2.17; // Αθλητικός συντελεστής (Bulk/Maintain)
 
-    // Αυτόματος υπολογισμός πρωτεΐνης βάσει του ΔΥΝΑΜΙΚΟΥ βάρους
-    const autoProtein = Math.round(weight * multiplier); 
-    
-    // Αποθήκευση στο σύστημα (για να το διαβάζει το UI)
+    const weight = currentSettings ? currentSettings.weight : 74;
+    const multiplier = 2.17;
+    const autoProtein = Math.round(weight * multiplier);
+
     localStorage.setItem(M?.diet?.todayProtein || 'pegasus_today_protein', autoProtein);
-    
+
     return autoProtein;
 };
 
 /* ===== 8. FINISH & REPORTING ===== */
 function finishWorkout() {
-    if (!running && !timer && phase === 0) return; 
-    
-    clearInterval(timer); running = false; remainingSeconds = 0; updateTotalBar();
+    if (!running && !timer && phase === 0) return;
+
+    clearInterval(timer);
+    running = false;
+    remainingSeconds = 0;
+    updateTotalBar();
 
     const label = document.getElementById("phaseTimer");
-    if (label) { label.textContent = "ΟΛΟΚΛΗΡΩΣΗ & ΤΟΠΙΚΗ ΑΠΟΘΗΚΕΥΣΗ..."; label.style.color = "#4CAF50"; }
+    if (label) {
+        label.textContent = "ΟΛΟΚΛΗΡΩΣΗ & ΤΟΠΙΚΗ ΑΠΟΘΗΚΕΥΣΗ...";
+        label.style.color = "#4CAF50";
+    }
 
     const now = new Date();
     const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -677,7 +731,6 @@ function finishWorkout() {
     let data = JSON.parse(localStorage.getItem(doneKey) || "{}");
     data[workoutKey] = true;
     localStorage.setItem(doneKey, JSON.stringify(data));
-    localStorage.setItem(P_M?.workout?.cardio_offset || "pegasus_cardio_offset_sets", "0");
 
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
@@ -689,24 +742,33 @@ function finishWorkout() {
             let currentWeekly = parseFloat(localStorage.getItem("pegasus_weekly_kcal")) || 0;
             localStorage.setItem("pegasus_weekly_kcal", (currentWeekly + sessionKcal).toFixed(1));
 
-            let todayKcal = parseFloat(localStorage.getItem(P_M?.diet?.todayKcal || "pegasus_today_kcal")) || 0;
-            localStorage.setItem(P_M?.diet?.todayKcal || "pegasus_today_kcal", (todayKcal + sessionKcal).toFixed(1));
-
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
-            sessionActiveKcal = 0; localStorage.setItem("pegasus_session_kcal", "0.0");
-        } 
-        
+            sessionActiveKcal = 0;
+            localStorage.setItem("pegasus_session_kcal", "0.0");
+        }
+
         const list = document.getElementById("exList");
-        if (list) list.innerHTML = `<div style="padding:20px; color:#4CAF50; text-align:center; font-weight:bold; font-size:16px;">✅ Η ΠΡΟΠΟΝΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ ΕΠΙΤΥΧΩΣ</div>`;
-        
+        if (list) {
+            list.innerHTML = `<div style="padding:20px; color:#4CAF50; text-align:center; font-weight:bold; font-size:16px;">✅ Η ΠΡΟΠΟΝΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ ΕΠΙΤΥΧΩΣ</div>`;
+        }
+
         const vid = document.getElementById("video");
         if (vid) {
-            vid.pause(); vid.src = "videos/stretching.mp4"; vid.load(); vid.play().catch(e => console.log("Auto-play prevented"));
+            vid.pause();
+            vid.src = "videos/stretching.mp4";
+            vid.load();
+            vid.play().catch(() => console.log("Auto-play prevented"));
         }
 
         const sBtn = document.getElementById("btnStart");
         if (sBtn) sBtn.innerHTML = "Έναρξη";
-        if (label) { label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING"; label.style.color = "#00bcd4"; }
+        if (label) {
+            label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
+            label.style.color = "#00bcd4";
+        }
+
+        if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
+        if (typeof window.updateFoodUI === "function") window.updateFoodUI();
 
         console.log("🎯 PEGASUS OS: Session Successfully Terminated.");
     }, 3000);
@@ -716,26 +778,33 @@ function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
     if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
 
-    const currentDay = activeBtn.id.replace('nav-', ''); 
+    const currentDay = activeBtn.id.replace('nav-', '');
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
-    
-    let rawData = (typeof window.calculateDailyProgram !== 'undefined') ? 
-                  window.calculateDailyProgram(currentDay, isRainy) : 
-                  ((window.program && window.program[currentDay]) ? [...window.program[currentDay]] : []);
+
+    let rawData = (typeof window.calculateDailyProgram !== 'undefined')
+        ? window.calculateDailyProgram(currentDay, isRainy)
+        : ((window.program && window.program[currentDay]) ? [...window.program[currentDay]] : []);
 
     if (currentDay === "Παρασκευή" && !isRainy && window.program && window.program["Κυριακή"]) {
-        const bonus = window.program["Κυριακή"].filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling")).map(ex => ({...ex, isSpillover: false}));
+        const bonus = window.program["Κυριακή"]
+            .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
+            .map(ex => ({ ...ex, isSpillover: false }));
         rawData = [...rawData, ...bonus];
     }
 
-    const dayExercises = window.PegasusOptimizer ? window.PegasusOptimizer.apply(currentDay, rawData) : rawData.map(e => ({ ...e, adjustedSets: e.sets }));
+    const dayExercises = window.PegasusOptimizer
+        ? window.PegasusOptimizer.apply(currentDay, rawData)
+        : rawData.map(e => ({ ...e, adjustedSets: e.sets }));
+
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
-    const muscleContainer = document.getElementById('muscleProgressContainer'); 
+    const muscleContainer = document.getElementById('muscleProgressContainer');
 
     if (!panel || !content) return;
 
-    panel.style.display = 'block'; content.innerHTML = ''; if (muscleContainer) muscleContainer.innerHTML = ''; 
+    panel.style.display = 'block';
+    content.innerHTML = '';
+    if (muscleContainer) muscleContainer.innerHTML = '';
 
     dayExercises.filter(ex => (ex.adjustedSets || ex.sets) > 0).forEach((ex) => {
         const cleanName = ex.name.trim();
@@ -750,26 +819,36 @@ function openExercisePreview() {
             </div>
         `;
     });
-    
-    if (typeof window.forcePegasusRender === "function") setTimeout(() => window.forcePegasusRender(), 50);
+
+    if (typeof window.forcePegasusRender === "function") {
+        setTimeout(() => window.forcePegasusRender(), 50);
+    }
 }
 
 /* ===== 10. TRACKING ===== */
 window.logPegasusSet = function(exName) {
     let historyKey = P_M?.workout?.weekly_history || 'pegasus_weekly_history';
-    let history = JSON.parse(localStorage.getItem(historyKey)) || { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+    let history = JSON.parse(localStorage.getItem(historyKey) || "{}");
+    if (!history || typeof history !== "object") {
+        history = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+    }
 
     let muscle = (window.exercisesDB?.find(ex => ex.name.trim() === exName.trim()))?.muscleGroup || "Άλλο";
     let value = 1;
 
     const cleanName = exName.trim().toUpperCase();
-    if (cleanName.includes("ΠΟΔΗΛΑΣΙΑ") || cleanName.includes("CYCLING")) { muscle = "Πόδια"; value = 18; } 
-    else if (cleanName.includes("EMS ΠΟΔΙΩΝ")) { muscle = "Πόδια"; value = 6; }
+    if (cleanName.includes("ΠΟΔΗΛΑΣΙΑ") || cleanName.includes("CYCLING")) {
+        muscle = "Πόδια";
+        value = 18;
+    } else if (cleanName.includes("EMS ΠΟΔΙΩΝ")) {
+        muscle = "Πόδια";
+        value = 6;
+    }
 
     if (history.hasOwnProperty(muscle)) {
         history[muscle] += value;
         localStorage.setItem(historyKey, JSON.stringify(history));
-        if (window.MuscleProgressUI?.render) setTimeout(() => window.MuscleProgressUI.render(), 50); 
+        if (window.MuscleProgressUI?.render) setTimeout(() => window.MuscleProgressUI.render(), 50);
     }
 };
 
@@ -787,7 +866,8 @@ window.onload = () => {
     const todayObj = new Date();
     const todayName = greekDays[todayObj.getDay()];
 
-    if (todayName === "Σάββατο") {
+    // ✅ FIX: Weekly reset Monday ώστε να συμφωνεί με progressUI.js
+    if (todayName === "Δευτέρα") {
         try {
             const lastReset = localStorage.getItem('pegasus_last_reset');
             const todayDateStr = todayObj.toISOString().split('T')[0];
@@ -798,7 +878,9 @@ window.onload = () => {
                 localStorage.setItem('pegasus_last_reset', todayDateStr);
                 if (window.PegasusCloud?.push) window.PegasusCloud.push();
             }
-        } catch (e) { console.error("🛡️ PEGASUS RESET ERROR:", e); }
+        } catch (e) {
+            console.error("🛡️ PEGASUS RESET ERROR:", e);
+        }
     }
 
     setTimeout(() => {
@@ -808,18 +890,16 @@ window.onload = () => {
     }, 2000);
 
     if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
-    
-    // 🎯 INITIALIZE UI BRIDGE
+
     const importInput = document.getElementById('importFileTools');
     if (importInput) importInput.onchange = (e) => window.importPegasusData(e);
 
-createNavbar();
+    createNavbar();
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     if (window.updateKoukiBalance) window.updateKoukiBalance();
-    
-    // 🎯 STRICT BOOT PRIORITY: Πρώτα υπολογισμός στόχου, μετά εμφάνιση στο UI
+
     if (typeof window.calculatePegasusDailyTarget === "function") {
-        window.calculatePegasusDailyTarget(); 
+        window.calculatePegasusDailyTarget();
     } else if (typeof window.updateKcalUI === "function") {
         window.updateKcalUI();
     }
@@ -831,28 +911,55 @@ createNavbar();
             const vid = document.getElementById("video");
             if (!vid) return;
             if (!vid.src.includes("warmup.mp4")) {
-                vid.pause(); vid.src = "videos/warmup.mp4"; vid.load(); vid.play().catch(e => console.log(e));
+                vid.pause();
+                vid.src = "videos/warmup.mp4";
+                vid.load();
+                vid.play().catch(e => console.log(e));
             } else {
                 vid.pause();
                 if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
-                    window.currentIdx = 0; window.phase = 0; window.showVideo(0);
+                    window.currentIdx = 0;
+                    window.phase = 0;
+                    window.showVideo(0);
                 }
             }
         },
         "btnTurboTools": () => {
-            window.TURBO_MODE = !window.TURBO_MODE; window.SPEED = window.TURBO_MODE ? 10 : 1;
+            window.TURBO_MODE = !window.TURBO_MODE;
+            window.SPEED = window.TURBO_MODE ? 10 : 1;
+            TURBO_MODE = window.TURBO_MODE;
+            SPEED = window.SPEED;
+
             const btn = document.getElementById('btnTurboTools');
-            if(btn) { btn.textContent = window.TURBO_MODE ? "🚀 TURBO: ΕΝΕΡΓΟ" : "🚀 TURBO: ΑΝΕΝΕΡΓΟ"; btn.style.color = window.TURBO_MODE ? "#ff4444" : "#4CAF50"; }
+            if (btn) {
+                btn.textContent = window.TURBO_MODE ? "🚀 TURBO: ΕΝΕΡΓΟ" : "🚀 TURBO: ΑΝΕΝΕΡΓΟ";
+                btn.style.color = window.TURBO_MODE ? "#ff4444" : "#4CAF50";
+            }
         },
         "btnMuteTools": () => {
             window.muted = !window.muted;
+            muted = window.muted;
+
             const btn = document.getElementById('btnMuteTools');
-            if(btn) { btn.textContent = window.muted ? "🔇 ΗΧΟΣ: ΣΙΓΑΣΗ" : "🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ"; btn.style.color = window.muted ? "#888" : "#4CAF50"; }
+            if (btn) {
+                btn.textContent = window.muted ? "🔇 ΗΧΟΣ: ΣΙΓΑΣΗ" : "🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ";
+                btn.style.color = window.muted ? "#888" : "#4CAF50";
+            }
         },
-        "btnPartnerMode": () => { if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode(); },
-        "btnImportData": () => { const f = document.getElementById('importFileTools'); if(f) f.click(); },
-        "btnExportData": () => { if (window.exportPegasusData) window.exportPegasusData(); },
-        "btnMasterVault": () => { const m = document.getElementById('pinModal'); if(m) m.style.display = 'flex'; },
+        "btnPartnerMode": () => {
+            if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode();
+        },
+        "btnImportData": () => {
+            const f = document.getElementById('importFileTools');
+            if (f) f.click();
+        },
+        "btnExportData": () => {
+            if (window.exportPegasusData) window.exportPegasusData();
+        },
+        "btnMasterVault": () => {
+            const m = document.getElementById('pinModal');
+            if (m) m.style.display = 'flex';
+        },
         "btnPlanSelector": { panel: "planModal", init: null },
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
@@ -863,17 +970,17 @@ createNavbar();
             else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.");
         },
         "btnToolsUI": { panel: "toolsPanel", init: null },
-        "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview }, 
-        "btnGallery": { panel: "galleryPanel", init: () => { if(window.GalleryEngine) window.GalleryEngine.render(); } },
-        "btnCardio": { panel: "cardioPanel", init: () => { if(window.PegasusCardio) window.PegasusCardio.open(); } },
+        "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview },
+        "btnGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
+        "btnCardio": { panel: "cardioPanel", init: () => { if (window.PegasusCardio) window.PegasusCardio.open(); } },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
         "btnManualEmail": () => {
             if (window.PegasusReporting?.checkAndSendMorningReport) window.PegasusReporting.checkAndSendMorningReport(true);
             else alert("Reporting Engine Offline");
         },
-        "btnSaveSettings": () => { 
+        "btnSaveSettings": () => {
             if (typeof window.savePegasusSettingsGlobal === "function") {
-                window.savePegasusSettingsGlobal(); 
+                window.savePegasusSettingsGlobal();
             } else {
                 const weightVal = document.getElementById("userWeightInput")?.value || 74;
                 if (window.PegasusWeight?.save) window.PegasusWeight.save(weightVal);
@@ -888,22 +995,28 @@ createNavbar();
         const btn = document.getElementById(btnId);
         if (btn) {
             btn.onclick = (e) => {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 const target = window.masterUI[btnId];
+
                 if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
                     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
-                if (typeof target === 'function') target();
-                else if (target && target.panel) {
+
+                if (typeof target === 'function') {
+                    target();
+                } else if (target && target.panel) {
                     const el = document.getElementById(target.panel);
-                    if (el) { el.style.display = "block"; if (target.init) target.init(); }
+                    if (el) {
+                        el.style.display = "block";
+                        if (target.init) target.init();
+                    }
                 }
             };
         }
     });
 
-    setTimeout(() => { 
-        document.querySelectorAll(".navbar button").forEach(b => { 
+    setTimeout(() => {
+        document.querySelectorAll(".navbar button").forEach(b => {
             if (b.id.replace('nav-', '') === todayName) {
                 if (typeof selectDay === "function") {
                     selectDay(b, todayName);
@@ -916,7 +1029,7 @@ createNavbar();
                     }, 150);
                 }
             }
-        }); 
+        });
     }, 400);
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
@@ -928,7 +1041,7 @@ createNavbar();
             loader.style.visibility = 'hidden';
             console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
         }
-    }, 1000); 
+    }, 1000);
 };
 
 window.PegasusDebug = {
