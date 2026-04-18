@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.3)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.4)
    Protocol: Global Variable Re-declaration (Unlock M)
-   Status: THE SINGLE SOURCE OF TRUTH | FIXED: REDECLARATION ERRORS
+   Status: THE SINGLE SOURCE OF TRUTH | CLEANED: KEY CONSISTENCY PATCH
    ========================================================================== */
 
 window.PegasusManifest = {
@@ -11,9 +11,9 @@ window.PegasusManifest = {
     metadata: {
         os: "Pegasus OS",
         author: "Angelos & Gemini",
-        last_update: "2026-04-15",
+        last_update: "2026-04-18",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.3 Stable"
+        engine_version: "v18.4 Stable"
     },
 
     // ---------------------------------------------------------
@@ -35,9 +35,9 @@ window.PegasusManifest = {
         lastPush: "pegasus_last_push",
         lastReport: "pegasus_last_auto_report",
         lastEmailSent: "pegasus_last_email_sent_date",
-        weatherCode: "pegasus_weather_code",
-       "auditUI.js": "Real-time System Integrity Monitor & Diagnostic Tool."       
+        weatherCode: "pegasus_weather_code"
     },
+
     user: {
         weight: "pegasus_weight",
         weightHistory: "pegasus_weight_history",
@@ -50,11 +50,13 @@ window.PegasusManifest = {
         contacts: "pegasus_contacts",
         partners: "pegasus_partners_list"
     },
+
     workout: {
         weekly_history: "pegasus_weekly_history",
         done: "pegasus_workouts_done",
         total: "pegasus_total_workouts",
-        cardio_offset: "pegasus_cardio_offset_sets",
+        cardio_offset: "pegasus_cardio_offset_sets",   // legacy compatibility key base
+        cardio_daily_prefix: "pegasus_cardio_kcal_",   // canonical per-day cardio key
         cardio_history: "pegasus_cardio_history",
         activePlan: "pegasus_active_plan",
         muscleTargets: "pegasus_muscle_targets",
@@ -63,31 +65,38 @@ window.PegasusManifest = {
         ex_time: "pegasus_ex_time",
         rest_time: "pegasus_rest_time"
     },
-    nutrition: { 
-        log_prefix: "food_log_" 
+
+    nutrition: {
+        log_prefix: "food_log_"
     },
+
     diet: {
         weekly_kcal: "pegasus_weekly_kcal",
+        weeklyKcal: "pegasus_weekly_kcal",      // alias compatibility
         session_kcal: "pegasus_session_kcal",
+        sessionKcal: "pegasus_session_kcal",    // alias compatibility
         inventory: "pegasus_supp_inventory",
         foodLibrary: "pegasus_food_library",
         todayKcal: "pegasus_today_kcal",
         todayProtein: "pegasus_today_protein"
     },
+
     kouki: {
         agreement: "kouki_agreement_log",
         totalMeals: "kouki_meals_total",
         remaining: "kouki_meals_remaining",
         totalStock: "kouki_total_stock"
     },
+
     car: {
         identity: "pegasus_car_identity",
         dates: "pegasus_car_dates",
         service: "pegasus_car_service",
-        legacySpecs: "pegasus_car_specs", 
+        legacySpecs: "pegasus_car_specs",
         legacyService: "peg_car_service",
         legacyDates: "peg_car_dates"
     },
+
     parking: {
         loc: "pegasus_parking_loc",
         history: "pegasus_parking_history"
@@ -106,6 +115,8 @@ window.PegasusManifest = {
         "optimizer.js": "AI Training Volumizer (Dynamic Set Adjustment).",
         "cloudSync.js": "Security & Persistence Layer (API & Vault PIN).",
         "cardio.js": "Cardio Engine (+18 σετ πόδια & Kcal target modifier).",
+        "auditUI.js": "Real-time System Integrity Monitor & Diagnostic Tool.",
+        "debug.js": "Tracer, health checks, calorie audit and runtime diagnostics.",
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
         "dragDrop.js": "UI Window Positioning Memory.",
@@ -142,20 +153,31 @@ window.PegasusManifest = {
 
         for (let i = 0; i < localStorage.length; i++) {
             let key = localStorage.key(i);
-            if (key.startsWith("food_log_") || key.startsWith("weight_") || key.startsWith("pegasus_weight_") || 
-                key.startsWith("pegasus_cardio_kcal_") || key.startsWith("pegasus_pos_") || 
-                key.startsWith("pegasus_routine_injected_") || key.startsWith("pegasus_history_") || 
-                key.startsWith("pegasus_day_status_") || key.startsWith("cardio_log_")) {
-                validKeys.push(key); 
+
+            if (
+                key.startsWith("food_log_") ||
+                key.startsWith("weight_") ||
+                key.startsWith("pegasus_weight_") ||
+                key.startsWith("pegasus_cardio_kcal_") ||
+                key.startsWith("pegasus_pos_") ||
+                key.startsWith("pegasus_routine_injected_") ||
+                key.startsWith("pegasus_history_") ||
+                key.startsWith("pegasus_day_status_") ||
+                key.startsWith("cardio_log_")
+            ) {
+                validKeys.push(key);
                 continue;
             }
+
             if (manifestStr.includes(`"${key}"`)) {
                 validKeys.push(key);
             } else {
                 orphanKeys.push(key);
             }
         }
+
         console.log(`✅ Καταγεγραμμένα & Έγκυρα Κλειδιά: ${validKeys.length}`);
+
         if (orphanKeys.length > 0) {
             console.warn(`⚠️ ΠΡΟΣΟΧΗ: Βρέθηκαν ${orphanKeys.length} Ορφανά Κλειδιά!`);
             console.table(orphanKeys.map(k => ({ "Ορφανό Κλειδί": k })));
@@ -165,8 +187,7 @@ window.PegasusManifest = {
     }
 };
 
-// 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK:
-// Ορίζουμε το M ως var στην κορυφή του παγκόσμιου scope.
+// 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.3 LOADED. GLOBAL UNLOCK ACTIVE.");
+console.log("🏛️ PEGASUS MANIFEST v18.4 LOADED. GLOBAL UNLOCK ACTIVE.");
