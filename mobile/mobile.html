@@ -600,6 +600,12 @@
 
         window.addEventListener("pegasus_sync_status", (e) => {
             const status = e.detail?.status;
+
+            if (!isUnlocked && status !== "locked") {
+                setSyncStatus("locked");
+                return;
+            }
+
             if (status === "online") setSyncStatus("online");
             else if (status === "offline") setSyncStatus("offline");
             else if (status === "syncing") setSyncStatus("syncing");
@@ -634,7 +640,7 @@
 
         window.addEventListener("offline", () => {
             stopMobileSyncHeartbeat();
-            setSyncStatus('offline');
+            setSyncStatus(isUnlocked ? 'offline' : 'locked');
         });
 
         window.addEventListener("pegasus_sync_complete", () => {
@@ -659,7 +665,8 @@
         function skipVault() {
             document.getElementById("pinModal").style.display = "none";
             stopMobileSyncHeartbeat();
-            setSyncStatus('offline');
+            isUnlocked = false;
+            setSyncStatus('locked');
             refreshAllUI();
         }
 
@@ -743,15 +750,18 @@
                         startMobileSyncHeartbeat();
                         setTimeout(() => refreshAllUI(), 500);
                     } else {
+                        isUnlocked = false;
                         setSyncStatus('locked');
                     }
                 } catch (e) {
                     console.error("📡 Cloud Boot Error:", e);
-                    setSyncStatus(navigator.onLine ? 'error' : 'offline');
+                    isUnlocked = false;
+                    setSyncStatus('locked');
                 }
             } else {
                 const modal = document.getElementById("pinModal");
                 if (modal) modal.style.display = "flex";
+                isUnlocked = false;
                 setSyncStatus('locked');
             }
         })();
