@@ -25,28 +25,36 @@ const PegasusCloud = {
         return `${day}/${month}/${d.getFullYear()}`;
     },
 
-    unlock: function(pin) {
+unlock: function(pin) {
         if (!pin) return false;
         const cleanPin = pin.trim();
+        if (cleanPin.length < 4) return false;
+
+        this.userKey = cleanPin;
+        this.isUnlocked = true;
+        localStorage.setItem('pegasus_vault_unlocked', 'true');
         
-        // Έλεγχος PIN
-        if (btoa(cleanPin) === "MjM3NQ==") { 
-            this.userKey = this.config.encryptedPart;
-            this.isUnlocked = true;
+        // 🛡️ PEGASUS PRIORITY PROTOCOL: 
+        // Πρώτα τραβάμε τα δεδομένα (από κινητό) και ΜΕΤΑ επιτρέπουμε στη ρουτίνα να γράψει
+        console.log("🔄 PEGASUS: Initializing Master Sync...");
+        
+        this.pull().then(() => {
+            console.log("✅ PEGASUS: Sync Complete. Data merged.");
+            this.hasSuccessfullyPulled = true;
             
-            localStorage.setItem("pegasus_vault_pin", cleanPin);
-            localStorage.setItem("pegasus_vault_time", Date.now().toString());
-            
-            this.pull(true);
-            
-            if (!this.syncInterval) {
-                this.syncInterval = setInterval(() => {
-                    if (this.isUnlocked && !this.isPushing) this.pull(true);
-                }, 30000); 
+            // Μόνο αφού επιβεβαιώσουμε το Pull, τρέχουμε τη ρουτίνα του PC
+            if (typeof window.checkDailyRoutinePC === "function") {
+                window.checkDailyRoutinePC();
             }
-            return true;
-        }
-        return false;
+        }).catch(err => {
+            console.error("❌ PEGASUS: Initial Sync Failed:", err);
+        });
+
+        // Ξεκινάμε τον περιοδικό έλεγχο (κάθε 30")
+        if (this.syncInterval) clearInterval(this.syncInterval);
+        this.syncInterval = setInterval(() => this.pull(), 30000);
+
+        return true;
     },
 
     pull: async function(silent = false) {
