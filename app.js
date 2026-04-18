@@ -1062,15 +1062,19 @@ window.onload = () => {
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
-    setTimeout(() => {
-        const loader = document.getElementById('pegasus-loader');
-        if (loader) {
-            loader.style.opacity = '0';
-            loader.style.visibility = 'hidden';
-            console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
-        }
-    }, 1000);
-};
+setTimeout(() => {
+    const loader = document.getElementById('pegasus-loader');
+    if (loader) {
+        loader.style.opacity = '0';
+        loader.style.visibility = 'hidden';
+    }
+
+    if (typeof window.updateKcalUI === "function") {
+        window.updateKcalUI();
+    }
+
+    console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
+}, 1000);
 
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase }),
