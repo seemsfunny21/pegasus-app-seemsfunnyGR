@@ -95,27 +95,30 @@ const playBeep = (volume = 1) => {
 };
 
 /* ===== PEGASUS ENGINE BRIDGE (SAFE WRAPPER) ===== */
-window.PegasusEngine = window.PegasusEngine || {
-    dispatch: typeof dispatch === "function" ? dispatch : function () {
-        console.warn("⚠️ PegasusEngine.dispatch not ready yet");
+window.PegasusEngine = {
+    dispatch: function (action) {
+        console.log("📨 PEGASUS ENGINE DISPATCH:", action);
+        // future reducer logic εδώ
     },
 
     getEventBuffer: function () {
-        try {
-            return typeof getEventBuffer === "function" ? getEventBuffer() : [];
-        } catch (e) {
-            console.warn("⚠️ getEventBuffer error:", e);
-            return [];
-        }
+        return window._pegasusEventBuffer || [];
     },
 
     getState: function () {
-        try {
-            return typeof getState === "function" ? getState() : {};
-        } catch (e) {
-            console.warn("⚠️ getState error:", e);
-            return {};
-        }
+        return {
+            exercises,
+            remainingSets,
+            currentIdx,
+            phase,
+            running,
+            totalSeconds,
+            remainingSeconds,
+            sessionActiveKcal,
+            TURBO_MODE,
+            SPEED,
+            userWeight
+        };
     }
 };
 
