@@ -1,43 +1,61 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v16.5 (DYNAMIC KOUKI WEEKLY)
-   Protocol: Strict 4-Split Architecture | EMS & Bike Integration
-   Status: PRODUCTION READY | WEEKLY MENU SYNC ACTIVE
+   📦 PEGASUS DATA ENGINE - v17.0 (ULTIMATE IRON - 45' PRECISION)
+   Protocol: 10" Prep | 45" Work (TUT) | 60" Rest | Total: 1'55" / Set
+   Status: PRODUCTION READY - FULL RECONCILIATION
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
 
-// 1. DEFAULT PLAN
+// 1. DEFAULT PLAN (Rest & Stretching Days)
 window.program = {
     "Δευτέρα": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
-    "Τρίτη": [], "Τετάρτη": [], "Πέμπτη": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
+    "Τρίτη": [], "Τετάρτη": [], 
+    "Πέμπτη": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
     "Παρασκευή": [], "Σάββατο": [], "Κυριακή": []
 };
 
-// 2. MASTER EXERCISES DATABASE
+// 2. MASTER EXERCISES DATABASE (26 UNIQUE ENTRIES)
 window.exercisesDB = [
-    { name: "Chest Press", muscleGroup: "Στήθος" }, { name: "Chest Flys", muscleGroup: "Στήθος" }, { name: "Pushups", muscleGroup: "Στήθος" },
-    { name: "Wide Pulldowns (Ανοιχτή)", muscleGroup: "Πλάτη" }, { name: "Medium Pulldowns (Κλειστή)", muscleGroup: "Πλάτη" }, { name: "Behind Neck Pulldowns", muscleGroup: "Πλάτη" }, { name: "Seated Rows", muscleGroup: "Πλάτη" }, { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
+    { name: "Chest Press", muscleGroup: "Στήθος" }, 
+    { name: "Chest Flys", muscleGroup: "Στήθος" }, 
+    { name: "Pushups", muscleGroup: "Στήθος" },
+    { name: "Lat Pulldowns", muscleGroup: "Πλάτη" }, 
+    { name: "Lat Pulldowns Close", muscleGroup: "Πλάτη" }, 
+    { name: "Low Rows Seated", muscleGroup: "Πλάτη" }, 
+    { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
+    { name: "Reverse Grip Cable Row", muscleGroup: "Πλάτη" },
+    { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Upright Rows", muscleGroup: "Ώμοι" },
-    { name: "Bicep Curls", muscleGroup: "Χέρια" }, { name: "Preacher Curls", muscleGroup: "Χέρια" }, { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
-    { name: "Ab Crunches", muscleGroup: "Κορμός" }, { name: "Sit Ups", muscleGroup: "Κορμός" }, { name: "Plank", muscleGroup: "Κορμός" }, { name: "Reverse Crunch", muscleGroup: "Κορμός" }, { name: "Lying Knee Raise", muscleGroup: "Κορμός" }, { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
+    { name: "Reverse Flys", muscleGroup: "Ώμοι" },
+    { name: "Bicep Curls", muscleGroup: "Χέρια" }, 
+    { name: "Standing Bicep Curls", muscleGroup: "Χέρια" }, 
+    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια" }, 
+    { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
+    { name: "Ab Crunches", muscleGroup: "Κορμός" }, 
+    { name: "Situps", muscleGroup: "Κορμός" }, 
+    { name: "Plank", muscleGroup: "Κορμός" }, 
+    { name: "Reverse Crunch", muscleGroup: "Κορμός" }, 
+    { name: "Lying Knee Raise", muscleGroup: "Κορμός" }, 
+    { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
     { name: "Leg Extensions", muscleGroup: "Πόδια" },
-    { name: "Pec Deck", muscleGroup: "Στήθος" }, { name: "Lat Pulldown", muscleGroup: "Πλάτη" }, { name: "Low Seated Row", muscleGroup: "Πλάτη" },
-    { name: "Standing Bicep Curl", muscleGroup: "Χέρια" }, { name: "Leg Extension", muscleGroup: "Πόδια" },
-    { name: "EMS Training", muscleGroup: "Πλάτη" }, { name: "Ποδηλασία", muscleGroup: "Πόδια" }, { name: "Cycling", muscleGroup: "Πόδια" },
+    { name: "Cycling", muscleGroup: "Πόδια" },
+    { name: "EMS Training", muscleGroup: "Πλάτη" },
     { name: "Stretching", muscleGroup: "None" }
 ];
 
-// 3. ASSET MAPPING
+// 3. ASSET MAPPING (Video & Icon Linking)
 window.videoMap = {
-    "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups", "Pec Deck": "chestflys",
-    "Wide Pulldowns (Ανοιχτή)": "latpulldowns", "Medium Pulldowns (Κλειστή)": "latpulldowns", "Behind Neck Pulldowns": "latpulldowns", "Lat Pulldown": "latpulldowns",
-    "Seated Rows": "lowrowsseated", "Bent Over Rows": "bentoverrows", "Low Seated Row": "lowrowsseated",
-    "Upright Rows": "uprightrows", "Bicep Curls": "bicepcurls", "Standing Bicep Curl": "bicepcurls",
-    "Preacher Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
-    "Ab Crunches": "abcrunches", "Sit Ups": "situps", "Plank": "plank",
+    "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups",
+    "Lat Pulldowns": "latpulldowns", "Lat Pulldowns Close": "latpulldownsclose",
+    "Low Rows Seated": "lowrowsseated", "Bent Over Rows": "bentoverrows", 
+    "Reverse Grip Cable Row": "reversegripcablerow", "Straight Arm Pulldowns": "straightarmpulldowns",
+    "Upright Rows": "uprightrows", "Reverse Flys": "chestflys", 
+    "Bicep Curls": "bicepcurls", "Standing Bicep Curls": "bicepcurls", 
+    "Preacher Bicep Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
+    "Ab Crunches": "abcrunches", "Situps": "situps", "Plank": "plank",
     "Reverse Crunch": "reversecrunch", "Lying Knee Raise": "lyingkneeraise",
-    "Leg Raise Hip Lift": "legraisehiplift", "Leg Extensions": "legextensions", "Leg Extension": "legextensions",
-    "EMS Training": "ems_general", "Ποδηλασία": "cycling", "Cycling": "cycling", "Stretching": "stretching_base"
+    "Leg Raise Hip Lift": "legraisehiplift", "Leg Extensions": "legextensions",
+    "Cycling": "cycling", "EMS Training": "ems", "Stretching": "stretching"
 };
 
 // 4. PEGASUS 4-PILLAR SPLIT ENGINE
@@ -52,16 +70,38 @@ window.setPegasusPlan = function(planKey) {
         iron_tuesday: [
             { name: "Chest Press", sets: 6, muscleGroup: "Στήθος", weight: "54" },
             { name: "Chest Flys", sets: 5, muscleGroup: "Στήθος", weight: "42" },
-            { name: "Wide Pulldowns (Ανοιχτή)", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
+            { name: "Lat Pulldowns", sets: 6, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Low Rows Seated", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
             { name: "Ab Crunches", sets: 5, muscleGroup: "Κορμός", weight: "30" }
         ],
         iron_wednesday: [
-            { name: "Upright Rows", sets: 6, muscleGroup: "Ώμοι", weight: "30" },
+            { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι", weight: "30" },
+            { name: "Reverse Flys", sets: 4, muscleGroup: "Ώμοι", weight: "24" },
             { name: "Bicep Curls", sets: 6, muscleGroup: "Χέρια", weight: "30" },
             { name: "Tricep Pulldowns", sets: 6, muscleGroup: "Χέρια", weight: "20" },
-            { name: "Preacher Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
+            { name: "Preacher Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
+            { name: "Lying Knee Raise", sets: 4, muscleGroup: "Κορμός", weight: "0" }
+        ],
+        iron_friday: [
+            { name: "Lat Pulldowns Close", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Straight Arm Pulldowns", sets: 5, muscleGroup: "Πλάτη", weight: "30" },
+            { name: "Reverse Grip Cable Row", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Bent Over Rows", sets: 5, muscleGroup: "Πλάτη", weight: "30" },
+            { name: "Pushups", sets: 5, muscleGroup: "Στήθος", weight: "0" },
+            { name: "Reverse Crunch", sets: 4, muscleGroup: "Κορμός", weight: "0" }
+        ],
+        iron_saturday: [
+            { name: "Leg Extensions", sets: 8, muscleGroup: "Πόδια", weight: "36" },
+            { name: "Situps", sets: 6, muscleGroup: "Κορμός", weight: "0" },
+            { name: "Ab Crunches", sets: 6, muscleGroup: "Κορμός", weight: "30" },
             { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
+        ],
+        iron_sunday: [
+            { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
+            { name: "Low Rows Seated", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
+            { name: "Standing Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
+            { name: "Tricep Pulldowns", sets: 5, muscleGroup: "Χέρια", weight: "20" },
+            { name: "Leg Raise Hip Lift", sets: 5, muscleGroup: "Κορμός", weight: "0" }
         ],
         ems_wednesday: [
             { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη", weight: "0" },
@@ -69,28 +109,8 @@ window.setPegasusPlan = function(planKey) {
             { name: "Bicep Curls", sets: 4, muscleGroup: "Χέρια", weight: "30" },
             { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
         ],
-        iron_friday: [
-            { name: "Wide Pulldowns (Ανοιχτή)", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Medium Pulldowns (Κλειστή)", sets: 5, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Behind Neck Pulldowns", sets: 5, muscleGroup: "Πλάτη", weight: "30" },
-            { name: "Bent Over Rows", sets: 6, muscleGroup: "Πλάτη", weight: "30" },
-            { name: "Pushups", sets: 5, muscleGroup: "Στήθος", weight: "0" }
-        ],
-        iron_saturday: [
-            { name: "Leg Extensions", sets: 8, muscleGroup: "Πόδια", weight: "36" },
-            { name: "Sit Ups", sets: 6, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Ab Crunches", sets: 6, muscleGroup: "Κορμός", weight: "30" },
-            { name: "Plank", sets: 5, muscleGroup: "Κορμός", weight: "0" }
-        ],
-        iron_sunday: [
-            { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
-            { name: "Seated Rows", sets: 5, muscleGroup: "Πλάτη", weight: "66" },
-            { name: "Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
-            { name: "Tricep Pulldowns", sets: 5, muscleGroup: "Χέρια", weight: "20" },
-            { name: "Leg Raise Hip Lift", sets: 5, muscleGroup: "Κορμός", weight: "0" }
-        ],
         bike_weekend: [
-            { name: "Ποδηλασία", sets: 1, muscleGroup: "Πόδια", weight: "0" },
+            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" },
             { name: "Ab Crunches", sets: 4, muscleGroup: "Κορμός", weight: "0" }
         ]
     };
@@ -110,9 +130,7 @@ window.setPegasusPlan = function(planKey) {
     }
 })();
 
-// ==========================================================================
-// 5. THE KOUKI MENU CONSOLIDATION (WEEKLY SYNC)
-// ==========================================================================
+// 5. KOUKI MENU CONSOLIDATION
 window.PegasusKoukiDB = [
     { name: "Κοτόπουλο αλά κρεμ", type: "poulika", price: 6.00, kcal: 620, protein: 50 },
     { name: "Κοτόπουλο γλυκόξινο", type: "poulika", price: 6.00, kcal: 580, protein: 48 },
@@ -150,18 +168,16 @@ window.PegasusKoukiDB = [
     { name: "Πέρκα φούρνου", type: "psari", price: 7.00, kcal: 500, protein: 40 }
 ];
 
-// ==========================================================================
-// 6. DYNAMIC WEEKLY BRIDGE (MAPPED TO YOUR MENU)
-// ==========================================================================
+// 6. DYNAMIC WEEKLY BRIDGE
 (function buildWeeklyMenu() {
     const rawMenu = {
-        "Monday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Κοτόσουπα", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Γεμιστά με ρύζι", "Φασολάδα", "Γίγαντες πλακί", "Μπάμιες με κοτόπουλο", "Μακαρόνια με κιμά", "Φασολάκια", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Μπιφτέκι μοσχαρίσιο", "Μπριάμ"],
-        "Tuesday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Αρακάς", "Ρεβύθια πλακί", "Γεμιστά με κιμά", "Μοσχάρι κοκκινιστό", "Κεφτεδάκια τηγανητά", "Γιουβαρλάκια", "Μακαρόνια με κιμά", "Σνίτσελ κοτόπουλο", "Κοντοσούβλι κοτόπουλο", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"],
-        "Wednesday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κιμά", "Μοσχάρι βραστό", "Μπιφτέκι κοτόπουλο", "Γίγαντες με χόρτα", "Χταπόδι με κοφτό μακαρονάκι", "Μακαρόνια με κιμά", "Γεμιστά με ρύζι", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Σακές", "Σολομός φούρνου", "Κοτόπουλο φούρνου", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
-        "Thursday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Κεφτεδάκια τηγανητά", "Μοσχάρι με μελιτζάνες", "Γεμιστά με κιμά", "Σουπιές με σπανάκι", "Φασολάκια", "Μελιτζάνες ιμάμ", "Κοτόσουπα", "Γαριδομακαρονάδα", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Φιλέτο κοτόπουλο με καρότα"],
-        "Friday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κοτόπουλο", "Μπακαλιάρος σκορδαλιά", "Παπουτσάκια", "Φασολάδα", "Σπανακόρυζο", "Γεμιστά με ρύζι", "Μπιφτέκι γεμιστό", "Γίγαντες πλακί", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόπουλο φούρνου", "Μακαρόνια με κιμά", "Σουτζουκάκια", "Κοτόσουπα", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
-        "Saturday": ["Μουσακάς", "Παστίτσιο", "Ογκρατέν ζυμαρικών", "Μπακαλιάρος με κρεμμύδια", "Μπάμιες", "Γεμιστά με ρύζι", "Μπιφτέκι κοτόπουλο", "Γεμιστά κολοκυθάκια", "Γιουβαρλάκια", "Τσιπούρα φούρνου", "Αρνί με πατάτες", "Μοσχάρι γιουβέτσι", "Κοτόπουλο φούρνου", "Μοσχάρι κοκκινιστό", "Κοντοσούβλι χοιρινό", "Μακαρόνια με κιμά"],
-        "Sunday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Γίγαντες με χόρτα", "Κοτόσουπα", "Πέρκα φούρνου", "Μπιφτέκι γεμιστό", "Κεφτεδάκια τηγανητά", "Γαριδομακαρονάδα", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"]
+        "Monday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Κοτόσουπα", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Γεμιστά με ρύζι", "Φασολάδα", "Γίγαντες πλακί", "Μπάμιες με κοτόπουλο", "Μακαρόνια με κιμά", "Φασολάκια", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Μπιφτέκι μοσχαρίσιο"],
+        "Tuesday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Αρακάς", "Ρεβύθια πλακί", "Γεμιστά με κιμά", "Μοσχάρι κοκκινιστό", "Κεφτεδάκια τηγανητά", "Γιουβαρλάκια", "Μακαρόνια με κιμά", "Σνίτσελ κοτόπουλο", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"],
+        "Wednesday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κιμά", "Μπιφτέκι κοτόπουλο", "Μακαρόνια με κιμά", "Γεμιστά με ρύζι", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Σολομός φούρνου", "Κοτόπουλο φούρνου", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
+        "Thursday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Κεφτεδάκια τηγανητά", "Γεμιστά με κιμά", "Σουπιές με σπανάκι", "Φασολάκια", "Κοτόσουπα", "Γαριδομακαρονάδα", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"],
+        "Friday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Παπουτσάκια", "Φασολάδα", "Γεμιστά με ρύζι", "Γίγαντες πλακί", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόπουλο φούρνου", "Μακαρόνια με κιμά", "Σουτζουκάκια", "Κοτόσουπα", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
+        "Saturday": ["Μουσακάς", "Παστίτσιο", "Γεμιστά με ρύζι", "Μπιφτέκι κοτόπουλο", "Γιουβαρλάκια", "Αρνί με πατάτες", "Μοσχάρι γιουβέτσι", "Κοτόπουλο φούρνου", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά"],
+        "Sunday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόσουπα", "Πέρκα φούρνου", "Κεφτεδάκια τηγανητά", "Γαριδομακαρονάδα", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"]
     };
 
     window.KOUKI_MASTER_MENU = {};
@@ -171,7 +187,6 @@ window.PegasusKoukiDB = [
             return { n: foodName, p: data.price, t: data.type };
         });
     }
-    
     window.KOUKI_MENU = window.PegasusKoukiDB.map(f => ({ name: f.name, kcal: f.kcal, protein: f.protein, type: f.type }));
 })();
 
@@ -189,8 +204,6 @@ window.getPegasusMacros = function(foodName, fallbackType) {
 
 window.getDynamicTargets = function() {
     const targets = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Πόδια": 0, "Κορμός": 0 };
-    
-    // Σκανάρισμα όλων των ημερών στο window.program
     Object.values(window.program).forEach(dayExercises => {
         dayExercises.forEach(ex => {
             if (targets.hasOwnProperty(ex.muscleGroup)) {
@@ -198,8 +211,5 @@ window.getDynamicTargets = function() {
             }
         });
     });
-    
-    // Αν ένα target βγει 0 (π.χ. δεν έχεις βάλει ακόμα ασκήσεις), 
-    // βάζουμε ένα ελάχιστο safety limit ή το αφήνουμε 0
     return targets;
 };
