@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.4 SYNC PATCH)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.5 UI REFRESH PATCH)
    STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
-   FIXES: FOCUS PULL + VISIBILITY PULL + SAFER ENGINE ATTACH + BETTER UI SYNC
+   FIXES: FOCUS PULL + VISIBILITY PULL + SAFER ENGINE ATTACH + DOUBLE UI KCAL REFRESH
    ========================================================================== */
 
 const PegasusCloud = {
@@ -258,6 +258,10 @@ const PegasusCloud = {
         if (typeof renderLiftingContent === "function") renderLiftingContent();
         if (typeof updateKcalUI === "function") updateKcalUI();
         if (typeof renderCalendar === "function") renderCalendar();
+
+        setTimeout(() => {
+            if (typeof updateKcalUI === "function") updateKcalUI();
+        }, 150);
 
         if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
         if (window.PegasusDiet?.updateUI) window.PegasusDiet.updateUI();
