@@ -67,10 +67,11 @@ const PegasusCloud = {
             const lastLocal = localStorage.getItem("pegasus_last_push") || "0";
 
             // ✅ CRITICAL: VERSION CHECK
-            if (!cloud.last_update_ts || cloud.last_update_ts.toString() === lastLocal) {
-                this.isPulling = false;
-                return;
-            }
+if (!cloud.last_update_ts || cloud.last_update_ts.toString() === lastLocal) {
+    this.hasSuccessfullyPulled = true; // 🔥 ΧΩΡΙΣ ΑΥΤΟ ΔΕΝ ΘΑ ΚΑΝΕΙ ΠΟΤΕ PUSH
+    this.isPulling = false;
+    return;
+}
 
             console.log("☁️ CLOUD: New version detected → syncing...");
 
