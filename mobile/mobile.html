@@ -11,7 +11,7 @@
         (function() {
             const params = new URLSearchParams(window.location.search);
             const now = Date.now();
-if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 30000))) {
+            if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 30000))) {
                 window.location.replace(window.location.pathname + '?v=' + now + window.location.hash);
             }
         })();
@@ -22,12 +22,12 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
 </head>
 <body>
 
-<div id="pinModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
+    <div id="pinModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
         <div style="background:#0a0a0a; border:2px solid #00ff41; padding:40px 30px; border-radius:30px; text-align:center; width:85%; max-width: 320px; box-shadow: 0 0 50px rgba(0,255,65,0.15);">
             <div style="font-size:35px; margin-bottom:15px;">🛡️</div>
             <div style="color:#00ff41; font-weight:900; margin-bottom:5px; letter-spacing:1px; font-size: 20px;">PEGASUS OS</div>
             <div style="color:#555; font-size: 10px; font-weight: 800; margin-bottom: 25px; letter-spacing: 2px;">ΑΣΦΑΛΗΣ ΤΑΥΤΟΠΟΙΗΣΗ</div>
-           <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px; border-color: #333; margin-bottom: 20px;" inputmode="numeric" maxlength="4" placeholder="••••">
+            <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px; border-color: #333; margin-bottom: 20px;" inputmode="numeric" maxlength="4" placeholder="••••">
             <button class="primary-btn" onclick="attemptVaultUnlock()" style="font-size: 14px; padding: 20px;">ΑΠΑΣΦΑΛΙΣΗ</button>
             <button class="secondary-btn" style="margin-top: 15px; border-color: #222; color: #555;" onclick="skipVault()">ΛΕΙΤΟΥΡΓΙΑ OFFLINE</button>
         </div>
@@ -37,17 +37,17 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
     <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;"></div>
 
     <div id="home" class="view active">
-<div class="header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px; position: relative; box-sizing: border-box;">
-    <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">◀</button>
-    
-    <div style="text-align:center; flex: 1;">
-        <h1 style="font-size: 32px; margin: 0; line-height: 1;">PEGASUS</h1>
-        <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">TACTICAL DATA INTERFACE</p>
-    </div>
-    
-    <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">▶</button>
-</div>
-        
+        <div class="header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px; position: relative; box-sizing: border-box;">
+            <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">◀</button>
+
+            <div style="text-align:center; flex: 1;">
+                <h1 style="font-size: 32px; margin: 0; line-height: 1;">PEGASUS</h1>
+                <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">TACTICAL DATA INTERFACE</p>
+            </div>
+
+            <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">▶</button>
+        </div>
+
         <div id="dynamic-grid" class="dynamic-grid"></div>
         <div id="settings-anchor"></div>
     </div>
@@ -186,7 +186,7 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
 
     <div id="settings_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        
+
         <div class="mini-card" style="border: 1px solid var(--main); padding: 25px 20px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,65,0.05);">
             <div style="position: absolute; top: -10px; right: -10px; opacity: 0.05; font-size: 100px; pointer-events: none;">⚖️</div>
             <span class="mini-label" style="font-size: 11px; margin-bottom: 15px; display: block;">ΚΑΤΑΓΡΑΦΗ ΒΑΡΟΥΣ ΣΩΜΑΤΟΣ</span>
@@ -236,13 +236,13 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
                 { id: 'car', icon: '🚗', label: 'Όχημα' },
                 { id: 'notes', icon: '📝', label: 'Σημειώσεις' }
             ],
-            
+
             extraModules: [],
 
             registerModule: function(module) {
                 if (this.coreModules.some(m => m.id === module.id)) return;
                 if (this.extraModules.some(m => m.id === module.id)) return;
-                
+
                 this.extraModules.push(module);
                 if (document.readyState === "loading") {
                     document.addEventListener("DOMContentLoaded", () => this.render());
@@ -254,7 +254,7 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
             changePage: function(direction) {
                 const extraPages = Math.ceil(this.extraModules.length / this.modulesPerPage);
                 const maxPages = Math.max(1, 1 + extraPages);
-                
+
                 this.currentPage = Math.max(0, Math.min(this.currentPage + direction, maxPages - 1));
                 this.render();
             },
@@ -292,12 +292,12 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
                         pageTxt.textContent = `EXTENDED TACTICAL MODULES (ΣΕΛ. ${this.currentPage + 1}/${maxPages})`;
                     }
                 }
-                
+
                 if (btnPrev) {
                     btnPrev.style.opacity = this.currentPage === 0 ? "0.1" : "1";
                     btnPrev.style.pointerEvents = this.currentPage === 0 ? "none" : "auto";
                 }
-                
+
                 if (btnNext) {
                     btnNext.style.opacity = this.currentPage >= maxPages - 1 ? "0.1" : "1";
                     btnNext.style.pointerEvents = this.currentPage >= maxPages - 1 ? "none" : "auto";
@@ -353,7 +353,7 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
                 settingsTile.className = 'tile full-width';
                 settingsTile.onclick = () => openView('settings_panel');
                 settingsTile.style.borderColor = "var(--main)";
-                
+
                 settingsTile.innerHTML = `
                     <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; height: 100%;">
                         <span class="tile-icon" style="font-size: 20px; margin-right: 10px; margin-bottom: 0;">⚙️</span>
@@ -367,7 +367,7 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
         window.registerPegasusModule = function(module) {
             window.PegasusMobileUI.registerModule(module);
         };
-        
+
         document.addEventListener("DOMContentLoaded", () => {
             window.PegasusMobileUI.render();
         });
@@ -397,6 +397,7 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
     <script src="maintenance-mobile.js"></script>
     <script src="oracle-mobile.js"></script>
     <script src="lifting-mobile.js"></script>
+
     <script>
         const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
         let isUnlocked = false;
@@ -419,72 +420,70 @@ if (navigator.onLine && (!params.has('v') || (now - parseInt(params.get('v')) > 
                     updateSuppUI();
                 }
                 if (id === 'preview') updateMuscleUI();
-                if (id === 'profile') window.PegasusProfile?.load(); 
+                if (id === 'profile') window.PegasusProfile?.load();
                 if (id === 'car') window.PegasusCar?.load();
                 if (id === 'notes') {
                     const nDate = document.getElementById('nDate');
-                    if(nDate) nDate.value = new Date().toLocaleDateString('el-GR');
+                    if (nDate) nDate.value = new Date().toLocaleDateString('el-GR');
                     window.PegasusProfile?.renderNotes();
                 }
-                
-                if (id === 'settings_panel') window.PegasusWeight?.updateUI(); 
+
+                if (id === 'settings_panel') window.PegasusWeight?.updateUI();
                 if (id === 'parking_panel') window.PegasusParking?.updateUI();
 
                 const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
                 if (typeof window[dynamicRenderName] === 'function') {
                     window[dynamicRenderName]();
                 }
-
-            } catch(e) { console.error("Refresh Error:", e); }
+            } catch (e) {
+                console.error("Refresh Error:", e);
+            }
         }
 
         function refreshAllUI() {
-            window.PegasusDiet?.updateUI(); 
-            window.PegasusInventory?.updateUI(); 
-            window.PegasusWeight?.updateUI(); 
+            window.PegasusDiet?.updateUI();
+            window.PegasusInventory?.updateUI();
+            window.PegasusWeight?.updateUI();
             window.PegasusParking?.updateUI();
-            window.PegasusCar?.load(); 
+            window.PegasusCar?.load();
             window.PegasusProfile?.load();
             if (typeof updateMuscleUI === "function") updateMuscleUI();
             if (typeof updateSuppUI === "function") updateSuppUI();
         }
 
         function updateSuppUI() {
-            const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || {prot: 2500, crea: 1000};
+            const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || { prot: 2500, crea: 1000 };
             const pPct = (s.prot / 2500) * 100;
             const cPct = (s.crea / 1000) * 100;
-            if(document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
-            if(document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
-            if(document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
-            if(document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
+            if (document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
+            if (document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
+            if (document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
+            if (document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
         }
 
-        function unlockFields(v) { 
-            document.querySelectorAll(`#${v} input[readonly]`).forEach(el => { 
-                el.removeAttribute('readonly'); 
-                el.style.border = "1px solid #00ff41"; 
-            }); 
+        function unlockFields(v) {
+            document.querySelectorAll(`#${v} input[readonly]`).forEach(el => {
+                el.removeAttribute('readonly');
+                el.style.border = "1px solid #00ff41";
+            });
         }
 
-function updateMuscleUI() { 
+        function updateMuscleUI() {
             const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
             const container = document.getElementById("muscle-container");
             if (!container) return;
 
-            // 🚀 ΔΥΝΑΜΙΚΗ ΑΝΤΛΗΣΗ: Παίρνει τους στόχους κατευθείαν από το data.js
-            const targets = typeof window.getDynamicTargets === 'function' 
-                ? window.getDynamicTargets() 
+            const targets = typeof window.getDynamicTargets === 'function'
+                ? window.getDynamicTargets()
                 : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
 
             container.innerHTML = Object.keys(targets).map(g => {
                 const targetSets = targets[g];
-                
-                // 🛡️ TACTICAL UX: Αν μια ομάδα έχει 0 σετ, η μπάρα εξαφανίζεται
-                if (targetSets === 0) return ''; 
+                if (targetSets === 0) return '';
 
-                const v = h[g] || 0; 
+                const v = h[g] || 0;
                 const p = Math.min((v / targetSets) * 100, 100);
-                
+
                 return `
                     <div class="mini-card">
                         <span class="mini-label">${g}</span>
@@ -497,33 +496,101 @@ function updateMuscleUI() {
             }).join('');
         }
 
-        function setSyncStatus(s) { 
-            const e = document.getElementById("sync-indicator"); if(!e) return;
-            if (s === 'online') { e.textContent = "ONLINE"; e.style.color = "#00ff41"; }
-            else if (s === 'offline') { e.textContent = "OFFLINE"; e.style.color = "#ff4444"; }
-            else { e.textContent = s.toUpperCase(); e.style.color = "#00bcd4"; }
+        function setSyncStatus(s) {
+            const e = document.getElementById("sync-indicator");
+            if (!e) return;
+
+            if (s === 'online') {
+                e.textContent = "ONLINE";
+                e.style.color = "#00ff41";
+            } else if (s === 'offline') {
+                e.textContent = "OFFLINE";
+                e.style.color = "#ff4444";
+            } else {
+                e.textContent = s.toUpperCase();
+                e.style.color = "#00bcd4";
+            }
         }
 
-function attemptVaultUnlock() { 
-            const pin = document.getElementById("pinInput").value;
-            if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { 
-                document.getElementById("pinModal").style.display = "none"; 
-                isUnlocked = true;
+        window._pegasusMobileSyncTimer = null;
+
+        async function runMobileSyncHeartbeat() {
+            try {
+                if (!window.PegasusCloud?.isUnlocked) {
+                    setSyncStatus('offline');
+                    return;
+                }
+
+                setSyncStatus('ΣΥΓΧΡΟΝΙΣΜΟΣ...');
+                await window.PegasusCloud.pull(true);
                 refreshAllUI();
+                setSyncStatus('online');
+            } catch (e) {
+                console.error("📡 Mobile Heartbeat Error:", e);
+                setSyncStatus('offline');
+            }
+        }
+
+        function startMobileSyncHeartbeat() {
+            stopMobileSyncHeartbeat();
+
+            if (!window.PegasusCloud?.isUnlocked) return;
+            if (document.hidden) return;
+
+            window._pegasusMobileSyncTimer = setInterval(() => {
+                if (!document.hidden && window.PegasusCloud?.isUnlocked) {
+                    runMobileSyncHeartbeat();
+                }
+            }, 10000);
+        }
+
+        function stopMobileSyncHeartbeat() {
+            if (window._pegasusMobileSyncTimer) {
+                clearInterval(window._pegasusMobileSyncTimer);
+                window._pegasusMobileSyncTimer = null;
+            }
+        }
+
+        window.addEventListener("focus", () => {
+            if (window.PegasusCloud?.isUnlocked) {
+                runMobileSyncHeartbeat();
+                startMobileSyncHeartbeat();
+            }
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stopMobileSyncHeartbeat();
+            } else if (window.PegasusCloud?.isUnlocked) {
+                runMobileSyncHeartbeat();
+                startMobileSyncHeartbeat();
+            }
+        });
+
+        async function attemptVaultUnlock() {
+            const pin = document.getElementById("pinInput").value;
+
+            if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
+                document.getElementById("pinModal").style.display = "none";
+                isUnlocked = true;
+
+                await runMobileSyncHeartbeat();
+                startMobileSyncHeartbeat();
             } else {
                 alert("ΛΑΘΟΣ PIN");
                 document.getElementById("pinInput").value = "";
             }
         }
 
-        function skipVault() { 
-            document.getElementById("pinModal").style.display = "none"; 
-            setSyncStatus('offline'); 
-            refreshAllUI(); 
+        function skipVault() {
+            document.getElementById("pinModal").style.display = "none";
+            stopMobileSyncHeartbeat();
+            setSyncStatus('offline');
+            refreshAllUI();
         }
 
         function hardResetSystem() {
-            if(confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
+            if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
                 localStorage.removeItem("pegasus_vault_pin");
                 location.replace(location.pathname + '?v=' + Date.now());
             }
@@ -541,7 +608,9 @@ function attemptVaultUnlock() {
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download = `PEGASUS_MOBILE_BKP.json`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function importData(e) {
@@ -556,25 +625,29 @@ function attemptVaultUnlock() {
                         Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
                         location.reload();
                     }
-                } catch (err) { alert("❌ Μη έγκυρο αρχείο."); }
+                } catch (err) {
+                    alert("❌ Μη έγκυρο αρχείο.");
+                }
             };
             reader.readAsText(file);
         }
 
         (async function boot() {
             console.log("⚡ PEGASUS: Fast Boot...");
-            const pin = localStorage.getItem("pegasus_vault_pin"); 
-            
+            const pin = localStorage.getItem("pegasus_vault_pin");
+
             refreshAllUI();
 
-            if(pin && window.PegasusCloud) {
+            if (pin && window.PegasusCloud) {
                 try {
                     const success = await window.PegasusCloud.unlock(pin);
-                    
+
                     if (success) {
                         console.log("📡 Cloud Sync: Fully Connected.");
-                        setSyncStatus('online');
-                        setTimeout(() => refreshAllUI(), 500); 
+                        isUnlocked = true;
+                        await runMobileSyncHeartbeat();
+                        startMobileSyncHeartbeat();
+                        setTimeout(() => refreshAllUI(), 500);
                     }
                 } catch (e) {
                     console.error("📡 Cloud Boot Error:", e);
@@ -582,7 +655,7 @@ function attemptVaultUnlock() {
                 }
             } else {
                 const modal = document.getElementById("pinModal");
-                if (modal) modal.style.display = "flex"; 
+                if (modal) modal.style.display = "flex";
             }
         })();
     </script>
@@ -593,12 +666,13 @@ function attemptVaultUnlock() {
                 navigator.serviceWorker.register('../sw.js')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
-                        
-                        // Έλεγχος για updates κάθε φορά που ανοίγει η σελίδα
+
                         reg.update();
 
                         reg.onupdatefound = () => {
                             const installingWorker = reg.installing;
+                            if (!installingWorker) return;
+
                             installingWorker.onstatechange = () => {
                                 if (installingWorker.state === 'installed') {
                                     if (navigator.serviceWorker.controller) {
