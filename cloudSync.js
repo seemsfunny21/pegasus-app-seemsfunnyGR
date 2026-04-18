@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.7 STATUS COLOR HARDENED)
+   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v19.8 STATUS FLOW HARDENED)
    STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
-   FIXES: SAFE UI REFRESH + SYNC STATUS EVENTS + ONLINE/OFFLINE/ERROR COLOR FLOW
+   FIXES: SAFE STATUS FLOW + DEDUPED UI REFRESH + CLEAN ONLINE/OFFLINE/SYNCING
    ========================================================================== */
 
 const PegasusCloud = {
@@ -37,15 +37,24 @@ const PegasusCloud = {
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
-    emitSyncStatus(status) {
+    getAllowedStoragePrefixes() {
+        return ["pegasus_", "food_log_", "kouki_", "peg_", "weight_", "finance_"];
+    },
+
+    isAllowedStorageKey(key) {
+        if (!key) return false;
+        return this.getAllowedStoragePrefixes().some(prefix => key.startsWith(prefix));
+    },
+
+    emitSyncStatus(status, force = false) {
         if (typeof window === "undefined") return;
         if (!status) return;
 
-        if (this.lastStatus === status) return;
+        if (!force && this.lastStatus === status) return;
         this.lastStatus = status;
 
         window.dispatchEvent(new CustomEvent("pegasus_sync_status", {
-            detail: { status: status }
+            detail: { status }
         }));
     },
 
@@ -71,7 +80,7 @@ const PegasusCloud = {
         localStorage.setItem("pegasus_vault_time", Date.now().toString());
 
         console.log("🔓 CLOUD: Unlocked");
-        this.emitSyncStatus(navigator.onLine ? "syncing" : "offline");
+        this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
 
         setTimeout(() => {
             this.pull(true);
@@ -93,7 +102,7 @@ const PegasusCloud = {
         }
 
         this.isPulling = true;
-        this.emitSyncStatus("syncing");
+        this.emitSyncStatus("syncing", true);
 
         try {
             const res = await fetch(
@@ -114,14 +123,14 @@ const PegasusCloud = {
 
             if (!cloud.last_update_ts) {
                 this.hasSuccessfullyPulled = true;
-                this.emitSyncStatus("online");
-                return true;
+                this.emitSyncStatus("online", true);
+                return false;
             }
 
             if (cloud.last_update_ts.toString() === lastLocal) {
                 this.hasSuccessfullyPulled = true;
-                this.emitSyncStatus("online");
-                return true;
+                this.emitSyncStatus("online", true);
+                return false;
             }
 
             console.log("☁️ CLOUD: Syncing latest version...");
@@ -130,14 +139,7 @@ const PegasusCloud = {
             for (let i = 0; i < keys.length; i++) {
                 const k = keys[i];
 
-                if (
-                    k.startsWith("pegasus_") ||
-                    k.startsWith("food_log_") ||
-                    k.startsWith("kouki_") ||
-                    k.startsWith("peg_") ||
-                    k.startsWith("weight_") ||
-                    k.startsWith("finance_")
-                ) {
+                if (this.isAllowedStorageKey(k)) {
                     const val = typeof cloud[k] === "string"
                         ? cloud[k]
                         : JSON.stringify(cloud[k]);
@@ -175,12 +177,12 @@ const PegasusCloud = {
                 console.log("📥 CLOUD: Pull OK");
             }
 
-            this.emitSyncStatus("online");
+            this.emitSyncStatus("online", true);
             return true;
 
         } catch (e) {
             console.error("❌ PULL ERROR:", e);
-            this.emitSyncStatus(navigator.onLine ? "error" : "offline");
+            this.emitSyncStatus(navigator.onLine ? "error" : "offline", true);
             return false;
         } finally {
             this.isPulling = false;
@@ -199,7 +201,9 @@ const PegasusCloud = {
             return;
         }
 
-        if (force) return this._doPush();
+        if (force) {
+            return this._doPush();
+        }
 
         if (this.pushTimeout) clearTimeout(this.pushTimeout);
 
@@ -218,18 +222,18 @@ const PegasusCloud = {
 
     async _doPush() {
         if (!navigator.onLine) {
-            this.emitSyncStatus("offline");
+            this.emitSyncStatus("offline", true);
             return false;
         }
 
         this.isPushing = true;
-        this.emitSyncStatus("syncing");
+        this.emitSyncStatus("syncing", true);
 
         const ts = Date.now().toString();
 
         if (this.lastPushTs === ts) {
             this.isPushing = false;
-            this.emitSyncStatus("online");
+            this.emitSyncStatus("online", true);
             return true;
         }
 
@@ -243,18 +247,7 @@ const PegasusCloud = {
 
         for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
-
-            if (
-                k &&
-                (
-                    k.startsWith("pegasus_") ||
-                    k.startsWith("food_log_") ||
-                    k.startsWith("kouki_") ||
-                    k.startsWith("peg_") ||
-                    k.startsWith("weight_") ||
-                    k.startsWith("finance_")
-                )
-            ) {
+            if (this.isAllowedStorageKey(k)) {
                 payload[k] = localStorage.getItem(k);
             }
         }
@@ -278,12 +271,12 @@ const PegasusCloud = {
             window.originalSetItem.call(localStorage, "pegasus_last_push", ts);
             console.log("📤 CLOUD: Sync OK");
 
-            this.emitSyncStatus("online");
+            this.emitSyncStatus("online", true);
             return true;
 
         } catch (e) {
             console.error("❌ PUSH ERROR:", e);
-            this.emitSyncStatus(navigator.onLine ? "error" : "offline");
+            this.emitSyncStatus(navigator.onLine ? "error" : "offline", true);
             return false;
         } finally {
             this.isPushing = false;
@@ -350,14 +343,7 @@ if (!window.originalSetItem) {
         window.originalSetItem.apply(this, arguments);
 
         if (!window.PegasusCloud?.isUnlocked) return;
-
-        const allowed =
-            key.startsWith("pegasus_") ||
-            key.startsWith("food_log_") ||
-            key.startsWith("kouki_") ||
-            key.startsWith("peg_") ||
-            key.startsWith("weight_") ||
-            key.startsWith("finance_");
+        if (!window.PegasusCloud.isAllowedStorageKey(key)) return;
 
         const internal = [
             "pegasus_last_push",
@@ -365,7 +351,7 @@ if (!window.originalSetItem) {
             "pegasus_vault_time"
         ];
 
-        if (!internal.includes(key) && allowed) {
+        if (!internal.includes(key)) {
             queueMicrotask(() => {
                 window.PegasusCloud.push();
             });
@@ -379,12 +365,7 @@ if (!window.originalSetItem) {
 window.addEventListener("storage", (e) => {
     if (!e.key) return;
 
-    if (
-        e.key.startsWith("pegasus_") ||
-        e.key.startsWith("food_log_") ||
-        e.key.startsWith("weight_") ||
-        e.key.startsWith("kouki_")
-    ) {
+    if (PegasusCloud.isAllowedStorageKey(e.key)) {
         PegasusCloud.triggerUIUpdate();
     }
 });
@@ -405,14 +386,14 @@ document.addEventListener("visibilitychange", () => {
 });
 
 window.addEventListener("online", () => {
-    PegasusCloud.emitSyncStatus("online");
+    PegasusCloud.emitSyncStatus("online", true);
     if (window.PegasusCloud?.isUnlocked) {
         window.PegasusCloud.pull(true);
     }
 });
 
 window.addEventListener("offline", () => {
-    PegasusCloud.emitSyncStatus("offline");
+    PegasusCloud.emitSyncStatus("offline", true);
 });
 
 /* =========================
@@ -432,10 +413,10 @@ window.addEventListener("load", () => {
         if (age < 86400000) {
             PegasusCloud.unlock(pin);
         } else {
-            PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline");
+            PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
         }
     } else {
-        PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline");
+        PegasusCloud.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
     }
 });
 
