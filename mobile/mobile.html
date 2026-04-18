@@ -15,7 +15,6 @@
             const versionTs = hasVersion ? parseInt(params.get('v'), 10) : 0;
             const hasSwController = !!navigator.serviceWorker?.controller;
 
-            // ΜΟΝΟ αν είμαστε online, δεν έχουμε active SW controller και το version stamp είναι παλιό
             if (
                 navigator.onLine &&
                 !hasSwController &&
@@ -253,8 +252,9 @@
                 if (this.extraModules.some(m => m.id === module.id)) return;
 
                 this.extraModules.push(module);
+
                 if (document.readyState === "loading") {
-                    document.addEventListener("DOMContentLoaded", () => this.render());
+                    document.addEventListener("DOMContentLoaded", () => this.render(), { once: true });
                 } else {
                     this.render();
                 }
@@ -362,7 +362,6 @@
                 settingsTile.className = 'tile full-width';
                 settingsTile.onclick = () => openView('settings_panel');
                 settingsTile.style.borderColor = "var(--main)";
-
                 settingsTile.innerHTML = `
                     <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; height: 100%;">
                         <span class="tile-icon" style="font-size: 20px; margin-right: 10px; margin-bottom: 0;">⚙️</span>
@@ -379,7 +378,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             window.PegasusMobileUI.render();
-        });
+        }, { once: true });
     </script>
 
     <script src="../manifest.js"></script>
@@ -408,7 +407,11 @@
     <script src="lifting-mobile.js"></script>
 
     <script>
-        const PEGASUS = { key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC", bin: "69b6757ab7ec241ddc6d7230" };
+        const PEGASUS = {
+            key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
+            bin: "69b6757ab7ec241ddc6d7230"
+        };
+
         let isUnlocked = false;
 
         window._pegasusMobileSyncTimer = null;
@@ -440,7 +443,6 @@
                     if (nDate) nDate.value = new Date().toLocaleDateString('el-GR');
                     window.PegasusProfile?.renderNotes();
                 }
-
                 if (id === 'settings_panel') window.PegasusWeight?.updateUI();
                 if (id === 'parking_panel') window.PegasusParking?.updateUI();
 
@@ -541,25 +543,30 @@
         }
 
         async function runMobileSyncHeartbeat() {
-            if (window._pegasusMobileSyncBusy) return;
+            if (window._pegasusMobileSyncBusy) return false;
+
             if (!window.PegasusCloud?.isUnlocked) {
                 setSyncStatus('locked');
-                return;
+                return false;
             }
-            if (document.hidden) return;
+
+            if (document.hidden) return false;
+
             if (!navigator.onLine) {
                 setSyncStatus('offline');
-                return;
+                return false;
             }
 
             window._pegasusMobileSyncBusy = true;
 
             try {
-                await window.PegasusCloud.pull(true);
-                refreshAllUI();
+                const changed = await window.PegasusCloud.pull(true);
+                if (changed) refreshAllUI();
+                return !!changed;
             } catch (e) {
                 console.error("📡 Mobile Heartbeat Error:", e);
                 setSyncStatus('error');
+                return false;
             } finally {
                 window._pegasusMobileSyncBusy = false;
             }
@@ -597,6 +604,7 @@
             else if (status === "offline") setSyncStatus("offline");
             else if (status === "syncing") setSyncStatus("syncing");
             else if (status === "error") setSyncStatus("error");
+            else if (status === "locked") setSyncStatus("locked");
         });
 
         window.addEventListener("focus", () => {
@@ -683,7 +691,7 @@
         function exportData() {
             const backup = {};
             for (let i = 0; i < localStorage.length; i++) {
-                let k = localStorage.key(i);
+                const k = localStorage.key(i);
                 if (k && (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_"))) {
                     backup[k] = localStorage.getItem(k);
                 }
@@ -771,7 +779,7 @@
                         };
                     })
                     .catch(err => console.error('❌ SW Registration Failed:', err));
-            });
+            }, { once: true });
         }
     </script>
 
