@@ -1075,6 +1075,7 @@ setTimeout(() => {
 
     console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
 }, 1000);
+   };
 
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase }),
