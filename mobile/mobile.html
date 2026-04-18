@@ -515,21 +515,27 @@
             }).join('');
         }
 
-        function setSyncStatus(s) {
+        function setSyncStatus(status) {
             const e = document.getElementById("sync-indicator");
             if (!e) return;
 
-            if (s === 'online') {
+            if (status === 'online') {
                 e.textContent = "ONLINE";
                 e.style.color = "#00ff41";
-            } else if (s === 'offline') {
+            } else if (status === 'offline') {
                 e.textContent = "OFFLINE";
                 e.style.color = "#ff4444";
-            } else if (s === 'syncing') {
+            } else if (status === 'syncing') {
                 e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ...";
                 e.style.color = "#00bcd4";
+            } else if (status === 'error') {
+                e.textContent = "ΣΦΑΛΜΑ SYNC";
+                e.style.color = "#ff9800";
+            } else if (status === 'locked') {
+                e.textContent = "LOCKED";
+                e.style.color = "#888";
             } else {
-                e.textContent = String(s).toUpperCase();
+                e.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
                 e.style.color = "#00bcd4";
             }
         }
@@ -537,21 +543,23 @@
         async function runMobileSyncHeartbeat() {
             if (window._pegasusMobileSyncBusy) return;
             if (!window.PegasusCloud?.isUnlocked) {
-                setSyncStatus('offline');
+                setSyncStatus('locked');
                 return;
             }
             if (document.hidden) return;
+            if (!navigator.onLine) {
+                setSyncStatus('offline');
+                return;
+            }
 
             window._pegasusMobileSyncBusy = true;
 
             try {
-                setSyncStatus('syncing');
                 await window.PegasusCloud.pull(true);
                 refreshAllUI();
-                setSyncStatus('online');
             } catch (e) {
                 console.error("📡 Mobile Heartbeat Error:", e);
-                setSyncStatus('offline');
+                setSyncStatus('error');
             } finally {
                 window._pegasusMobileSyncBusy = false;
             }
@@ -564,7 +572,13 @@
             if (document.hidden) return;
 
             window._pegasusMobileSyncTimer = setInterval(() => {
-                if (!document.hidden && window.PegasusCloud?.isUnlocked && !window.PegasusCloud.isPulling && !window.PegasusCloud.isPushing) {
+                if (
+                    !document.hidden &&
+                    window.PegasusCloud?.isUnlocked &&
+                    !window.PegasusCloud.isPulling &&
+                    !window.PegasusCloud.isPushing &&
+                    !window._pegasusMobileSyncBusy
+                ) {
                     runMobileSyncHeartbeat();
                 }
             }, 10000);
@@ -577,14 +591,13 @@
             }
         }
 
-
         window.addEventListener("pegasus_sync_status", (e) => {
-    const status = e.detail?.status;
-    if (status === "online") setSyncStatus("online");
-    else if (status === "offline") setSyncStatus("offline");
-    else if (status === "syncing") setSyncStatus("syncing");
-    else if (status === "error") setSyncStatus("offline");
-});
+            const status = e.detail?.status;
+            if (status === "online") setSyncStatus("online");
+            else if (status === "offline") setSyncStatus("offline");
+            else if (status === "syncing") setSyncStatus("syncing");
+            else if (status === "error") setSyncStatus("error");
+        });
 
         window.addEventListener("focus", () => {
             if (window.PegasusCloud?.isUnlocked) {
@@ -607,7 +620,7 @@
                 runMobileSyncHeartbeat();
                 startMobileSyncHeartbeat();
             } else {
-                setSyncStatus('online');
+                setSyncStatus('locked');
             }
         });
 
@@ -618,9 +631,6 @@
 
         window.addEventListener("pegasus_sync_complete", () => {
             refreshAllUI();
-            if (window.PegasusCloud?.isUnlocked) {
-                setSyncStatus('online');
-            }
         });
 
         async function attemptVaultUnlock() {
@@ -725,16 +735,16 @@
                         startMobileSyncHeartbeat();
                         setTimeout(() => refreshAllUI(), 500);
                     } else {
-                        setSyncStatus('offline');
+                        setSyncStatus('locked');
                     }
                 } catch (e) {
                     console.error("📡 Cloud Boot Error:", e);
-                    setSyncStatus('offline');
+                    setSyncStatus(navigator.onLine ? 'error' : 'offline');
                 }
             } else {
                 const modal = document.getElementById("pinModal");
                 if (modal) modal.style.display = "flex";
-                setSyncStatus(navigator.onLine ? 'online' : 'offline');
+                setSyncStatus('locked');
             }
         })();
     </script>
