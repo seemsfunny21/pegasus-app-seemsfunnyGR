@@ -507,19 +507,7 @@ function updateMuscleUI() {
 
 function attemptVaultUnlock() { 
             const pin = document.getElementById("pinInput").value;
-          if (window.PegasusCloud && window.PegasusCloud.unlock(pin.trim())) {
-
-    document.getElementById("pinModal").style.display = "none";
-
-    setTimeout(async () => {
-        await window.PegasusCloud.pull(true);
-        window.PegasusCloud.push(true);
-
-        setSyncStatus('online');
-        refreshAllUI();
-    }, 500);
-
-} else {
+            if(window.PegasusCloud && window.PegasusCloud.unlock(pin)) { 
                 document.getElementById("pinModal").style.display = "none"; 
                 isUnlocked = true;
                 refreshAllUI();
@@ -574,45 +562,30 @@ function attemptVaultUnlock() {
             reader.readAsText(file);
         }
 
-(async function boot() {
-    console.log("⚡ PEGASUS: Clean Boot...");
+        (async function boot() {
+            console.log("⚡ PEGASUS: Fast Boot...");
+            const pin = localStorage.getItem("pegasus_vault_pin"); 
+            
+            refreshAllUI();
 
-    const pin = localStorage.getItem("pegasus_vault_pin");
-
-    refreshAllUI();
-
-    if (pin && window.PegasusCloud) {
-        try {
-            const ok = window.PegasusCloud.unlock(pin.trim());
-
-            if (ok) {
-                console.log("🔓 Auto Unlock OK");
-
-                // 🔥 ΠΕΡΙΜΕΝΟΥΜΕ ΤΟ ΠΡΩΤΟ PULL
-                setTimeout(async () => {
-                    await window.PegasusCloud.pull(true);
-
-                    // 🔥 FORCE FIRST PUSH (για να ξεκλειδώσει pipeline)
-                    window.PegasusCloud.push(true);
-
-                    setSyncStatus('online');
-                    refreshAllUI();
-
-                }, 500);
-
+            if(pin && window.PegasusCloud) {
+                try {
+                    const success = await window.PegasusCloud.unlock(pin);
+                    
+                    if (success) {
+                        console.log("📡 Cloud Sync: Fully Connected.");
+                        setSyncStatus('online');
+                        setTimeout(() => refreshAllUI(), 500); 
+                    }
+                } catch (e) {
+                    console.error("📡 Cloud Boot Error:", e);
+                    setSyncStatus('offline');
+                }
             } else {
-                console.warn("❌ Unlock failed");
-                setSyncStatus('offline');
+                const modal = document.getElementById("pinModal");
+                if (modal) modal.style.display = "flex"; 
             }
-
-        } catch (e) {
-            console.error("❌ Boot Error:", e);
-            setSyncStatus('offline');
-        }
-    } else {
-        document.getElementById("pinModal").style.display = "flex";
-    }
-})();
+        })();
     </script>
 
     <script>
