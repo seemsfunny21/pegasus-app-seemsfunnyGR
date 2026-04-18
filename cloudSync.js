@@ -302,18 +302,19 @@ if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
 }
 
 // ==========================================================================
-// 🛡️ PEGASUS SPLIT-BRAIN GUARD (CROSS-TAB SYNC)
+// 🛡️ PEGASUS CLOUD INTERCEPTOR (STRICT REAL-TIME)
 // ==========================================================================
-window.addEventListener('storage', (e) => {
-    if (e.key && e.key.startsWith('pegasus_')) {
-        console.log("🔄 PEGASUS GUARD: Εντοπίστηκε αλλαγή δεδομένων από άλλη καρτέλα. Αυτόματος συγχρονισμός UI.");
-        
-        // Ανανέωση UI στο Desktop
-        if (typeof window.updateFoodUI === "function") window.updateFoodUI();
-        if (typeof window.renderLiftingContent === "function") window.renderLiftingContent();
-        
-        // Ανανέωση UI στο Mobile
-        if (window.PegasusDiet && typeof window.PegasusDiet.updateUI === "function") window.PegasusDiet.updateUI();
-        if (window.PegasusFinance && typeof window.PegasusFinance.render === "function") window.PegasusFinance.render();
+const originalSetItem = localStorage.setItem;
+localStorage.setItem = function(key, value) {
+    originalSetItem.apply(this, arguments);
+
+    // Αν η αλλαγή αφορά φαγητό ή τη ρουτίνα, κάνουμε PUSH ΑΜΕΣΩΣ (χωρίς debounce)
+    if (key.startsWith('food_log_') || key.startsWith('pegasus_routine_')) {
+        if (window.PegasusCloud && window.PegasusCloud.isUnlocked) {
+            console.log(`🚀 PEGASUS: Real-time Sync for ${key}`);
+            
+            // Παράκαμψη του timeout για ακαριαία αποστολή
+            window.PegasusCloud.push("STRICT_IMMEDIATE"); 
+        }
     }
-});
+};
