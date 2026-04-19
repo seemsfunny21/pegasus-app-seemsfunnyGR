@@ -190,6 +190,18 @@ function restoreLegacyExerciseRefs(realExercises) {
     window.exercises = exercises;
 }
 
+function getPegasusInternalExerciseNameFromElement(node) {
+    if (!node) return "";
+    return node.dataset?.internalName || node.getAttribute?.("data-internal-name") || node.textContent?.trim() || "";
+}
+
+function getPegasusExerciseDisplayLabel(name) {
+    if (typeof window.getPegasusExerciseDisplayName === "function") {
+        return window.getPegasusExerciseDisplayName(name);
+    }
+    return name;
+}
+
 function syncEngineFromLegacy(actionType, extra) {
     const engine = getPegasusCoreEngine();
     if (!engine) return;
@@ -240,7 +252,7 @@ window.syncSessionWithHistory = function() {
     const targets = (typeof window.getDynamicTargets === "function") ? window.getDynamicTargets() : {};
 
     exercises.forEach((exDiv, i) => {
-        const exName = exDiv.querySelector(".exercise-name")?.textContent?.trim();
+        const exName = getPegasusInternalExerciseNameFromElement(exDiv.querySelector(".exercise-name"));
         const muscle = (window.exercisesDB?.find(e => e.name.trim() === exName))?.muscleGroup;
 
         if (muscle) {
@@ -365,7 +377,12 @@ function selectDay(btn, day) {
         `;
 
         const nameNode = d.querySelector(".exercise-name");
-        if (nameNode) nameNode.textContent = cleanName;
+        if (nameNode) {
+            nameNode.dataset.internalName = cleanName;
+            nameNode.dataset.i18nKind = "exercise";
+            nameNode.dataset.i18nSource = cleanName;
+            nameNode.textContent = getPegasusExerciseDisplayLabel(cleanName);
+        }
 
         const weightInputEl = d.querySelector(".weight-input");
         if (weightInputEl) {
@@ -996,7 +1013,7 @@ function openExercisePreview() {
         content.innerHTML += `
             <div class="preview-item">
                 <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';" alt="${cleanName}">
-                <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
+                <p>${getPegasusExerciseDisplayLabel(cleanName)} (${ex.adjustedSets || ex.sets} set)</p>
             </div>
         `;
     });

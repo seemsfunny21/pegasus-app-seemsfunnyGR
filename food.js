@@ -219,7 +219,7 @@ window.updateFoodUI = function() {
 
         const nameSpan = document.createElement('span');
         nameSpan.style.cssText = "font-weight: bold; color: #eee; font-size: 14px;";
-        nameSpan.textContent = item.name;
+        nameSpan.textContent = window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(item.name) : item.name;
 
         const metaSpan = document.createElement('span');
         metaSpan.style.cssText = "font-size: 11px; color: #4CAF50;";
@@ -361,7 +361,7 @@ window.renderKoukiMenu = function() {
 
         const titleDiv = document.createElement('div');
         titleDiv.style.cssText = "color: #eee; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;";
-        titleDiv.textContent = item.n;
+        titleDiv.textContent = window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(item.n) : item.n;
 
         const metaWrap = document.createElement('div');
         metaWrap.style.cssText = "display: flex; flex-direction: column; gap: 3px;";
@@ -422,7 +422,7 @@ window.filterLibrary = function() {
 
             const nameSpan = document.createElement('span');
             nameSpan.style.cssText = "font-weight: bold; color: #eee; font-size: 14px;";
-            nameSpan.textContent = `+ ${item.name}`;
+            nameSpan.textContent = `+ ${window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(item.name) : item.name}`;
 
             const metaSpan = document.createElement('span');
             metaSpan.style.cssText = "font-size: 11px; color: #4CAF50;";

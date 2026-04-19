@@ -246,7 +246,7 @@ window.PegasusDiet = {
             html += `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
                     <div style="text-align:left;">
-                        <div style="color:#fff; font-weight:bold; font-size:14px;">${opt.n}</div>
+                        <div style="color:#fff; font-weight:bold; font-size:14px;">${window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(opt.n) : opt.n}</div>
                         <div style="color:#4CAF50; font-size:12px; font-weight:900;">🔥 ${macros.kcal} kcal | 🍗 ${macros.protein}g</div>
                     </div>
                     <button onclick="window.PegasusDiet.quickAdd('${safeName} (Κούκι)', ${macros.kcal}, ${macros.protein}); document.getElementById('advisorMobileResult').innerHTML='';"
@@ -280,7 +280,7 @@ window.PegasusDiet = {
                 const safeName = String(i.name).replace(/'/g, "\\'");
                 return `
                     <div class="search-item" onclick="window.PegasusDiet.selectSuggested('${safeName}', ${i.kcal}, ${i.protein})">
-                        <span class="search-item-name">${i.name}</span>
+                        <span class="search-item-name">${window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(i.name) : i.name}</span>
                         <span class="search-item-macros">${i.kcal} kcal | ${i.protein}g</span>
                     </div>
                 `;
@@ -341,7 +341,7 @@ window.PegasusDiet = {
                  style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
                 <div style="text-align:left;">
                     <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΠΡΟΣΘΗΚΗ ΣΤΟ LOG</span>
-                    <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${itemName}</div>
+                    <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(itemName) : itemName}</div>
                     <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${macros.protein}G PROTEIN</div>
                 </div>
                 <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${macros.kcal} KCAL</div>
@@ -382,7 +382,7 @@ window.PegasusDiet = {
             listDisplay.innerHTML = log.map((i, idx) => `
                 <div class="log-item">
                     <button class="btn-del" onclick="window.PegasusDiet.delete(${idx})">✕</button>
-                    <div style="font-weight:900; font-size:14px; color:#fff;">${i.name}</div>
+                    <div style="font-weight:900; font-size:14px; color:#fff;">${window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(i.name) : i.name}</div>
                     <div style="color:var(--main); font-size:11px; font-weight:800; margin-top:4px;">${i.kcal} kcal | ${i.protein}g P</div>
                 </div>
             `).join('');
