@@ -83,6 +83,15 @@ function getPhaseDefaultTime(targetPhase) {
     return (targetPhase === 0) ? config.prep : (targetPhase === 1 ? config.work : config.rest);
 }
 
+function getPhaseStartingSeconds(targetPhase, currentRemaining) {
+    const fallback = getPhaseDefaultTime(targetPhase);
+    const parsedRemaining = Number(currentRemaining);
+    if (Number.isFinite(parsedRemaining) && parsedRemaining > 0) {
+        return parsedRemaining;
+    }
+    return fallback;
+}
+
 window.getPegasusTodayCardioOffset = function() {
     const dateStr = window.getPegasusTodayDateStr();
 
@@ -1055,7 +1064,7 @@ function runPhase() {
     }
 
     const phaseDefaultTime = getPhaseDefaultTime(phase);
-    let t = (phaseRemainingSeconds !== null) ? phaseRemainingSeconds : phaseDefaultTime;
+    let t = getPhaseStartingSeconds(phase, phaseRemainingSeconds);
     phaseRemainingSeconds = t;
 
     let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
@@ -1107,6 +1116,7 @@ function runPhase() {
 
             if (phase === 0) {
                 phase = 1;
+                phaseRemainingSeconds = getPhaseDefaultTime(1);
                 syncPegasusProgressRuntime();
                 dispatchPegasusWorkoutAction("WORKOUT_START_RUNTIME");
                 runPhase();
@@ -1128,16 +1138,24 @@ function runPhase() {
                 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 
                 phase = 2;
+                phaseRemainingSeconds = getPhaseDefaultTime(2);
                 syncPegasusProgressRuntime();
-                dispatchPegasusWorkoutAction("WORKOUT_SET_COMPLETED_RUNTIME");
+                dispatchPegasusWorkoutAction("WORKOUT_SET_COMPLETED_RUNTIME", {
+                    workout: { phase: 2 },
+                    timers: { phaseRemainingSeconds: phaseRemainingSeconds }
+                });
                 runPhase();
             } else {
                 let next = getNextIndexCircuit();
                 if (next !== -1) {
                     currentIdx = next;
                     phase = 0;
+                    phaseRemainingSeconds = getPhaseDefaultTime(0);
                     syncPegasusProgressRuntime();
-                    dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
+                    dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME", {
+                        workout: { phase: 0, currentIdx: currentIdx },
+                        timers: { phaseRemainingSeconds: phaseRemainingSeconds }
+                    });
                     runPhase();
                 } else {
                     finishWorkout();
