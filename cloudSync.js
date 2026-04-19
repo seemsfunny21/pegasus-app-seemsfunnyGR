@@ -73,7 +73,7 @@ const PegasusCloud = {
     },
 
     canAutoUnlock() {
-        return this.hasValidSession() && !!localStorage.getItem(this.storage.masterHash) && !!localStorage.getItem(this.storage.wrappedMaster);
+        return this.hasValidSession() && !!localStorage.getItem(this.storage.wrappedMaster);
     },
 
     getSyncedExactKeys() {
@@ -716,7 +716,6 @@ const PegasusCloud = {
 
     async tryAutoUnlock() {
         if (!this.canAutoUnlock()) return false;
-        if (!localStorage.getItem(this.storage.masterHash)) return false;
 
         const restoredMaster = await this.getStoredMasterKey();
         if (!restoredMaster) return false;
@@ -734,6 +733,10 @@ const PegasusCloud = {
         this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
 
         try {
+            const repairedMasterHash = await this.hashString(restoredMaster);
+            this.safeSetLocal(this.storage.masterHash, repairedMasterHash);
+            this.setValidSessionWindow();
+
             if (navigator.onLine) {
                 await this.pull(true);
             } else {
@@ -808,7 +811,20 @@ const PegasusCloud = {
         this.isUnlocked = true;
         this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
 
+        let sessionMaterialsPersisted = false;
+
         try {
+            this.safeSetLocal(this.storage.masterHash, candidateMasterHash);
+            if (candidatePinHash) {
+                this.safeSetLocal(this.storage.localPinHash, candidatePinHash);
+            }
+            await this.storeWrappedMaster(cleanMaster);
+
+            if (opts.persistSession) {
+                this.setValidSessionWindow();
+            }
+            sessionMaterialsPersisted = true;
+
             if (navigator.onLine) {
                 try {
                     await this.pull(true);
@@ -820,18 +836,6 @@ const PegasusCloud = {
                 }
             } else {
                 this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
-            }
-
-            if (!storedMasterHash) {
-                this.safeSetLocal(this.storage.masterHash, candidateMasterHash);
-            }
-            if (candidatePinHash) {
-                this.safeSetLocal(this.storage.localPinHash, candidatePinHash);
-            }
-            await this.storeWrappedMaster(cleanMaster);
-
-            if (opts.persistSession) {
-                this.setValidSessionWindow();
             }
 
             this.startAutoSync();
@@ -848,6 +852,11 @@ const PegasusCloud = {
             this.hasSuccessfullyPulled = prevState.hasSuccessfullyPulled;
             this.userKey = prevState.userKey;
             this.masterKey = prevState.masterKey;
+            if (String(e?.message || "") === "INVALID_MASTER_KEY" && sessionMaterialsPersisted) {
+                this.safeRemoveLocal(this.storage.validUntil);
+                this.safeRemoveLocal(this.storage.wrappedMaster);
+                if (!storedMasterHash) this.safeRemoveLocal(this.storage.masterHash);
+            }
             this.emitSyncStatus("locked", true);
             if (String(e?.message || "") === "INVALID_MASTER_KEY") return false;
             console.error("❌ UNLOCK ERROR:", e);

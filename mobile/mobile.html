@@ -976,6 +976,7 @@
 
         try {
             if (window.PegasusCloud?.canAutoUnlock?.()) {
+                setSyncStatus('syncing');
                 const success = await window.PegasusCloud.tryAutoUnlock();
 
                 if (success) {
@@ -1009,7 +1010,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.8')
+                navigator.serviceWorker.register('../sw.js?v=3.11')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();
