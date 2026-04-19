@@ -89,11 +89,15 @@
 
 
     function isSerializableExerciseArray(value) {
-        return Array.isArray(value) && value.every(item => {
+        return Array.isArray(value) && value.length > 0 && value.every(item => {
             if (!item || typeof item !== "object") return false;
             if (item.nodeType || typeof item.querySelector === "function" || typeof item.classList !== "undefined") return false;
             return true;
         });
+    }
+
+    function isDomExerciseArray(value) {
+        return Array.isArray(value) && value.length > 0 && value.every(item => item && typeof item.querySelector === "function" && item.classList);
     }
 
     function applyHydrationSnapshot(next, payload) {
@@ -257,7 +261,9 @@
 
     function syncLegacyGlobals(nextState) {
         try {
-            if (typeof window.exercises !== "undefined") window.exercises = nextState.workout.exercises;
+            if (typeof window.exercises !== "undefined" && isDomExerciseArray(nextState.workout.exercises)) {
+                window.exercises = nextState.workout.exercises;
+            }
             if (typeof window.remainingSets !== "undefined") window.remainingSets = nextState.workout.remainingSets;
             if (typeof window.currentIdx !== "undefined") window.currentIdx = nextState.workout.currentIdx;
             if (typeof window.phase !== "undefined") window.phase = nextState.workout.phase;

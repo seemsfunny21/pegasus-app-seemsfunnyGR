@@ -261,7 +261,7 @@ window.getPegasusSessionState = getPegasusSessionState;
 
 
 function isPegasusDomExerciseArray(value) {
-    return Array.isArray(value) && value.every(item => item && typeof item.querySelector === "function" && item.classList);
+    return Array.isArray(value) && value.length > 0 && value.every(item => item && typeof item.querySelector === "function" && item.classList);
 }
 
 function isPegasusSerializableExerciseArray(value) {
