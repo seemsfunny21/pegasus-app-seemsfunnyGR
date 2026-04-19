@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.44 (EFFECTIVE TARGET UI PATCH)
+   PEGASUS WORKOUT ENGINE - v10.46 (PHASE-1 REDUCER SESSION PATCH)
    Protocol: Partial Session Memory + Auto-Sort + Smart Sync Logic
-   Status: FINAL STABLE | EFFECTIVE KCAL TARGET UNIFIED
+   Status: FINAL STABLE | PHASE-1 REDUCER HYDRATION READY
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
@@ -129,10 +129,16 @@ window.updateKcalUI = function() {
     const kcalLabel = document.querySelector(".kcal-label");
     if (!kcalDisplay) return;
 
-    const isWorkoutActive = running;
+    const session = (typeof window.getPegasusSessionState === "function")
+        ? window.getPegasusSessionState()
+        : null;
+
+    const workoutState = session?.workout || {};
+    const isWorkoutActive = typeof workoutState.running === "boolean" ? workoutState.running : running;
+    const liveSessionKcal = typeof workoutState.sessionKcal === "number" ? workoutState.sessionKcal : sessionActiveKcal;
 
     if (isWorkoutActive) {
-        kcalDisplay.textContent = parseFloat(sessionActiveKcal).toFixed(1);
+        kcalDisplay.textContent = parseFloat(liveSessionKcal || 0).toFixed(1);
         kcalDisplay.style.color = "#FFC107";
         if (kcalLabel) kcalLabel.textContent = "KCAL ΠΡΟΠΟΝΗΣΗΣ";
     } else {
@@ -190,45 +196,111 @@ function restoreLegacyExerciseRefs(realExercises) {
     window.exercises = exercises;
 }
 
+function buildPegasusLegacySnapshot(extra) {
+    const payload = {
+        exercises: exercises,
+        remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
+        currentIdx: currentIdx,
+        phase: phase,
+        running: running,
+        sessionKcal: sessionActiveKcal,
+        totalSeconds: totalSeconds,
+        remainingSeconds: remainingSeconds,
+        phaseRemainingSeconds: phaseRemainingSeconds,
+        turboMode: TURBO_MODE,
+        speed: SPEED,
+        userWeight: userWeight,
+        muted: muted,
+        todayDateStr: window.getPegasusTodayDateStr(),
+        todayKey: window.getPegasusLocalDateKey()
+    };
+
+    if (extra && typeof extra === "object") {
+        Object.keys(extra).forEach(key => {
+            payload[key] = extra[key];
+        });
+    }
+
+    return payload;
+}
+
+function getPegasusSessionState() {
+    const engine = getPegasusCoreEngine();
+    if (engine?.getSessionSnapshot) {
+        return engine.getSessionSnapshot();
+    }
+
+    return {
+        workout: {
+            exercises,
+            remainingSets,
+            currentIdx,
+            phase,
+            running,
+            sessionKcal: sessionActiveKcal
+        },
+        timers: {
+            totalSeconds,
+            remainingSeconds,
+            phaseRemainingSeconds,
+            turboMode: TURBO_MODE,
+            speed: SPEED
+        },
+        user: {
+            weight: userWeight,
+            muted: muted
+        },
+        nutrition: {
+            todayDateStr: window.getPegasusTodayDateStr(),
+            todayKey: window.getPegasusLocalDateKey()
+        }
+    };
+}
+
+window.getPegasusSessionState = getPegasusSessionState;
+
 function syncEngineFromLegacy(actionType, extra) {
     const engine = getPegasusCoreEngine();
     if (!engine) return;
 
     const realExercises = exercises;
-    const safeRemainingSets = Array.isArray(remainingSets) ? remainingSets.slice() : [];
-    const currentState = engine.getState ? clonePegasusValue(engine.getState()) : engine.getInitialState();
+    const snapshot = buildPegasusLegacySnapshot(extra);
 
-    currentState.workout = currentState.workout || {};
-    currentState.timers = currentState.timers || {};
-    currentState.user = currentState.user || {};
-    currentState.nutrition = currentState.nutrition || {};
-    currentState.meta = currentState.meta || {};
+    if (typeof engine.hydrateFromLegacy === "function") {
+        engine.hydrateFromLegacy(snapshot, actionType || "HYDRATE_LEGACY_RUNTIME");
+    } else {
+        const currentState = engine.getState ? clonePegasusValue(engine.getState()) : engine.getInitialState();
+        currentState.workout = currentState.workout || {};
+        currentState.timers = currentState.timers || {};
+        currentState.user = currentState.user || {};
+        currentState.nutrition = currentState.nutrition || {};
+        currentState.meta = currentState.meta || {};
 
-    currentState.workout.currentIdx = currentIdx;
-    currentState.workout.phase = phase;
-    currentState.workout.running = running;
-    currentState.workout.remainingSets = safeRemainingSets;
-    currentState.workout.sessionKcal = sessionActiveKcal;
+        currentState.workout.currentIdx = snapshot.currentIdx;
+        currentState.workout.phase = snapshot.phase;
+        currentState.workout.running = snapshot.running;
+        currentState.workout.remainingSets = snapshot.remainingSets;
+        currentState.workout.sessionKcal = snapshot.sessionKcal;
+        currentState.workout.exercises = snapshot.exercises;
+        currentState.workout.selectedDay = snapshot.selectedDay ?? currentState.workout.selectedDay;
 
-    if (extra && Object.prototype.hasOwnProperty.call(extra, "selectedDay")) {
-        currentState.workout.selectedDay = extra.selectedDay;
+        currentState.timers.totalSeconds = snapshot.totalSeconds;
+        currentState.timers.remainingSeconds = snapshot.remainingSeconds;
+        currentState.timers.phaseRemainingSeconds = snapshot.phaseRemainingSeconds;
+        currentState.timers.turboMode = snapshot.turboMode;
+        currentState.timers.speed = snapshot.speed;
+
+        currentState.user.weight = snapshot.userWeight;
+        currentState.user.muted = snapshot.muted;
+
+        currentState.nutrition.todayDateStr = snapshot.todayDateStr;
+        currentState.nutrition.todayKey = snapshot.todayKey;
+        currentState.meta.updatedAt = Date.now();
+        currentState.meta.lastAction = actionType || "SYNC_LEGACY";
+
+        engine.replaceState(currentState, actionType || "SYNC_LEGACY");
     }
 
-    currentState.timers.totalSeconds = totalSeconds;
-    currentState.timers.remainingSeconds = remainingSeconds;
-    currentState.timers.phaseRemainingSeconds = phaseRemainingSeconds;
-    currentState.timers.turboMode = TURBO_MODE;
-    currentState.timers.speed = SPEED;
-
-    currentState.user.weight = userWeight;
-    currentState.user.muted = muted;
-
-    currentState.nutrition.todayDateStr = window.getPegasusTodayDateStr();
-    currentState.nutrition.todayKey = window.getPegasusLocalDateKey();
-    currentState.meta.updatedAt = Date.now();
-    currentState.meta.lastAction = actionType || "SYNC_LEGACY";
-
-    engine.replaceState(currentState, actionType || "SYNC_LEGACY");
     restoreLegacyExerciseRefs(realExercises);
 }
 
@@ -1239,6 +1311,7 @@ window.onload = () => {
 
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
+    session: () => (typeof window.getPegasusSessionState === "function" ? window.getPegasusSessionState() : null),
     engineState: () => (window.PegasusEngine?.getState ? window.PegasusEngine.getState() : null),
     replay: (limit) => (window.PegasusEngine?.replay ? window.PegasusEngine.replay(limit) : null),
     manifest: () => P_M,

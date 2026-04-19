@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CORE ENGINE - v1.0
+   PEGASUS CORE ENGINE - v1.1
    Protocol: Global Store + Reducer + Event Buffer + Legacy State Bridge
-   Status: FOUNDATION STABLE | ACTION CORE READY
+   Status: FOUNDATION STABLE | REDUCER HYDRATION READY
    ========================================================================== */
 
 (function() {
@@ -87,6 +87,31 @@
         window._pegasusEventBuffer = eventBuffer;
     }
 
+    function applyHydrationSnapshot(next, payload) {
+        const snapshot = payload || {};
+
+        next.workout.exercises = clone(snapshot.exercises || next.workout.exercises || []);
+        next.workout.remainingSets = clone(snapshot.remainingSets || next.workout.remainingSets || []);
+        next.workout.currentIdx = snapshot.currentIdx ?? next.workout.currentIdx;
+        next.workout.phase = snapshot.phase ?? next.workout.phase;
+        next.workout.running = snapshot.running ?? next.workout.running;
+        next.workout.sessionKcal = snapshot.sessionKcal ?? next.workout.sessionKcal;
+        next.workout.selectedDay = snapshot.selectedDay ?? next.workout.selectedDay;
+        next.workout.weights = clone(snapshot.weights || next.workout.weights || {});
+
+        next.timers.totalSeconds = snapshot.totalSeconds ?? next.timers.totalSeconds;
+        next.timers.remainingSeconds = snapshot.remainingSeconds ?? next.timers.remainingSeconds;
+        next.timers.phaseRemainingSeconds = snapshot.phaseRemainingSeconds ?? next.timers.phaseRemainingSeconds;
+        next.timers.turboMode = snapshot.turboMode ?? next.timers.turboMode;
+        next.timers.speed = snapshot.speed ?? next.timers.speed;
+
+        next.user.weight = snapshot.userWeight ?? snapshot.weight ?? next.user.weight;
+        next.user.muted = snapshot.muted ?? next.user.muted;
+
+        next.nutrition.todayDateStr = snapshot.todayDateStr ?? getTodayDateStr();
+        next.nutrition.todayKey = snapshot.todayKey ?? getLocalDateKey();
+    }
+
     function reducer(currentState, action) {
         const prev = currentState;
         const next = clone(prev);
@@ -99,49 +124,28 @@
 
         switch (action.type) {
             case "BOOT_FROM_LEGACY":
-                next.workout.exercises = clone(action.payload?.exercises || []);
-                next.workout.remainingSets = clone(action.payload?.remainingSets || []);
-                next.workout.currentIdx = action.payload?.currentIdx ?? next.workout.currentIdx;
-                next.workout.phase = action.payload?.phase ?? next.workout.phase;
-                next.workout.running = action.payload?.running ?? next.workout.running;
-                next.workout.sessionKcal = action.payload?.sessionKcal ?? next.workout.sessionKcal;
-
-                next.timers.totalSeconds = action.payload?.totalSeconds ?? next.timers.totalSeconds;
-                next.timers.remainingSeconds = action.payload?.remainingSeconds ?? next.timers.remainingSeconds;
-                next.timers.phaseRemainingSeconds = action.payload?.phaseRemainingSeconds ?? next.timers.phaseRemainingSeconds;
-                next.timers.turboMode = action.payload?.turboMode ?? next.timers.turboMode;
-                next.timers.speed = action.payload?.speed ?? next.timers.speed;
-
-                next.user.weight = action.payload?.userWeight ?? next.user.weight;
-                next.user.muted = action.payload?.muted ?? next.user.muted;
-                break;
-
+            case "SYNC_LEGACY":
+            case "HYDRATE_LEGACY_RUNTIME":
             case "SELECT_DAY":
-                next.workout.selectedDay = action.payload?.day || null;
-                next.workout.exercises = clone(action.payload?.exercises || []);
-                next.workout.remainingSets = clone(action.payload?.remainingSets || []);
-                next.workout.currentIdx = 0;
-                next.workout.phase = 0;
-                next.workout.running = false;
-                next.workout.sessionKcal = 0;
-
-                next.timers.totalSeconds = action.payload?.totalSeconds || 0;
-                next.timers.remainingSeconds = action.payload?.remainingSeconds || 0;
-                next.timers.phaseRemainingSeconds = null;
-                break;
-
             case "START_WORKOUT":
-                next.workout.running = true;
-                break;
-
             case "PAUSE_WORKOUT":
-                next.workout.running = false;
-                break;
-
             case "RESUME_FROM_PREP":
-                next.workout.running = true;
-                next.workout.phase = 0;
-                next.timers.phaseRemainingSeconds = null;
+            case "PHASE_START":
+            case "PHASE_TICK":
+            case "PHASE_COMPLETE_PREP":
+            case "SET_COMPLETED":
+            case "REST_COMPLETE_NEXT":
+            case "SKIP_EXERCISE":
+            case "TOGGLE_SKIP_EXERCISE":
+            case "SAVE_WEIGHT":
+            case "AUTO_INIT_TODAY":
+            case "WORKOUT_FINISHED":
+            case "WORKOUT_REPORT_SAVED":
+            case "BOOT_COMPLETE":
+            case "SYNC_MUTED":
+            case "SYNC_TURBO":
+            case "WARMUP_RETURN":
+                applyHydrationSnapshot(next, action.payload);
                 break;
 
             case "SET_CURRENT_INDEX":
@@ -176,15 +180,6 @@
                 next.timers.phaseRemainingSeconds = action.payload?.phaseRemainingSeconds ?? next.timers.phaseRemainingSeconds;
                 break;
 
-            case "PHASE_TICK":
-                if (typeof action.payload?.remainingSeconds === "number") {
-                    next.timers.remainingSeconds = action.payload.remainingSeconds;
-                }
-                if (typeof action.payload?.phaseRemainingSeconds === "number") {
-                    next.timers.phaseRemainingSeconds = action.payload.phaseRemainingSeconds;
-                }
-                break;
-
             case "SET_TIMER_STATE":
                 next.timers.totalSeconds = action.payload?.totalSeconds ?? next.timers.totalSeconds;
                 next.timers.remainingSeconds = action.payload?.remainingSeconds ?? next.timers.remainingSeconds;
@@ -201,22 +196,6 @@
 
             case "SYNC_WEIGHT":
                 next.user.weight = action.payload?.weight ?? next.user.weight;
-                break;
-
-            case "SYNC_MUTED":
-                next.user.muted = !!action.payload?.muted;
-                break;
-
-            case "SYNC_TURBO":
-                next.timers.turboMode = !!action.payload?.turboMode;
-                next.timers.speed = action.payload?.speed ?? (next.timers.turboMode ? 10 : 1);
-                break;
-
-            case "WORKOUT_FINISHED":
-                next.workout.running = false;
-                next.workout.phase = 0;
-                next.timers.phaseRemainingSeconds = null;
-                next.timers.remainingSeconds = 0;
                 break;
 
             case "RESET_WORKOUT_RUNTIME":
@@ -325,12 +304,46 @@
         return replayState;
     }
 
+    function hydrateFromLegacy(snapshot, actionType) {
+        return dispatch({
+            type: actionType || "HYDRATE_LEGACY_RUNTIME",
+            payload: clone(snapshot || {})
+        });
+    }
+
+    function getWorkoutState() {
+        return clone(state.workout || {});
+    }
+
+    function getTimerState() {
+        return clone(state.timers || {});
+    }
+
+    function getUserState() {
+        return clone(state.user || {});
+    }
+
+    function getSessionSnapshot() {
+        return {
+            workout: getWorkoutState(),
+            timers: getTimerState(),
+            user: getUserState(),
+            nutrition: clone(state.nutrition || {}),
+            meta: clone(state.meta || {})
+        };
+    }
+
     window.PegasusEngine = {
         __isCoreEngine: true,
         dispatch,
         getState,
         subscribe,
         replaceState,
+        hydrateFromLegacy,
+        getWorkoutState,
+        getTimerState,
+        getUserState,
+        getSessionSnapshot,
         getEventBuffer,
         clearEventBuffer,
         replay,

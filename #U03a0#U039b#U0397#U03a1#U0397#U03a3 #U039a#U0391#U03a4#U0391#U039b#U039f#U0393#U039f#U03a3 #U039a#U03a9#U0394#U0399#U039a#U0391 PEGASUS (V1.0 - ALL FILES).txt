@@ -1,0 +1,76 @@
+1. Σύστημα Συγχρονισμού & Φορητότητας (Νέα Κατηγορία)
+cloudSync.js: Ο νέος "πνεύμονας" του Pegasus. Διαχειρίζεται την επικοινωνία με το JSONbin API, το PIN ξεκλειδώματος (2375) και τον αμφίδρομο συγχρονισμό (Push/Pull) μεταξύ Desktop και Mobile.
+
+mobile.html: Η πλήρης, αυτόνομη έκδοση για κινητά. Περιλαμβάνει το Tactical UI, το Swipe-to-Delete, το Smart Search και το Live Reload Protocol για άμεση ενημέρωση από το GitHub.
+
+sw.js (Service Worker): Διαχειρίζεται το Offline Vault και το caching των βίντεο και εικόνων, επιτρέποντας στην εφαρμογή να φορτώνει ακαριαία.
+
+manifest.json: Επιτρέπει την εγκατάσταση του Pegasus ως Web App (PWA) στο κινητό, αφαιρώντας το πλαίσιο του browser για πλήρη "Tactical" εμπειρία.
+
+2. Δεδομένα & Βελτιστοποίηση (Ενημερωμένο)
+optimizer.js: Module που υπολογίζει δυναμικά την προσαρμογή των σετ και των βαρών πριν τη φόρτωση του προγράμματος (Patch: 18-Set Cycling Credit).
+
+settings.js: Περιλαμβάνει πλέον και τις παραμέτρους για τους εβδομαδιαίους στόχους ανά μυϊκή ομάδα (Weekly Set Targets).
+
+3. Διατροφή & Εξωτερικές Διασυνδέσεις (Ενημερωμένο)
+food.js / extensions.js: Ενοποιημένη λογική για τη διαχείριση της βιβλιοθήκης και του "Agreement Log" (30 γεύματα).
+
+inventoryHandler.js: Διαχειρίζεται πλέον και το απόθεμα των συμπληρωμάτων (Whey/Creatine), αφαιρώντας αυτόματα γραμμάρια κατά την καταγραφή γευμάτων.
+
+4. Πυρήνας & UI (Ενημερωμένο)
+app.js (v6.6+): Ο ενορχηστρωτής έχει αναβαθμιστεί με το Zero-Time Protocol και το Dual Video Engine (υποστήριξη τοπικών MP4 και YouTube Iframes).
+
+reporting.js: Προετοιμασία του "Morning Report" που αποστέλλεται μέσω EmailJS, περιλαμβάνοντας θερμίδες, βάρος και ολοκληρωμένες ασκήσεις.
+
+⚙️ Συνολικός Απολογισμός Αρχείων (26 Αρχεία)
+index.html (Main Core)
+
+mobile.html (Mobile Core)
+
+style.css (Theme)
+
+manifest.json (App Config)
+
+sw.js (Offline Logic)
+
+data.js (Database)
+
+settings.js (User Profile)
+
+cloudSync.js (Cloud Engine)
+
+optimizer.js (DVS Engine)
+
+app.js (Logic Orchestrator)
+
+logicmetabolic.js (Burn Logic)
+
+metabolic.js (MET Engine)
+
+calories.js (Kcal Manager)
+
+food.js (Nutrition Core)
+
+extensions.js (Kouki Integration)
+
+inventoryHandler.js (Supps/Sets Logic)
+
+ems.js (Wednesday Module)
+
+cardio.js (Outdoor Tracker)
+
+partner.js (Partner Engine)
+
+weather.js (Weather API)
+
+weatherHandler.js (Rain/Legacy Logic)
+
+progressUI.js (Muscle Bars)
+
+achievements.js (Milestones)
+
+calendar.js (History)
+
+backup.js (Data Portability)
+
+debug.js (Health Check)
