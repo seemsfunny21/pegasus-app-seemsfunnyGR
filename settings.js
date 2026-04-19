@@ -8,11 +8,32 @@
 var M = M || window.PegasusManifest;
 
 const DEFAULT_SETTINGS = {
-    weight: 74, height: 187, age: 38, gender: 'male',
-    goalKcal: 2800, goalProtein: 160, exTime: 45, restTime: 60,
-    activeSplit: 'IRON', // Default Pillar
-    muscleTargets: { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }
+    weight: 74,
+    height: 187,
+    age: 38,
+    gender: 'male',
+    goalKcal: 2800,
+    goalProtein: 160,
+    exTime: 45,
+    restTime: 60,
+    activeSplit: 'IRON',
+    muscleTargets: {
+        "Στήθος": 24,
+        "Πλάτη": 24,
+        "Πόδια": 24,
+        "Χέρια": 16,
+        "Ώμοι": 16,
+        "Κορμός": 12
+    }
 };
+
+function clonePegasusSettings(value) {
+    try {
+        return structuredClone(value);
+    } catch (e) {
+        return JSON.parse(JSON.stringify(value));
+    }
+}
 
 /**
  * 1. GLOBAL ACCESSOR
@@ -22,28 +43,31 @@ window.getPegasusSettings = function() {
         const u = M?.user || {};
         const d = M?.diet || {};
         const w = M?.workout || {};
-        
+
         const storedTargetsStr = localStorage.getItem(w.muscleTargets || "pegasus_muscle_targets");
         let storedTargets = null;
+
         if (storedTargetsStr) {
-            try { storedTargets = JSON.parse(storedTargetsStr); } catch (e) { }
+            try {
+                storedTargets = JSON.parse(storedTargetsStr);
+            } catch (e) {}
         }
 
         return {
             weight: parseFloat(localStorage.getItem(u.weight || "pegasus_weight")) || DEFAULT_SETTINGS.weight,
             height: parseFloat(localStorage.getItem(u.height || "pegasus_height")) || DEFAULT_SETTINGS.height,
-            age: parseInt(localStorage.getItem(u.age || "pegasus_age")) || DEFAULT_SETTINGS.age,
+            age: parseInt(localStorage.getItem(u.age || "pegasus_age"), 10) || DEFAULT_SETTINGS.age,
             gender: localStorage.getItem(u.gender || "pegasus_gender") || DEFAULT_SETTINGS.gender,
-            goalKcal: parseInt(localStorage.getItem(d.todayKcal || "pegasus_today_kcal")) || DEFAULT_SETTINGS.goalKcal,
-            goalProtein: parseInt(localStorage.getItem(d.todayProtein || "pegasus_today_protein")) || DEFAULT_SETTINGS.goalProtein,
-            exTime: parseInt(localStorage.getItem(w.ex_time || "pegasus_ex_time")) || DEFAULT_SETTINGS.exTime,
-            restTime: parseInt(localStorage.getItem(w.rest_time || "pegasus_rest_time")) || DEFAULT_SETTINGS.restTime,
+            goalKcal: parseInt(localStorage.getItem(d.todayKcal || "pegasus_today_kcal"), 10) || DEFAULT_SETTINGS.goalKcal,
+            goalProtein: parseInt(localStorage.getItem(d.todayProtein || "pegasus_today_protein"), 10) || DEFAULT_SETTINGS.goalProtein,
+            exTime: parseInt(localStorage.getItem(w.ex_time || "pegasus_ex_time"), 10) || DEFAULT_SETTINGS.exTime,
+            restTime: parseInt(localStorage.getItem(w.rest_time || "pegasus_rest_time"), 10) || DEFAULT_SETTINGS.restTime,
             activeSplit: localStorage.getItem('pegasus_active_plan') || DEFAULT_SETTINGS.activeSplit,
-            muscleTargets: storedTargets || DEFAULT_SETTINGS.muscleTargets
+            muscleTargets: storedTargets || clonePegasusSettings(DEFAULT_SETTINGS.muscleTargets)
         };
-    } catch (e) { 
+    } catch (e) {
         console.warn("PEGASUS: Settings corruption detected.", e);
-        return DEFAULT_SETTINGS; 
+        return clonePegasusSettings(DEFAULT_SETTINGS);
     }
 };
 
@@ -53,7 +77,7 @@ window.getPegasusSettings = function() {
 window.calculateBMR = function() {
     const w = parseFloat(document.getElementById("userWeightInput")?.value);
     const h = parseFloat(document.getElementById("userHeightInput")?.value);
-    const a = parseInt(document.getElementById("userAgeInput")?.value);
+    const a = parseInt(document.getElementById("userAgeInput")?.value, 10);
     const g = document.getElementById("userGenderInput")?.value;
     const bmrDisplay = document.getElementById("maintenanceKcalDisplay");
 
@@ -62,8 +86,41 @@ window.calculateBMR = function() {
     let bmr = (10 * w) + (6.25 * h) - (5 * a);
     bmr = (g === "male") ? bmr + 5 : bmr - 161;
     const tdee = Math.round(bmr * 1.55);
-    
+
     if (bmrDisplay) bmrDisplay.textContent = `Συντήρηση (TDEE): ${tdee} kcal`;
+};
+
+/**
+ * 2.5 RUNTIME BRIDGE
+ */
+window.applyPegasusRuntimeSettings = function(settingsObj) {
+    const s = settingsObj || window.getPegasusSettings();
+
+    window.pegasusTimerConfig = {
+        prep: 10,
+        work: parseInt(s.exTime, 10) || DEFAULT_SETTINGS.exTime,
+        rest: parseInt(s.restTime, 10) || DEFAULT_SETTINGS.restTime
+    };
+
+    if (typeof window.userWeight !== "undefined") {
+        window.userWeight = parseFloat(s.weight) || DEFAULT_SETTINGS.weight;
+    }
+
+    if (window.PegasusEngine?.dispatch) {
+        window.PegasusEngine.dispatch({
+            type: "SYNC_WEIGHT",
+            payload: { weight: parseFloat(s.weight) || DEFAULT_SETTINGS.weight }
+        });
+
+        window.PegasusEngine.dispatch({
+            type: "SET_TIMER_STATE",
+            payload: {
+                totalSeconds: window.totalSeconds || 0,
+                remainingSeconds: window.remainingSeconds || 0,
+                phaseRemainingSeconds: window.phaseRemainingSeconds ?? null
+            }
+        });
+    }
 };
 
 /**
@@ -71,17 +128,17 @@ window.calculateBMR = function() {
  */
 window.initSettingsUI = function() {
     const s = window.getPegasusSettings();
-    
+
     const fields = {
-        "userWeightInput": s.weight, 
+        "userWeightInput": s.weight,
         "userHeightInput": s.height,
-        "userAgeInput": s.age, 
+        "userAgeInput": s.age,
         "userGenderInput": s.gender,
-        "goalKcalInput": s.goalKcal, 
+        "goalKcalInput": s.goalKcal,
         "goalProteinInput": s.goalProtein,
-        "exerciseTimeInput": s.exTime, 
+        "exerciseTimeInput": s.exTime,
         "restTimeInput": s.restTime,
-        "activeSplitSelector": s.activeSplit // 🎯 New Select Element in UI
+        "activeSplitSelector": s.activeSplit
     };
 
     for (let id in fields) {
@@ -98,6 +155,9 @@ window.initSettingsUI = function() {
         const el = document.getElementById(id);
         if (el) el.oninput = window.calculateBMR;
     });
+
+    window.applyPegasusRuntimeSettings(s);
+    window.calculateBMR();
 };
 
 /**
@@ -114,30 +174,54 @@ window.savePegasusSettingsGlobal = function() {
             return (el && el.value !== "") ? el.value : fallback;
         };
 
-        // Core Identity
-        localStorage.setItem(u.weight || "pegasus_weight", getValue("userWeightInput", DEFAULT_SETTINGS.weight));
-        localStorage.setItem(u.height || "pegasus_height", getValue("userHeightInput", DEFAULT_SETTINGS.height));
-        localStorage.setItem(u.age || "pegasus_age", getValue("userAgeInput", DEFAULT_SETTINGS.age));
-        localStorage.setItem(u.gender || "pegasus_gender", getValue("userGenderInput", DEFAULT_SETTINGS.gender));
-        
-        // Nutrition & Time
-        localStorage.setItem(d.todayKcal || "pegasus_today_kcal", getValue("goalKcalInput", DEFAULT_SETTINGS.goalKcal));
-        localStorage.setItem(d.todayProtein || "pegasus_today_protein", getValue("goalProteinInput", DEFAULT_SETTINGS.goalProtein));
-        localStorage.setItem(w.ex_time || "pegasus_ex_time", getValue("exerciseTimeInput", DEFAULT_SETTINGS.exTime));
-        localStorage.setItem(w.rest_time || "pegasus_rest_time", getValue("restTimeInput", DEFAULT_SETTINGS.restTime));
+        const newSettings = {
+            weight: parseFloat(getValue("userWeightInput", DEFAULT_SETTINGS.weight)) || DEFAULT_SETTINGS.weight,
+            height: parseFloat(getValue("userHeightInput", DEFAULT_SETTINGS.height)) || DEFAULT_SETTINGS.height,
+            age: parseInt(getValue("userAgeInput", DEFAULT_SETTINGS.age), 10) || DEFAULT_SETTINGS.age,
+            gender: getValue("userGenderInput", DEFAULT_SETTINGS.gender),
+            goalKcal: parseInt(getValue("goalKcalInput", DEFAULT_SETTINGS.goalKcal), 10) || DEFAULT_SETTINGS.goalKcal,
+            goalProtein: parseInt(getValue("goalProteinInput", DEFAULT_SETTINGS.goalProtein), 10) || DEFAULT_SETTINGS.goalProtein,
+            exTime: parseInt(getValue("exerciseTimeInput", DEFAULT_SETTINGS.exTime), 10) || DEFAULT_SETTINGS.exTime,
+            restTime: parseInt(getValue("restTimeInput", DEFAULT_SETTINGS.restTime), 10) || DEFAULT_SETTINGS.restTime,
+            activeSplit: getValue("activeSplitSelector", DEFAULT_SETTINGS.activeSplit),
+            muscleTargets: {}
+        };
 
-        // 🎯 Active Split (Unified Bridge with data.js v16.4)
-        const newSplit = getValue("activeSplitSelector", DEFAULT_SETTINGS.activeSplit);
-        localStorage.setItem('pegasus_active_plan', newSplit);
-
-        // Muscle Targets
-        const targets = {};
         ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
             const el = document.getElementById(`target${m}Input`);
-            const val = el ? parseInt(el.value) : NaN;
-            targets[m] = isNaN(val) ? DEFAULT_SETTINGS.muscleTargets[m] : val;
+            const val = el ? parseInt(el.value, 10) : NaN;
+            newSettings.muscleTargets[m] = isNaN(val) ? DEFAULT_SETTINGS.muscleTargets[m] : val;
         });
-        localStorage.setItem(w.muscleTargets || "pegasus_muscle_targets", JSON.stringify(targets));
+
+        // Core Identity
+        localStorage.setItem(u.weight || "pegasus_weight", String(newSettings.weight));
+        localStorage.setItem(u.height || "pegasus_height", String(newSettings.height));
+        localStorage.setItem(u.age || "pegasus_age", String(newSettings.age));
+        localStorage.setItem(u.gender || "pegasus_gender", newSettings.gender);
+
+        // Nutrition & Time
+        localStorage.setItem(d.todayKcal || "pegasus_today_kcal", String(newSettings.goalKcal));
+        localStorage.setItem(d.todayProtein || "pegasus_today_protein", String(newSettings.goalProtein));
+        localStorage.setItem(w.ex_time || "pegasus_ex_time", String(newSettings.exTime));
+        localStorage.setItem(w.rest_time || "pegasus_rest_time", String(newSettings.restTime));
+
+        // Active Split
+        localStorage.setItem('pegasus_active_plan', newSettings.activeSplit);
+
+        // Muscle Targets
+        localStorage.setItem(
+            w.muscleTargets || "pegasus_muscle_targets",
+            JSON.stringify(newSettings.muscleTargets)
+        );
+
+        window.applyPegasusRuntimeSettings(newSettings);
+
+        if (window.PegasusEngine?.dispatch) {
+            window.PegasusEngine.dispatch({
+                type: "PLAN_CHANGED",
+                payload: { planKey: newSettings.activeSplit }
+            });
+        }
 
         if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
 
@@ -148,3 +232,7 @@ window.savePegasusSettingsGlobal = function() {
         alert("Κρίσιμο σφάλμα κατά την αποθήκευση.");
     }
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+    window.applyPegasusRuntimeSettings(window.getPegasusSettings());
+});
