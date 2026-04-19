@@ -8,7 +8,7 @@ const PegasusCloud = {
         binId: "69b6757ab7ec241ddc6d7230",
         encryptedPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
         syncThrottle: 2000,
-        pullInterval: 10000,
+        pullInterval: 30000,
         dailyUnlockHour: 7,
         cryptoIterations: 120000
     },
@@ -294,11 +294,12 @@ const PegasusCloud = {
     },
 
     async fetchLatestRecord() {
+        const effectiveKey = this.userKey || this.config.encryptedPart;
         const res = await fetch(
             `https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`,
             {
                 headers: {
-                    "X-Master-Key": this.userKey,
+                    "X-Master-Key": effectiveKey,
                     "X-Bin-Meta": "false"
                 }
             }

@@ -624,26 +624,97 @@
         }).join('');
     }
 
+    const MOBILE_SYNC_CYCLE_MS = () => Math.max(10000, Number(window.PegasusCloud?.config?.pullInterval || 30000));
+    let mobileSyncCountdownTimer = null;
+    let mobileLastSyncPulseTs = 0;
+    let mobileNextSyncAt = 0;
+
+    function scheduleNextMobileSyncCycle(fromNow = true) {
+        const cycleMs = MOBILE_SYNC_CYCLE_MS();
+        mobileNextSyncAt = Date.now() + (fromNow ? cycleMs : 0);
+    }
+
+    function renderMobileSyncCycleStatus() {
+        const e = document.getElementById("sync-indicator");
+        if (!e) return;
+        if (!window.PegasusCloud?.isUnlocked) {
+            e.textContent = "LOCKED";
+            e.style.color = "#888";
+            return;
+        }
+        if (!navigator.onLine) {
+            e.textContent = "OFFLINE";
+            e.style.color = "#ff4444";
+            return;
+        }
+
+        const now = Date.now();
+        if (mobileLastSyncPulseTs && (now - mobileLastSyncPulseTs) < 1200) {
+            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
+            e.style.color = "#00bcd4";
+            return;
+        }
+
+        if (!mobileNextSyncAt || mobileNextSyncAt <= now) {
+            scheduleNextMobileSyncCycle(true);
+        }
+
+        const remainingSec = Math.max(0, Math.ceil((mobileNextSyncAt - now) / 1000));
+        if (remainingSec > 20) {
+            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
+            e.style.color = "#00ff41";
+        } else if (remainingSec > 10) {
+            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
+            e.style.color = "#ff9800";
+        } else {
+            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
+            e.style.color = "#ff4444";
+        }
+    }
+
+    function startMobileSyncCountdown() {
+        stopMobileSyncCountdown();
+        if (!window.PegasusCloud?.isUnlocked) return;
+        renderMobileSyncCycleStatus();
+        mobileSyncCountdownTimer = setInterval(() => {
+            renderMobileSyncCycleStatus();
+        }, 1000);
+    }
+
+    function stopMobileSyncCountdown() {
+        if (mobileSyncCountdownTimer) {
+            clearInterval(mobileSyncCountdownTimer);
+            mobileSyncCountdownTimer = null;
+        }
+    }
+
     function setSyncStatus(status) {
         const e = document.getElementById("sync-indicator");
         if (!e) return;
 
         if (status === 'online') {
-            e.textContent = "ONLINE";
-            e.style.color = "#00ff41";
+            startMobileSyncCountdown();
+            renderMobileSyncCycleStatus();
         } else if (status === 'offline') {
+            stopMobileSyncCountdown();
             e.textContent = "OFFLINE";
             e.style.color = "#ff4444";
         } else if (status === 'syncing') {
-            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ...";
+            mobileLastSyncPulseTs = Date.now();
+            scheduleNextMobileSyncCycle(true);
+            startMobileSyncCountdown();
+            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
             e.style.color = "#00bcd4";
         } else if (status === 'error') {
+            stopMobileSyncCountdown();
             e.textContent = "ΣΦΑΛΜΑ SYNC";
             e.style.color = "#ff9800";
         } else if (status === 'locked') {
+            stopMobileSyncCountdown();
             e.textContent = "LOCKED";
             e.style.color = "#888";
         } else {
+            stopMobileSyncCountdown();
             e.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
             e.style.color = "#00bcd4";
         }
@@ -696,6 +767,9 @@
         if (!window.PegasusCloud?.isUnlocked) return;
         if (document.hidden) return;
 
+        scheduleNextMobileSyncCycle(true);
+        startMobileSyncCountdown();
+
         window._pegasusMobileSyncTimer = setInterval(() => {
             if (
                 !document.hidden &&
@@ -706,7 +780,7 @@
             ) {
                 runMobileSyncHeartbeat();
             }
-        }, 10000);
+        }, MOBILE_SYNC_CYCLE_MS());
     }
 
     function stopMobileSyncHeartbeat() {
@@ -714,6 +788,7 @@
             clearInterval(window._pegasusMobileSyncTimer);
             window._pegasusMobileSyncTimer = null;
         }
+        stopMobileSyncCountdown();
     }
 
     window.addEventListener("pegasus_sync_status", (e) => {
@@ -764,6 +839,8 @@
 
     window.addEventListener("pegasus_sync_complete", () => {
         refreshAllUI();
+        mobileLastSyncPulseTs = Date.now();
+        scheduleNextMobileSyncCycle(true);
         if (window.PegasusCloud?.isUnlocked && !window.PegasusCloud?.isPulling && !window.PegasusCloud?.isPushing) {
             setSyncStatus('online');
         }
@@ -788,6 +865,8 @@
         if (success) {
             document.getElementById("pinModal").style.display = "none";
             isUnlocked = true;
+            mobileLastSyncPulseTs = Date.now();
+            scheduleNextMobileSyncCycle(true);
             setSyncStatus(window.PegasusCloud?.isUnlocked ? (navigator.onLine ? 'online' : 'offline') : 'locked');
 
             await reconcileMobileDailyRoutine();
