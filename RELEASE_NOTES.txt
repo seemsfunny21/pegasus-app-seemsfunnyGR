@@ -1,0 +1,13 @@
+PEGASUS FINAL POLISHED
+
+Baseline:
+- Stable post-P11 architecture build
+- Reducer/runtime bridge, semantic workout actions, replay/checkpoints,
+  persisted runtime, selector-driven UI state, control state selectors.
+
+Recommended validation:
+- Run the MAX FINAL AUDIT script from the ChatGPT thread after deploy.
+- Smoke-test: select day, start, pause, next, food/inventory, cloud sync.
+
+Package type:
+- Production-oriented stable build
