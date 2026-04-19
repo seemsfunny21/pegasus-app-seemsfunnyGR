@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.1)
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.2)
    STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
@@ -643,16 +643,22 @@ const PegasusCloud = {
 
             const protectedContacts = cloud?.protected?.contacts;
             if (protectedContacts) {
-                if (!this.masterKey) {
-                    throw new Error("INVALID_MASTER_KEY");
-                }
-                const decryptedContacts = await this.decryptCloudPayload(protectedContacts);
-                if (decryptedContacts && typeof decryptedContacts === "object") {
-                    protectedStorage = (decryptedContacts.storage && typeof decryptedContacts.storage === "object")
-                        ? decryptedContacts.storage
-                        : decryptedContacts;
-                }
                 hasProtectedPayload = true;
+                if (!this.masterKey) {
+                    console.warn("⚠️ CLOUD: Protected contacts present but master key is unavailable. Continuing with general storage only.");
+                } else {
+                    try {
+                        const decryptedContacts = await this.decryptCloudPayload(protectedContacts);
+                        if (decryptedContacts && typeof decryptedContacts === "object") {
+                            protectedStorage = (decryptedContacts.storage && typeof decryptedContacts.storage === "object")
+                                ? decryptedContacts.storage
+                                : decryptedContacts;
+                        }
+                    } catch (e) {
+                        console.warn("⚠️ CLOUD: Protected contacts bucket unavailable for this unlock. Continuing with general storage only.", e);
+                        protectedStorage = {};
+                    }
+                }
             }
 
             return {
