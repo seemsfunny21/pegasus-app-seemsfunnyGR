@@ -6,6 +6,16 @@
     const LANG_KEY = 'pegasus_language';
     const LEGACY_LANG_KEY = 'pegasus_lang';
     const exactPairs = [
+        ['ΕΡΓΑΛΕΙΑ PEGASUS', 'PEGASUS TOOLS'], ['ΣΥΣΤΗΜΑ ΣΥΝΕΡΓΑΤΗ', 'PARTNER SYSTEM'], ['Όνομα συνεργάτη...', 'Partner name...'],
+        ['ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ', 'PARTNER: OFF'], ['📅 ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ', '📅 PROGRAM TYPE'], ['🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ', '🔊 SOUND: ON'],
+        ['🔇 ΗΧΟΣ: ΣΙΓΑΣΗ', '🔇 SOUND: MUTED'], ['🚀 TURBO: ΑΝΕΝΕΡΓΟ', '🚀 TURBO: OFF'], ['🚀 TURBO: ΕΝΕΡΓΟ', '🚀 TURBO: ON'],
+        ['💾 ΑΠΟΘΗΚΕΥΣΗ ΑΡΧΕΙΟΥ', '💾 SAVE FILE'], ['📂 ΦΟΡΤΩΣΗ ΑΡΧΕΙΟΥ', '📂 LOAD FILE'], ['🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ', '🔐 SYNC'],
+        ['⚡ ΚΑΤΑΓΡΑΦΗ EMS', '⚡ EMS LOG'], ['🔍 ΕΛΕΓΧΟΣ PEGASUS', '🔍 PEGASUS CHECK'], ['➕ ΑΝΕΒΑΣΕ ΦΩΤΟΓΡΑΦΙΑ (JPG/PNG)', '➕ UPLOAD PHOTO (JPG/PNG)'],
+        ['ΕΒΔΟΜΑΔΙΑΙΟΙ ΣΤΟΧΟΙ ΣΕΤ', 'WEEKLY SET TARGETS'], ['PEGASUS STRICT: Συμπλήρωσε έγκυρα Χιλιόμετρα και Θερμίδες.', 'PEGASUS STRICT: Enter valid Distance and Calories.'],
+        ['✅ ΚΑΤΑΧΩΡΗΘΗΚΕ!', '✅ SAVED!'], ['PEGASUS STRICT: Συμπλήρωσε Φαγητό και Θερμίδες!', 'PEGASUS STRICT: Fill Food and Calories!'],
+        ['PEGASUS STRICT: Μπορείς να συγκρίνεις μόνο 2 φωτογραφίες τη φορά.', 'PEGASUS STRICT: You can compare only 2 photos at a time.'],
+        ['PEGASUS STRICT: Γράψε ένα έγκυρο όνομα συνεργάτη!', 'PEGASUS STRICT: Enter a valid partner name!'], ['Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.', 'Error: dietAdvisor.js did not load correctly.'],
+        ['PEGASUS STRICT: Παρακαλώ εισάγετε ένα έγκυρο βάρος (30-250 kg).', 'PEGASUS STRICT: Please enter a valid weight (30-250 kg).'], ['ΣΦΑΛΜΑ: Συμπλήρωσε Άσκηση, Κιλά και Επαναλήψεις.', 'ERROR: Fill Exercise, Weight and Reps.'],
         ['Προθέρμανση', 'Warmup'], ['Έναρξη', 'Start'], ['Παύση', 'Pause'], ['Συνέχεια', 'Continue'], ['Επόμενο', 'Next'],
         ['Ημερολόγιο', 'Calendar'], ['Επιτεύγματα', 'Achievements'], ['Διατροφή', 'Nutrition'], ['ΠΡΟΕΠΙΣΚΟΠΗΣΗ', 'PREVIEW'],
         ['Ρυθμίσεις', 'Settings'], ['EMAIL', 'EMAIL'], ['⚙️ ΕΡΓΑΛΕΙΑ', '⚙️ TOOLS'], ['GR / EN', 'EN / GR'],
@@ -31,6 +41,18 @@
         ['ONLINE', 'ONLINE'], ['OFFLINE', 'OFFLINE'], ['LOCKED', 'LOCKED'], ['Advisor Offline', 'Advisor Offline'], ['αρχικοποιηση συστηματος', 'system initialization'],
         ['Δευτέρα','Monday'], ['Τρίτη','Tuesday'], ['Τετάρτη','Wednesday'], ['Πέμπτη','Thursday'], ['Παρασκευή','Friday'], ['Σάββατο','Saturday'], ['Κυριακή','Sunday'],
         ['ΔΕΥΤΕΡΑ','MONDAY'], ['ΤΡΙΤΗ','TUESDAY'], ['ΤΕΤΑΡΤΗ','WEDNESDAY'], ['ΠΕΜΠΤΗ','THURSDAY'], ['ΠΑΡΑΣΚΕΥΗ','FRIDAY'], ['ΣΑΒΒΑΤΟ','SATURDAY'], ['ΚΥΡΙΑΚΗ','SUNDAY']
+    ];
+
+
+    const phrasePairs = [
+        ['ΣΥΝΕΡΓΑΤΗΣ:', 'PARTNER:'], ['ΑΠΕΝΕΡΓΟΣ', 'OFF'], ['ΕΝΕΡΓΟΣ', 'ON'],
+        ['Συντήρηση (TDEE):', 'Maintenance (TDEE):'], ['M.O. Εβδομάδας:', 'Weekly Avg:'],
+        ['ΗΧΟΣ:', 'SOUND:'], ['ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ', 'PROGRAM TYPE'], ['ΣΥΓΧΡΟΝΙΣΜΟΣ', 'SYNC'],
+        ['ΚΑΤΑΓΡΑΦΗ EMS', 'EMS LOG'], ['ΚΑΤΑΓΡΑΦΗ ΠΟΔΗΛΑΣΙΑΣ', 'CYCLING LOG'],
+        ['ΧΙΛΙΟΜΕΤΡΑ', 'DISTANCE'], ['ΘΕΡΜΙΔΕΣ', 'CALORIES'], ['ΠΡΩΤΕΪΝΗ', 'PROTEIN'],
+        ['ΑΠΟΘΗΚΕΥΣΗ', 'SAVE'], ['ΑΚΥΡΟ', 'CANCEL'], ['ΕΒΔΟΜΑΔΙΑΙΑ ΣΤΟΧΕΥΣΗ', 'WEEKLY TARGETING'],
+        ['ΠΡΟΣΩΠΙΚΑ ΕΓΓΡΑΦΑ', 'PERSONAL DOCUMENTS'], ['ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ', 'VEHICLE DETAILS'],
+        ['ΗΜΕΡΟΜΗΝΙΕΣ & ΣΕΡΒΙΣ', 'DATES & SERVICE'], ['ΠΡΟΣΩΠΙΚΕΣ ΣΗΜΕΙΩΣΕΙΣ', 'PERSONAL NOTES']
     ];
 
     const exercisePairs = [
@@ -71,9 +93,17 @@
         const raw = String(text ?? '');
         const trimmed = raw.trim();
         if (!trimmed) return raw;
+
         const pair = lookup.get(trimmed);
-        if (!pair) return raw;
-        return raw.replace(trimmed, translatePairText(trimmed, pair, lang));
+        if (pair) return raw.replace(trimmed, translatePairText(trimmed, pair, lang));
+
+        let translated = raw;
+        phrasePairs.forEach((phrasePair) => {
+            const from = lang === 'en' ? phrasePair[0] : phrasePair[1];
+            const to = lang === 'en' ? phrasePair[1] : phrasePair[0];
+            if (from && translated.includes(from)) translated = translated.split(from).join(to);
+        });
+        return translated;
     }
 
     function getExerciseDisplayName(name, forcedLang) {
@@ -169,11 +199,15 @@
         });
     });
 
-    window.PegasusI18n = { getLanguage, setLanguage, applyLanguage, translateLoose, getExerciseDisplayName };
+    function toggleLanguage() { setLanguage(getLanguage() === 'en' ? 'gr' : 'en'); }
+
+    window.PegasusI18n = { getLanguage, setLanguage, toggleLanguage, applyLanguage, translateLoose, getExerciseDisplayName };
     window.t = translateLoose;
     window.tr = translateLoose;
     window.getPegasusExerciseDisplayName = getExerciseDisplayName;
     window.translatePegasusUI = applyLanguage;
+    window.setPegasusLanguage = setLanguage;
+    window.togglePegasusLanguage = toggleLanguage;
 
     document.addEventListener('DOMContentLoaded', () => {
         updateLangButtons();
@@ -182,7 +216,7 @@
         document.querySelectorAll('#btnLangToggle, .pegasus-lang-toggle').forEach(btn => {
             if (!btn.dataset.i18nBound) {
                 btn.dataset.i18nBound = 'true';
-                btn.addEventListener('click', () => setLanguage(getLanguage() === 'en' ? 'gr' : 'en'));
+                btn.addEventListener('click', () => toggleLanguage());
             }
         });
     });

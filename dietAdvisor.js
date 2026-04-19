@@ -1,240 +1,205 @@
 /* ==========================================================================
-   PEGASUS COMMAND TRACER & AUDITOR - v3.5 (ANTI-SILENT FAIL)
-   Protocol: Strict Data Analyst - Full Loop Monitoring & GC
-   Status: FINAL STABLE | ZERO-BUG VERIFIED | CACHE WILDCARD ACTIVE
+   PEGASUS DIET ADVISOR - v1.0 (SHARED DESKTOP / MOBILE)
+   Protocol: Daily Deficit Analysis + Kouki Recommendation Engine
    ========================================================================== */
+(function() {
+    var M = M || window.PegasusManifest;
 
-var M = M || window.PegasusManifest;
-
-window.PegasusTracer = {
-    logs: JSON.parse(localStorage.getItem("pegasus_command_trace") || "[]"),
-
-    log: function(btnId, step, status, details = "") {
-        const entry = {
-            timestamp: new Date().toLocaleTimeString('el-GR'),
-            button: btnId,
-            step: step,        // π.χ. "Trigger", "Auth Check", "DB Open", "Finalize"
-            status: status,    // "START", "PENDING", "SUCCESS", "ERROR"
-            details: details
-        };
-        
-        this.logs.push(entry);
-        if (this.logs.length > 100) this.logs.shift();
-        
-        localStorage.setItem("pegasus_command_trace", JSON.stringify(this.logs));
-        
-        const color = status === "ERROR" ? "#FF5252" : (status === "SUCCESS" ? "#4CAF50" : "#FFC107");
-        console.log(`%c[TRACER] ${btnId} > ${step} > ${status}`, `color: ${color}; font-weight: bold;`, details);
-    },
-
-    printLastTrace: function() {
-        console.table(this.logs.slice(-10));
-    },
-
-    clear: function() {
-        this.logs = [];
-        localStorage.removeItem("pegasus_command_trace");
-        console.log("🛡️ PEGASUS: Tracer Log Purged.");
-    }
-};
-
-/* ==========================================================================
-   INTERCEPTION BRIDGE: Σύνδεση με το app.js
-   ========================================================================== */
-document.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (btn && btn.id) {
-        window.PegasusTracer.log(btn.id, "DOM_CLICK", "START", `Button Text: ${btn.textContent}`);
-    }
-}, true);
-
-/* ==========================================================================
-   PEGASUS HEALTH & DEBUG SYSTEM
-   ========================================================================== */
-
-window.PegasusLogger = {
-    // 🎯 Ρυθμίσεις κλεισμένες μέσα στο αντικείμενο (Collision Shield)
-    CONFIG: {
-        MAX: 50,
-        KEY: "pegasus_error_log"
-    },
-    log: function(message, type = "ERROR") {
+    function getLang() {
         try {
-            let logs = JSON.parse(localStorage.getItem(this.CONFIG.KEY)) || [];
-            const entry = {
-                timestamp: new Date().toLocaleString('el-GR'),
-                type: type,
-                msg: message,
-                device: (window.innerWidth <= 800) ? "Mobile" : "Desktop"
-            };
-            
-            logs.unshift(entry);
-            if (logs.length > this.CONFIG.MAX) logs.pop();
-            
-            localStorage.setItem(this.CONFIG.KEY, JSON.stringify(logs));
-            console.log(`%c[PEGASUS ${type}]: ${message}`, "color: #ff4444; font-weight: bold;");
-        } catch (e) { 
-            console.error("Logger Internal Failure:", e); 
+            return window.PegasusI18n?.getLanguage?.() || localStorage.getItem('pegasus_language') || localStorage.getItem('pegasus_lang') || 'gr';
+        } catch (e) {
+            return 'gr';
         }
-    },
-    getLogs: function() { 
-        return JSON.parse(localStorage.getItem(this.CONFIG.KEY)) || []; 
-    },
-    clearLogs: function() {
-        localStorage.removeItem(this.CONFIG.KEY);
-        console.log("🛡️ PEGASUS: Error Logs Cleared.");
-    }
-};
-
-/**
- * 2. CALORIE LOGIC VALIDATION
- * Protocol: Mifflin-St Jeor Validation
- * Formula: $BMR = (10 \times weight) + (6.25 \times height) - (5 \times age) + 5$
- */
-window.verifyCalorieLogic = () => {
-    const baseline = { age: 38, height: 187, weight: 74 };
-    const currentWeight = parseFloat(localStorage.getItem("pegasus_weight")) || 0;
-    
-    // 🎯 Δυναμικός υπολογισμός BMR βάσει του ΤΩΡΙΝΟΥ βάρους (αν υπάρχει)
-    const activeWeight = currentWeight > 0 ? currentWeight : baseline.weight;
-    const bmr = (10 * activeWeight) + (6.25 * baseline.height) - (5 * baseline.age) + 5;
-    const tdee = Math.round(bmr * 1.55);
-    const target = 2800;
-
-    console.log(`%c--- CALORIE AUDIT (STRICT v3.5) ---`, 'color: #ff9800; font-weight: bold;');
-    
-    console.table({
-        "Weight": { Value: `${activeWeight} kg`, Ref: baseline.weight, Status: currentWeight > 0 ? "OK" : "USING_BASELINE" },
-        "BMR": { Value: `${bmr.toFixed(0)} kcal`, Formula: "Mifflin-St Jeor" },
-        "TDEE": { Value: `${tdee} kcal`, Factor: "1.55x" },
-        "Pegasus": { Value: `${target} kcal`, Status: target > tdee ? "SURPLUS (BULK)" : "DEFICIT" }
-    });
-
-    // 🛡️ Έλεγχος μόνο για ακραίες τιμές (Safety Guard)
-    if (currentWeight > 150 || (currentWeight < 40 && currentWeight !== 0)) {
-        window.PegasusLogger.log(`Extreme weight detected (${currentWeight}kg). Check sensors.`, "WARNING");
-        return false;
-    }
-    return true;
-};
-
-/**
- * 3. ASYNC CACHE AUDIT ENGINE (DYNAMIC WILDCARD)
- */
-window.verifyPegasusCache = async () => {
-    try {
-        const names = await caches.keys();
-        // 🎯 Ψάχνει για οποιαδήποτε cache του Pegasus, ανεξαρτήτως έκδοσης
-        const activeCache = names.find(name => name.startsWith('pegasus-shield'));
-        if (!activeCache) return { status: false, version: "None" };
-
-        const cache = await caches.open(activeCache);
-        const keys = await cache.keys();
-        return { status: keys.length > 0, version: activeCache };
-    } catch (err) { return { status: false, version: "Error" }; }
-};
-
-/**
- * 4. CORE HEALTH CHECK
- */
-window.pegasusHealthCheck = async function() {
-    console.log("%c--- PEGASUS HEALTH CHECK v3.5 ---", "color: #4CAF50; font-weight: bold;");
-    let errors = [];
-    let warnings = [];
-
-    // 🎯 Ενισχυμένη ανίχνευση Mobile
-    const isMobile = window.location.pathname.includes("mobile.html") || window.innerWidth <= 800;
-    
-    if (typeof window.program === 'undefined') {
-        errors.push("Critical: Dynamic Engine (data.js) not found.");
-    }
-    
-    const lastPush = localStorage.getItem("pegasus_last_push");
-    if (!lastPush) warnings.push("Sync: No successful Cloud Push recorded.");
-
-    const essential = isMobile ? ["sync-indicator"] : ["btnStart", "exList", "totalProgress"];
-    essential.forEach(id => {
-        if (!document.getElementById(id)) errors.push(`UI: Element ID '${id}' missing.`);
-    });
-
-    const cacheResult = await window.verifyPegasusCache();
-    if (!cacheResult.status) {
-        warnings.push("Cache: Offline Vault not fully initialized.");
-    } else {
-        console.log(`📦 Cache Active: ${cacheResult.version}`);
     }
 
-    window.verifyCalorieLogic();
-
-    if (errors.length === 0 && warnings.length === 0) {
-        console.log("%c✅ SYSTEM HEALTHY: All protocols operational.", "color: #4CAF50; font-weight: bold; font-size: 12px;");
-    } else {
-        errors.forEach(err => {
-            console.error("❌ " + err);
-            window.PegasusLogger.log(err, "HEALTH_CRITICAL");
-        });
-        warnings.forEach(wrn => console.warn("⚠️ " + wrn));
+    function isEn() {
+        return getLang() === 'en';
     }
-    console.log("%c--- CHECK COMPLETE ---", "color: #4CAF50; font-weight: bold;");
-};
 
-/* ==========================================================================
-   PEGASUS GARBAGE COLLECTOR (v13.2 - EXPANDED PRUNING)
-   Status: FINAL STABLE | PROTECTS STORAGE QUOTA
-   ========================================================================== */
-window.PegasusGarbageCollector = {
-    retentionDays: 60,
+    function t(gr, en) {
+        return isEn() ? en : gr;
+    }
 
-    run: function() {
-        console.log("🧹 PEGASUS GC: Initiating Full Storage Scan...");
-        const now = Date.now();
-        let deletedCount = 0;
-        let keysToDelete = [];
-        const dailyPrefixes = ["food_log_", "pegasus_cardio_kcal_", "pegasus_routine_injected_"];
+    function getDateStr() {
+        if (typeof window.PegasusDiet?.getStrictDateStr === 'function') return window.PegasusDiet.getStrictDateStr();
+        if (typeof window.getStrictDateStr === 'function') return window.getStrictDateStr();
+        if (typeof window.getPegasusTodayDateStr === 'function') return window.getPegasusTodayDateStr();
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (!key) continue;
+        const d = new Date();
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
 
-            // 🎯 Καθαρισμός ΟΛΩΝ των ημερήσιων κλειδιών που συσσωρεύονται
-            if (dailyPrefixes.some(p => key.startsWith(p))) {
-                const datePart = key.split('_').pop(); 
-                const parts = datePart.split('/');
-                
-                if (parts.length === 3) {
-                    const logDate = new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-                    if (now - logDate > (this.retentionDays * 86400000)) {
-                        keysToDelete.push(key);
-                    }
-                }
-            }
+    function getFoodLog() {
+        const dateStr = getDateStr();
+        const prefix = M?.nutrition?.log_prefix || M?.diet?.log_prefix || 'food_log_';
+        try {
+            return JSON.parse(localStorage.getItem(prefix + dateStr) || '[]');
+        } catch (e) {
+            return [];
         }
+    }
 
-        keysToDelete.forEach(key => {
-            localStorage.removeItem(key);
-            deletedCount++;
-        });
+    function getTotals() {
+        const log = getFoodLog();
+        return log.reduce((acc, item) => {
+            acc.kcal += parseFloat(item?.kcal || 0) || 0;
+            acc.protein += parseFloat(item?.protein || 0) || 0;
+            return acc;
+        }, { kcal: 0, protein: 0, log: log });
+    }
 
-        if (deletedCount > 0) {
-            console.log(`✅ GC: Purged ${deletedCount} obsolete daily records.`);
-            if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-                window.PegasusCloud.push();
-            }
+    function getTargets() {
+        let kcal = 2800;
+        let protein = 160;
+
+        try {
+            const settings = typeof window.getPegasusSettings === 'function' ? window.getPegasusSettings() : null;
+            if (settings?.goalKcal) kcal = parseFloat(settings.goalKcal) || kcal;
+            if (settings?.goalProtein) protein = parseFloat(settings.goalProtein) || protein;
+        } catch (e) {}
+
+        if (typeof window.PegasusDiet?.getEffectiveTarget === 'function') {
+            kcal = parseFloat(window.PegasusDiet.getEffectiveTarget()) || kcal;
+        } else if (typeof window.getPegasusEffectiveDailyTarget === 'function') {
+            kcal = parseFloat(window.getPegasusEffectiveDailyTarget()) || kcal;
         } else {
-            console.log("🧹 GC: Storage is optimal.");
+            kcal = parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal')) || kcal;
         }
+
+        return { kcal: Math.round(kcal), protein: Math.round(protein) };
     }
-};
 
-// 5. GLOBAL RUNTIME ERROR CATCHER
-window.addEventListener('error', function(event) {
-    const fileName = event.filename ? event.filename.split('/').pop() : "unknown";
-    const cleanMsg = `Runtime: ${event.message} at ${fileName}:${event.lineno}`;
-    window.PegasusLogger.log(cleanMsg, "RUNTIME_ERROR");
-});
+    function getTodayDayKey() {
+        const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return daysMap[new Date().getDay()];
+    }
 
-// Boot Sequence (Καθυστέρηση για σταθερότητα CPU load)
-setTimeout(() => {
-    if (window.PegasusGarbageCollector) window.PegasusGarbageCollector.run();
-    window.pegasusHealthCheck();
-}, 5000);
+    function getMacros(name, type, fallbackKcal, fallbackProtein) {
+        if (typeof window.getPegasusMacros === 'function') {
+            const macros = window.getPegasusMacros(name, type);
+            return {
+                kcal: parseFloat(macros?.kcal || fallbackKcal || 0) || 0,
+                protein: parseFloat(macros?.protein || fallbackProtein || 0) || 0
+            };
+        }
+
+        return {
+            kcal: parseFloat(fallbackKcal || 550) || 550,
+            protein: parseFloat(fallbackProtein || 35) || 35
+        };
+    }
+
+    function pushCandidate(list, seen, raw) {
+        const name = String(raw?.name || raw?.n || '').trim();
+        if (!name) return;
+        if (seen.has(name.toLowerCase())) return;
+
+        const type = raw?.t || raw?.type || 'kreas';
+        const macros = getMacros(name, type, raw?.kcal, raw?.protein);
+        if (!macros.kcal && !macros.protein) return;
+
+        seen.add(name.toLowerCase());
+        list.push({
+            n: name,
+            t: type,
+            kcal: macros.kcal,
+            protein: macros.protein
+        });
+    }
+
+    function getCandidates() {
+        const candidates = [];
+        const seen = new Set();
+
+        const todayKey = getTodayDayKey();
+        const todayMenu = window.KOUKI_MASTER_MENU?.[todayKey] || [];
+        todayMenu.forEach(item => pushCandidate(candidates, seen, item));
+
+        const dbMenu = Array.isArray(window.PegasusKoukiDB) ? window.PegasusKoukiDB : [];
+        dbMenu.forEach(item => pushCandidate(candidates, seen, item));
+
+        try {
+            const libKey = M?.diet?.foodLibrary || 'pegasus_food_library';
+            const library = JSON.parse(localStorage.getItem(libKey) || '[]');
+            library.forEach(item => pushCandidate(candidates, seen, item));
+        } catch (e) {}
+
+        return candidates;
+    }
+
+    function scoreCandidate(item, needKcal, needProtein) {
+        const kcal = item.kcal || 0;
+        const protein = item.protein || 0;
+        const proteinDensity = protein / Math.max(kcal, 1);
+        const kcalFit = needKcal > 0 ? Math.min(kcal, needKcal) : Math.max(0, 350 - Math.abs(kcal - 350));
+        const proteinFit = needProtein > 0 ? Math.min(protein, needProtein) : protein;
+        const kcalOvershoot = Math.max(0, kcal - Math.max(needKcal, 1));
+
+        return (
+            proteinFit * 4.5 +
+            (kcalFit / 45) +
+            (proteinDensity * 180) -
+            (kcalOvershoot / 90)
+        );
+    }
+
+    function buildMessage(consumed, targets) {
+        const needKcal = Math.max(0, targets.kcal - consumed.kcal);
+        const needProtein = Math.max(0, targets.protein - consumed.protein);
+
+        if (needKcal <= 120 && needProtein <= 10) {
+            return t(
+                `Είσαι πολύ κοντά στον στόχο. Υπολείπονται περίπου ${needKcal} kcal και ${needProtein}g πρωτεΐνης.`,
+                `You are very close to target. You are missing about ${needKcal} kcal and ${needProtein}g protein.`
+            );
+        }
+
+        return t(
+            `Σου λείπουν περίπου ${needKcal} kcal και ${needProtein}g πρωτεΐνης. Αυτές είναι οι καλύτερες επιλογές για τώρα.`,
+            `You are missing about ${needKcal} kcal and ${needProtein}g protein. These are the best options right now.`
+        );
+    }
+
+    function analyzeAndRecommend() {
+        const consumed = getTotals();
+        const targets = getTargets();
+        const needKcal = Math.max(0, targets.kcal - consumed.kcal);
+        const needProtein = Math.max(0, targets.protein - consumed.protein);
+
+        const options = getCandidates()
+            .map(item => ({ ...item, score: scoreCandidate(item, needKcal, needProtein) }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 4)
+            .map(item => ({ n: item.n, t: item.t, kcal: item.kcal, protein: item.protein }));
+
+        return {
+            msg: buildMessage(consumed, targets),
+            options,
+            consumed: { kcal: Math.round(consumed.kcal), protein: Math.round(consumed.protein) },
+            targets,
+            deficits: { kcal: needKcal, protein: needProtein }
+        };
+    }
+
+    function renderAdvisorUI() {
+        const advice = analyzeAndRecommend();
+        const lines = [advice.msg, ''];
+
+        advice.options.forEach((opt, index) => {
+            lines.push(`${index + 1}. ${opt.n} — ${opt.kcal} kcal | ${opt.protein}g P`);
+        });
+
+        const title = t('PEGASUS ADVISOR', 'PEGASUS ADVISOR');
+        if (typeof window.pegasusAlert === 'function') {
+            return window.pegasusAlert(lines.join('\n'), title);
+        }
+        return alert(lines.join('\n'));
+    }
+
+    window.PegasusDietAdvisor = {
+        analyzeAndRecommend,
+        renderAdvisorUI
+    };
+    window.renderAdvisorUI = renderAdvisorUI;
+})();
