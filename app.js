@@ -62,7 +62,20 @@ window.getPegasusLocalDateKey = function() {
 };
 
 function getPegasusTimerConfig() {
-    return window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
+    const raw = window.pegasusTimerConfig || {};
+    const normalizePhase = (value, fallback) => {
+        const parsed = parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    };
+
+    const normalized = {
+        prep: normalizePhase(raw.prep, 10),
+        work: normalizePhase(raw.work, 45),
+        rest: normalizePhase(raw.rest, 60)
+    };
+
+    window.pegasusTimerConfig = normalized;
+    return normalized;
 }
 
 function getPhaseDefaultTime(targetPhase) {
@@ -1033,6 +1046,14 @@ function runPhase() {
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
     const config = getPegasusTimerConfig();
+    if (phase === 2 && (!Number.isFinite(config.rest) || config.rest <= 0)) {
+        phase = 0;
+        syncPegasusProgressRuntime();
+        dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
+        runPhase();
+        return;
+    }
+
     const phaseDefaultTime = getPhaseDefaultTime(phase);
     let t = (phaseRemainingSeconds !== null) ? phaseRemainingSeconds : phaseDefaultTime;
     phaseRemainingSeconds = t;
@@ -1665,6 +1686,10 @@ window.onload = () => {
             if (window.exportPegasusData) window.exportPegasusData();
         },
         "btnMasterVault": () => {
+            if (typeof window.handleDesktopSyncOpen === 'function') {
+                window.handleDesktopSyncOpen();
+                return;
+            }
             const m = document.getElementById('pinModal');
             if (m) m.style.display = 'flex';
         },

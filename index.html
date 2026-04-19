@@ -376,7 +376,7 @@
 </div>
 
 <script>
-    /* PEGASUS SECURITY PROTOCOL - UNIVERSAL ALIGNED (v18.2) */
+    /* PEGASUS SECURITY PROTOCOL - DESKTOP ON-DEMAND SYNC (v18.3) */
     function updateVaultButton(isConnected) {
         const vaultBtn = document.getElementById("btnMasterVault");
         if (!vaultBtn) return;
@@ -386,9 +386,48 @@
             vaultBtn.style.borderColor = "#00ff41";
             vaultBtn.style.color = "#00ff41";
         } else {
-            vaultBtn.textContent = "OFFLINE MODE";
-            vaultBtn.style.borderColor = "#666";
-            vaultBtn.style.color = "#666";
+            vaultBtn.textContent = "🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ";
+            vaultBtn.style.borderColor = "#00bcd4";
+            vaultBtn.style.color = "#00bcd4";
+        }
+    }
+
+    function openVaultModal() {
+        const modal = document.getElementById("pinModal");
+        if (!modal) return;
+        modal.style.display = "flex";
+        const pinInput = document.getElementById("pinInput");
+        if (pinInput) setTimeout(() => pinInput.focus(), 60);
+    }
+
+    async function handleDesktopSyncOpen() {
+        try {
+            if (window.PegasusCloud?.isUnlocked) {
+                updateVaultButton(true);
+                if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
+                    await window.PegasusCloud.syncNow(true);
+                }
+                if (typeof refreshAllUI === 'function') refreshAllUI();
+                return;
+            }
+
+            if (window.PegasusCloud?.canAutoUnlock?.()) {
+                const ok = await window.PegasusCloud.tryAutoUnlock();
+                updateVaultButton(!!ok);
+                if (ok) {
+                    if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
+                        await window.PegasusCloud.syncNow(true);
+                    }
+                    if (typeof refreshAllUI === 'function') refreshAllUI();
+                    return;
+                }
+            }
+
+            openVaultModal();
+        } catch (e) {
+            console.error("Desktop Vault Open Error:", e);
+            updateVaultButton(false);
+            openVaultModal();
         }
     }
 
@@ -410,6 +449,9 @@
         if (success) {
             document.getElementById("pinModal").style.display = "none";
             updateVaultButton(true);
+            if (navigator.onLine && typeof window.PegasusCloud?.syncNow === "function") {
+                await window.PegasusCloud.syncNow(true);
+            }
             if (typeof refreshAllUI === 'function') refreshAllUI();
         } else {
             if (errorDiv) errorDiv.textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN / MASTER KEY";
@@ -418,27 +460,18 @@
         }
     }
 
-    function skipVault() { 
-        document.getElementById("pinModal").style.display = "none"; 
+    function skipVault() {
+        document.getElementById("pinModal").style.display = "none";
         updateVaultButton(false);
     }
 
-    window.addEventListener("load", async () => {
-        const modal = document.getElementById("pinModal");
-        try {
-            if (window.PegasusCloud?.canAutoUnlock?.()) {
-                const ok = await window.PegasusCloud.tryAutoUnlock();
-                updateVaultButton(ok);
-                if (!ok && modal) modal.style.display = "flex";
-            } else if (modal) {
-                modal.style.display = "flex";
-                updateVaultButton(false);
-            }
-        } catch (e) {
-            console.error("Desktop Vault Boot Error:", e);
-            updateVaultButton(false);
-            if (modal) modal.style.display = "flex";
-        }
+    window.addEventListener("load", () => {
+        updateVaultButton(false);
+    });
+
+    window.addEventListener("pegasus_sync_status", (e) => {
+        const status = e?.detail?.status || "";
+        updateVaultButton(status === "online" || status === "syncing");
     });
 </script>
 
