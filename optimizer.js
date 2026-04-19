@@ -8,19 +8,52 @@
 var M = M || window.PegasusManifest;
 
 window.PegasusOptimizer = {
+    getDefaultTargets: function() {
+        return {
+            "Στήθος": 24,
+            "Πλάτη": 24,
+            "Πόδια": 24,
+            "Χέρια": 16,
+            "Ώμοι": 16,
+            "Κορμός": 12
+        };
+    },
+
     getTargets: function() {
         try {
             const targetsKey = M?.workout?.muscleTargets || "pegasus_muscle_targets";
             const stored = localStorage.getItem(targetsKey);
-            return stored ? JSON.parse(stored) : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+            const parsed = stored ? JSON.parse(stored) : null;
+            return parsed && typeof parsed === "object" ? parsed : this.getDefaultTargets();
         } catch (e) {
-            return { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+            return this.getDefaultTargets();
         }
+    },
+
+    getProgressSnapshot: function() {
+        const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+        try {
+            const parsed = JSON.parse(localStorage.getItem(historyKey) || "{}");
+            return (parsed && typeof parsed === "object") ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    },
+
+    getEmptyProgress: function() {
+        return {
+            "Στήθος": 0,
+            "Πλάτη": 0,
+            "Ώμοι": 0,
+            "Χέρια": 0,
+            "Κορμός": 0,
+            "Πόδια": 0
+        };
     },
 
     apply: function(day, sessionExercises) {
         const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
-        let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
+        let progress = this.getProgressSnapshot();
 
         const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
         const lastReset = localStorage.getItem(lastResetKey);
@@ -33,15 +66,23 @@ window.PegasusOptimizer = {
         // 🛡️ TACTICAL RESET EXECUTION (Persistence Patch)
         if ((day === "Σάββατο" && lastReset !== todayDate) || daysSinceReset >= 6.5) {
             console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
-            progress = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+            progress = this.getEmptyProgress();
             localStorage.setItem(historyKey, JSON.stringify(progress));
             localStorage.setItem(lastResetKey, todayDate);
-            if (window.PegasusCloud) window.PegasusCloud.push(true);
+
+            if (window.PegasusEngine?.dispatch) {
+                window.PegasusEngine.dispatch({
+                    type: "OPTIMIZER_WEEKLY_RESET",
+                    payload: { day: day, date: todayDate }
+                });
+            }
+
+            if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
         }
 
         let sessionTracker = { ...progress };
         const currentTargets = this.getTargets();
-        let mappedData = sessionExercises.map(ex => this.calculateExercise(ex, sessionTracker, currentTargets));
+        let mappedData = (sessionExercises || []).map(ex => this.calculateExercise(ex, sessionTracker, currentTargets));
 
         const getActiveMins = (data) => data.reduce((sum, ex) => sum + (ex.adjustedSets > 0 ? (ex.adjustedSets * 1.9) : 0), 0);
         let currentMinutes = getActiveMins(mappedData);
@@ -80,6 +121,18 @@ window.PegasusOptimizer = {
                 }
             }
         }
+
+        if (window.PegasusEngine?.dispatch) {
+            window.PegasusEngine.dispatch({
+                type: "OPTIMIZER_APPLIED",
+                payload: {
+                    day: day,
+                    totalExercises: mappedData.length,
+                    activeMinutes: currentMinutes
+                }
+            });
+        }
+
         return mappedData;
     },
 
@@ -99,15 +152,25 @@ window.PegasusOptimizer = {
         }
 
         if (finalSets > 0) {
-            // Αν είναι ποδηλασία πιστώνουμε 18 (ή όσο απομένει για το 100%), αλλιώς τα σετ που έγιναν
-            tracker[group] += (isCycling ? Math.min(18, remaining) : finalSets);
+            // Αν είναι ποδηλασία πιστώνουμε μέχρι 18 ή όσο απομένει
+            tracker[group] = (tracker[group] || 0) + (isCycling ? Math.min(18, remaining) : finalSets);
         }
 
-        return { ...ex, adjustedSets: finalSets, isCompleted: remaining <= 0, muscleGroup: group };
+        return {
+            ...ex,
+            adjustedSets: finalSets,
+            isCompleted: remaining <= 0,
+            muscleGroup: group
+        };
     },
 
     getGroup: function(name) {
-        const cleanName = name.trim().replace(" ☀️", "");
+        const cleanName = String(name || "").trim().replace(" ☀️", "");
+
+        if (typeof window.getPegasusExerciseGroup === "function") {
+            return window.getPegasusExerciseGroup(cleanName);
+        }
+
         if (window.exercisesDB) {
             const match = window.exercisesDB.find(ex => ex.name === cleanName);
             if (match) return match.muscleGroup;
