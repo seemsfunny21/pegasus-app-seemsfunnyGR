@@ -41,8 +41,26 @@ const PegasusCloud = {
         return ["pegasus_", "food_log_", "kouki_", "peg_", "weight_", "finance_"];
     },
 
+    getBlockedStorageKeys() {
+        return [
+            "pegasus_last_push",
+            "pegasus_vault_pin",
+            "pegasus_vault_time",
+            "pegasus_gemini_key",
+            "pegasus_openai_key",
+            "pegasus_openrouter_key"
+        ];
+    },
+
+    isSensitiveStorageKey(key) {
+        if (!key) return false;
+        if (this.getBlockedStorageKeys().includes(key)) return true;
+        return /(vault|token|secret|api[_-]?key|gemini[_-]?key|master[_-]?key)/i.test(key);
+    },
+
     isAllowedStorageKey(key) {
         if (!key) return false;
+        if (this.isSensitiveStorageKey(key)) return false;
         return this.getAllowedStoragePrefixes().some(prefix => key.startsWith(prefix));
     },
 
@@ -59,10 +77,11 @@ const PegasusCloud = {
     },
 
     safeSetLocal(key, value) {
+        const normalized = (typeof value === "string") ? value : JSON.stringify(value);
         if (window.originalSetItem) {
-            window.originalSetItem.call(localStorage, key, value);
+            window.originalSetItem.call(localStorage, key, normalized);
         } else {
-            localStorage.setItem(key, value);
+            localStorage.setItem(key, normalized);
         }
     },
 
@@ -72,6 +91,28 @@ const PegasusCloud = {
         } catch (e) {
             console.warn("⚠️ UI SAFE CALL ERROR:", e);
         }
+    },
+
+    async fetchLatestRecord() {
+        const res = await fetch(
+            `https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`,
+            {
+                headers: {
+                    "X-Master-Key": this.userKey,
+                    "X-Bin-Meta": "false"
+                }
+            }
+        );
+
+        if (!res.ok) throw new Error("Fetch latest failed");
+
+        const data = await res.json();
+        return data.record || data;
+    },
+
+    getBoundedEvents() {
+        const events = this.engine?.getEventBuffer?.() || [];
+        return Array.isArray(events) ? events.slice(-100) : [];
     },
 
     /* =========================
@@ -124,28 +165,16 @@ const PegasusCloud = {
         let finalStatus = "online";
 
         try {
-            const res = await fetch(
-                `https://api.jsonbin.io/v3/b/${this.config.binId}/latest?nocache=${Date.now()}`,
-                {
-                    headers: {
-                        "X-Master-Key": this.userKey,
-                        "X-Bin-Meta": "false"
-                    }
-                }
-            );
+            const cloud = await this.fetchLatestRecord();
+            const lastLocal = parseInt(localStorage.getItem("pegasus_last_push") || "0", 10);
+            const remoteTs = parseInt(cloud?.last_update_ts || "0", 10);
 
-            if (!res.ok) throw new Error("Pull failed");
-
-            const data = await res.json();
-            const cloud = data.record || data;
-            const lastLocal = localStorage.getItem("pegasus_last_push") || "0";
-
-            if (!cloud.last_update_ts) {
+            if (!remoteTs) {
                 this.hasSuccessfullyPulled = true;
                 return false;
             }
 
-            if (cloud.last_update_ts.toString() === lastLocal) {
+            if (remoteTs === lastLocal) {
                 this.hasSuccessfullyPulled = true;
                 return false;
             }
@@ -158,11 +187,7 @@ const PegasusCloud = {
                 const k = keys[i];
 
                 if (this.isAllowedStorageKey(k)) {
-                    const val = typeof cloud[k] === "string"
-                        ? cloud[k]
-                        : JSON.stringify(cloud[k]);
-
-                    this.safeSetLocal(k, val);
+                    this.safeSetLocal(k, cloud[k]);
                 }
             }
 
@@ -171,7 +196,7 @@ const PegasusCloud = {
                     const existingBuffer = this.engine.getEventBuffer?.() || [];
                     const existingHashes = new Set(existingBuffer.map(ev => JSON.stringify(ev)));
 
-                    for (const event of cloud.__events__) {
+                    for (const event of cloud.__events__.slice(-100)) {
                         const eventHash = JSON.stringify(event);
                         if (!existingHashes.has(eventHash)) {
                             this.engine.dispatch(event);
@@ -182,7 +207,7 @@ const PegasusCloud = {
                 }
             }
 
-            this.safeSetLocal("pegasus_last_push", cloud.last_update_ts.toString());
+            this.safeSetLocal("pegasus_last_push", remoteTs.toString());
             this.hasSuccessfullyPulled = true;
 
             if (!silent) {
@@ -252,6 +277,17 @@ const PegasusCloud = {
         let finalStatus = "online";
 
         try {
+            const remote = await this.fetchLatestRecord();
+            const remoteTs = parseInt(remote?.last_update_ts || "0", 10);
+            const localTs = parseInt(localStorage.getItem("pegasus_last_push") || "0", 10);
+
+            if (remoteTs && remoteTs > localTs) {
+                console.warn("⚠️ CLOUD: Remote is newer than local. Pulling before push...");
+                this.isPushing = false;
+                await this.pull(true);
+                return false;
+            }
+
             const ts = Date.now().toString();
 
             if (this.lastPushTs === ts) {
@@ -263,7 +299,7 @@ const PegasusCloud = {
             const payload = {
                 last_update_ts: ts,
                 last_update_date: this.getTodayKey(),
-                __events__: this.engine?.getEventBuffer?.() || []
+                __events__: this.getBoundedEvents()
             };
 
             for (let i = 0; i < localStorage.length; i++) {
@@ -402,7 +438,10 @@ if (!window.originalSetItem) {
         const internal = [
             "pegasus_last_push",
             "pegasus_vault_pin",
-            "pegasus_vault_time"
+            "pegasus_vault_time",
+            "pegasus_gemini_key",
+            "pegasus_openai_key",
+            "pegasus_openrouter_key"
         ];
 
         if (!internal.includes(key)) {
