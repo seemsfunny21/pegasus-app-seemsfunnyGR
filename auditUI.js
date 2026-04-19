@@ -17,12 +17,25 @@ window.PegasusAuditUI = {
         }
     },
 
+    getEngineState() {
+        try {
+            return window.PegasusEngine?.getState?.() || null;
+        } catch (e) {
+            return null;
+        }
+    },
+
     getGreekDayName() {
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         return greekDays[new Date().getDay()];
     },
 
     getExpectedBaseTarget() {
+        if (typeof window.getPegasusBaseDailyTarget === "function") {
+            const target = parseFloat(window.getPegasusBaseDailyTarget());
+            return isNaN(target) ? 2800 : target;
+        }
+
         const dayName = this.getGreekDayName();
 
         const settings = (typeof window.getPegasusSettings === "function")
@@ -58,11 +71,20 @@ window.PegasusAuditUI = {
     },
 
     getTodayDateStr() {
+        if (typeof window.getPegasusTodayDateStr === "function") {
+            return window.getPegasusTodayDateStr();
+        }
+
         const d = new Date();
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
     getTodayCardioOffset() {
+        if (typeof window.getPegasusTodayCardioOffset === "function") {
+            const offset = parseFloat(window.getPegasusTodayCardioOffset());
+            return isNaN(offset) ? 0 : offset;
+        }
+
         const dateStr = this.getTodayDateStr();
 
         const unified = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr));
@@ -75,15 +97,33 @@ window.PegasusAuditUI = {
     },
 
     getEffectiveTargetKcal() {
-        if (typeof window.calculatePegasusDailyTarget === "function") {
-            const base = parseFloat(window.calculatePegasusDailyTarget());
-            const cardio = this.getTodayCardioOffset();
-            return Math.round((isNaN(base) ? 0 : base) + cardio);
+        if (typeof window.getPegasusEffectiveDailyTarget === "function") {
+            const target = parseFloat(window.getPegasusEffectiveDailyTarget());
+            return Math.round(isNaN(target) ? 2800 : target);
         }
 
         const stored = parseFloat(localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal"));
+        const base = isNaN(stored) ? this.getExpectedBaseTarget() : stored;
         const cardio = this.getTodayCardioOffset();
-        return Math.round((isNaN(stored) ? 2800 : stored) + cardio);
+        return Math.round(base + cardio);
+    },
+
+    getEventBufferSize() {
+        try {
+            const events = window.PegasusEngine?.getEventBuffer?.() || [];
+            return Array.isArray(events) ? events.length : 0;
+        } catch (e) {
+            return 0;
+        }
+    },
+
+    getReplayPreview(limit = 10) {
+        try {
+            if (!window.PegasusEngine?.replay) return null;
+            return window.PegasusEngine.replay(limit);
+        } catch (e) {
+            return null;
+        }
     },
 
     async runFullDiagnostic(isSilent = false) {
@@ -93,16 +133,17 @@ window.PegasusAuditUI = {
 
         /* --- 1. MODULE PULSE (CRITICAL) --- */
         const criticalModules = [
-            { id: "Manifest", obj: window.PegasusManifest },
-            { id: "DataEngine", obj: window.program },
-            { id: "AppCore", obj: window.masterUI || window.app },
-            { id: "Optimizer", obj: window.PegasusOptimizer },
-            { id: "Settings", obj: window.getPegasusSettings },
-            { id: "CloudSync", obj: window.PegasusCloud }
+            { id: "Manifest", ok: !!window.PegasusManifest },
+            { id: "DataEngine", ok: !!window.program },
+            { id: "AppCore", ok: !!(window.masterUI || window.app) },
+            { id: "Optimizer", ok: !!window.PegasusOptimizer },
+            { id: "Settings", ok: !!window.getPegasusSettings },
+            { id: "CloudSync", ok: !!window.PegasusCloud },
+            { id: "CoreEngine", ok: !!(window.PegasusEngine && window.PegasusEngine.__isCoreEngine) }
         ];
 
         criticalModules.forEach(m => {
-            if (!m.obj) {
+            if (!m.ok) {
                 report.errors.push(`Module Offline: ${m.id}`);
                 report.score -= 20;
             }
@@ -146,7 +187,7 @@ window.PegasusAuditUI = {
             report.score -= 10;
         }
 
-        if (isRecoveryDay && (targetKcal < 1800 || targetKcal > 2600 + cardioOffset)) {
+        if (isRecoveryDay && (targetKcal < 1800 || targetKcal > (2600 + cardioOffset))) {
             isAnomalous = true;
             report.warnings.push(`Metabolic Shift: Recovery-day kcal (${targetKcal}) outside safe protocol.`);
             report.score -= 10;
@@ -181,13 +222,57 @@ window.PegasusAuditUI = {
             report.score -= 5;
         }
 
+        /* --- 6. ENGINE STATE PULSE --- */
+        const engineState = this.getEngineState();
+        const bufferSize = this.getEventBufferSize();
+
+        if (!engineState) {
+            report.errors.push("Engine State Missing");
+            report.score -= 20;
+        } else {
+            const running =
+                typeof engineState.workout?.running === "boolean"
+                    ? engineState.workout.running
+                    : !!engineState.running;
+
+            const currentIdx =
+                typeof engineState.workout?.currentIdx === "number"
+                    ? engineState.workout.currentIdx
+                    : engineState.currentIdx;
+
+            const phase =
+                typeof engineState.workout?.phase === "number"
+                    ? engineState.workout.phase
+                    : engineState.phase;
+
+            if (running && (currentIdx === undefined || phase === undefined)) {
+                report.warnings.push("Engine Running with incomplete runtime state.");
+                report.score -= 10;
+            }
+
+            if (bufferSize <= 0) {
+                report.warnings.push("Engine event buffer empty.");
+                report.score -= 5;
+            }
+        }
+
+        const replayPreview = this.getReplayPreview(10);
+        if (!replayPreview && window.PegasusEngine?.replay) {
+            report.warnings.push("Replay preview unavailable.");
+            report.score -= 5;
+        }
+
         this.lastAudit = {
             time: new Date().toLocaleTimeString('el-GR'),
             weight,
             baseTarget,
             cardioOffset,
             effectiveTarget: targetKcal,
-            expectedTarget
+            expectedTarget,
+            engineBufferSize: bufferSize,
+            engineRunning: !!(engineState?.workout?.running ?? engineState?.running ?? false),
+            engineCurrentIdx: engineState?.workout?.currentIdx ?? engineState?.currentIdx ?? null,
+            enginePhase: engineState?.workout?.phase ?? engineState?.phase ?? null
         };
 
         /* --- UI UPDATER --- */
@@ -231,7 +316,11 @@ window.PegasusAuditUI = {
                 { Metric: "Base Target", Value: `${this.lastAudit.baseTarget} kcal` },
                 { Metric: "Cardio Offset", Value: `${this.lastAudit.cardioOffset} kcal` },
                 { Metric: "Expected Target", Value: `${this.lastAudit.expectedTarget} kcal` },
-                { Metric: "Effective Target", Value: `${this.lastAudit.effectiveTarget} kcal` }
+                { Metric: "Effective Target", Value: `${this.lastAudit.effectiveTarget} kcal` },
+                { Metric: "Engine Buffer", Value: `${this.lastAudit.engineBufferSize} events` },
+                { Metric: "Engine Running", Value: `${this.lastAudit.engineRunning}` },
+                { Metric: "Engine CurrentIdx", Value: `${this.lastAudit.engineCurrentIdx}` },
+                { Metric: "Engine Phase", Value: `${this.lastAudit.enginePhase}` }
             ]);
         }
 
@@ -250,6 +339,20 @@ window.PegasusAuditUI = {
         }
 
         console.log(`%c > FINAL INTEGRITY SCORE: ${report.score}/100`, "color: #00bcd4; font-weight: bold;");
+
+        const replayPreview = this.getReplayPreview(5);
+        if (replayPreview) {
+            console.log("%c > REPLAY PREVIEW (last 5 events rebuilt state):", "color: #888; font-weight: bold;");
+            console.table([
+                {
+                    running: replayPreview?.workout?.running ?? replayPreview?.running ?? false,
+                    currentIdx: replayPreview?.workout?.currentIdx ?? replayPreview?.currentIdx ?? null,
+                    phase: replayPreview?.workout?.phase ?? replayPreview?.phase ?? null,
+                    remainingSeconds: replayPreview?.timers?.remainingSeconds ?? replayPreview?.remainingSeconds ?? null,
+                    sessionKcal: replayPreview?.workout?.sessionKcal ?? replayPreview?.sessionActiveKcal ?? null
+                }
+            ]);
+        }
 
         if (report.score < 100 && typeof M.auditData === "function") {
             console.log("%c > TRACING ORPHAN KEYS...", "color: #888;");
