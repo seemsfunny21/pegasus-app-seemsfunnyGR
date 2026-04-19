@@ -10,35 +10,37 @@ var M = M || window.PegasusManifest;
 window.PegasusOptimizer = {
     getTargets: function() {
         try {
-           const targetsKey = M?.workout?.muscleTargets || "pegasus_muscle_targets";
-           const stored = localStorage.getItem(targetsKey);
+            const targetsKey = M?.workout?.muscleTargets || "pegasus_muscle_targets";
+            const stored = localStorage.getItem(targetsKey);
             return stored ? JSON.parse(stored) : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-        } catch (e) { return { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 }; }
+        } catch (e) {
+            return { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        }
     },
 
     apply: function(day, sessionExercises) {
         const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
-let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
-        
-       const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
+        let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
+
+        const lastResetKey = M?.system?.lastResetTimestamp || 'pegasus_last_reset_timestamp';
         const lastReset = localStorage.getItem(lastResetKey);
         const now = new Date();
         const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        
+
         const lastResetTime = new Date(lastReset || "1970-01-01").getTime();
         const daysSinceReset = (now.getTime() - lastResetTime) / (1000 * 3600 * 24);
-        
+
         // 🛡️ TACTICAL RESET EXECUTION (Persistence Patch)
         if ((day === "Σάββατο" && lastReset !== todayDate) || daysSinceReset >= 6.5) {
             console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
             progress = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-           localStorage.setItem(historyKey, JSON.stringify(progress));
+            localStorage.setItem(historyKey, JSON.stringify(progress));
             localStorage.setItem(lastResetKey, todayDate);
             if (window.PegasusCloud) window.PegasusCloud.push(true);
         }
-        
+
         let sessionTracker = { ...progress };
-        const currentTargets = this.getTargets(); 
+        const currentTargets = this.getTargets();
         let mappedData = sessionExercises.map(ex => this.calculateExercise(ex, sessionTracker, currentTargets));
 
         const getActiveMins = (data) => data.reduce((sum, ex) => sum + (ex.adjustedSets > 0 ? (ex.adjustedSets * 1.9) : 0), 0);
@@ -52,11 +54,11 @@ let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
                 "Κυριακή": ["Στήθος", "Χέρια", "Κορμός", "Πλάτη"]
             };
             const searchGroups = priorities[day] || ["Κορμός"];
-            
+
             for (let groupName of searchGroups) {
                 if (currentMinutes >= 45) break;
                 if (!window.exercisesDB) break;
-                
+
                 const potentialEx = window.exercisesDB.filter(ex => ex.muscleGroup === groupName);
 
                 for (let sEx of potentialEx) {
@@ -68,7 +70,7 @@ let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
                     const target = currentTargets[groupName] || 24;
 
                     if (done < target && !mappedData.some(m => m.name.trim() === sEx.name.trim())) {
-                        let spilloverEx = this.calculateExercise({...sEx, sets: 5}, sessionTracker, currentTargets);
+                        let spilloverEx = this.calculateExercise({ ...sEx, sets: 5 }, sessionTracker, currentTargets);
                         if (spilloverEx.adjustedSets > 0) {
                             spilloverEx.isSpillover = true;
                             mappedData.push(spilloverEx);
@@ -85,20 +87,20 @@ let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
         const group = this.getGroup(ex.name);
         const target = currentTargets[group] || 24;
         const remaining = target - (tracker[group] || 0);
-        
+
         let finalSets = (remaining <= 0) ? 0 : (ex.sets > remaining ? remaining : ex.sets);
-        
+
         // 🚴 🎯 FIXED: Special Rule - Cycling Credits 18 sets
         // Η άσκηση εμφανίζεται αν λείπει ΕΣΤΩ ΚΑΙ 1 σετ (remaining > 0)
         const isCycling = ex.name.includes("Ποδηλασία") || ex.name.includes("Cycling");
-        
-        if (isCycling) { 
-            finalSets = (remaining > 0) ? 1 : 0; 
+
+        if (isCycling) {
+            finalSets = (remaining > 0) ? 1 : 0;
         }
-        
-        if (finalSets > 0) { 
+
+        if (finalSets > 0) {
             // Αν είναι ποδηλασία πιστώνουμε 18 (ή όσο απομένει για το 100%), αλλιώς τα σετ που έγιναν
-            tracker[group] += (isCycling ? Math.max(18, remaining) : finalSets); 
+            tracker[group] += (isCycling ? Math.min(18, remaining) : finalSets);
         }
 
         return { ...ex, adjustedSets: finalSets, isCompleted: remaining <= 0, muscleGroup: group };
@@ -116,15 +118,15 @@ let progress = JSON.parse(localStorage.getItem(historyKey)) || {};
         // Keyword Mapping Logic
         if (n.includes("στήθος") || n.includes("chest") || n.includes("pushups")) return "Στήθος";
         if (n.includes("πλάτη") || n.includes("row") || n.includes("pulldown") || n.includes("back")) return "Πλάτη";
-        
+
         // 🎯 FIXED Priority: "leg raise" -> Κορμός, "lateral raise" -> Ώμοι
-        if (n.includes("leg raise")) return "Κορμός"; 
+        if (n.includes("leg raise")) return "Κορμός";
         if (n.includes("πόδια") || n.includes("leg") || n.includes("kickbacks") || n.includes("cycling") || n.includes("ποδηλασία")) return "Πόδια";
         if (n.includes("χέρια") || n.includes("bicep") || n.includes("tricep") || n.includes("curls")) return "Χέρια";
-        
+
         if (n.includes("ώμοι") || n.includes("shoulder") || n.includes("upright") || n.includes("lateral")) return "Ώμοι";
         if (n.includes("κορμός") || n.includes("abs") || n.includes("crunch") || n.includes("plank") || n.includes("raise")) return "Κορμός";
-        
+
         return "Άλλο";
     }
 };
