@@ -17,6 +17,59 @@ window.PegasusDiet = {
         return `${d}/${m}/${y}`;
     },
 
+    getFoodLogKey: function(dateStr) {
+        const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
+        return prefix + (dateStr || this.getStrictDateStr());
+    },
+
+    safeParseLog: function(raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    getRoutineTemplates: function() {
+        return [
+            { name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, tsOffset: 1000 },
+            { name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, tsOffset: 2000 },
+            { name: "Κρεατίνη 5g (Ρουτίνα)", kcal: 0, protein: 0, tsOffset: 3000 }
+        ];
+    },
+
+    getInventoryImpact: function(name) {
+        const cleanName = String(name || "").trim().toLowerCase();
+
+        const isWhey =
+            cleanName.includes("whey") ||
+            cleanName.includes("πρωτεΐνη") ||
+            cleanName.includes("πρωτεινη");
+
+        const isCreatine =
+            cleanName.includes("κρεατίνη") ||
+            cleanName.includes("κρεατινη") ||
+            cleanName.includes("creatine");
+
+        return {
+            prot: isWhey ? 30 : 0,
+            crea: isCreatine ? 5 : 0
+        };
+    },
+
+    applyInventoryImpact: function(name) {
+        const impact = this.getInventoryImpact(name);
+
+        if (impact.prot > 0 && window.PegasusInventory?.consume) {
+            window.PegasusInventory.consume('prot', impact.prot);
+        }
+
+        if (impact.crea > 0 && window.PegasusInventory?.consume) {
+            window.PegasusInventory.consume('crea', impact.crea);
+        }
+    },
+
     getBaseTarget: function() {
         if (typeof window.getPegasusBaseDailyTarget === "function") {
             return window.getPegasusBaseDailyTarget();
@@ -88,25 +141,43 @@ window.PegasusDiet = {
         const dateStr = this.getStrictDateStr();
         const flagKey = "pegasus_routine_injected_" + dateStr;
 
-        if (localStorage.getItem(flagKey) === "true") return false;
-
-        console.log("🚀 DIET: Injecting daily baseline...");
-        localStorage.setItem(flagKey, "true");
-
         let log = this.getLog(dateStr);
-        const hasRoutine = log.some(i => i.name.includes("(Ρουτίνα)"));
+        let changed = false;
 
-        if (!hasRoutine) {
-            log.push({ name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, ts: Date.now() - 1000 });
-            log.push({ name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, ts: Date.now() - 2000 });
-            log.push({ name: "Κρεατίνη 5g (Ρουτίνα)", kcal: 0, protein: 0, ts: Date.now() - 3000 });
+        const templates = this.getRoutineTemplates();
 
-            if (window.PegasusInventory) {
-                window.PegasusInventory.consume('prot', 30);
+        templates.forEach((item) => {
+            const exists = log.some(entry => entry?.name === item.name);
+
+            if (!exists) {
+                log.push({
+                    name: item.name,
+                    kcal: item.kcal,
+                    protein: item.protein,
+                    ts: Date.now() - item.tsOffset
+                });
+
+                this.applyInventoryImpact(item.name);
+                changed = true;
+            }
+        });
+
+        const hasAllRoutineEntries = templates.every(item =>
+            log.some(entry => entry?.name === item.name)
+        );
+
+        if (hasAllRoutineEntries) {
+            localStorage.setItem(flagKey, "true");
+        }
+
+        if (changed) {
+            console.log("🚀 DIET: Injecting / reconciling daily baseline...");
+            localStorage.setItem(this.getFoodLogKey(dateStr), JSON.stringify(log));
+
+            if (window.PegasusInventory?.updateUI) {
+                window.PegasusInventory.updateUI();
             }
 
-            const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
-            localStorage.setItem(prefix + dateStr, JSON.stringify(log));
             return true;
         }
 
@@ -120,22 +191,28 @@ window.PegasusDiet = {
 
         if (!name || name.trim() === "") return;
 
-        if (name.toLowerCase().includes("whey") && window.PegasusInventory) {
-            window.PegasusInventory.consume('prot', 30);
-        }
+        this.applyInventoryImpact(name);
 
         if (name.includes("(Κούκι)")) {
             let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
-            agreementLog.push({ date: new Date().toLocaleDateString('el-GR'), food: name });
+            agreementLog.push({
+                date: this.getStrictDateStr(),
+                food: name
+            });
             localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
         }
 
         const dateStr = this.getStrictDateStr();
         let log = this.getLog(dateStr);
-        log.unshift({ name: name, kcal: kcal, protein: prot, ts: Date.now() });
 
-        const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
-        localStorage.setItem(prefix + dateStr, JSON.stringify(log));
+        log.unshift({
+            name: name,
+            kcal: kcal,
+            protein: prot,
+            ts: Date.now()
+        });
+
+        localStorage.setItem(this.getFoodLogKey(dateStr), JSON.stringify(log));
 
         if (document.getElementById("fName")) document.getElementById("fName").value = "";
         this.closeSearch();
@@ -310,6 +387,10 @@ window.PegasusDiet = {
                 </div>
             `).join('');
         }
+
+        if (window.PegasusInventory?.updateUI) {
+            window.PegasusInventory.updateUI();
+        }
     },
 
     delete: async function(idx) {
@@ -317,21 +398,14 @@ window.PegasusDiet = {
         let log = this.getLog(dateStr);
         log.splice(idx, 1);
 
-        const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
-        localStorage.setItem(prefix + dateStr, JSON.stringify(log));
+        localStorage.setItem(this.getFoodLogKey(dateStr), JSON.stringify(log));
 
         this.updateUI();
         if (window.PegasusCloud) await window.PegasusCloud.push();
     },
 
     getLog: function(dateStr) {
-        try {
-            const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
-            const data = localStorage.getItem(prefix + dateStr);
-            return data ? JSON.parse(data) : [];
-        } catch (e) {
-            return [];
-        }
+        return this.safeParseLog(localStorage.getItem(this.getFoodLogKey(dateStr)));
     },
 
     quickAdd: function(n, k, p) {
