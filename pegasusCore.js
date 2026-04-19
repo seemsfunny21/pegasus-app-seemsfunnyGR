@@ -70,6 +70,8 @@
         };
     }
 
+    const PROGRESS_PERSIST_KEY = "pegasus_engine_progress_runtime_v1";
+
     let state = getInitialState();
     let listeners = [];
     let eventBuffer = window._pegasusEventBuffer || [];
@@ -90,8 +92,78 @@
         };
     }
 
+    function buildPersistableProgressFromState(sourceState) {
+        const ref = sourceState || state || getInitialState();
+        return {
+            selectedDay: ref?.workout?.selectedDay || null,
+            currentIdx: ref?.workout?.currentIdx ?? 0,
+            phase: ref?.workout?.phase ?? 0,
+            running: !!ref?.workout?.running,
+            remainingSets: clone(ref?.workout?.remainingSets || []),
+            totalSeconds: ref?.timers?.totalSeconds ?? 0,
+            remainingSeconds: ref?.timers?.remainingSeconds ?? 0,
+            phaseRemainingSeconds: ref?.timers?.phaseRemainingSeconds ?? null,
+            sessionKcal: ref?.workout?.sessionKcal ?? 0,
+            turboMode: ref?.timers?.turboMode ?? false,
+            speed: ref?.timers?.speed ?? 1,
+            userWeight: ref?.user?.weight ?? 74,
+            muted: ref?.user?.muted ?? false,
+            todayDateStr: ref?.nutrition?.todayDateStr || getTodayDateStr(),
+            todayKey: ref?.nutrition?.todayKey || getLocalDateKey(),
+            savedAt: Date.now(),
+            sourceAction: ref?.meta?.lastAction || null
+        };
+    }
+
+    function getPersistedRuntime() {
+        try {
+            const raw = localStorage.getItem(PROGRESS_PERSIST_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === "object" ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function savePersistedRuntime(label, sourceState) {
+        const entry = buildPersistableProgressFromState(sourceState || state);
+        entry.label = label || entry.sourceAction || "PERSIST_RUNTIME";
+
+        try {
+            localStorage.setItem(PROGRESS_PERSIST_KEY, JSON.stringify(entry));
+        } catch (e) {
+            console.warn("⚠️ PEGASUS CORE: Persist warning", e);
+        }
+
+        return clone(entry);
+    }
+
+    function clearPersistedRuntime() {
+        try {
+            localStorage.removeItem(PROGRESS_PERSIST_KEY);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function restorePersistedRuntime() {
+        const snapshot = getPersistedRuntime();
+        if (!snapshot) return null;
+
+        return dispatch({
+            type: "RESTORE_PERSISTED_PROGRESS",
+            payload: clone(snapshot)
+        });
+    }
+
     function shouldAutoCheckpoint(actionType) {
         return /^WORKOUT_.*_RUNTIME$/.test(actionType || "");
+    }
+
+    function shouldPersistRuntime(actionType) {
+        return /^WORKOUT_.*_RUNTIME$/.test(actionType || "") || actionType === "PATCH_PROGRESS_RUNTIME" || actionType === "SET_SELECTED_DAY" || actionType === "PATCH_USER_RUNTIME" || actionType === "RESTORE_PERSISTED_PROGRESS";
     }
 
     function createCheckpoint(label, sourceState) {
@@ -203,6 +275,7 @@
             case "WORKOUT_NEXT_RUNTIME":
             case "WORKOUT_SET_COMPLETED_RUNTIME":
             case "WORKOUT_FINISH_RUNTIME":
+            case "RESTORE_PERSISTED_PROGRESS":
                 applyHydrationSnapshot(next, action.payload);
                 break;
 
@@ -350,6 +423,7 @@
         pushEventBuffer(normalizedAction);
         syncLegacyGlobals(state);
         if (shouldAutoCheckpoint(normalizedAction.type)) createCheckpoint(normalizedAction.type, state);
+        if (shouldPersistRuntime(normalizedAction.type)) savePersistedRuntime(normalizedAction.type, state);
 
         listeners.forEach(fn => {
             try {
@@ -537,6 +611,10 @@
         patchProgressRuntime,
         patchUserRuntime,
         patchSessionRuntime,
+        getPersistedRuntime,
+        savePersistedRuntime,
+        restorePersistedRuntime,
+        clearPersistedRuntime,
         selectDayRuntime,
         startWorkoutRuntime,
         pauseWorkoutRuntime,

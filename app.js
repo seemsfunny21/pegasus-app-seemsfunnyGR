@@ -1637,11 +1637,26 @@ window.getPegasusReplayProgress = window.getPegasusReplayProgress || function(li
     return window.PegasusEngine?.replayProgress ? window.PegasusEngine.replayProgress(limit) : null;
 };
 
+window.getPegasusPersistedProgress = window.getPegasusPersistedProgress || function() {
+    return window.PegasusEngine?.getPersistedRuntime ? window.PegasusEngine.getPersistedRuntime() : null;
+};
+
+window.restorePegasusPersistedProgress = window.restorePegasusPersistedProgress || function() {
+    return window.PegasusEngine?.restorePersistedRuntime ? window.PegasusEngine.restorePersistedRuntime() : null;
+};
+
+window.clearPegasusPersistedProgress = window.clearPegasusPersistedProgress || function() {
+    return window.PegasusEngine?.clearPersistedRuntime ? window.PegasusEngine.clearPersistedRuntime() : null;
+};
+
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
     session: () => (typeof window.getPegasusSessionState === "function" ? window.getPegasusSessionState() : null),
     progress: () => (typeof window.getPegasusProgressState === "function" ? window.getPegasusProgressState() : null),
     replayProgress: (limit) => (typeof window.getPegasusReplayProgress === "function" ? window.getPegasusReplayProgress(limit) : null),
+    persistedProgress: () => (typeof window.getPegasusPersistedProgress === "function" ? window.getPegasusPersistedProgress() : null),
+    restorePersistedProgress: () => (typeof window.restorePegasusPersistedProgress === "function" ? window.restorePegasusPersistedProgress() : null),
+    clearPersistedProgress: () => (typeof window.clearPegasusPersistedProgress === "function" ? window.clearPegasusPersistedProgress() : null),
     actions: (limit) => (window.PegasusEngine?.getActionTypes ? window.PegasusEngine.getActionTypes(limit || 25) : ((window.PegasusEngine?.getEventBuffer ? window.PegasusEngine.getEventBuffer() : []).slice(-(limit || 25)).map(ev => ev.type))),
     actionEntries: (limit) => (window.PegasusEngine?.getActionEntries ? window.PegasusEngine.getActionEntries(limit || 25) : []),
     checkpoints: (limit) => (window.PegasusEngine?.getCheckpoints ? window.PegasusEngine.getCheckpoints(limit || 10) : []),
