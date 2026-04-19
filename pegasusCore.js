@@ -401,6 +401,24 @@
         return dispatch({ type: "SET_SELECTED_DAY", payload: { selectedDay } });
     }
 
+    function getSelectedDay() {
+        return state?.workout?.selectedDay || null;
+    }
+
+    function getProgressSnapshot() {
+        return {
+            selectedDay: getSelectedDay(),
+            currentIdx: state?.workout?.currentIdx ?? 0,
+            phase: state?.workout?.phase ?? 0,
+            running: !!state?.workout?.running,
+            remainingSets: clone(state?.workout?.remainingSets || []),
+            totalSeconds: state?.timers?.totalSeconds ?? 0,
+            remainingSeconds: state?.timers?.remainingSeconds ?? 0,
+            phaseRemainingSeconds: state?.timers?.phaseRemainingSeconds ?? null,
+            sessionKcal: state?.workout?.sessionKcal ?? 0
+        };
+    }
+
     window.PegasusEngine = {
         __isCoreEngine: true,
         dispatch,
@@ -413,6 +431,8 @@
         patchUserRuntime,
         patchSessionRuntime,
         setSelectedDay,
+        getSelectedDay,
+        getProgressSnapshot,
         getWorkoutState,
         getTimerState,
         getUserState,

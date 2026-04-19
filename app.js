@@ -259,6 +259,55 @@ function getPegasusSessionState() {
 
 window.getPegasusSessionState = getPegasusSessionState;
 
+function getPegasusProgressState() {
+    const engine = getPegasusCoreEngine();
+    if (engine?.getProgressSnapshot) {
+        return engine.getProgressSnapshot();
+    }
+
+    const session = getPegasusSessionState();
+    return {
+        selectedDay: session?.workout?.selectedDay || null,
+        currentIdx: session?.workout?.currentIdx ?? currentIdx,
+        phase: session?.workout?.phase ?? phase,
+        running: !!(session?.workout?.running ?? running),
+        remainingSets: Array.isArray(session?.workout?.remainingSets) ? session.workout.remainingSets.slice() : [],
+        totalSeconds: session?.timers?.totalSeconds ?? totalSeconds,
+        remainingSeconds: session?.timers?.remainingSeconds ?? remainingSeconds,
+        phaseRemainingSeconds: session?.timers?.phaseRemainingSeconds ?? phaseRemainingSeconds,
+        sessionKcal: session?.workout?.sessionKcal ?? sessionActiveKcal
+    };
+}
+
+window.getPegasusProgressState = getPegasusProgressState;
+
+function syncPegasusSelectedDay(selectedDay) {
+    patchPegasusSessionRuntime({
+        workout: {
+            selectedDay: selectedDay ?? null,
+            currentIdx: currentIdx,
+            phase: phase,
+            running: running,
+            remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
+            sessionKcal: sessionActiveKcal
+        },
+        timers: {
+            totalSeconds: totalSeconds,
+            remainingSeconds: remainingSeconds,
+            phaseRemainingSeconds: phaseRemainingSeconds,
+            turboMode: TURBO_MODE,
+            speed: SPEED
+        },
+        user: {
+            weight: userWeight,
+            muted: muted
+        },
+        nutrition: {
+            todayDateStr: window.getPegasusTodayDateStr(),
+            todayKey: window.getPegasusLocalDateKey()
+        }
+    });
+}
 
 function isPegasusDomExerciseArray(value) {
     return Array.isArray(value) && value.length > 0 && value.every(item => item && typeof item.querySelector === "function" && item.classList);
@@ -371,7 +420,7 @@ function bindPegasusEngineUiBridge() {
             if (!nextState || !action) return;
 
             const actionType = action.type || "";
-            const runtimeAction = actionType.includes("PATCH_") || actionType.includes("PHASE") || actionType.includes("WORKOUT") || actionType.includes("SYNC_") || actionType.includes("SELECT_DAY") || actionType.includes("AUTO_INIT");
+            const runtimeAction = actionType.includes("PATCH_") || actionType.includes("PHASE") || actionType.includes("WORKOUT") || actionType.includes("SYNC_") || actionType.includes("SELECT_DAY") || actionType.includes("SET_SELECTED_DAY") || actionType.includes("AUTO_INIT") || actionType.includes("BOOT");
 
             if (runtimeAction) {
                 applyPegasusSessionSnapshot(nextState);
@@ -636,7 +685,7 @@ function selectDay(btn, day) {
     });
 
     if (typeof calculateTotalTime === "function") calculateTotalTime(false);
-    syncEngineFromLegacy("SELECT_DAY", { selectedDay: day });
+    syncPegasusSelectedDay(day);
 
     setTimeout(() => { window.syncSessionWithHistory(); }, 50);
 
@@ -1206,11 +1255,9 @@ function calculateTotalTime(isUpdate = false) {
 function updateTotalBar() {
     const bar = document.getElementById("totalProgress");
     const timeText = document.getElementById("totalProgressTime");
-    const session = getPegasusSessionState();
-    const engineTotalSeconds = session?.timers?.totalSeconds;
-    const engineRemainingSeconds = session?.timers?.remainingSeconds;
-    const safeTotalSeconds = (typeof engineTotalSeconds === "number" && engineTotalSeconds > 0) ? engineTotalSeconds : totalSeconds;
-    const safeRemainingSeconds = (typeof engineRemainingSeconds === "number") ? engineRemainingSeconds : remainingSeconds;
+    const progressState = getPegasusProgressState();
+    const safeTotalSeconds = (typeof progressState?.totalSeconds === "number" && progressState.totalSeconds > 0) ? progressState.totalSeconds : totalSeconds;
+    const safeRemainingSeconds = (typeof progressState?.remainingSeconds === "number") ? progressState.remainingSeconds : remainingSeconds;
     if (!bar || safeTotalSeconds <= 0) return;
 
     const progress = ((safeTotalSeconds - safeRemainingSeconds) / safeTotalSeconds) * 100;
@@ -1469,6 +1516,9 @@ window.onload = () => {
     const importInput = document.getElementById('importFileTools');
     if (importInput) importInput.onchange = (e) => window.importPegasusData(e);
 
+    bindPegasusEngineUiBridge();
+    syncEngineFromLegacy("BOOT_FROM_LEGACY", { selectedDay: todayName });
+
     createNavbar();
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     if (window.updateKoukiBalance) window.updateKoukiBalance();
@@ -1602,7 +1652,7 @@ window.onload = () => {
                         if (typeof exercises !== 'undefined') {
                             currentIdx = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx]?.classList.contains("exercise-skipped"));
                             if (currentIdx === -1) currentIdx = 0;
-                            syncEngineFromLegacy("AUTO_INIT_TODAY", { selectedDay: todayName });
+                            syncPegasusSelectedDay(todayName);
                             console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
                         }
                     }, 150);
@@ -1620,7 +1670,7 @@ window.onload = () => {
             loader.style.visibility = 'hidden';
         }
 
-        syncEngineFromLegacy("BOOT_COMPLETE", { selectedDay: todayName });
+        syncPegasusSelectedDay(todayName);
 
         if (typeof window.updateKcalUI === "function") {
             window.updateKcalUI();
