@@ -110,9 +110,48 @@ const PegasusCloud = {
         return data.record || data;
     },
 
+    normalizeEngineEvent(event) {
+        if (!event) return null;
+
+        const raw = (event.action && !event.type) ? event.action : event;
+        if (!raw || typeof raw !== "object") return null;
+        if (!raw.type) return null;
+
+        const normalized = { ...raw };
+
+        if (typeof raw.__ts === "number") {
+            normalized.__ts = raw.__ts;
+        } else if (typeof event.__ts === "number") {
+            normalized.__ts = event.__ts;
+        } else if (typeof event.time === "number") {
+            normalized.__ts = event.time;
+        }
+
+        return normalized;
+    },
+
+    getEventHash(event) {
+        const normalized = this.normalizeEngineEvent(event);
+        if (!normalized) return "";
+
+        const hashable = { ...normalized };
+        delete hashable.__ts;
+
+        try {
+            return JSON.stringify(hashable);
+        } catch (e) {
+            return "";
+        }
+    },
+
     getBoundedEvents() {
         const events = this.engine?.getEventBuffer?.() || [];
-        return Array.isArray(events) ? events.slice(-100) : [];
+        if (!Array.isArray(events)) return [];
+
+        return events
+            .map(ev => this.normalizeEngineEvent(ev))
+            .filter(Boolean)
+            .slice(-100);
     },
 
     /* =========================
@@ -194,13 +233,21 @@ const PegasusCloud = {
             if (this.engine && Array.isArray(cloud.__events__)) {
                 try {
                     const existingBuffer = this.engine.getEventBuffer?.() || [];
-                    const existingHashes = new Set(existingBuffer.map(ev => JSON.stringify(ev)));
+                    const existingHashes = new Set(
+                        existingBuffer
+                            .map(ev => this.getEventHash(ev))
+                            .filter(Boolean)
+                    );
 
-                    for (const event of cloud.__events__.slice(-100)) {
-                        const eventHash = JSON.stringify(event);
-                        if (!existingHashes.has(eventHash)) {
-                            this.engine.dispatch(event);
-                        }
+                    for (const remoteEvent of cloud.__events__.slice(-100)) {
+                        const normalizedEvent = this.normalizeEngineEvent(remoteEvent);
+                        if (!normalizedEvent) continue;
+
+                        const eventHash = this.getEventHash(normalizedEvent);
+                        if (!eventHash || existingHashes.has(eventHash)) continue;
+
+                        this.engine.dispatch(normalizedEvent);
+                        existingHashes.add(eventHash);
                     }
                 } catch (e) {
                     console.warn("⚠️ ENGINE BRIDGE ERROR:", e);
