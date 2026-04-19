@@ -337,6 +337,54 @@ function getPegasusRuntimeSummary() {
 
 window.getPegasusRuntimeSummary = getPegasusRuntimeSummary;
 
+
+function getPegasusControlState() {
+    const engine = getPegasusCoreEngine();
+    if (engine?.getControlState) {
+        return engine.getControlState();
+    }
+
+    const summary = getPegasusRuntimeSummary();
+    const total = Number(summary?.totalSeconds || 0);
+    const remaining = Number(summary?.remainingSeconds || 0);
+    const wasStarted = !!summary?.hasExercises && total > 0 && remaining < total;
+
+    return {
+        selectedDay: summary?.selectedDay ?? null,
+        running: !!summary?.running,
+        hasExercises: !!summary?.hasExercises,
+        hasRemainingWork: !!summary?.hasRemainingWork,
+        isFinished: !!summary?.isFinished,
+        wasStarted,
+        startLabel: summary?.running ? "Παύση" : (wasStarted ? "Συνέχεια" : "Έναρξη"),
+        nextLabel: "Επόμενο",
+        canStart: !!summary?.canStart,
+        canPause: !!summary?.canPause,
+        canNext: !!summary?.hasExercises && !!summary?.hasRemainingWork
+    };
+}
+
+window.getPegasusControlState = getPegasusControlState;
+
+function renderPegasusControlState() {
+    const controls = getPegasusControlState();
+    const startBtn = document.getElementById("btnStart");
+    const nextBtn = document.getElementById("btnNext");
+
+    if (startBtn) {
+        startBtn.innerHTML = controls?.startLabel || "Έναρξη";
+        startBtn.dataset.running = controls?.running ? "true" : "false";
+        startBtn.dataset.started = controls?.wasStarted ? "true" : "false";
+    }
+
+    if (nextBtn) {
+        nextBtn.innerHTML = controls?.nextLabel || "Επόμενο";
+        nextBtn.style.opacity = controls?.canNext ? "1" : "0.65";
+    }
+
+    return controls;
+}
+
 function getPegasusActiveSelectedDay() {
     const activeBtn = document.querySelector(".navbar button.active");
     return activeBtn ? activeBtn.id.replace("nav-", "") : null;
@@ -564,11 +612,7 @@ function bindPegasusEngineUiBridge() {
                 updateTotalBar();
                 if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
-                const startBtn = document.getElementById("btnStart");
-                if (startBtn) {
-                    const runtimeSummary = (typeof window.getPegasusRuntimeSummary === "function") ? window.getPegasusRuntimeSummary() : null;
-                    startBtn.innerHTML = runtimeSummary?.running ? "Παύση" : "Έναρξη";
-                }
+                renderPegasusControlState();
             }
         } catch (e) {
             console.warn("⚠️ PEGASUS ENGINE UI BRIDGE WARNING:", e);
@@ -718,8 +762,7 @@ function selectDay(btn, day) {
     sessionActiveKcal = 0;
     localStorage.setItem("pegasus_session_kcal", "0.0");
 
-    const sBtn = document.getElementById("btnStart");
-    if (sBtn) sBtn.innerHTML = "Έναρξη";
+    renderPegasusControlState();
 
     if (typeof window.calculatePegasusDailyTarget === "function") {
         if (!window.isCalculatingTarget) {
@@ -870,8 +913,7 @@ function startPause() {
     }
 
     running = !running;
-    const sBtn = document.getElementById("btnStart");
-    if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
+    renderPegasusControlState();
 
     syncPegasusProgressRuntime();
     dispatchPegasusWorkoutAction(running ? "WORKOUT_START_RUNTIME" : "WORKOUT_PAUSE_RUNTIME");
@@ -1386,8 +1428,7 @@ function finishWorkout() {
             vid.play().catch(() => console.log("Auto-play prevented"));
         }
 
-        const sBtn = document.getElementById("btnStart");
-        if (sBtn) sBtn.innerHTML = "Έναρξη";
+        renderPegasusControlState();
         if (label) {
             label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
             label.style.color = "#00bcd4";
@@ -1684,6 +1725,7 @@ window.onload = () => {
 
         syncPegasusProgressRuntime();
         syncPegasusUserRuntime();
+        renderPegasusControlState();
 
         console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
     }, 1000);
@@ -1716,6 +1758,7 @@ window.PegasusDebug = {
     progress: () => (typeof window.getPegasusProgressState === "function" ? window.getPegasusProgressState() : null),
     summary: () => (typeof window.getPegasusRuntimeSummary === "function" ? window.getPegasusRuntimeSummary() : null),
     timerDisplay: () => (typeof window.getPegasusTimerDisplayState === "function" ? window.getPegasusTimerDisplayState() : null),
+    controls: () => (typeof window.getPegasusControlState === "function" ? window.getPegasusControlState() : null),
     replayProgress: (limit) => (typeof window.getPegasusReplayProgress === "function" ? window.getPegasusReplayProgress(limit) : null),
     persistedProgress: () => (typeof window.getPegasusPersistedProgress === "function" ? window.getPegasusPersistedProgress() : null),
     restorePersistedProgress: () => (typeof window.restorePegasusPersistedProgress === "function" ? window.restorePegasusPersistedProgress() : null),

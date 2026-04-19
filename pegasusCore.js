@@ -647,6 +647,30 @@
         };
     }
 
+
+    function getControlState() {
+        const summary = getRuntimeSummary();
+        const totalSeconds = Number(summary.totalSeconds || 0);
+        const remainingSeconds = Number(summary.remainingSeconds || 0);
+        const hasExercises = !!summary.hasExercises;
+        const hasRemainingWork = !!summary.hasRemainingWork;
+        const wasStarted = hasExercises && totalSeconds > 0 && remainingSeconds < totalSeconds;
+
+        return {
+            selectedDay: summary.selectedDay || null,
+            running: !!summary.running,
+            hasExercises,
+            hasRemainingWork,
+            isFinished: !!summary.isFinished,
+            wasStarted,
+            startLabel: summary.running ? "Παύση" : (wasStarted ? "Συνέχεια" : "Έναρξη"),
+            nextLabel: "Επόμενο",
+            canStart: hasExercises && hasRemainingWork && !summary.running,
+            canPause: !!summary.running,
+            canNext: hasExercises && hasRemainingWork
+        };
+    }
+
     window.PegasusEngine = {
         __isCoreEngine: true,
         dispatch,
@@ -674,6 +698,7 @@
         getProgressSnapshot,
         getTimerDisplayState,
         getRuntimeSummary,
+        getControlState,
         getActionEntries,
         getActionTypes,
         getWorkoutActionTypes,
