@@ -213,13 +213,30 @@ window.updateFoodUI = function() {
         const div = document.createElement('div');
         div.className = 'food-item';
         div.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border-left:3px solid #4CAF50; border-radius:4px;";
-        div.innerHTML = `
-            <div style="display: flex; flex-direction: column; flex: 1;">
-                <span style="font-weight: bold; color: #eee; font-size: 14px;">${item.name}</span>
-                <span style="font-size: 11px; color: #4CAF50;">${item.kcal} kcal | ${item.protein}g P</span>
-            </div>
-            <button class="delete-btn" onclick="deleteFoodItem(${index})">✕</button>
-        `;
+
+        const infoWrap = document.createElement('div');
+        infoWrap.style.cssText = "display: flex; flex-direction: column; flex: 1;";
+
+        const nameSpan = document.createElement('span');
+        nameSpan.style.cssText = "font-weight: bold; color: #eee; font-size: 14px;";
+        nameSpan.textContent = item.name;
+
+        const metaSpan = document.createElement('span');
+        metaSpan.style.cssText = "font-size: 11px; color: #4CAF50;";
+        metaSpan.textContent = `${item.kcal} kcal | ${item.protein}g P`;
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-btn';
+        delBtn.textContent = '✕';
+        delBtn.addEventListener('click', () => {
+            window.deleteFoodItem(index);
+        });
+
+        infoWrap.appendChild(nameSpan);
+        infoWrap.appendChild(metaSpan);
+        div.appendChild(infoWrap);
+        div.appendChild(delBtn);
+
         listContainer.appendChild(div);
     });
 
@@ -319,38 +336,55 @@ window.renderKoukiMenu = function() {
 
     container.innerHTML = `
         <h4 style="color: #4CAF50; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 15px; font-size: 13px; font-weight: bold;">📍 ${targetDayName.toUpperCase()} (ΚΟΥΚΙ)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; width: 100%;">
-            ${todayMenu.map(item => {
-                let protein, kcal;
-
-                if (typeof window.getPegasusMacros === "function") {
-                    const macros = window.getPegasusMacros(item.n, item.t);
-                    protein = macros.protein;
-                    kcal = macros.kcal;
-                } else {
-                    protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
-                    kcal = (item.p >= 6.5) ? 680 : 520;
-                    if (item.n === "Μουσακάς") { kcal = 830; protein = 26; }
-                    if (item.n === "Παστίτσιο") { kcal = 750; protein = 35; }
-                }
-
-                const safeName = String(item.n).replace(/'/g, "\\'");
-
-                return `
-                <button onclick="window.addFoodItem('${safeName} (Κούκι)', ${kcal}, ${protein})"
-                        style="background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 12px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;">
-                    <div style="color: #eee; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;">
-                        ${item.n}
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 3px;">
-                        <span style="color: #4CAF50; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;">🔥 ${kcal} KCAL</span>
-                        <span style="color: #81C784; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;">🍗 ${protein}G PROTEIN</span>
-                    </div>
-                </button>
-                `;
-            }).join('')}
-        </div>
+        <div id="koukiQuickMenuGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; width: 100%;"></div>
     `;
+
+    const grid = document.getElementById('koukiQuickMenuGrid');
+    if (!grid) return;
+
+    todayMenu.forEach(item => {
+        let protein, kcal;
+
+        if (typeof window.getPegasusMacros === "function") {
+            const macros = window.getPegasusMacros(item.n, item.t);
+            protein = macros.protein;
+            kcal = macros.kcal;
+        } else {
+            protein = (item.t === 'kreas' || item.t === 'poulika') ? 45 : (item.t === 'ospro' ? 18 : 25);
+            kcal = (item.p >= 6.5) ? 680 : 520;
+            if (item.n === "Μουσακάς") { kcal = 830; protein = 26; }
+            if (item.n === "Παστίτσιο") { kcal = 750; protein = 35; }
+        }
+
+        const btn = document.createElement('button');
+        btn.style.cssText = "background: #0a0a0a; border: 1px solid #333; color: #eee; padding: 12px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: left; transition: 0.2s;";
+
+        const titleDiv = document.createElement('div');
+        titleDiv.style.cssText = "color: #eee; font-weight: bold; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px;";
+        titleDiv.textContent = item.n;
+
+        const metaWrap = document.createElement('div');
+        metaWrap.style.cssText = "display: flex; flex-direction: column; gap: 3px;";
+
+        const kcalSpan = document.createElement('span');
+        kcalSpan.style.cssText = "color: #4CAF50; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;";
+        kcalSpan.textContent = `🔥 ${kcal} KCAL`;
+
+        const proteinSpan = document.createElement('span');
+        proteinSpan.style.cssText = "color: #81C784; font-weight: bold; font-size: 10px; letter-spacing: 0.5px;";
+        proteinSpan.textContent = `🍗 ${protein}G PROTEIN`;
+
+        metaWrap.appendChild(kcalSpan);
+        metaWrap.appendChild(proteinSpan);
+        btn.appendChild(titleDiv);
+        btn.appendChild(metaWrap);
+
+        btn.addEventListener('click', () => {
+            window.addFoodItem(`${item.n} (Κούκι)`, kcal, protein);
+        });
+
+        grid.appendChild(btn);
+    });
 };
 
 window.addQuickFood = function(name, kcal, protein) {
@@ -380,17 +414,35 @@ window.filterLibrary = function() {
     library
         .filter(item => item.name.toLowerCase().includes(searchTerm))
         .forEach(item => {
-            const safeName = String(item.name).replace(/'/g, "\\'");
-
             const wrapper = document.createElement('div');
             wrapper.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#111; padding:10px; margin-bottom:5px; border:1px solid #4CAF50; border-radius:4px;";
-            wrapper.innerHTML = `
-                <div style="display: flex; flex-direction: column; flex: 1; cursor: pointer;" onclick="window.addFoodItem('${safeName}', ${item.kcal}, ${item.protein})">
-                    <span style="font-weight: bold; color: #eee; font-size: 14px;">+ ${item.name}</span>
-                    <span style="font-size: 11px; color: #4CAF50;">${item.kcal} kcal | ${item.protein || 0}g P</span>
-                </div>
-                <button class="delete-btn" onclick="window.removeFromLibrary('${safeName}')">✕</button>
-            `;
+
+            const clickable = document.createElement('div');
+            clickable.style.cssText = "display: flex; flex-direction: column; flex: 1; cursor: pointer;";
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.cssText = "font-weight: bold; color: #eee; font-size: 14px;";
+            nameSpan.textContent = `+ ${item.name}`;
+
+            const metaSpan = document.createElement('span');
+            metaSpan.style.cssText = "font-size: 11px; color: #4CAF50;";
+            metaSpan.textContent = `${item.kcal} kcal | ${item.protein || 0}g P`;
+
+            clickable.appendChild(nameSpan);
+            clickable.appendChild(metaSpan);
+            clickable.addEventListener('click', () => {
+                window.addFoodItem(item.name, item.kcal, item.protein);
+            });
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.textContent = '✕';
+            delBtn.addEventListener('click', () => {
+                window.removeFromLibrary(item.name);
+            });
+
+            wrapper.appendChild(clickable);
+            wrapper.appendChild(delBtn);
             libContainer.appendChild(wrapper);
         });
 };
