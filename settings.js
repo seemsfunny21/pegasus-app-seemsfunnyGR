@@ -168,6 +168,7 @@ window.savePegasusSettingsGlobal = function() {
         const u = M?.user || {};
         const d = M?.diet || {};
         const w = M?.workout || {};
+        const currentSettings = window.getPegasusSettings();
 
         const getValue = (id, fallback) => {
             const el = document.getElementById(id);
@@ -175,15 +176,15 @@ window.savePegasusSettingsGlobal = function() {
         };
 
         const newSettings = {
-            weight: parseFloat(getValue("userWeightInput", DEFAULT_SETTINGS.weight)) || DEFAULT_SETTINGS.weight,
-            height: parseFloat(getValue("userHeightInput", DEFAULT_SETTINGS.height)) || DEFAULT_SETTINGS.height,
-            age: parseInt(getValue("userAgeInput", DEFAULT_SETTINGS.age), 10) || DEFAULT_SETTINGS.age,
-            gender: getValue("userGenderInput", DEFAULT_SETTINGS.gender),
-            goalKcal: parseInt(getValue("goalKcalInput", DEFAULT_SETTINGS.goalKcal), 10) || DEFAULT_SETTINGS.goalKcal,
-            goalProtein: parseInt(getValue("goalProteinInput", DEFAULT_SETTINGS.goalProtein), 10) || DEFAULT_SETTINGS.goalProtein,
-            exTime: parseInt(getValue("exerciseTimeInput", DEFAULT_SETTINGS.exTime), 10) || DEFAULT_SETTINGS.exTime,
-            restTime: parseInt(getValue("restTimeInput", DEFAULT_SETTINGS.restTime), 10) || DEFAULT_SETTINGS.restTime,
-            activeSplit: getValue("activeSplitSelector", DEFAULT_SETTINGS.activeSplit),
+            weight: parseFloat(getValue("userWeightInput", currentSettings.weight)) || currentSettings.weight || DEFAULT_SETTINGS.weight,
+            height: parseFloat(getValue("userHeightInput", currentSettings.height)) || currentSettings.height || DEFAULT_SETTINGS.height,
+            age: parseInt(getValue("userAgeInput", currentSettings.age), 10) || currentSettings.age || DEFAULT_SETTINGS.age,
+            gender: getValue("userGenderInput", currentSettings.gender || DEFAULT_SETTINGS.gender),
+            goalKcal: parseInt(getValue("goalKcalInput", currentSettings.goalKcal), 10) || currentSettings.goalKcal || DEFAULT_SETTINGS.goalKcal,
+            goalProtein: parseInt(getValue("goalProteinInput", currentSettings.goalProtein), 10) || currentSettings.goalProtein || DEFAULT_SETTINGS.goalProtein,
+            exTime: parseInt(getValue("exerciseTimeInput", currentSettings.exTime), 10) || currentSettings.exTime || DEFAULT_SETTINGS.exTime,
+            restTime: parseInt(getValue("restTimeInput", currentSettings.restTime), 10) || currentSettings.restTime || DEFAULT_SETTINGS.restTime,
+            activeSplit: getValue("activeSplitSelector", currentSettings.activeSplit || DEFAULT_SETTINGS.activeSplit),
             muscleTargets: {}
         };
 

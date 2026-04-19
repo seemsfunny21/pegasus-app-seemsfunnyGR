@@ -1156,7 +1156,7 @@ window.onload = () => {
         },
         "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview },
-        "btnGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
+        "btnOpenGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
         "btnCardio": { panel: "cardioPanel", init: () => { if (window.PegasusCardio) window.PegasusCardio.open(); } },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
         "btnManualEmail": () => {
@@ -1207,8 +1207,8 @@ window.onload = () => {
                     selectDay(b, todayName);
                     setTimeout(() => {
                         if (typeof exercises !== 'undefined') {
-                            remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
-                            currentIdx = 0;
+                            currentIdx = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx]?.classList.contains("exercise-skipped"));
+                            if (currentIdx === -1) currentIdx = 0;
                             syncEngineFromLegacy("AUTO_INIT_TODAY", { selectedDay: todayName });
                             console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
                         }

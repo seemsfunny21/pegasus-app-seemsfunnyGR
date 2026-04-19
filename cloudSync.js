@@ -9,7 +9,7 @@ const PegasusCloud = {
         binId: "69b6757ab7ec241ddc6d7230",
         encryptedPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
         syncThrottle: 2000,
-        pullInterval: 60000
+        pullInterval: 10000
     },
 
     isUnlocked: false,
