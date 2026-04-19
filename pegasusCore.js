@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS CORE ENGINE - v1.1
+   PEGASUS CORE ENGINE - v1.2
    Protocol: Global Store + Reducer + Event Buffer + Legacy State Bridge
-   Status: FOUNDATION STABLE | REDUCER HYDRATION READY
+   Status: FOUNDATION STABLE | RUNTIME PATCH ACTIONS READY
    ========================================================================== */
 
 (function() {
@@ -198,6 +198,37 @@
                 next.user.weight = action.payload?.weight ?? next.user.weight;
                 break;
 
+            case "SET_SELECTED_DAY":
+                next.workout.selectedDay = action.payload?.selectedDay ?? next.workout.selectedDay;
+                break;
+
+            case "PATCH_WORKOUT_RUNTIME":
+                if (action.payload && typeof action.payload === "object") {
+                    Object.assign(next.workout, clone(action.payload));
+                }
+                break;
+
+            case "PATCH_TIMER_RUNTIME":
+                if (action.payload && typeof action.payload === "object") {
+                    Object.assign(next.timers, clone(action.payload));
+                }
+                break;
+
+            case "PATCH_USER_RUNTIME":
+                if (action.payload && typeof action.payload === "object") {
+                    Object.assign(next.user, clone(action.payload));
+                }
+                break;
+
+            case "PATCH_SESSION_RUNTIME":
+                if (action.payload && typeof action.payload === "object") {
+                    if (action.payload.workout) Object.assign(next.workout, clone(action.payload.workout));
+                    if (action.payload.timers) Object.assign(next.timers, clone(action.payload.timers));
+                    if (action.payload.user) Object.assign(next.user, clone(action.payload.user));
+                    if (action.payload.nutrition) Object.assign(next.nutrition, clone(action.payload.nutrition));
+                }
+                break;
+
             case "RESET_WORKOUT_RUNTIME":
                 next.workout.currentIdx = 0;
                 next.workout.phase = 0;
@@ -333,6 +364,26 @@
         };
     }
 
+    function patchWorkoutRuntime(payload) {
+        return dispatch({ type: "PATCH_WORKOUT_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function patchTimerRuntime(payload) {
+        return dispatch({ type: "PATCH_TIMER_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function patchUserRuntime(payload) {
+        return dispatch({ type: "PATCH_USER_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function patchSessionRuntime(payload) {
+        return dispatch({ type: "PATCH_SESSION_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function setSelectedDay(selectedDay) {
+        return dispatch({ type: "SET_SELECTED_DAY", payload: { selectedDay } });
+    }
+
     window.PegasusEngine = {
         __isCoreEngine: true,
         dispatch,
@@ -340,6 +391,11 @@
         subscribe,
         replaceState,
         hydrateFromLegacy,
+        patchWorkoutRuntime,
+        patchTimerRuntime,
+        patchUserRuntime,
+        patchSessionRuntime,
+        setSelectedDay,
         getWorkoutState,
         getTimerState,
         getUserState,
