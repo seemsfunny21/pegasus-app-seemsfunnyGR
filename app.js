@@ -14,7 +14,7 @@ if (!M) {
 }
 
 /* ===== 1. ISSUE LOGGER (DIAGNOSTIC MODE) ===== */
-window.pegasusLogs = JSON.parse(localStorage.getItem(P_M?.system?.logs || "pegasus_system_logs") || "[]");
+window.pegasusLogs = (() => { try { return JSON.parse(localStorage.getItem(P_M?.system?.logs || "pegasus_system_logs") || "[]"); } catch (e) { console.warn("⚠️ PEGASUS LOGS RESET:", e); return []; } })();
 const originalError = console.error;
 const originalWarn = console.warn;
 

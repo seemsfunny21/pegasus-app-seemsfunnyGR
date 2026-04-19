@@ -1,7 +1,6 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - UNIVERSAL CORE (v20.0 STATUS RELEASE PATCH)
-   STATUS: PRODUCTION SAFE | HYBRID EVENT READY | NO LOOP BUGS | STABLE
-   FIXES: PULL RELEASE BEFORE ONLINE STATUS + SAFE UI UPDATE + CLEAN STATUS FLOW
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.0)
+   STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
 const PegasusCloud = {
@@ -9,15 +8,32 @@ const PegasusCloud = {
         binId: "69b6757ab7ec241ddc6d7230",
         encryptedPart: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
         syncThrottle: 2000,
-        pullInterval: 10000
+        pullInterval: 10000,
+        dailyUnlockHour: 7,
+        cryptoIterations: 120000
+    },
+
+    storage: {
+        lastPush: "pegasus_last_push",
+        validUntil: "pegasus_vault_valid_until",
+        wrappedMaster: "pegasus_vault_master_wrapped",
+        deviceSecret: "pegasus_vault_device_secret",
+        pendingQueue: "pegasus_cloud_pending_v1",
+        legacyPin: "pegasus_vault_pin",
+        legacyTime: "pegasus_vault_time",
+        geminiKey: "pegasus_gemini_key",
+        openaiKey: "pegasus_openai_key",
+        openrouterKey: "pegasus_openrouter_key"
     },
 
     isUnlocked: false,
     hasSuccessfullyPulled: false,
     isPulling: false,
     isPushing: false,
+    isApplyingRemote: false,
 
     userKey: "",
+    masterKey: "",
     syncInterval: null,
     pushTimeout: null,
     lastPushTs: null,
@@ -37,31 +53,136 @@ const PegasusCloud = {
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
-    getAllowedStoragePrefixes() {
-        return ["pegasus_", "food_log_", "kouki_", "peg_", "weight_", "finance_"];
+    getNextUnlockTs() {
+        const now = new Date();
+        const next = new Date(now);
+        next.setHours(this.config.dailyUnlockHour, 0, 0, 0);
+
+        if (now.getTime() >= next.getTime()) {
+            next.setDate(next.getDate() + 1);
+        }
+
+        return next.getTime();
     },
 
-    getBlockedStorageKeys() {
+    hasValidSession() {
+        const validUntil = parseInt(localStorage.getItem(this.storage.validUntil) || "0", 10);
+        return Number.isFinite(validUntil) && validUntil > Date.now();
+    },
+
+    canAutoUnlock() {
+        return this.hasValidSession() && !!localStorage.getItem(this.storage.wrappedMaster);
+    },
+
+    getSyncedExactKeys() {
         return [
-            "pegasus_last_push",
-            "pegasus_vault_pin",
-            "pegasus_vault_time",
-            "pegasus_gemini_key",
-            "pegasus_openai_key",
-            "pegasus_openrouter_key"
+            "pegasus_weight",
+            "pegasus_weight_history",
+            "pegasus_age",
+            "pegasus_height",
+            "pegasus_gender",
+            "pegasus_language",
+            "pegasus_weekly_history",
+            "pegasus_workouts_done",
+            "pegasus_total_workouts",
+            "pegasus_active_plan",
+            "pegasus_muscle_targets",
+            "pegasus_calendar_history",
+            "pegasus_exercise_weights",
+            "pegasus_ex_time",
+            "pegasus_rest_time",
+            "pegasus_weekly_kcal",
+            "pegasus_session_kcal",
+            "pegasus_supp_inventory",
+            "pegasus_food_library",
+            "pegasus_today_kcal",
+            "pegasus_today_protein",
+            "pegasus_cardio_history",
+            "pegasus_daily_progress",
+            "kouki_agreement_log",
+            "kouki_meals_total",
+            "kouki_meals_remaining",
+            "kouki_total_stock"
         ];
+    },
+
+    getSyncedPrefixes() {
+        return [
+            "food_log_",
+            "pegasus_cardio_kcal_",
+            "pegasus_cardio_offset_sets_"
+        ];
+    },
+
+    getLocalOnlyKeys() {
+        return [
+            "pegasus_user_specs",
+            "pegasus_notes",
+            "pegasus_contacts",
+            "pegasus_partners_list",
+            "pegasus_car_identity",
+            "pegasus_car_dates",
+            "pegasus_car_service",
+            "pegasus_car_specs",
+            "peg_car_service",
+            "peg_car_dates",
+            "pegasus_parking_loc",
+            "pegasus_parking_history",
+            "pegasus_social_v1",
+            "pegasus_master_pin",
+            "pegasus_finance_v1",
+            "pegasus_maintenance_v1",
+            "pegasus_movies_v1",
+            "pegasus_missions_v1",
+            "pegasus_biometrics_v1",
+            "pegasus_supplies_v1",
+            "pegasus_morning_checkin"
+        ];
+    },
+
+    getInternalStorageKeys() {
+        return [
+            this.storage.lastPush,
+            this.storage.validUntil,
+            this.storage.wrappedMaster,
+            this.storage.deviceSecret,
+            this.storage.pendingQueue,
+            this.storage.legacyPin,
+            this.storage.legacyTime,
+            this.storage.geminiKey,
+            this.storage.openaiKey,
+            this.storage.openrouterKey
+        ];
+    },
+
+    isInternalStorageKey(key) {
+        if (!key) return false;
+        return this.getInternalStorageKeys().includes(key);
+    },
+
+    isLocalOnlyStorageKey(key) {
+        if (!key) return false;
+        return this.getLocalOnlyKeys().includes(key);
     },
 
     isSensitiveStorageKey(key) {
         if (!key) return false;
-        if (this.getBlockedStorageKeys().includes(key)) return true;
+        if (this.isInternalStorageKey(key)) return true;
+        if (this.isLocalOnlyStorageKey(key)) return true;
         return /(vault|token|secret|api[_-]?key|gemini[_-]?key|master[_-]?key)/i.test(key);
     },
 
     isAllowedStorageKey(key) {
         if (!key) return false;
         if (this.isSensitiveStorageKey(key)) return false;
-        return this.getAllowedStoragePrefixes().some(prefix => key.startsWith(prefix));
+        if (this.getSyncedExactKeys().includes(key)) return true;
+        return this.getSyncedPrefixes().some(prefix => key.startsWith(prefix));
+    },
+
+    isExportBlockedKey(key) {
+        if (!key) return true;
+        if (this.isInternalStorageKey(key)) return true;
+        return false;
     },
 
     emitSyncStatus(status, force = false) {
@@ -82,6 +203,14 @@ const PegasusCloud = {
             window.originalSetItem.call(localStorage, key, normalized);
         } else {
             localStorage.setItem(key, normalized);
+        }
+    },
+
+    safeRemoveLocal(key) {
+        if (window.originalRemoveItem) {
+            window.originalRemoveItem.call(localStorage, key);
+        } else {
+            localStorage.removeItem(key);
         }
     },
 
@@ -154,40 +283,345 @@ const PegasusCloud = {
             .slice(-100);
     },
 
-    /* =========================
-       🔓 UNLOCK
-    ========================= */
-    unlock(pin) {
-        if (!pin) return false;
-        if (this.isUnlocked) return true;
-
-        const clean = String(pin).trim();
+    validatePin(pin) {
+        const clean = String(pin || "").trim();
+        if (!clean) return false;
 
         try {
-            if (btoa(clean) !== "MjM3NQ==") return false;
+            return btoa(clean) === "MjM3NQ==";
         } catch (e) {
             return false;
         }
+    },
 
-        this.userKey = this.config.encryptedPart;
-        this.isUnlocked = true;
+    loadPendingChanges() {
+        try {
+            const raw = localStorage.getItem(this.storage.pendingQueue);
+            const parsed = raw ? JSON.parse(raw) : {};
+            return (parsed && typeof parsed === "object") ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    },
 
-        this.safeSetLocal("pegasus_vault_pin", clean);
-        this.safeSetLocal("pegasus_vault_time", Date.now().toString());
+    savePendingChanges(queue) {
+        const normalized = (queue && typeof queue === "object") ? queue : {};
+        this.safeSetLocal(this.storage.pendingQueue, JSON.stringify(normalized));
+    },
 
-        console.log("🔓 CLOUD: Unlocked");
-        this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
+    hasPendingChanges() {
+        return Object.keys(this.loadPendingChanges()).length > 0;
+    },
 
-        setTimeout(() => {
-            this.pull(true);
-            this.startAutoSync();
-        }, 50);
+    queuePendingChange(key, value, type = "set") {
+        if (!this.isAllowedStorageKey(key)) return;
+
+        const queue = this.loadPendingChanges();
+        queue[key] = {
+            type,
+            value: type === "set" ? String(value) : null,
+            ts: Date.now()
+        };
+        this.savePendingChanges(queue);
+    },
+
+    clearPendingChanges() {
+        this.savePendingChanges({});
+    },
+
+    applyPendingChangesToLocal() {
+        const queue = this.loadPendingChanges();
+        const entries = Object.entries(queue);
+        if (!entries.length) return false;
+
+        this.isApplyingRemote = true;
+        try {
+            for (const [key, entry] of entries) {
+                if (!this.isAllowedStorageKey(key)) continue;
+
+                if (entry?.type === "remove") {
+                    this.safeRemoveLocal(key);
+                } else if (typeof entry?.value === "string") {
+                    this.safeSetLocal(key, entry.value);
+                }
+            }
+        } finally {
+            this.isApplyingRemote = false;
+        }
 
         return true;
     },
 
+    getLocalAllowedKeys() {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (this.isAllowedStorageKey(key)) keys.push(key);
+        }
+        return keys;
+    },
+
+    toBase64(bytes) {
+        let binary = "";
+        const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+        for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+        return btoa(binary);
+    },
+
+    fromBase64(str) {
+        const binary = atob(str);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+    },
+
+    randomBytes(length = 16) {
+        const bytes = new Uint8Array(length);
+        crypto.getRandomValues(bytes);
+        return bytes;
+    },
+
+    async deriveAesKey(secret, saltBytes, usage = ["encrypt", "decrypt"]) {
+        const encoder = new TextEncoder();
+        const baseKey = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(String(secret || "")),
+            "PBKDF2",
+            false,
+            ["deriveKey"]
+        );
+
+        return crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt: saltBytes,
+                iterations: this.config.cryptoIterations,
+                hash: "SHA-256"
+            },
+            baseKey,
+            {
+                name: "AES-GCM",
+                length: 256
+            },
+            false,
+            usage
+        );
+    },
+
+    async encryptString(secret, plainText) {
+        const encoder = new TextEncoder();
+        const iv = this.randomBytes(12);
+        const salt = this.randomBytes(16);
+        const key = await this.deriveAesKey(secret, salt);
+        const cipher = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv },
+            key,
+            encoder.encode(String(plainText || ""))
+        );
+
+        return {
+            v: 1,
+            salt: this.toBase64(salt),
+            iv: this.toBase64(iv),
+            data: this.toBase64(new Uint8Array(cipher))
+        };
+    },
+
+    async decryptString(secret, envelope) {
+        if (!envelope?.salt || !envelope?.iv || !envelope?.data) {
+            throw new Error("INVALID_ENVELOPE");
+        }
+
+        const key = await this.deriveAesKey(secret, this.fromBase64(envelope.salt));
+        const plainBuffer = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: this.fromBase64(envelope.iv) },
+            key,
+            this.fromBase64(envelope.data)
+        );
+
+        return new TextDecoder().decode(plainBuffer);
+    },
+
+    getOrCreateDeviceSecret() {
+        let secret = localStorage.getItem(this.storage.deviceSecret);
+        if (secret) return secret;
+
+        secret = this.toBase64(this.randomBytes(32));
+        this.safeSetLocal(this.storage.deviceSecret, secret);
+        return secret;
+    },
+
+    async storeWrappedMaster(masterKey) {
+        const secret = this.getOrCreateDeviceSecret();
+        const wrapped = await this.encryptString(secret, masterKey);
+        this.safeSetLocal(this.storage.wrappedMaster, JSON.stringify(wrapped));
+    },
+
+    async getStoredMasterKey() {
+        const wrappedRaw = localStorage.getItem(this.storage.wrappedMaster);
+        if (!wrappedRaw) return "";
+
+        try {
+            const wrapped = JSON.parse(wrappedRaw);
+            const secret = this.getOrCreateDeviceSecret();
+            return await this.decryptString(secret, wrapped);
+        } catch (e) {
+            console.warn("⚠️ CLOUD: Wrapped master unavailable.", e);
+            return "";
+        }
+    },
+
+    async encryptCloudPayload(payload) {
+        return this.encryptString(this.masterKey, JSON.stringify(payload || {}));
+    },
+
+    async decryptCloudPayload(envelope) {
+        try {
+            const text = await this.decryptString(this.masterKey, envelope);
+            return JSON.parse(text || "{}");
+        } catch (e) {
+            throw new Error("INVALID_MASTER_KEY");
+        }
+    },
+
+    async extractCloudPayload(cloud) {
+        if (cloud?.__pegasus_secure_v1 && cloud?.secure_payload) {
+            return this.decryptCloudPayload(cloud.secure_payload);
+        }
+
+        const storage = {};
+        if (cloud && typeof cloud === "object") {
+            for (const key of Object.keys(cloud)) {
+                if (this.isAllowedStorageKey(key)) {
+                    storage[key] = cloud[key];
+                }
+            }
+        }
+
+        return {
+            storage,
+            events: Array.isArray(cloud?.__events__) ? cloud.__events__ : []
+        };
+    },
+
+    setValidSessionWindow() {
+        this.safeSetLocal(this.storage.validUntil, this.getNextUnlockTs().toString());
+        this.safeRemoveLocal(this.storage.legacyPin);
+        this.safeRemoveLocal(this.storage.legacyTime);
+    },
+
+    clearLocalSecurityState(options = {}) {
+        const preserveDeviceSecret = options.preserveDeviceSecret === true;
+        const preserveWrappedMaster = options.preserveWrappedMaster === true;
+
+        this.safeRemoveLocal(this.storage.validUntil);
+        this.safeRemoveLocal(this.storage.lastPush);
+        this.safeRemoveLocal(this.storage.pendingQueue);
+        this.safeRemoveLocal(this.storage.legacyPin);
+        this.safeRemoveLocal(this.storage.legacyTime);
+
+        if (!preserveWrappedMaster) this.safeRemoveLocal(this.storage.wrappedMaster);
+        if (!preserveDeviceSecret) this.safeRemoveLocal(this.storage.deviceSecret);
+
+        this.isUnlocked = false;
+        this.hasSuccessfullyPulled = false;
+        this.masterKey = "";
+        this.userKey = "";
+        this.emitSyncStatus("locked", true);
+    },
+
+    async tryAutoUnlock() {
+        if (!this.canAutoUnlock()) return false;
+
+        const masterKey = await this.getStoredMasterKey();
+        if (!masterKey) return false;
+
+        return this.unlock("", masterKey, {
+            skipPinCheck: true,
+            storeWrappedMaster: false,
+            persistSession: false,
+            autoUnlock: true
+        });
+    },
+
     /* =========================
-       📥 PULL (HYBRID SAFE)
+       🔓 UNLOCK
+    ========================= */
+    async unlock(pin, masterKey, options = {}) {
+        if (this.isUnlocked) return true;
+
+        const opts = {
+            skipPinCheck: false,
+            storeWrappedMaster: true,
+            persistSession: true,
+            autoUnlock: false,
+            ...options
+        };
+
+        if (!opts.skipPinCheck && !this.validatePin(pin)) {
+            return false;
+        }
+
+        const cleanMaster = String(masterKey || "").trim();
+        if (!cleanMaster) return false;
+
+        const prevState = {
+            isUnlocked: this.isUnlocked,
+            hasSuccessfullyPulled: this.hasSuccessfullyPulled,
+            userKey: this.userKey,
+            masterKey: this.masterKey
+        };
+
+        this.userKey = this.config.encryptedPart;
+        this.masterKey = cleanMaster;
+        this.isUnlocked = true;
+        this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
+
+        try {
+            if (navigator.onLine) {
+                try {
+                    await this.pull(true);
+                } catch (e) {
+                    if (String(e?.message || "") === "INVALID_MASTER_KEY") {
+                        throw e;
+                    }
+                    console.warn("⚠️ CLOUD: Soft unlock sync error.", e);
+                }
+            } else {
+                this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
+            }
+
+            if (opts.storeWrappedMaster) {
+                await this.storeWrappedMaster(cleanMaster);
+            }
+
+            if (opts.persistSession) {
+                this.setValidSessionWindow();
+            }
+
+            this.startAutoSync();
+
+            if (navigator.onLine && this.hasPendingChanges()) {
+                await this._doPush();
+            }
+
+            console.log(opts.autoUnlock ? "🔓 CLOUD: Auto-unlocked" : "🔓 CLOUD: Unlocked");
+            this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
+            return true;
+        } catch (e) {
+            this.isUnlocked = prevState.isUnlocked;
+            this.hasSuccessfullyPulled = prevState.hasSuccessfullyPulled;
+            this.userKey = prevState.userKey;
+            this.masterKey = prevState.masterKey;
+            this.emitSyncStatus("locked", true);
+            if (String(e?.message || "") === "INVALID_MASTER_KEY") return false;
+            console.error("❌ UNLOCK ERROR:", e);
+            return false;
+        }
+    },
+
+    /* =========================
+       📥 PULL (SECURE + QUEUE SAFE)
     ========================= */
     async pull(silent = false) {
         if (!this.isUnlocked || this.isPulling) return false;
@@ -205,69 +639,93 @@ const PegasusCloud = {
 
         try {
             const cloud = await this.fetchLatestRecord();
-            const lastLocal = parseInt(localStorage.getItem("pegasus_last_push") || "0", 10);
+            const lastLocal = parseInt(localStorage.getItem(this.storage.lastPush) || "0", 10);
             const remoteTs = parseInt(cloud?.last_update_ts || "0", 10);
+            const pendingExists = this.hasPendingChanges();
 
             if (!remoteTs) {
                 this.hasSuccessfullyPulled = true;
-                return false;
-            }
-
-            if (remoteTs === lastLocal) {
-                this.hasSuccessfullyPulled = true;
-                return false;
-            }
-
-            console.log("☁️ CLOUD: Syncing latest version...");
-            changed = true;
-
-            const keys = Object.keys(cloud);
-            for (let i = 0; i < keys.length; i++) {
-                const k = keys[i];
-
-                if (this.isAllowedStorageKey(k)) {
-                    this.safeSetLocal(k, cloud[k]);
+                if (pendingExists) {
+                    this.applyPendingChangesToLocal();
                 }
+                return false;
             }
 
-            if (this.engine && Array.isArray(cloud.__events__)) {
+            if (remoteTs !== lastLocal) {
+                const remotePayload = await this.extractCloudPayload(cloud);
+                const remoteStorage = (remotePayload?.storage && typeof remotePayload.storage === "object") ? remotePayload.storage : {};
+                const remoteEvents = Array.isArray(remotePayload?.events) ? remotePayload.events : [];
+
+                console.log("☁️ CLOUD: Syncing latest version...");
+                changed = true;
+
+                this.isApplyingRemote = true;
                 try {
-                    const existingBuffer = this.engine.getEventBuffer?.() || [];
-                    const existingHashes = new Set(
-                        existingBuffer
-                            .map(ev => this.getEventHash(ev))
-                            .filter(Boolean)
-                    );
+                    const localAllowedKeys = this.getLocalAllowedKeys();
+                    const remoteKeys = new Set(Object.keys(remoteStorage));
 
-                    for (const remoteEvent of cloud.__events__.slice(-100)) {
-                        const normalizedEvent = this.normalizeEngineEvent(remoteEvent);
-                        if (!normalizedEvent) continue;
-
-                        const eventHash = this.getEventHash(normalizedEvent);
-                        if (!eventHash || existingHashes.has(eventHash)) continue;
-
-                        this.engine.dispatch(normalizedEvent);
-                        existingHashes.add(eventHash);
+                    for (const key of localAllowedKeys) {
+                        if (!remoteKeys.has(key)) {
+                            this.safeRemoveLocal(key);
+                        }
                     }
-                } catch (e) {
-                    console.warn("⚠️ ENGINE BRIDGE ERROR:", e);
+
+                    for (const [key, value] of Object.entries(remoteStorage)) {
+                        if (this.isAllowedStorageKey(key)) {
+                            this.safeSetLocal(key, value);
+                        }
+                    }
+                } finally {
+                    this.isApplyingRemote = false;
                 }
+
+                if (this.engine && remoteEvents.length) {
+                    try {
+                        const existingBuffer = this.engine.getEventBuffer?.() || [];
+                        const existingHashes = new Set(
+                            existingBuffer
+                                .map(ev => this.getEventHash(ev))
+                                .filter(Boolean)
+                        );
+
+                        for (const remoteEvent of remoteEvents.slice(-100)) {
+                            const normalizedEvent = this.normalizeEngineEvent(remoteEvent);
+                            if (!normalizedEvent) continue;
+
+                            const eventHash = this.getEventHash(normalizedEvent);
+                            if (!eventHash || existingHashes.has(eventHash)) continue;
+
+                            this.engine.dispatch(normalizedEvent);
+                            existingHashes.add(eventHash);
+                        }
+                    } catch (e) {
+                        console.warn("⚠️ ENGINE BRIDGE ERROR:", e);
+                    }
+                }
+
+                this.safeSetLocal(this.storage.lastPush, remoteTs.toString());
             }
 
-            this.safeSetLocal("pegasus_last_push", remoteTs.toString());
             this.hasSuccessfullyPulled = true;
 
-            if (!silent) {
+            if (pendingExists) {
+                changed = this.applyPendingChangesToLocal() || changed;
+            }
+
+            if (!silent && changed) {
                 console.log("📥 CLOUD: Pull OK");
             }
 
-            return true;
-
+            return changed;
         } catch (e) {
+            if (String(e?.message || "") === "INVALID_MASTER_KEY") {
+                finalStatus = "locked";
+                throw e;
+            }
+
             console.error("❌ PULL ERROR:", e);
             finalStatus = navigator.onLine ? "error" : "offline";
             return false;
-
         } finally {
             this.isPulling = false;
 
@@ -282,10 +740,31 @@ const PegasusCloud = {
     },
 
     /* =========================
-       📤 PUSH (EVENT READY)
+       🔁 SYNC NOW
+    ========================= */
+    async syncNow(silent = false) {
+        if (!this.isUnlocked) return false;
+        if (this.isPulling || this.isPushing) return false;
+        if (!navigator.onLine) {
+            this.emitSyncStatus("offline", true);
+            return false;
+        }
+
+        const changed = await this.pull(silent);
+
+        if (this.hasPendingChanges()) {
+            const pushed = await this._doPush();
+            return !!(changed || pushed);
+        }
+
+        return !!changed;
+    },
+
+    /* =========================
+       📤 PUSH (ENCRYPTED SNAPSHOT)
     ========================= */
     push(force = false) {
-        if (!this.isUnlocked || !this.hasSuccessfullyPulled) return;
+        if (!this.isUnlocked) return;
         if (this.isPulling || this.isPushing) return;
 
         if (!navigator.onLine) {
@@ -302,7 +781,6 @@ const PegasusCloud = {
         this.pushTimeout = setTimeout(() => {
             if (
                 this.isUnlocked &&
-                this.hasSuccessfullyPulled &&
                 !this.isPulling &&
                 !this.isPushing &&
                 navigator.onLine
@@ -313,6 +791,7 @@ const PegasusCloud = {
     },
 
     async _doPush() {
+        if (!this.isUnlocked) return false;
         if (!navigator.onLine) {
             this.emitSyncStatus("offline", true);
             return false;
@@ -326,35 +805,42 @@ const PegasusCloud = {
         try {
             const remote = await this.fetchLatestRecord();
             const remoteTs = parseInt(remote?.last_update_ts || "0", 10);
-            const localTs = parseInt(localStorage.getItem("pegasus_last_push") || "0", 10);
+            const localTs = parseInt(localStorage.getItem(this.storage.lastPush) || "0", 10);
+            const pendingExists = this.hasPendingChanges();
 
             if (remoteTs && remoteTs > localTs) {
                 console.warn("⚠️ CLOUD: Remote is newer than local. Pulling before push...");
-                this.isPushing = false;
                 await this.pull(true);
-                return false;
+                if (!pendingExists) return false;
+            }
+
+            if (this.hasPendingChanges()) {
+                this.applyPendingChangesToLocal();
             }
 
             const ts = Date.now().toString();
+            if (this.lastPushTs === ts) return true;
+            this.lastPushTs = ts;
 
-            if (this.lastPushTs === ts) {
-                return true;
+            const storage = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (this.isAllowedStorageKey(key)) {
+                    storage[key] = localStorage.getItem(key);
+                }
             }
 
-            this.lastPushTs = ts;
+            const securePayload = await this.encryptCloudPayload({
+                storage,
+                events: this.getBoundedEvents()
+            });
 
             const payload = {
                 last_update_ts: ts,
                 last_update_date: this.getTodayKey(),
-                __events__: this.getBoundedEvents()
+                __pegasus_secure_v1: true,
+                secure_payload: securePayload
             };
-
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (this.isAllowedStorageKey(k)) {
-                    payload[k] = localStorage.getItem(k);
-                }
-            }
 
             const res = await fetch(
                 `https://api.jsonbin.io/v3/b/${this.config.binId}`,
@@ -371,15 +857,14 @@ const PegasusCloud = {
 
             if (!res.ok) throw new Error("Push failed");
 
-            this.safeSetLocal("pegasus_last_push", ts);
-            console.log("📤 CLOUD: Sync OK");
+            this.safeSetLocal(this.storage.lastPush, ts);
+            this.clearPendingChanges();
+            console.log("📤 CLOUD: Secure Sync OK");
             return true;
-
         } catch (e) {
             console.error("❌ PUSH ERROR:", e);
             finalStatus = navigator.onLine ? "error" : "offline";
             return false;
-
         } finally {
             this.isPushing = false;
             this.emitSyncStatus(finalStatus, true);
@@ -465,13 +950,13 @@ const PegasusCloud = {
                 return;
             }
 
-            this.pull(true);
+            this.syncNow(true);
         }, this.config.pullInterval);
     }
 };
 
 /* =========================
-   STORAGE INTERCEPTOR
+   STORAGE INTERCEPTORS
 ========================= */
 if (!window.originalSetItem) {
     window.originalSetItem = localStorage.setItem;
@@ -480,19 +965,33 @@ if (!window.originalSetItem) {
         window.originalSetItem.apply(this, arguments);
 
         if (!window.PegasusCloud?.isUnlocked) return;
+        if (window.PegasusCloud.isApplyingRemote) return;
         if (!window.PegasusCloud.isAllowedStorageKey(key)) return;
+        if (window.PegasusCloud.isInternalStorageKey(key)) return;
 
-        const internal = [
-            "pegasus_last_push",
-            "pegasus_vault_pin",
-            "pegasus_vault_time",
-            "pegasus_gemini_key",
-            "pegasus_openai_key",
-            "pegasus_openrouter_key"
-        ];
+        queueMicrotask(() => {
+            window.PegasusCloud.queuePendingChange(key, value, "set");
+            window.PegasusCloud.push();
+        });
+    };
+}
 
-        if (!internal.includes(key)) {
+if (!window.originalRemoveItem) {
+    window.originalRemoveItem = localStorage.removeItem;
+
+    localStorage.removeItem = function(key) {
+        const shouldQueue = (
+            window.PegasusCloud?.isUnlocked &&
+            !window.PegasusCloud.isApplyingRemote &&
+            window.PegasusCloud.isAllowedStorageKey(key) &&
+            !window.PegasusCloud.isInternalStorageKey(key)
+        );
+
+        window.originalRemoveItem.apply(this, arguments);
+
+        if (shouldQueue) {
             queueMicrotask(() => {
+                window.PegasusCloud.queuePendingChange(key, null, "remove");
                 window.PegasusCloud.push();
             });
         }
@@ -515,19 +1014,19 @@ window.addEventListener("storage", (e) => {
 ========================= */
 window.addEventListener("focus", () => {
     if (window.PegasusCloud?.isUnlocked && navigator.onLine) {
-        window.PegasusCloud.pull(true);
+        window.PegasusCloud.syncNow(true);
     }
 });
 
 document.addEventListener("visibilitychange", () => {
     if (!document.hidden && window.PegasusCloud?.isUnlocked && navigator.onLine) {
-        window.PegasusCloud.pull(true);
+        window.PegasusCloud.syncNow(true);
     }
 });
 
 window.addEventListener("online", () => {
     if (window.PegasusCloud?.isUnlocked) {
-        window.PegasusCloud.pull(true);
+        window.PegasusCloud.syncNow(true);
     }
 });
 
@@ -536,22 +1035,11 @@ window.addEventListener("offline", () => {
 });
 
 /* =========================
-   AUTO LOGIN
+   ENGINE ATTACH ONLY
 ========================= */
 window.addEventListener("load", () => {
     if (window.PegasusEngine && !PegasusCloud.engine) {
         PegasusCloud.attachEngine(window.PegasusEngine);
-    }
-
-    const pin = localStorage.getItem("pegasus_vault_pin");
-    const time = localStorage.getItem("pegasus_vault_time");
-
-    if (pin && time) {
-        const age = Date.now() - parseInt(time, 10);
-
-        if (age < 86400000) {
-            PegasusCloud.unlock(pin);
-        }
     }
 });
 

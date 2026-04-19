@@ -9,7 +9,6 @@ const CACHE_NAME = 'pegasus-shield-v3.6-DYNAMIC';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
-    './mobile.html',
     './mobile/mobile.html',
     './style.css',
     './app.js',
@@ -26,13 +25,10 @@ const ASSETS_TO_CACHE = [
     './protcrea.js',
     './cardio.js',
     './partner.js',
-    './muscleProgress.js',
     './debug.js',
     './settings.js',
-    './inventory.js',
     './aiHandler.js',
     './voice.js',
-    './videos/beep.mp3'
 ];
 
 /* =========================

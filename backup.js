@@ -26,7 +26,9 @@ window.exportPegasusData = async function() {
             )
         );
 
-        if (isOfficial || key.includes("ANGELOS") || key.startsWith("weight_")) {
+        const isBlocked = window.PegasusCloud?.isExportBlockedKey?.(key);
+
+        if (!isBlocked && (isOfficial || key.includes("ANGELOS") || key.startsWith("weight_"))) {
             data.localStorage[key] = val;
         }
     }

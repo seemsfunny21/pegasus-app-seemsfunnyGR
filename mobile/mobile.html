@@ -37,7 +37,10 @@
             <div style="font-size:35px; margin-bottom:15px;">🛡️</div>
             <div style="color:#00ff41; font-weight:900; margin-bottom:5px; letter-spacing:1px; font-size: 20px;">PEGASUS OS</div>
             <div style="color:#555; font-size: 10px; font-weight: 800; margin-bottom: 25px; letter-spacing: 2px;">ΑΣΦΑΛΗΣ ΤΑΥΤΟΠΟΙΗΣΗ</div>
-            <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px; border-color: #333; margin-bottom: 20px;" inputmode="numeric" maxlength="4" placeholder="••••">
+            <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px; border-color: #333; margin-bottom: 12px;" inputmode="numeric" maxlength="4" placeholder="••••">
+            <input type="password" id="masterKeyInput" style="font-size:14px; letter-spacing:2px; border-color:#333; margin-bottom: 12px; text-align:center;" autocomplete="off" placeholder="MASTER KEY">
+            <div style="color:#555; font-size:10px; font-weight:800; margin-bottom:12px; letter-spacing:1px;">PIN + MASTER KEY ΜΙΑ ΦΟΡΑ ΤΗΝ ΗΜΕΡΑ · ΕΠΑΝΑΦΟΡΑ ΜΕΤΑ ΤΙΣ 07:00</div>
+            <div id="pinError" style="color:#ff4444; font-size:11px; font-weight:800; min-height:14px; margin-bottom:12px;"></div>
             <button class="primary-btn" onclick="attemptVaultUnlock()" style="font-size: 14px; padding: 20px;">ΑΠΑΣΦΑΛΙΣΗ</button>
             <button class="secondary-btn" style="margin-top: 15px; border-color: #222; color: #555;" onclick="skipVault()">ΛΕΙΤΟΥΡΓΙΑ OFFLINE</button>
         </div>
@@ -651,7 +654,7 @@
         setSyncStatus('syncing');
 
         try {
-            const changed = await window.PegasusCloud.pull(true);
+            const changed = await window.PegasusCloud.syncNow(true);
 
             if (changed) {
                 refreshAllUI();
@@ -752,9 +755,22 @@
     });
 
     async function attemptVaultUnlock() {
-        const pin = document.getElementById("pinInput").value;
+        const pinInput = document.getElementById("pinInput");
+        const masterInput = document.getElementById("masterKeyInput");
+        const errorDiv = document.getElementById("pinError");
+        const pin = pinInput ? pinInput.value.trim() : "";
+        const masterKey = masterInput ? masterInput.value.trim() : "";
 
-        if (window.PegasusCloud && window.PegasusCloud.unlock(pin)) {
+        if (errorDiv) errorDiv.textContent = "";
+
+        if (!pin || !masterKey) {
+            if (errorDiv) errorDiv.textContent = "ΣΥΜΠΛΗΡΩΣΕ PIN ΚΑΙ MASTER KEY";
+            return;
+        }
+
+        const success = await window.PegasusCloud?.unlock(pin, masterKey);
+
+        if (success) {
             document.getElementById("pinModal").style.display = "none";
             isUnlocked = true;
 
@@ -762,8 +778,9 @@
             await runMobileSyncHeartbeat();
             startMobileSyncHeartbeat();
         } else {
-            alert("ΛΑΘΟΣ PIN");
-            document.getElementById("pinInput").value = "";
+            if (errorDiv) errorDiv.textContent = "ΛΑΘΟΣ PIN / MASTER KEY";
+            if (pinInput) pinInput.value = "";
+            if (masterInput) masterInput.value = "";
         }
     }
 
@@ -795,7 +812,9 @@
                 console.error("Hard Reset Cleanup Error:", e);
             }
 
-            localStorage.removeItem("pegasus_vault_pin");
+            if (window.PegasusCloud?.clearLocalSecurityState) {
+                window.PegasusCloud.clearLocalSecurityState();
+            }
             location.replace(location.pathname + '?v=' + Date.now());
         }
     }
@@ -804,7 +823,12 @@
         const backup = {};
         for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
-            if (k && (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_"))) {
+            if (!k) continue;
+
+            const shouldSkip = window.PegasusCloud?.isExportBlockedKey?.(k);
+            if (shouldSkip) continue;
+
+            if (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_") || k.startsWith("kouki_") || k.startsWith("weight_")) {
                 backup[k] = localStorage.getItem(k);
             }
         }
@@ -840,15 +864,14 @@
 
     (async function boot() {
         console.log("⚡ PEGASUS: Fast Boot...");
-        const pin = localStorage.getItem("pegasus_vault_pin");
 
         installMobileInventoryBridges();
         refreshAllUI();
         updateSuppUI();
 
-        if (pin && window.PegasusCloud) {
-            try {
-                const success = await window.PegasusCloud.unlock(pin);
+        try {
+            if (window.PegasusCloud?.canAutoUnlock?.()) {
+                const success = await window.PegasusCloud.tryAutoUnlock();
 
                 if (success) {
                     console.log("📡 Cloud Sync: Fully Connected.");
@@ -860,20 +883,20 @@
                         refreshAllUI();
                         updateSuppUI();
                     }, 500);
-                } else {
-                    isUnlocked = false;
-                    setSyncStatus('locked');
+                    return;
                 }
-            } catch (e) {
-                console.error("📡 Cloud Boot Error:", e);
-                isUnlocked = false;
-                setSyncStatus('locked');
             }
-        } else {
+
             const modal = document.getElementById("pinModal");
             if (modal) modal.style.display = "flex";
             isUnlocked = false;
             setSyncStatus('locked');
+        } catch (e) {
+            console.error("📡 Cloud Boot Error:", e);
+            isUnlocked = false;
+            setSyncStatus('locked');
+            const modal = document.getElementById("pinModal");
+            if (modal) modal.style.display = "flex";
         }
     })();
 </script>
