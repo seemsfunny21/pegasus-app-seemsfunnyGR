@@ -6,7 +6,16 @@
 (function() {
     const LIFTING_DATA_KEY = 'pegasus_lifting_v1';
 
-window.PegasusLifting = {
+    function getPegasusLiftingDateStr() {
+        if (typeof window.getPegasusTodayDateStr === "function") {
+            return window.getPegasusTodayDateStr();
+        }
+
+        const d = new Date();
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
+    window.PegasusLifting = {
         isLocked: false, // 🛡️ API SPAM GUARD
 
         addSet: function() {
@@ -24,10 +33,10 @@ window.PegasusLifting = {
             }
 
             let logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
-            
+
             const newEntry = {
                 id: 'lift_' + Date.now(),
-                date: new Date().toLocaleDateString('el-GR'),
+                date: getPegasusLiftingDateStr(),
                 timestamp: Date.now(),
                 exercise: exercise.toUpperCase(), // Κεφαλαία για ομοιομορφία
                 weight: weight,
@@ -39,12 +48,12 @@ window.PegasusLifting = {
             document.getElementById('liftWeight').value = '';
             document.getElementById('liftReps').value = '';
             // Κρατάμε το όνομα της άσκησης στο input γιατί συνήθως κάνουμε πολλαπλά σετ
-            
+
             this.saveAndRender(logs);
         },
 
         deleteSet: function(id) {
-            if(confirm('Διαγραφή αυτού του σετ;')) {
+            if (confirm('Διαγραφή αυτού του σετ;')) {
                 let logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
                 logs = logs.filter(l => l.id !== id);
                 this.saveAndRender(logs);
@@ -57,7 +66,7 @@ window.PegasusLifting = {
 
             // ☁️ REAL-TIME CLOUD TRIGGER
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-               window.PegasusCloud.push(true);
+                window.PegasusCloud.push(true);
             }
         }
     };
@@ -67,11 +76,11 @@ window.PegasusLifting = {
         const viewDiv = document.createElement('div');
         viewDiv.id = 'lifting';
         viewDiv.className = 'view';
-        
+
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div class="section-title">ΠΡΟΟΔΕΥΤΙΚΗ ΥΠΕΡΦΟΡΤΩΣΗ</div>
-            
+
             <div class="mini-card" style="background: rgba(15,15,15,0.95); padding: 20px; border: 1px solid var(--main); box-shadow: 0 0 15px rgba(0,255,65,0.1);">
                 <input type="text" id="liftName" placeholder="Άσκηση (π.χ. ΠΙΕΣΕΙΣ ΣΤΗΘΟΥΣ)" style="border: 2px solid #444; margin-bottom: 15px; text-transform: uppercase;">
                 <div class="compact-grid" style="margin-bottom: 15px;">
@@ -102,11 +111,11 @@ window.PegasusLifting = {
         if (!todayContainer || !historyContainer) return;
 
         const logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
-        const todayStr = new Date().toLocaleDateString('el-GR');
-        
+        const todayStr = getPegasusLiftingDateStr();
+
         let todayHtml = '';
         let historyHtml = '';
-        
+
         // Dictionary για να βρούμε την καλύτερη/τελευταία επίδοση ανά άσκηση στο παρελθόν
         let bestLifts = {};
 
@@ -157,12 +166,12 @@ window.PegasusLifting = {
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
         window.renderLiftingContent();
-        
+
         if (window.registerPegasusModule) {
-            window.registerPegasusModule({ 
-                id: 'lifting', 
-                label: 'Βάρη', 
-                icon: '🏋️‍♂️' 
+            window.registerPegasusModule({
+                id: 'lifting',
+                label: 'Βάρη',
+                icon: '🏋️‍♂️'
             });
         }
     });
