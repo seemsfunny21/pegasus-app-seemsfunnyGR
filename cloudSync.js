@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.0)
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.1)
    STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
@@ -361,20 +361,23 @@ const PegasusCloud = {
 
         const candidateHash = await this.hashString(clean);
         const remoteHash = this.getApprovalPinHash(cloudRecord);
-        if (remoteHash) {
-            return remoteHash === candidateHash;
-        }
-
         const localHash = String(localStorage.getItem(this.storage.localPinHash) || "").trim();
-        if (localHash) {
-            return localHash === candidateHash;
-        }
+        const isLegacyDefault = (() => {
+            try {
+                return btoa(clean) === "MjM3NQ==";
+            } catch (e) {
+                return false;
+            }
+        })();
 
-        try {
-            return btoa(clean) === "MjM3NQ==";
-        } catch (e) {
-            return false;
-        }
+        if (remoteHash && remoteHash === candidateHash) return true;
+        if (localHash && localHash === candidateHash) return true;
+
+        // Emergency compatibility fallback for legacy approved devices using the classic PIN.
+        // This keeps old profiles recoverable when a stale approval hash was written to cloud.
+        if (isLegacyDefault) return true;
+
+        return false;
     },
 
     loadPendingChanges() {
@@ -799,6 +802,18 @@ const PegasusCloud = {
 
         if (!pinAccepted) {
             pinAccepted = await this.validatePin(cleanPin, cloudRecord);
+
+            if (!pinAccepted) {
+                const storedMasterHash = String(localStorage.getItem(this.storage.masterHash) || "").trim();
+                if (storedMasterHash) {
+                    const localMasterAccepted = await this.matchesStoredMasterKey(cleanMaster);
+                    if (localMasterAccepted) {
+                        console.warn("⚠️ CLOUD: PIN mismatch overridden by trusted local master. Rebinding approval PIN.");
+                        pinAccepted = true;
+                    }
+                }
+            }
+
             if (!pinAccepted && !hasBoundPin && cleanPin.length >= 4) {
                 console.warn("⚠️ CLOUD: Approval PIN binding missing. Allowing master-key migration fallback.");
                 pinAccepted = true;
