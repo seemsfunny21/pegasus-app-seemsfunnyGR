@@ -7,8 +7,53 @@
 
 const PegasusMetabolic = {
     sessionKcal: 0,
+    unsubscribeEngine: null,
+
+    getEngineState: function() {
+        try {
+            return window.PegasusEngine?.getState?.() || null;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    isWorkoutRunning: function() {
+        const engineState = this.getEngineState();
+        if (!engineState) return false;
+
+        if (typeof engineState.workout?.running === "boolean") {
+            return engineState.workout.running;
+        }
+
+        return !!engineState.running;
+    },
+
+    getEngineSessionKcal: function() {
+        const engineState = this.getEngineState();
+        if (!engineState) return null;
+
+        if (typeof engineState.workout?.sessionKcal === "number") {
+            return engineState.workout.sessionKcal;
+        }
+
+        if (typeof engineState.sessionActiveKcal === "number") {
+            return engineState.sessionActiveKcal;
+        }
+
+        return null;
+    },
 
     get userWeight() {
+        const engineState = this.getEngineState();
+
+        if (typeof engineState?.user?.weight === "number" && !isNaN(engineState.user.weight)) {
+            return engineState.user.weight;
+        }
+
+        if (typeof engineState?.userWeight === "number" && !isNaN(engineState.userWeight)) {
+            return engineState.userWeight;
+        }
+
         return parseFloat(localStorage.getItem(window.PegasusManifest?.user?.weight || "pegasus_weight")) || 74;
     },
 
@@ -20,7 +65,7 @@ const PegasusMetabolic = {
             todayKcal: window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal",
             todayProtein: window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein",
             sessionKcal: window.PegasusManifest?.diet?.session_kcal || "pegasus_session_kcal",
-            weeklyKcal: window.PegasusManifest?.diet?.weekly_kcal || "pegasus_weekly_kcal",
+            weeklyKcal: window.PegasusManifest?.diet?.weeklyKcal || window.PegasusManifest?.diet?.weekly_kcal || "pegasus_weekly_kcal",
             workoutDone: window.PegasusManifest?.workout?.done || "pegasus_workouts_done",
             cardioOffsetLegacy: window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets",
             calendarHistory: window.PegasusManifest?.workout?.calendarHistory || "pegasus_calendar_history",
@@ -175,14 +220,17 @@ const PegasusMetabolic = {
     renderUI: function(sessionValue) {
         const keys = this.getKeys();
 
+        const engineSessionKcal = this.getEngineSessionKcal();
         const sVal = (sessionValue !== undefined)
             ? parseFloat(sessionValue)
-            : (parseFloat(localStorage.getItem(keys.sessionKcal)) || this.sessionKcal || 0);
+            : (engineSessionKcal !== null
+                ? parseFloat(engineSessionKcal || 0)
+                : (parseFloat(localStorage.getItem(keys.sessionKcal)) || this.sessionKcal || 0));
 
         const effectiveTarget = this.getEffectiveDailyTarget();
 
         const kcalDesktop = document.querySelector(".kcal-value");
-        const engineRunning = !!window.PegasusEngine?.getState?.().running;
+        const engineRunning = this.isWorkoutRunning();
 
         if (kcalDesktop && engineRunning) {
             kcalDesktop.textContent = sVal.toFixed(1);
@@ -203,6 +251,32 @@ const PegasusMetabolic = {
 
             kcalMobile.textContent = `${Math.round(consumed)} / ${Math.round(effectiveTarget)}`;
         }
+    },
+
+    attachEngineHooks: function() {
+        if (!window.PegasusEngine?.subscribe) return;
+        if (this.unsubscribeEngine) return;
+
+        this.unsubscribeEngine = window.PegasusEngine.subscribe((state, action) => {
+            const actionType = action?.type || "";
+
+            if (
+                actionType.startsWith("PHASE_") ||
+                actionType.startsWith("SET_") ||
+                actionType.startsWith("WORKOUT_") ||
+                actionType === "START_WORKOUT" ||
+                actionType === "PAUSE_WORKOUT" ||
+                actionType === "RESUME_FROM_PREP" ||
+                actionType === "SELECT_DAY" ||
+                actionType === "SYNC_WEIGHT" ||
+                actionType === "SYNC_TURBO" ||
+                actionType === "SYNC_MUTED" ||
+                actionType === "BOOT_COMPLETE" ||
+                actionType === "AUTO_INIT_TODAY"
+            ) {
+                this.renderUI();
+            }
+        });
     },
 
     /* =========================================================
@@ -254,4 +328,9 @@ window.getPegasusEffectiveDailyTarget = PegasusMetabolic.getEffectiveDailyTarget
 document.addEventListener('DOMContentLoaded', () => {
     PegasusMetabolic.syncStoredTargets();
     PegasusMetabolic.renderUI();
+
+    setTimeout(() => {
+        PegasusMetabolic.attachEngineHooks();
+        PegasusMetabolic.renderUI();
+    }, 200);
 });
