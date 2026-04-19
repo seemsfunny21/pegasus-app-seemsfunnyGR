@@ -163,6 +163,15 @@
                 applyHydrationSnapshot(next, action.payload);
                 break;
 
+            case "WORKOUT_SELECT_DAY_RUNTIME":
+            case "WORKOUT_START_RUNTIME":
+            case "WORKOUT_PAUSE_RUNTIME":
+            case "WORKOUT_NEXT_RUNTIME":
+            case "WORKOUT_SET_COMPLETED_RUNTIME":
+            case "WORKOUT_FINISH_RUNTIME":
+                applyHydrationSnapshot(next, action.payload);
+                break;
+
             case "SET_CURRENT_INDEX":
                 next.workout.currentIdx = action.payload?.currentIdx ?? next.workout.currentIdx;
                 break;
@@ -440,6 +449,30 @@
         };
     }
 
+    function selectDayRuntime(payload) {
+        return dispatch({ type: "WORKOUT_SELECT_DAY_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function startWorkoutRuntime(payload) {
+        return dispatch({ type: "WORKOUT_START_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function pauseWorkoutRuntime(payload) {
+        return dispatch({ type: "WORKOUT_PAUSE_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function nextExerciseRuntime(payload) {
+        return dispatch({ type: "WORKOUT_NEXT_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function completeSetRuntime(payload) {
+        return dispatch({ type: "WORKOUT_SET_COMPLETED_RUNTIME", payload: clone(payload || {}) });
+    }
+
+    function finishWorkoutRuntime(payload) {
+        return dispatch({ type: "WORKOUT_FINISH_RUNTIME", payload: clone(payload || {}) });
+    }
+
     window.PegasusEngine = {
         __isCoreEngine: true,
         dispatch,
@@ -452,6 +485,12 @@
         patchProgressRuntime,
         patchUserRuntime,
         patchSessionRuntime,
+        selectDayRuntime,
+        startWorkoutRuntime,
+        pauseWorkoutRuntime,
+        nextExerciseRuntime,
+        completeSetRuntime,
+        finishWorkoutRuntime,
         setSelectedDay,
         getSelectedDay,
         getProgressSnapshot,

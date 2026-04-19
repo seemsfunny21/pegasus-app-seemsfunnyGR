@@ -328,6 +328,22 @@ function syncPegasusSelectedDay(selectedDay) {
     });
 }
 
+function dispatchPegasusWorkoutAction(actionType, extra) {
+    const engine = getPegasusCoreEngine();
+    if (!engine) return null;
+
+    const payload = buildPegasusProgressPayload(extra);
+
+    if (actionType === "WORKOUT_SELECT_DAY_RUNTIME" && engine.selectDayRuntime) return engine.selectDayRuntime(payload);
+    if (actionType === "WORKOUT_START_RUNTIME" && engine.startWorkoutRuntime) return engine.startWorkoutRuntime(payload);
+    if (actionType === "WORKOUT_PAUSE_RUNTIME" && engine.pauseWorkoutRuntime) return engine.pauseWorkoutRuntime(payload);
+    if (actionType === "WORKOUT_NEXT_RUNTIME" && engine.nextExerciseRuntime) return engine.nextExerciseRuntime(payload);
+    if (actionType === "WORKOUT_SET_COMPLETED_RUNTIME" && engine.completeSetRuntime) return engine.completeSetRuntime(payload);
+    if (actionType === "WORKOUT_FINISH_RUNTIME" && engine.finishWorkoutRuntime) return engine.finishWorkoutRuntime(payload);
+
+    return null;
+}
+
 function isPegasusDomExerciseArray(value) {
     return Array.isArray(value) && value.length > 0 && value.every(item => item && typeof item.querySelector === "function" && item.classList);
 }
@@ -751,6 +767,7 @@ function selectDay(btn, day) {
 
     if (typeof calculateTotalTime === "function") calculateTotalTime(false);
     syncPegasusSelectedDay(day);
+    dispatchPegasusWorkoutAction("WORKOUT_SELECT_DAY_RUNTIME", { workout: { selectedDay: day } });
 
     setTimeout(() => { window.syncSessionWithHistory(); }, 50);
 
@@ -800,6 +817,7 @@ function startPause() {
     if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
 
     syncPegasusProgressRuntime();
+    dispatchPegasusWorkoutAction(running ? "WORKOUT_START_RUNTIME" : "WORKOUT_PAUSE_RUNTIME");
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     if (running) {
@@ -943,6 +961,7 @@ function runPhase() {
             if (phase === 0) {
                 phase = 1;
                 syncPegasusProgressRuntime();
+                dispatchPegasusWorkoutAction("WORKOUT_START_RUNTIME");
                 runPhase();
             } else if (phase === 1) {
                 let done = parseInt(e.dataset.done) || 0;
@@ -963,6 +982,7 @@ function runPhase() {
 
                 phase = 2;
                 syncPegasusProgressRuntime();
+                dispatchPegasusWorkoutAction("WORKOUT_SET_COMPLETED_RUNTIME");
                 runPhase();
             } else {
                 let next = getNextIndexCircuit();
@@ -970,6 +990,7 @@ function runPhase() {
                     currentIdx = next;
                     phase = 0;
                     syncPegasusProgressRuntime();
+                    dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
                     runPhase();
                 } else {
                     finishWorkout();
@@ -1013,6 +1034,7 @@ function skipToNextExercise() {
         currentIdx = nextIdx;
         phase = 0;
         syncPegasusProgressRuntime();
+        dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
         if (running) runPhase();
         else showVideo(currentIdx);
     } else {
@@ -1259,6 +1281,7 @@ function finishWorkout() {
     remainingSeconds = 0;
     updateTotalBar();
     syncPegasusProgressRuntime();
+    dispatchPegasusWorkoutAction("WORKOUT_FINISH_RUNTIME", { workout: { running: false }, timers: { remainingSeconds: 0, phaseRemainingSeconds: null } });
 
     const label = document.getElementById("phaseTimer");
     if (label) {
@@ -1614,6 +1637,7 @@ window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
     session: () => (typeof window.getPegasusSessionState === "function" ? window.getPegasusSessionState() : null),
     progress: () => (typeof window.getPegasusProgressState === "function" ? window.getPegasusProgressState() : null),
+    actions: () => ((window.PegasusEngine?.getEventBuffer ? window.PegasusEngine.getEventBuffer() : []).slice(-10).map(ev => ev.type)),
     workout: () => (window.PegasusEngine?.getWorkoutState ? window.PegasusEngine.getWorkoutState() : null),
     timers: () => (window.PegasusEngine?.getTimerState ? window.PegasusEngine.getTimerState() : null),
     user: () => (window.PegasusEngine?.getUserState ? window.PegasusEngine.getUserState() : null),
