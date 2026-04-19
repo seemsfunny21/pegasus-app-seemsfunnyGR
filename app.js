@@ -1061,7 +1061,24 @@ window.updateTotalWorkoutCount = function() {
 };
 
 /* ===== 11. BOOT SEQUENCE ===== */
-window.onload = () => {
+window.__pegasusBootStarted = window.__pegasusBootStarted || false;
+window.__pegasusBootCompleted = window.__pegasusBootCompleted || false;
+
+function hidePegasusLoader(force = false) {
+    const loader = document.getElementById('pegasus-loader');
+    if (!loader) return;
+
+    if (!force && !window.__pegasusBootCompleted) return;
+
+    loader.style.opacity = '0';
+    loader.style.visibility = 'hidden';
+    loader.style.pointerEvents = 'none';
+}
+
+function bootPegasusApp() {
+    if (window.__pegasusBootStarted) return;
+    window.__pegasusBootStarted = true;
+
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayObj = new Date();
     const todayName = greekDays[todayObj.getDay()];
@@ -1238,11 +1255,8 @@ window.onload = () => {
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
     setTimeout(() => {
-        const loader = document.getElementById('pegasus-loader');
-        if (loader) {
-            loader.style.opacity = '0';
-            loader.style.visibility = 'hidden';
-        }
+        window.__pegasusBootCompleted = true;
+        hidePegasusLoader(true);
 
         syncEngineFromLegacy("BOOT_COMPLETE", { selectedDay: todayName });
 
@@ -1252,7 +1266,25 @@ window.onload = () => {
 
         console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
     }, 1000);
-};
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootPegasusApp, { once: true });
+} else {
+    setTimeout(bootPegasusApp, 0);
+}
+
+window.addEventListener('load', () => {
+    if (!window.__pegasusBootStarted) bootPegasusApp();
+    setTimeout(() => hidePegasusLoader(true), 0);
+}, { once: true });
+
+setTimeout(() => {
+    if (!window.__pegasusBootCompleted) {
+        console.warn('⚠️ PEGASUS: Loader fallback release activated.');
+        hidePegasusLoader(true);
+    }
+}, 4500);
 
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
