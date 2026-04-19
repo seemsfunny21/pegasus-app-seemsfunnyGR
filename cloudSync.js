@@ -16,6 +16,7 @@ const PegasusCloud = {
     storage: {
         lastPush: "pegasus_last_push",
         validUntil: "pegasus_vault_valid_until",
+        masterHash: "pegasus_vault_master_hash",
         wrappedMaster: "pegasus_vault_master_wrapped",
         deviceSecret: "pegasus_vault_device_secret",
         pendingQueue: "pegasus_cloud_pending_v1",
@@ -71,7 +72,7 @@ const PegasusCloud = {
     },
 
     canAutoUnlock() {
-        return this.hasValidSession() && !!localStorage.getItem(this.storage.wrappedMaster);
+        return this.hasValidSession() && !!localStorage.getItem(this.storage.masterHash);
     },
 
     getSyncedExactKeys() {
@@ -144,6 +145,7 @@ const PegasusCloud = {
         return [
             this.storage.lastPush,
             this.storage.validUntil,
+            this.storage.masterHash,
             this.storage.wrappedMaster,
             this.storage.deviceSecret,
             this.storage.pendingQueue,
@@ -182,6 +184,7 @@ const PegasusCloud = {
     isExportBlockedKey(key) {
         if (!key) return true;
         if (this.isInternalStorageKey(key)) return true;
+        if (this.isLocalOnlyStorageKey(key)) return true;
         return false;
     },
 
@@ -220,6 +223,36 @@ const PegasusCloud = {
         } catch (e) {
             console.warn("⚠️ UI SAFE CALL ERROR:", e);
         }
+    },
+
+    async hashString(value) {
+        const input = String(value || "");
+
+        try {
+            if (globalThis.crypto?.subtle && typeof TextEncoder !== "undefined") {
+                const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+                return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+            }
+        } catch (e) {
+            console.warn("⚠️ CLOUD: subtle hash fallback.", e);
+        }
+
+        let hash = 5381;
+        for (let i = 0; i < input.length; i++) {
+            hash = ((hash << 5) + hash) ^ input.charCodeAt(i);
+        }
+        return `fallback_${(hash >>> 0).toString(16)}`;
+    },
+
+    async matchesStoredMasterKey(masterKey) {
+        const clean = String(masterKey || "").trim();
+        if (!clean) return false;
+
+        const storedHash = localStorage.getItem(this.storage.masterHash);
+        if (!storedHash) return true;
+
+        const incomingHash = await this.hashString(clean);
+        return storedHash === incomingHash;
     },
 
     async fetchLatestRecord() {
@@ -486,7 +519,17 @@ const PegasusCloud = {
 
     async extractCloudPayload(cloud) {
         if (cloud?.__pegasus_secure_v1 && cloud?.secure_payload) {
+            if (!this.masterKey) {
+                throw new Error("INVALID_MASTER_KEY");
+            }
             return this.decryptCloudPayload(cloud.secure_payload);
+        }
+
+        if (cloud?.__pegasus_plain_v2 && cloud?.storage && typeof cloud.storage === "object") {
+            return {
+                storage: cloud.storage,
+                events: Array.isArray(cloud?.__events__) ? cloud.__events__ : []
+            };
         }
 
         const storage = {};
@@ -513,6 +556,7 @@ const PegasusCloud = {
     clearLocalSecurityState(options = {}) {
         const preserveDeviceSecret = options.preserveDeviceSecret === true;
         const preserveWrappedMaster = options.preserveWrappedMaster === true;
+        const preserveMasterHash = options.preserveMasterHash !== false;
 
         this.safeRemoveLocal(this.storage.validUntil);
         this.safeRemoveLocal(this.storage.lastPush);
@@ -520,6 +564,7 @@ const PegasusCloud = {
         this.safeRemoveLocal(this.storage.legacyPin);
         this.safeRemoveLocal(this.storage.legacyTime);
 
+        if (!preserveMasterHash) this.safeRemoveLocal(this.storage.masterHash);
         if (!preserveWrappedMaster) this.safeRemoveLocal(this.storage.wrappedMaster);
         if (!preserveDeviceSecret) this.safeRemoveLocal(this.storage.deviceSecret);
 
@@ -532,16 +577,45 @@ const PegasusCloud = {
 
     async tryAutoUnlock() {
         if (!this.canAutoUnlock()) return false;
+        if (!localStorage.getItem(this.storage.masterHash)) return false;
 
-        const masterKey = await this.getStoredMasterKey();
-        if (!masterKey) return false;
+        const prevState = {
+            isUnlocked: this.isUnlocked,
+            hasSuccessfullyPulled: this.hasSuccessfullyPulled,
+            userKey: this.userKey,
+            masterKey: this.masterKey
+        };
 
-        return this.unlock("", masterKey, {
-            skipPinCheck: true,
-            storeWrappedMaster: false,
-            persistSession: false,
-            autoUnlock: true
-        });
+        this.userKey = this.config.encryptedPart;
+        this.isUnlocked = true;
+        this.masterKey = "";
+        this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
+
+        try {
+            if (navigator.onLine) {
+                await this.pull(true);
+            } else {
+                this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
+            }
+
+            this.startAutoSync();
+
+            if (navigator.onLine && this.hasPendingChanges()) {
+                await this._doPush();
+            }
+
+            console.log("🔓 CLOUD: Auto-unlocked");
+            this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
+            return true;
+        } catch (e) {
+            this.isUnlocked = prevState.isUnlocked;
+            this.hasSuccessfullyPulled = prevState.hasSuccessfullyPulled;
+            this.userKey = prevState.userKey;
+            this.masterKey = prevState.masterKey;
+            this.emitSyncStatus("locked", true);
+            console.warn("⚠️ CLOUD: Auto-unlock failed.", e);
+            return false;
+        }
     },
 
     /* =========================
@@ -552,7 +626,6 @@ const PegasusCloud = {
 
         const opts = {
             skipPinCheck: false,
-            storeWrappedMaster: true,
             persistSession: true,
             autoUnlock: false,
             ...options
@@ -564,6 +637,10 @@ const PegasusCloud = {
 
         const cleanMaster = String(masterKey || "").trim();
         if (!cleanMaster) return false;
+
+        const storedMasterHash = localStorage.getItem(this.storage.masterHash) || "";
+        const candidateMasterHash = await this.hashString(cleanMaster);
+        if (storedMasterHash && !(await this.matchesStoredMasterKey(cleanMaster))) return false;
 
         const prevState = {
             isUnlocked: this.isUnlocked,
@@ -591,8 +668,8 @@ const PegasusCloud = {
                 this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
             }
 
-            if (opts.storeWrappedMaster) {
-                await this.storeWrappedMaster(cleanMaster);
+            if (!storedMasterHash) {
+                this.safeSetLocal(this.storage.masterHash, candidateMasterHash);
             }
 
             if (opts.persistSession) {
@@ -601,7 +678,7 @@ const PegasusCloud = {
 
             this.startAutoSync();
 
-            if (navigator.onLine && this.hasPendingChanges()) {
+            if (navigator.onLine) {
                 await this._doPush();
             }
 
@@ -830,16 +907,12 @@ const PegasusCloud = {
                 }
             }
 
-            const securePayload = await this.encryptCloudPayload({
-                storage,
-                events: this.getBoundedEvents()
-            });
-
             const payload = {
                 last_update_ts: ts,
                 last_update_date: this.getTodayKey(),
-                __pegasus_secure_v1: true,
-                secure_payload: securePayload
+                __pegasus_plain_v2: true,
+                storage,
+                __events__: this.getBoundedEvents()
             };
 
             const res = await fetch(
