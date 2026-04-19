@@ -635,6 +635,12 @@ function selectDay(btn, day) {
     }, 150);
 }
 
+
+function isPegasusExerciseAvailable(idx) {
+    const ex = exercises[idx];
+    return !!(ex && ex.classList && !ex.classList.contains("exercise-skipped"));
+}
+
 /* ===== 5. WORKOUT ENGINE CORE (DYNAMIC TIMER PATCH) ===== */
 function startPause() {
     if (exercises.length === 0) return;
@@ -644,7 +650,7 @@ function startPause() {
     const isFreshStart = (currentIdx === 0 && phase === 0 && totalSeconds === remainingSeconds);
 
     if (!running) {
-        let firstAvailable = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx].classList.contains("exercise-skipped"));
+        let firstAvailable = remainingSets.findIndex((sets, idx) => sets > 0 && isPegasusExerciseAvailable(idx));
         if (isFreshStart) {
             if (firstAvailable !== -1) currentIdx = firstAvailable;
         } else if (exercises[currentIdx] && exercises[currentIdx].classList.contains("exercise-skipped")) {
@@ -990,7 +996,7 @@ function skipToNextExercise() {
 function getNextIndexCircuit() {
     for (let i = 1; i <= remainingSets.length; i++) {
         let idx = (currentIdx + i) % remainingSets.length;
-        if (remainingSets[idx] > 0 && !exercises[idx].classList.contains("exercise-skipped")) return idx;
+        if (remainingSets[idx] > 0 && isPegasusExerciseAvailable(idx)) return idx;
     }
     return -1;
 }
@@ -1613,6 +1619,11 @@ window.onload = () => {
 
         console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
     }, 1000);
+};
+
+
+window.getPegasusSessionState = window.getPegasusSessionState || function() {
+    return window.PegasusEngine?.getSessionSnapshot ? window.PegasusEngine.getSessionSnapshot() : null;
 };
 
 window.PegasusDebug = {
