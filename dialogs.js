@@ -190,6 +190,14 @@
     };
 
     window.alert = function(message) {
-        window.pegasusAlert(message);
+        return window.pegasusAlert(message);
+    };
+
+    window.confirm = function(message) {
+        return window.pegasusConfirm(message);
+    };
+
+    window.prompt = function(message, defaultValue) {
+        return window.pegasusPrompt(message, defaultValue);
     };
 })();

@@ -4,7 +4,8 @@
    ========================================================================== */
 
 (function() {
-    const LANG_KEY = 'pegasus_lang';
+    const LANG_KEY = 'pegasus_language';
+    const LEGACY_LANG_KEY = 'pegasus_lang';
     const exactPairs = [
         ['Προθέρμανση', 'Warmup'], ['Έναρξη', 'Start'], ['Παύση', 'Pause'], ['Συνέχεια', 'Continue'], ['Επόμενο', 'Next'],
         ['Ημερολόγιο', 'Calendar'], ['Επιτεύγματα', 'Achievements'], ['Διατροφή', 'Nutrition'], ['ΠΡΟΕΠΙΣΚΟΠΗΣΗ', 'PREVIEW'],
@@ -36,7 +37,7 @@
         ['ΠΙΝΑΚΙΔΑ', 'PLATE'], ['ΜΟΝΤΕΛΟ', 'MODEL'], ['VIN (ΠΛΑΙΣΙΟ)', 'VIN (CHASSIS)'], ['ΚΥΒΙΚΑ (cc)', 'ENGINE (cc)'], ['ΙΠΠΟΙ (hp)', 'HORSEPOWER (hp)'], ['ΛΗΞΗ ΑΣΦΑΛΕΙΑΣ', 'INSURANCE EXPIRY'],
         ['ΛΗΞΗ ΚΤΕΟ', 'KTEO EXPIRY'], ['ΕΠΟΜΕΝΟ SERVICE (KM)', 'NEXT SERVICE (KM)'], ['ΙΣΤΟΡΙΚΟ SERVICE', 'SERVICE HISTORY'], ['Εργασία (π.χ. Λάδια)', 'Task (e.g. Oil)'], ['Χιλιόμετρα', 'Kilometers'],
         ['Πληκτρολόγησε σημείωση...', 'Type note...'], ['ΠΡΟΣΘΗΚΗ ΣΗΜΕΙΩΣΗΣ', 'ADD NOTE'], ['Παρκινγκ: --', 'Parking: --'], ['ΠΑΡΚΙΝΓΚ: --', 'PARKING: --'],
-        ['TACTICAL DATA INTERFACE', 'TACTICAL DATA INTERFACE'], ['EXTENDED TACTICAL MODULES', 'EXTENDED TACTICAL MODULES']
+        ['TACTICAL DATA INTERFACE', 'TACTICAL DATA INTERFACE'], ['EXTENDED TACTICAL MODULES', 'EXTENDED TACTICAL MODULES'],
         ['Παρακαλώ επίλεξε πρώτα μια ημέρα!', 'Please select a day first!'], ['Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.', 'Error: dietAdvisor.js did not load correctly.'], ['Reporting Engine Offline', 'Reporting Engine Offline'],
         ['Δευτέρα','Monday'], ['Τρίτη','Tuesday'], ['Τετάρτη','Wednesday'], ['Πέμπτη','Thursday'], ['Παρασκευή','Friday'], ['Σάββατο','Saturday'], ['Κυριακή','Sunday'],
         ['ΔΕΥΤΕΡΑ','MONDAY'], ['ΤΡΙΤΗ','TUESDAY'], ['ΤΕΤΑΡΤΗ','WEDNESDAY'], ['ΠΕΜΠΤΗ','THURSDAY'], ['ΠΑΡΑΣΚΕΥΗ','FRIDAY'], ['ΣΑΒΒΑΤΟ','SATURDAY'], ['ΚΥΡΙΑΚΗ','SUNDAY']
@@ -56,10 +57,12 @@
         lookup.set(pair[1], idx);
     });
 
-    function getLanguage() { return localStorage.getItem(LANG_KEY) || 'gr'; }
+    function getLanguage() { return localStorage.getItem(LANG_KEY) || localStorage.getItem(LEGACY_LANG_KEY) || 'gr'; }
 
     function setLanguage(lang) {
-        localStorage.setItem(LANG_KEY, lang === 'en' ? 'en' : 'gr');
+        const safeLang = lang === 'en' ? 'en' : 'gr';
+        localStorage.setItem(LANG_KEY, safeLang);
+        localStorage.setItem(LEGACY_LANG_KEY, safeLang);
         applyLanguage();
     }
 
