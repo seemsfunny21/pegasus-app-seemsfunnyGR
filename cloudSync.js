@@ -780,6 +780,9 @@ const PegasusCloud = {
         const cleanMaster = String(masterKey || "").trim();
         if (!cleanMaster) return false;
 
+        const prevUserKey = this.userKey;
+        this.userKey = this.config.encryptedPart;
+
         let cloudRecord = null;
         if (navigator.onLine) {
             try {
@@ -789,20 +792,33 @@ const PegasusCloud = {
             }
         }
 
-        if (!opts.skipPinCheck && !(await this.validatePin(cleanPin, cloudRecord))) {
+        const remotePinHash = this.getApprovalPinHash(cloudRecord);
+        const localPinHash = String(localStorage.getItem(this.storage.localPinHash) || "").trim();
+        const hasBoundPin = !!(remotePinHash || localPinHash);
+        let pinAccepted = !!opts.skipPinCheck;
+
+        if (!pinAccepted) {
+            pinAccepted = await this.validatePin(cleanPin, cloudRecord);
+            if (!pinAccepted && !hasBoundPin && cleanPin.length >= 4) {
+                console.warn("⚠️ CLOUD: Approval PIN binding missing. Allowing master-key migration fallback.");
+                pinAccepted = true;
+            }
+        }
+
+        if (!pinAccepted) {
+            this.userKey = prevUserKey;
             return false;
         }
 
         const storedMasterHash = localStorage.getItem(this.storage.masterHash) || "";
         const candidateMasterHash = await this.hashString(cleanMaster);
         const candidatePinHash = cleanPin ? await this.hashString(cleanPin) : "";
-
-        if (storedMasterHash && !(await this.matchesStoredMasterKey(cleanMaster))) return false;
+        const storedMasterMatches = storedMasterHash ? (await this.matchesStoredMasterKey(cleanMaster)) : true;
 
         const prevState = {
             isUnlocked: this.isUnlocked,
             hasSuccessfullyPulled: this.hasSuccessfullyPulled,
-            userKey: this.userKey,
+            userKey: prevUserKey,
             masterKey: this.masterKey
         };
 
@@ -844,6 +860,9 @@ const PegasusCloud = {
                 await this._doPush();
             }
 
+            if (!storedMasterMatches) {
+                console.warn("⚠️ CLOUD: Stored master hash repaired from successful unlock.");
+            }
             console.log(opts.autoUnlock ? "🔓 CLOUD: Auto-unlocked" : "🔓 CLOUD: Unlocked");
             this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
             return true;
