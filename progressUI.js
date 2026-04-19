@@ -54,11 +54,8 @@ window.MuscleProgressUI = {
 
         return Array.from(activeExerciseElements)
             .map(el => {
-                const nameNode = el.querySelector(".exercise-name");
-                const internalName = nameNode?.dataset?.internalName || nameNode?.innerText?.trim() || "";
                 return {
-                    name: internalName,
-                    displayName: (typeof window.getPegasusExerciseDisplayName === "function") ? window.getPegasusExerciseDisplayName(internalName) : internalName,
+                    name: el.querySelector(".exercise-name")?.innerText?.trim() || "",
                     isSkipped: el.classList.contains("exercise-skipped")
                 };
             })
@@ -135,7 +132,7 @@ window.MuscleProgressUI = {
                         <img src="${imgPath}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='images/placeholder.jpg';">
                     </div>
                     <div style="color: #fff; font-size: 7.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px;">
-                        ${ex.displayName || ex.name}
+                        ${ex.name}
                     </div>
                 </div>`;
             });

@@ -55,7 +55,7 @@ window.saveCardioData = async function() {
     const kcal = parseFloat(rawKcal);
 
     if (isNaN(km) || isNaN(kcal) || km <= 0 || kcal <= 0) {
-        await window.pegasusAlert("PEGASUS STRICT: Συμπλήρωσε έγκυρα Χιλιόμετρα και Θερμίδες.");
+        alert("PEGASUS STRICT: Συμπλήρωσε έγκυρα Χιλιόμετρα και Θερμίδες.");
         return;
     }
 
@@ -135,7 +135,7 @@ window.saveCardioData = async function() {
     localStorage.setItem("pegasus_cardio_history", JSON.stringify(historyLog.slice(0, 50)));
 
     /* --- 5. UI REFRESH --- */
-    await window.pegasusAlert(`✅ ΚΑΤΑΧΩΡΗΘΗΚΕ!\nΘερμίδες: ${kcal} kcal\nLeveling: +18 σετ στα Πόδια.`);
+    alert(`✅ ΚΑΤΑΧΩΡΗΘΗΚΕ!\nΘερμίδες: ${kcal} kcal\nLeveling: +18 σετ στα Πόδια.`);
 
     window.PegasusCardio.close();
 

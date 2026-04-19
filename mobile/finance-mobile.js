@@ -88,7 +88,7 @@
             const amount = parseFloat(safeAmountStr);
 
             if (!desc || isNaN(amount) || amount <= 0) {
-                window.pegasusAlert("ΣΦΑΛΜΑ: Συμπληρώστε έγκυρη περιγραφή και ποσό.");
+                alert("ΣΦΑΛΜΑ: Συμπληρώστε έγκυρη περιγραφή και ποσό.");
                 this.isLocked = false; // Απελευθέρωση κλειδώματος σε περίπτωση σφάλματος
                 return;
             }
@@ -109,8 +109,8 @@
             this.saveAndRender(transactions);
         },
 
-        deleteTransaction: async function(id) {
-            if(await window.pegasusConfirm('Οριστική διαγραφή συναλλαγής;')) {
+        deleteTransaction: function(id) {
+            if(confirm('Οριστική διαγραφή συναλλαγής;')) {
                 let transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
                 transactions = transactions.filter(t => t.id !== id);
                 this.saveAndRender(transactions);

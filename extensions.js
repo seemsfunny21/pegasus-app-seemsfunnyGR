@@ -102,7 +102,7 @@ function showWeeklyPlanner() {
         html += `
             <div class="planner-item" style="display:flex; justify-content:space-between; align-items:center; background:#111; margin-bottom:8px; padding:10px; border-radius:5px; border-left:3px solid #4CAF50;">
                 <div style="flex:1;">
-                    <div style="color:#fff; font-size:11px; font-weight:bold;">${window.getPegasusFoodDisplayName ? window.getPegasusFoodDisplayName(item.name) : item.name}</div>
+                    <div style="color:#fff; font-size:11px; font-weight:bold;">${item.name}</div>
                     <div style="color:#4CAF50; font-size:10px; margin-top:3px;">${item.protein}g P | ${item.kcal} kcal</div>
                 </div>
                 <button class="planner-add-btn" onclick="addFromPlanner('${safeName}', ${item.kcal}, ${item.protein})" style="background:#4CAF50; color:#fff; border:none; border-radius:4px; width:30px; height:30px; cursor:pointer; font-weight:bold;">+</button>

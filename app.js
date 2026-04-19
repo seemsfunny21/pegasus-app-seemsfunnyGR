@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS WORKOUT ENGINE - v10.45 (SAFE BOOT / LOADER RELEASE PATCH)
+   PEGASUS WORKOUT ENGINE - v10.44 (EFFECTIVE TARGET UI PATCH)
    Protocol: Partial Session Memory + Auto-Sort + Smart Sync Logic
    Status: FINAL STABLE | EFFECTIVE KCAL TARGET UNIFIED
    ========================================================================== */
@@ -11,33 +11,6 @@ window.masterUI = window.masterUI || {};
 
 if (!M) {
     console.warn("⚠️ PEGASUS CRITICAL: Manifest not found during app.js boot.");
-}
-
-/* ===== 0. EMERGENCY LOADER RELEASE ===== */
-function forceHidePegasusLoaderNow() {
-    const loader = document.getElementById("pegasus-loader");
-    if (!loader) return;
-    loader.style.opacity = "0";
-    loader.style.visibility = "hidden";
-    loader.style.pointerEvents = "none";
-}
-
-window.__pegasusEmergencyLoaderReleaseScheduled = window.__pegasusEmergencyLoaderReleaseScheduled || false;
-if (!window.__pegasusEmergencyLoaderReleaseScheduled) {
-    window.__pegasusEmergencyLoaderReleaseScheduled = true;
-
-    setTimeout(() => {
-        if (!window.__pegasusBootCompleted) {
-            console.warn("⚠️ PEGASUS: Emergency loader release triggered.");
-            forceHidePegasusLoaderNow();
-        }
-    }, 3000);
-
-    window.addEventListener("pageshow", () => {
-        if (window.__pegasusBootCompleted) {
-            forceHidePegasusLoaderNow();
-        }
-    });
 }
 
 /* ===== 1. ISSUE LOGGER (DIAGNOSTIC MODE) ===== */
@@ -217,18 +190,6 @@ function restoreLegacyExerciseRefs(realExercises) {
     window.exercises = exercises;
 }
 
-function getPegasusInternalExerciseNameFromElement(node) {
-    if (!node) return "";
-    return node.dataset?.internalName || node.getAttribute?.("data-internal-name") || node.textContent?.trim() || "";
-}
-
-function getPegasusExerciseDisplayLabel(name) {
-    if (typeof window.getPegasusExerciseDisplayName === "function") {
-        return window.getPegasusExerciseDisplayName(name);
-    }
-    return name;
-}
-
 function syncEngineFromLegacy(actionType, extra) {
     const engine = getPegasusCoreEngine();
     if (!engine) return;
@@ -279,7 +240,7 @@ window.syncSessionWithHistory = function() {
     const targets = (typeof window.getDynamicTargets === "function") ? window.getDynamicTargets() : {};
 
     exercises.forEach((exDiv, i) => {
-        const exName = getPegasusInternalExerciseNameFromElement(exDiv.querySelector(".exercise-name"));
+        const exName = exDiv.querySelector(".exercise-name")?.textContent?.trim();
         const muscle = (window.exercisesDB?.find(e => e.name.trim() === exName))?.muscleGroup;
 
         if (muscle) {
@@ -404,12 +365,7 @@ function selectDay(btn, day) {
         `;
 
         const nameNode = d.querySelector(".exercise-name");
-        if (nameNode) {
-            nameNode.dataset.internalName = cleanName;
-            nameNode.dataset.i18nKind = "exercise";
-            nameNode.dataset.i18nSource = cleanName;
-            nameNode.textContent = getPegasusExerciseDisplayLabel(cleanName);
-        }
+        if (nameNode) nameNode.textContent = cleanName;
 
         const weightInputEl = d.querySelector(".weight-input");
         if (weightInputEl) {
@@ -1001,11 +957,7 @@ function finishWorkout() {
 
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
-    if (!activeBtn) {
-        if (typeof window.pegasusAlert === "function") window.pegasusAlert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
-        else alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
-        return;
-    }
+    if (!activeBtn) { if (window.pegasusAlert) window.pegasusAlert("Παρακαλώ επίλεξε πρώτα μια ημέρα!"); else alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!"); return; }
 
     const currentDay = activeBtn.id.replace('nav-', '');
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
@@ -1044,7 +996,7 @@ function openExercisePreview() {
         content.innerHTML += `
             <div class="preview-item">
                 <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';" alt="${cleanName}">
-                <p>${getPegasusExerciseDisplayLabel(cleanName)} (${ex.adjustedSets || ex.sets} set)</p>
+                <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
             </div>
         `;
     });
@@ -1092,256 +1044,198 @@ window.updateTotalWorkoutCount = function() {
 };
 
 /* ===== 11. BOOT SEQUENCE ===== */
-window.__pegasusBootStarted = window.__pegasusBootStarted || false;
-window.__pegasusBootCompleted = window.__pegasusBootCompleted || false;
+window.onload = () => {
+    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const todayObj = new Date();
+    const todayName = greekDays[todayObj.getDay()];
 
-function hidePegasusLoader(force = false) {
-    const loader = document.getElementById('pegasus-loader');
-    if (!loader) return;
+    if (todayName === "Δευτέρα") {
+        try {
+            const lastReset = localStorage.getItem('pegasus_last_reset');
+            const todayDateStr = window.getPegasusLocalDateKey();
+            if (lastReset !== todayDateStr) {
+                const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+                localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
+                localStorage.setItem('pegasus_weekly_kcal', "0.0");
+                localStorage.setItem('pegasus_last_reset', todayDateStr);
+                if (window.PegasusCloud?.push) window.PegasusCloud.push();
+            }
+        } catch (e) {
+            console.error("🛡️ PEGASUS RESET ERROR:", e);
+        }
+    }
 
-    if (!force && !window.__pegasusBootCompleted) return;
+    setTimeout(() => {
+        if (window.PegasusCloud?.getMasterWeight && window.PegasusWeight) {
+            window.PegasusWeight.alignWithCloud(window.PegasusCloud.getMasterWeight());
+        }
+    }, 2000);
 
-    loader.style.opacity = '0';
-    loader.style.visibility = 'hidden';
-    loader.style.pointerEvents = 'none';
-}
+    if (typeof emailjs !== 'undefined') emailjs.init('qsfyDrneUHP7zEFui');
 
-function bootPegasusApp() {
-    if (window.__pegasusBootStarted) return;
-    window.__pegasusBootStarted = true;
+    const importInput = document.getElementById('importFileTools');
+    if (importInput) importInput.onchange = (e) => window.importPegasusData(e);
 
-    try {
-        const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-        const todayObj = new Date();
-        const todayName = greekDays[todayObj.getDay()];
+    createNavbar();
+    if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
+    if (window.updateKoukiBalance) window.updateKoukiBalance();
 
-        if (todayName === "Δευτέρα") {
-            try {
-                const lastReset = localStorage.getItem('pegasus_last_reset');
-                const todayDateStr = window.getPegasusLocalDateKey();
-                if (lastReset !== todayDateStr) {
-                    const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-                    localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
-                    localStorage.setItem('pegasus_weekly_kcal', "0.0");
-                    localStorage.setItem('pegasus_last_reset', todayDateStr);
-                    if (window.PegasusCloud?.push) window.PegasusCloud.push();
+    if (typeof window.calculatePegasusDailyTarget === "function") {
+        window.calculatePegasusDailyTarget();
+    } else if (typeof window.updateKcalUI === "function") {
+        window.updateKcalUI();
+    }
+
+    window.masterUI = {
+        "btnStart": startPause,
+        "btnNext": skipToNextExercise,
+        "btnWarmup": () => {
+            const vid = document.getElementById("video");
+            if (!vid) return;
+            if (!vid.src.includes("warmup.mp4")) {
+                vid.pause();
+                vid.src = "videos/warmup.mp4";
+                vid.load();
+                vid.play().catch(e => console.log(e));
+            } else {
+                vid.pause();
+                if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
+                    window.currentIdx = 0;
+                    window.phase = 0;
+                    syncEngineFromLegacy("WARMUP_RETURN");
+                    window.showVideo(0);
                 }
-            } catch (e) {
-                console.error("🛡️ PEGASUS RESET ERROR:", e);
+            }
+        },
+        "btnTurboTools": () => {
+            window.TURBO_MODE = !window.TURBO_MODE;
+            window.SPEED = window.TURBO_MODE ? 10 : 1;
+            TURBO_MODE = window.TURBO_MODE;
+            SPEED = window.SPEED;
+            syncEngineFromLegacy("SYNC_TURBO");
+
+            const btn = document.getElementById('btnTurboTools');
+            if (btn) {
+                btn.textContent = window.TURBO_MODE ? "🚀 TURBO: ΕΝΕΡΓΟ" : "🚀 TURBO: ΑΝΕΝΕΡΓΟ";
+                btn.style.color = window.TURBO_MODE ? "#ff4444" : "#4CAF50";
+            }
+        },
+        "btnMuteTools": () => {
+            window.muted = !window.muted;
+            muted = window.muted;
+            syncEngineFromLegacy("SYNC_MUTED");
+
+            const btn = document.getElementById('btnMuteTools');
+            if (btn) {
+                btn.textContent = window.muted ? "🔇 ΗΧΟΣ: ΣΙΓΑΣΗ" : "🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ";
+                btn.style.color = window.muted ? "#888" : "#4CAF50";
+            }
+        },
+        "btnPartnerMode": () => {
+            if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode();
+        },
+        "btnImportData": () => {
+            const f = document.getElementById('importFileTools');
+            if (f) f.click();
+        },
+        "btnExportData": () => {
+            if (window.exportPegasusData) window.exportPegasusData();
+        },
+        "btnMasterVault": () => {
+            const m = document.getElementById('pinModal');
+            if (m) m.style.display = 'flex';
+        },
+        "btnPlanSelector": { panel: "planModal", init: null },
+        "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
+        "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
+        "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
+        "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
+        "btnProposalsUI": () => {
+            if (window.PegasusDietAdvisor?.renderAdvisorUI) window.renderAdvisorUI();
+            else { if (window.pegasusAlert) window.pegasusAlert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); }
+        },
+        "btnToolsUI": { panel: "toolsPanel", init: null },
+        "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview },
+        "btnOpenGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
+        "btnCardio": { panel: "cardioPanel", init: () => { if (window.PegasusCardio) window.PegasusCardio.open(); } },
+        "btnEMS": { panel: "emsModal", init: window.logEMSData },
+        "btnManualEmail": () => {
+            if (window.PegasusReporting?.checkAndSendMorningReport) window.PegasusReporting.checkAndSendMorningReport(true);
+            else { if (window.pegasusAlert) window.pegasusAlert("Reporting Engine Offline"); else alert("Reporting Engine Offline"); }
+        },
+        "btnSaveSettings": () => {
+            if (typeof window.savePegasusSettingsGlobal === "function") {
+                window.savePegasusSettingsGlobal();
+            } else {
+                const weightVal = document.getElementById("userWeightInput")?.value || 74;
+                if (window.PegasusWeight?.save) window.PegasusWeight.save(weightVal);
+                else localStorage.setItem(P_M?.user?.weight || "pegasus_weight", weightVal);
+                if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
+                setTimeout(() => { location.reload(); }, 300);
             }
         }
+    };
 
-        setTimeout(() => {
-            try {
-                if (window.PegasusCloud?.getMasterWeight && window.PegasusWeight) {
-                    window.PegasusWeight.alignWithCloud(window.PegasusCloud.getMasterWeight());
+    Object.keys(window.masterUI).forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const target = window.masterUI[btnId];
+
+                if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
+                    document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
                 }
-            } catch (e) {
-                console.warn("⚠️ PEGASUS WEIGHT CLOUD ALIGN FAILED:", e);
-            }
-        }, 2000);
 
-        if (typeof emailjs !== 'undefined') {
-            try {
-                emailjs.init('qsfyDrneUHP7zEFui');
-            } catch (e) {
-                console.warn("⚠️ EMAILJS INIT FAILED:", e);
+                if (typeof target === 'function') {
+                    target();
+                } else if (target && target.panel) {
+                    const el = document.getElementById(target.panel);
+                    if (el) {
+                        el.style.display = "block";
+                        if (target.init) target.init();
+                    }
+                }
+            };
+        }
+    });
+
+    setTimeout(() => {
+        document.querySelectorAll(".navbar button").forEach(b => {
+            if (b.id.replace('nav-', '') === todayName) {
+                if (typeof selectDay === "function") {
+                    selectDay(b, todayName);
+                    setTimeout(() => {
+                        if (typeof exercises !== 'undefined') {
+                            currentIdx = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx]?.classList.contains("exercise-skipped"));
+                            if (currentIdx === -1) currentIdx = 0;
+                            syncEngineFromLegacy("AUTO_INIT_TODAY", { selectedDay: todayName });
+                            console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
+                        }
+                    }, 150);
+                }
             }
+        });
+    }, 400);
+
+    if (window.PegasusUI?.init) window.PegasusUI.init();
+
+    setTimeout(() => {
+        const loader = document.getElementById('pegasus-loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            loader.style.visibility = 'hidden';
         }
 
-        const importInput = document.getElementById('importFileTools');
-        if (importInput) importInput.onchange = (e) => window.importPegasusData?.(e);
+        syncEngineFromLegacy("BOOT_COMPLETE", { selectedDay: todayName });
 
-        createNavbar();
-        if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
-        if (window.updateKoukiBalance) window.updateKoukiBalance();
-
-        if (typeof window.calculatePegasusDailyTarget === "function") {
-            window.calculatePegasusDailyTarget();
-        } else if (typeof window.updateKcalUI === "function") {
+        if (typeof window.updateKcalUI === "function") {
             window.updateKcalUI();
         }
 
-        window.masterUI = {
-            "btnStart": startPause,
-            "btnNext": skipToNextExercise,
-            "btnWarmup": () => {
-                const vid = document.getElementById("video");
-                if (!vid) return;
-                if (!vid.src.includes("warmup.mp4")) {
-                    vid.pause();
-                    vid.src = "videos/warmup.mp4";
-                    vid.load();
-                    vid.play().catch(e => console.log(e));
-                } else {
-                    vid.pause();
-                    if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
-                        window.currentIdx = 0;
-                        window.phase = 0;
-                        syncEngineFromLegacy("WARMUP_RETURN");
-                        window.showVideo(0);
-                    }
-                }
-            },
-            "btnTurboTools": () => {
-                window.TURBO_MODE = !window.TURBO_MODE;
-                window.SPEED = window.TURBO_MODE ? 10 : 1;
-                TURBO_MODE = window.TURBO_MODE;
-                SPEED = window.SPEED;
-                syncEngineFromLegacy("SYNC_TURBO");
-
-                const btn = document.getElementById('btnTurboTools');
-                if (btn) {
-                    btn.textContent = window.TURBO_MODE ? "🚀 TURBO: ΕΝΕΡΓΟ" : "🚀 TURBO: ΑΝΕΝΕΡΓΟ";
-                    btn.style.color = window.TURBO_MODE ? "#ff4444" : "#4CAF50";
-                }
-            },
-            "btnMuteTools": () => {
-                window.muted = !window.muted;
-                muted = window.muted;
-                syncEngineFromLegacy("SYNC_MUTED");
-
-                const btn = document.getElementById('btnMuteTools');
-                if (btn) {
-                    btn.textContent = window.muted ? "🔇 ΗΧΟΣ: ΣΙΓΑΣΗ" : "🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ";
-                    btn.style.color = window.muted ? "#888" : "#4CAF50";
-                }
-            },
-            "btnPartnerMode": () => {
-                if (typeof window.togglePartnerMode === 'function') window.togglePartnerMode();
-            },
-            "btnImportData": () => {
-                const f = document.getElementById('importFileTools');
-                if (f) f.click();
-            },
-            "btnExportData": () => {
-                if (window.exportPegasusData) window.exportPegasusData();
-            },
-            "btnMasterVault": () => {
-                const m = document.getElementById('pinModal');
-                if (m) m.style.display = 'flex';
-            },
-            "btnPlanSelector": { panel: "planModal", init: null },
-            "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
-            "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
-            "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
-            "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
-            "btnProposalsUI": () => {
-                if (window.PegasusDietAdvisor?.renderAdvisorUI) window.renderAdvisorUI();
-                else {
-                    if (typeof window.pegasusAlert === "function") window.pegasusAlert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.");
-                    else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.");
-                }
-            },
-            "btnToolsUI": { panel: "toolsPanel", init: null },
-            "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview },
-            "btnOpenGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
-            "btnCardio": { panel: "cardioPanel", init: () => { if (window.PegasusCardio) window.PegasusCardio.open(); } },
-            "btnEMS": { panel: "emsModal", init: window.logEMSData },
-            "btnManualEmail": () => {
-                if (window.PegasusReporting?.checkAndSendMorningReport) window.PegasusReporting.checkAndSendMorningReport(true);
-                else {
-                    if (typeof window.pegasusAlert === "function") window.pegasusAlert("Reporting Engine Offline");
-                    else alert("Reporting Engine Offline");
-                }
-            },
-            "btnSaveSettings": () => {
-                if (typeof window.savePegasusSettingsGlobal === "function") {
-                    window.savePegasusSettingsGlobal();
-                } else {
-                    const weightVal = document.getElementById("userWeightInput")?.value || 74;
-                    if (window.PegasusWeight?.save) window.PegasusWeight.save(weightVal);
-                    else localStorage.setItem(P_M?.user?.weight || "pegasus_weight", weightVal);
-                    if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
-                    setTimeout(() => { location.reload(); }, 300);
-                }
-            }
-        };
-
-        Object.keys(window.masterUI).forEach(btnId => {
-            const btn = document.getElementById(btnId);
-            if (btn) {
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    const target = window.masterUI[btnId];
-
-                    if (!btnId.includes("Save") && !btnId.includes("Start") && btnId !== "btnProposalsUI") {
-                        document.querySelectorAll('.pegasus-panel, #emsModal').forEach(p => p.style.display = "none");
-                    }
-
-                    if (typeof target === 'function') {
-                        target();
-                    } else if (target && target.panel) {
-                        const el = document.getElementById(target.panel);
-                        if (el) {
-                            el.style.display = "block";
-                            if (target.init) target.init();
-                        }
-                    }
-                };
-            }
-        });
-
-        setTimeout(() => {
-            document.querySelectorAll(".navbar button").forEach(b => {
-                if (b.id.replace('nav-', '') === todayName) {
-                    if (typeof selectDay === "function") {
-                        selectDay(b, todayName);
-                        setTimeout(() => {
-                            if (typeof exercises !== 'undefined') {
-                                currentIdx = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx]?.classList.contains("exercise-skipped"));
-                                if (currentIdx === -1) currentIdx = 0;
-                                syncEngineFromLegacy("AUTO_INIT_TODAY", { selectedDay: todayName });
-                                console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
-                            }
-                        }, 150);
-                    }
-                }
-            });
-        }, 400);
-
-        if (window.PegasusUI?.init) window.PegasusUI.init();
-
-        setTimeout(() => {
-            window.__pegasusBootCompleted = true;
-            hidePegasusLoader(true);
-
-            syncEngineFromLegacy("BOOT_COMPLETE", { selectedDay: todayName });
-
-            if (typeof window.updateKcalUI === "function") {
-                window.updateKcalUI();
-            }
-
-            console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
-        }, 1000);
-
-    } catch (bootError) {
-        console.error("❌ PEGASUS BOOT FAILURE:", bootError);
-        window.__pegasusBootCompleted = true;
-        hidePegasusLoader(true);
-    }
-}
-
-window.forcePegasusBoot = bootPegasusApp;
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootPegasusApp, { once: true });
-} else {
-    setTimeout(bootPegasusApp, 0);
-}
-
-window.addEventListener('load', () => {
-    if (!window.__pegasusBootStarted) bootPegasusApp();
-    setTimeout(() => hidePegasusLoader(true), 0);
-}, { once: true });
-
-setTimeout(() => {
-    if (!window.__pegasusBootCompleted) {
-        console.warn('⚠️ PEGASUS: Loader fallback release activated.');
-        window.__pegasusBootCompleted = true;
-        hidePegasusLoader(true);
-    }
-}, 4500);
+        console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
+    }, 1000);
+};
 
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),

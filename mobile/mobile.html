@@ -56,9 +56,9 @@
             </div>
 
             <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">▶</button>
-            <button id="btnLangToggleMobile" class="secondary-btn mobile-lang-btn">🌐 GR / EN</button>
         </div>
 
+        <button id="btnLangToggle" class="secondary-btn pegasus-lang-toggle" style="margin-bottom:12px; width:100%;">GR / EN</button>
         <div id="dynamic-grid" class="dynamic-grid"></div>
         <div id="settings-anchor"></div>
     </div>
@@ -762,7 +762,7 @@
             await runMobileSyncHeartbeat();
             startMobileSyncHeartbeat();
         } else {
-            await window.pegasusAlert("ΛΑΘΟΣ PIN");
+            alert("ΛΑΘΟΣ PIN");
             document.getElementById("pinInput").value = "";
         }
     }
@@ -776,7 +776,7 @@
     }
 
     async function hardResetSystem() {
-        if (await window.pegasusConfirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
+        if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
             try {
                 stopMobileSyncHeartbeat();
 
@@ -823,16 +823,16 @@
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = async (event) => {
+        reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (await window.pegasusConfirm("🚨 Επαναφορά δεδομένων;")) {
+                if (confirm("🚨 Επαναφορά δεδομένων;")) {
                     localStorage.clear();
                     Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
                     location.reload();
                 }
             } catch (err) {
-                await window.pegasusAlert("❌ Μη έγκυρο αρχείο.");
+                alert("❌ Μη έγκυρο αρχείο.");
             }
         };
         reader.readAsText(file);

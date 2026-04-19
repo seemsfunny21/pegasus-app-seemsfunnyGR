@@ -26,7 +26,7 @@
             const days = parseInt(document.getElementById('maintDays').value);
 
             if(!label || isNaN(days)) {
-                window.pegasusAlert('ΣΦΑΛΜΑ: Εισάγετε Περιγραφή και Συχνότητα (Ημέρες).');
+                alert('ΣΦΑΛΜΑ: Εισάγετε Περιγραφή και Συχνότητα (Ημέρες).');
                 return;
             }
 
@@ -55,8 +55,8 @@
             this.saveAndRender(tasks);
         },
 
-        deleteTask: async function(id) {
-            if(await window.pegasusConfirm('Οριστική διαγραφή αυτού του καθήκοντος;')) {
+        deleteTask: function(id) {
+            if(confirm('Οριστική διαγραφή αυτού του καθήκοντος;')) {
                 let tasks = JSON.parse(localStorage.getItem(MAINTENANCE_DATA_KEY)) || [];
                 tasks = tasks.filter(t => t.id !== id);
                 this.saveAndRender(tasks);

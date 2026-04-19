@@ -24,7 +24,7 @@ window.togglePartnerMode = function() {
         let upperName = rawName.toLocaleUpperCase('el-GR');
 
         if (rawName === "" || upperName === "ANGELOS" || upperName === "ΑΓΓΕΛΟΣ" || upperName === "ZZ") {
-            window.pegasusAlert("PEGASUS STRICT: Γράψε ένα έγκυρο όνομα συνεργάτη!");
+            alert("PEGASUS STRICT: Γράψε ένα έγκυρο όνομα συνεργάτη!");
             return;
         }
 

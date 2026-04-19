@@ -62,7 +62,7 @@
             const title = titleInput ? titleInput.value : "";
 
             if(!title || title.trim() === '') {
-                window.pegasusAlert('Παρακαλώ εισάγετε τον τίτλο του στόχου.');
+                alert('Παρακαλώ εισάγετε τον τίτλο του στόχου.');
                 return;
             }
 
@@ -81,8 +81,8 @@
             if(titleInput) titleInput.value = '';
         },
 
-        deleteMission: async function(id) {
-            if(await window.pegasusConfirm('Διαγραφή αυτού του Ημερήσιου Στόχου;')) {
+        deleteMission: function(id) {
+            if(confirm('Διαγραφή αυτού του Ημερήσιου Στόχου;')) {
                 let missions = JSON.parse(localStorage.getItem(MISSIONS_DATA_KEY)) || [];
                 missions = missions.filter(m => m.id !== id);
                 this.saveAndRender(missions);

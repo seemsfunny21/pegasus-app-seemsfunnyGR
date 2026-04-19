@@ -62,11 +62,11 @@
             this.saveAndRender(supplies);
         },
 
-        setManualAmount: async function(id) {
+        setManualAmount: function(id) {
             let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
             const idx = supplies.findIndex(i => i.id === id);
             
-            const newVal = await window.pegasusPrompt(`Ενημέρωση αποθέματος για: ${supplies[idx].label} (${supplies[idx].unit})`, supplies[idx].amount);
+            const newVal = prompt(`Ενημέρωση αποθέματος για: ${supplies[idx].label} (${supplies[idx].unit})`, supplies[idx].amount);
             
             if (newVal !== null && !isNaN(newVal) && newVal.trim() !== '') {
                 supplies[idx].amount = parseFloat(newVal);
@@ -74,8 +74,8 @@
             }
         },
 
-        deleteItem: async function(id) {
-            if(await window.pegasusConfirm('Διαγραφή αυτού του προϊόντος από τη βάση;')) {
+        deleteItem: function(id) {
+            if(confirm('Διαγραφή αυτού του προϊόντος από τη βάση;')) {
                 let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
                 supplies = supplies.filter(i => i.id !== id);
                 this.saveAndRender(supplies);
@@ -104,7 +104,7 @@
             const portion = parseFloat(document.getElementById('newPortion').value);
 
             if(!label || isNaN(refill) || isNaN(portion)) {
-                window.pegasusAlert('Παρακαλώ συμπληρώστε Όνομα, Σύνολο Αγοράς και Δόση Κατανάλωσης.');
+                alert('Παρακαλώ συμπληρώστε Όνομα, Σύνολο Αγοράς και Δόση Κατανάλωσης.');
                 return;
             }
 

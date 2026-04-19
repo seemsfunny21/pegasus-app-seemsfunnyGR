@@ -28,7 +28,7 @@
             const reps = parseInt(document.getElementById('liftReps').value);
 
             if (!exercise || isNaN(weight) || isNaN(reps)) {
-                window.pegasusAlert("ΣΦΑΛΜΑ: Συμπλήρωσε Άσκηση, Κιλά και Επαναλήψεις.");
+                alert("ΣΦΑΛΜΑ: Συμπλήρωσε Άσκηση, Κιλά και Επαναλήψεις.");
                 return;
             }
 
@@ -52,8 +52,8 @@
             this.saveAndRender(logs);
         },
 
-        deleteSet: async function(id) {
-            if (await window.pegasusConfirm('Διαγραφή αυτού του σετ;')) {
+        deleteSet: function(id) {
+            if (confirm('Διαγραφή αυτού του σετ;')) {
                 let logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
                 logs = logs.filter(l => l.id !== id);
                 this.saveAndRender(logs);

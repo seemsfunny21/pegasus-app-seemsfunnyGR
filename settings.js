@@ -163,7 +163,7 @@ window.initSettingsUI = function() {
 /**
  * 4. MASTER SAVE LOGIC (Cross-File Impact Audit Compliant)
  */
-window.savePegasusSettingsGlobal = async function() {
+window.savePegasusSettingsGlobal = function() {
     try {
         const u = M?.user || {};
         const d = M?.diet || {};
@@ -226,11 +226,11 @@ window.savePegasusSettingsGlobal = async function() {
 
         if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
 
-        await window.pegasusAlert("✅ Pegasus Settings: Συγχρονισμός ολοκληρώθηκε!");
+        alert("✅ Pegasus Settings: Συγχρονισμός ολοκληρώθηκε!");
         location.reload();
     } catch (err) {
         console.error("❌ PEGASUS SAVE FAILURE:", err);
-        await window.pegasusAlert("Κρίσιμο σφάλμα κατά την αποθήκευση.");
+        alert("Κρίσιμο σφάλμα κατά την αποθήκευση.");
     }
 };
 

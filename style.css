@@ -117,19 +117,6 @@ input[type="number"], input[type="text"], input[type="password"] {
 .p-btn { cursor: pointer; text-decoration: none; }
 .p-btn:hover { background: #4CAF50; color: #000; box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
 
-.p-btn-lang {
-    min-width: 92px;
-    font-weight: 900;
-    letter-spacing: 0.6px;
-}
-
-.mobile-lang-btn {
-    margin-left: 6px;
-    height: 40px;
-    padding: 0 10px;
-    align-self: center;
-}
-
 #totalProgressContainer { width: 130px; padding: 0; position: relative; overflow: hidden; flex-shrink: 0; }
 #totalProgress { height: 100%; width: 0%; background: rgba(76, 175, 80, 0.3); transition: width 0.3s ease; }
 #totalProgressTime { position: absolute; width: 100%; text-align: center; line-height: 38px; font-weight: bold; color: #fff; z-index: 1; }

@@ -1,8 +1,7 @@
 /* ==========================================================================
-   PEGASUS UI DIALOGS - v1.0
+   PEGASUS UI DIALOGS - v1.1 SAFE
    Protocol: Themed Alerts / Confirms / Prompts
    ========================================================================== */
-
 (function() {
     if (window.pegasusAlert && window.pegasusConfirm && window.pegasusPrompt) return;
 
@@ -10,7 +9,9 @@
     let activeResolver = null;
 
     function tr(text) {
-        if (window.PegasusI18n?.translateLoose) return window.PegasusI18n.translateLoose(text);
+        try {
+            if (window.PegasusI18n?.translateLoose) return window.PegasusI18n.translateLoose(text);
+        } catch (e) {}
         return text;
     }
 
@@ -189,15 +190,7 @@
         });
     };
 
-    window.alert = function(message) {
-        return window.pegasusAlert(message);
-    };
-
-    window.confirm = function(message) {
-        return window.pegasusConfirm(message);
-    };
-
-    window.prompt = function(message, defaultValue) {
-        return window.pegasusPrompt(message, defaultValue);
-    };
+    window.alert = function(message) { return window.pegasusAlert(message); };
+    window.confirm = function(message) { return window.pegasusConfirm(message); };
+    window.prompt = function(message, defaultValue) { return window.pegasusPrompt(message, defaultValue); };
 })();

@@ -121,7 +121,7 @@ window.GalleryEngine = {
             this.selectedPhotos.push({ src, date });
             this.updateComparisonUI();
         } else {
-            window.pegasusAlert("PEGASUS STRICT: Μπορείς να συγκρίνεις μόνο 2 φωτογραφίες τη φορά.");
+            alert("PEGASUS STRICT: Μπορείς να συγκρίνεις μόνο 2 φωτογραφίες τη φορά.");
         }
     },
 
@@ -153,7 +153,7 @@ window.GalleryEngine = {
     },
 
     async delete(id) {
-        if (!await window.pegasusConfirm("🚨 ΕΠΙΒΕΒΑΙΩΣΗ: Οριστική διαγραφή φωτογραφίας;")) return;
+        if (!confirm("🚨 ΕΠΙΒΕΒΑΙΩΣΗ: Οριστική διαγραφή φωτογραφίας;")) return;
         
         // 🎯 FIXED: Proper Promise wrapper for IndexedDB Delete
         await new Promise((resolve, reject) => {

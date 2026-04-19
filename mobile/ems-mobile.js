@@ -79,7 +79,7 @@ window.PegasusEMS = {
         // --- 3. FINAL SAVE & SYNC ---
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(h));
         
-        await window.pegasusAlert("⚡ EMS SESSION COMPLETE!\n36 Sets added to XP.\nLeg sets skipped if cardio was detected.");
+        alert("⚡ EMS SESSION COMPLETE!\n36 Sets added to XP.\nLeg sets skipped if cardio was detected.");
         
         if (window.PegasusCloud) {
             // Χρήση true για άμεσο συγχρονισμό μετά από μεγάλο session
