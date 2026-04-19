@@ -99,6 +99,7 @@ window.PegasusDiet = {
         if (!hasRoutine) {
             log.push({ name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, ts: Date.now() - 1000 });
             log.push({ name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, ts: Date.now() - 2000 });
+            log.push({ name: "Κρεατίνη 5g (Ρουτίνα)", kcal: 0, protein: 0, ts: Date.now() - 3000 });
 
             if (window.PegasusInventory) {
                 window.PegasusInventory.consume('prot', 30);
