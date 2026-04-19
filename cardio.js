@@ -7,6 +7,15 @@
 // 🛡️ Global Safe Declaration
 var M = M || window.PegasusManifest;
 
+function getPegasusLocalInputDate() {
+    if (typeof window.getPegasusLocalDateKey === "function") {
+        return window.getPegasusLocalDateKey();
+    }
+
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 window.PegasusCardio = {
     open: function() {
         const panel = document.getElementById('cardioPanel');
@@ -17,7 +26,7 @@ window.PegasusCardio = {
         if (kmInput) kmInput.value = "";
         if (kcalInput) kcalInput.value = "";
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = getPegasusLocalInputDate();
         const dateInput = document.getElementById('cDate');
         if (dateInput) dateInput.value = today;
 
@@ -134,6 +143,7 @@ window.saveCardioData = async function() {
     if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render();
     if (typeof window.updateFoodUI === "function") window.updateFoodUI();
     if (typeof window.renderFood === "function") window.renderFood();
+    if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     /* --- 6. CLOUD PUSH --- */
     if (window.PegasusCloud?.push) {
