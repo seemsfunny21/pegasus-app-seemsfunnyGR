@@ -119,8 +119,18 @@ window.importPegasusData = function(event) {
                 migratedStorage[newKey] = (typeof val === 'object') ? JSON.stringify(val) : String(val);
             });
 
+            const preserved = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
+                if (window.PegasusCloud?.isExportBlockedKey?.(key) || window.PegasusCloud?.isLocalOnlyStorageKey?.(key) || window.PegasusCloud?.isInternalStorageKey?.(key)) {
+                    preserved[key] = localStorage.getItem(key);
+                }
+            }
+
             localStorage.clear();
             Object.entries(migratedStorage).forEach(([k, v]) => localStorage.setItem(k, v));
+            Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
 
             if (!localStorage.getItem("pegasus_weight")) localStorage.setItem("pegasus_weight", "74");
 

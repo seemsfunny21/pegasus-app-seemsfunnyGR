@@ -859,8 +859,18 @@
             try {
                 const data = JSON.parse(event.target.result);
                 if (confirm("🚨 Επαναφορά δεδομένων;")) {
+                    const preserved = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (!key) continue;
+                        if (window.PegasusCloud?.isExportBlockedKey?.(key) || window.PegasusCloud?.isLocalOnlyStorageKey?.(key) || window.PegasusCloud?.isInternalStorageKey?.(key)) {
+                            preserved[key] = localStorage.getItem(key);
+                        }
+                    }
+
                     localStorage.clear();
                     Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                    Object.keys(preserved).forEach(k => localStorage.setItem(k, preserved[k]));
                     location.reload();
                 }
             } catch (err) {
