@@ -264,7 +264,13 @@
             if (typeof window.exercises !== "undefined" && isDomExerciseArray(nextState.workout.exercises)) {
                 window.exercises = nextState.workout.exercises;
             }
-            if (typeof window.remainingSets !== "undefined") window.remainingSets = nextState.workout.remainingSets;
+            if (
+                typeof window.remainingSets !== "undefined" &&
+                Array.isArray(nextState.workout.remainingSets) &&
+                (nextState.workout.remainingSets.length > 0 || !Array.isArray(window.remainingSets) || window.remainingSets.length === 0)
+            ) {
+                window.remainingSets = nextState.workout.remainingSets;
+            }
             if (typeof window.currentIdx !== "undefined") window.currentIdx = nextState.workout.currentIdx;
             if (typeof window.phase !== "undefined") window.phase = nextState.workout.phase;
             if (typeof window.running !== "undefined") window.running = nextState.workout.running;

@@ -333,10 +333,46 @@ function applyPegasusSessionSnapshot(snapshot) {
         window.exercises = exercises;
     }
 
-    if (Array.isArray(workout.remainingSets)) {
+    if (Array.isArray(workout.remainingSets) && (workout.remainingSets.length > 0 || !Array.isArray(remainingSets) || remainingSets.length === 0)) {
         remainingSets = workout.remainingSets.slice();
         window.remainingSets = remainingSets;
     }
+
+    currentIdx = workout.currentIdx ?? currentIdx;
+    phase = workout.phase ?? phase;
+    running = workout.running ?? running;
+    sessionActiveKcal = workout.sessionKcal ?? sessionActiveKcal;
+
+    totalSeconds = timers.totalSeconds ?? totalSeconds;
+    remainingSeconds = timers.remainingSeconds ?? remainingSeconds;
+    phaseRemainingSeconds = timers.phaseRemainingSeconds ?? phaseRemainingSeconds;
+    TURBO_MODE = timers.turboMode ?? TURBO_MODE;
+    SPEED = timers.speed ?? SPEED;
+
+    userWeight = user.weight ?? userWeight;
+    muted = user.muted ?? muted;
+
+    window.currentIdx = currentIdx;
+    window.phase = phase;
+    window.running = running;
+    window.sessionActiveKcal = sessionActiveKcal;
+    window.totalSeconds = totalSeconds;
+    window.remainingSeconds = remainingSeconds;
+    window.phaseRemainingSeconds = phaseRemainingSeconds;
+    window.TURBO_MODE = TURBO_MODE;
+    window.SPEED = SPEED;
+    window.userWeight = userWeight;
+    window.muted = muted;
+
+    return snapshot;
+}
+
+function applyPegasusProgressSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return snapshot;
+
+    const workout = snapshot.workout || {};
+    const timers = snapshot.timers || {};
+    const user = snapshot.user || {};
 
     currentIdx = workout.currentIdx ?? currentIdx;
     phase = workout.phase ?? phase;
@@ -386,7 +422,11 @@ function patchPegasusEngineRuntime(actionType, payload) {
     }
 
     if (nextState?.workout && nextState?.timers) {
-        applyPegasusSessionSnapshot(nextState);
+        if (actionType === "PATCH_TIMER_RUNTIME") {
+            applyPegasusProgressSnapshot(nextState);
+        } else {
+            applyPegasusSessionSnapshot(nextState);
+        }
     }
 
     return nextState;
@@ -423,7 +463,11 @@ function bindPegasusEngineUiBridge() {
             const runtimeAction = actionType.includes("PATCH_") || actionType.includes("PHASE") || actionType.includes("WORKOUT") || actionType.includes("SYNC_") || actionType.includes("SELECT_DAY") || actionType.includes("SET_SELECTED_DAY") || actionType.includes("AUTO_INIT") || actionType.includes("BOOT");
 
             if (runtimeAction) {
-                applyPegasusSessionSnapshot(nextState);
+                if (actionType === "PATCH_TIMER_RUNTIME") {
+                    applyPegasusProgressSnapshot(nextState);
+                } else {
+                    applyPegasusSessionSnapshot(nextState);
+                }
                 updateTotalBar();
                 if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
@@ -1692,6 +1736,7 @@ window.getPegasusSessionState = window.getPegasusSessionState || function() {
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
     session: () => (typeof window.getPegasusSessionState === "function" ? window.getPegasusSessionState() : null),
+    progress: () => (typeof window.getPegasusProgressState === "function" ? window.getPegasusProgressState() : null),
     workout: () => (window.PegasusEngine?.getWorkoutState ? window.PegasusEngine.getWorkoutState() : null),
     timers: () => (window.PegasusEngine?.getTimerState ? window.PegasusEngine.getTimerState() : null),
     user: () => (window.PegasusEngine?.getUserState ? window.PegasusEngine.getUserState() : null),
