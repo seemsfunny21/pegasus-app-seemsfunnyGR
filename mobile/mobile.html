@@ -718,8 +718,9 @@
 
     window.addEventListener("pegasus_sync_status", (e) => {
         const status = e.detail?.status;
+        const effectivelyUnlocked = !!(isUnlocked || window.PegasusCloud?.isUnlocked);
 
-        if (!isUnlocked && status !== "locked") {
+        if (!effectivelyUnlocked && status !== "locked") {
             setSyncStatus("locked");
             return;
         }
@@ -787,6 +788,7 @@
         if (success) {
             document.getElementById("pinModal").style.display = "none";
             isUnlocked = true;
+            setSyncStatus(window.PegasusCloud?.isUnlocked ? (navigator.onLine ? 'online' : 'offline') : 'locked');
 
             await reconcileMobileDailyRoutine();
             await runMobileSyncHeartbeat();
