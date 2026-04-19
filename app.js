@@ -281,30 +281,49 @@ function getPegasusProgressState() {
 
 window.getPegasusProgressState = getPegasusProgressState;
 
-function syncPegasusSelectedDay(selectedDay) {
-    patchPegasusSessionRuntime({
+function getPegasusActiveSelectedDay() {
+    const activeBtn = document.querySelector(".navbar button.active");
+    return activeBtn ? activeBtn.id.replace("nav-", "") : null;
+}
+
+function buildPegasusProgressPayload(extra) {
+    const safeExtra = (extra && typeof extra === "object") ? extra : {};
+    const extraWorkout = (safeExtra.workout && typeof safeExtra.workout === "object") ? safeExtra.workout : {};
+    const extraTimers = (safeExtra.timers && typeof safeExtra.timers === "object") ? safeExtra.timers : {};
+
+    const selectedDay = Object.prototype.hasOwnProperty.call(extraWorkout, "selectedDay")
+        ? extraWorkout.selectedDay
+        : getPegasusActiveSelectedDay();
+
+    return {
         workout: {
             selectedDay: selectedDay ?? null,
-            currentIdx: currentIdx,
-            phase: phase,
-            running: running,
+            currentIdx,
+            phase,
+            running,
             remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
-            sessionKcal: sessionActiveKcal
+            sessionKcal: sessionActiveKcal,
+            ...extraWorkout
         },
         timers: {
-            totalSeconds: totalSeconds,
-            remainingSeconds: remainingSeconds,
-            phaseRemainingSeconds: phaseRemainingSeconds,
+            totalSeconds,
+            remainingSeconds,
+            phaseRemainingSeconds,
             turboMode: TURBO_MODE,
-            speed: SPEED
-        },
-        user: {
-            weight: userWeight,
-            muted: muted
-        },
-        nutrition: {
-            todayDateStr: window.getPegasusTodayDateStr(),
-            todayKey: window.getPegasusLocalDateKey()
+            speed: SPEED,
+            ...extraTimers
+        }
+    };
+}
+
+function syncPegasusProgressRuntime(extra) {
+    return patchPegasusEngineRuntime("PATCH_PROGRESS_RUNTIME", buildPegasusProgressPayload(extra));
+}
+
+function syncPegasusSelectedDay(selectedDay) {
+    syncPegasusProgressRuntime({
+        workout: {
+            selectedDay: selectedDay ?? null
         }
     });
 }
@@ -413,6 +432,8 @@ function patchPegasusEngineRuntime(actionType, payload) {
         nextState = engine.patchWorkoutRuntime(payload);
     } else if (actionType === "PATCH_TIMER_RUNTIME" && engine.patchTimerRuntime) {
         nextState = engine.patchTimerRuntime(payload);
+    } else if (actionType === "PATCH_PROGRESS_RUNTIME" && engine.patchProgressRuntime) {
+        nextState = engine.patchProgressRuntime(payload);
     } else if (actionType === "PATCH_USER_RUNTIME" && engine.patchUserRuntime) {
         nextState = engine.patchUserRuntime(payload);
     } else if (actionType === "PATCH_SESSION_RUNTIME" && engine.patchSessionRuntime) {
@@ -422,7 +443,7 @@ function patchPegasusEngineRuntime(actionType, payload) {
     }
 
     if (nextState?.workout && nextState?.timers) {
-        if (actionType === "PATCH_TIMER_RUNTIME") {
+        if (actionType === "PATCH_TIMER_RUNTIME" || actionType === "PATCH_PROGRESS_RUNTIME") {
             applyPegasusProgressSnapshot(nextState);
         } else {
             applyPegasusSessionSnapshot(nextState);
@@ -463,7 +484,7 @@ function bindPegasusEngineUiBridge() {
             const runtimeAction = actionType.includes("PATCH_") || actionType.includes("PHASE") || actionType.includes("WORKOUT") || actionType.includes("SYNC_") || actionType.includes("SELECT_DAY") || actionType.includes("SET_SELECTED_DAY") || actionType.includes("AUTO_INIT") || actionType.includes("BOOT");
 
             if (runtimeAction) {
-                if (actionType === "PATCH_TIMER_RUNTIME") {
+                if (actionType === "PATCH_TIMER_RUNTIME" || actionType === "PATCH_PROGRESS_RUNTIME") {
                     applyPegasusProgressSnapshot(nextState);
                 } else {
                     applyPegasusSessionSnapshot(nextState);
@@ -778,8 +799,7 @@ function startPause() {
     const sBtn = document.getElementById("btnStart");
     if (sBtn) sBtn.innerHTML = running ? "Παύση" : "Συνέχεια";
 
-    syncPegasusWorkoutRuntime();
-    syncPegasusTimerRuntime();
+    syncPegasusProgressRuntime();
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     if (running) {
@@ -808,43 +828,14 @@ function startPause() {
             }
 
             phaseRemainingSeconds = null;
-            syncPegasusTimerRuntime();
             updateTotalBar();
 
             const barFill = document.getElementById("phaseTimerFill");
             if (barFill) barFill.style.width = "0%";
 
-            patchPegasusSessionRuntime({
-                workout: {
-                    currentIdx: currentIdx,
-                    phase: phase,
-                    running: running,
-                    sessionKcal: sessionActiveKcal
-                },
-                timers: {
-                    totalSeconds: totalSeconds,
-                    remainingSeconds: remainingSeconds,
-                    phaseRemainingSeconds: phaseRemainingSeconds,
-                    turboMode: TURBO_MODE,
-                    speed: SPEED
-                }
-            });
+            syncPegasusProgressRuntime();
         } else {
-            patchPegasusSessionRuntime({
-                workout: {
-                    currentIdx: currentIdx,
-                    phase: phase,
-                    running: running,
-                    sessionKcal: sessionActiveKcal
-                },
-                timers: {
-                    totalSeconds: totalSeconds,
-                    remainingSeconds: remainingSeconds,
-                    phaseRemainingSeconds: phaseRemainingSeconds,
-                    turboMode: TURBO_MODE,
-                    speed: SPEED
-                }
-            });
+            syncPegasusProgressRuntime();
         }
 
         runPhase();
@@ -852,23 +843,7 @@ function startPause() {
         clearInterval(timer);
         timer = null;
         if (vid) vid.pause();
-        syncPegasusWorkoutRuntime();
-        syncPegasusTimerRuntime();
-        patchPegasusSessionRuntime({
-            workout: {
-                currentIdx: currentIdx,
-                phase: phase,
-                running: running,
-                sessionKcal: sessionActiveKcal
-            },
-            timers: {
-                totalSeconds: totalSeconds,
-                remainingSeconds: remainingSeconds,
-                phaseRemainingSeconds: phaseRemainingSeconds,
-                turboMode: TURBO_MODE,
-                speed: SPEED
-            }
-        });
+        syncPegasusProgressRuntime();
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
     }
 }
@@ -929,21 +904,7 @@ function runPhase() {
         label.className = "phase-label " + cssClass;
     }
 
-    syncPegasusWorkoutRuntime();
-    syncPegasusTimerRuntime();
-    patchPegasusSessionRuntime({
-        workout: {
-            currentIdx: currentIdx,
-            phase: phase,
-            running: running,
-            sessionKcal: sessionActiveKcal
-        },
-        timers: {
-            totalSeconds: totalSeconds,
-            remainingSeconds: remainingSeconds,
-            phaseRemainingSeconds: phaseRemainingSeconds
-        }
-    });
+    syncPegasusProgressRuntime();
 
     if (phase !== 2) showVideo(currentIdx);
 
@@ -970,22 +931,8 @@ function runPhase() {
             barFill.style.width = (((totalPhaseTime - Math.max(0, t)) / totalPhaseTime) * 100) + "%";
         }
 
-        syncPegasusWorkoutRuntime();
-        syncPegasusTimerRuntime();
+        syncPegasusProgressRuntime();
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
-        patchPegasusSessionRuntime({
-            workout: {
-                currentIdx: currentIdx,
-                phase: phase,
-                running: running,
-                sessionKcal: sessionActiveKcal
-            },
-            timers: {
-                totalSeconds: totalSeconds,
-                remainingSeconds: remainingSeconds,
-                phaseRemainingSeconds: phaseRemainingSeconds
-            }
-        });
 
         if (t <= 0) {
             clearInterval(timer);
@@ -995,7 +942,7 @@ function runPhase() {
 
             if (phase === 0) {
                 phase = 1;
-                patchPegasusWorkoutRuntime({ currentIdx: currentIdx, phase: phase, running: running, sessionKcal: sessionActiveKcal });
+                syncPegasusProgressRuntime();
                 runPhase();
             } else if (phase === 1) {
                 let done = parseInt(e.dataset.done) || 0;
@@ -1015,33 +962,14 @@ function runPhase() {
                 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 
                 phase = 2;
-                patchPegasusSessionRuntime({
-                    workout: {
-                        currentIdx: currentIdx,
-                        phase: phase,
-                        running: running,
-                        remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
-                        sessionKcal: sessionActiveKcal
-                    },
-                    timers: {
-                        totalSeconds: totalSeconds,
-                        remainingSeconds: remainingSeconds,
-                        phaseRemainingSeconds: phaseRemainingSeconds
-                    }
-                });
+                syncPegasusProgressRuntime();
                 runPhase();
             } else {
                 let next = getNextIndexCircuit();
                 if (next !== -1) {
                     currentIdx = next;
                     phase = 0;
-                    patchPegasusWorkoutRuntime({
-                        currentIdx: currentIdx,
-                        phase: phase,
-                        running: running,
-                        remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
-                        sessionKcal: sessionActiveKcal
-                    });
+                    syncPegasusProgressRuntime();
                     runPhase();
                 } else {
                     finishWorkout();
@@ -1084,14 +1012,7 @@ function skipToNextExercise() {
     if (nextIdx !== -1) {
         currentIdx = nextIdx;
         phase = 0;
-        syncPegasusWorkoutRuntime();
-        patchPegasusWorkoutRuntime({
-            currentIdx: currentIdx,
-            phase: phase,
-            running: running,
-            remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
-            sessionKcal: sessionActiveKcal
-        });
+        syncPegasusProgressRuntime();
         if (running) runPhase();
         else showVideo(currentIdx);
     } else {
@@ -1132,18 +1053,7 @@ window.toggleSkipExercise = function(idx, auto = false) {
             if (nextIdx !== -1) {
                 currentIdx = nextIdx;
                 phase = 0;
-                patchPegasusSessionRuntime({
-                    workout: {
-                        currentIdx: currentIdx,
-                        phase: phase,
-                        running: running,
-                        remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
-                        sessionKcal: sessionActiveKcal
-                    },
-                    timers: {
-                        phaseRemainingSeconds: phaseRemainingSeconds
-                    }
-                });
+                syncPegasusProgressRuntime();
                 runPhase();
             } else {
                 finishWorkout();
@@ -1156,22 +1066,7 @@ window.toggleSkipExercise = function(idx, auto = false) {
     }
 
     calculateTotalTime(true);
-    syncPegasusWorkoutRuntime();
-    syncPegasusTimerRuntime();
-    patchPegasusSessionRuntime({
-        workout: {
-            currentIdx: currentIdx,
-            phase: phase,
-            running: running,
-            remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
-            sessionKcal: sessionActiveKcal
-        },
-        timers: {
-            totalSeconds: totalSeconds,
-            remainingSeconds: remainingSeconds,
-            phaseRemainingSeconds: phaseRemainingSeconds
-        }
-    });
+    syncPegasusProgressRuntime();
     if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 };
 
@@ -1212,7 +1107,6 @@ window.saveWeight = function(name, val) {
     }
 
     syncPegasusUserRuntime();
-    patchPegasusUserRuntime({ weight: userWeight, muted: muted });
 
     if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render();
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
@@ -1288,11 +1182,7 @@ function calculateTotalTime(isUpdate = false) {
         timeDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`;
     }
 
-    patchPegasusTimerRuntime({
-        totalSeconds: totalSeconds,
-        remainingSeconds: remainingSeconds,
-        phaseRemainingSeconds: phaseRemainingSeconds
-    });
+    syncPegasusProgressRuntime();
     updateTotalBar();
 }
 
@@ -1368,19 +1258,7 @@ function finishWorkout() {
     phaseRemainingSeconds = null;
     remainingSeconds = 0;
     updateTotalBar();
-    patchPegasusSessionRuntime({
-        workout: {
-            currentIdx: currentIdx,
-            phase: phase,
-            running: running,
-            sessionKcal: sessionActiveKcal
-        },
-        timers: {
-            totalSeconds: totalSeconds,
-            remainingSeconds: remainingSeconds,
-            phaseRemainingSeconds: phaseRemainingSeconds
-        }
-    });
+    syncPegasusProgressRuntime();
 
     const label = document.getElementById("phaseTimer");
     if (label) {
@@ -1408,7 +1286,7 @@ function finishWorkout() {
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
             sessionActiveKcal = 0;
             localStorage.setItem("pegasus_session_kcal", "0.0");
-            patchPegasusWorkoutRuntime({ sessionKcal: sessionActiveKcal, running: running, phase: phase, currentIdx: currentIdx });
+            syncPegasusProgressRuntime();
         }
 
         const list = document.getElementById("exList");
@@ -1720,8 +1598,7 @@ window.onload = () => {
             window.updateKcalUI();
         }
 
-        syncPegasusWorkoutRuntime();
-        syncPegasusTimerRuntime();
+        syncPegasusProgressRuntime();
         syncPegasusUserRuntime();
 
         console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");

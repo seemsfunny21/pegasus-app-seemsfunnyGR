@@ -229,6 +229,17 @@
                 }
                 break;
 
+            case "PATCH_PROGRESS_RUNTIME":
+                if (action.payload && typeof action.payload === "object") {
+                    if (action.payload.workout && typeof action.payload.workout === "object") {
+                        Object.assign(next.workout, clone(action.payload.workout));
+                    }
+                    if (action.payload.timers && typeof action.payload.timers === "object") {
+                        Object.assign(next.timers, clone(action.payload.timers));
+                    }
+                }
+                break;
+
             case "PATCH_USER_RUNTIME":
                 if (action.payload && typeof action.payload === "object") {
                     Object.assign(next.user, clone(action.payload));
@@ -395,6 +406,10 @@
         return dispatch({ type: "PATCH_TIMER_RUNTIME", payload: clone(payload || {}) });
     }
 
+    function patchProgressRuntime(payload) {
+        return dispatch({ type: "PATCH_PROGRESS_RUNTIME", payload: clone(payload || {}) });
+    }
+
     function patchUserRuntime(payload) {
         return dispatch({ type: "PATCH_USER_RUNTIME", payload: clone(payload || {}) });
     }
@@ -434,6 +449,7 @@
         hydrateFromLegacy,
         patchWorkoutRuntime,
         patchTimerRuntime,
+        patchProgressRuntime,
         patchUserRuntime,
         patchSessionRuntime,
         setSelectedDay,
