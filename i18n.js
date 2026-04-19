@@ -161,6 +161,20 @@
         });
     }
 
+
+    function applyTargetedDesktopTranslations(lang) {
+        const galleryBtn = document.getElementById('btnOpenGallery');
+        if (galleryBtn) galleryBtn.textContent = lang === 'en' ? '🖼️ PROGRESS GALLERY' : '🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ';
+
+        const galleryTitle = document.querySelector('#galleryPanel h3');
+        if (galleryTitle) galleryTitle.textContent = lang === 'en' ? 'PROGRESS GALLERY' : 'ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ';
+
+        const cardioTitle = document.querySelector('#cardioPanel h3');
+        if (cardioTitle) cardioTitle.innerHTML = lang === 'en'
+            ? '🚴<br>CYCLING<br>LOG'
+            : '🚴<br>ΚΑΤΑΓΡΑΦΗ<br>ΠΟΔΗΛΑΣΙΑΣ';
+    }
+
     function refreshViews() {
         try {
             window.refreshAllUI?.();
@@ -182,11 +196,16 @@
 
     function applyLanguage() {
         try {
-            document.documentElement.lang = getLanguage() === 'en' ? 'en' : 'el';
+            const lang = getLanguage();
+            document.documentElement.lang = lang === 'en' ? 'en' : 'el';
             walkAndTranslate(document.body);
+            applyTargetedDesktopTranslations(lang);
             updateLangButtons();
             refreshViews();
-            setTimeout(() => walkAndTranslate(document.body), 60);
+            setTimeout(() => {
+                walkAndTranslate(document.body);
+                applyTargetedDesktopTranslations(lang);
+            }, 60);
         } catch (e) {
             console.warn('PEGASUS I18N apply warning', e);
         }

@@ -1557,7 +1557,10 @@ window.updateTotalWorkoutCount = function() {
     const count = Object.keys(data).length;
     localStorage.setItem(P_M?.workout?.total || "pegasus_total_workouts", count);
     const display = document.getElementById("totalWorkoutsDisplay");
-    if (display) display.textContent = `Προπονήσεις: ${count}`;
+    if (display) {
+        const lang = (typeof window.PegasusI18n?.getLanguage === "function") ? window.PegasusI18n.getLanguage() : (localStorage.getItem('pegasus_language') || 'gr');
+        display.textContent = `${lang === 'en' ? 'Workouts' : 'Προπονήσεις'}: ${count}`;
+    }
 };
 
 /* ===== 11. BOOT SEQUENCE ===== */
