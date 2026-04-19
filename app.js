@@ -1633,11 +1633,19 @@ window.getPegasusSessionState = window.getPegasusSessionState || function() {
     return window.PegasusEngine?.getSessionSnapshot ? window.PegasusEngine.getSessionSnapshot() : null;
 };
 
+window.getPegasusReplayProgress = window.getPegasusReplayProgress || function(limit) {
+    return window.PegasusEngine?.replayProgress ? window.PegasusEngine.replayProgress(limit) : null;
+};
+
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
     session: () => (typeof window.getPegasusSessionState === "function" ? window.getPegasusSessionState() : null),
     progress: () => (typeof window.getPegasusProgressState === "function" ? window.getPegasusProgressState() : null),
-    actions: () => ((window.PegasusEngine?.getEventBuffer ? window.PegasusEngine.getEventBuffer() : []).slice(-10).map(ev => ev.type)),
+    replayProgress: (limit) => (typeof window.getPegasusReplayProgress === "function" ? window.getPegasusReplayProgress(limit) : null),
+    actions: (limit) => (window.PegasusEngine?.getActionTypes ? window.PegasusEngine.getActionTypes(limit || 25) : ((window.PegasusEngine?.getEventBuffer ? window.PegasusEngine.getEventBuffer() : []).slice(-(limit || 25)).map(ev => ev.type))),
+    actionEntries: (limit) => (window.PegasusEngine?.getActionEntries ? window.PegasusEngine.getActionEntries(limit || 25) : []),
+    checkpoints: (limit) => (window.PegasusEngine?.getCheckpoints ? window.PegasusEngine.getCheckpoints(limit || 10) : []),
+    workoutActions: (limit) => (window.PegasusEngine?.getWorkoutActionTypes ? window.PegasusEngine.getWorkoutActionTypes(limit || 25) : []),
     workout: () => (window.PegasusEngine?.getWorkoutState ? window.PegasusEngine.getWorkoutState() : null),
     timers: () => (window.PegasusEngine?.getTimerState ? window.PegasusEngine.getTimerState() : null),
     user: () => (window.PegasusEngine?.getUserState ? window.PegasusEngine.getUserState() : null),

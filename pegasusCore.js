@@ -73,6 +73,40 @@
     let state = getInitialState();
     let listeners = [];
     let eventBuffer = window._pegasusEventBuffer || [];
+    let checkpoints = window._pegasusCheckpoints || [];
+
+    function buildProgressSnapshotFromState(sourceState) {
+        const ref = sourceState || state || getInitialState();
+        return {
+            selectedDay: ref?.workout?.selectedDay || null,
+            currentIdx: ref?.workout?.currentIdx ?? 0,
+            phase: ref?.workout?.phase ?? 0,
+            running: !!ref?.workout?.running,
+            remainingSets: clone(ref?.workout?.remainingSets || []),
+            totalSeconds: ref?.timers?.totalSeconds ?? 0,
+            remainingSeconds: ref?.timers?.remainingSeconds ?? 0,
+            phaseRemainingSeconds: ref?.timers?.phaseRemainingSeconds ?? null,
+            sessionKcal: ref?.workout?.sessionKcal ?? 0
+        };
+    }
+
+    function shouldAutoCheckpoint(actionType) {
+        return /^WORKOUT_.*_RUNTIME$/.test(actionType || "");
+    }
+
+    function createCheckpoint(label, sourceState) {
+        const entry = {
+            label: label || (sourceState?.meta?.lastAction || state?.meta?.lastAction || "CHECKPOINT"),
+            ts: Date.now(),
+            progress: buildProgressSnapshotFromState(sourceState || state),
+            meta: clone((sourceState || state)?.meta || {})
+        };
+
+        checkpoints.push(entry);
+        if (checkpoints.length > 40) checkpoints = checkpoints.slice(-40);
+        window._pegasusCheckpoints = checkpoints;
+        return clone(entry);
+    }
 
     function pushEventBuffer(action) {
         eventBuffer.push({
@@ -315,6 +349,7 @@
         state = reducer(state, normalizedAction);
         pushEventBuffer(normalizedAction);
         syncLegacyGlobals(state);
+        if (shouldAutoCheckpoint(normalizedAction.type)) createCheckpoint(normalizedAction.type, state);
 
         listeners.forEach(fn => {
             try {
@@ -436,17 +471,34 @@
     }
 
     function getProgressSnapshot() {
-        return {
-            selectedDay: getSelectedDay(),
-            currentIdx: state?.workout?.currentIdx ?? 0,
-            phase: state?.workout?.phase ?? 0,
-            running: !!state?.workout?.running,
-            remainingSets: clone(state?.workout?.remainingSets || []),
-            totalSeconds: state?.timers?.totalSeconds ?? 0,
-            remainingSeconds: state?.timers?.remainingSeconds ?? 0,
-            phaseRemainingSeconds: state?.timers?.phaseRemainingSeconds ?? null,
-            sessionKcal: state?.workout?.sessionKcal ?? 0
-        };
+        return buildProgressSnapshotFromState(state);
+    }
+
+    function getActionEntries(limit) {
+        const entries = eventBuffer || [];
+        return clone(entries.slice(-(limit || entries.length)));
+    }
+
+    function getActionTypes(limit) {
+        return getActionEntries(limit).map(entry => entry.type);
+    }
+
+    function getWorkoutActionTypes(limit) {
+        return getActionTypes(limit).filter(type => /^WORKOUT_/.test(type || ""));
+    }
+
+    function getCheckpoints(limit) {
+        const items = checkpoints || [];
+        return clone(items.slice(-(limit || items.length)));
+    }
+
+    function clearCheckpoints() {
+        checkpoints = [];
+        window._pegasusCheckpoints = [];
+    }
+
+    function replayProgress(limit) {
+        return buildProgressSnapshotFromState(replay(limit));
     }
 
     function selectDayRuntime(payload) {
@@ -494,6 +546,13 @@
         setSelectedDay,
         getSelectedDay,
         getProgressSnapshot,
+        getActionEntries,
+        getActionTypes,
+        getWorkoutActionTypes,
+        getCheckpoints,
+        createCheckpoint,
+        clearCheckpoints,
+        replayProgress,
         getWorkoutState,
         getTimerState,
         getUserState,
@@ -505,6 +564,7 @@
     };
 
     window._pegasusEventBuffer = eventBuffer;
+    window._pegasusCheckpoints = checkpoints;
 
     console.log("🧠 PEGASUS CORE: Engine initialized.");
 })();
