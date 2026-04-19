@@ -61,7 +61,6 @@
             <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">▶</button>
         </div>
 
-        <button id="btnLangToggle" class="secondary-btn pegasus-lang-toggle" style="margin-bottom:12px; width:100%;">GR / EN</button>
         <div id="dynamic-grid" class="dynamic-grid"></div>
         <div id="settings-anchor"></div>
     </div>
@@ -211,6 +210,15 @@
             <div id="mobileWeightAvg" style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; font-size: 12px; color: var(--main); font-weight: 900; border: 1px dashed rgba(0,255,65,0.3); letter-spacing: 1px; text-transform: uppercase;">
                 M.O. Εβδομάδας: -- kg
             </div>
+        </div>
+
+        <div class="mini-card" style="margin-top: 30px; padding: 20px; border-color: var(--main); background: rgba(0,255,65,0.04);">
+            <span class="mini-label" style="margin-bottom: 12px; display: block;">ΓΛΩΣΣΑ ΔΙΕΠΑΦΗΣ</span>
+            <button id="btnLangToggle" class="secondary-btn pegasus-lang-toggle" style="width:100%; margin:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px;">
+                <span aria-hidden="true" style="font-size:22px; line-height:1;">🇬🇷</span>
+                <span style="flex:1; text-align:center; font-weight:900; letter-spacing:0.8px;">ΕΛΛΗΝΙΚΑ / ENGLISH</span>
+                <span aria-hidden="true" style="font-size:22px; line-height:1;">🇬🇧</span>
+            </button>
         </div>
 
         <div class="section-title" style="margin-top: 30px;">ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ (CLOUD / LOCAL)</div>

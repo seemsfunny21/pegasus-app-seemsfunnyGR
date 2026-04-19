@@ -156,8 +156,18 @@
     }
 
     function updateLangButtons() {
+        const isEn = getLanguage() === 'en';
         document.querySelectorAll('#btnLangToggle, .pegasus-lang-toggle').forEach(btn => {
-            btn.textContent = getLanguage() === 'en' ? 'EN / GR' : 'GR / EN';
+            btn.innerHTML = `
+                <span aria-hidden="true" style="font-size:22px; line-height:1; opacity:${isEn ? '0.55' : '1'};">🇬🇷</span>
+                <span style="flex:1; text-align:center; font-weight:900; letter-spacing:0.8px;">ΕΛΛΗΝΙΚΑ / ENGLISH</span>
+                <span aria-hidden="true" style="font-size:22px; line-height:1; opacity:${isEn ? '1' : '0.55'};">🇬🇧</span>
+            `;
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'space-between';
+            btn.style.gap = '12px';
+            btn.style.padding = '16px 18px';
         });
     }
 
