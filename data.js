@@ -1,6 +1,6 @@
 /* ==========================================================================
    📦 PEGASUS DATA ENGINE - v17.4 (IRON - NOMENCLATURE & VIDEO RECONCILIATION)
-   Protocol: 10" Prep | 45" Work | 60" Rest 
+   Protocol: 10" Prep | 45" Work | 60" Rest
    Status: PRODUCTION READY (Final Mapping)
    ========================================================================== */
 
@@ -8,33 +8,33 @@ var M = M || window.PegasusManifest;
 
 // 1. DEFAULT PLAN (Rest & Stretching Days)
 window.program = {
-    "Δευτέρα": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
-    "Τρίτη": [], "Τετάρτη": [], 
-    "Πέμπτη": [ { name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" } ],
+    "Δευτέρα": [{ name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" }],
+    "Τρίτη": [], "Τετάρτη": [],
+    "Πέμπτη": [{ name: "Stretching", sets: 1, muscleGroup: "None", weight: "0" }],
     "Παρασκευή": [], "Σάββατο": [], "Κυριακή": []
 };
 
 // 2. MASTER EXERCISES DATABASE (RE-MAPPED)
 window.exercisesDB = [
-    { name: "Chest Press", muscleGroup: "Στήθος" }, 
-    { name: "Chest Flys", muscleGroup: "Στήθος" }, 
+    { name: "Chest Press", muscleGroup: "Στήθος" },
+    { name: "Chest Flys", muscleGroup: "Στήθος" },
     { name: "Pushups", muscleGroup: "Στήθος" },
-    { name: "Lat Pulldowns", muscleGroup: "Πλάτη" }, 
-    { name: "Lat Pulldowns Close", muscleGroup: "Πλάτη" }, 
+    { name: "Lat Pulldowns", muscleGroup: "Πλάτη" },
+    { name: "Lat Pulldowns Close", muscleGroup: "Πλάτη" },
     { name: "Seated Rows", muscleGroup: "Πλάτη" }, // Πρώην Low Rows Seated
     { name: "Low Rows Seated", muscleGroup: "Πλάτη" }, // Πρώην Reverse Grip Cable Row
     { name: "Bent Over Rows", muscleGroup: "Πλάτη" },
     { name: "Straight Arm Pulldowns", muscleGroup: "Πλάτη" },
     { name: "Upright Rows", muscleGroup: "Ώμοι" },
-    { name: "Bicep Curls", muscleGroup: "Χέρια" }, 
-    { name: "Standing Bicep Curls", muscleGroup: "Χέρια" }, 
-    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια" }, 
+    { name: "Bicep Curls", muscleGroup: "Χέρια" },
+    { name: "Standing Bicep Curls", muscleGroup: "Χέρια" },
+    { name: "Preacher Bicep Curls", muscleGroup: "Χέρια" },
     { name: "Tricep Pulldowns", muscleGroup: "Χέρια" },
-    { name: "Ab Crunches", muscleGroup: "Κορμός" }, 
-    { name: "Situps", muscleGroup: "Κορμός" }, 
-    { name: "Plank", muscleGroup: "Κορμός" }, 
-    { name: "Reverse Crunch", muscleGroup: "Κορμός" }, 
-    { name: "Lying Knee Raise", muscleGroup: "Κορμός" }, 
+    { name: "Ab Crunches", muscleGroup: "Κορμός" },
+    { name: "Situps", muscleGroup: "Κορμός" },
+    { name: "Plank", muscleGroup: "Κορμός" },
+    { name: "Reverse Crunch", muscleGroup: "Κορμός" },
+    { name: "Lying Knee Raise", muscleGroup: "Κορμός" },
     { name: "Leg Raise Hip Lift", muscleGroup: "Κορμός" },
     { name: "Leg Extensions", muscleGroup: "Πόδια" },
     { name: "Cycling", muscleGroup: "Πόδια" },
@@ -44,29 +44,56 @@ window.exercisesDB = [
 
 // 3. ASSET MAPPING (VIDEO SYNC)
 window.videoMap = {
-    "Chest Press": "chestpress", "Chest Flys": "chestflys", "Pushups": "pushups",
-    "Lat Pulldowns": "latpulldowns", "Lat Pulldowns Close": "latpulldownsclose",
+    "Chest Press": "chestpress",
+    "Chest Flys": "chestflys",
+    "Pushups": "pushups",
+    "Lat Pulldowns": "latpulldowns",
+    "Lat Pulldowns Close": "latpulldownsclose",
     "Seated Rows": "reverseseatedrows", // Παίζει το βίντεο reverseseatedrows
     "Low Rows Seated": "lowrowsseated", // Παίζει το βίντεο lowrowsseated
-    "Bent Over Rows": "bentoverrows", 
+    "Bent Over Rows": "bentoverrows",
     "Straight Arm Pulldowns": "straightarmpulldowns",
-    "Upright Rows": "uprightrows", 
-    "Bicep Curls": "bicepcurls", "Standing Bicep Curls": "bicepcurls", 
-    "Preacher Bicep Curls": "preacherbicepcurls", "Tricep Pulldowns": "triceppulldowns",
-    "Ab Crunches": "abcrunches", "Situps": "situps", "Plank": "plank",
-    "Reverse Crunch": "reversecrunch", "Lying Knee Raise": "lyingkneeraise",
-    "Leg Raise Hip Lift": "legraisehiplift", "Leg Extensions": "legextensions",
-    "Cycling": "cycling", "EMS Training": "ems", "Stretching": "stretching"
+    "Upright Rows": "uprightrows",
+    "Bicep Curls": "bicepcurls",
+    "Standing Bicep Curls": "bicepcurls",
+    "Preacher Bicep Curls": "preacherbicepcurls",
+    "Tricep Pulldowns": "triceppulldowns",
+    "Ab Crunches": "abcrunches",
+    "Situps": "situps",
+    "Plank": "plank",
+    "Reverse Crunch": "reversecrunch",
+    "Lying Knee Raise": "lyingkneeraise",
+    "Leg Raise Hip Lift": "legraisehiplift",
+    "Leg Extensions": "legextensions",
+    "Cycling": "cycling",
+    "EMS Training": "ems",
+    "Stretching": "stretching"
 };
 
 // 4. PEGASUS ENGINE (IRON SPLIT UPDATED)
+window.getPegasusActivePlan = function() {
+    return localStorage.getItem('pegasus_active_plan') || 'IRON';
+};
+
 window.setPegasusPlan = function(planKey) {
     localStorage.setItem('pegasus_active_plan', planKey);
+
+    if (window.PegasusEngine?.dispatch) {
+        window.PegasusEngine.dispatch({
+            type: "PLAN_CHANGED",
+            payload: { planKey: planKey }
+        });
+    }
+
+    if (window.PegasusCloud?.push) {
+        window.PegasusCloud.push(true);
+    }
+
     setTimeout(() => window.location.reload(), 1000);
 };
 
 (function applyPegasusSplit() {
-    const activePlan = localStorage.getItem('pegasus_active_plan') || 'IRON';
+    const activePlan = window.getPegasusActivePlan();
     const days = {
         iron_tuesday: [
             { name: "Chest Press", sets: 6, muscleGroup: "Στήθος", weight: "54" },
@@ -77,7 +104,7 @@ window.setPegasusPlan = function(planKey) {
         ],
         iron_wednesday: [
             { name: "Upright Rows", sets: 5, muscleGroup: "Ώμοι", weight: "30" },
-            { name: "Low Rows Seated", sets: 4, muscleGroup: "Πλάτη", weight: "36" }, 
+            { name: "Low Rows Seated", sets: 4, muscleGroup: "Πλάτη", weight: "36" },
             { name: "Bicep Curls", sets: 6, muscleGroup: "Χέρια", weight: "30" },
             { name: "Tricep Pulldowns", sets: 6, muscleGroup: "Χέρια", weight: "20" },
             { name: "Preacher Bicep Curls", sets: 5, muscleGroup: "Χέρια", weight: "30" },
@@ -117,19 +144,63 @@ window.setPegasusPlan = function(planKey) {
     };
 
     if (activePlan === 'IRON') {
-        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.iron_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.iron_saturday; window.program["Κυριακή"] = days.iron_sunday;
+        window.program["Τρίτη"] = days.iron_tuesday;
+        window.program["Τετάρτη"] = days.iron_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday;
+        window.program["Σάββατο"] = days.iron_saturday;
+        window.program["Κυριακή"] = days.iron_sunday;
     } else if (activePlan === 'EMS_ONLY') {
-        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.ems_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.iron_saturday; window.program["Κυριακή"] = days.iron_sunday;
+        window.program["Τρίτη"] = days.iron_tuesday;
+        window.program["Τετάρτη"] = days.ems_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday;
+        window.program["Σάββατο"] = days.iron_saturday;
+        window.program["Κυριακή"] = days.iron_sunday;
     } else if (activePlan === 'BIKE_ONLY') {
-        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.iron_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.bike_weekend; window.program["Κυριακή"] = days.bike_weekend;
+        window.program["Τρίτη"] = days.iron_tuesday;
+        window.program["Τετάρτη"] = days.iron_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday;
+        window.program["Σάββατο"] = days.bike_weekend;
+        window.program["Κυριακή"] = days.bike_weekend;
     } else if (activePlan === 'HYBRID') {
-        window.program["Τρίτη"] = days.iron_tuesday; window.program["Τετάρτη"] = days.ems_wednesday;
-        window.program["Παρασκευή"] = days.iron_friday; window.program["Σάββατο"] = days.bike_weekend; window.program["Κυριακή"] = days.bike_weekend;
+        window.program["Τρίτη"] = days.iron_tuesday;
+        window.program["Τετάρτη"] = days.ems_wednesday;
+        window.program["Παρασκευή"] = days.iron_friday;
+        window.program["Σάββατο"] = days.bike_weekend;
+        window.program["Κυριακή"] = days.bike_weekend;
     }
 })();
+
+// Shared helpers for engine / reporting / optimizer
+window.getPegasusExerciseGroup = function(exerciseName) {
+    const cleanName = String(exerciseName || "").trim().replace(" ☀️", "");
+    const exact = window.exercisesDB.find(ex => ex.name === cleanName);
+    if (exact) return exact.muscleGroup;
+
+    const n = cleanName.toLowerCase();
+
+    if (n.includes("chest") || n.includes("pushups")) return "Στήθος";
+    if (n.includes("lat") || n.includes("row") || n.includes("pulldown") || n.includes("back")) return "Πλάτη";
+    if (n.includes("upright") || n.includes("shoulder")) return "Ώμοι";
+    if (n.includes("bicep") || n.includes("tricep") || n.includes("curl")) return "Χέρια";
+    if (n.includes("ab") || n.includes("situp") || n.includes("plank") || n.includes("crunch") || n.includes("raise")) return "Κορμός";
+    if (n.includes("leg") || n.includes("cycling")) return "Πόδια";
+    if (n.includes("stretch")) return "None";
+    if (n.includes("ems")) return "Πλάτη";
+
+    return "Άλλο";
+};
+
+window.getPegasusProgramSnapshot = function(dayName) {
+    if (dayName && Array.isArray(window.program?.[dayName])) {
+        return window.program[dayName].map(ex => ({ ...ex }));
+    }
+
+    const snapshot = {};
+    Object.keys(window.program || {}).forEach(day => {
+        snapshot[day] = (window.program[day] || []).map(ex => ({ ...ex }));
+    });
+    return snapshot;
+};
 
 // 5. KOUKI MENU CONSOLIDATION
 window.PegasusKoukiDB = [
@@ -196,17 +267,28 @@ window.getPegasusMacros = function(foodName, fallbackType) {
     const needsRice = !["carb", "soup"].includes(type);
     const riceKcal = needsRice ? 280 : 0;
     const riceProt = needsRice ? 6 : 0;
-    if (item) return { kcal: item.kcal + riceKcal, protein: item.protein + riceProt };
+
+    if (item) {
+        return {
+            kcal: item.kcal + riceKcal,
+            protein: item.protein + riceProt
+        };
+    }
+
     let p = (type === 'kreas' || type === 'poulika') ? 45 : (type === 'ospro' ? 18 : 25);
     return { kcal: 550 + riceKcal, protein: p + riceProt };
 };
 
 window.getDynamicTargets = function() {
     const targets = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Πόδια": 0, "Κορμός": 0 };
+
     Object.values(window.program).forEach(dayExercises => {
         dayExercises.forEach(ex => {
-            if (targets.hasOwnProperty(ex.muscleGroup)) targets[ex.muscleGroup] += parseInt(ex.sets);
+            if (targets.hasOwnProperty(ex.muscleGroup)) {
+                targets[ex.muscleGroup] += parseInt(ex.sets, 10);
+            }
         });
     });
+
     return targets;
 };
