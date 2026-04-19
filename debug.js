@@ -81,11 +81,20 @@ window.PegasusLogger = {
    ========================================================================== */
 window.PegasusDebugHelpers = {
     getTodayDateStr: function() {
+        if (typeof window.getPegasusTodayDateStr === "function") {
+            return window.getPegasusTodayDateStr();
+        }
+
         const d = new Date();
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
     getTodayCardioOffset: function() {
+        if (typeof window.getPegasusTodayCardioOffset === "function") {
+            const val = parseFloat(window.getPegasusTodayCardioOffset());
+            return isNaN(val) ? 0 : val;
+        }
+
         const dateStr = this.getTodayDateStr();
 
         const unified = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr));
@@ -98,6 +107,11 @@ window.PegasusDebugHelpers = {
     },
 
     getBaseTarget: function() {
+        if (typeof window.getPegasusBaseDailyTarget === "function") {
+            const val = parseFloat(window.getPegasusBaseDailyTarget());
+            return isNaN(val) ? 2800 : val;
+        }
+
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const dayName = greekDays[new Date().getDay()];
 
@@ -131,14 +145,65 @@ window.PegasusDebugHelpers = {
     },
 
     getEffectiveTarget: function() {
-        if (typeof window.calculatePegasusDailyTarget === "function") {
-            const target = parseFloat(window.calculatePegasusDailyTarget());
+        if (typeof window.getPegasusEffectiveDailyTarget === "function") {
+            const target = parseFloat(window.getPegasusEffectiveDailyTarget());
             return Math.round(isNaN(target) ? 2800 : target);
         }
 
         const base = this.getBaseTarget();
         const cardio = this.getTodayCardioOffset();
         return Math.round(base + cardio);
+    },
+
+    getEngineState: function() {
+        try {
+            return window.PegasusEngine?.getState?.() || null;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    isEngineReady: function() {
+        return !!(window.PegasusEngine && window.PegasusEngine.__isCoreEngine);
+    },
+
+    getWorkoutRunning: function() {
+        const state = this.getEngineState();
+        if (!state) return false;
+
+        if (typeof state.workout?.running === "boolean") return state.workout.running;
+        if (typeof state.running === "boolean") return state.running;
+
+        return false;
+    },
+
+    getSessionKcal: function() {
+        const state = this.getEngineState();
+        if (!state) return 0;
+
+        if (typeof state.workout?.sessionKcal === "number") return state.workout.sessionKcal;
+        if (typeof state.sessionActiveKcal === "number") return state.sessionActiveKcal;
+
+        return 0;
+    },
+
+    getEventBufferSize: function() {
+        try {
+            const events = window.PegasusEngine?.getEventBuffer?.() || [];
+            return Array.isArray(events) ? events.length : 0;
+        } catch (e) {
+            return 0;
+        }
+    },
+
+    replayPreview: function(limit = 20) {
+        try {
+            if (!window.PegasusEngine?.replay) return null;
+            return window.PegasusEngine.replay(limit);
+        } catch (e) {
+            console.error("PEGASUS DEBUG: Replay preview failed.", e);
+            return null;
+        }
     }
 };
 
@@ -189,6 +254,7 @@ window.pegasusHealthCheck = async function() {
 
     if (typeof window.program === 'undefined') errors.push("Critical: data.js not loaded.");
     if (!window.PegasusManifest) errors.push("Critical: manifest.js missing.");
+    if (!window.PegasusDebugHelpers.isEngineReady()) errors.push("Critical: pegasusCore.js not loaded.");
 
     const lastPush = localStorage.getItem("pegasus_last_push");
     if (!lastPush) warnings.push("Sync: No Cloud Push history.");
@@ -207,6 +273,14 @@ window.pegasusHealthCheck = async function() {
     const effectiveTarget = window.PegasusDebugHelpers.getEffectiveTarget();
     if (effectiveTarget < 1800 || effectiveTarget > 3800) {
         warnings.push(`Metabolic target out of expected range: ${effectiveTarget} kcal`);
+    }
+
+    const engineState = window.PegasusDebugHelpers.getEngineState();
+    if (!engineState) {
+        warnings.push("Engine state unavailable.");
+    } else {
+        const bufferSize = window.PegasusDebugHelpers.getEventBufferSize();
+        if (bufferSize <= 0) warnings.push("Engine event buffer is empty.");
     }
 
     if (errors.length === 0 && warnings.length === 0) {
