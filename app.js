@@ -198,7 +198,7 @@ function restoreLegacyExerciseRefs(realExercises) {
 
 function buildPegasusLegacySnapshot(extra) {
     const payload = {
-        exercises: exercises,
+        exercises: isPegasusSerializableExerciseArray(exercises) ? exercises : [],
         remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
         currentIdx: currentIdx,
         phase: phase,
@@ -259,6 +259,19 @@ function getPegasusSessionState() {
 
 window.getPegasusSessionState = getPegasusSessionState;
 
+
+function isPegasusDomExerciseArray(value) {
+    return Array.isArray(value) && value.every(item => item && typeof item.querySelector === "function" && item.classList);
+}
+
+function isPegasusSerializableExerciseArray(value) {
+    return Array.isArray(value) && value.every(item => {
+        if (!item || typeof item !== "object") return false;
+        if (item.nodeType || typeof item.querySelector === "function" || typeof item.classList !== "undefined") return false;
+        return true;
+    });
+}
+
 function applyPegasusSessionSnapshot(snapshot) {
     if (!snapshot || typeof snapshot !== "object") return snapshot;
 
@@ -266,7 +279,7 @@ function applyPegasusSessionSnapshot(snapshot) {
     const timers = snapshot.timers || {};
     const user = snapshot.user || {};
 
-    if (Array.isArray(workout.exercises)) {
+    if (isPegasusDomExerciseArray(workout.exercises)) {
         exercises = workout.exercises;
         window.exercises = exercises;
     }

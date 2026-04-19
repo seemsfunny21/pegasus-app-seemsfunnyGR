@@ -87,10 +87,21 @@
         window._pegasusEventBuffer = eventBuffer;
     }
 
+
+    function isSerializableExerciseArray(value) {
+        return Array.isArray(value) && value.every(item => {
+            if (!item || typeof item !== "object") return false;
+            if (item.nodeType || typeof item.querySelector === "function" || typeof item.classList !== "undefined") return false;
+            return true;
+        });
+    }
+
     function applyHydrationSnapshot(next, payload) {
         const snapshot = payload || {};
 
-        next.workout.exercises = clone(snapshot.exercises || next.workout.exercises || []);
+        if (isSerializableExerciseArray(snapshot.exercises)) {
+            next.workout.exercises = clone(snapshot.exercises);
+        }
         next.workout.remainingSets = clone(snapshot.remainingSets || next.workout.remainingSets || []);
         next.workout.currentIdx = snapshot.currentIdx ?? next.workout.currentIdx;
         next.workout.phase = snapshot.phase ?? next.workout.phase;
