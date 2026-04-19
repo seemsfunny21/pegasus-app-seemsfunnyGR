@@ -8,6 +8,8 @@
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
     <script>
+        window.PEGASUS_IS_MOBILE = true;
+
         (function() {
             const params = new URLSearchParams(window.location.search);
             const now = Date.now();
@@ -418,6 +420,86 @@
     window._pegasusMobileSyncBusy = false;
     window._pegasusLastUiRefreshTs = 0;
 
+    function getMobileDateStr() {
+        if (typeof window.getPegasusTodayDateStr === "function") {
+            return window.getPegasusTodayDateStr();
+        }
+
+        const d = new Date();
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
+    function getMobileFoodLogKey(dateStr) {
+        const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
+        return prefix + dateStr;
+    }
+
+    function installMobileInventoryBridges() {
+        window.PegasusInventory = window.PegasusInventory || {};
+
+        if (typeof window.PegasusInventory.getInventory !== "function") {
+            window.PegasusInventory.getInventory = function() {
+                return JSON.parse(localStorage.getItem('pegasus_supp_inventory') || '{"prot":2500,"crea":1000}');
+            };
+        }
+
+        if (typeof window.PegasusInventory.updateUI !== "function") {
+            window.PegasusInventory.updateUI = function() {
+                updateSuppUI();
+            };
+        }
+
+        if (typeof window.PegasusInventory.refill !== "function") {
+            window.PegasusInventory.refill = function(type, grams) {
+                if (typeof window.restockSupplement === "function") {
+                    const inv = window.restockSupplement(type, grams);
+                    updateSuppUI();
+                    return inv;
+                }
+
+                const stock = JSON.parse(localStorage.getItem('pegasus_supp_inventory') || '{"prot":2500,"crea":1000}');
+                const key = (type === 'protein') ? 'prot' : (type === 'creatine' ? 'crea' : type);
+
+                if (stock[key] !== undefined) {
+                    stock[key] = (parseFloat(stock[key]) || 0) + (parseFloat(grams) || 0);
+                    localStorage.setItem('pegasus_supp_inventory', JSON.stringify(stock));
+                    updateSuppUI();
+                    if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
+                }
+
+                return stock;
+            };
+        }
+    }
+
+    async function reconcileMobileDailyRoutine() {
+        const dateStr = getMobileDateStr();
+        const logKey = getMobileFoodLogKey(dateStr);
+        const log = window.PegasusDiet?.getLog
+            ? (window.PegasusDiet.getLog(dateStr) || [])
+            : JSON.parse(localStorage.getItem(logKey) || "[]");
+
+        const hasYogurt = log.some(item => item?.name === "Γιαούρτι 2% + Whey (Ρουτίνα)");
+        const hasEggs = log.some(item => item?.name === "3 Αυγά (Ρουτίνα)");
+        const hasCreatine = log.some(item => item?.name === "Κρεατίνη 5g (Ρουτίνα)");
+
+        if (!window.PegasusDiet?.add) return;
+
+        if (!hasYogurt) {
+            await window.PegasusDiet.add("Γιαούρτι 2% + Whey (Ρουτίνα)", 250, 35);
+        }
+
+        if (!hasEggs) {
+            await window.PegasusDiet.add("3 Αυγά (Ρουτίνα)", 210, 18);
+        }
+
+        if (!hasCreatine) {
+            await window.PegasusDiet.add("Κρεατίνη 5g (Ρουτίνα)", 0, 0);
+        }
+
+        window.PegasusInventory?.updateUI?.();
+    }
+
     function openView(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         const targetView = document.getElementById(id);
@@ -432,7 +514,7 @@
             if (id === 'diet') window.PegasusDiet?.updateUI();
             if (id === 'library') window.PegasusDiet?.renderDailyKouki();
             if (id === 'supps') {
-                window.PegasusInventory?.updateUI();
+                window.PegasusInventory?.updateUI?.();
                 updateSuppUI();
             }
             if (id === 'preview') updateMuscleUI();
@@ -461,7 +543,7 @@
         window._pegasusLastUiRefreshTs = now;
 
         window.PegasusDiet?.updateUI();
-        window.PegasusInventory?.updateUI();
+        window.PegasusInventory?.updateUI?.();
         window.PegasusWeight?.updateUI();
         window.PegasusParking?.updateUI();
         window.PegasusCar?.load();
@@ -472,14 +554,19 @@
     }
 
     function updateSuppUI() {
-        const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory')) || { prot: 2500, crea: 1000 };
-        const pPct = (s.prot / 2500) * 100;
-        const cPct = (s.crea / 1000) * 100;
+        const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory') || '{"prot":2500,"crea":1000}');
+        const pPct = Math.max(0, Math.min(100, (s.prot / 2500) * 100));
+        const cPct = Math.max(0, Math.min(100, (s.crea / 1000) * 100));
 
         if (document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
         if (document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
         if (document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
         if (document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
+
+        if (document.getElementById('protLevelText')) document.getElementById('protLevelText').textContent = `${Math.round(s.prot)} / 2500g`;
+        if (document.getElementById('creaLevelText')) document.getElementById('creaLevelText').textContent = `${Math.round(s.crea)} / 1000g`;
+        if (document.getElementById('protBar')) document.getElementById('protBar').style.width = pPct + '%';
+        if (document.getElementById('creaBar')) document.getElementById('creaBar').style.width = cPct + '%';
     }
 
     function unlockFields(v) {
@@ -668,6 +755,7 @@
             document.getElementById("pinModal").style.display = "none";
             isUnlocked = true;
 
+            await reconcileMobileDailyRoutine();
             await runMobileSyncHeartbeat();
             startMobileSyncHeartbeat();
         } else {
@@ -751,7 +839,9 @@
         console.log("⚡ PEGASUS: Fast Boot...");
         const pin = localStorage.getItem("pegasus_vault_pin");
 
+        installMobileInventoryBridges();
         refreshAllUI();
+        updateSuppUI();
 
         if (pin && window.PegasusCloud) {
             try {
@@ -760,9 +850,13 @@
                 if (success) {
                     console.log("📡 Cloud Sync: Fully Connected.");
                     isUnlocked = true;
+                    await reconcileMobileDailyRoutine();
                     await runMobileSyncHeartbeat();
                     startMobileSyncHeartbeat();
-                    setTimeout(() => refreshAllUI(), 500);
+                    setTimeout(() => {
+                        refreshAllUI();
+                        updateSuppUI();
+                    }, 500);
                 } else {
                     isUnlocked = false;
                     setSyncStatus('locked');
