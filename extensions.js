@@ -195,6 +195,7 @@ window.checkDailyRoutinePC = function() {
         if (typeof window.addFoodItem === "function") {
             setTimeout(() => window.addFoodItem("Γιαούρτι 2% + Whey (Ρουτίνα)", 250, 35), 100);
             setTimeout(() => window.addFoodItem("3 Αυγά (Ρουτίνα)", 210, 18), 300);
+            setTimeout(() => window.addFoodItem("Κρεατίνη 5g (Ρουτίνα)", 0, 0), 500);
         }
 
         // 🎯 FIXED: Αφαιρέθηκε η χειροκίνητη μείωση (s.prot -= 30) 
