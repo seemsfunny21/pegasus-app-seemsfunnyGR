@@ -43,6 +43,7 @@ var running = false;
 var timer = null;
 var totalSeconds = 0;
 var remainingSeconds = 0;
+var phaseRemainingSeconds = null;
 var sessionActiveKcal = 0;
 var muted = localStorage.getItem(P_M?.system?.mute || "pegasus_mute_state") === "true";
 var TURBO_MODE = localStorage.getItem(P_M?.system?.turbo || "pegasus_turbo_state") === "true";
@@ -54,6 +55,20 @@ window.getPegasusTodayDateStr = function() {
     const d = new Date();
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 };
+
+window.getPegasusLocalDateKey = function() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+function getPegasusTimerConfig() {
+    return window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
+}
+
+function getPhaseDefaultTime(targetPhase) {
+    const config = getPegasusTimerConfig();
+    return (targetPhase === 0) ? config.prep : (targetPhase === 1 ? config.work : config.rest);
+}
 
 window.getPegasusTodayCardioOffset = function() {
     const dateStr = window.getPegasusTodayDateStr();
@@ -114,7 +129,7 @@ window.updateKcalUI = function() {
     const kcalLabel = document.querySelector(".kcal-label");
     if (!kcalDisplay) return;
 
-   const isWorkoutActive = running;
+    const isWorkoutActive = running;
 
     if (isWorkoutActive) {
         kcalDisplay.textContent = parseFloat(sessionActiveKcal).toFixed(1);
@@ -163,6 +178,11 @@ window.PegasusEngine = {
             action: action,
             time: Date.now()
         });
+
+        if (window._pegasusEventBuffer.length > 100) {
+            window._pegasusEventBuffer = window._pegasusEventBuffer.slice(-100);
+        }
+
         console.log("📨 PEGASUS ENGINE EVENT:", action);
     },
 
@@ -179,6 +199,7 @@ window.PegasusEngine = {
             running: running,
             totalSeconds: totalSeconds,
             remainingSeconds: remainingSeconds,
+            phaseRemainingSeconds: phaseRemainingSeconds,
             sessionActiveKcal: sessionActiveKcal,
             TURBO_MODE: TURBO_MODE,
             SPEED: SPEED,
@@ -245,6 +266,7 @@ function selectDay(btn, day) {
     timer = null;
     running = false;
     phase = 0;
+    phaseRemainingSeconds = null;
     currentIdx = 0;
     sessionActiveKcal = 0;
     localStorage.setItem("pegasus_session_kcal", "0.0");
@@ -287,37 +309,60 @@ function selectDay(btn, day) {
     exercises = [];
     remainingSets = [];
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = window.getPegasusLocalDateKey();
     let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
     if (dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
 
-    mappedData.forEach((e, idx) => {
+    mappedData.forEach((e) => {
         if (!e.name || e.name === "αα" || e.adjustedSets < 0.1) return;
 
         const cleanName = e.name.trim();
-        const safeName = cleanName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-
         let finalSets = parseFloat(e.adjustedSets);
         let doneSoFar = dailyProg.exercises[cleanName] || 0;
         let remSets = Math.max(0, finalSets - doneSoFar);
+        const renderIdx = exercises.length;
 
         const d = document.createElement("div");
         d.className = "exercise";
         d.dataset.total = finalSets;
         d.dataset.done = doneSoFar;
-        d.dataset.index = idx;
+        d.dataset.index = renderIdx;
 
         const savedWeight = window.getSavedWeight(cleanName);
         const displayWeight = (savedWeight && savedWeight !== "") ? savedWeight : (e.weight || "");
 
         d.innerHTML = `
-            <div class="exercise-info" onclick="window.toggleSkipExercise(${idx})">
+            <div class="exercise-info">
                 <div class="set-counter">${doneSoFar}/${finalSets}</div>
-                <div class="exercise-name">${cleanName}</div>
-                <input type="number" id="weight-${idx}" class="weight-input" data-name="${safeName}" placeholder="kg" value="${displayWeight}" onclick="event.stopPropagation()" onchange="saveWeight('${cleanName}', this.value)">
+                <div class="exercise-name"></div>
+                <input type="number" id="weight-${renderIdx}" class="weight-input" placeholder="kg">
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
         `;
+
+        const nameNode = d.querySelector(".exercise-name");
+        if (nameNode) nameNode.textContent = cleanName;
+
+        const weightInputEl = d.querySelector(".weight-input");
+        if (weightInputEl) {
+            weightInputEl.setAttribute("data-name", cleanName);
+            if (displayWeight !== "") weightInputEl.value = displayWeight;
+
+            weightInputEl.addEventListener("click", function(ev) {
+                ev.stopPropagation();
+            });
+
+            weightInputEl.addEventListener("change", function() {
+                window.saveWeight(cleanName, this.value);
+            });
+        }
+
+        const infoNode = d.querySelector(".exercise-info");
+        if (infoNode) {
+            infoNode.addEventListener("click", function() {
+                window.toggleSkipExercise(renderIdx);
+            });
+        }
 
         list.appendChild(d);
         exercises.push(d);
@@ -344,18 +389,21 @@ function selectDay(btn, day) {
 /* ===== 5. WORKOUT ENGINE CORE (DYNAMIC TIMER PATCH) ===== */
 function startPause() {
     if (exercises.length === 0) return;
+
     const vid = document.getElementById("video");
+    const config = getPegasusTimerConfig();
+    const isFreshStart = (currentIdx === 0 && phase === 0 && totalSeconds === remainingSeconds);
 
     if (!running) {
         let firstAvailable = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx].classList.contains("exercise-skipped"));
-        if (currentIdx === 0 && phase === 0 && totalSeconds === remainingSeconds) {
+        if (isFreshStart) {
             if (firstAvailable !== -1) currentIdx = firstAvailable;
         } else if (exercises[currentIdx] && exercises[currentIdx].classList.contains("exercise-skipped")) {
             if (firstAvailable !== -1) currentIdx = firstAvailable;
         }
     }
 
-    if (!running && currentIdx === 0 && phase === 0) {
+    if (!running && isFreshStart) {
         sessionActiveKcal = 0;
         localStorage.setItem("pegasus_session_kcal", "0.0");
     }
@@ -372,16 +420,53 @@ function startPause() {
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     if (running) {
+        if (!isFreshStart) {
+            const pausedPhase = phase;
+            const pausedRemaining = (phaseRemainingSeconds !== null) ? phaseRemainingSeconds : getPhaseDefaultTime(pausedPhase);
+
+            if (pausedPhase === 0) {
+                const restorePrep = Math.max(0, config.prep - pausedRemaining);
+                totalSeconds += restorePrep;
+                remainingSeconds += restorePrep;
+                phase = 0;
+            } else if (pausedPhase === 1) {
+                const restoreWorkToPrep = Math.max(0, config.prep + (config.work - pausedRemaining));
+                totalSeconds += restoreWorkToPrep;
+                remainingSeconds += restoreWorkToPrep;
+                phase = 0;
+            } else if (pausedPhase === 2) {
+                const skippedRest = Math.max(0, pausedRemaining);
+                totalSeconds = Math.max(0, totalSeconds - skippedRest);
+                remainingSeconds = Math.max(0, remainingSeconds - skippedRest);
+
+                let nextIdx = getNextIndexCircuit();
+                if (nextIdx !== -1) currentIdx = nextIdx;
+                phase = 0;
+            }
+
+            phaseRemainingSeconds = null;
+            updateTotalBar();
+
+            const barFill = document.getElementById("phaseTimerFill");
+            if (barFill) barFill.style.width = "0%";
+        }
+
         runPhase();
     } else {
         clearInterval(timer);
+        timer = null;
+        if (vid) vid.pause();
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
     }
 }
 
 function runPhase() {
     if (!running) return;
-    if (timer) clearInterval(timer);
+
+    if (timer) {
+        clearInterval(timer);
+        timer = null;
+    }
 
     if (remainingSets.every(s => s <= 0)) {
         finishWorkout();
@@ -391,8 +476,11 @@ function runPhase() {
     const e = exercises[currentIdx];
     if (!e) return;
 
-    const exName = e.querySelector(".weight-input").getAttribute("data-name");
-    let liftedWeight = parseFloat(e.querySelector(".weight-input").value) || 0;
+    const weightInput = e.querySelector(".weight-input");
+    if (!weightInput) return;
+
+    const exName = weightInput.getAttribute("data-name") || "";
+    let liftedWeight = parseFloat(weightInput.value) || 0;
 
     let baseMET = 3.5;
     let intensityMultiplier = 1.0;
@@ -412,8 +500,11 @@ function runPhase() {
     e.style.borderColor = "#4CAF50";
     e.style.background = "rgba(76, 175, 80, 0.1)";
 
-    const config = window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
-    let t = (phase === 0) ? config.prep : (phase === 1 ? config.work : config.rest);
+    const config = getPegasusTimerConfig();
+    const phaseDefaultTime = getPhaseDefaultTime(phase);
+    let t = (phaseRemainingSeconds !== null) ? phaseRemainingSeconds : phaseDefaultTime;
+    phaseRemainingSeconds = t;
+
     let pName = (phase === 0) ? "ΠΡΟΕΤΟΙΜΑΣΙΑ" : (phase === 1 ? "ΑΣΚΗΣΗ" : "ΔΙΑΛΕΙΜΜΑ");
     let cssClass = (phase === 0) ? "timer-prep" : (phase === 1 ? "timer-work" : "timer-rest");
 
@@ -429,6 +520,8 @@ function runPhase() {
 
     timer = setInterval(() => {
         t -= 1;
+        phaseRemainingSeconds = Math.max(0, t);
+
         if (remainingSeconds > 0) {
             remainingSeconds -= 1;
             updateTotalBar();
@@ -444,14 +537,16 @@ function runPhase() {
         if (label) label.textContent = `${pName} (${Math.max(0, Math.ceil(t))})`;
 
         if (barFill) {
-            let totalPhaseTime = (phase === 0) ? config.prep : (phase === 1 ? config.work : config.rest);
-            barFill.style.width = (((totalPhaseTime - t) / totalPhaseTime) * 100) + "%";
+            const totalPhaseTime = phaseDefaultTime || 1;
+            barFill.style.width = (((totalPhaseTime - Math.max(0, t)) / totalPhaseTime) * 100) + "%";
         }
 
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
         if (t <= 0) {
             clearInterval(timer);
+            timer = null;
+            phaseRemainingSeconds = null;
             playBeep();
 
             if (phase === 0) {
@@ -461,10 +556,10 @@ function runPhase() {
                 let done = parseInt(e.dataset.done) || 0;
                 done++;
                 e.dataset.done = done;
-                remainingSets[currentIdx] = parseFloat(e.dataset.total) - done;
+                remainingSets[currentIdx] = Math.max(0, parseFloat(e.dataset.total) - done);
                 e.querySelector(".set-counter").textContent = `${done}/${e.dataset.total}`;
 
-                const todayStr = new Date().toISOString().split('T')[0];
+                const todayStr = window.getPegasusLocalDateKey();
                 let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
                 if (dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
                 dailyProg.exercises[exName] = done;
@@ -492,19 +587,23 @@ function runPhase() {
 
 function skipToNextExercise() {
     if (exercises.length === 0) return;
-    clearInterval(timer);
 
-    if ((phase === 1 || phase === 2) && running) {
+    clearInterval(timer);
+    timer = null;
+    phaseRemainingSeconds = null;
+
+    if (phase === 1 && running) {
         const currentExNode = exercises[currentIdx];
-        const exName = currentExNode.querySelector(".weight-input").getAttribute("data-name");
+        const weightInput = currentExNode ? currentExNode.querySelector(".weight-input") : null;
+        const exName = weightInput ? (weightInput.getAttribute("data-name") || "") : "";
 
         let done = parseInt(currentExNode.dataset.done) || 0;
         done++;
         currentExNode.dataset.done = done;
-        remainingSets[currentIdx]--;
+        remainingSets[currentIdx] = Math.max(0, parseFloat(currentExNode.dataset.total) - done);
         currentExNode.querySelector(".set-counter").textContent = `${done}/${currentExNode.dataset.total}`;
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = window.getPegasusLocalDateKey();
         let dailyProg = JSON.parse(localStorage.getItem('pegasus_daily_progress') || "{}");
         if (dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
         dailyProg.exercises[exName] = done;
@@ -547,8 +646,14 @@ window.toggleSkipExercise = function(idx, auto = false) {
         exDiv.style.setProperty('filter', 'grayscale(100%)', 'important');
         remainingSets[idx] = 0;
 
+        if (currentIdx === idx) {
+            phaseRemainingSeconds = null;
+        }
+
         if (!auto && currentIdx === idx && running) {
             clearInterval(timer);
+            timer = null;
+
             let nextIdx = getNextIndexCircuit();
             if (nextIdx !== -1) {
                 currentIdx = nextIdx;
@@ -561,7 +666,7 @@ window.toggleSkipExercise = function(idx, auto = false) {
     } else {
         exDiv.style.setProperty('opacity', '1', 'important');
         exDiv.style.setProperty('filter', 'none', 'important');
-        remainingSets[idx] = originalSets - done;
+        remainingSets[idx] = Math.max(0, originalSets - done);
     }
 
     calculateTotalTime(true);
@@ -653,7 +758,7 @@ function showVideo(i) {
 }
 
 function calculateTotalTime(isUpdate = false) {
-    const config = window.pegasusTimerConfig || { prep: 10, work: 45, rest: 60 };
+    const config = getPegasusTimerConfig();
     let newTotal = exercises.reduce((acc, ex) => {
         if (ex.classList.contains("exercise-skipped")) return acc;
         let sets = parseFloat(ex.dataset.total) || 0;
@@ -742,7 +847,9 @@ function finishWorkout() {
     if (!running && !timer && phase === 0) return;
 
     clearInterval(timer);
+    timer = null;
     running = false;
+    phaseRemainingSeconds = null;
     remainingSeconds = 0;
     updateTotalBar();
 
@@ -752,8 +859,7 @@ function finishWorkout() {
         label.style.color = "#4CAF50";
     }
 
-    const now = new Date();
-    const workoutKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const workoutKey = window.getPegasusLocalDateKey();
 
     let doneKey = P_M?.workout?.done || "pegasus_workouts_done";
     let data = JSON.parse(localStorage.getItem(doneKey) || "{}");
@@ -898,7 +1004,7 @@ window.onload = () => {
     if (todayName === "Δευτέρα") {
         try {
             const lastReset = localStorage.getItem('pegasus_last_reset');
-            const todayDateStr = todayObj.toISOString().split('T')[0];
+            const todayDateStr = window.getPegasusLocalDateKey();
             if (lastReset !== todayDateStr) {
                 const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
                 localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
@@ -1062,23 +1168,23 @@ window.onload = () => {
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
-setTimeout(() => {
-    const loader = document.getElementById('pegasus-loader');
-    if (loader) {
-        loader.style.opacity = '0';
-        loader.style.visibility = 'hidden';
-    }
+    setTimeout(() => {
+        const loader = document.getElementById('pegasus-loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            loader.style.visibility = 'hidden';
+        }
 
-    if (typeof window.updateKcalUI === "function") {
-        window.updateKcalUI();
-    }
+        if (typeof window.updateKcalUI === "function") {
+            window.updateKcalUI();
+        }
 
-    console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
-}, 1000);
-   };
+        console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
+    }, 1000);
+};
 
 window.PegasusDebug = {
-    state: () => ({ exercises, remainingSets, currentIdx, running, phase }),
+    state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
     manifest: () => P_M,
     testImage: (name) => {
         const testImg = new Image();
