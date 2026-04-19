@@ -330,6 +330,52 @@ function patchPegasusEngineRuntime(actionType, payload) {
     return nextState;
 }
 
+function patchPegasusWorkoutRuntime(payload) {
+    return patchPegasusEngineRuntime("PATCH_WORKOUT_RUNTIME", payload);
+}
+
+function patchPegasusTimerRuntime(payload) {
+    return patchPegasusEngineRuntime("PATCH_TIMER_RUNTIME", payload);
+}
+
+function patchPegasusUserRuntime(payload) {
+    return patchPegasusEngineRuntime("PATCH_USER_RUNTIME", payload);
+}
+
+function patchPegasusSessionRuntime(payload) {
+    return patchPegasusEngineRuntime("PATCH_SESSION_RUNTIME", payload);
+}
+
+function bindPegasusEngineUiBridge() {
+    if (window.__pegasusEngineUiBridgeBound) return;
+    const engine = getPegasusCoreEngine();
+    if (!engine?.subscribe) return;
+
+    window.__pegasusEngineUiBridgeBound = true;
+
+    engine.subscribe((nextState, action) => {
+        try {
+            if (!nextState || !action) return;
+
+            const actionType = action.type || "";
+            const runtimeAction = actionType.includes("PATCH_") || actionType.includes("PHASE") || actionType.includes("WORKOUT") || actionType.includes("SYNC_") || actionType.includes("SELECT_DAY") || actionType.includes("AUTO_INIT");
+
+            if (runtimeAction) {
+                applyPegasusSessionSnapshot(nextState);
+                updateTotalBar();
+                if (typeof window.updateKcalUI === "function") window.updateKcalUI();
+
+                const startBtn = document.getElementById("btnStart");
+                if (startBtn) {
+                    startBtn.innerHTML = nextState.workout?.running ? "Παύση" : "Έναρξη";
+                }
+            }
+        } catch (e) {
+            console.warn("⚠️ PEGASUS ENGINE UI BRIDGE WARNING:", e);
+        }
+    });
+}
+
 function syncEngineFromLegacy(actionType, extra) {
     const engine = getPegasusCoreEngine();
     if (!engine) return;
@@ -656,9 +702,37 @@ function startPause() {
             const barFill = document.getElementById("phaseTimerFill");
             if (barFill) barFill.style.width = "0%";
 
-            syncEngineFromLegacy("RESUME_FROM_PREP");
+            patchPegasusSessionRuntime({
+                workout: {
+                    currentIdx: currentIdx,
+                    phase: phase,
+                    running: running,
+                    sessionKcal: sessionActiveKcal
+                },
+                timers: {
+                    totalSeconds: totalSeconds,
+                    remainingSeconds: remainingSeconds,
+                    phaseRemainingSeconds: phaseRemainingSeconds,
+                    turboMode: TURBO_MODE,
+                    speed: SPEED
+                }
+            });
         } else {
-            syncEngineFromLegacy("START_WORKOUT");
+            patchPegasusSessionRuntime({
+                workout: {
+                    currentIdx: currentIdx,
+                    phase: phase,
+                    running: running,
+                    sessionKcal: sessionActiveKcal
+                },
+                timers: {
+                    totalSeconds: totalSeconds,
+                    remainingSeconds: remainingSeconds,
+                    phaseRemainingSeconds: phaseRemainingSeconds,
+                    turboMode: TURBO_MODE,
+                    speed: SPEED
+                }
+            });
         }
 
         runPhase();
@@ -668,7 +742,21 @@ function startPause() {
         if (vid) vid.pause();
         syncPegasusWorkoutRuntime();
         syncPegasusTimerRuntime();
-        syncEngineFromLegacy("PAUSE_WORKOUT");
+        patchPegasusSessionRuntime({
+            workout: {
+                currentIdx: currentIdx,
+                phase: phase,
+                running: running,
+                sessionKcal: sessionActiveKcal
+            },
+            timers: {
+                totalSeconds: totalSeconds,
+                remainingSeconds: remainingSeconds,
+                phaseRemainingSeconds: phaseRemainingSeconds,
+                turboMode: TURBO_MODE,
+                speed: SPEED
+            }
+        });
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
     }
 }
@@ -731,7 +819,19 @@ function runPhase() {
 
     syncPegasusWorkoutRuntime();
     syncPegasusTimerRuntime();
-    syncEngineFromLegacy("PHASE_START");
+    patchPegasusSessionRuntime({
+        workout: {
+            currentIdx: currentIdx,
+            phase: phase,
+            running: running,
+            sessionKcal: sessionActiveKcal
+        },
+        timers: {
+            totalSeconds: totalSeconds,
+            remainingSeconds: remainingSeconds,
+            phaseRemainingSeconds: phaseRemainingSeconds
+        }
+    });
 
     if (phase !== 2) showVideo(currentIdx);
 
@@ -761,7 +861,19 @@ function runPhase() {
         syncPegasusWorkoutRuntime();
         syncPegasusTimerRuntime();
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
-        syncEngineFromLegacy("PHASE_TICK");
+        patchPegasusSessionRuntime({
+            workout: {
+                currentIdx: currentIdx,
+                phase: phase,
+                running: running,
+                sessionKcal: sessionActiveKcal
+            },
+            timers: {
+                totalSeconds: totalSeconds,
+                remainingSeconds: remainingSeconds,
+                phaseRemainingSeconds: phaseRemainingSeconds
+            }
+        });
 
         if (t <= 0) {
             clearInterval(timer);
@@ -771,7 +883,7 @@ function runPhase() {
 
             if (phase === 0) {
                 phase = 1;
-                syncEngineFromLegacy("PHASE_COMPLETE_PREP");
+                patchPegasusWorkoutRuntime({ currentIdx: currentIdx, phase: phase, running: running, sessionKcal: sessionActiveKcal });
                 runPhase();
             } else if (phase === 1) {
                 let done = parseInt(e.dataset.done) || 0;
@@ -791,14 +903,33 @@ function runPhase() {
                 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 
                 phase = 2;
-                syncEngineFromLegacy("SET_COMPLETED");
+                patchPegasusSessionRuntime({
+                    workout: {
+                        currentIdx: currentIdx,
+                        phase: phase,
+                        running: running,
+                        remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
+                        sessionKcal: sessionActiveKcal
+                    },
+                    timers: {
+                        totalSeconds: totalSeconds,
+                        remainingSeconds: remainingSeconds,
+                        phaseRemainingSeconds: phaseRemainingSeconds
+                    }
+                });
                 runPhase();
             } else {
                 let next = getNextIndexCircuit();
                 if (next !== -1) {
                     currentIdx = next;
                     phase = 0;
-                    syncEngineFromLegacy("REST_COMPLETE_NEXT");
+                    patchPegasusWorkoutRuntime({
+                        currentIdx: currentIdx,
+                        phase: phase,
+                        running: running,
+                        remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
+                        sessionKcal: sessionActiveKcal
+                    });
                     runPhase();
                 } else {
                     finishWorkout();
@@ -842,7 +973,13 @@ function skipToNextExercise() {
         currentIdx = nextIdx;
         phase = 0;
         syncPegasusWorkoutRuntime();
-        syncEngineFromLegacy("SKIP_EXERCISE");
+        patchPegasusWorkoutRuntime({
+            currentIdx: currentIdx,
+            phase: phase,
+            running: running,
+            remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
+            sessionKcal: sessionActiveKcal
+        });
         if (running) runPhase();
         else showVideo(currentIdx);
     } else {
@@ -883,7 +1020,18 @@ window.toggleSkipExercise = function(idx, auto = false) {
             if (nextIdx !== -1) {
                 currentIdx = nextIdx;
                 phase = 0;
-                syncEngineFromLegacy("TOGGLE_SKIP_EXERCISE");
+                patchPegasusSessionRuntime({
+                    workout: {
+                        currentIdx: currentIdx,
+                        phase: phase,
+                        running: running,
+                        remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
+                        sessionKcal: sessionActiveKcal
+                    },
+                    timers: {
+                        phaseRemainingSeconds: phaseRemainingSeconds
+                    }
+                });
                 runPhase();
             } else {
                 finishWorkout();
@@ -898,7 +1046,20 @@ window.toggleSkipExercise = function(idx, auto = false) {
     calculateTotalTime(true);
     syncPegasusWorkoutRuntime();
     syncPegasusTimerRuntime();
-    syncEngineFromLegacy("TOGGLE_SKIP_EXERCISE");
+    patchPegasusSessionRuntime({
+        workout: {
+            currentIdx: currentIdx,
+            phase: phase,
+            running: running,
+            remainingSets: Array.isArray(remainingSets) ? remainingSets.slice() : [],
+            sessionKcal: sessionActiveKcal
+        },
+        timers: {
+            totalSeconds: totalSeconds,
+            remainingSeconds: remainingSeconds,
+            phaseRemainingSeconds: phaseRemainingSeconds
+        }
+    });
     if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 };
 
@@ -939,7 +1100,7 @@ window.saveWeight = function(name, val) {
     }
 
     syncPegasusUserRuntime();
-    syncEngineFromLegacy("SAVE_WEIGHT");
+    patchPegasusUserRuntime({ weight: userWeight, muted: muted });
 
     if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render();
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
@@ -1014,6 +1175,12 @@ function calculateTotalTime(isUpdate = false) {
         const s = remainingSeconds % 60;
         timeDisplay.textContent = `${m}:${String(s).padStart(2, '0')}`;
     }
+
+    patchPegasusTimerRuntime({
+        totalSeconds: totalSeconds,
+        remainingSeconds: remainingSeconds,
+        phaseRemainingSeconds: phaseRemainingSeconds
+    });
     updateTotalBar();
 }
 
@@ -1091,7 +1258,19 @@ function finishWorkout() {
     phaseRemainingSeconds = null;
     remainingSeconds = 0;
     updateTotalBar();
-    syncEngineFromLegacy("WORKOUT_FINISHED");
+    patchPegasusSessionRuntime({
+        workout: {
+            currentIdx: currentIdx,
+            phase: phase,
+            running: running,
+            sessionKcal: sessionActiveKcal
+        },
+        timers: {
+            totalSeconds: totalSeconds,
+            remainingSeconds: remainingSeconds,
+            phaseRemainingSeconds: phaseRemainingSeconds
+        }
+    });
 
     const label = document.getElementById("phaseTimer");
     if (label) {
@@ -1119,7 +1298,7 @@ function finishWorkout() {
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
             sessionActiveKcal = 0;
             localStorage.setItem("pegasus_session_kcal", "0.0");
-            syncEngineFromLegacy("WORKOUT_REPORT_SAVED");
+            patchPegasusWorkoutRuntime({ sessionKcal: sessionActiveKcal, running: running, phase: phase, currentIdx: currentIdx });
         }
 
         const list = document.getElementById("exList");
@@ -1297,7 +1476,7 @@ window.onload = () => {
                 if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
                     window.currentIdx = 0;
                     window.phase = 0;
-                    syncEngineFromLegacy("WARMUP_RETURN");
+                    patchPegasusWorkoutRuntime({ currentIdx: 0, phase: 0, running: running, sessionKcal: sessionActiveKcal });
                     window.showVideo(0);
                 }
             }
@@ -1307,7 +1486,7 @@ window.onload = () => {
             window.SPEED = window.TURBO_MODE ? 10 : 1;
             TURBO_MODE = window.TURBO_MODE;
             SPEED = window.SPEED;
-            syncEngineFromLegacy("SYNC_TURBO");
+            patchPegasusTimerRuntime({ turboMode: TURBO_MODE, speed: SPEED });
 
             const btn = document.getElementById('btnTurboTools');
             if (btn) {
@@ -1318,7 +1497,7 @@ window.onload = () => {
         "btnMuteTools": () => {
             window.muted = !window.muted;
             muted = window.muted;
-            syncEngineFromLegacy("SYNC_MUTED");
+            patchPegasusUserRuntime({ muted: muted, weight: userWeight });
 
             const btn = document.getElementById('btnMuteTools');
             if (btn) {
@@ -1439,6 +1618,9 @@ window.onload = () => {
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
     session: () => (typeof window.getPegasusSessionState === "function" ? window.getPegasusSessionState() : null),
+    workout: () => (window.PegasusEngine?.getWorkoutState ? window.PegasusEngine.getWorkoutState() : null),
+    timers: () => (window.PegasusEngine?.getTimerState ? window.PegasusEngine.getTimerState() : null),
+    user: () => (window.PegasusEngine?.getUserState ? window.PegasusEngine.getUserState() : null),
     engineState: () => (window.PegasusEngine?.getState ? window.PegasusEngine.getState() : null),
     replay: (limit) => (window.PegasusEngine?.replay ? window.PegasusEngine.replay(limit) : null),
     manifest: () => P_M,
