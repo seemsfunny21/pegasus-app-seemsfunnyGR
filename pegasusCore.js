@@ -599,6 +599,54 @@
         return dispatch({ type: "WORKOUT_FINISH_RUNTIME", payload: clone(payload || {}) });
     }
 
+
+    function getProgressPercent(sourceState) {
+        const snap = buildProgressSnapshotFromState(sourceState || state);
+        const total = snap.totalSeconds || 0;
+        const remaining = snap.remainingSeconds || 0;
+        if (total <= 0) return 0;
+        return Math.max(0, Math.min(100, ((total - remaining) / total) * 100));
+    }
+
+    function getTimerDisplayState() {
+        const snap = buildProgressSnapshotFromState(state);
+        const remaining = typeof snap.remainingSeconds === "number" ? snap.remainingSeconds : 0;
+        const minutes = Math.floor(remaining / 60);
+        const seconds = Math.floor(remaining % 60);
+
+        return {
+            totalSeconds: snap.totalSeconds || 0,
+            remainingSeconds: remaining,
+            phaseRemainingSeconds: snap.phaseRemainingSeconds,
+            progressPercent: getProgressPercent(state),
+            remainingText: `${minutes}:${String(seconds).padStart(2, "0")}`
+        };
+    }
+
+    function getRuntimeSummary() {
+        const snap = buildProgressSnapshotFromState(state);
+        const remainingSets = Array.isArray(snap.remainingSets) ? snap.remainingSets : [];
+        const hasRemainingWork = remainingSets.some(value => Number(value || 0) > 0);
+        const hasExercises = remainingSets.length > 0;
+        const isFinished = hasExercises && !hasRemainingWork;
+
+        return {
+            selectedDay: snap.selectedDay || null,
+            currentIdx: snap.currentIdx ?? 0,
+            phase: snap.phase ?? 0,
+            running: !!snap.running,
+            hasExercises,
+            hasRemainingWork,
+            isFinished,
+            canStart: hasRemainingWork && !snap.running,
+            canPause: !!snap.running,
+            sessionKcal: snap.sessionKcal || 0,
+            totalSeconds: snap.totalSeconds || 0,
+            remainingSeconds: snap.remainingSeconds || 0,
+            progressPercent: getProgressPercent(state)
+        };
+    }
+
     window.PegasusEngine = {
         __isCoreEngine: true,
         dispatch,
@@ -624,6 +672,8 @@
         setSelectedDay,
         getSelectedDay,
         getProgressSnapshot,
+        getTimerDisplayState,
+        getRuntimeSummary,
         getActionEntries,
         getActionTypes,
         getWorkoutActionTypes,
