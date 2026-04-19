@@ -37,7 +37,7 @@ window.PegasusCar = {
         }
         
         this.load();
-        alert("Τα στοιχεία του οχήματος αποθηκεύτηκαν και συγχρονίστηκαν.");
+        await window.pegasusAlert("Τα στοιχεία του οχήματος αποθηκεύτηκαν και συγχρονίστηκαν.");
     },
 
     load: function() {
@@ -113,7 +113,7 @@ window.PegasusCar = {
     },
 
     deleteLog: async function(idx) {
-        if(!confirm("Οριστική διαγραφή αυτής της εργασίας;")) return;
+        if(!await window.pegasusConfirm("Οριστική διαγραφή αυτής της εργασίας;")) return;
         let logs = JSON.parse(localStorage.getItem(CAR_M.car.service)) || [];
         logs.splice(idx, 1);
         localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));

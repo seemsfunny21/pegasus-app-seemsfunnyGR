@@ -222,7 +222,7 @@ window.PegasusDiet = {
     },
 
     askAdvisor: function() {
-        if (!window.PegasusDietAdvisor) return alert("Advisor Offline");
+        if (!window.PegasusDietAdvisor) { window.pegasusAlert("Advisor Offline"); return; }
 
         const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
         const container = document.getElementById("advisorMobileResult");

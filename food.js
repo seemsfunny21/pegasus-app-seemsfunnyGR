@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (kcalEl) kcalEl.value = "";
                 if (protEl) protEl.value = "";
             } else {
-                alert("PEGASUS STRICT: Συμπλήρωσε Φαγητό και Θερμίδες!");
+                window.pegasusAlert("PEGASUS STRICT: Συμπλήρωσε Φαγητό και Θερμίδες!");
             }
         };
     }

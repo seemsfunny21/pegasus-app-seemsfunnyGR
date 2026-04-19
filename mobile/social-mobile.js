@@ -27,11 +27,11 @@
             // 1. First-Time Setup
             if (!masterPin) {
                 if (input.length < 4) {
-                    alert("Το PIN πρέπει να έχει τουλάχιστον 4 ψηφία.");
+                    window.pegasusAlert("Το PIN πρέπει να έχει τουλάχιστον 4 ψηφία.");
                     return;
                 }
                 localStorage.setItem('pegasus_master_pin', input);
-                alert("✅ Το Master PIN ορίστηκε επιτυχώς! Απομνημόνευσέ το.");
+                window.pegasusAlert("✅ Το Master PIN ορίστηκε επιτυχώς! Απομνημόνευσέ το.");
                 masterPin = input;
             }
 
@@ -80,22 +80,22 @@
             this.saveAndRender(entities);
         },
 
-        editEntry: function(id) {
+        editEntry: async function(id) {
             if (!isUnlocked) return;
             let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
             const idx = entities.findIndex(e => e.id === id);
             if (idx === -1) return;
 
-            const newVal = prompt("Επεξεργασία (Όνομα & Link):", entities[idx].name);
+            const newVal = await window.pegasusPrompt("Επεξεργασία (Όνομα & Link):", entities[idx].name);
             if (newVal !== null && newVal.trim() !== '') {
                 entities[idx].name = sanitizeHTML(newVal.trim());
                 this.saveAndRender(entities);
             }
         },
 
-        deleteEntry: function(id) {
+        deleteEntry: async function(id) {
             if (!isUnlocked) return;
-            if(confirm('Οριστική διαγραφή αυτής της εγγραφής;')) {
+            if(await window.pegasusConfirm('Οριστική διαγραφή αυτής της εγγραφής;')) {
                 let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
                 entities = entities.filter(e => e.id !== id);
                 this.saveAndRender(entities);

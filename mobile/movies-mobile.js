@@ -26,7 +26,7 @@
             const title = document.getElementById('newMovieTitle').value;
 
             if(!title || title.trim() === '') {
-                alert('ΣΦΑΛΜΑ: Εισάγετε τον τίτλο της ταινίας.');
+                window.pegasusAlert('ΣΦΑΛΜΑ: Εισάγετε τον τίτλο της ταινίας.');
                 return;
             }
 
@@ -58,8 +58,8 @@
             this.saveAndRender(movies);
         },
 
-        deleteMovie: function(id) {
-            if(confirm('Διαγραφή αυτής της ταινίας από τη βάση δεδομένων;')) {
+        deleteMovie: async function(id) {
+            if(await window.pegasusConfirm('Διαγραφή αυτής της ταινίας από τη βάση δεδομένων;')) {
                 let movies = JSON.parse(localStorage.getItem(MOVIES_DATA_KEY)) || [];
                 movies = movies.filter(m => m.id !== id);
                 this.saveAndRender(movies);

@@ -69,7 +69,7 @@ window.PegasusProfile = {
             console.log("📡 PROFILE: Cloud Sync Complete.");
         }
 
-        alert("Τα στοιχεία αποθηκεύτηκαν επιτυχώς.");
+        await window.pegasusAlert("Τα στοιχεία αποθηκεύτηκαν επιτυχώς.");
     },
 
     // 3. Προσθήκη Νέας Σημείωσης
@@ -96,7 +96,7 @@ window.PegasusProfile = {
 
     // 4. Διαγραφή Σημείωσης
     deleteNote: async function(idx) {
-        if (!confirm("Διαγραφή σημείωσης;")) return;
+        if (!await window.pegasusConfirm("Διαγραφή σημείωσης;")) return;
 
         let list = this.safeParse("pegasus_notes", []) || [];
 

@@ -10,7 +10,7 @@ const HISTORY_KEY = M?.user?.weight_history || 'pegasus_weight_history';
 
 window.PegasusWeight = {
     // 1. Καταγραφή βάρους (Συμβατό με Mobile & Desktop)
-    save: function(val) {
+    save: async function(val) {
         // 🎯 FIXED: Αν κληθεί χωρίς τιμή (ή με Event object από το UI), ψάχνει αυτόματα τα inputs
         let rawVal = val;
         if (rawVal === undefined || typeof rawVal === 'object') {
@@ -27,7 +27,7 @@ window.PegasusWeight = {
         // Αποκλεισμός εξωπραγματικών τιμών
         if (isNaN(weight) || weight < 30 || weight > 250) {
             if (window.PegasusLogger) window.PegasusLogger.log(`Invalid weight input: ${rawVal}`, "WARNING");
-            alert("PEGASUS STRICT: Παρακαλώ εισάγετε ένα έγκυρο βάρος (30-250 kg).");
+            await window.pegasusAlert("PEGASUS STRICT: Παρακαλώ εισάγετε ένα έγκυρο βάρος (30-250 kg).");
             return;
         }
 
@@ -56,7 +56,7 @@ window.PegasusWeight = {
         }
         
         this.updateUI();
-        alert(`✅ Βάρος καταγράφηκε: ${weight} kg`);
+        await window.pegasusAlert(`✅ Βάρος καταγράφηκε: ${weight} kg`);
     },
 
     // 2. Υπολογισμός μέσου όρου με Χρονολογική Ταξινόμηση

@@ -957,7 +957,7 @@ function finishWorkout() {
 
 function openExercisePreview() {
     const activeBtn = document.querySelector(".navbar button.active");
-    if (!activeBtn) return alert("Παρακαλώ επίλεξε πρώτα μια ημέρα!");
+    if (!activeBtn) { window.pegasusAlert("Παρακαλώ επίλεξε πρώτα μια ημέρα!"); return; }
 
     const currentDay = activeBtn.id.replace('nav-', '');
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
@@ -1152,7 +1152,7 @@ window.onload = () => {
         "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
         "btnProposalsUI": () => {
             if (window.PegasusDietAdvisor?.renderAdvisorUI) window.renderAdvisorUI();
-            else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.");
+            else window.pegasusAlert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά.");
         },
         "btnToolsUI": { panel: "toolsPanel", init: null },
         "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview },
@@ -1161,7 +1161,7 @@ window.onload = () => {
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
         "btnManualEmail": () => {
             if (window.PegasusReporting?.checkAndSendMorningReport) window.PegasusReporting.checkAndSendMorningReport(true);
-            else alert("Reporting Engine Offline");
+            else window.pegasusAlert("Reporting Engine Offline");
         },
         "btnSaveSettings": () => {
             if (typeof window.savePegasusSettingsGlobal === "function") {

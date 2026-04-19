@@ -24,7 +24,7 @@
 
             // Έλεγχος αν υπάρχει ήδη εγγραφή για σήμερα
             if (entries.some(e => e.date === today)) {
-                alert('Υπάρχει ήδη καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
+                window.pegasusAlert('Υπάρχει ήδη καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
                 return;
             }
 
@@ -40,8 +40,8 @@
             this.saveAndRender(entries);
         },
 
-        deleteEntry: function(id) {
-            if(confirm('Διαγραφή της βιομετρικής καταγραφής;')) {
+        deleteEntry: async function(id) {
+            if(await window.pegasusConfirm('Διαγραφή της βιομετρικής καταγραφής;')) {
                 let entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
                 entries = entries.filter(e => e.id !== id);
                 this.saveAndRender(entries);

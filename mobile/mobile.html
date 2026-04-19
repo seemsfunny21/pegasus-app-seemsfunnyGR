@@ -384,6 +384,8 @@
     </script>
 
     <script src="../manifest.js"></script>
+    <script src="../dialogs.js"></script>
+    <script src="../i18n.js"></script>
     <script src="../data.js"></script>
     <script src="../extensions.js"></script>
     <script src="../metabolicEngine.js"></script>
@@ -759,7 +761,7 @@
             await runMobileSyncHeartbeat();
             startMobileSyncHeartbeat();
         } else {
-            alert("ΛΑΘΟΣ PIN");
+            await window.pegasusAlert("ΛΑΘΟΣ PIN");
             document.getElementById("pinInput").value = "";
         }
     }
@@ -773,7 +775,7 @@
     }
 
     async function hardResetSystem() {
-        if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
+        if (await window.pegasusConfirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
             try {
                 stopMobileSyncHeartbeat();
 
@@ -820,16 +822,16 @@
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (confirm("🚨 Επαναφορά δεδομένων;")) {
+                if (await window.pegasusConfirm("🚨 Επαναφορά δεδομένων;")) {
                     localStorage.clear();
                     Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
                     location.reload();
                 }
             } catch (err) {
-                alert("❌ Μη έγκυρο αρχείο.");
+                await window.pegasusAlert("❌ Μη έγκυρο αρχείο.");
             }
         };
         reader.readAsText(file);

@@ -7,7 +7,7 @@
 window.exportPegasusData = async function() {
     if (!window.PegasusManifest) {
         console.error("❌ CRITICAL: PegasusManifest not found.");
-        alert("ΣΦΑΛΜΑ: Λείπει το manifest.js. Η εξαγωγή ακυρώθηκε.");
+        await window.pegasusAlert("ΣΦΑΛΜΑ: Λείπει το manifest.js. Η εξαγωγή ακυρώθηκε.");
         return;
     }
 
@@ -89,7 +89,7 @@ window.importPegasusData = function(event) {
             }
 
             const msg = `🚨 PEGASUS OS: ΕΝΑΡΞΗ ΑΝΑΚΤΗΣΗΣ\n\nΘα γίνει αυτόματη διόρθωση ημερομηνιών και πλήρης επαναφορά.\nΤα τρέχοντα δεδομένα θα διαγραφούν. Συνέχεια;`;
-            if (!confirm(msg)) return;
+            if (!await window.pegasusConfirm(msg)) return;
 
             console.log("%c[RECOVERY] Initializing Universal Migration Engine...", "color: #ff9800; font-weight: bold;");
 
@@ -147,7 +147,7 @@ window.importPegasusData = function(event) {
 
         } catch (err) {
             console.error("Critical Recovery Failure:", err);
-            alert("FATAL RESTORE ERROR: " + err.message);
+            await window.pegasusAlert("FATAL RESTORE ERROR: " + err.message);
         }
     };
     reader.readAsText(file);
@@ -158,7 +158,7 @@ async function finalizeRecovery() {
     if (window.PegasusCloud && window.PegasusCloud.push) {
         await window.PegasusCloud.push(true);
     }
-    alert("✅ Η ΑΝΑΚΤΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!\n\nΌλα τα δεδομένα διορθώθηκαν και συγχρονίστηκαν.");
+    await window.pegasusAlert("✅ Η ΑΝΑΚΤΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!\n\nΌλα τα δεδομένα διορθώθηκαν και συγχρονίστηκαν.");
     window.location.reload();
 }
 

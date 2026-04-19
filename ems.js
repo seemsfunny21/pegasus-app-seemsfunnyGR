@@ -69,7 +69,7 @@ window.saveEMSFinal = async function() {
     const kcal = parseFloat(kcalStr);
 
     if (!dateStr || isNaN(avg) || isNaN(kcal)) {
-        alert("ΑΠΟΤΥΧΙΑ: Εισάγετε έγκυρα αριθμητικά δεδομένα.");
+        await window.pegasusAlert("ΑΠΟΤΥΧΙΑ: Εισάγετε έγκυρα αριθμητικά δεδομένα.");
         return;
     }
 
@@ -105,7 +105,7 @@ window.saveEMSFinal = async function() {
             await window.PegasusCloud.push(true);
         }
         
-        alert(`⚡ PEGASUS SYNC: Πιστώθηκαν 36 σετ.\nΚαύση: ${kcal} kcal.\nΗ Τετάρτη ολοκληρώθηκε!`);
+        await window.pegasusAlert(`⚡ PEGASUS SYNC: Πιστώθηκαν 36 σετ.\nΚαύση: ${kcal} kcal.\nΗ Τετάρτη ολοκληρώθηκε!`);
         
         window.closeEMSModal();
         
@@ -116,7 +116,7 @@ window.saveEMSFinal = async function() {
 
     } catch (e) {
         console.error("EMS Save Error:", e);
-        alert("Σφάλμα κατά τον συγχρονισμό.");
+        await window.pegasusAlert("Σφάλμα κατά τον συγχρονισμό.");
     }
 };
 
