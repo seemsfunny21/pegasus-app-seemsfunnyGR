@@ -169,44 +169,68 @@ const playBeep = (volume = 1) => {
     }
 };
 
-/* ===== PEGASUS ENGINE BRIDGE (SAFE WRAPPER) ===== */
-window._pegasusEventBuffer = window._pegasusEventBuffer || [];
-
-window.PegasusEngine = {
-    dispatch: function(action) {
-        window._pegasusEventBuffer.push({
-            action: action,
-            time: Date.now()
-        });
-
-        if (window._pegasusEventBuffer.length > 100) {
-            window._pegasusEventBuffer = window._pegasusEventBuffer.slice(-100);
-        }
-
-        console.log("📨 PEGASUS ENGINE EVENT:", action);
-    },
-
-    getEventBuffer: function() {
-        return window._pegasusEventBuffer || [];
-    },
-
-    getState: function() {
-        return {
-            exercises: exercises,
-            remainingSets: remainingSets,
-            currentIdx: currentIdx,
-            phase: phase,
-            running: running,
-            totalSeconds: totalSeconds,
-            remainingSeconds: remainingSeconds,
-            phaseRemainingSeconds: phaseRemainingSeconds,
-            sessionActiveKcal: sessionActiveKcal,
-            TURBO_MODE: TURBO_MODE,
-            SPEED: SPEED,
-            userWeight: userWeight
-        };
+/* ===== PEGASUS CORE ENGINE BRIDGE ===== */
+function clonePegasusValue(value) {
+    try {
+        return structuredClone(value);
+    } catch (e) {
+        return JSON.parse(JSON.stringify(value));
     }
-};
+}
+
+function getPegasusCoreEngine() {
+    if (window.PegasusEngine && window.PegasusEngine.__isCoreEngine) {
+        return window.PegasusEngine;
+    }
+    return null;
+}
+
+function restoreLegacyExerciseRefs(realExercises) {
+    exercises = realExercises || [];
+    window.exercises = exercises;
+}
+
+function syncEngineFromLegacy(actionType, extra) {
+    const engine = getPegasusCoreEngine();
+    if (!engine) return;
+
+    const realExercises = exercises;
+    const safeRemainingSets = Array.isArray(remainingSets) ? remainingSets.slice() : [];
+    const currentState = engine.getState ? clonePegasusValue(engine.getState()) : engine.getInitialState();
+
+    currentState.workout = currentState.workout || {};
+    currentState.timers = currentState.timers || {};
+    currentState.user = currentState.user || {};
+    currentState.nutrition = currentState.nutrition || {};
+    currentState.meta = currentState.meta || {};
+
+    currentState.workout.currentIdx = currentIdx;
+    currentState.workout.phase = phase;
+    currentState.workout.running = running;
+    currentState.workout.remainingSets = safeRemainingSets;
+    currentState.workout.sessionKcal = sessionActiveKcal;
+
+    if (extra && Object.prototype.hasOwnProperty.call(extra, "selectedDay")) {
+        currentState.workout.selectedDay = extra.selectedDay;
+    }
+
+    currentState.timers.totalSeconds = totalSeconds;
+    currentState.timers.remainingSeconds = remainingSeconds;
+    currentState.timers.phaseRemainingSeconds = phaseRemainingSeconds;
+    currentState.timers.turboMode = TURBO_MODE;
+    currentState.timers.speed = SPEED;
+
+    currentState.user.weight = userWeight;
+    currentState.user.muted = muted;
+
+    currentState.nutrition.todayDateStr = window.getPegasusTodayDateStr();
+    currentState.nutrition.todayKey = window.getPegasusLocalDateKey();
+    currentState.meta.updatedAt = Date.now();
+    currentState.meta.lastAction = actionType || "SYNC_LEGACY";
+
+    engine.replaceState(currentState, actionType || "SYNC_LEGACY");
+    restoreLegacyExerciseRefs(realExercises);
+}
 
 /* ===== 3.5 SMART SYNC (AUTO-SKIP COMPLETED TARGETS) ===== */
 window.syncSessionWithHistory = function() {
@@ -376,6 +400,8 @@ function selectDay(btn, day) {
     });
 
     if (typeof calculateTotalTime === "function") calculateTotalTime(false);
+    syncEngineFromLegacy("SELECT_DAY", { selectedDay: day });
+
     setTimeout(() => { window.syncSessionWithHistory(); }, 50);
 
     setTimeout(() => {
@@ -449,6 +475,10 @@ function startPause() {
 
             const barFill = document.getElementById("phaseTimerFill");
             if (barFill) barFill.style.width = "0%";
+
+            syncEngineFromLegacy("RESUME_FROM_PREP");
+        } else {
+            syncEngineFromLegacy("START_WORKOUT");
         }
 
         runPhase();
@@ -456,6 +486,7 @@ function startPause() {
         clearInterval(timer);
         timer = null;
         if (vid) vid.pause();
+        syncEngineFromLegacy("PAUSE_WORKOUT");
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
     }
 }
@@ -516,6 +547,8 @@ function runPhase() {
         label.className = "phase-label " + cssClass;
     }
 
+    syncEngineFromLegacy("PHASE_START");
+
     if (phase !== 2) showVideo(currentIdx);
 
     timer = setInterval(() => {
@@ -542,6 +575,7 @@ function runPhase() {
         }
 
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
+        syncEngineFromLegacy("PHASE_TICK");
 
         if (t <= 0) {
             clearInterval(timer);
@@ -551,6 +585,7 @@ function runPhase() {
 
             if (phase === 0) {
                 phase = 1;
+                syncEngineFromLegacy("PHASE_COMPLETE_PREP");
                 runPhase();
             } else if (phase === 1) {
                 let done = parseInt(e.dataset.done) || 0;
@@ -570,12 +605,14 @@ function runPhase() {
                 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 
                 phase = 2;
+                syncEngineFromLegacy("SET_COMPLETED");
                 runPhase();
             } else {
                 let next = getNextIndexCircuit();
                 if (next !== -1) {
                     currentIdx = next;
                     phase = 0;
+                    syncEngineFromLegacy("REST_COMPLETE_NEXT");
                     runPhase();
                 } else {
                     finishWorkout();
@@ -618,6 +655,7 @@ function skipToNextExercise() {
     if (nextIdx !== -1) {
         currentIdx = nextIdx;
         phase = 0;
+        syncEngineFromLegacy("SKIP_EXERCISE");
         if (running) runPhase();
         else showVideo(currentIdx);
     } else {
@@ -658,6 +696,7 @@ window.toggleSkipExercise = function(idx, auto = false) {
             if (nextIdx !== -1) {
                 currentIdx = nextIdx;
                 phase = 0;
+                syncEngineFromLegacy("TOGGLE_SKIP_EXERCISE");
                 runPhase();
             } else {
                 finishWorkout();
@@ -670,6 +709,7 @@ window.toggleSkipExercise = function(idx, auto = false) {
     }
 
     calculateTotalTime(true);
+    syncEngineFromLegacy("TOGGLE_SKIP_EXERCISE");
     if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 };
 
@@ -708,6 +748,8 @@ window.saveWeight = function(name, val) {
     if (lifter === "ΑΓΓΕΛΟΣ") {
         localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
     }
+
+    syncEngineFromLegacy("SAVE_WEIGHT");
 
     if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render();
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
@@ -756,6 +798,8 @@ function showVideo(i) {
         });
     }
 }
+
+window.showVideo = showVideo;
 
 function calculateTotalTime(isUpdate = false) {
     const config = getPegasusTimerConfig();
@@ -852,6 +896,7 @@ function finishWorkout() {
     phaseRemainingSeconds = null;
     remainingSeconds = 0;
     updateTotalBar();
+    syncEngineFromLegacy("WORKOUT_FINISHED");
 
     const label = document.getElementById("phaseTimer");
     if (label) {
@@ -879,6 +924,7 @@ function finishWorkout() {
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
             sessionActiveKcal = 0;
             localStorage.setItem("pegasus_session_kcal", "0.0");
+            syncEngineFromLegacy("WORKOUT_REPORT_SAVED");
         }
 
         const list = document.getElementById("exList");
@@ -959,6 +1005,8 @@ function openExercisePreview() {
         setTimeout(() => window.forcePegasusRender(), 50);
     }
 }
+
+window.openExercisePreview = openExercisePreview;
 
 /* ===== 10. TRACKING ===== */
 window.logPegasusSet = function(exName) {
@@ -1054,6 +1102,7 @@ window.onload = () => {
                 if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
                     window.currentIdx = 0;
                     window.phase = 0;
+                    syncEngineFromLegacy("WARMUP_RETURN");
                     window.showVideo(0);
                 }
             }
@@ -1063,6 +1112,7 @@ window.onload = () => {
             window.SPEED = window.TURBO_MODE ? 10 : 1;
             TURBO_MODE = window.TURBO_MODE;
             SPEED = window.SPEED;
+            syncEngineFromLegacy("SYNC_TURBO");
 
             const btn = document.getElementById('btnTurboTools');
             if (btn) {
@@ -1073,6 +1123,7 @@ window.onload = () => {
         "btnMuteTools": () => {
             window.muted = !window.muted;
             muted = window.muted;
+            syncEngineFromLegacy("SYNC_MUTED");
 
             const btn = document.getElementById('btnMuteTools');
             if (btn) {
@@ -1158,6 +1209,7 @@ window.onload = () => {
                         if (typeof exercises !== 'undefined') {
                             remainingSets = exercises.map(ex => parseFloat(ex.dataset.total));
                             currentIdx = 0;
+                            syncEngineFromLegacy("AUTO_INIT_TODAY", { selectedDay: todayName });
                             console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
                         }
                     }, 150);
@@ -1175,6 +1227,8 @@ window.onload = () => {
             loader.style.visibility = 'hidden';
         }
 
+        syncEngineFromLegacy("BOOT_COMPLETE", { selectedDay: todayName });
+
         if (typeof window.updateKcalUI === "function") {
             window.updateKcalUI();
         }
@@ -1185,6 +1239,8 @@ window.onload = () => {
 
 window.PegasusDebug = {
     state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
+    engineState: () => (window.PegasusEngine?.getState ? window.PegasusEngine.getState() : null),
+    replay: (limit) => (window.PegasusEngine?.replay ? window.PegasusEngine.replay(limit) : null),
     manifest: () => P_M,
     testImage: (name) => {
         const testImg = new Image();
