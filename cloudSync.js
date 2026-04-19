@@ -411,6 +411,29 @@ const PegasusCloud = {
         this.savePendingChanges({});
     },
 
+    pruneStalePendingChanges(remoteTs) {
+        const queue = this.loadPendingChanges();
+        if (!queue || typeof queue !== "object") return false;
+
+        const remoteMillis = Number(remoteTs);
+        if (!Number.isFinite(remoteMillis) || remoteMillis <= 0) return false;
+
+        let changed = false;
+        for (const [key, entry] of Object.entries(queue)) {
+            const entryTs = Number(entry?.ts || 0);
+            if (Number.isFinite(entryTs) && entryTs > 0 && entryTs <= remoteMillis) {
+                delete queue[key];
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.savePendingChanges(queue);
+        }
+
+        return changed;
+    },
+
     applyPendingChangesToLocal() {
         const queue = this.loadPendingChanges();
         const entries = Object.entries(queue);
@@ -852,7 +875,7 @@ const PegasusCloud = {
             const cloud = await this.fetchLatestRecord();
             const lastLocal = parseInt(localStorage.getItem(this.storage.lastPush) || "0", 10);
             const remoteTs = parseInt(cloud?.last_update_ts || "0", 10);
-            const pendingExists = this.hasPendingChanges();
+            let pendingExists = this.hasPendingChanges();
 
             if (!remoteTs) {
                 this.hasSuccessfullyPulled = true;
@@ -863,6 +886,11 @@ const PegasusCloud = {
             }
 
             if (remoteTs !== lastLocal) {
+                if (remoteTs > lastLocal && pendingExists) {
+                    this.pruneStalePendingChanges(remoteTs);
+                    pendingExists = this.hasPendingChanges();
+                }
+
                 const remotePayload = await this.extractCloudPayload(cloud);
                 const remoteStorage = (remotePayload?.storage && typeof remotePayload.storage === "object") ? remotePayload.storage : {};
                 const remoteProtectedStorage = (remotePayload?.protectedStorage && typeof remotePayload.protectedStorage === "object") ? remotePayload.protectedStorage : {};

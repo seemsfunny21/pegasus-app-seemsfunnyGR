@@ -520,6 +520,12 @@
         if (targetView) {
             targetView.classList.add('active');
             refreshUIComponent(id);
+
+            if (id === 'diet' && window.PegasusCloud?.isUnlocked && navigator.onLine) {
+                setTimeout(() => {
+                    runMobileSyncHeartbeat();
+                }, 50);
+            }
         }
     }
 
@@ -922,7 +928,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js')
+                navigator.serviceWorker.register('../sw.js?v=3.8')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();
