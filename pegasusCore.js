@@ -671,6 +671,26 @@
         };
     }
 
+    function getUiState() {
+        const progress = getProgressSnapshot();
+        const timerDisplay = getTimerDisplayState();
+        const summary = getRuntimeSummary();
+        const controls = getControlState();
+        const phaseIndex = Number(progress?.phase ?? 0);
+        const phaseName = phaseIndex === 0 ? "prep" : (phaseIndex === 1 ? "work" : "rest");
+
+        return {
+            selectedDay: summary.selectedDay || controls.selectedDay || progress.selectedDay || null,
+            phase: phaseIndex,
+            phaseName,
+            progress,
+            timerDisplay,
+            summary,
+            controls,
+            persisted: getPersistedRuntime()
+        };
+    }
+
     window.PegasusEngine = {
         __isCoreEngine: true,
         dispatch,
@@ -699,6 +719,7 @@
         getTimerDisplayState,
         getRuntimeSummary,
         getControlState,
+        getUiState,
         getActionEntries,
         getActionTypes,
         getWorkoutActionTypes,

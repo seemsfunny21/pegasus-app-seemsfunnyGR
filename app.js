@@ -129,9 +129,12 @@ window.updateKcalUI = function() {
     const kcalLabel = document.querySelector(".kcal-label");
     if (!kcalDisplay) return;
 
-    const summary = (typeof window.getPegasusRuntimeSummary === "function")
+    const uiState = (typeof window.getPegasusUiState === "function")
+        ? window.getPegasusUiState()
+        : null;
+    const summary = uiState?.summary || ((typeof window.getPegasusRuntimeSummary === "function")
         ? window.getPegasusRuntimeSummary()
-        : { running, sessionKcal: sessionActiveKcal };
+        : { running, sessionKcal: sessionActiveKcal });
 
     const isWorkoutActive = !!summary.running;
     const liveSessionKcal = typeof summary.sessionKcal === "number" ? summary.sessionKcal : sessionActiveKcal;
@@ -366,8 +369,32 @@ function getPegasusControlState() {
 
 window.getPegasusControlState = getPegasusControlState;
 
+function getPegasusUiState() {
+    const engine = getPegasusCoreEngine();
+    if (engine?.getUiState) {
+        return engine.getUiState();
+    }
+
+    const progress = getPegasusProgressState();
+    const phaseValue = progress?.phase ?? phase;
+
+    return {
+        selectedDay: getPegasusRuntimeSummary().selectedDay || null,
+        phase: phaseValue,
+        phaseName: phaseValue === 0 ? "prep" : (phaseValue === 1 ? "work" : "rest"),
+        progress,
+        timerDisplay: getPegasusTimerDisplayState(),
+        summary: getPegasusRuntimeSummary(),
+        controls: getPegasusControlState(),
+        persisted: (typeof window.getPegasusPersistedProgress === "function") ? window.getPegasusPersistedProgress() : null
+    };
+}
+
+window.getPegasusUiState = getPegasusUiState;
+
 function renderPegasusControlState() {
-    const controls = getPegasusControlState();
+    const uiState = getPegasusUiState();
+    const controls = uiState?.controls || getPegasusControlState();
     const startBtn = document.getElementById("btnStart");
     const nextBtn = document.getElementById("btnNext");
 
@@ -1310,9 +1337,12 @@ function calculateTotalTime(isUpdate = false) {
 function updateTotalBar() {
     const bar = document.getElementById("totalProgress");
     const timeText = document.getElementById("totalProgressTime");
-    const timerDisplay = (typeof window.getPegasusTimerDisplayState === "function")
+    const uiState = (typeof window.getPegasusUiState === "function")
+        ? window.getPegasusUiState()
+        : null;
+    const timerDisplay = uiState?.timerDisplay || ((typeof window.getPegasusTimerDisplayState === "function")
         ? window.getPegasusTimerDisplayState()
-        : { totalSeconds, remainingSeconds, progressPercent: 0, remainingText: "0:00" };
+        : { totalSeconds, remainingSeconds, progressPercent: 0, remainingText: "0:00" });
 
     const safeTotalSeconds = (typeof timerDisplay?.totalSeconds === "number" && timerDisplay.totalSeconds > 0) ? timerDisplay.totalSeconds : totalSeconds;
     const safeRemainingSeconds = (typeof timerDisplay?.remainingSeconds === "number") ? timerDisplay.remainingSeconds : remainingSeconds;
@@ -1759,6 +1789,7 @@ window.PegasusDebug = {
     summary: () => (typeof window.getPegasusRuntimeSummary === "function" ? window.getPegasusRuntimeSummary() : null),
     timerDisplay: () => (typeof window.getPegasusTimerDisplayState === "function" ? window.getPegasusTimerDisplayState() : null),
     controls: () => (typeof window.getPegasusControlState === "function" ? window.getPegasusControlState() : null),
+    uiState: () => (typeof window.getPegasusUiState === "function" ? window.getPegasusUiState() : null),
     replayProgress: (limit) => (typeof window.getPegasusReplayProgress === "function" ? window.getPegasusReplayProgress(limit) : null),
     persistedProgress: () => (typeof window.getPegasusPersistedProgress === "function" ? window.getPegasusPersistedProgress() : null),
     restorePersistedProgress: () => (typeof window.restorePegasusPersistedProgress === "function" ? window.restorePegasusPersistedProgress() : null),
