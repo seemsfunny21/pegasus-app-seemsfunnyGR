@@ -41,6 +41,8 @@ const PegasusCloud = {
     lastPushTs: null,
     lastUiRefreshTs: 0,
     lastStatus: null,
+    restorePromise: null,
+    hasApprovedRestoreCompleted: false,
 
     engine: null,
 
@@ -724,6 +726,8 @@ const PegasusCloud = {
         this.hasSuccessfullyPulled = false;
         this.masterKey = "";
         this.userKey = "";
+        this.restorePromise = null;
+        this.hasApprovedRestoreCompleted = false;
         this.emitSyncStatus("locked", true);
     },
 
@@ -734,56 +738,73 @@ const PegasusCloud = {
             ...options
         };
 
-        if (opts.requireValidWindow) {
-            if (!this.canAutoUnlock()) return false;
-        } else {
-            if (!this.canRestoreApprovedDevice()) return false;
-        }
-
-        const restoredMaster = await this.getStoredMasterKey();
-        if (!restoredMaster) return false;
-
-        const prevState = {
-            isUnlocked: this.isUnlocked,
-            hasSuccessfullyPulled: this.hasSuccessfullyPulled,
-            userKey: this.userKey,
-            masterKey: this.masterKey
-        };
-
-        this.userKey = this.config.encryptedPart;
-        this.isUnlocked = true;
-        this.masterKey = restoredMaster;
-        this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
-
-        try {
-            const repairedMasterHash = await this.hashString(restoredMaster);
-            this.safeSetLocal(this.storage.masterHash, repairedMasterHash);
-            this.setValidSessionWindow();
-
-            if (navigator.onLine) {
-                await this.pull(true);
-            } else {
-                this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
-            }
-
-            this.startAutoSync();
-
-            if (navigator.onLine && this.hasPendingChanges()) {
-                await this._doPush();
-            }
-
-            console.log(`🔓 CLOUD: ${opts.logLabel}`);
-            this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
+        if (this.isUnlocked && this.hasApprovedRestoreCompleted) {
             return true;
-        } catch (e) {
-            this.isUnlocked = prevState.isUnlocked;
-            this.hasSuccessfullyPulled = prevState.hasSuccessfullyPulled;
-            this.userKey = prevState.userKey;
-            this.masterKey = prevState.masterKey;
-            this.emitSyncStatus("locked", true);
-            console.warn(`⚠️ CLOUD: ${opts.logLabel} failed.`, e);
-            return false;
         }
+
+        if (this.restorePromise) {
+            return this.restorePromise;
+        }
+
+        this.restorePromise = (async () => {
+            if (opts.requireValidWindow) {
+                if (!this.canAutoUnlock()) return false;
+            } else {
+                if (!this.canRestoreApprovedDevice()) return false;
+            }
+
+            const restoredMaster = await this.getStoredMasterKey();
+            if (!restoredMaster) return false;
+
+            const prevState = {
+                isUnlocked: this.isUnlocked,
+                hasSuccessfullyPulled: this.hasSuccessfullyPulled,
+                userKey: this.userKey,
+                masterKey: this.masterKey,
+                hasApprovedRestoreCompleted: this.hasApprovedRestoreCompleted
+            };
+
+            this.userKey = this.config.encryptedPart;
+            this.isUnlocked = true;
+            this.masterKey = restoredMaster;
+            this.emitSyncStatus(navigator.onLine ? "syncing" : "offline", true);
+
+            try {
+                const repairedMasterHash = await this.hashString(restoredMaster);
+                this.safeSetLocal(this.storage.masterHash, repairedMasterHash);
+                this.setValidSessionWindow();
+
+                if (navigator.onLine) {
+                    await this.pull(true);
+                } else {
+                    this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
+                }
+
+                this.startAutoSync();
+
+                if (navigator.onLine && this.hasPendingChanges()) {
+                    await this._doPush();
+                }
+
+                this.hasApprovedRestoreCompleted = true;
+                console.log(`🔓 CLOUD: ${opts.logLabel}`);
+                this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
+                return true;
+            } catch (e) {
+                this.isUnlocked = prevState.isUnlocked;
+                this.hasSuccessfullyPulled = prevState.hasSuccessfullyPulled;
+                this.userKey = prevState.userKey;
+                this.masterKey = prevState.masterKey;
+                this.hasApprovedRestoreCompleted = prevState.hasApprovedRestoreCompleted;
+                this.emitSyncStatus("locked", true);
+                console.warn(`⚠️ CLOUD: ${opts.logLabel} failed.`, e);
+                return false;
+            } finally {
+                this.restorePromise = null;
+            }
+        })();
+
+        return this.restorePromise;
     },
 
     async tryAutoUnlock() {
@@ -791,6 +812,7 @@ const PegasusCloud = {
     },
 
     async tryApprovedDeviceUnlock() {
+        if (this.isUnlocked && this.hasApprovedRestoreCompleted) return true;
         return this.restoreApprovedDevice({ requireValidWindow: false, logLabel: "Approved device restored" });
     },
 
@@ -906,6 +928,7 @@ const PegasusCloud = {
             if (!storedMasterMatches) {
                 console.warn("⚠️ CLOUD: Stored master hash repaired from successful unlock.");
             }
+            this.hasApprovedRestoreCompleted = true;
             console.log(opts.autoUnlock ? "🔓 CLOUD: Auto-unlocked" : "🔓 CLOUD: Unlocked");
             this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
             return true;
@@ -919,6 +942,7 @@ const PegasusCloud = {
                 this.safeRemoveLocal(this.storage.wrappedMaster);
                 if (!storedMasterHash) this.safeRemoveLocal(this.storage.masterHash);
             }
+            this.hasApprovedRestoreCompleted = false;
             this.emitSyncStatus("locked", true);
             if (String(e?.message || "") === "INVALID_MASTER_KEY") return false;
             console.error("❌ UNLOCK ERROR:", e);
@@ -1319,6 +1343,7 @@ if (!window.originalSetItem) {
 
         queueMicrotask(() => {
             cloud.queuePendingChange(key, value, "set");
+            if (!cloud.isUnlocked) return;
             cloud.push();
         });
     };
@@ -1341,6 +1366,7 @@ if (!window.originalRemoveItem) {
         if (shouldQueue) {
             queueMicrotask(() => {
                 window.PegasusCloud.queuePendingChange(key, null, "remove");
+                if (!window.PegasusCloud.isUnlocked) return;
                 window.PegasusCloud.push();
             });
         }

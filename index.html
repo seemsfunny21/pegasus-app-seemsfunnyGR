@@ -482,10 +482,10 @@
         try {
             if (!window.PegasusCloud) return;
 
-            let ok = false;
-            if (window.PegasusCloud.canRestoreApprovedDevice?.()) {
+            let ok = !!window.PegasusCloud.isUnlocked;
+            if (!ok && window.PegasusCloud.canRestoreApprovedDevice?.()) {
                 ok = await window.PegasusCloud.tryApprovedDeviceUnlock();
-            } else if (window.PegasusCloud.canAutoUnlock?.()) {
+            } else if (!ok && window.PegasusCloud.canAutoUnlock?.()) {
                 ok = await window.PegasusCloud.tryAutoUnlock();
             }
 
@@ -494,11 +494,6 @@
             if (ok) {
                 if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
                     await window.PegasusCloud.syncNow(true);
-                    setTimeout(() => {
-                        if (navigator.onLine && window.PegasusCloud?.isUnlocked && typeof window.PegasusCloud.syncNow === "function") {
-                            window.PegasusCloud.syncNow(true);
-                        }
-                    }, 1200);
                 }
                 if (typeof refreshAllUI === 'function') refreshAllUI();
             }
