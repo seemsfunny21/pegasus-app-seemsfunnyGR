@@ -5,6 +5,20 @@
 
 const CAR_M = window.PegasusManifest || { car: { identity: "pegasus_car_identity", dates: "pegasus_car_dates", service: "pegasus_car_service", legacySpecs: "pegasus_car_specs", legacyService: "peg_car_service", legacyDates: "peg_car_dates" }};
 
+
+const PEGASUS_CAR_SAFE_PARSE = window.PEGASUS_CAR_SAFE_PARSE || function(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return (parsed === null || parsed === undefined) ? fallback : parsed;
+    } catch (e) {
+        console.warn('⚠️ CAR: Safe parse fallback for', key, e);
+        return fallback;
+    }
+};
+window.PEGASUS_CAR_SAFE_PARSE = PEGASUS_CAR_SAFE_PARSE;
+
 window.PegasusCar = {
     saveSpecs: async function() {
         console.log("🚗 CAR: Initiating Save Protocol...");

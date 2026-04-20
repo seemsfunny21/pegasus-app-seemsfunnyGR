@@ -1026,11 +1026,16 @@
     (async function boot() {
         console.log("⚡ PEGASUS: Fast Boot...");
 
-        installMobileInventoryBridges();
-        refreshAllUI();
-        updateSuppUI();
+        const modal = document.getElementById("pinModal");
+        isUnlocked = false;
+        if (modal) modal.style.display = "flex";
+        setSyncStatus('locked');
 
         try {
+            try { installMobileInventoryBridges(); } catch (e) { console.error("📦 Mobile Bridge Error:", e); }
+            try { refreshAllUI(); } catch (e) { console.error("📱 Mobile UI Boot Error:", e); }
+            try { updateSuppUI(); } catch (e) { console.error("📦 Mobile Supp UI Error:", e); }
+
             if (window.PegasusCloud?.canAutoUnlock?.()) {
                 setSyncStatus('syncing');
                 const success = await window.PegasusCloud.tryAutoUnlock();
@@ -1038,18 +1043,18 @@
                 if (success) {
                     console.log("📡 Cloud Sync: Fully Connected.");
                     isUnlocked = true;
+                    if (modal) modal.style.display = "none";
                     await reconcileMobileDailyRoutine();
                     await runMobileSyncHeartbeat();
                     startMobileSyncHeartbeat();
                     setTimeout(() => {
-                        refreshAllUI();
-                        updateSuppUI();
+                        try { refreshAllUI(); } catch (e) { console.error("📱 Mobile UI Post-Unlock Error:", e); }
+                        try { updateSuppUI(); } catch (e) { console.error("📦 Mobile Supp Post-Unlock Error:", e); }
                     }, 500);
                     return;
                 }
             }
 
-            const modal = document.getElementById("pinModal");
             if (modal) modal.style.display = "flex";
             isUnlocked = false;
             setSyncStatus('locked');
@@ -1057,7 +1062,6 @@
             console.error("📡 Cloud Boot Error:", e);
             isUnlocked = false;
             setSyncStatus('locked');
-            const modal = document.getElementById("pinModal");
             if (modal) modal.style.display = "flex";
         }
     })();
