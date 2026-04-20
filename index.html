@@ -494,6 +494,11 @@
             if (ok) {
                 if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
                     await window.PegasusCloud.syncNow(true);
+                    setTimeout(() => {
+                        if (navigator.onLine && window.PegasusCloud?.isUnlocked && typeof window.PegasusCloud.syncNow === "function") {
+                            window.PegasusCloud.syncNow(true);
+                        }
+                    }, 1200);
                 }
                 if (typeof refreshAllUI === 'function') refreshAllUI();
             }

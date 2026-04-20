@@ -1073,7 +1073,14 @@ const PegasusCloud = {
        🔁 SYNC NOW
     ========================= */
     async syncNow(silent = false) {
-        if (!this.isUnlocked) return false;
+        if (!this.isUnlocked) {
+            if (this.canRestoreApprovedDevice()) {
+                const restored = await this.tryApprovedDeviceUnlock();
+                if (!restored) return false;
+            } else {
+                return false;
+            }
+        }
         if (this.isPulling || this.isPushing) return false;
         if (!navigator.onLine) {
             this.emitSyncStatus("offline", true);
@@ -1094,12 +1101,20 @@ const PegasusCloud = {
        📤 PUSH (ENCRYPTED SNAPSHOT)
     ========================= */
     push(force = false) {
-        if (!this.isUnlocked) return;
-        if (this.isPulling || this.isPushing) return;
+        if (!this.isUnlocked) {
+            if (this.canRestoreApprovedDevice()) {
+                return this.tryApprovedDeviceUnlock().then(ok => {
+                    if (!ok) return false;
+                    return this.push(force);
+                });
+            }
+            return false;
+        }
+        if (this.isPulling || this.isPushing) return false;
 
         if (!navigator.onLine) {
             this.emitSyncStatus("offline", true);
-            return;
+            return false;
         }
 
         if (force) {
@@ -1295,14 +1310,16 @@ if (!window.originalSetItem) {
     localStorage.setItem = function(key, value) {
         window.originalSetItem.apply(this, arguments);
 
-        if (!window.PegasusCloud?.isUnlocked) return;
-        if (window.PegasusCloud.isApplyingRemote) return;
-        if (!window.PegasusCloud.isAllowedStorageKey(key)) return;
-        if (window.PegasusCloud.isInternalStorageKey(key)) return;
+        const cloud = window.PegasusCloud;
+        if (!cloud) return;
+        if (cloud.isApplyingRemote) return;
+        if (!cloud.isAllowedStorageKey(key)) return;
+        if (cloud.isInternalStorageKey(key)) return;
+        if (!cloud.isUnlocked && !cloud.canRestoreApprovedDevice?.()) return;
 
         queueMicrotask(() => {
-            window.PegasusCloud.queuePendingChange(key, value, "set");
-            window.PegasusCloud.push();
+            cloud.queuePendingChange(key, value, "set");
+            cloud.push();
         });
     };
 }
@@ -1312,7 +1329,8 @@ if (!window.originalRemoveItem) {
 
     localStorage.removeItem = function(key) {
         const shouldQueue = (
-            window.PegasusCloud?.isUnlocked &&
+            !!window.PegasusCloud &&
+            (window.PegasusCloud.isUnlocked || window.PegasusCloud.canRestoreApprovedDevice?.()) &&
             !window.PegasusCloud.isApplyingRemote &&
             window.PegasusCloud.isAllowedStorageKey(key) &&
             !window.PegasusCloud.isInternalStorageKey(key)
