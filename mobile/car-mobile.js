@@ -41,11 +41,11 @@ window.PegasusCar = {
     },
 
     load: function() {
-        const identity = JSON.parse(localStorage.getItem(CAR_M.car.identity)) || 
-                         JSON.parse(localStorage.getItem(CAR_M.car.legacySpecs)) || {};
+        const identity = PEGASUS_CAR_SAFE_PARSE(CAR_M.car.identity, null) || 
+                         PEGASUS_CAR_SAFE_PARSE(CAR_M.car.legacySpecs, {}) || {};
         
-        const dates = JSON.parse(localStorage.getItem(CAR_M.car.dates)) || 
-                      JSON.parse(localStorage.getItem(CAR_M.car.legacyDates)) || {};
+        const dates = PEGASUS_CAR_SAFE_PARSE(CAR_M.car.dates, null) || 
+                      PEGASUS_CAR_SAFE_PARSE(CAR_M.car.legacyDates, {}) || {};
         
         const fields = {
             'carPlate': identity.plate, 'carModel': identity.model,
@@ -66,7 +66,7 @@ window.PegasusCar = {
         const k = document.getElementById('srvKm')?.value;
         if (!t || !k) return;
 
-        let logs = JSON.parse(localStorage.getItem(CAR_M.car.service)) || [];
+        let logs = PEGASUS_CAR_SAFE_PARSE(CAR_M.car.service, []) || [];
         
         // 🛡️ DATE FORMAT FIX: Αποφυγή el-GR format trap
         const rawDate = new Date();
@@ -84,10 +84,10 @@ window.PegasusCar = {
     },
 
     renderServiceLog: function() {
-        let logs = JSON.parse(localStorage.getItem(CAR_M.car.service));
+        let logs = PEGASUS_CAR_SAFE_PARSE(CAR_M.car.service, null);
         
         if (!logs || logs.length === 0) {
-            logs = JSON.parse(localStorage.getItem(CAR_M.car.legacyService)) || [];
+            logs = PEGASUS_CAR_SAFE_PARSE(CAR_M.car.legacyService, []) || [];
             if (logs.length > 0) localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
         }
 
@@ -99,14 +99,15 @@ window.PegasusCar = {
             return;
         }
 
+        const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
         container.innerHTML = logs.map((i, idx) => `
             <div class="log-item" style="border-left: 4px solid var(--main); margin-bottom: 10px; padding: 12px; background: rgba(255,255,255,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div style="font-weight:900; font-size:13px; color:#fff; text-align:left; flex:1;">${i.t}</div>
+                    <div style="font-weight:900; font-size:13px; color:#fff; text-align:left; flex:1;">${esc(i.t)}</div>
                     <button onclick="window.PegasusCar.deleteLog(${idx})" style="background:none; border:none; color:var(--danger); font-weight:bold; padding: 0 5px;">✕</button>
                 </div>
                 <div style="font-size:11px; color:var(--main); font-weight:800; margin-top:5px; text-align:left;">
-                    📍 ${i.k} KM | 📅 ${i.d}
+                    📍 ${esc(i.k)} KM | 📅 ${esc(i.d)}
                 </div>
             </div>
         `).join('');
@@ -114,7 +115,7 @@ window.PegasusCar = {
 
     deleteLog: async function(idx) {
         if(!confirm("Οριστική διαγραφή αυτής της εργασίας;")) return;
-        let logs = JSON.parse(localStorage.getItem(CAR_M.car.service)) || [];
+        let logs = PEGASUS_CAR_SAFE_PARSE(CAR_M.car.service, []) || [];
         logs.splice(idx, 1);
         localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
         

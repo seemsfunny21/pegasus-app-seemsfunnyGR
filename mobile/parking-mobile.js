@@ -1,5 +1,15 @@
 /* ===== PEGASUS PARKING TRACKER MODULE v2.1 (Anti-Crash Version) ===== */
 window.PegasusParking = {
+    selectHistory: function(idx) {
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || []; } catch (e) { history = []; }
+        const chosen = history[idx];
+        const input = document.getElementById('parkingInput');
+        if (!chosen || !input) return;
+        input.value = chosen;
+        this.save();
+    },
+
     save: async function() {
         const inputEl = document.getElementById('parkingInput');
         const location = inputEl ? inputEl.value.trim() : "";
@@ -85,11 +95,15 @@ window.PegasusParking = {
         const container = document.getElementById('parkingHistoryList');
         if (!container) return;
 
-        container.innerHTML = history.map(loc => `
-            <div class="log-item" onclick="document.getElementById('parkingInput').value='${loc}'; window.PegasusParking.save();" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4); margin-bottom:8px;">
-                <div style="font-size:13px; font-weight:800; color:#fff;">📍 ${loc}</div>
+        const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
+        container.innerHTML = history.map((loc, idx) => `
+            <div class="log-item parking-history-item" data-index="${idx}" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.4); margin-bottom:8px;">
+                <div style="font-size:13px; font-weight:800; color:#fff;">📍 ${esc(loc)}</div>
             </div>
         `).join('');
+        container.querySelectorAll('.parking-history-item').forEach(el => {
+            el.addEventListener('click', () => window.PegasusParking.selectHistory(Number(el.dataset.index)));
+        });
     }
 };
 

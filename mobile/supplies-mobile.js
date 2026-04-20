@@ -24,7 +24,7 @@
 
             if (lastSync === todayStr) return; // Ήδη ενημερωμένο για σήμερα
 
-            let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+            let supplies = (window.PegasusMobileSafe?.safeReadStorage(SUPPLIES_DATA_KEY, defaultSupplies, { repairOnFailure: true })) || defaultSupplies;
             
             let daysDiff = 1;
             if (lastSync) {
@@ -49,7 +49,7 @@
         },
 
         updateAmount: function(id, type) {
-            let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+            let supplies = (window.PegasusMobileSafe?.safeReadStorage(SUPPLIES_DATA_KEY, defaultSupplies, { repairOnFailure: true })) || defaultSupplies;
             const idx = supplies.findIndex(i => i.id === id);
             if (idx === -1) return;
 
@@ -63,7 +63,7 @@
         },
 
         setManualAmount: function(id) {
-            let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+            let supplies = (window.PegasusMobileSafe?.safeReadStorage(SUPPLIES_DATA_KEY, defaultSupplies, { repairOnFailure: true })) || defaultSupplies;
             const idx = supplies.findIndex(i => i.id === id);
             
             const newVal = prompt(`Ενημέρωση αποθέματος για: ${supplies[idx].label} (${supplies[idx].unit})`, supplies[idx].amount);
@@ -76,7 +76,7 @@
 
         deleteItem: function(id) {
             if(confirm('Διαγραφή αυτού του προϊόντος από τη βάση;')) {
-                let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+                let supplies = (window.PegasusMobileSafe?.safeReadStorage(SUPPLIES_DATA_KEY, defaultSupplies, { repairOnFailure: true })) || defaultSupplies;
                 supplies = supplies.filter(i => i.id !== id);
                 this.saveAndRender(supplies);
             }
@@ -108,7 +108,7 @@
                 return;
             }
 
-            let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+            let supplies = (window.PegasusMobileSafe?.safeReadStorage(SUPPLIES_DATA_KEY, defaultSupplies, { repairOnFailure: true })) || defaultSupplies;
             
             const newItem = {
                 id: 'sup_' + Date.now(),
@@ -178,27 +178,29 @@
         const container = document.getElementById('supplies-content');
         if (!container) return;
 
-        const supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
+        const supplies = (window.PegasusMobileSafe?.safeReadStorage(SUPPLIES_DATA_KEY, defaultSupplies, { repairOnFailure: true })) || defaultSupplies;
         
         container.innerHTML = supplies.map(item => {
             const pct = (item.amount / item.refill) * 100;
             const statusColor = pct < 15 ? '#ff4444' : (pct < 40 ? '#ffbb33' : '#00ff41');
 
+            const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
+            const safeId = encodeURIComponent(String(item.id || ''));
             return `
                 <div class="mini-card" style="border-left: 4px solid ${statusColor}; padding: 15px; position: relative;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                         <div>
-                            <div style="font-weight: 900; font-size: 16px; color: #fff;">${item.icon} ${item.label}</div>
+                            <div style="font-weight: 900; font-size: 16px; color: #fff;">${esc(item.icon)} ${esc(item.label)}</div>
                             <div style="font-size: 11px; color: #555; font-weight: 800;">
-                                ΣΥΝΟΛΟ: <span style="color:${statusColor}">${item.amount}${item.unit}</span>
+                                ΣΥΝΟΛΟ: <span style="color:${statusColor}">${Number(item.amount) || 0}${esc(item.unit)}</span>
                             </div>
                         </div>
                         <div style="display: flex; gap: 5px;">
-                            <button onclick="window.PegasusSupplies.setManualAmount('${item.id}')" 
+                            <button onclick="window.PegasusSupplies.setManualAmount(decodeURIComponent('${safeId}'))" 
                                     style="background: rgba(255,255,255,0.05); border: 1px solid #333; color: #777; border-radius: 8px; padding: 5px 8px; font-size: 12px; cursor: pointer;">
                                 ⚙️
                             </button>
-                            <button onclick="window.PegasusSupplies.deleteItem('${item.id}')" 
+                            <button onclick="window.PegasusSupplies.deleteItem(decodeURIComponent('${safeId}'))" 
                                     style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 5px 8px; font-size: 12px; cursor: pointer;">
                                 🗑️
                             </button>
@@ -211,12 +213,12 @@
 
                     <div style="display: flex; gap: 8px;">
                         <button class="secondary-btn" style="flex: 2; padding: 10px; font-size: 10px; border-color: #222;" 
-                                onclick="window.PegasusSupplies.updateAmount('${item.id}', 'consume')">
-                            -${item.portion}${item.unit}
+                                onclick="window.PegasusSupplies.updateAmount(decodeURIComponent('${safeId}'), 'consume')">
+                            -${Number(item.portion) || 0}${esc(item.unit)}
                         </button>
                         <button class="primary-btn" style="flex: 1; padding: 10px; font-size: 10px;" 
-                                onclick="window.PegasusSupplies.updateAmount('${item.id}', 'refill')">
-                            +${item.refill}
+                                onclick="window.PegasusSupplies.updateAmount(decodeURIComponent('${safeId}'), 'refill')">
+                            +${Number(item.refill) || 0}
                         </button>
                     </div>
                 </div>

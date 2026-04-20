@@ -49,7 +49,7 @@ window.PegasusEMS = {
         console.log("⚡ EMS: Session Completed. Running Final Pulse Protocol...");
         
         // --- 0. DATA SOURCE RECOVERY ---
-        let h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        let h = (window.PegasusMobileSafe?.safeReadStorage('pegasus_weekly_history', {}, { repairOnFailure: true })) || {};
         const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
         
         // --- 0.1 DATE PREPARATION (UNIFIED PADDING PROTOCOL) ---
@@ -72,7 +72,7 @@ window.PegasusEMS = {
 
         // --- 2. 🏆 ACHIEVEMENT SYNC (XP/LIFETIME STATS) ---
         // Το EMS θεωρείται Full Body Session (36 sets total)
-        let stats = JSON.parse(localStorage.getItem('pegasus_stats')) || { totalSets: 0, exerciseHistory: {} };
+        let stats = (window.PegasusMobileSafe?.safeReadStorage('pegasus_stats', { totalSets: 0, exerciseHistory: {} }, { repairOnFailure: true })) || { totalSets: 0, exerciseHistory: {} };
         stats.totalSets = (stats.totalSets || 0) + 36;
         localStorage.setItem('pegasus_stats', JSON.stringify(stats));
 

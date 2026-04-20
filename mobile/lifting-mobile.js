@@ -32,7 +32,7 @@
                 return;
             }
 
-            let logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
+            let logs = (window.PegasusMobileSafe?.safeReadStorage(LIFTING_DATA_KEY, [], { repairOnFailure: true })) || [];
 
             const newEntry = {
                 id: 'lift_' + Date.now(),
@@ -54,7 +54,7 @@
 
         deleteSet: function(id) {
             if (confirm('Διαγραφή αυτού του σετ;')) {
-                let logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
+                let logs = (window.PegasusMobileSafe?.safeReadStorage(LIFTING_DATA_KEY, [], { repairOnFailure: true })) || [];
                 logs = logs.filter(l => l.id !== id);
                 this.saveAndRender(logs);
             }
@@ -110,7 +110,7 @@
         const historyContainer = document.getElementById('lift-history');
         if (!todayContainer || !historyContainer) return;
 
-        const logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
+        const logs = (window.PegasusMobileSafe?.safeReadStorage(LIFTING_DATA_KEY, [], { repairOnFailure: true })) || [];
         const todayStr = getPegasusLiftingDateStr();
 
         let todayHtml = '';
@@ -125,7 +125,7 @@
                 todayHtml += `
                     <div class="mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-left: 3px solid var(--main);">
                         <div style="flex: 1;">
-                            <div style="font-size: 13px; font-weight: 900; color: #fff;">${log.exercise}</div>
+                            <div style="font-size: 13px; font-weight: 900; color: #fff;">${(window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? "")))(log.exercise)}</div>
                         </div>
                         <div style="font-size: 16px; font-weight: 900; color: var(--main); margin-right: 15px;">
                             ${log.weight}kg <span style="color:#777; font-size:12px;">x</span> ${log.reps}
@@ -149,8 +149,8 @@
             historyHtml += `
                 <div class="mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-color: #222; background: rgba(20,20,20,0.8);">
                     <div>
-                        <div style="font-size: 12px; font-weight: 900; color: #aaa; margin-bottom: 2px;">${pr.exercise}</div>
-                        <div style="font-size: 9px; color: #555;">Τελευταίο Ρεκόρ: ${pr.date}</div>
+                        <div style="font-size: 12px; font-weight: 900; color: #aaa; margin-bottom: 2px;">${(window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? "")))(pr.exercise)}</div>
+                        <div style="font-size: 9px; color: #555;">Τελευταίο Ρεκόρ: ${(window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? "")))(pr.date)}</div>
                     </div>
                     <div style="font-size: 14px; font-weight: 900; color: #fff;">
                         ${pr.weight}kg <span style="color:#777; font-size:10px;">x</span> ${pr.reps}

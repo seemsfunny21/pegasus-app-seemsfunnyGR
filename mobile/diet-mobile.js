@@ -220,37 +220,34 @@ window.PegasusDiet = {
         this.updateUI();
         if (window.PegasusCloud) await window.PegasusCloud.push(true);
     },
-
     askAdvisor: function() {
         if (!window.PegasusDietAdvisor) return alert("Advisor Offline");
 
         const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
         const container = document.getElementById("advisorMobileResult");
+        const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
 
         if (!container) return;
 
         let html = `
             <div style="background:#111; border:1px solid #f39c12; padding:15px; border-radius:12px; margin:10px 0;">
                 <div style="color:#f39c12; font-weight:900; font-size:13px; margin-bottom:10px;">🧠 PEGASUS LOGIC</div>
-                <div style="color:#eee; font-size:14px; margin-bottom:15px; line-height:1.4;">${advice.msg}</div>
+                <div style="color:#eee; font-size:14px; margin-bottom:15px; line-height:1.4;">${esc(advice.msg)}</div>
                 <div style="display:flex; flex-direction:column; gap:10px;">
         `;
 
-        advice.options.forEach(opt => {
+        advice.options.forEach((opt, idx) => {
             const macros = (typeof window.getPegasusMacros === "function")
                 ? window.getPegasusMacros(opt.n, opt.t)
                 : { kcal: 550, protein: 45 };
 
-            const safeName = String(opt.n).replace(/'/g, "\\'");
-
             html += `
                 <div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
                     <div style="text-align:left;">
-                        <div style="color:#fff; font-weight:bold; font-size:14px;">${opt.n}</div>
-                        <div style="color:#4CAF50; font-size:12px; font-weight:900;">🔥 ${macros.kcal} kcal | 🍗 ${macros.protein}g</div>
+                        <div style="color:#fff; font-weight:bold; font-size:14px;">${esc(opt.n)}</div>
+                        <div style="color:#4CAF50; font-size:12px; font-weight:900;">🔥 ${Number(macros.kcal) || 0} kcal | 🍗 ${Number(macros.protein) || 0}g</div>
                     </div>
-                    <button onclick="window.PegasusDiet.quickAdd('${safeName} (Κούκι)', ${macros.kcal}, ${macros.protein}); document.getElementById('advisorMobileResult').innerHTML='';"
-                            style="background:#f39c12; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:900; font-size:11px;">
+                    <button data-pegasus-advisor-add="${idx}" style="background:#f39c12; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:900; font-size:11px;">
                         ΠΡΟΣΘΗΚΗ
                     </button>
                 </div>
@@ -259,11 +256,22 @@ window.PegasusDiet = {
 
         html += `</div></div>`;
         container.innerHTML = html;
+        container.querySelectorAll('button[data-pegasus-advisor-add]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const opt = advice.options[Number(btn.dataset.pegasusAdvisorAdd)];
+                if (!opt) return;
+                const macros = (typeof window.getPegasusMacros === 'function')
+                    ? window.getPegasusMacros(opt.n, opt.t)
+                    : { kcal: 550, protein: 45 };
+                window.PegasusDiet.quickAdd(`${opt.n} (Κούκι)`, Number(macros.kcal) || 0, Number(macros.protein) || 0);
+                document.getElementById('advisorMobileResult').innerHTML = '';
+            });
+        });
     },
-
     handleSearch: function(term) {
         const resBox = document.getElementById("searchSuggestions");
         const fNameInput = document.getElementById("fName");
+        const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
 
         if (!resBox) return;
         if (!term || term.length < 2) {
@@ -272,19 +280,22 @@ window.PegasusDiet = {
             return;
         }
 
-        const lib = JSON.parse(localStorage.getItem(window.PegasusManifest?.diet?.foodLibrary || "pegasus_food_library") || "[]");
-        const matches = lib.filter(i => i.name.toLowerCase().includes(term.toLowerCase())).slice(0, 5);
+        const lib = window.PegasusMobileSafe?.safeReadStorage(window.PegasusManifest?.diet?.foodLibrary || "pegasus_food_library", [], { repairOnFailure: false }) || [];
+        const matches = lib.filter(i => String(i?.name || '').toLowerCase().includes(term.toLowerCase())).slice(0, 5);
 
         if (matches.length > 0) {
-            resBox.innerHTML = matches.map(i => {
-                const safeName = String(i.name).replace(/'/g, "\\'");
-                return `
-                    <div class="search-item" onclick="window.PegasusDiet.selectSuggested('${safeName}', ${i.kcal}, ${i.protein})">
-                        <span class="search-item-name">${i.name}</span>
-                        <span class="search-item-macros">${i.kcal} kcal | ${i.protein}g</span>
+            resBox.innerHTML = matches.map((i, idx) => `
+                    <div class="search-item" data-search-idx="${idx}">
+                        <span class="search-item-name">${esc(i.name)}</span>
+                        <span class="search-item-macros">${Number(i.kcal) || 0} kcal | ${Number(i.protein) || 0}g</span>
                     </div>
-                `;
-            }).join('');
+                `).join('');
+            resBox.querySelectorAll('[data-search-idx]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const item = matches[Number(el.dataset.searchIdx)];
+                    if (item) window.PegasusDiet.selectSuggested(String(item.name || ''), Number(item.kcal) || 0, Number(item.protein) || 0);
+                });
+            });
             resBox.style.display = "block";
             if (fNameInput) fNameInput.style.borderRadius = "16px";
         } else {
@@ -303,7 +314,6 @@ window.PegasusDiet = {
             if (document.getElementById("fName")) document.getElementById("fName").style.borderRadius = "16px";
         }
     },
-
     renderDailyKouki: function() {
         const container = document.getElementById('libraryContainer');
         if (!container) return;
@@ -311,6 +321,7 @@ window.PegasusDiet = {
         const targetDate = new Date();
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const targetDayName = greekDays[targetDate.getDay()];
+        const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
 
         const daysMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const targetDayKey = daysMap[targetDate.getDay()];
@@ -326,27 +337,37 @@ window.PegasusDiet = {
 
         container.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-                <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${targetDayName} (ΚΟΥΚΙ)</span>
-            </div>` + dailyMenu.map(item => {
+                <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${esc(targetDayName)} (ΚΟΥΚΙ)</span>
+            </div>` + dailyMenu.map((item, idx) => {
                 const itemName = item.n || item.name;
                 const itemTag = item.t || item.type || "kreas";
                 const macros = (typeof window.getPegasusMacros === "function")
                     ? window.getPegasusMacros(itemName, itemTag)
                     : { kcal: 550, protein: 45 };
 
-                const safeName = String(itemName).replace(/'/g, "\\'");
-
                 return `
-            <div class="mini-card" onclick="window.PegasusDiet.quickAdd('${safeName} (Κούκι)', ${macros.kcal}, ${macros.protein})"
+            <div class="mini-card pegasus-kouki-item" data-kouki-idx="${idx}"
                  style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
                 <div style="text-align:left;">
                     <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΠΡΟΣΘΗΚΗ ΣΤΟ LOG</span>
-                    <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${itemName}</div>
-                    <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${macros.protein}G PROTEIN</div>
+                    <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${esc(itemName)}</div>
+                    <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${Number(macros.protein) || 0}G PROTEIN</div>
                 </div>
-                <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${macros.kcal} KCAL</div>
+                <div style="font-weight:900; color:#eee; font-size:16px;">🔥 ${Number(macros.kcal) || 0} KCAL</div>
             </div>`;
             }).join('');
+        container.querySelectorAll('.pegasus-kouki-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const item = dailyMenu[Number(el.dataset.koukiIdx)];
+                if (!item) return;
+                const itemName = item.n || item.name;
+                const itemTag = item.t || item.type || 'kreas';
+                const macros = (typeof window.getPegasusMacros === 'function')
+                    ? window.getPegasusMacros(itemName, itemTag)
+                    : { kcal: 550, protein: 45 };
+                window.PegasusDiet.quickAdd(`${itemName} (Κούκι)`, Number(macros.kcal) || 0, Number(macros.protein) || 0);
+            });
+        });
     },
 
     updateUI: function() {
@@ -379,11 +400,12 @@ window.PegasusDiet = {
 
         const listDisplay = document.getElementById("foodHistoryList");
         if (listDisplay) {
+            const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
             listDisplay.innerHTML = log.map((i, idx) => `
                 <div class="log-item">
                     <button class="btn-del" onclick="window.PegasusDiet.delete(${idx})">✕</button>
-                    <div style="font-weight:900; font-size:14px; color:#fff;">${i.name}</div>
-                    <div style="color:var(--main); font-size:11px; font-weight:800; margin-top:4px;">${i.kcal} kcal | ${i.protein}g P</div>
+                    <div style="font-weight:900; font-size:14px; color:#fff;">${esc(i.name)}</div>
+                    <div style="color:var(--main); font-size:11px; font-weight:800; margin-top:4px;">${Number(i.kcal) || 0} kcal | ${Number(i.protein) || 0}g P</div>
                 </div>
             `).join('');
         }
