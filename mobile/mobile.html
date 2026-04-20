@@ -1036,12 +1036,18 @@
             try { refreshAllUI(); } catch (e) { console.error("📱 Mobile UI Boot Error:", e); }
             try { updateSuppUI(); } catch (e) { console.error("📦 Mobile Supp UI Error:", e); }
 
-            if (window.PegasusCloud?.canAutoUnlock?.()) {
+            const cloud = window.PegasusCloud;
+            const canRestoreApproved = !!cloud?.canRestoreApprovedDevice?.();
+            const canDailyAutoUnlock = !!cloud?.canAutoUnlock?.();
+
+            if (canRestoreApproved || canDailyAutoUnlock) {
                 setSyncStatus('syncing');
-                const success = await window.PegasusCloud.tryAutoUnlock();
+                const success = canDailyAutoUnlock
+                    ? await cloud.tryAutoUnlock()
+                    : await cloud.tryApprovedDeviceUnlock();
 
                 if (success) {
-                    console.log("📡 Cloud Sync: Fully Connected.");
+                    console.log(canDailyAutoUnlock ? "📡 Cloud Sync: Auto-Unlocked." : "📡 Cloud Sync: Approved Device Restored.");
                     isUnlocked = true;
                     if (modal) modal.style.display = "none";
                     await reconcileMobileDailyRoutine();
@@ -1070,7 +1076,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.12')
+                navigator.serviceWorker.register('../sw.js?v=3.13')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

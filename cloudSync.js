@@ -21,7 +21,7 @@ const PegasusCloud = {
         deviceSecret: "pegasus_vault_device_secret",
         pendingQueue: "pegasus_cloud_pending_v1",
         localPinHash: "pegasus_vault_pin_hash_local",
-        approvedDevice: "pegasus_desktop_device_approved",
+        approvedDevice: "pegasus_device_approved",
         legacyPin: "pegasus_vault_pin",
         legacyTime: "pegasus_vault_time",
         geminiKey: "pegasus_gemini_key",
