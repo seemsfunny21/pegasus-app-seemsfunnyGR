@@ -21,6 +21,7 @@ const PegasusCloud = {
         deviceSecret: "pegasus_vault_device_secret",
         pendingQueue: "pegasus_cloud_pending_v1",
         localPinHash: "pegasus_vault_pin_hash_local",
+        approvedDevice: "pegasus_desktop_device_approved",
         legacyPin: "pegasus_vault_pin",
         legacyTime: "pegasus_vault_time",
         geminiKey: "pegasus_gemini_key",
@@ -78,8 +79,18 @@ const PegasusCloud = {
         return this.hasValidSession() && !!localStorage.getItem(this.storage.wrappedMaster);
     },
 
+    hasApprovedDevice() {
+        return String(localStorage.getItem(this.storage.approvedDevice) || "") === "1";
+    },
+
+    markApprovedDevice() {
+        this.safeSetLocal(this.storage.approvedDevice, "1");
+    },
+
     canRestoreApprovedDevice() {
-        return !!localStorage.getItem(this.storage.wrappedMaster) && !!localStorage.getItem(this.storage.deviceSecret);
+        const hasMaterials = !!localStorage.getItem(this.storage.wrappedMaster) && !!localStorage.getItem(this.storage.deviceSecret);
+        if (!hasMaterials) return false;
+        return this.hasApprovedDevice() || this.hasValidSession() || !!localStorage.getItem(this.storage.localPinHash);
     },
 
     getSyncedExactKeys() {
@@ -715,6 +726,7 @@ const PegasusCloud = {
         this.safeRemoveLocal(this.storage.lastPush);
         this.safeRemoveLocal(this.storage.pendingQueue);
         this.safeRemoveLocal(this.storage.localPinHash);
+        this.safeRemoveLocal(this.storage.approvedDevice);
         this.safeRemoveLocal(this.storage.legacyPin);
         this.safeRemoveLocal(this.storage.legacyTime);
 
@@ -773,6 +785,7 @@ const PegasusCloud = {
                 const repairedMasterHash = await this.hashString(restoredMaster);
                 this.safeSetLocal(this.storage.masterHash, repairedMasterHash);
                 this.setValidSessionWindow();
+                this.markApprovedDevice();
 
                 if (navigator.onLine) {
                     await this.pull(true);
@@ -900,6 +913,7 @@ const PegasusCloud = {
                 this.safeSetLocal(this.storage.localPinHash, candidatePinHash);
             }
             await this.storeWrappedMaster(cleanMaster);
+            this.markApprovedDevice();
 
             if (opts.persistSession) {
                 this.setValidSessionWindow();
