@@ -476,8 +476,35 @@
         updateVaultButton(false);
     }
 
-    window.addEventListener("load", () => {
+    async function restoreDesktopApprovedSyncOnLoad() {
         updateVaultButton(false);
+
+        try {
+            if (!window.PegasusCloud) return;
+
+            let ok = false;
+            if (window.PegasusCloud.canRestoreApprovedDevice?.()) {
+                ok = await window.PegasusCloud.tryApprovedDeviceUnlock();
+            } else if (window.PegasusCloud.canAutoUnlock?.()) {
+                ok = await window.PegasusCloud.tryAutoUnlock();
+            }
+
+            updateVaultButton(!!ok);
+
+            if (ok) {
+                if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
+                    await window.PegasusCloud.syncNow(true);
+                }
+                if (typeof refreshAllUI === 'function') refreshAllUI();
+            }
+        } catch (e) {
+            console.warn("⚠️ DESKTOP: Approved sync restore failed.", e);
+            updateVaultButton(false);
+        }
+    }
+
+    window.addEventListener("load", () => {
+        restoreDesktopApprovedSyncOnLoad();
     });
 
     window.addEventListener("pegasus_sync_status", (e) => {
