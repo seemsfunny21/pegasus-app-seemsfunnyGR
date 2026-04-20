@@ -1028,8 +1028,7 @@
 
         const modal = document.getElementById("pinModal");
         isUnlocked = false;
-        if (modal) modal.style.display = "flex";
-        setSyncStatus('locked');
+        if (modal) modal.style.display = "none";
 
         try {
             try { installMobileInventoryBridges(); } catch (e) { console.error("📦 Mobile Bridge Error:", e); }
@@ -1039,8 +1038,9 @@
             const cloud = window.PegasusCloud;
             const canRestoreApproved = !!cloud?.canRestoreApprovedDevice?.();
             const canDailyAutoUnlock = !!cloud?.canAutoUnlock?.();
+            const shouldAttemptSilentRestore = canRestoreApproved || canDailyAutoUnlock;
 
-            if (canRestoreApproved || canDailyAutoUnlock) {
+            if (shouldAttemptSilentRestore) {
                 setSyncStatus('syncing');
                 const success = canDailyAutoUnlock
                     ? await cloud.tryAutoUnlock()
