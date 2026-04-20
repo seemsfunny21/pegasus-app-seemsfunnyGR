@@ -839,6 +839,7 @@ const PegasusCloud = {
             skipPinCheck: false,
             persistSession: true,
             autoUnlock: false,
+            deferPostUnlockSync: false,
             ...options
         };
 
@@ -936,7 +937,13 @@ const PegasusCloud = {
             this.startAutoSync();
 
             if (navigator.onLine) {
-                await this._doPush();
+                if (opts.deferPostUnlockSync) {
+                    setTimeout(() => {
+                        this._doPush().catch(e => console.error("❌ DEFERRED PUSH ERROR:", e));
+                    }, 0);
+                } else {
+                    await this._doPush();
+                }
             }
 
             if (!storedMasterMatches) {
