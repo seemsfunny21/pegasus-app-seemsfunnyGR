@@ -315,6 +315,11 @@ const PegasusCloud = {
         return String(record?.approval?.pin_hash || record?.pin_hash || "").trim();
     },
 
+    getApprovalMasterHash(record) {
+        if (!record || typeof record !== "object") return "";
+        return String(record?.approval?.master_hash || record?.master_hash || "").trim();
+    },
+
     emitSyncStatus(status, force = false) {
         if (typeof window === "undefined") return;
         if (!status) return;
@@ -465,6 +470,12 @@ const PegasusCloud = {
         const prevMaster = this.masterKey;
 
         try {
+            const candidateMasterHash = await this.hashString(cleanMaster);
+            const remoteMasterHash = this.getApprovalMasterHash(cloudRecord);
+            if (remoteMasterHash && candidateMasterHash === remoteMasterHash) {
+                return true;
+            }
+
             this.masterKey = cleanMaster;
 
             if (cloudRecord?.protected?.contacts) {
@@ -1349,7 +1360,8 @@ const PegasusCloud = {
                 last_update_date: this.getTodayKey(),
                 __pegasus_plain_v3: true,
                 approval: {
-                    pin_hash: localStorage.getItem(this.storage.localPinHash) || ""
+                    pin_hash: localStorage.getItem(this.storage.localPinHash) || "",
+                    master_hash: localStorage.getItem(this.storage.masterHash) || ""
                 },
                 storage,
                 protected: {
