@@ -76,6 +76,10 @@ const PegasusCloud = {
         return this.hasValidSession() && !!localStorage.getItem(this.storage.wrappedMaster);
     },
 
+    canRestoreApprovedDevice() {
+        return !!localStorage.getItem(this.storage.wrappedMaster) && !!localStorage.getItem(this.storage.deviceSecret);
+    },
+
     getSyncedExactKeys() {
         return [
             "pegasus_weight",
@@ -723,8 +727,18 @@ const PegasusCloud = {
         this.emitSyncStatus("locked", true);
     },
 
-    async tryAutoUnlock() {
-        if (!this.canAutoUnlock()) return false;
+    async restoreApprovedDevice(options = {}) {
+        const opts = {
+            requireValidWindow: true,
+            logLabel: "Auto-unlocked",
+            ...options
+        };
+
+        if (opts.requireValidWindow) {
+            if (!this.canAutoUnlock()) return false;
+        } else {
+            if (!this.canRestoreApprovedDevice()) return false;
+        }
 
         const restoredMaster = await this.getStoredMasterKey();
         if (!restoredMaster) return false;
@@ -758,7 +772,7 @@ const PegasusCloud = {
                 await this._doPush();
             }
 
-            console.log("🔓 CLOUD: Auto-unlocked");
+            console.log(`🔓 CLOUD: ${opts.logLabel}`);
             this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
             return true;
         } catch (e) {
@@ -767,9 +781,17 @@ const PegasusCloud = {
             this.userKey = prevState.userKey;
             this.masterKey = prevState.masterKey;
             this.emitSyncStatus("locked", true);
-            console.warn("⚠️ CLOUD: Auto-unlock failed.", e);
+            console.warn(`⚠️ CLOUD: ${opts.logLabel} failed.`, e);
             return false;
         }
+    },
+
+    async tryAutoUnlock() {
+        return this.restoreApprovedDevice({ requireValidWindow: true, logLabel: "Auto-unlocked" });
+    },
+
+    async tryApprovedDeviceUnlock() {
+        return this.restoreApprovedDevice({ requireValidWindow: false, logLabel: "Approved device restored" });
     },
 
     /* =========================

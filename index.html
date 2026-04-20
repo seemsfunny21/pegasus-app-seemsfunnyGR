@@ -423,6 +423,18 @@
                 }
             }
 
+            if (window.PegasusCloud?.canRestoreApprovedDevice?.()) {
+                const ok = await window.PegasusCloud.tryApprovedDeviceUnlock();
+                updateVaultButton(!!ok);
+                if (ok) {
+                    if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
+                        await window.PegasusCloud.syncNow(true);
+                    }
+                    if (typeof refreshAllUI === 'function') refreshAllUI();
+                    return;
+                }
+            }
+
             openVaultModal();
         } catch (e) {
             console.error("Desktop Vault Open Error:", e);
