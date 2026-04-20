@@ -157,6 +157,12 @@ const PegasusCloud = {
         }
     },
 
+
+    needsPinBindingRepair() {
+        const localPinHash = String(localStorage.getItem(this.storage.localPinHash) || '').trim();
+        return this.hasApprovedDevice() && !localPinHash;
+    },
+
     canRestoreApprovedDevice() {
         const hasMaterials = !!localStorage.getItem(this.storage.wrappedMaster) && !!localStorage.getItem(this.storage.deviceSecret);
         if (!hasMaterials) return false;
@@ -904,6 +910,16 @@ const PegasusCloud = {
                 this.markApprovedDevice();
 
                 if (navigator.onLine) {
+                    let approvalRecord = null;
+                    try {
+                        approvalRecord = await this.fetchLatestRecord();
+                    } catch (e) {
+                        approvalRecord = null;
+                    }
+                    const remotePinHash = this.getApprovalPinHash(approvalRecord);
+                    if (remotePinHash && !localStorage.getItem(this.storage.localPinHash)) {
+                        this.safeSetLocal(this.storage.localPinHash, remotePinHash);
+                    }
                     await this.pull(true);
                 } else {
                     this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
@@ -997,6 +1013,11 @@ const PegasusCloud = {
                 && trustedLocalMaster
                 && this.hasApprovedDevice();
 
+            const canSecureRebindFreshDevice = !pinAccepted
+                && !hasBoundPin
+                && cleanPin.length >= 4
+                && await this.canSecureRebindPinWithMaster(cleanMaster, cloudRecord);
+
             const canSecureRebindExistingBinding = !pinAccepted
                 && hasBoundPin
                 && cleanPin.length >= 4
@@ -1004,14 +1025,21 @@ const PegasusCloud = {
 
             if (canRepairMissingPinBinding) {
                 console.warn("⚠️ CLOUD: Approval PIN binding missing on trusted approved device. Rebinding with current PIN.");
+                this.traceStep("cloudSync", "unlock", "REBIND_ALLOWED", "MISSING_PIN_BINDING_APPROVED_DEVICE");
+                pinAccepted = true;
+            } else if (canSecureRebindFreshDevice) {
+                console.warn("⚠️ CLOUD: Fresh-device PIN binding rebuilt from successful master-key validation.");
+                this.traceStep("cloudSync", "unlock", "REBIND_ALLOWED", "MISSING_PIN_BINDING_MASTER_HASH");
                 pinAccepted = true;
             } else if (canSecureRebindExistingBinding) {
                 console.warn("⚠️ CLOUD: Approval PIN mismatch repaired from successful master-key validation. Rebinding with current PIN.");
+                this.traceStep("cloudSync", "unlock", "REBIND_ALLOWED", "PIN_MISMATCH_MASTER_HASH");
                 pinAccepted = true;
             }
         }
 
         if (!pinAccepted) {
+            this.traceStep("cloudSync", "unlock", "PIN_REJECTED", hasBoundPin ? "PIN_MISMATCH" : "PIN_BINDING_MISSING");
             this.userKey = prevUserKey;
             return false;
         }
