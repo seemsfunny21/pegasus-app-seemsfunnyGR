@@ -847,11 +847,19 @@ const PegasusCloud = {
         const cleanMaster = String(masterKey || "").trim();
         if (!cleanMaster) return false;
 
+        const storedMasterHash = String(localStorage.getItem(this.storage.masterHash) || "").trim();
+        const localPinHash = String(localStorage.getItem(this.storage.localPinHash) || "").trim();
+        const candidatePinHash = cleanPin ? await this.hashString(cleanPin) : "";
+        const candidateMasterHash = await this.hashString(cleanMaster);
+        const trustedLocalMaster = storedMasterHash ? (await this.matchesStoredMasterKey(cleanMaster)) : false;
+        const storedMasterMatches = storedMasterHash ? trustedLocalMaster : true;
+        const fastLocalApproval = !!(opts.deferPostUnlockSync && candidatePinHash && localPinHash && candidatePinHash === localPinHash && trustedLocalMaster);
+
         const prevUserKey = this.userKey;
         this.userKey = this.config.encryptedPart;
 
         let cloudRecord = null;
-        if (navigator.onLine) {
+        if (navigator.onLine && !fastLocalApproval) {
             try {
                 cloudRecord = await this.fetchLatestRecord();
             } catch (e) {
@@ -860,22 +868,15 @@ const PegasusCloud = {
         }
 
         const remotePinHash = this.getApprovalPinHash(cloudRecord);
-        const localPinHash = String(localStorage.getItem(this.storage.localPinHash) || "").trim();
         const hasBoundPin = !!(remotePinHash || localPinHash);
-        let pinAccepted = !!opts.skipPinCheck;
+        let pinAccepted = !!opts.skipPinCheck || fastLocalApproval;
 
         if (!pinAccepted) {
             pinAccepted = await this.validatePin(cleanPin, cloudRecord);
 
-            if (!pinAccepted) {
-                const storedMasterHash = String(localStorage.getItem(this.storage.masterHash) || "").trim();
-                if (storedMasterHash) {
-                    const localMasterAccepted = await this.matchesStoredMasterKey(cleanMaster);
-                    if (localMasterAccepted) {
-                        console.warn("⚠️ CLOUD: PIN mismatch overridden by trusted local master. Rebinding approval PIN.");
-                        pinAccepted = true;
-                    }
-                }
+            if (!pinAccepted && trustedLocalMaster) {
+                console.warn("⚠️ CLOUD: PIN mismatch overridden by trusted local master. Rebinding approval PIN.");
+                pinAccepted = true;
             }
 
             if (!pinAccepted && !hasBoundPin && cleanPin.length >= 4) {
@@ -888,11 +889,6 @@ const PegasusCloud = {
             this.userKey = prevUserKey;
             return false;
         }
-
-        const storedMasterHash = localStorage.getItem(this.storage.masterHash) || "";
-        const candidateMasterHash = await this.hashString(cleanMaster);
-        const candidatePinHash = cleanPin ? await this.hashString(cleanPin) : "";
-        const storedMasterMatches = storedMasterHash ? (await this.matchesStoredMasterKey(cleanMaster)) : true;
 
         const prevState = {
             isUnlocked: this.isUnlocked,
@@ -922,13 +918,17 @@ const PegasusCloud = {
             sessionMaterialsPersisted = true;
 
             if (navigator.onLine) {
-                try {
-                    await this.pull(true);
-                } catch (e) {
-                    if (String(e?.message || "") === "INVALID_MASTER_KEY") {
-                        throw e;
+                if (!fastLocalApproval) {
+                    try {
+                        await this.pull(true);
+                    } catch (e) {
+                        if (String(e?.message || "") === "INVALID_MASTER_KEY") {
+                            throw e;
+                        }
+                        console.warn("⚠️ CLOUD: Soft unlock sync error.", e);
                     }
-                    console.warn("⚠️ CLOUD: Soft unlock sync error.", e);
+                } else {
+                    this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
                 }
             } else {
                 this.hasSuccessfullyPulled = !!localStorage.getItem(this.storage.lastPush);
@@ -937,9 +937,9 @@ const PegasusCloud = {
             this.startAutoSync();
 
             if (navigator.onLine) {
-                if (opts.deferPostUnlockSync) {
+                if (opts.deferPostUnlockSync || fastLocalApproval) {
                     setTimeout(() => {
-                        this._doPush().catch(e => console.error("❌ DEFERRED PUSH ERROR:", e));
+                        this.syncNow(true).catch(e => console.error("❌ DEFERRED SYNC ERROR:", e));
                     }, 0);
                 } else {
                     await this._doPush();
