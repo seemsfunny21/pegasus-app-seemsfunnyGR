@@ -374,6 +374,7 @@
     </div>
 </div>
 
+<script src="pegasusRuntimeMonitor.js"></script>
 <script>
     /* PEGASUS SECURITY PROTOCOL - DESKTOP ON-DEMAND SYNC (v18.3) */
     function updateVaultButton(isConnected) {
@@ -400,6 +401,7 @@
     }
 
     async function handleDesktopSyncOpen() {
+        window.PegasusRuntimeMonitor?.trace?.("desktopSync", "handleOpen", "START");
         try {
             if (window.PegasusCloud?.isUnlocked) {
                 updateVaultButton(true);
@@ -407,6 +409,7 @@
                     await window.PegasusCloud.syncNow(true);
                 }
                 if (typeof refreshAllUI === 'function') refreshAllUI();
+                window.PegasusRuntimeMonitor?.trace?.("desktopSync", "handleOpen", "ALREADY_UNLOCKED");
                 return;
             }
 
@@ -418,6 +421,7 @@
                         await window.PegasusCloud.syncNow(true);
                     }
                     if (typeof refreshAllUI === 'function') refreshAllUI();
+                    window.PegasusRuntimeMonitor?.trace?.("desktopSync", "handleOpen", "AUTO_UNLOCK_OK");
                     return;
                 }
             }
@@ -430,12 +434,15 @@
                         await window.PegasusCloud.syncNow(true);
                     }
                     if (typeof refreshAllUI === 'function') refreshAllUI();
+                    window.PegasusRuntimeMonitor?.trace?.("desktopSync", "handleOpen", "APPROVED_RESTORE_OK");
                     return;
                 }
             }
 
+            window.PegasusRuntimeMonitor?.trace?.("desktopSync", "handleOpen", "PROMPT_REQUIRED");
             openVaultModal();
         } catch (e) {
+            window.PegasusRuntimeMonitor?.capture?.("desktopSync", "handleOpen", e);
             console.error("Desktop Vault Open Error:", e);
             updateVaultButton(false);
             openVaultModal();
@@ -443,6 +450,7 @@
     }
 
     async function attemptVaultUnlock() {
+        window.PegasusRuntimeMonitor?.trace?.("desktopSync", "manualUnlock", "START");
         const pinInput = document.getElementById("pinInput");
         const masterInput = document.getElementById("masterKeyInput");
         const errorDiv = document.getElementById("pinError");
@@ -451,6 +459,7 @@
 
         if (errorDiv) errorDiv.textContent = "";
         if (!pin || !masterKey) {
+            window.PegasusRuntimeMonitor?.warn?.("desktopSync", "manualUnlock", "MISSING_CREDENTIALS");
             if (errorDiv) errorDiv.textContent = "ΣΥΜΠΛΗΡΩΣΕ PIN ΚΑΙ MASTER KEY";
             return;
         }
@@ -458,6 +467,7 @@
         const success = await window.PegasusCloud?.unlock(pin, masterKey);
 
         if (success) {
+            window.PegasusRuntimeMonitor?.trace?.("desktopSync", "manualUnlock", "SUCCESS");
             document.getElementById("pinModal").style.display = "none";
             updateVaultButton(true);
             if (navigator.onLine && typeof window.PegasusCloud?.syncNow === "function") {
@@ -465,6 +475,7 @@
             }
             if (typeof refreshAllUI === 'function') refreshAllUI();
         } else {
+            window.PegasusRuntimeMonitor?.warn?.("desktopSync", "manualUnlock", "INVALID_PIN_OR_MASTER");
             if (errorDiv) errorDiv.textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN / MASTER KEY";
             if (pinInput) pinInput.value = "";
             if (masterInput) masterInput.value = "";
@@ -477,6 +488,7 @@
     }
 
     async function restoreDesktopApprovedSyncOnLoad() {
+        window.PegasusRuntimeMonitor?.trace?.("desktopSync", "restoreOnLoad", "START");
         updateVaultButton(false);
 
         try {
@@ -490,6 +502,7 @@
             }
 
             updateVaultButton(!!ok);
+            window.PegasusRuntimeMonitor?.trace?.("desktopSync", "restoreOnLoad", ok ? "RESTORED" : "NOT_RESTORED");
 
             if (ok) {
                 if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
@@ -498,6 +511,7 @@
                 if (typeof refreshAllUI === 'function') refreshAllUI();
             }
         } catch (e) {
+            window.PegasusRuntimeMonitor?.capture?.("desktopSync", "restoreOnLoad", e);
             console.warn("⚠️ DESKTOP: Approved sync restore failed.", e);
             updateVaultButton(false);
         }

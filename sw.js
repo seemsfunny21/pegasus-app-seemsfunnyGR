@@ -4,12 +4,13 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.15-DYNAMIC';
+const CACHE_NAME = 'pegasus-shield-v3.18-DYNAMIC';
 
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './mobile/mobile.html',
+    './pegasusRuntimeMonitor.js',
     './mobile/mobileSafe.js',
     './mobile/mobileErrorMonitor.js',
     './mobile/mobileUI.js',

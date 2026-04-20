@@ -55,6 +55,14 @@ const PegasusCloud = {
         console.log("🧠 CLOUD: Engine attached");
     },
 
+    traceStep(moduleName, action, status, extra) {
+        try { window.PegasusRuntimeMonitor?.trace?.(moduleName, action, status, extra); } catch (_) {}
+    },
+
+    traceError(moduleName, action, error, extra) {
+        try { window.PegasusRuntimeMonitor?.capture?.(moduleName, action, error, extra); } catch (_) {}
+    },
+
     getTodayKey() {
         const d = new Date();
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
@@ -817,6 +825,7 @@ const PegasusCloud = {
     },
 
     async restoreApprovedDevice(options = {}) {
+        this.traceStep("cloudSync", "restoreApprovedDevice", "START", options?.requireValidWindow ? "AUTO" : "APPROVED");
         const opts = {
             requireValidWindow: true,
             logLabel: "Auto-unlocked",
@@ -906,6 +915,7 @@ const PegasusCloud = {
        🔓 UNLOCK
     ========================= */
     async unlock(pin, masterKey, options = {}) {
+        this.traceStep("cloudSync", "unlock", "START", options?.autoUnlock ? "AUTO" : "MANUAL");
         if (this.isUnlocked) return true;
 
         const opts = {
@@ -1024,6 +1034,7 @@ const PegasusCloud = {
             }
             this.hasApprovedRestoreCompleted = true;
             console.log(opts.autoUnlock ? "🔓 CLOUD: Auto-unlocked" : "🔓 CLOUD: Unlocked");
+            this.traceStep("cloudSync", "unlock", "SUCCESS", opts.autoUnlock ? "AUTO" : "MANUAL");
             this.emitSyncStatus(navigator.onLine ? "online" : "offline", true);
             return true;
         } catch (e) {
@@ -1039,6 +1050,7 @@ const PegasusCloud = {
             this.hasApprovedRestoreCompleted = false;
             this.emitSyncStatus("locked", true);
             if (String(e?.message || "") === "INVALID_MASTER_KEY") return false;
+            this.traceError("cloudSync", "unlock", e);
             console.error("❌ UNLOCK ERROR:", e);
             return false;
         }
@@ -1048,6 +1060,7 @@ const PegasusCloud = {
        📥 PULL (SECURE + QUEUE SAFE)
     ========================= */
     async pull(silent = false) {
+        this.traceStep("cloudSync", "pull", "START", silent ? "SILENT" : "VERBOSE");
         if (!this.isUnlocked || this.isPulling) return false;
 
         if (!navigator.onLine) {
@@ -1164,6 +1177,7 @@ const PegasusCloud = {
                 console.log("📥 CLOUD: Pull OK");
             }
 
+            this.traceStep("cloudSync", "pull", changed ? "CHANGED" : "DONE");
             return changed;
         } catch (e) {
             if (String(e?.message || "") === "INVALID_MASTER_KEY") {
@@ -1171,6 +1185,7 @@ const PegasusCloud = {
                 throw e;
             }
 
+            this.traceError("cloudSync", "pull", e);
             console.error("❌ PULL ERROR:", e);
             finalStatus = navigator.onLine ? "error" : "offline";
             return false;
@@ -1191,6 +1206,7 @@ const PegasusCloud = {
        🔁 SYNC NOW
     ========================= */
     async syncNow(silent = false) {
+        this.traceStep("cloudSync", "syncNow", "START", silent ? "SILENT" : "VERBOSE");
         if (!this.isUnlocked) {
             if (this.canRestoreApprovedDevice()) {
                 const restored = await this.tryApprovedDeviceUnlock();
@@ -1209,9 +1225,11 @@ const PegasusCloud = {
 
         if (this.hasPendingChanges() || this.hasProtectedRepairPending()) {
             const pushed = await this._doPush();
+            this.traceStep("cloudSync", "syncNow", pushed ? "PUSHED" : "PULL_ONLY");
             return !!(changed || pushed);
         }
 
+        this.traceStep("cloudSync", "syncNow", changed ? "CHANGED" : "NO_CHANGE");
         return !!changed;
     },
 
@@ -1254,6 +1272,7 @@ const PegasusCloud = {
     },
 
     async _doPush() {
+        this.traceStep("cloudSync", "push", "START");
         if (!this.isUnlocked) return false;
         if (!navigator.onLine) {
             this.emitSyncStatus("offline", true);
@@ -1326,8 +1345,10 @@ const PegasusCloud = {
             this.clearPendingChanges();
             this.clearProtectedRepairPending();
             console.log("📤 CLOUD: Secure Sync OK");
+            this.traceStep("cloudSync", "push", "SUCCESS");
             return true;
         } catch (e) {
+            this.traceError("cloudSync", "push", e);
             console.error("❌ PUSH ERROR:", e);
             finalStatus = navigator.onLine ? "error" : "offline";
             return false;

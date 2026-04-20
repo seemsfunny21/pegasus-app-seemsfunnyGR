@@ -134,6 +134,7 @@
     }
 
     function refreshAllUI() {
+        window.PegasusRuntimeMonitor?.trace?.("mobileUI", "refreshAllUI", "START");
         const now = Date.now();
         if (now - window._pegasusLastUiRefreshTs < 250) return;
         window._pegasusLastUiRefreshTs = now;
@@ -294,9 +295,11 @@
             e.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
             e.style.color = "#00bcd4";
         }
+        window.PegasusRuntimeMonitor?.trace?.("mobileUI", "refreshAllUI", "DONE");
     }
 
     async function runMobileSyncHeartbeat() {
+        window.PegasusRuntimeMonitor?.trace?.("cloudSync", "mobileHeartbeat", "START");
         if (window._pegasusMobileSyncBusy) return false;
 
         if (!window.PegasusCloud?.isUnlocked) {
@@ -327,8 +330,10 @@
                 setSyncStatus('locked');
             }
 
+            window.PegasusRuntimeMonitor?.trace?.("cloudSync", "mobileHeartbeat", changed ? "SYNCED" : "NO_CHANGE");
             return !!changed;
         } catch (e) {
+            window.PegasusRuntimeMonitor?.capture?.("cloudSync", "mobileHeartbeat", e);
             window.PegasusMobileErrors?.capture?.("cloudSync", "mobileHeartbeat", e);
             console.error("📡 Mobile Heartbeat Error:", e);
             setSyncStatus('error');
@@ -424,6 +429,7 @@
     });
 
     async function attemptVaultUnlock() {
+        window.PegasusRuntimeMonitor?.trace?.("unlock", "attemptVaultUnlock", "START");
         if (window._pegasusUnlockBusy) return;
 
         const pinInput = document.getElementById("pinInput");
@@ -470,6 +476,7 @@
                     }
                 }, 250);
             } else {
+                window.PegasusRuntimeMonitor?.warn?.("unlock", "attemptVaultUnlock", "INVALID_PIN_OR_MASTER");
                 window.PegasusMobileErrors?.warn?.("unlock", "credentials", "INVALID_PIN_OR_MASTER");
                 if (errorDiv) errorDiv.style.color = "#ff4444";
                 if (errorDiv) errorDiv.textContent = "ΛΑΘΟΣ PIN / MASTER KEY";
@@ -584,6 +591,7 @@
     }
 
     (async function boot() {
+        window.PegasusRuntimeMonitor?.trace?.("mobileBoot", "boot", "START");
         console.log("⚡ PEGASUS: Fast Boot...");
 
         const modal = document.getElementById("pinModal");
@@ -607,6 +615,7 @@
                     : await cloud.tryApprovedDeviceUnlock();
 
                 if (success) {
+                    window.PegasusRuntimeMonitor?.trace?.("mobileBoot", canDailyAutoUnlock ? "autoUnlock" : "approvedRestore", "SUCCESS");
                     window.PegasusMobileErrors?.info?.("cloudSync", canDailyAutoUnlock ? "autoUnlock" : "approvedRestore", "SUCCESS");
                     console.log(canDailyAutoUnlock ? "📡 Cloud Sync: Auto-Unlocked." : "📡 Cloud Sync: Approved Device Restored.");
                     isUnlocked = true;
@@ -626,6 +635,7 @@
             isUnlocked = false;
             setSyncStatus('locked');
         } catch (e) {
+            window.PegasusRuntimeMonitor?.capture?.("mobileBoot", "boot", e);
             window.PegasusMobileErrors?.capture?.("cloudSync", "mobileBoot", e);
             console.error("📡 Cloud Boot Error:", e);
             isUnlocked = false;

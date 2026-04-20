@@ -66,6 +66,11 @@
       const entry = buildEntry(level, moduleName, action, error, extra);
       entries.push(entry);
       safeWrite(entries);
+      try {
+        if (level === "ERROR") window.PegasusRuntimeMonitor?.capture?.(moduleName || "UNKNOWN", action || "runtime", error, extra);
+        else if (level === "WARN") window.PegasusRuntimeMonitor?.warn?.(moduleName || "UNKNOWN", action || "runtime", error, extra);
+        else window.PegasusRuntimeMonitor?.info?.(moduleName || "UNKNOWN", action || "runtime", n.message, extra);
+      } catch (_) {}
       return entry;
     } finally {
       guard = false;
@@ -89,6 +94,13 @@
     },
     getLatest() {
       const entries = safeRead();
+      return entries.length ? entries[entries.length - 1] : null;
+    },
+    getProblems() {
+      return safeRead().filter(entry => entry.level === "WARN" || entry.level === "ERROR");
+    },
+    getLatestProblem() {
+      const entries = safeRead().filter(entry => entry.level === "WARN" || entry.level === "ERROR");
       return entries.length ? entries[entries.length - 1] : null;
     },
     clear() {
