@@ -498,9 +498,9 @@ const PegasusCloud = {
                 return await this.matchesStoredMasterKey(cleanMaster);
             }
 
-            const noRemoteApprovalBinding = !this.getApprovalPinHash(cloudRecord) && !remoteMasterHash;
+            const noRemotePinBinding = !this.getApprovalPinHash(cloudRecord);
             const hasUsableCloudPayload = !!(cloudRecord?.last_update_ts || cloudRecord?.last_update_date || (cloudRecord?.storage && typeof cloudRecord.storage === "object"));
-            if (noRemoteApprovalBinding && hasUsableCloudPayload && cleanMaster.length >= 8) {
+            if (noRemotePinBinding && hasUsableCloudPayload && cleanMaster.length >= 8) {
                 return true;
             }
 
