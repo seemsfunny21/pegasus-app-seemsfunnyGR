@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.3)
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v22.0)
    STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
@@ -451,20 +451,9 @@ const PegasusCloud = {
         const candidateHash = await this.hashString(clean);
         const remoteHash = this.getApprovalPinHash(cloudRecord);
         const localHash = String(localStorage.getItem(this.storage.localPinHash) || "").trim();
-        const isLegacyDefault = (() => {
-            try {
-                return btoa(clean) === "MjM3NQ==";
-            } catch (e) {
-                return false;
-            }
-        })();
 
         if (remoteHash && remoteHash === candidateHash) return true;
         if (localHash && localHash === candidateHash) return true;
-
-        // Emergency compatibility fallback for legacy approved devices using the classic PIN.
-        // This keeps old profiles recoverable when a stale approval hash was written to cloud.
-        if (isLegacyDefault) return true;
 
         return false;
     },
@@ -960,13 +949,14 @@ const PegasusCloud = {
         if (!pinAccepted) {
             pinAccepted = await this.validatePin(cleanPin, cloudRecord);
 
-            if (!pinAccepted && trustedLocalMaster) {
-                console.warn("⚠️ CLOUD: PIN mismatch overridden by trusted local master. Rebinding approval PIN.");
-                pinAccepted = true;
-            }
+            const canRepairMissingPinBinding = !pinAccepted
+                && !hasBoundPin
+                && cleanPin.length >= 4
+                && trustedLocalMaster
+                && this.hasApprovedDevice();
 
-            if (!pinAccepted && !hasBoundPin && cleanPin.length >= 4) {
-                console.warn("⚠️ CLOUD: Approval PIN binding missing. Allowing master-key migration fallback.");
+            if (canRepairMissingPinBinding) {
+                console.warn("⚠️ CLOUD: Approval PIN binding missing on trusted approved device. Rebinding with current PIN.");
                 pinAccepted = true;
             }
         }
