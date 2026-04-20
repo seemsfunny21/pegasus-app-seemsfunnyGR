@@ -250,7 +250,7 @@ window.pegasusHealthCheck = async function() {
     let errors = [];
     let warnings = [];
 
-    const isMobile = window.location.pathname.includes("mobile.html") || window.innerWidth <= 800;
+    const isMobile = window.location.pathname.includes("mobile.html");
 
     if (typeof window.program === 'undefined') errors.push("Critical: data.js not loaded.");
     if (!window.PegasusManifest) errors.push("Critical: manifest.js missing.");

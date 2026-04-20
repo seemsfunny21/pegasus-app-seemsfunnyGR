@@ -22,6 +22,7 @@ const PegasusCloud = {
         pendingQueue: "pegasus_cloud_pending_v1",
         localPinHash: "pegasus_vault_pin_hash_local",
         approvedDevice: "pegasus_device_approved",
+        desktopApproved: "pegasus_desktop_device_approved",
         legacyPin: "pegasus_vault_pin",
         legacyTime: "pegasus_vault_time",
         geminiKey: "pegasus_gemini_key",
@@ -90,11 +91,12 @@ const PegasusCloud = {
     },
 
     hasApprovedDevice() {
-        return String(localStorage.getItem(this.storage.approvedDevice) || "") === "1";
+        return String(localStorage.getItem(this.storage.approvedDevice) || localStorage.getItem(this.storage.desktopApproved) || "") === "1";
     },
 
     markApprovedDevice() {
         this.safeSetLocal(this.storage.approvedDevice, "1");
+        this.safeSetLocal(this.storage.desktopApproved, "1");
     },
 
     getProtectedContactsSignature(envelope) {
@@ -808,6 +810,7 @@ const PegasusCloud = {
         this.safeRemoveLocal(this.storage.protectedContactsState);
         this.safeRemoveLocal(this.storage.protectedContactsRepair);
         this.safeRemoveLocal(this.storage.approvedDevice);
+        this.safeRemoveLocal(this.storage.desktopApproved);
         this.safeRemoveLocal(this.storage.legacyPin);
         this.safeRemoveLocal(this.storage.legacyTime);
 
