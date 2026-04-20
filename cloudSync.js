@@ -458,6 +458,37 @@ const PegasusCloud = {
         return false;
     },
 
+    async canSecureRebindPinWithMaster(masterKey, cloudRecord = null) {
+        const cleanMaster = String(masterKey || "").trim();
+        if (!cleanMaster || !cloudRecord) return false;
+
+        const prevMaster = this.masterKey;
+
+        try {
+            this.masterKey = cleanMaster;
+
+            if (cloudRecord?.protected?.contacts) {
+                await this.decryptCloudPayload(cloudRecord.protected.contacts);
+                return true;
+            }
+
+            if (cloudRecord?.__pegasus_secure_v1 && cloudRecord?.secure_payload) {
+                await this.decryptCloudPayload(cloudRecord.secure_payload);
+                return true;
+            }
+
+            if (this.hasApprovedDevice()) {
+                return await this.matchesStoredMasterKey(cleanMaster);
+            }
+
+            return false;
+        } catch (e) {
+            return false;
+        } finally {
+            this.masterKey = prevMaster;
+        }
+    },
+
     loadPendingChanges() {
         try {
             const raw = localStorage.getItem(this.storage.pendingQueue);
@@ -955,8 +986,16 @@ const PegasusCloud = {
                 && trustedLocalMaster
                 && this.hasApprovedDevice();
 
+            const canSecureRebindExistingBinding = !pinAccepted
+                && hasBoundPin
+                && cleanPin.length >= 4
+                && await this.canSecureRebindPinWithMaster(cleanMaster, cloudRecord);
+
             if (canRepairMissingPinBinding) {
                 console.warn("⚠️ CLOUD: Approval PIN binding missing on trusted approved device. Rebinding with current PIN.");
+                pinAccepted = true;
+            } else if (canSecureRebindExistingBinding) {
+                console.warn("⚠️ CLOUD: Approval PIN mismatch repaired from successful master-key validation. Rebinding with current PIN.");
                 pinAccepted = true;
             }
         }
