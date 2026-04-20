@@ -498,6 +498,12 @@ const PegasusCloud = {
                 return await this.matchesStoredMasterKey(cleanMaster);
             }
 
+            const noRemoteApprovalBinding = !this.getApprovalPinHash(cloudRecord) && !remoteMasterHash;
+            const hasUsableCloudPayload = !!(cloudRecord?.last_update_ts || cloudRecord?.last_update_date || (cloudRecord?.storage && typeof cloudRecord.storage === "object"));
+            if (noRemoteApprovalBinding && hasUsableCloudPayload && cleanMaster.length >= 8) {
+                return true;
+            }
+
             return false;
         } catch (e) {
             return false;
@@ -1029,7 +1035,8 @@ const PegasusCloud = {
                 pinAccepted = true;
             } else if (canSecureRebindFreshDevice) {
                 console.warn("⚠️ CLOUD: Fresh-device PIN binding rebuilt from successful master-key validation.");
-                this.traceStep("cloudSync", "unlock", "REBIND_ALLOWED", "MISSING_PIN_BINDING_MASTER_HASH");
+                const remoteMasterHash = this.getApprovalMasterHash(cloudRecord);
+                this.traceStep("cloudSync", "unlock", "REBIND_ALLOWED", remoteMasterHash ? "MISSING_PIN_BINDING_MASTER_HASH" : "MISSING_PIN_BINDING_LEGACY_MIGRATION");
                 pinAccepted = true;
             } else if (canSecureRebindExistingBinding) {
                 console.warn("⚠️ CLOUD: Approval PIN mismatch repaired from successful master-key validation. Rebinding with current PIN.");
