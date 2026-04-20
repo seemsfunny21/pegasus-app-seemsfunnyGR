@@ -791,7 +791,9 @@ const PegasusCloud = {
                         this.clearProtectedContactsUnavailable();
                     } catch (e) {
                         this.markProtectedContactsUnavailable(protectedContacts);
-                        console.warn("⚠️ CLOUD: Protected contacts bucket unavailable for this unlock. Continuing with general storage only.", e);
+                        if (this.hasLocalProtectedStorage() || this.hasProtectedRepairPending()) {
+                            console.warn("⚠️ CLOUD: Protected contacts bucket unavailable for this unlock. Continuing with general storage only.", e);
+                        }
                         protectedStorage = {};
                     }
                 }
