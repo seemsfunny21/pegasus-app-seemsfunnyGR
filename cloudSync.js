@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.2)
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v21.3)
    STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
@@ -26,7 +26,9 @@ const PegasusCloud = {
         legacyTime: "pegasus_vault_time",
         geminiKey: "pegasus_gemini_key",
         openaiKey: "pegasus_openai_key",
-        openrouterKey: "pegasus_openrouter_key"
+        openrouterKey: "pegasus_openrouter_key",
+        protectedContactsState: "pegasus_protected_contacts_state",
+        protectedContactsRepair: "pegasus_protected_contacts_repair"
     },
 
     isUnlocked: false,
@@ -85,6 +87,64 @@ const PegasusCloud = {
 
     markApprovedDevice() {
         this.safeSetLocal(this.storage.approvedDevice, "1");
+    },
+
+    getProtectedContactsSignature(envelope) {
+        if (!envelope || typeof envelope !== "object") return "";
+        const data = String(envelope?.data || "");
+        return [
+            String(envelope?.iv || ""),
+            String(envelope?.salt || ""),
+            String(data.length),
+            String(data.slice(0, 32))
+        ].join("|");
+    },
+
+    hasLocalProtectedStorage() {
+        return this.getLocalManagedKeys({ includeProtected: true }).some(key => this.isProtectedStorageKey(key));
+    },
+
+    hasProtectedRepairPending() {
+        return String(localStorage.getItem(this.storage.protectedContactsRepair) || "") === "1";
+    },
+
+    markProtectedRepairPending() {
+        this.safeSetLocal(this.storage.protectedContactsRepair, "1");
+    },
+
+    clearProtectedRepairPending() {
+        this.safeRemoveLocal(this.storage.protectedContactsRepair);
+    },
+
+    markProtectedContactsUnavailable(envelope) {
+        const marker = {
+            sig: this.getProtectedContactsSignature(envelope),
+            masterHash: String(localStorage.getItem(this.storage.masterHash) || ""),
+            at: Date.now()
+        };
+        this.safeSetLocal(this.storage.protectedContactsState, JSON.stringify(marker));
+        if (this.hasLocalProtectedStorage()) {
+            this.markProtectedRepairPending();
+        }
+    },
+
+    clearProtectedContactsUnavailable() {
+        this.safeRemoveLocal(this.storage.protectedContactsState);
+        this.clearProtectedRepairPending();
+    },
+
+    shouldSkipProtectedContactsDecrypt(envelope) {
+        try {
+            const raw = localStorage.getItem(this.storage.protectedContactsState);
+            if (!raw) return false;
+            const marker = JSON.parse(raw);
+            if (!marker || typeof marker !== "object") return false;
+            const currentMasterHash = String(localStorage.getItem(this.storage.masterHash) || "");
+            if (!currentMasterHash || marker.masterHash !== currentMasterHash) return false;
+            return marker.sig && marker.sig === this.getProtectedContactsSignature(envelope);
+        } catch (e) {
+            return false;
+        }
     },
 
     canRestoreApprovedDevice() {
@@ -187,6 +247,8 @@ const PegasusCloud = {
             this.storage.deviceSecret,
             this.storage.pendingQueue,
             this.storage.localPinHash,
+            this.storage.protectedContactsState,
+            this.storage.protectedContactsRepair,
             this.storage.legacyPin,
             this.storage.legacyTime,
             this.storage.geminiKey,
@@ -663,6 +725,8 @@ const PegasusCloud = {
                 hasProtectedPayload = true;
                 if (!this.masterKey) {
                     console.warn("⚠️ CLOUD: Protected contacts present but master key is unavailable. Continuing with general storage only.");
+                } else if (this.shouldSkipProtectedContactsDecrypt(protectedContacts)) {
+                    protectedStorage = {};
                 } else {
                     try {
                         const decryptedContacts = await this.decryptCloudPayload(protectedContacts);
@@ -671,10 +735,17 @@ const PegasusCloud = {
                                 ? decryptedContacts.storage
                                 : decryptedContacts;
                         }
+                        this.clearProtectedContactsUnavailable();
                     } catch (e) {
+                        this.markProtectedContactsUnavailable(protectedContacts);
                         console.warn("⚠️ CLOUD: Protected contacts bucket unavailable for this unlock. Continuing with general storage only.", e);
                         protectedStorage = {};
                     }
+                }
+            } else {
+                this.clearProtectedContactsUnavailable();
+                if (this.hasLocalProtectedStorage()) {
+                    this.markProtectedRepairPending();
                 }
             }
 
@@ -726,6 +797,8 @@ const PegasusCloud = {
         this.safeRemoveLocal(this.storage.lastPush);
         this.safeRemoveLocal(this.storage.pendingQueue);
         this.safeRemoveLocal(this.storage.localPinHash);
+        this.safeRemoveLocal(this.storage.protectedContactsState);
+        this.safeRemoveLocal(this.storage.protectedContactsRepair);
         this.safeRemoveLocal(this.storage.approvedDevice);
         this.safeRemoveLocal(this.storage.legacyPin);
         this.safeRemoveLocal(this.storage.legacyTime);
@@ -795,7 +868,7 @@ const PegasusCloud = {
 
                 this.startAutoSync();
 
-                if (navigator.onLine && this.hasPendingChanges()) {
+                if (navigator.onLine && (this.hasPendingChanges() || this.hasProtectedRepairPending())) {
                     await this._doPush();
                 }
 
@@ -941,7 +1014,7 @@ const PegasusCloud = {
                     setTimeout(() => {
                         this.syncNow(true).catch(e => console.error("❌ DEFERRED SYNC ERROR:", e));
                     }, 0);
-                } else {
+                } else if (this.hasPendingChanges() || this.hasProtectedRepairPending()) {
                     await this._doPush();
                 }
             }
@@ -1134,7 +1207,7 @@ const PegasusCloud = {
 
         const changed = await this.pull(silent);
 
-        if (this.hasPendingChanges()) {
+        if (this.hasPendingChanges() || this.hasProtectedRepairPending()) {
             const pushed = await this._doPush();
             return !!(changed || pushed);
         }
@@ -1197,11 +1270,12 @@ const PegasusCloud = {
             const remoteTs = parseInt(remote?.last_update_ts || "0", 10);
             const localTs = parseInt(localStorage.getItem(this.storage.lastPush) || "0", 10);
             const pendingExists = this.hasPendingChanges();
+            const protectedRepairPending = this.hasProtectedRepairPending();
 
             if (remoteTs && remoteTs > localTs) {
                 console.warn("⚠️ CLOUD: Remote is newer than local. Pulling before push...");
                 await this.pull(true);
-                if (!pendingExists) return false;
+                if (!pendingExists && !protectedRepairPending) return false;
             }
 
             if (this.hasPendingChanges()) {
@@ -1250,6 +1324,7 @@ const PegasusCloud = {
 
             this.safeSetLocal(this.storage.lastPush, ts);
             this.clearPendingChanges();
+            this.clearProtectedRepairPending();
             console.log("📤 CLOUD: Secure Sync OK");
             return true;
         } catch (e) {

@@ -128,6 +128,7 @@
                 window[dynamicRenderName]();
             }
         } catch (e) {
+            window.PegasusMobileErrors?.capture?.("mobileUI", `refresh:${id}`, e);
             console.error("Refresh Error:", e);
         }
     }
@@ -328,6 +329,7 @@
 
             return !!changed;
         } catch (e) {
+            window.PegasusMobileErrors?.capture?.("cloudSync", "mobileHeartbeat", e);
             console.error("📡 Mobile Heartbeat Error:", e);
             setSyncStatus('error');
             return false;
@@ -460,7 +462,7 @@
                 scheduleNextMobileSyncCycle(true);
                 setSyncStatus(window.PegasusCloud?.isUnlocked ? (navigator.onLine ? 'online' : 'offline') : 'locked');
 
-                Promise.resolve().then(() => reconcileMobileDailyRoutine()).catch(err => console.error("Mobile reconcile error:", err));
+                Promise.resolve().then(() => reconcileMobileDailyRoutine()).catch(err => { window.PegasusMobileErrors?.capture?.("diet", "reconcileDailyRoutine", err); console.error("Mobile reconcile error:", err); });
                 startMobileSyncHeartbeat();
                 setTimeout(() => {
                     if (window.PegasusCloud?.isUnlocked && !window.PegasusCloud?.isPulling && !window.PegasusCloud?.isPushing && !window._pegasusMobileSyncBusy) {
@@ -468,6 +470,7 @@
                     }
                 }, 250);
             } else {
+                window.PegasusMobileErrors?.warn?.("unlock", "credentials", "INVALID_PIN_OR_MASTER");
                 if (errorDiv) errorDiv.style.color = "#ff4444";
                 if (errorDiv) errorDiv.textContent = "ΛΑΘΟΣ PIN / MASTER KEY";
                 if (pinInput) pinInput.value = "";
@@ -511,6 +514,7 @@
                     await Promise.all(keys.map(key => caches.delete(key)));
                 }
             } catch (e) {
+                window.PegasusMobileErrors?.capture?.("system", "hardReset", e);
                 console.error("Hard Reset Cleanup Error:", e);
             }
 
@@ -572,6 +576,7 @@
                     location.reload();
                 }
             } catch (err) {
+                window.PegasusMobileErrors?.capture?.("backup", "import", err);
                 alert("❌ Μη έγκυρο αρχείο.");
             }
         };
@@ -586,9 +591,9 @@
         if (modal) modal.style.display = "none";
 
         try {
-            try { installMobileInventoryBridges(); } catch (e) { console.error("📦 Mobile Bridge Error:", e); }
-            try { refreshAllUI(); } catch (e) { console.error("📱 Mobile UI Boot Error:", e); }
-            try { updateSuppUI(); } catch (e) { console.error("📦 Mobile Supp UI Error:", e); }
+            try { installMobileInventoryBridges(); } catch (e) { window.PegasusMobileErrors?.capture?.("inventory", "installBridges", e); console.error("📦 Mobile Bridge Error:", e); }
+            try { refreshAllUI(); } catch (e) { window.PegasusMobileErrors?.capture?.("mobileUI", "bootRefreshAllUI", e); console.error("📱 Mobile UI Boot Error:", e); }
+            try { updateSuppUI(); } catch (e) { window.PegasusMobileErrors?.capture?.("inventory", "bootUpdateSuppUI", e); console.error("📦 Mobile Supp UI Error:", e); }
 
             const cloud = window.PegasusCloud;
             const canRestoreApproved = !!cloud?.canRestoreApprovedDevice?.();
@@ -602,6 +607,7 @@
                     : await cloud.tryApprovedDeviceUnlock();
 
                 if (success) {
+                    window.PegasusMobileErrors?.info?.("cloudSync", canDailyAutoUnlock ? "autoUnlock" : "approvedRestore", "SUCCESS");
                     console.log(canDailyAutoUnlock ? "📡 Cloud Sync: Auto-Unlocked." : "📡 Cloud Sync: Approved Device Restored.");
                     isUnlocked = true;
                     if (modal) modal.style.display = "none";
@@ -609,8 +615,8 @@
                     await runMobileSyncHeartbeat();
                     startMobileSyncHeartbeat();
                     setTimeout(() => {
-                        try { refreshAllUI(); } catch (e) { console.error("📱 Mobile UI Post-Unlock Error:", e); }
-                        try { updateSuppUI(); } catch (e) { console.error("📦 Mobile Supp Post-Unlock Error:", e); }
+                        try { refreshAllUI(); } catch (e) { window.PegasusMobileErrors?.capture?.("mobileUI", "postUnlockRefreshAllUI", e); console.error("📱 Mobile UI Post-Unlock Error:", e); }
+                        try { updateSuppUI(); } catch (e) { window.PegasusMobileErrors?.capture?.("inventory", "postUnlockUpdateSuppUI", e); console.error("📦 Mobile Supp Post-Unlock Error:", e); }
                     }, 500);
                     return;
                 }
@@ -620,6 +626,7 @@
             isUnlocked = false;
             setSyncStatus('locked');
         } catch (e) {
+            window.PegasusMobileErrors?.capture?.("cloudSync", "mobileBoot", e);
             console.error("📡 Cloud Boot Error:", e);
             isUnlocked = false;
             setSyncStatus('locked');
