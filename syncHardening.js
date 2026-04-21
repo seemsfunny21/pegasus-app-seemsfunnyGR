@@ -18,6 +18,7 @@
             restoreInFlight: false,
             deferredPush: false,
             deferredSync: false,
+            blockedRequest: null,
             flushTimer: null,
             recentNotes: [],
             counters: {
@@ -27,17 +28,26 @@
                 restoreCalls: 0,
                 restoreBlockedPush: 0,
                 pullDuringPush: 0,
-                pushQueued: 0
+                pushQueued: 0,
+                phaseCorrections: 0,
+                deferredRetries: 0
             }
         };
 
-        const STICKY_PHASES = new Set(["restoring", "pulling", "pushing", "recovering", "blocked"]);
         const originalEmitSyncStatus = cloud.emitSyncStatus.bind(cloud);
         const originalPush = cloud.push.bind(cloud);
         const originalDoPush = cloud._doPush.bind(cloud);
         const originalPull = cloud.pull.bind(cloud);
         const originalSyncNow = cloud.syncNow.bind(cloud);
         const originalRestoreApprovedDevice = cloud.restoreApprovedDevice.bind(cloud);
+
+        function isOnline() {
+            return typeof navigator === "undefined" ? true : !!navigator.onLine;
+        }
+
+        function hasDeferredWork() {
+            return !!(state.deferredPush || state.deferredSync);
+        }
 
         function trace(status, extra) {
             try {
@@ -85,11 +95,12 @@
                     approvedRestoreCompleted: !!cloud.hasApprovedRestoreCompleted,
                     pendingChanges,
                     protectedRepairPending,
-                    online: typeof navigator === "undefined" ? true : !!navigator.onLine
+                    online: isOnline()
                 },
                 deferred: {
                     push: !!state.deferredPush,
-                    sync: !!state.deferredSync
+                    sync: !!state.deferredSync,
+                    blockedRequest: state.blockedRequest ? { ...state.blockedRequest } : null
                 },
                 counters: { ...state.counters },
                 recentNotes: state.recentNotes.slice(-10)
@@ -116,15 +127,43 @@
             dispatchStateEvent(reason || "syncHardening");
         }
 
-        function coarseStatusToPhase(status) {
-            switch (status) {
-                case "syncing": return "syncing";
-                case "offline": return "offline";
-                case "error": return "error";
-                case "locked": return "locked";
-                case "online": return "online";
-                default: return status || "unknown";
+        function derivePhase() {
+            if (state.restoreInFlight) return "restoring";
+            if (cloud.isPushing) return "pushing";
+            if (cloud.isPulling) return "pulling";
+            if (!cloud.isUnlocked) return "locked";
+            if (!isOnline()) return "offline";
+            if (state.lastCoarseStatus === "error") return "error";
+            if (hasDeferredWork()) return "recovering";
+            if (state.lastCoarseStatus === "syncing") return "syncing";
+            return "online";
+        }
+
+        function syncDerivedPhase(reason, extra) {
+            const nextPhase = derivePhase();
+            if (state.phase !== nextPhase) {
+                state.counters.phaseCorrections += 1;
             }
+            setPhase(nextPhase, reason, extra);
+            return nextPhase;
+        }
+
+        function rememberBlockedRequest(action, reason, extra) {
+            state.blockedRequest = {
+                action,
+                reason,
+                at: new Date().toISOString(),
+                extra: extra || null
+            };
+        }
+
+        function clearBlockedRequest(noteType) {
+            if (!state.blockedRequest) return;
+            addNote(noteType || "blocked_request_cleared", {
+                action: state.blockedRequest.action,
+                reason: state.blockedRequest.reason
+            });
+            state.blockedRequest = null;
         }
 
         async function flushDeferred(reason) {
@@ -133,19 +172,32 @@
                 state.flushTimer = null;
             }
 
-            if (state.restoreInFlight) return false;
-            if (cloud.isPulling || cloud.isPushing) return false;
-            if (!cloud.isUnlocked) return false;
-            if (typeof navigator !== "undefined" && !navigator.onLine) return false;
+            if (state.restoreInFlight || cloud.isPulling || cloud.isPushing) {
+                if (hasDeferredWork()) {
+                    state.counters.deferredRetries += 1;
+                    scheduleDeferredFlush(`${reason || "flush"}:busy_retry`, 180);
+                }
+                return false;
+            }
+
+            if (!cloud.isUnlocked || !isOnline()) {
+                syncDerivedPhase(reason || "flushDeferred:waiting");
+                return false;
+            }
 
             const shouldSync = state.deferredSync;
             const shouldPush = !shouldSync && state.deferredPush;
-            if (!shouldSync && !shouldPush) return false;
+            if (!shouldSync && !shouldPush) {
+                clearBlockedRequest("deferred_already_clear");
+                syncDerivedPhase(reason || "flushDeferred:idle");
+                return false;
+            }
 
             state.deferredSync = false;
             state.deferredPush = false;
             state.counters.deferredFlush += 1;
             addNote("deferred_flush", { reason, action: shouldSync ? "syncNow" : "push" });
+            clearBlockedRequest("deferred_flush_started");
             setPhase("recovering", reason || "deferred_flush", { action: shouldSync ? "syncNow" : "push" });
 
             try {
@@ -157,26 +209,23 @@
                 capture("flushDeferred", error, { reason, shouldSync, shouldPush });
                 return false;
             } finally {
-                dispatchStateEvent("flushDeferred:done");
+                syncDerivedPhase("flushDeferred:done");
             }
         }
 
-        function scheduleDeferredFlush(reason) {
+        function scheduleDeferredFlush(reason, delay = 140) {
             if (state.flushTimer) clearTimeout(state.flushTimer);
             state.flushTimer = setTimeout(() => {
                 flushDeferred(reason);
-            }, 140);
+            }, delay);
         }
 
         cloud.emitSyncStatus = function patchedEmitSyncStatus(status, force = false) {
             const result = originalEmitSyncStatus(status, force);
             state.lastCoarseStatus = status;
-            const mappedPhase = coarseStatusToPhase(status);
-            const stickyActive = STICKY_PHASES.has(state.phase) && (cloud.isPulling || cloud.isPushing || state.restoreInFlight || state.deferredPush || state.deferredSync);
-            if (!stickyActive || force) {
-                setPhase(mappedPhase, "emitSyncStatus", { status, force: !!force });
-            } else {
-                dispatchStateEvent("emitSyncStatus:sticky");
+            syncDerivedPhase("emitSyncStatus", { status, force: !!force });
+            if (hasDeferredWork() && !state.restoreInFlight && !cloud.isPulling && !cloud.isPushing && cloud.isUnlocked && isOnline()) {
+                scheduleDeferredFlush("emitSyncStatus:ready");
             }
             return result;
         };
@@ -190,7 +239,7 @@
             try {
                 const result = await originalRestoreApprovedDevice(options);
                 addNote("restore_complete", { result: !!result });
-                setPhase(result ? (cloud.isUnlocked ? "online" : "locked") : "locked", "restoreApprovedDevice:done", { result: !!result });
+                syncDerivedPhase("restoreApprovedDevice:done", { result: !!result });
                 return result;
             } catch (error) {
                 capture("restoreApprovedDevice", error, options);
@@ -198,7 +247,11 @@
                 throw error;
             } finally {
                 state.restoreInFlight = false;
-                scheduleDeferredFlush("restore_complete");
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("restore_complete");
+                } else {
+                    syncDerivedPhase("restoreApprovedDevice:finalize");
+                }
             }
         };
 
@@ -217,11 +270,11 @@
                 setPhase("error", "pull:error");
                 throw error;
             } finally {
-                if (!cloud.isPushing && !state.restoreInFlight) {
-                    const nextPhase = !cloud.isUnlocked ? "locked" : ((typeof navigator !== "undefined" && !navigator.onLine) ? "offline" : (state.lastCoarseStatus === "error" ? "error" : "online"));
-                    setPhase(nextPhase, "pull:done", { silent: !!silent });
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("pull_complete");
+                } else {
+                    syncDerivedPhase("pull:done", { silent: !!silent });
                 }
-                scheduleDeferredFlush("pull_complete");
             }
         };
 
@@ -230,16 +283,23 @@
             if (state.restoreInFlight || cloud.isPulling || cloud.isPushing) {
                 state.deferredSync = true;
                 state.counters.blockedSync += 1;
+                rememberBlockedRequest("syncNow", "syncNow:busy", {
+                    silent: !!silent,
+                    restoreInFlight: !!state.restoreInFlight,
+                    isPulling: !!cloud.isPulling,
+                    isPushing: !!cloud.isPushing
+                });
                 addNote("sync_blocked", {
                     silent: !!silent,
                     restoreInFlight: !!state.restoreInFlight,
                     isPulling: !!cloud.isPulling,
                     isPushing: !!cloud.isPushing
                 });
-                setPhase("blocked", "syncNow:busy", { silent: !!silent });
+                syncDerivedPhase("syncNow:busy", { silent: !!silent, deferredAction: "syncNow" });
                 return false;
             }
 
+            clearBlockedRequest("sync_request_started");
             setPhase("syncing", "syncNow:start", { silent: !!silent });
             try {
                 return await originalSyncNow(silent);
@@ -248,7 +308,11 @@
                 setPhase("error", "syncNow:error");
                 throw error;
             } finally {
-                scheduleDeferredFlush("syncNow_complete");
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("syncNow_complete");
+                } else {
+                    syncDerivedPhase("syncNow:done", { silent: !!silent });
+                }
             }
         };
 
@@ -259,23 +323,30 @@
                 state.deferredPush = true;
                 state.counters.blockedPush += 1;
                 state.counters.restoreBlockedPush += 1;
+                rememberBlockedRequest("push", "push:restore_in_flight", { force: !!force });
                 addNote("push_blocked_restore", { force: !!force });
-                setPhase("blocked", "push:restore_in_flight", { force: !!force });
+                syncDerivedPhase("push:restore_in_flight", { force: !!force, deferredAction: "push" });
                 return false;
             }
 
             if (cloud.isPulling || cloud.isPushing) {
                 state.deferredPush = true;
                 state.counters.blockedPush += 1;
+                rememberBlockedRequest("push", "push:busy", {
+                    force: !!force,
+                    isPulling: !!cloud.isPulling,
+                    isPushing: !!cloud.isPushing
+                });
                 addNote("push_blocked_busy", {
                     force: !!force,
                     isPulling: !!cloud.isPulling,
                     isPushing: !!cloud.isPushing
                 });
-                setPhase("blocked", "push:busy", { force: !!force });
+                syncDerivedPhase("push:busy", { force: !!force, deferredAction: "push" });
                 return false;
             }
 
+            clearBlockedRequest(force ? "forced_push_started" : "queued_push_started");
             if (!force) {
                 state.counters.pushQueued += 1;
                 setPhase("syncing", "push:queued", { force: false });
@@ -291,11 +362,13 @@
             if (state.restoreInFlight) {
                 state.deferredPush = true;
                 state.counters.blockedPush += 1;
+                rememberBlockedRequest("push", "_doPush:restore_in_flight", null);
                 addNote("doPush_blocked_restore", null);
-                setPhase("blocked", "_doPush:restore_in_flight");
+                syncDerivedPhase("_doPush:restore_in_flight", { deferredAction: "push" });
                 return false;
             }
 
+            clearBlockedRequest("doPush_started");
             setPhase("pushing", "_doPush:start", {
                 pendingChanges: !!cloud.hasPendingChanges?.(),
                 protectedRepairPending: !!cloud.hasProtectedRepairPending?.()
@@ -308,7 +381,11 @@
                 setPhase("error", "_doPush:error");
                 throw error;
             } finally {
-                scheduleDeferredFlush("push_complete");
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("push_complete");
+                } else {
+                    syncDerivedPhase("_doPush:done");
+                }
             }
         };
 
@@ -329,10 +406,22 @@
             }
         };
 
+        window.addEventListener("online", () => {
+            if (hasDeferredWork()) {
+                scheduleDeferredFlush("browser_online", 60);
+            } else {
+                syncDerivedPhase("browser_online");
+            }
+        });
+
+        window.addEventListener("offline", () => {
+            syncDerivedPhase("browser_offline");
+        });
+
         cloud.__syncHardeningInstalled = true;
         cloud.__syncHardeningState = state;
         addNote("installed", { phase: state.phase });
-        setPhase(state.phase, "install");
+        syncDerivedPhase("install");
         console.log("🛡️ PEGASUS SYNC HARDENING: Active");
     }
 
