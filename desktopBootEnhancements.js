@@ -43,6 +43,8 @@
 
         window.addEventListener('load', () => {
             const swPath = window.location.pathname.includes('mobile/') ? '../sw.js' : './sw.js';
-            navigator.serviceWorker.register(swPath + '?v=3.12').catch(err => console.error("🛡️ SW Error:", err));
+            navigator.serviceWorker.register(swPath + '?v=3.20')
+                .then(reg => reg.update())
+                .catch(err => console.error("🛡️ SW Error:", err));
         });
     }

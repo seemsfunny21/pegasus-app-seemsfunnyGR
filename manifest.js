@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.5)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.6)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -11,9 +11,9 @@ window.PegasusManifest = {
     metadata: {
         os: "Pegasus OS",
         author: "Angelos & Gemini",
-        last_update: "2026-04-19",
+        last_update: "2026-04-21",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.5 Stable"
+        engine_version: "v18.6 Stable"
     },
 
     // ---------------------------------------------------------
@@ -115,6 +115,19 @@ window.PegasusManifest = {
     architecture: {
         "manifest.js": "Κεντρικός ορισμός LocalStorage keys & System Blueprint.",
         "app.js": "Master Orchestrator / Event Bus (UI & Workout Timer).",
+        "appState.js": "Shared runtime state container for app/session coordination.",
+        "runtimeBridge.js": "Bridge μεταξύ legacy UI flow και Pegasus core runtime state.",
+        "calorieRuntime.js": "Dynamic calorie/protein target calculation and UI runtime sync.",
+        "audioRuntime.js": "Audio unlock and beep/runtime sound state manager.",
+        "weightState.js": "Saved exercise weights and active lifter state access layer.",
+        "diagnosticsRuntime.js": "Runtime warning/error bridge and high-level diagnostics hooks.",
+        "moduleIntegrity.js": "Checks whether critical modules/globals are loaded and healthy.",
+        "syncHardening.js": "Primary sync guard/state machine for overlapping sync prevention.",
+        "syncEdgeHardening.js": "Cross-tab lease, dedupe and online/visibility sync edge-case protection.",
+        "syncDiagnostics.js": "High-level sync observability and lease/deferred diagnostics layer.",
+        "storageHardening.js": "LocalStorage audit/repair layer with safe defaults and schema guards.",
+        "selfCheckRunner.js": "Regression/self-check runner for quick health snapshots.",
+        "programGuide.js": "Interactive in-app How-To / system map / file reference guide.",
         "food.js": "Nutrition Logic & Συμφωνία 30 Γευμάτων (Κούκι).",
         "protcrea.js": "Inventory Guard (Πρωτεΐνη 2500g / Κρεατίνη 1000g).",
         "weightTracker.js": "Biometric Trend Analyzer (Moving Average).",
@@ -127,6 +140,14 @@ window.PegasusManifest = {
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
         "dragDrop.js": "UI Window Positioning Memory.",
+        "desktopBoot.js": "Desktop startup bootstrap and initial app boot orchestration.",
+        "desktopPanels.js": "Desktop panel open/render helpers for major UI windows.",
+        "desktopActions.js": "Desktop action handlers for buttons and workout commands.",
+        "desktopRender.js": "Desktop-specific render/update helpers for workout UI.",
+        "desktopSyncUI.js": "Desktop sync panel rendering and initialization status UI.",
+        "desktopRoute.js": "Desktop route/bootstrap branching and mode selection logic.",
+        "desktopSyncController.js": "Desktop sync controller hooks and higher-level sync entry wiring.",
+        "desktopBootEnhancements.js": "Boot polish helpers, loader updates and service worker registration.",
         "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
         "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
         "reporting.js": "EmailJS Automated Morning Dispatcher."
@@ -205,4 +226,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.5 LOADED. GLOBAL UNLOCK ACTIVE.");
+console.log("🏛️ PEGASUS MANIFEST v18.6 LOADED. GLOBAL UNLOCK ACTIVE.");
