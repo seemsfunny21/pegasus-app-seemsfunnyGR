@@ -8,6 +8,8 @@
     const BTN_ID = 'btnProgramGuide';
     const SEARCH_ID = 'pegasusGuideSearch';
     const CONTENT_ID = 'pegasusGuideContent';
+    const CARD_STYLE = 'background:linear-gradient(180deg,#141414 0%,#101010 100%); border:1px solid rgba(111,255,163,0.14); border-radius:14px; padding:14px; box-shadow:0 10px 28px rgba(0,0,0,0.28);';
+    const SECTION_STYLE = 'background:linear-gradient(180deg,#121212 0%,#0d0d0d 100%); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px; text-align:left; box-shadow:0 10px 24px rgba(0,0,0,0.26);';
 
     const QUICK_START = [
         'Επίλεξε ημέρα από το navbar για να δεις το πρόγραμμα της ημέρας.',
@@ -125,12 +127,13 @@
             const category = isExternal ? 'External Dependency' : info.category;
             const role = isExternal ? 'Εξωτερική βιβλιοθήκη που χρησιμοποιείται από το PEGASUS build.' : info.role;
             return `
-                <div class="pegasus-guide-card" data-guide-search="${escapeHtml((file + ' ' + category + ' ' + role).toLowerCase())}" style="background:#111; border:1px solid #2c2c2c; border-radius:10px; padding:12px; margin-bottom:10px; text-align:left;">
-                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-                        <div style="font-weight:900; color:#4CAF50; font-size:13px;">${escapeHtml(file)}</div>
-                        <div style="font-size:10px; color:#9ad29d; letter-spacing:0.8px;">${escapeHtml(category)}</div>
+                <div class="pegasus-guide-card" data-guide-search="${escapeHtml((file + ' ' + category + ' ' + role).toLowerCase())}" style="${CARD_STYLE} margin-bottom:12px; text-align:left; position:relative; overflow:hidden;">
+                    <div style="position:absolute; inset:0 auto auto 0; width:100%; height:1px; background:linear-gradient(90deg,rgba(76,175,80,0) 0%, rgba(76,175,80,0.55) 50%, rgba(76,175,80,0) 100%);"></div>
+                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; position:relative;">
+                        <div style="font-weight:900; color:#7CFFB2; font-size:13px; letter-spacing:0.3px;">${escapeHtml(file)}</div>
+                        <div style="font-size:10px; color:#b5f0bf; letter-spacing:0.9px; background:rgba(76,175,80,0.09); border:1px solid rgba(76,175,80,0.18); padding:4px 8px; border-radius:999px;">${escapeHtml(category)}</div>
                     </div>
-                    <div style="margin-top:6px; color:#ddd; font-size:12px; line-height:1.5;">${escapeHtml(role)}</div>
+                    <div style="margin-top:8px; color:#e5e5e5; font-size:12px; line-height:1.6; position:relative;">${escapeHtml(role)}</div>
                 </div>
             `;
         }).join('');
@@ -141,53 +144,57 @@
         const buildInfo = [manifestMeta.os, manifestMeta.engine_version, manifestMeta.last_update].filter(Boolean).join(' • ');
         return `
             <div style="display:flex; flex-direction:column; gap:14px;">
-                <div style="background:#0f0f0f; border:1px solid #333; border-radius:12px; padding:14px; text-align:left;">
+                <div style="${SECTION_STYLE} position:relative; overflow:hidden;">
+                    <div style="position:absolute; inset:0 0 auto 0; height:2px; background:linear-gradient(90deg,#2f6bff 0%, #7cffb2 55%, #2f6bff 100%);"></div>
                     <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
                         <div>
-                            <div style="color:#4CAF50; font-size:18px; font-weight:900; letter-spacing:1px;">PEGASUS HOW TO / SYSTEM MAP</div>
-                            <div style="color:#bbb; font-size:11px; margin-top:4px;">Ο οδηγός αυτός είναι μόνο ενημερωτικός. Δεν αλλάζει δεδομένα και εξηγεί τι κάνει κάθε βασικό κομμάτι του συστήματος.</div>
+                            <div style="color:#7CFFB2; font-size:20px; font-weight:900; letter-spacing:1.1px;">PEGASUS HOW TO / SYSTEM MAP</div>
+                            <div style="color:#c9c9c9; font-size:11px; margin-top:6px; line-height:1.6; max-width:640px;">Ο οδηγός αυτός είναι μόνο ενημερωτικός. Δεν αλλάζει δεδομένα και εξηγεί τι κάνει κάθε βασικό κομμάτι του συστήματος, ώστε να ξέρεις πού βρίσκεται κάθε λειτουργία και ποιο αρχείο ευθύνεται για αυτήν.</div>
                         </div>
-                        <div style="font-size:10px; color:#8a8a8a; text-align:right;">${escapeHtml(buildInfo || 'PEGASUS build')}</div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;">
+                            <div style="font-size:10px; color:#d6d6d6; text-align:right; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);">${escapeHtml(buildInfo || 'PEGASUS build')}</div>
+                            <div style="font-size:10px; color:#7cffb2; text-align:right; padding:6px 10px; border-radius:999px; background:rgba(124,255,178,0.08); border:1px solid rgba(124,255,178,0.18);">READ-ONLY GUIDE</div>
+                        </div>
                     </div>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
-                    <div style="color:#4CAF50; font-weight:900; margin-bottom:10px; font-size:14px;">ΠΩΣ ΧΡΗΣΙΜΟΠΟΙΕΙΣ ΤΟ PEGASUS</div>
-                    <ol style="margin:0; padding-left:18px; color:#ddd; font-size:12px; line-height:1.7;">
-                        ${QUICK_START.map(step => `<li style="margin-bottom:6px;">${escapeHtml(step)}</li>`).join('')}
+                <div style="${SECTION_STYLE}">
+                    <div style="color:#7CFFB2; font-weight:900; margin-bottom:12px; font-size:14px; letter-spacing:0.4px;">ΠΩΣ ΧΡΗΣΙΜΟΠΟΙΕΙΣ ΤΟ PEGASUS</div>
+                    <ol style="margin:0; padding-left:18px; color:#ececec; font-size:12px; line-height:1.8;">
+                        ${QUICK_START.map(step => `<li style="margin-bottom:7px;">${escapeHtml(step)}</li>`).join('')}
                     </ol>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
-                    <div style="color:#4CAF50; font-weight:900; margin-bottom:10px; font-size:14px;">ΒΑΣΙΚΑ ΣΗΜΕΙΑ ΤΟΥ ΠΡΟΓΡΑΜΜΑΤΟΣ</div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;">
+                <div style="${SECTION_STYLE}">
+                    <div style="color:#7CFFB2; font-weight:900; margin-bottom:12px; font-size:14px; letter-spacing:0.4px;">ΒΑΣΙΚΑ ΣΗΜΕΙΑ ΤΟΥ ΠΡΟΓΡΑΜΜΑΤΟΣ</div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px;">
                         ${MAIN_AREAS.map(area => `
-                            <div class="pegasus-guide-card" data-guide-search="${escapeHtml((area.name + ' ' + area.role).toLowerCase())}" style="background:#111; border:1px solid #2c2c2c; border-radius:10px; padding:12px;">
-                                <div style="color:#4CAF50; font-size:13px; font-weight:900; margin-bottom:6px;">${escapeHtml(area.name)}</div>
-                                <div style="color:#ddd; font-size:12px; line-height:1.5;">${escapeHtml(area.role)}</div>
+                            <div class="pegasus-guide-card" data-guide-search="${escapeHtml((area.name + ' ' + area.role).toLowerCase())}" style="${CARD_STYLE}">
+                                <div style="color:#7CFFB2; font-size:13px; font-weight:900; margin-bottom:6px;">${escapeHtml(area.name)}</div>
+                                <div style="color:#e4e4e4; font-size:12px; line-height:1.6;">${escapeHtml(area.role)}</div>
                             </div>
                         `).join('')}
                     </div>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
-                    <div style="color:#4CAF50; font-weight:900; margin-bottom:10px; font-size:14px;">ΤΥΠΟΙ ΠΡΟΓΡΑΜΜΑΤΩΝ</div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px;">
+                <div style="${SECTION_STYLE}">
+                    <div style="color:#7CFFB2; font-weight:900; margin-bottom:12px; font-size:14px; letter-spacing:0.4px;">ΤΥΠΟΙ ΠΡΟΓΡΑΜΜΑΤΩΝ</div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px;">
                         ${PROGRAM_MODES.map(mode => `
-                            <div class="pegasus-guide-card" data-guide-search="${escapeHtml((mode.code + ' ' + mode.role).toLowerCase())}" style="background:#111; border:1px solid #2c2c2c; border-radius:10px; padding:12px;">
-                                <div style="color:#4CAF50; font-size:13px; font-weight:900; margin-bottom:6px;">${escapeHtml(mode.code)}</div>
-                                <div style="color:#ddd; font-size:12px; line-height:1.5;">${escapeHtml(mode.role)}</div>
+                            <div class="pegasus-guide-card" data-guide-search="${escapeHtml((mode.code + ' ' + mode.role).toLowerCase())}" style="${CARD_STYLE}">
+                                <div style="color:#7CFFB2; font-size:13px; font-weight:900; margin-bottom:6px;">${escapeHtml(mode.code)}</div>
+                                <div style="color:#e4e4e4; font-size:12px; line-height:1.6;">${escapeHtml(mode.role)}</div>
                             </div>
                         `).join('')}
                     </div>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
+                <div style="${SECTION_STYLE}">
                     <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
-                        <div style="color:#4CAF50; font-weight:900; font-size:14px;">ΑΡΧΕΙΟ -> ΔΟΥΛΕΙΑ ΠΟΥ ΚΑΝΕΙ</div>
-                        <input id="${SEARCH_ID}" type="text" placeholder="Ψάξε αρχείο ή λειτουργία..." style="min-width:220px; flex:1; max-width:320px; background:#0a0a0a; color:#4CAF50; border:1px solid #4CAF50; border-radius:8px; padding:8px 10px;">
+                        <div style="color:#7CFFB2; font-weight:900; font-size:14px; letter-spacing:0.4px;">ΑΡΧΕΙΟ -> ΔΟΥΛΕΙΑ ΠΟΥ ΚΑΝΕΙ</div>
+                        <input id="${SEARCH_ID}" type="text" placeholder="Ψάξε αρχείο ή λειτουργία..." style="min-width:220px; flex:1; max-width:340px; background:linear-gradient(180deg,#0f1113 0%,#0b0c0d 100%); color:#7CFFB2; border:1px solid rgba(124,255,178,0.35); border-radius:12px; padding:10px 12px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.04); outline:none;">
                     </div>
-                    <div style="color:#aaa; font-size:11px; margin-bottom:10px;">Ο παρακάτω κατάλογος εξηγεί τι κάνει κάθε βασικό script που φορτώνεται στο current build.</div>
+                    <div style="color:#b5b5b5; font-size:11px; margin-bottom:12px; line-height:1.55;">Ο παρακάτω κατάλογος εξηγεί τι κάνει κάθε βασικό script που φορτώνεται στο current build.</div>
                     <div id="${CONTENT_ID}" style="max-height:420px; overflow-y:auto; padding-right:4px;">${buildFileCards()}</div>
                 </div>
             </div>
@@ -215,13 +222,13 @@
         panel = document.createElement('div');
         panel.id = PANEL_ID;
         panel.className = 'pegasus-panel';
-        panel.style.cssText = 'display:none; width:min(860px,92vw); height:min(780px,88vh); z-index:1002; overflow:hidden;';
+        panel.style.cssText = 'display:none; width:min(920px,92vw); height:min(790px,88vh); z-index:1002; overflow:hidden; border:1px solid rgba(124,255,178,0.16); border-radius:18px; background:linear-gradient(180deg,#111214 0%,#090909 100%); box-shadow:0 26px 80px rgba(0,0,0,0.48);';
         panel.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
-                <h3 style="text-align:left; margin:0;">📘 ΟΔΗΓΟΣ PEGASUS</h3>
-                <button id="btnCloseProgramGuide" class="p-btn tools-btn" style="width:auto; min-width:120px;">ΚΛΕΙΣΙΜΟ</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <h3 style="text-align:left; margin:0; color:#f3f3f3; letter-spacing:0.6px;">📘 ΟΔΗΓΟΣ PEGASUS</h3>
+                <button id="btnCloseProgramGuide" class="p-btn tools-btn" style="width:auto; min-width:132px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background:linear-gradient(180deg,#1d1f22 0%,#121314 100%); color:#f1f1f1; box-shadow:0 10px 24px rgba(0,0,0,0.24); font-weight:900; letter-spacing:0.6px;">ΚΛΕΙΣΙΜΟ</button>
             </div>
-            <div id="pegasusProgramGuideRoot" style="height:calc(100% - 52px); overflow-y:auto; padding-right:6px;"></div>
+            <div id="pegasusProgramGuideRoot" style="height:calc(100% - 58px); overflow-y:auto; padding-right:6px;"></div>
         `;
         document.body.appendChild(panel);
 
@@ -260,6 +267,8 @@
         const panel = ensurePanel();
         panel.style.display = 'block';
         panel.style.zIndex = '2001';
+        const root = panel.querySelector('#pegasusProgramGuideRoot');
+        if (root) root.scrollTop = 0;
     }
 
     function ensureButton() {
@@ -271,7 +280,7 @@
         btn.id = BTN_ID;
         btn.className = 'p-btn tools-btn';
         btn.textContent = '📘 ΟΔΗΓΟΣ / HOW TO PEGASUS';
-        btn.style.cssText = 'border-color:#00bcd4; color:#00bcd4; margin-top:8px; font-weight:900;';
+        btn.style.cssText = 'margin-top:10px; font-weight:900; color:#7CFFB2; border:1px solid rgba(124,255,178,0.28); background:linear-gradient(180deg,#151817 0%,#0f1110 100%); box-shadow:0 12px 24px rgba(0,0,0,0.22); letter-spacing:0.4px;';
         btn.onclick = (e) => {
             e.stopPropagation();
             open();
