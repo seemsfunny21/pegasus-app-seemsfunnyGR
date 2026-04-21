@@ -21,7 +21,8 @@
         ["PegasusSyncHardening.getState", () => typeof window.PegasusSyncHardening?.getState === "function"],
         ["PegasusSyncEdgeHardening.getState", () => typeof window.PegasusSyncEdgeHardening?.getState === "function"],
         ["PegasusSyncDiagnostics.summary", () => typeof window.PegasusSyncDiagnostics?.summary === "function"],
-        ["PegasusSelfCheck.run", () => typeof window.PegasusSelfCheck?.run === "function"]
+        ["PegasusSelfCheck.run", () => typeof window.PegasusSelfCheck?.run === "function"],
+        ["PegasusProgramGuide.open", () => typeof window.PegasusProgramGuide?.open === "function"]
     ];
 
     function buildIntegrityResult() {
