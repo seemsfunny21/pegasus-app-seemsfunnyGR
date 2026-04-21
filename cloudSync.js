@@ -498,12 +498,6 @@ const PegasusCloud = {
                 return await this.matchesStoredMasterKey(cleanMaster);
             }
 
-            const noRemotePinBinding = !this.getApprovalPinHash(cloudRecord);
-            const hasUsableCloudPayload = !!(cloudRecord?.last_update_ts || cloudRecord?.last_update_date || (cloudRecord?.storage && typeof cloudRecord.storage === "object"));
-            if (noRemotePinBinding && hasUsableCloudPayload && cleanMaster.length >= 8) {
-                return true;
-            }
-
             return false;
         } catch (e) {
             return false;
