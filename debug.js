@@ -256,9 +256,6 @@ window.pegasusHealthCheck = async function() {
     if (!window.PegasusManifest) errors.push("Critical: manifest.js missing.");
     if (!window.PegasusDebugHelpers.isEngineReady()) errors.push("Critical: pegasusCore.js not loaded.");
 
-    const lastPush = localStorage.getItem("pegasus_last_push");
-    if (!lastPush) warnings.push("Sync: No Cloud Push history.");
-
     const essential = isMobile
         ? ["sync-indicator"]
         : ["btnStart", "exList", "totalProgress", "muscleProgressContainer"];
