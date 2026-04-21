@@ -16,7 +16,8 @@
         ["renderPegasusControlState", () => typeof window.renderPegasusControlState === "function"],
         ["bindPegasusEngineUiBridge", () => typeof window.bindPegasusEngineUiBridge === "function"],
         ["syncEngineFromLegacy", () => typeof window.syncEngineFromLegacy === "function"],
-        ["PegasusDebug.summary", () => typeof window.PegasusDebug?.summary === "function"]
+        ["PegasusDebug.summary", () => typeof window.PegasusDebug?.summary === "function"],
+        ["PegasusSyncHardening.getState", () => typeof window.PegasusSyncHardening?.getState === "function"]
     ];
 
     function buildIntegrityResult() {
