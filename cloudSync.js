@@ -1024,15 +1024,7 @@ const PegasusCloud = {
             const canSecureRebindFreshDevice = !pinAccepted
                 && !hasBoundPin
                 && cleanPin.length >= 4
-                && (
-                    await this.canSecureRebindPinWithMaster(cleanMaster, cloudRecord)
-                    || (
-                        navigator.onLine
-                        && cleanMaster.length >= 8
-                        && this.config?.encryptedPart
-                        && String(this.userKey || this.config.encryptedPart) === String(this.config.encryptedPart)
-                    )
-                );
+                && await this.canSecureRebindPinWithMaster(cleanMaster, cloudRecord);
 
             const canSecureRebindExistingBinding = !pinAccepted
                 && hasBoundPin
