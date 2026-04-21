@@ -18,7 +18,8 @@
         ["syncEngineFromLegacy", () => typeof window.syncEngineFromLegacy === "function"],
         ["PegasusDebug.summary", () => typeof window.PegasusDebug?.summary === "function"],
         ["PegasusSyncHardening.getState", () => typeof window.PegasusSyncHardening?.getState === "function"],
-        ["PegasusSyncEdgeHardening.getState", () => typeof window.PegasusSyncEdgeHardening?.getState === "function"]
+        ["PegasusSyncEdgeHardening.getState", () => typeof window.PegasusSyncEdgeHardening?.getState === "function"],
+        ["PegasusSyncDiagnostics.summary", () => typeof window.PegasusSyncDiagnostics?.summary === "function"]
     ];
 
     function buildIntegrityResult() {
