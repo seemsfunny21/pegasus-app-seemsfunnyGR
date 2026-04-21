@@ -20,7 +20,8 @@
         ["PegasusStorageHardening.summary", () => typeof window.PegasusStorageHardening?.summary === "function"],
         ["PegasusSyncHardening.getState", () => typeof window.PegasusSyncHardening?.getState === "function"],
         ["PegasusSyncEdgeHardening.getState", () => typeof window.PegasusSyncEdgeHardening?.getState === "function"],
-        ["PegasusSyncDiagnostics.summary", () => typeof window.PegasusSyncDiagnostics?.summary === "function"]
+        ["PegasusSyncDiagnostics.summary", () => typeof window.PegasusSyncDiagnostics?.summary === "function"],
+        ["PegasusSelfCheck.run", () => typeof window.PegasusSelfCheck?.run === "function"]
     ];
 
     function buildIntegrityResult() {
