@@ -158,8 +158,8 @@
             const category = isExternal ? 'External Dependency' : info.category;
             const role = isExternal ? 'Εξωτερική βιβλιοθήκη που χρησιμοποιείται από το PEGASUS build.' : info.role;
             return `
-                <div class="pegasus-guide-card" data-guide-search="${escapeHtml((file + ' ' + category + ' ' + role).toLowerCase())}" style="background:#111; border:1px solid #2c2c2c; border-radius:10px; padding:12px; margin-bottom:10px; text-align:left;">
-                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+                <div class="pegasus-guide-card" data-guide-search="${escapeHtml((file + ' ' + category + ' ' + role).toLowerCase())}" style="background:#111; border:1px solid #2c2c2c; border-radius:10px; padding:12px; margin-bottom:10px; text-align:center;">
+                    <div style="display:flex; justify-content:center; gap:12px; align-items:flex-start; flex-wrap:wrap;">
                         <div style="font-weight:900; color:#4CAF50; font-size:13px;">${escapeHtml(file)}</div>
                         <div style="font-size:10px; color:#9ad29d; letter-spacing:0.8px;">${escapeHtml(category)}</div>
                     </div>
@@ -174,24 +174,24 @@
         const buildInfo = [manifestMeta.os, manifestMeta.engine_version, manifestMeta.last_update].filter(Boolean).join(' • ');
         return `
             <div style="display:flex; flex-direction:column; gap:14px;">
-                <div style="background:#0f0f0f; border:1px solid #333; border-radius:12px; padding:14px; text-align:left;">
-                    <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+                <div style="background:#0f0f0f; border:1px solid #333; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="display:flex; justify-content:center; gap:10px; align-items:flex-start; flex-wrap:wrap;">
                         <div>
                             <div style="color:#4CAF50; font-size:18px; font-weight:900; letter-spacing:1px;">PEGASUS HOW TO / SYSTEM MAP</div>
                             <div style="color:#bbb; font-size:11px; margin-top:4px;">Ο οδηγός αυτός είναι μόνο ενημερωτικός. Δεν αλλάζει δεδομένα και εξηγεί τι κάνει κάθε βασικό κομμάτι του συστήματος.</div>
                         </div>
-                        <div style="font-size:10px; color:#8a8a8a; text-align:right;">${escapeHtml(buildInfo || 'PEGASUS build')}</div>
+                        <div style="font-size:10px; color:#8a8a8a; text-align:center;">${escapeHtml(buildInfo || 'PEGASUS build')}</div>
                     </div>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
+                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:center;">
                     <div style="color:#4CAF50; font-weight:900; margin-bottom:10px; font-size:14px;">ΠΩΣ ΧΡΗΣΙΜΟΠΟΙΕΙΣ ΤΟ PEGASUS</div>
-                    <ol style="margin:0; padding-left:18px; color:#ddd; font-size:12px; line-height:1.7;">
+                    <ol style="margin:0; padding-left:0; color:#ddd; font-size:12px; line-height:1.7; text-align:center; list-style-position:inside;">
                         ${QUICK_START.map(step => `<li style="margin-bottom:6px;">${escapeHtml(step)}</li>`).join('')}
                     </ol>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
+                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:center;">
                     <div style="color:#4CAF50; font-weight:900; margin-bottom:10px; font-size:14px;">ΒΑΣΙΚΑ ΣΗΜΕΙΑ ΤΟΥ ΠΡΟΓΡΑΜΜΑΤΟΣ</div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;">
                         ${MAIN_AREAS.map(area => `
@@ -203,7 +203,7 @@
                     </div>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
+                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:center;">
                     <div style="color:#4CAF50; font-weight:900; margin-bottom:10px; font-size:14px;">ΤΥΠΟΙ ΠΡΟΓΡΑΜΜΑΤΩΝ</div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px;">
                         ${PROGRAM_MODES.map(mode => `
@@ -215,7 +215,7 @@
                     </div>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
+                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:center;">
                     <div style="color:#4CAF50; font-weight:900; margin-bottom:10px; font-size:14px;">DEBUG / TESTING COMMANDS</div>
                     <div style="color:#aaa; font-size:11px; margin-bottom:10px;">Έτοιμες console εντολές για health checks, sync tests, diagnostics και forensic debugging μετά από αλλαγές.</div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px;">
@@ -229,10 +229,10 @@
                     </div>
                 </div>
 
-                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:left;">
-                    <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+                <div style="background:#101010; border:1px solid #2d2d2d; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="display:flex; justify-content:center; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; text-align:center;">
                         <div style="color:#4CAF50; font-weight:900; font-size:14px;">ΑΡΧΕΙΟ -> ΔΟΥΛΕΙΑ ΠΟΥ ΚΑΝΕΙ</div>
-                        <input id="${SEARCH_ID}" type="text" placeholder="Ψάξε αρχείο, λειτουργία ή debug command..." style="min-width:220px; flex:1; max-width:320px; background:#0a0a0a; color:#4CAF50; border:1px solid #4CAF50; border-radius:8px; padding:8px 10px;">
+                        <input id="${SEARCH_ID}" type="text" placeholder="Ψάξε αρχείο, λειτουργία ή debug command..." style="min-width:220px; flex:1; max-width:320px; background:#0a0a0a; color:#4CAF50; border:1px solid #4CAF50; border-radius:8px; padding:8px 10px; text-align:center;">
                     </div>
                     <div style="color:#aaa; font-size:11px; margin-bottom:10px;">Ο παρακάτω κατάλογος εξηγεί τι κάνει κάθε βασικό script που φορτώνεται στο current build.</div>
                     <div id="${CONTENT_ID}" style="max-height:420px; overflow-y:auto; padding-right:4px;">${buildFileCards()}</div>
@@ -264,8 +264,8 @@
         panel.className = 'pegasus-panel';
         panel.style.cssText = 'display:none; width:min(860px,92vw); height:min(780px,88vh); z-index:1002; overflow:hidden;';
         panel.innerHTML = `
-            <div style="display:flex; justify-content:flex-start; align-items:center; gap:10px; margin-bottom:10px;">
-                <h3 style="text-align:left; margin:0;">📘 ΟΔΗΓΟΣ PEGASUS</h3>
+            <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:10px;">
+                <h3 style="text-align:center; margin:0 auto; width:100%;">📘 ΟΔΗΓΟΣ PEGASUS</h3>
             </div>
             <div id="pegasusProgramGuideRoot" style="height:calc(100% - 42px); overflow-y:auto; padding-right:6px;"></div>
         `;
@@ -288,6 +288,22 @@
         if (!root) return;
         root.innerHTML = buildGuideHtml();
         wireSearch();
+    }
+
+    function close() {
+        const panel = document.getElementById(PANEL_ID);
+        if (!panel) return;
+        panel.style.display = 'none';
+    }
+
+    function handleOutsideClose(event) {
+        const panel = document.getElementById(PANEL_ID);
+        const btn = document.getElementById(BTN_ID);
+        if (!panel || panel.style.display === 'none') return;
+        const target = event.target;
+        if (panel.contains(target)) return;
+        if (btn && btn.contains(target)) return;
+        close();
     }
 
     function open() {
@@ -321,6 +337,14 @@
     function install() {
         ensurePanel();
         ensureButton();
+        if (!document.body.dataset.pegasusGuideOutsideCloseBound) {
+            document.body.dataset.pegasusGuideOutsideCloseBound = '1';
+            document.addEventListener('mousedown', handleOutsideClose, true);
+            document.addEventListener('touchstart', handleOutsideClose, true);
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') close();
+            });
+        }
         if (window.PegasusRuntimeMonitor?.trace) {
             window.PegasusRuntimeMonitor.trace('programGuide.js', 'install', 'Program guide installed', { buttonId: BTN_ID, panelId: PANEL_ID });
         }
@@ -328,6 +352,7 @@
 
     window.PegasusProgramGuide = {
         open,
+        close,
         render,
         rebuild: render,
         installed: () => ({
