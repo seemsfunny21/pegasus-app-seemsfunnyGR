@@ -6,8 +6,8 @@
 window.PegasusDesktopSyncUI = window.PegasusDesktopSyncUI || {
     buildMasterUI(todayName) {
         return {
-            "btnStart": startPause,
-            "btnNext": skipToNextExercise,
+            "btnStart": window.startPause,
+            "btnNext": window.skipToNextExercise,
             "btnWarmup": () => {
                 const vid = document.getElementById("video");
                 if (!vid) return;
@@ -21,7 +21,7 @@ window.PegasusDesktopSyncUI = window.PegasusDesktopSyncUI || {
                     if (typeof window.showVideo === "function" && window.exercises && window.exercises.length > 0) {
                         window.currentIdx = 0;
                         window.phase = 0;
-                        patchPegasusWorkoutRuntime({ currentIdx: 0, phase: 0, running: running, sessionKcal: sessionActiveKcal });
+                        if (typeof window.patchPegasusWorkoutRuntime === "function") window.patchPegasusWorkoutRuntime({ currentIdx: 0, phase: 0, running: running, sessionKcal: sessionActiveKcal });
                         window.showVideo(0);
                     }
                 }
@@ -31,7 +31,7 @@ window.PegasusDesktopSyncUI = window.PegasusDesktopSyncUI || {
                 window.SPEED = window.TURBO_MODE ? 10 : 1;
                 TURBO_MODE = window.TURBO_MODE;
                 SPEED = window.SPEED;
-                patchPegasusTimerRuntime({ turboMode: TURBO_MODE, speed: SPEED });
+                if (typeof window.patchPegasusTimerRuntime === "function") window.patchPegasusTimerRuntime({ turboMode: TURBO_MODE, speed: SPEED });
 
                 const btn = document.getElementById('btnTurboTools');
                 if (btn) {
@@ -42,7 +42,7 @@ window.PegasusDesktopSyncUI = window.PegasusDesktopSyncUI || {
             "btnMuteTools": () => {
                 window.muted = !window.muted;
                 muted = window.muted;
-                patchPegasusUserRuntime({ muted: muted, weight: userWeight });
+                if (typeof window.patchPegasusUserRuntime === "function") window.patchPegasusUserRuntime({ muted: muted, weight: userWeight });
 
                 const btn = document.getElementById('btnMuteTools');
                 if (btn) {
@@ -78,7 +78,7 @@ window.PegasusDesktopSyncUI = window.PegasusDesktopSyncUI || {
                 else { if (window.pegasusAlert) window.pegasusAlert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); }
             },
             "btnToolsUI": { panel: "toolsPanel", init: null },
-            "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview },
+            "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || window.openExercisePreview },
             "btnOpenGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
             "btnCardio": { panel: "cardioPanel", init: () => { if (window.PegasusCardio) window.PegasusCardio.open(); } },
             "btnEMS": { panel: "emsModal", init: window.logEMSData },
@@ -130,13 +130,13 @@ window.PegasusDesktopSyncUI = window.PegasusDesktopSyncUI || {
         setTimeout(() => {
             document.querySelectorAll(".navbar button").forEach(b => {
                 if (b.id.replace('nav-', '') === todayName) {
-                    if (typeof selectDay === "function") {
-                        selectDay(b, todayName);
+                    if (typeof window.selectDay === "function") {
+                        window.selectDay(b, todayName);
                         setTimeout(() => {
                             if (typeof exercises !== 'undefined') {
                                 currentIdx = remainingSets.findIndex((sets, idx) => sets > 0 && !exercises[idx]?.classList.contains("exercise-skipped"));
                                 if (currentIdx === -1) currentIdx = 0;
-                                syncPegasusSelectedDay(todayName);
+                                if (typeof window.syncPegasusSelectedDay === "function") window.syncPegasusSelectedDay(todayName);
                                 console.log("🚀 PEGASUS: Circuit Auto-Initialized for Today.");
                             }
                         }, 150);
@@ -156,15 +156,15 @@ window.PegasusDesktopSyncUI = window.PegasusDesktopSyncUI || {
                 loader.style.visibility = 'hidden';
             }
 
-            syncPegasusSelectedDay(todayName);
+            if (typeof window.syncPegasusSelectedDay === "function") window.syncPegasusSelectedDay(todayName);
 
             if (typeof window.updateKcalUI === "function") {
                 window.updateKcalUI();
             }
 
-            syncPegasusProgressRuntime();
-            syncPegasusUserRuntime();
-            renderPegasusControlState();
+            if (typeof window.syncPegasusProgressRuntime === "function") window.syncPegasusProgressRuntime();
+            if (typeof window.syncPegasusUserRuntime === "function") window.syncPegasusUserRuntime();
+            if (typeof window.renderPegasusControlState === "function") window.renderPegasusControlState();
 
             console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
         }, 1000);

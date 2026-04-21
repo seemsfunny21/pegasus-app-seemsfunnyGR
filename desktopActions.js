@@ -30,10 +30,10 @@ function startPause() {
     }
 
     running = !running;
-    renderPegasusControlState();
+    if (typeof window.renderPegasusControlState === "function") window.renderPegasusControlState();
 
     syncPegasusProgressRuntime();
-    dispatchPegasusWorkoutAction(running ? "WORKOUT_START_RUNTIME" : "WORKOUT_PAUSE_RUNTIME");
+    if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction(running ? "WORKOUT_START_RUNTIME" : "WORKOUT_PAUSE_RUNTIME");
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
 
     if (running) {
@@ -62,7 +62,7 @@ function startPause() {
             }
 
             phaseRemainingSeconds = null;
-            updateTotalBar();
+            if (typeof window.updateTotalBar === "function") window.updateTotalBar();
 
             const barFill = document.getElementById("phaseTimerFill");
             if (barFill) barFill.style.width = "0%";
@@ -126,7 +126,7 @@ function runPhase() {
     if (phase === 2 && (!Number.isFinite(config.rest) || config.rest <= 0)) {
         phase = 0;
         syncPegasusProgressRuntime();
-        dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
+        if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
         runPhase();
         return;
     }
@@ -148,7 +148,7 @@ function runPhase() {
 
     syncPegasusProgressRuntime();
 
-    if (phase !== 2) showVideo(currentIdx);
+    if (phase !== 2 && typeof window.showVideo === "function") window.showVideo(currentIdx);
 
     timer = setInterval(() => {
         t -= 1;
@@ -156,7 +156,7 @@ function runPhase() {
 
         if (remainingSeconds > 0) {
             remainingSeconds -= 1;
-            updateTotalBar();
+            if (typeof window.updateTotalBar === "function") window.updateTotalBar();
         }
 
         if (phase === 1) {
@@ -186,7 +186,7 @@ function runPhase() {
                 phase = 1;
                 phaseRemainingSeconds = getPhaseDefaultTime(1);
                 syncPegasusProgressRuntime();
-                dispatchPegasusWorkoutAction("WORKOUT_START_RUNTIME");
+                if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction("WORKOUT_START_RUNTIME");
                 runPhase();
             } else if (phase === 1) {
                 let done = parseInt(e.dataset.done) || 0;
@@ -208,7 +208,7 @@ function runPhase() {
                 phase = 2;
                 phaseRemainingSeconds = getPhaseDefaultTime(2);
                 syncPegasusProgressRuntime();
-                dispatchPegasusWorkoutAction("WORKOUT_SET_COMPLETED_RUNTIME", {
+                if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction("WORKOUT_SET_COMPLETED_RUNTIME", {
                     workout: { phase: 2 },
                     timers: { phaseRemainingSeconds: phaseRemainingSeconds }
                 });
@@ -220,7 +220,7 @@ function runPhase() {
                     phase = 0;
                     phaseRemainingSeconds = getPhaseDefaultTime(0);
                     syncPegasusProgressRuntime();
-                    dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME", {
+                    if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME", {
                         workout: { phase: 0, currentIdx: currentIdx },
                         timers: { phaseRemainingSeconds: phaseRemainingSeconds }
                     });
@@ -267,9 +267,9 @@ function skipToNextExercise() {
         currentIdx = nextIdx;
         phase = 0;
         syncPegasusProgressRuntime();
-        dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
+        if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
         if (running) runPhase();
-        else showVideo(currentIdx);
+        else if (typeof window.showVideo === "function") window.showVideo(currentIdx);
     } else {
         finishWorkout();
     }
@@ -320,7 +320,7 @@ window.toggleSkipExercise = function(idx, auto = false) {
         remainingSets[idx] = Math.max(0, originalSets - done);
     }
 
-    calculateTotalTime(true);
+    if (typeof window.calculateTotalTime === "function") window.calculateTotalTime(true);
     syncPegasusProgressRuntime();
     if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 };
@@ -333,9 +333,9 @@ function finishWorkout() {
     running = false;
     phaseRemainingSeconds = null;
     remainingSeconds = 0;
-    updateTotalBar();
+    if (typeof window.updateTotalBar === "function") window.updateTotalBar();
     syncPegasusProgressRuntime();
-    dispatchPegasusWorkoutAction("WORKOUT_FINISH_RUNTIME", { workout: { running: false }, timers: { remainingSeconds: 0, phaseRemainingSeconds: null } });
+    if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction("WORKOUT_FINISH_RUNTIME", { workout: { running: false }, timers: { remainingSeconds: 0, phaseRemainingSeconds: null } });
 
     const label = document.getElementById("phaseTimer");
     if (label) {
@@ -352,7 +352,7 @@ function finishWorkout() {
 
     if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
-    if (typeof openExercisePreview === 'function') openExercisePreview();
+    if (typeof window.openExercisePreview === 'function') window.openExercisePreview();
 
     setTimeout(() => {
         if (window.PegasusReporting?.prepareAndSaveReport) {
@@ -379,7 +379,7 @@ function finishWorkout() {
             vid.play().catch(() => console.log("Auto-play prevented"));
         }
 
-        renderPegasusControlState();
+        if (typeof window.renderPegasusControlState === "function") window.renderPegasusControlState();
         if (label) {
             label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
             label.style.color = "#00bcd4";

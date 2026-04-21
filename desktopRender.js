@@ -72,7 +72,7 @@ function calculateTotalTime(isUpdate = false) {
     }
 
     syncPegasusProgressRuntime();
-    updateTotalBar();
+    if (typeof window.updateTotalBar === "function") window.updateTotalBar();
 }
 
 function updateTotalBar() {

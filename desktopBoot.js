@@ -51,10 +51,10 @@ window.PegasusDesktopBoot = window.PegasusDesktopBoot || {
 
         window.PegasusDesktopBoot.initImportBinding();
 
-        bindPegasusEngineUiBridge();
-        syncEngineFromLegacy("BOOT_FROM_LEGACY", { selectedDay: todayName });
+        if (typeof window.bindPegasusEngineUiBridge === "function") window.bindPegasusEngineUiBridge();
+        if (typeof window.syncEngineFromLegacy === "function") window.syncEngineFromLegacy("BOOT_FROM_LEGACY", { selectedDay: todayName });
 
-        createNavbar();
+        if (typeof window.createNavbar === "function") window.createNavbar();
         if (window.updateTotalWorkoutCount) window.updateTotalWorkoutCount();
         if (window.updateKoukiBalance) window.updateKoukiBalance();
 

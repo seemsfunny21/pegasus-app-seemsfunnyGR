@@ -12,7 +12,7 @@ function createNavbar() {
                 if (e && e.isTrusted && window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                     window.PegasusCloud.push();
                 }
-                selectDay(btn, d);
+                if (typeof window.selectDay === "function") window.selectDay(btn, d);
             };
         }
     });
@@ -42,7 +42,7 @@ function selectDay(btn, day) {
     sessionActiveKcal = 0;
     localStorage.setItem("pegasus_session_kcal", "0.0");
 
-    renderPegasusControlState();
+    if (typeof window.renderPegasusControlState === "function") window.renderPegasusControlState();
 
     if (typeof window.calculatePegasusDailyTarget === "function") {
         if (!window.isCalculatingTarget) {
@@ -145,14 +145,14 @@ function selectDay(btn, day) {
         }
     });
 
-    if (typeof calculateTotalTime === "function") calculateTotalTime(false);
-    syncPegasusSelectedDay(day);
-    dispatchPegasusWorkoutAction("WORKOUT_SELECT_DAY_RUNTIME", { workout: { selectedDay: day } });
+    if (typeof window.calculateTotalTime === "function") window.calculateTotalTime(false);
+    if (typeof window.syncPegasusSelectedDay === "function") window.syncPegasusSelectedDay(day);
+    if (typeof window.dispatchPegasusWorkoutAction === "function") window.dispatchPegasusWorkoutAction("WORKOUT_SELECT_DAY_RUNTIME", { workout: { selectedDay: day } });
 
     setTimeout(() => { window.syncSessionWithHistory(); }, 50);
 
     setTimeout(() => {
-        if (typeof showVideo === "function") showVideo(0);
+        if (typeof window.showVideo === "function") window.showVideo(0);
         if (exercises.length === 0) {
             list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
         }

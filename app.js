@@ -434,6 +434,8 @@ function renderPegasusControlState() {
     return controls;
 }
 
+window.renderPegasusControlState = renderPegasusControlState;
+
 function getPegasusActiveSelectedDay() {
     const activeBtn = document.querySelector(".navbar button.active");
     return activeBtn ? activeBtn.id.replace("nav-", "") : null;
@@ -496,6 +498,10 @@ function dispatchPegasusWorkoutAction(actionType, extra) {
 
     return null;
 }
+
+window.syncPegasusProgressRuntime = syncPegasusProgressRuntime;
+window.syncPegasusSelectedDay = syncPegasusSelectedDay;
+window.dispatchPegasusWorkoutAction = dispatchPegasusWorkoutAction;
 
 function isPegasusDomExerciseArray(value) {
     return Array.isArray(value) && value.length > 0 && value.every(item => item && typeof item.querySelector === "function" && item.classList);
@@ -669,6 +675,8 @@ function bindPegasusEngineUiBridge() {
     });
 }
 
+window.bindPegasusEngineUiBridge = bindPegasusEngineUiBridge;
+
 function syncEngineFromLegacy(actionType, extra) {
     const engine = getPegasusCoreEngine();
     if (!engine) return;
@@ -718,6 +726,8 @@ function syncEngineFromLegacy(actionType, extra) {
 }
 
 
+window.syncEngineFromLegacy = syncEngineFromLegacy;
+
 function syncPegasusWorkoutRuntime(extraWorkout) {
     patchPegasusEngineRuntime("PATCH_WORKOUT_RUNTIME", {
         currentIdx,
@@ -747,6 +757,14 @@ function syncPegasusUserRuntime(extraUser) {
         ...(extraUser || {})
     });
 }
+
+window.patchPegasusWorkoutRuntime = patchPegasusWorkoutRuntime;
+window.patchPegasusTimerRuntime = patchPegasusTimerRuntime;
+window.patchPegasusUserRuntime = patchPegasusUserRuntime;
+window.patchPegasusSessionRuntime = patchPegasusSessionRuntime;
+window.syncPegasusWorkoutRuntime = syncPegasusWorkoutRuntime;
+window.syncPegasusTimerRuntime = syncPegasusTimerRuntime;
+window.syncPegasusUserRuntime = syncPegasusUserRuntime;
 
 /* ===== 3.5 SMART SYNC (AUTO-SKIP COMPLETED TARGETS) ===== */
 window.syncSessionWithHistory = function() {
