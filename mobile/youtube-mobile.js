@@ -52,16 +52,16 @@
         }
     }
 
-    function ensureYoutubeCoreTile() {
-        if (!window.PegasusMobileUI?.coreModules) return;
-        const exists = window.PegasusMobileUI.coreModules.some(module => module.id === 'youtube');
-        if (exists) return;
+    function registerYoutubeModule() {
+        if (!window.PegasusMobileUI) return;
+        const existsInCore = Array.isArray(window.PegasusMobileUI.coreModules) && window.PegasusMobileUI.coreModules.some(module => module.id === 'youtube');
+        if (existsInCore) {
+            window.PegasusMobileUI.coreModules = window.PegasusMobileUI.coreModules.filter(module => module.id !== 'youtube');
+        }
 
-        window.PegasusMobileUI.coreModules.splice(2, 0, {
-            id: 'youtube',
-            icon: '▶️',
-            label: 'YouTube'
-        });
+        if (typeof window.registerPegasusModule === 'function') {
+            window.registerPegasusModule({ id: 'youtube', icon: '▶️', label: 'YouTube' });
+        }
     }
 
     function injectViewLayer() {
@@ -74,16 +74,16 @@
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div class="section-title">YOUTUBE</div>
 
-            <div class="mini-card" style="border-left: 4px solid #ff0000; padding: 15px; margin-bottom: 15px;">
-                <div style="font-size: 11px; font-weight: 900; color: #ff0000; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">ΚΑΤΑΧΩΡΗΣΗ YOUTUBE ΣΕΛΙΔΑΣ</div>
+            <div class="mini-card" style="border-left: 4px solid var(--main); padding: 15px; margin-bottom: 15px; background: rgba(8,20,10,0.96); box-shadow: 0 0 14px rgba(0,255,136,0.12);">
+                <div style="font-size: 11px; font-weight: 900; color: var(--main); margin-bottom: 10px; text-align: center; letter-spacing: 1px;">ΚΑΤΑΧΩΡΗΣΗ YOUTUBE ΣΕΛΙΔΑΣ</div>
                 <input type="text" id="youtubeUrlInput" placeholder="https://www.youtube.com/..." style="margin-bottom: 10px; border: 2px solid #444;">
                 <input type="text" id="youtubeTitleInput" placeholder="Τίτλος ή σύντομο όνομα..." style="margin-bottom: 10px; border: 2px solid #444;">
                 <input type="text" id="youtubeTagInput" placeholder="Λέξη-κλειδί / σημείωση..." style="margin-bottom: 12px; border: 2px solid #444;">
-                <button class="primary-btn" style="background:#ff0000; border-color:#ff0000; color:#fff; box-shadow:none;" onclick="window.PegasusYouTube.addEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
+                <button class="primary-btn" style="background:var(--main); border-color:var(--main); color:#04110a; box-shadow:0 0 10px rgba(0,255,136,0.25);" onclick="window.PegasusYouTube.addEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
             </div>
 
             <input type="text" id="youtubeSearchInput" placeholder="🔍 Αναζήτηση YouTube link..." oninput="window.PegasusYouTube.handleSearch(this.value)" autocomplete="off">
-            <div id="youtubeCounter" style="font-size: 10px; color: #777; font-weight: 800; margin: 12px 0; text-align: center;"></div>
+            <div id="youtubeCounter" style="font-size: 10px; color: var(--main); font-weight: 800; margin: 12px 0; text-align: center; opacity: 0.9;"></div>
             <div id="youtubeList" style="width: 100%; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px;"></div>
         `;
 
@@ -165,18 +165,18 @@
             }
 
             list.innerHTML = items.length ? items.map(item => `
-                <div class="mini-card" style="border-left: 4px solid #ff0000; padding: 14px; background: rgba(15,15,15,0.95);">
+                <div class="mini-card" style="border-left: 4px solid var(--main); padding: 14px; background: rgba(8,20,10,0.95); box-shadow: 0 0 12px rgba(0,255,136,0.10);">
                     <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:10px;">
                         <div style="min-width:0; flex:1;">
                             <div style="font-size: 14px; font-weight: 900; color: #fff; word-break: break-word;">${item.title || 'YOUTUBE LINK'}</div>
-                            ${item.tag ? `<div style="font-size: 10px; color: #ff8080; font-weight: 800; margin-top: 4px; word-break: break-word;">${item.tag}</div>` : ''}
+                            ${item.tag ? `<div style="font-size: 10px; color: var(--main); font-weight: 800; margin-top: 4px; word-break: break-word; opacity:0.95;">${item.tag}</div>` : ''}
                             <div style="font-size: 9px; color: #777; margin-top: 5px; word-break: break-all;">${item.url}</div>
                             <div style="font-size: 9px; color: #555; margin-top: 4px;">Προστέθηκε: ${item.dateAdded}</div>
                         </div>
-                        <button onclick="window.PegasusYouTube.deleteEntry('${item.id}')" style="background: transparent; border: none; color: #ff4444; font-size: 16px; padding: 0 5px; cursor: pointer;">🗑️</button>
+                        <button onclick="window.PegasusYouTube.deleteEntry('${item.id}')" style="background: transparent; border: none; color: var(--main); font-size: 16px; padding: 0 5px; cursor: pointer;">🗑️</button>
                     </div>
                     <div style="display:flex; gap:10px;">
-                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="primary-btn" style="flex:1; margin:0; text-decoration:none; text-align:center; background:#ff0000; border-color:#ff0000; color:#fff; box-shadow:none;">ΑΝΟΙΓΜΑ</a>
+                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="primary-btn" style="flex:1; margin:0; text-decoration:none; text-align:center; background:var(--main); border-color:var(--main); color:#04110a; box-shadow:0 0 10px rgba(0,255,136,0.2);">ΑΝΟΙΓΜΑ</a>
                     </div>
                 </div>
             `).join('') : '<div style="color:#555; font-size:11px; text-align:center;">ΔΕΝ ΥΠΑΡΧΟΥΝ ΑΠΟΘΗΚΕΥΜΕΝΑ YOUTUBE LINKS</div>';
@@ -189,7 +189,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         injectViewLayer();
-        ensureYoutubeCoreTile();
+        registerYoutubeModule();
         window.PegasusMobileUI?.render?.();
         window.PegasusYouTube.renderContent();
     });

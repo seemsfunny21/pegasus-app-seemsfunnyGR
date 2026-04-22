@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.21 (FINAL CACHE SYNC)
+   PEGASUS PWA SERVICE WORKER - v3.23 (ADAPTIVE TYPOGRAPHY CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.21-FINAL';
+const CACHE_NAME = 'pegasus-shield-v3.23-TYPOGRAPHY';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -16,6 +16,8 @@ const ASSETS_TO_CACHE = [
     './app.js',
     './appState.js',
     './audioRuntime.js',
+    './adaptiveTypography.js',
+    './adaptiveTypographyLoader.js',
     './auditUI.js',
     './backup.js',
     './calendar.js',
@@ -69,6 +71,9 @@ const ASSETS_TO_CACHE = [
     './mobile/car-mobile.js',
     './mobile/cardio-mobile.js',
     './mobile/diet-mobile.js',
+    './mobile/diet-delete-routine-fix.js',
+    './mobile/mobile-uppercase-status-fix.js',
+    './mobile/youtube-mobile.js',
     './mobile/ems-mobile.js',
     './mobile/finance-mobile.js',
     './mobile/inventory-mobile.js',
