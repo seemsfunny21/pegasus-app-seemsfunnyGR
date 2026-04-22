@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.7 (FINAL CACHE SYNC)
+   PEGASUS PWA SERVICE WORKER - v3.21 (FINAL CACHE SYNC)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.20-FINAL';
+const CACHE_NAME = 'pegasus-shield-v3.21-FINAL';
 
 const ASSETS_TO_CACHE = [
     '.',
