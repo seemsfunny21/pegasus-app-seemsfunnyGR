@@ -1,5 +1,5 @@
 (function () {
-    const VERSION = '19.0';
+    const VERSION = '19.1';
     const LOADER_FLAG = '__pegasusAdaptiveTypographyLoaderInstalled';
     const SCRIPT_FLAG = 'pegasus-adaptive-typography-runtime';
 

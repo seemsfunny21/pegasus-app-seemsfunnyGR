@@ -11,3 +11,6 @@ Recommended validation:
 
 Package type:
 - Production-oriented stable build
+
+PEGASUS 72 / v19.2 Stable
+- Desktop workout resume patch: fixes stuck 0-set transition edge case and restores remaining workout time correctly after refresh.

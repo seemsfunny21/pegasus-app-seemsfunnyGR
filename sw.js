@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.25 (SETTINGS DATA TOOLS CACHE)
+   PEGASUS PWA SERVICE WORKER - v3.26 (DESKTOP RESUME PATCH CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.25-SETTINGS-DATA-TOOLS';
+const CACHE_NAME = 'pegasus-shield-v3.26-DESKTOP-RESUME-PATCH';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -31,6 +31,7 @@ const ASSETS_TO_CACHE = [
     './desktopBootEnhancements.js',
     './desktopPanels.js',
     './desktopRender.js',
+    './desktopWorkoutResumePatch.js',
     './desktopRoute.js',
     './desktopSyncController.js',
     './desktopSyncUI.js',

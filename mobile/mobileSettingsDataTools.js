@@ -214,10 +214,72 @@
         refreshSettingsDataToolsUI();
     }
 
+
+    function isTestEntry(value) {
+        try {
+            return String(JSON.stringify(value || '')).includes('TEST_');
+        } catch (e) {
+            return String(value || '').includes('TEST_');
+        }
+    }
+
+    function clearTestData() {
+        if (!confirm('🧹 Καθαρισμός όλων των TEST entries από modular data;')) return;
+
+        try {
+            window.PegasusMobileDataRegistry?.saveSafetySnapshot?.('pre-clear-test-data', { force: true, minIntervalMs: 0 });
+        } catch (snapshotErr) {
+            console.warn('⚠️ TEST CLEAR: Pre-clear snapshot skipped.', snapshotErr);
+        }
+
+        const touched = [];
+        let removedCount = 0;
+        getModularKeys().forEach((key) => {
+            const raw = localStorage.getItem(key);
+            if (typeof raw !== 'string' || !raw.includes('TEST_')) return;
+
+            const parsed = safeJsonParse(raw, null);
+            if (Array.isArray(parsed)) {
+                const filtered = parsed.filter(item => !isTestEntry(item));
+                if (filtered.length !== parsed.length) {
+                    localStorage.setItem(key, JSON.stringify(filtered));
+                    removedCount += (parsed.length - filtered.length);
+                    touched.push(key);
+                }
+                return;
+            }
+
+            if (typeof parsed === 'string' && parsed.includes('TEST_')) {
+                localStorage.removeItem(key);
+                removedCount += 1;
+                touched.push(key);
+            }
+        });
+
+        addEventLog('debug', removedCount ? 'ok' : 'info', removedCount ? 'TEST DATA CLEARED' : 'NO TEST DATA FOUND', {
+            removedCount,
+            keys: touched
+        });
+
+        try {
+            window.PegasusCloud?.push?.();
+        } catch (pushErr) {
+            console.warn('⚠️ TEST CLEAR: Push skipped.', pushErr);
+        }
+
+        try {
+            refreshSettingsDataToolsUI();
+        } catch (refreshErr) {
+            console.warn('⚠️ TEST CLEAR: UI refresh skipped.', refreshErr);
+        }
+
+        alert(removedCount ? `✅ Καθαρίστηκαν ${removedCount} TEST entries.` : 'ℹ️ Δεν βρέθηκαν TEST entries.');
+    }
+
     function getCloudStatusLabel() {
-        if (!navigator.onLine) return 'OFFLINE';
-        if (window.PegasusCloud?.isUnlocked) return 'CONNECTED';
-        return 'LOCAL ONLY';
+        if (!navigator.onLine) return 'ΧΩΡΙΣ ΔΙΚΤΥΟ';
+        if (window.PegasusCloud?.isUnlocked) return 'ΣΥΝΔΕΔΕΜΕΝΟ';
+        return 'ΤΟΠΙΚΟ ΜΟΝΟ';
     }
 
     function getCloudStatusColor() {
@@ -497,11 +559,13 @@
         exportModularData,
         importModularData,
         clearDebugLog: clearSyncDebugLog,
+        clearTestData,
         copyDebugLog
     };
 
     window.exportModularData = exportModularData;
     window.importModularData = importModularData;
+    window.clearPegasusTestData = clearTestData;
 
     patchDataSafetyLogging();
     patchCloudLogging();
@@ -520,3 +584,4 @@
         refreshSettingsDataToolsUI();
     }
 })();
+
