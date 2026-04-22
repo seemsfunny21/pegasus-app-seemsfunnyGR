@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.9)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v19.0)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-22",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.9 Stable"
+        engine_version: "v19.0 Stable"
     },
 
     // ---------------------------------------------------------
@@ -170,6 +170,7 @@ window.PegasusManifest = {
         "mobile/mobileSafe.js": "Mobile safety bootstrap και guard layer πριν το main mobile app.",
         "mobile/mobileDataRegistry.js": "Registry για persistent mobile module keys, backup contracts και sync-safe merge rules.",
         "mobile/mobileDataMigration.js": "Automatic mobile data safety bootstrap, migration restore και upgrade snapshots.",
+        "mobile/mobileSettingsDataTools.js": "Mobile settings data safety status, modular backup/restore tools και sync/debug event log.",
         "mobile/mobileErrorMonitor.js": "Mobile runtime error tracing και safe diagnostics hooks.",
         "mobile/mobileUI.js": "Shared mobile UI shell helpers και panel/view management.",
         "mobile/mobileApp.js": "Main mobile app bootstrap, wiring και route behavior.",
@@ -265,4 +266,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.8 LOADED. GLOBAL UNLOCK ACTIVE.");
+console.log(`🏛️ PEGASUS MANIFEST ${window.PegasusManifest?.metadata?.engine_version || "UNKNOWN"} LOADED. GLOBAL UNLOCK ACTIVE.`);

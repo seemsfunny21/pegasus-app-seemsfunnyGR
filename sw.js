@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.24 (MOBILE DATA SAFETY CACHE)
+   PEGASUS PWA SERVICE WORKER - v3.25 (SETTINGS DATA TOOLS CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.24-DATA-SAFETY';
+const CACHE_NAME = 'pegasus-shield-v3.25-SETTINGS-DATA-TOOLS';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -85,6 +85,7 @@ const ASSETS_TO_CACHE = [
     './mobile/mobileSafe.js',
     './mobile/mobileDataRegistry.js',
     './mobile/mobileDataMigration.js',
+    './mobile/mobileSettingsDataTools.js',
     './mobile/mobileServiceWorker.js',
     './mobile/mobileUI.js',
     './mobile/movies-mobile.js',

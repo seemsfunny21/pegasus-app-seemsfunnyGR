@@ -220,7 +220,25 @@
                     <input type="file" id="importFile" style="display:none;" onchange="importData(event)" accept=".json">
                 </label>
             </div>
-            <hr style="border: none; border-top: 1px solid #222; margin: 20px 0;">
+            <hr style="border: none; border-top: 1px solid #173b1c; margin: 20px 0;">
+            <div style="margin-bottom: 10px; font-size: 10px; font-weight: 900; color: var(--main); letter-spacing: 0.8px;">MODULAR DATA TOOLS</div>
+            <div class="compact-grid" style="margin-bottom: 16px;">
+                <button class="secondary-btn" style="border-color: var(--main); color: var(--main); display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 20px 10px;" onclick="exportModularData()">
+                    <span style="font-size: 24px;">🧩</span>
+                    <span style="font-size: 9px; font-weight: 900;">MODULAR BACKUP</span>
+                </button>
+
+                <label class="secondary-btn" style="border-color: var(--main); color: var(--main); display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 20px 10px; cursor: pointer; margin: 0;">
+                    <span style="font-size: 24px;">♻️</span>
+                    <span style="font-size: 9px; font-weight: 900;">MODULAR RESTORE</span>
+                    <input type="file" id="importModularFile" style="display:none;" onchange="importModularData(event)" accept=".json">
+                </label>
+            </div>
+
+            <div id="mobileDataSafetyStatusBox" class="mini-card" style="margin-top: 8px; padding: 16px; border-color: var(--main); background: rgba(0,255,65,0.05);"></div>
+            <div id="mobileSyncDebugLogBox" class="mini-card" style="margin-top: 14px; padding: 16px; border-color: var(--main); background: rgba(0,255,65,0.04);"></div>
+
+            <hr style="border: none; border-top: 1px solid #173b1c; margin: 20px 0;">
             <button class="primary-btn" style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; box-shadow: none; font-size: 11px; padding: 18px;" onclick="hardResetSystem()">
                 🚨 ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ
             </button>
@@ -261,9 +279,10 @@
     <script src="mobile-uppercase-status-fix.js"></script>
     <script src="youtube-mobile.js"></script>
 
-    <script src="../adaptiveTypographyLoader.js"></script>
+    <script src="../adaptiveTypographyLoader.js?v=19.0"></script>
 
     <script src="mobileApp.js"></script>
+    <script src="mobileSettingsDataTools.js"></script>
 
         <script src="mobileServiceWorker.js"></script>
 

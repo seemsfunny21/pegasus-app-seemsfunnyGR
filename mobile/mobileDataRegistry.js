@@ -148,6 +148,14 @@
             defaultValue: ''
         },
         {
+            key: 'pegasus_mobile_sync_debug_log_v1',
+            scope: 'local-only',
+            kind: 'array',
+            defaultValue: [],
+            idFields: ['id'],
+            timestampFields: ['ts', 'id']
+        },
+        {
             key: 'pegasus_supp_inventory',
             scope: 'general',
             kind: 'object',
