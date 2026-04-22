@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.26 (DESKTOP RESUME PATCH CACHE)
+   PEGASUS PWA SERVICE WORKER - v3.27 (BRIDGE HUB CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.26-DESKTOP-RESUME-PATCH';
+const CACHE_NAME = 'pegasus-shield-v3.27-BRIDGE-HUB';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -51,6 +51,7 @@ const ASSETS_TO_CACHE = [
     './moduleIntegrity.js',
     './optimizer.js',
     './partner.js',
+    './pegasusBridgeHub.js',
     './pegasusCore.js',
     './pegasusRuntimeMonitor.js',
     './programGuide.js',
@@ -79,6 +80,7 @@ const ASSETS_TO_CACHE = [
     './mobile/finance-mobile.js',
     './mobile/inventory-mobile.js',
     './mobile/lifting-mobile.js',
+    './mobile/mobileBridgeViews.js',
     './mobile/maintenance-mobile.js',
     './mobile/missions-mobile.js',
     './mobile/mobileApp.js',
