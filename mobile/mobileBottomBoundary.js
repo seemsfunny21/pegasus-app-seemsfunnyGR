@@ -3,7 +3,7 @@
     const DEFAULT_RESERVE = 48;
     const EXTRA_BREATHING_ROOM = 0;
     const CONTENT_GAP = 8;
-    const HOME_EXTRA_GAP = 14;
+    const HOME_GRID_GAP = 2;
 
     function getViewportHeight() {
         try {
@@ -23,39 +23,45 @@
         if (!activeView || !overlayRect) return null;
         const viewRect = activeView.getBoundingClientRect();
         const isHome = activeView.id === 'home';
-        const extraGap = isHome ? HOME_EXTRA_GAP : 0;
-        const availableHeight = Math.max(140, Math.round(overlayRect.top - viewRect.top - CONTENT_GAP - extraGap));
+        const availableHeight = Math.max(140, Math.round(overlayRect.top - viewRect.top - CONTENT_GAP));
 
         activeView.style.boxSizing = 'border-box';
-        activeView.style.height = availableHeight + 'px';
-        activeView.style.maxHeight = availableHeight + 'px';
         activeView.style.minHeight = '0px';
-        activeView.style.paddingBottom = isHome ? '0px' : (reserve + 10) + 'px';
-        activeView.style.scrollPaddingBottom = isHome ? '0px' : (reserve + 10) + 'px';
-        activeView.style.overflowY = isHome ? 'hidden' : 'auto';
         activeView.style.overflowX = 'hidden';
 
         let gridHeight = null;
+        let homeGap = null;
+
         if (isHome) {
+            activeView.style.height = 'auto';
+            activeView.style.maxHeight = 'none';
+            activeView.style.paddingBottom = '0px';
+            activeView.style.scrollPaddingBottom = '0px';
+            activeView.style.overflowY = 'hidden';
+
             const grid = document.getElementById('dynamic-grid');
-            const header = activeView.querySelector('.header');
-            const anchor = document.getElementById('settings-anchor');
             if (grid) {
-                const headerH = header ? Math.round(header.getBoundingClientRect().height) : 0;
-                const anchorH = anchor ? Math.round(anchor.getBoundingClientRect().height) : 0;
-                gridHeight = Math.max(120, availableHeight - headerH - anchorH - 6);
+                const gridRect = grid.getBoundingClientRect();
+                homeGap = Math.max(0, Math.round(overlayRect.top - gridRect.top - HOME_GRID_GAP));
+                gridHeight = Math.max(120, homeGap);
                 grid.style.boxSizing = 'border-box';
                 grid.style.height = gridHeight + 'px';
                 grid.style.maxHeight = gridHeight + 'px';
-                grid.style.minHeight = '0px';
-                grid.style.paddingBottom = (reserve + 12) + 'px';
-                grid.style.scrollPaddingBottom = (reserve + 12) + 'px';
+                grid.style.minHeight = gridHeight + 'px';
+                grid.style.paddingBottom = '0px';
+                grid.style.scrollPaddingBottom = '0px';
                 grid.style.overflowY = 'auto';
                 grid.style.overflowX = 'hidden';
             }
+        } else {
+            activeView.style.height = availableHeight + 'px';
+            activeView.style.maxHeight = availableHeight + 'px';
+            activeView.style.paddingBottom = (reserve + 10) + 'px';
+            activeView.style.scrollPaddingBottom = (reserve + 10) + 'px';
+            activeView.style.overflowY = 'auto';
         }
 
-        return { availableHeight, viewTop: Math.round(viewRect.top), gridHeight };
+        return { availableHeight, viewTop: Math.round(viewRect.top), gridHeight, homeGap };
     }
 
     function applyBottomBoundary() {
@@ -88,7 +94,8 @@
                     activeViewId: activeView?.id || null,
                     activeViewHeight: viewState?.availableHeight || null,
                     activeViewTop: viewState?.viewTop || null,
-                    gridHeight: viewState?.gridHeight || null
+                    gridHeight: viewState?.gridHeight || null,
+                    homeGap: viewState?.homeGap || null
                 };
             },
             refresh: applyBottomBoundary
