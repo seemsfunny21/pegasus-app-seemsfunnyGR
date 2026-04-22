@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.27 (BRIDGE HUB CACHE)
+   PEGASUS PWA SERVICE WORKER - v3.28 (REPORT DIET FINALIZER CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.27-BRIDGE-HUB';
+const CACHE_NAME = 'pegasus-shield-v3.28-REPORT-DIET-FINALIZER';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -58,6 +58,7 @@ const ASSETS_TO_CACHE = [
     './progressUI.js',
     './protcrea.js',
     './reporting.js',
+    './reportingDietFinalizePatch.js',
     './runtimeBridge.js',
     './selfCheckRunner.js',
     './settings.js',

@@ -14,3 +14,7 @@ Package type:
 
 PEGASUS 72 / v19.2 Stable
 - Desktop workout resume patch: fixes stuck 0-set transition edge case and restores remaining workout time correctly after refresh.
+
+
+[v19.4 Stable]
+- Morning email report now refreshes food log/cardio for the report date right before send, so the next-day email reflects the full previous day diet instead of an early routine-only snapshot.
