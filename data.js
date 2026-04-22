@@ -99,6 +99,7 @@ window.setPegasusPlan = function(planKey) {
             { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
             { name: "Chest Flys", sets: 3, muscleGroup: "Στήθος", weight: "42" },
             { name: "Pushups", sets: 3, muscleGroup: "Στήθος", weight: "0" },
+            { name: "Upright Rows", sets: 3, muscleGroup: "Ώμοι", weight: "30" },
             { name: "Ab Crunches", sets: 4, muscleGroup: "Κορμός", weight: "30" },
             { name: "Leg Raise Hip Lift", sets: 3, muscleGroup: "Κορμός", weight: "0" },
             { name: "Plank", sets: 3, muscleGroup: "Κορμός", weight: "0" }
