@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.8)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.9)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-22",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.8 Stable"
+        engine_version: "v18.9 Stable"
     },
 
     // ---------------------------------------------------------
@@ -168,6 +168,8 @@ window.PegasusManifest = {
         "auditUI.js": "Real-time system integrity monitor και diagnostic overlay.",
         "debug.js": "Tracer, health checks, calorie audit και runtime diagnostics tools.",
         "mobile/mobileSafe.js": "Mobile safety bootstrap και guard layer πριν το main mobile app.",
+        "mobile/mobileDataRegistry.js": "Registry για persistent mobile module keys, backup contracts και sync-safe merge rules.",
+        "mobile/mobileDataMigration.js": "Automatic mobile data safety bootstrap, migration restore και upgrade snapshots.",
         "mobile/mobileErrorMonitor.js": "Mobile runtime error tracing και safe diagnostics hooks.",
         "mobile/mobileUI.js": "Shared mobile UI shell helpers και panel/view management.",
         "mobile/mobileApp.js": "Main mobile app bootstrap, wiring και route behavior.",

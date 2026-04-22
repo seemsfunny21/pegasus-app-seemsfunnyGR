@@ -170,7 +170,7 @@ const PegasusCloud = {
     },
 
     getSyncedExactKeys() {
-        return [
+        const baseKeys = [
             "pegasus_weight",
             "pegasus_weight_history",
             "pegasus_age",
@@ -220,10 +220,13 @@ const PegasusCloud = {
             "kouki_meals_remaining",
             "kouki_total_stock"
         ];
+
+        const dynamicKeys = window.PegasusMobileDataRegistry?.getGeneralExactKeys?.() || [];
+        return Array.from(new Set([...baseKeys, ...dynamicKeys]));
     },
 
     getSyncedPrefixes() {
-        return [
+        const basePrefixes = [
             "food_log_",
             "pegasus_cardio_kcal_",
             "pegasus_cardio_offset_sets_",
@@ -234,17 +237,22 @@ const PegasusCloud = {
             "pegasus_pos_",
             "cardio_log_"
         ];
+
+        const dynamicPrefixes = window.PegasusMobileDataRegistry?.getGeneralPrefixes?.() || [];
+        return Array.from(new Set([...basePrefixes, ...dynamicPrefixes]));
     },
 
     getProtectedExactKeys() {
-        return [
+        const baseKeys = [
             "pegasus_social_v1",
             "pegasus_contacts"
         ];
+        const dynamicKeys = window.PegasusMobileDataRegistry?.getProtectedExactKeys?.() || [];
+        return Array.from(new Set([...baseKeys, ...dynamicKeys]));
     },
 
     getLocalOnlyKeys() {
-        return [
+        const baseKeys = [
             "pegasus_user_specs",
             "pegasus_car_identity",
             "pegasus_car_dates",
@@ -252,10 +260,12 @@ const PegasusCloud = {
             "peg_car_dates",
             "pegasus_master_pin"
         ];
+        const dynamicKeys = window.PegasusMobileDataRegistry?.getLocalOnlyExactKeys?.() || [];
+        return Array.from(new Set([...baseKeys, ...dynamicKeys]));
     },
 
     getInternalStorageKeys() {
-        return [
+        const baseKeys = [
             this.storage.lastPush,
             this.storage.validUntil,
             this.storage.masterHash,
@@ -271,6 +281,8 @@ const PegasusCloud = {
             this.storage.openaiKey,
             this.storage.openrouterKey
         ];
+        const dynamicKeys = window.PegasusMobileDataRegistry?.getInternalKeys?.() || [];
+        return Array.from(new Set([...baseKeys, ...dynamicKeys]));
     },
 
     isInternalStorageKey(key) {
@@ -314,6 +326,18 @@ const PegasusCloud = {
         if (this.isLocalOnlyStorageKey(key)) return true;
         if (this.isProtectedStorageKey(key)) return true;
         return false;
+    },
+
+
+    mergeManagedStorageValue(key, localValue, remoteValue) {
+        const registry = window.PegasusMobileDataRegistry;
+        if (!registry?.getDescriptor?.(key)) return remoteValue;
+        return registry.mergeManagedRawValue(key, localValue, remoteValue);
+    },
+
+    shouldPreserveManagedKeyOnRemoteMissing(key) {
+        const registry = window.PegasusMobileDataRegistry;
+        return !!registry?.shouldPreserveOnMissing?.(key);
     },
 
     getApprovalPinHash(record) {
@@ -1187,13 +1211,15 @@ const PegasusCloud = {
 
                     for (const key of localGeneralKeys) {
                         if (!remoteGeneralKeys.has(key)) {
+                            if (this.shouldPreserveManagedKeyOnRemoteMissing(key)) continue;
                             this.safeRemoveLocal(key);
                         }
                     }
 
                     for (const [key, value] of Object.entries(remoteStorage)) {
                         if (this.isGeneralStorageKey(key)) {
-                            this.safeSetLocal(key, value);
+                            const mergedValue = this.mergeManagedStorageValue(key, localStorage.getItem(key), value);
+                            this.safeSetLocal(key, mergedValue);
                         }
                     }
 
@@ -1203,13 +1229,15 @@ const PegasusCloud = {
 
                         for (const key of localProtectedKeys) {
                             if (!remoteProtectedKeys.has(key)) {
+                                if (this.shouldPreserveManagedKeyOnRemoteMissing(key)) continue;
                                 this.safeRemoveLocal(key);
                             }
                         }
 
                         for (const [key, value] of Object.entries(remoteProtectedStorage)) {
                             if (this.isProtectedStorageKey(key)) {
-                                this.safeSetLocal(key, value);
+                                const mergedValue = this.mergeManagedStorageValue(key, localStorage.getItem(key), value);
+                                this.safeSetLocal(key, mergedValue);
                             }
                         }
                     }
@@ -1381,6 +1409,12 @@ const PegasusCloud = {
             const ts = Date.now().toString();
             if (this.lastPushTs === ts) return true;
             this.lastPushTs = ts;
+
+            try {
+                window.PegasusMobileDataRegistry?.saveSafetySnapshot?.("cloud-push", { minIntervalMs: 15000 });
+            } catch (e) {
+                console.warn("⚠️ CLOUD: Mobile safety snapshot skipped.", e);
+            }
 
             const snapshot = this.collectStorageSnapshot({ includeProtected: true });
             const storage = snapshot.general || {};
