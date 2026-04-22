@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.28 (REPORT DIET FINALIZER CACHE)
+   PEGASUS PWA SERVICE WORKER - v3.29 (MOBILE BOTTOM BOUNDARY CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.28-REPORT-DIET-FINALIZER';
+const CACHE_NAME = 'pegasus-shield-v3.29-MOBILE-BOTTOM-BOUNDARY';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -82,6 +82,7 @@ const ASSETS_TO_CACHE = [
     './mobile/inventory-mobile.js',
     './mobile/lifting-mobile.js',
     './mobile/mobileBridgeViews.js',
+    './mobile/mobileBottomBoundary.js',
     './mobile/maintenance-mobile.js',
     './mobile/missions-mobile.js',
     './mobile/mobileApp.js',
