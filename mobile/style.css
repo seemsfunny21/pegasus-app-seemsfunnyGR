@@ -35,7 +35,7 @@ body {
 .grid::-webkit-scrollbar { display: none; }
 
 /* 🚀 THE NEW DYNAMIC GRID SYSTEM */
-.dynamic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: calc(var(--pg-ghost-nav-reserve) + 5px); overflow-y: auto; scrollbar-width: none; scroll-padding-bottom: calc(var(--pg-ghost-nav-reserve) + 10px); }
+.dynamic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; flex: 1 1 auto; min-height: 0; height: auto; max-height: none; padding-bottom: calc(var(--pg-ghost-nav-reserve) + 18px); overflow-y: auto; scrollbar-width: none; scroll-padding-bottom: calc(var(--pg-ghost-nav-reserve) + 18px); align-content: start; }
 .dynamic-grid::-webkit-scrollbar { display: none; }
 
 .log-item { 
@@ -166,10 +166,12 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 
 #home {
     padding-bottom: 0;
+    overflow: hidden;
 }
 
 #settings-anchor {
-    min-height: calc(var(--pg-ghost-nav-reserve) + 6px);
+    min-height: 0;
+    height: 0;
     width: 100%;
     flex-shrink: 0;
 }

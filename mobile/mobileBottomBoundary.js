@@ -3,6 +3,7 @@
     const DEFAULT_RESERVE = 48;
     const EXTRA_BREATHING_ROOM = 0;
     const CONTENT_GAP = 8;
+    const HOME_EXTRA_GAP = 14;
 
     function getViewportHeight() {
         try {
@@ -21,34 +22,40 @@
     function applyViewBoundary(activeView, overlayRect, reserve) {
         if (!activeView || !overlayRect) return null;
         const viewRect = activeView.getBoundingClientRect();
-        const availableHeight = Math.max(140, Math.round(overlayRect.top - viewRect.top - CONTENT_GAP));
+        const isHome = activeView.id === 'home';
+        const extraGap = isHome ? HOME_EXTRA_GAP : 0;
+        const availableHeight = Math.max(140, Math.round(overlayRect.top - viewRect.top - CONTENT_GAP - extraGap));
 
         activeView.style.boxSizing = 'border-box';
         activeView.style.height = availableHeight + 'px';
         activeView.style.maxHeight = availableHeight + 'px';
         activeView.style.minHeight = '0px';
-        activeView.style.overflowY = 'auto';
-        activeView.style.paddingBottom = (reserve + 10) + 'px';
-        activeView.style.scrollPaddingBottom = (reserve + 10) + 'px';
+        activeView.style.paddingBottom = isHome ? '0px' : (reserve + 10) + 'px';
+        activeView.style.scrollPaddingBottom = isHome ? '0px' : (reserve + 10) + 'px';
+        activeView.style.overflowY = isHome ? 'hidden' : 'auto';
+        activeView.style.overflowX = 'hidden';
 
-        if (activeView.id === 'home') {
+        let gridHeight = null;
+        if (isHome) {
             const grid = document.getElementById('dynamic-grid');
             const header = activeView.querySelector('.header');
             const anchor = document.getElementById('settings-anchor');
             if (grid) {
                 const headerH = header ? Math.round(header.getBoundingClientRect().height) : 0;
                 const anchorH = anchor ? Math.round(anchor.getBoundingClientRect().height) : 0;
-                const gridHeight = Math.max(120, availableHeight - headerH - anchorH - 10);
+                gridHeight = Math.max(120, availableHeight - headerH - anchorH - 6);
                 grid.style.boxSizing = 'border-box';
+                grid.style.height = gridHeight + 'px';
                 grid.style.maxHeight = gridHeight + 'px';
                 grid.style.minHeight = '0px';
-                grid.style.paddingBottom = (reserve + 8) + 'px';
-                grid.style.scrollPaddingBottom = (reserve + 8) + 'px';
+                grid.style.paddingBottom = (reserve + 12) + 'px';
+                grid.style.scrollPaddingBottom = (reserve + 12) + 'px';
                 grid.style.overflowY = 'auto';
+                grid.style.overflowX = 'hidden';
             }
         }
 
-        return { availableHeight, viewTop: Math.round(viewRect.top) };
+        return { availableHeight, viewTop: Math.round(viewRect.top), gridHeight };
     }
 
     function applyBottomBoundary() {
@@ -80,7 +87,8 @@
                     overlayBottom: Math.round(rect.bottom),
                     activeViewId: activeView?.id || null,
                     activeViewHeight: viewState?.availableHeight || null,
-                    activeViewTop: viewState?.viewTop || null
+                    activeViewTop: viewState?.viewTop || null,
+                    gridHeight: viewState?.gridHeight || null
                 };
             },
             refresh: applyBottomBoundary
@@ -123,5 +131,5 @@
     setTimeout(scheduleRefresh, 120);
     setTimeout(scheduleRefresh, 600);
 
-    console.log('📐 PEGASUS MOBILE BOTTOM BOUNDARY: Active.');
+    console.log('📐 PEGASUS MOBILE BOTTOM BOUNDARY: Home hotfix active.');
 })();

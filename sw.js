@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.29 (MOBILE BOTTOM BOUNDARY CACHE)
+   PEGASUS PWA SERVICE WORKER - v3.30 (HOME BOUNDARY HOTFIX CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.29-MOBILE-BOTTOM-BOUNDARY';
+const CACHE_NAME = 'pegasus-shield-v3.30-HOME-BOUNDARY-HOTFIX';
 
 const ASSETS_TO_CACHE = [
     '.',
