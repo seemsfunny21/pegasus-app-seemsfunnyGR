@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.32 (PARKING CURRENT ALIGN FIX)
+   PEGASUS PWA SERVICE WORKER - v3.34 (CONSOLIDATION PASS)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.33-LIFTING-UI-TRANSLATION-FIX';
+const CACHE_NAME = 'pegasus-shield-v3.34-CONSOLIDATED-PATCHES';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -31,7 +31,6 @@ const ASSETS_TO_CACHE = [
     './desktopBootEnhancements.js',
     './desktopPanels.js',
     './desktopRender.js',
-    './desktopWorkoutResumePatch.js',
     './desktopRoute.js',
     './desktopSyncController.js',
     './desktopSyncUI.js',
@@ -58,7 +57,6 @@ const ASSETS_TO_CACHE = [
     './progressUI.js',
     './protcrea.js',
     './reporting.js',
-    './reportingDietFinalizePatch.js',
     './runtimeBridge.js',
     './selfCheckRunner.js',
     './settings.js',
@@ -74,15 +72,12 @@ const ASSETS_TO_CACHE = [
     './mobile/car-mobile.js',
     './mobile/cardio-mobile.js',
     './mobile/diet-mobile.js',
-    './mobile/diet-delete-routine-fix.js',
-    './mobile/mobile-uppercase-status-fix.js',
     './mobile/youtube-mobile.js',
     './mobile/ems-mobile.js',
     './mobile/finance-mobile.js',
     './mobile/inventory-mobile.js',
     './mobile/lifting-mobile.js',
     './mobile/mobileBridgeViews.js',
-    './mobile/mobileBottomBoundary.js',
     './mobile/maintenance-mobile.js',
     './mobile/missions-mobile.js',
     './mobile/mobileApp.js',
@@ -96,7 +91,6 @@ const ASSETS_TO_CACHE = [
     './mobile/movies-mobile.js',
     './mobile/oracle-mobile.js',
     './mobile/parking-mobile.js',
-    './mobile/parking-current-fix.js',
     './mobile/profile-mobile.js',
     './mobile/social-mobile.js',
     './mobile/supplies-mobile.js',
