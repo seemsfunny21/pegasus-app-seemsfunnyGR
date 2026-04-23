@@ -56,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v21.6 Stable"
+        engine_version: "v21.7 Stable"
     },
 
     // ---------------------------------------------------------
@@ -172,8 +172,7 @@ window.PegasusManifest = {
         
         "desktopPanels.js": "Desktop panel open/render helpers για major UI windows.",
         "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
-        "desktopSyncUI.js": "Desktop sync panel rendering και initialization status UI.",
-        "desktopBoot.js": "Desktop startup bootstrap, app coordination και weather adaptation layer.",
+                "desktopBoot.js": "Desktop startup bootstrap, app coordination και weather adaptation layer.",
         
         "pegasusCore.js": "Core training engine, session logic και canonical workout state.",
         "data.js": "Master training data, program plans και day-by-day exercise definitions.",

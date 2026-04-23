@@ -24,7 +24,6 @@ const ASSETS_TO_CACHE = [
     './desktopActions.js',
     './desktopBoot.js',
     './desktopPanels.js',
-    './desktopSyncUI.js',
     './dialogs.js',
     './dietAdvisor.js',
     './dragDrop.js',

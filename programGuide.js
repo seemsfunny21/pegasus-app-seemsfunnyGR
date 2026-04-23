@@ -102,7 +102,6 @@
         'desktopPanels.js': { category: 'Desktop UI', role: 'Desktop panel helpers, ανοίγματα/κλεισίματα και panel-side wiring.' },
         'desktopActions.js': { category: 'Desktop UI', role: 'Desktop button actions και flows που συνδέουν UI με engine behaviors.' },
         'desktopRender.js': { category: 'Desktop UI', role: 'Desktop rendering του κύριου interface, labels, exercise list και visual refreshes.' },
-        'desktopSyncUI.js': { category: 'Desktop UI', role: 'Master UI button map για desktop panels, tools, gallery, cardio, sync και κεντρικά bindings.' },
         'desktopBoot.js': { category: 'Desktop Boot', role: 'Το βασικό desktop boot sequence: navbar, initial render, daily load και onload coordination.' },
         'workoutTracking.js': { category: 'Tracking', role: 'Καταγράφει sets/workouts, total workout count και related training metrics.' },
         'app.js': { category: 'App Coordination', role: 'Thin coordinator shell που δένει τα submodules χωρίς να κρατά το παλιό monolith logic.' },
