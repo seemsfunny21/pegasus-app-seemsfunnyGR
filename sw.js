@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.35 (CONSOLIDATION PASS)
+   PEGASUS PWA SERVICE WORKER - v3.37 (CONSOLIDATION PASS 2)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.36-WEIGHT-PROTEIN-FIX';
+const CACHE_NAME = 'pegasus-shield-v3.37-CONSOLIDATED-2';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -14,7 +14,6 @@ const ASSETS_TO_CACHE = [
     './mobile/style.css',
     './achievements.js',
     './app.js',
-    './audioRuntime.js',
     './adaptiveTypography.js',
     './auditUI.js',
     './backup.js',
@@ -28,9 +27,7 @@ const ASSETS_TO_CACHE = [
     './desktopBoot.js',
     './desktopPanels.js',
     './desktopRender.js',
-    './desktopSyncController.js',
     './desktopSyncUI.js',
-    './diagnosticsRuntime.js',
     './dialogs.js',
     './dietAdvisor.js',
     './dragDrop.js',
@@ -43,12 +40,10 @@ const ASSETS_TO_CACHE = [
     './inventoryHandler.js',
     './manifest.js',
     './metabolicEngine.js',
-    './moduleIntegrity.js',
     './optimizer.js',
     './partner.js',
     './pegasusBridgeHub.js',
     './pegasusCore.js',
-    './pegasusRuntimeMonitor.js',
     './programGuide.js',
     './progressUI.js',
     './protcrea.js',
@@ -61,9 +56,7 @@ const ASSETS_TO_CACHE = [
     './syncEdgeHardening.js',
     './syncHardening.js',
     './weather.js',
-    './weightState.js',
     './weightTracker.js',
-    './workoutTracking.js',
     './mobile/biometrics-mobile.js',
     './mobile/car-mobile.js',
     './mobile/cardio-mobile.js',

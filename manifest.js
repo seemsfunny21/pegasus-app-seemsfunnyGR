@@ -1,5 +1,48 @@
+(function(){
+  const scope = (location.pathname || '').includes('/mobile/') ? 'mobile' : 'desktop';
+  const ERROR_KEY = `pegasus_${scope}_runtime_errors`;
+  const TRACE_KEY = `pegasus_${scope}_runtime_trace`;
+  const MAX_ERRORS = 40;
+  const MAX_TRACE = 80;
+  const MAX_TEXT = 900;
+  function nowIso(){ try { return new Date().toISOString(); } catch(_) { return String(Date.now()); } }
+  function trimText(value){ const text = String(value ?? ''); return text.length > MAX_TEXT ? text.slice(0, MAX_TEXT) + '…' : text; }
+  function safeRead(key){ try { const raw = localStorage.getItem(key); if(!raw) return []; const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch(_) { return []; } }
+  function safeWrite(key, entries, limit){ try { localStorage.setItem(key, JSON.stringify(entries.slice(-limit))); return true; } catch(_) { return false; } }
+  function normalizeError(error){ if(!error) return { message: 'Unknown error', stack: '' }; if(typeof error === 'string') return { message: trimText(error), stack: '' }; const message = trimText(error.message || error.reason?.message || error.reason || error.toString?.() || 'Unknown error'); const stack = trimText(error.stack || error.reason?.stack || ''); return { message, stack }; }
+  function getLatestTrace(){ const entries = safeRead(TRACE_KEY); return entries.length ? entries[entries.length - 1] : null; }
+  function buildTrace(moduleName, action, status, extra){ return { ts: nowIso(), scope, module: trimText(moduleName || 'UNKNOWN'), action: trimText(action || 'runtime'), status: trimText(status || 'STEP'), path: trimText(location.pathname || ''), online: !!navigator.onLine, unlocked: !!window.PegasusCloud?.isUnlocked, extra: extra ? trimText(typeof extra === 'string' ? extra : JSON.stringify(extra)) : '' }; }
+  function buildError(level, moduleName, action, error, extra){ const n = normalizeError(error); const latestTrace = getLatestTrace(); return { ts: nowIso(), scope, level: trimText(level || 'ERROR'), module: trimText(moduleName || 'UNKNOWN'), action: trimText(action || 'runtime'), message: n.message, stack: n.stack, path: trimText(location.pathname || ''), online: !!navigator.onLine, unlocked: !!window.PegasusCloud?.isUnlocked, lastTrace: latestTrace ? `${latestTrace.module}:${latestTrace.action}:${latestTrace.status}` : '', extra: extra ? trimText(typeof extra === 'string' ? extra : JSON.stringify(extra)) : '' }; }
+  function pushTrace(moduleName, action, status, extra){ const entries = safeRead(TRACE_KEY); const entry = buildTrace(moduleName, action, status, extra); entries.push(entry); safeWrite(TRACE_KEY, entries, MAX_TRACE); return entry; }
+  function pushError(level, moduleName, action, error, extra){ const entries = safeRead(ERROR_KEY); const entry = buildError(level, moduleName, action, error, extra); entries.push(entry); safeWrite(ERROR_KEY, entries, MAX_ERRORS); return entry; }
+  function getLatestError(){ const entries = safeRead(ERROR_KEY); return entries.length ? entries[entries.length - 1] : null; }
+  window.PegasusRuntimeMonitor = {
+    scope,
+    errorKey: ERROR_KEY,
+    traceKey: TRACE_KEY,
+    trace(moduleName, action, status, extra){ return pushTrace(moduleName, action, status || 'STEP', extra); },
+    mark(moduleName, action, status, extra){ return pushTrace(moduleName, action, status || 'STEP', extra); },
+    capture(moduleName, action, error, extra){ return pushError('ERROR', moduleName, action, error, extra); },
+    warn(moduleName, action, error, extra){ return pushError('WARN', moduleName, action, error, extra); },
+    info(moduleName, action, message, extra){ return pushError('INFO', moduleName, action, message, extra); },
+    getErrors(){ return safeRead(ERROR_KEY); },
+    getLatestError,
+    getProblems(){ return safeRead(ERROR_KEY).filter(entry => entry.level === 'WARN' || entry.level === 'ERROR'); },
+    getLatestProblem(){ const problems = safeRead(ERROR_KEY).filter(entry => entry.level === 'WARN' || entry.level === 'ERROR'); return problems.length ? problems[problems.length - 1] : null; },
+    getTrace(){ return safeRead(TRACE_KEY); },
+    getLatestTrace,
+    clearErrors(){ try { localStorage.removeItem(ERROR_KEY); } catch(_) {} },
+    clearTrace(){ try { localStorage.removeItem(TRACE_KEY); } catch(_) {} },
+    clearAll(){ try { localStorage.removeItem(ERROR_KEY); } catch(_) {} try { localStorage.removeItem(TRACE_KEY); } catch(_) {} }
+  };
+  if(scope === 'desktop'){
+    window.addEventListener('error', function(event){ const src = event.filename ? event.filename.split('/').pop() : 'runtime'; pushError('ERROR', src || 'runtime', 'window.error', event.error || event.message || 'Window error', { lineno: event.lineno || 0, colno: event.colno || 0 }); });
+    window.addEventListener('unhandledrejection', function(event){ pushError('ERROR', 'promise', 'unhandledrejection', event.reason || 'Unhandled rejection'); });
+  }
+})();
+
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v20.9)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v21.0)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v20.9 Stable"
+        engine_version: "v21.0 Stable"
     },
 
     // ---------------------------------------------------------
@@ -118,25 +161,25 @@ window.PegasusManifest = {
         "sw.js": "PWA service worker για precache, offline fallback και cache hygiene.",
         "app.js": "Thin master orchestrator / compatibility shell για το desktop runtime.",
         "runtimeBridge.js": "Bridge μεταξύ legacy UI flow και Pegasus core runtime state.",
-        "workoutTracking.js": "Workout tracking helpers, counters και session logging.",
+        
         "calorieRuntime.js": "Dynamic calorie/protein target calculation και UI runtime sync.",
-        "audioRuntime.js": "Audio unlock, beep control και runtime sound state manager.",
-        "weightState.js": "Saved exercise weights και active lifter state access layer.",
-        "diagnosticsRuntime.js": "Runtime warning/error bridge και high-level diagnostics hooks.",
-        "moduleIntegrity.js": "Checks αν critical modules/globals είναι loaded και healthy.",
+        
+        
+        
+        
         "syncHardening.js": "Primary sync guard/state machine για overlap prevention.",
         "syncEdgeHardening.js": "Cross-tab lease, dedupe και online/visibility sync edge-case protection.",
         "syncDiagnostics.js": "High-level sync observability, lease/deferred diagnostics και summaries.",
         "storageHardening.js": "LocalStorage audit/repair layer με safe defaults και schema guards.",
         "selfCheckRunner.js": "Regression/self-check runner για quick health snapshots.",
         "programGuide.js": "Interactive in-app How-To / system map / file reference guide.",
-        "desktopSyncController.js": "Desktop sync controller hooks και higher-level sync entry wiring.",
+        
         "desktopPanels.js": "Desktop panel open/render helpers για major UI windows.",
         "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
         "desktopRender.js": "Desktop-specific render/update helpers για workout UI.",
         "desktopSyncUI.js": "Desktop sync panel rendering και initialization status UI.",
         "desktopBoot.js": "Desktop startup bootstrap και initial app boot orchestration.",
-        "pegasusRuntimeMonitor.js": "Central runtime monitor for traces, warnings και problem snapshots.",
+        
         "pegasusCore.js": "Core training engine, session logic και canonical workout state.",
         "data.js": "Master training data, program plans και day-by-day exercise definitions.",
         "settings.js": "User settings defaults, persistence helpers και configuration access.",
