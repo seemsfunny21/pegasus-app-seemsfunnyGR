@@ -133,6 +133,41 @@
         return daysMap[new Date().getDay()];
     }
 
+
+    function getTodayDayLabel() {
+        const dayKey = getTodayDayKey();
+        const grMap = {
+            Sunday: 'Κυριακή',
+            Monday: 'Δευτέρα',
+            Tuesday: 'Τρίτη',
+            Wednesday: 'Τετάρτη',
+            Thursday: 'Πέμπτη',
+            Friday: 'Παρασκευή',
+            Saturday: 'Σάββατο'
+        };
+        return isEn() ? dayKey : (grMap[dayKey] || dayKey);
+    }
+
+    function normalizeDishKey(value) {
+        return normalizeText(value)
+            .replace(/\([^)]*\)/g, ' ')
+            .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function getItemCounts(days) {
+        const counts = {};
+        getRecentHistory(days).forEach(day => {
+            (day.log || []).forEach(item => {
+                const key = normalizeDishKey(item?.name || item?.n || '');
+                if (!key) return;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+        });
+        return counts;
+    }
+
     function getMacros(name, type, fallbackKcal, fallbackProtein) {
         if (typeof window.getPegasusMacros === 'function') {
             const macros = window.getPegasusMacros(name, type);
@@ -284,13 +319,57 @@
         return score;
     }
 
-    function buildTopReasons(item, deficits) {
+    function buildTopReasons(item, deficits, repeatCount7) {
         const labels = deficits.filter(d => d.score > 0 && item.categories.includes(d.key)).slice(0, 2).map(d => d.label);
-        if (labels.length) return t(`Καλύπτει κενό σε ${labels.join(' / ')}.`, `Covers a gap in ${labels.join(' / ')}.`);
-        if (item.categories.includes('greens') || item.categories.includes('veg')) return t('Δίνει περισσότερη ποικιλία σε λαχανικά.', 'Adds more vegetable variety.');
-        if (item.categories.includes('legumes')) return t('Βάζει όσπρια που σου λείπουν εύκολα.', 'Adds legumes that are easy to miss.');
-        if (item.categories.includes('fish')) return t('Σου δίνει ψάρι/θαλασσινά αντί για ίδια πρωτεΐνη.', 'Gives you fish/seafood instead of repeating the same protein.');
-        return t('Είναι η πιο ισορροπημένη επιλογή για σήμερα.', 'It is the most balanced choice for today.');
+        let reason = '';
+        if (labels.length) reason = t(`Καλύπτει κενό σε ${labels.join(' / ')}.`, `Covers a gap in ${labels.join(' / ')}.`);
+        else if (item.categories.includes('greens') || item.categories.includes('veg')) reason = t('Δίνει περισσότερη ποικιλία σε λαχανικά.', 'Adds more vegetable variety.');
+        else if (item.categories.includes('legumes')) reason = t('Βάζει όσπρια που σου λείπουν εύκολα.', 'Adds legumes that are easy to miss.');
+        else if (item.categories.includes('fish')) reason = t('Σου δίνει ψάρι/θαλασσινά αντί για ίδια πρωτεΐνη.', 'Gives you fish/seafood instead of repeating the same protein.');
+        else reason = t('Είναι η πιο ισορροπημένη επιλογή για σήμερα.', 'It is the most balanced choice for today.');
+
+        if (repeatCount7 >= 2) {
+            reason += ' ' + t(`Το έχεις ήδη φάει ${repeatCount7} φορές τις τελευταίες 7 μέρες.`, `You already had it ${repeatCount7} times over the last 7 days.`);
+        }
+
+        return reason.trim();
+    }
+
+    function buildDeficitSummary(deficits) {
+        const topDeficits = deficits.filter(d => d.score > 0).slice(0, 3);
+        if (!topDeficits.length) {
+            return t('Δεν φαίνεται σοβαρό διατροφικό κενό στο πρόσφατο ιστορικό.', 'No major dietary gap appears in recent history.');
+        }
+        return t(
+            `Λείπουν περισσότερο: ${topDeficits.map(d => `${d.label} (${d.days5}/5)`).join(', ')}.`,
+            `Biggest gaps: ${topDeficits.map(d => `${d.label} (${d.days5}/5)`).join(', ')}.`
+        );
+    }
+
+    function buildProteinProgressLine(consumed, targets) {
+        return t(
+            `${Math.round(consumed.protein)}/${Math.round(targets.protein)} γρ πρωτεΐνης σήμερα (ρουτίνα + log ημέρας).`,
+            `${Math.round(consumed.protein)}/${Math.round(targets.protein)}g protein today (routine + daily log).`
+        );
+    }
+
+    function getOptionToneMeta(rank, repeatCount7) {
+        if (repeatCount7 >= 2) {
+            return {
+                tone: 'red',
+                toneLabel: t(`Κόψε το λίγο • ${repeatCount7}x / 7 ημέρες`, `Ease off • ${repeatCount7}x / 7 days`)
+            };
+        }
+        if (rank <= 1) {
+            return {
+                tone: 'green',
+                toneLabel: t('Top επιλογή σήμερα', 'Top choice today')
+            };
+        }
+        return {
+            tone: 'orange',
+            toneLabel: t('ΟΚ αλλά όχι κορυφαία', 'Okay, but not top-tier')
+        };
     }
 
     function buildMessage(consumed, targets, deficits, stats5) {
@@ -301,17 +380,16 @@
             : t('Η βάση πρωτεΐνης σου φαίνεται σχετικά σταθερή.', 'Your protein base looks relatively stable.');
 
         if (!topDeficits.length) {
-            return t(`${intro} Τις τελευταίες μέρες δεν φαίνεται σοβαρό διατροφικό κενό. Σήμερα προτίμησε ποικιλία και κάτι πιο ελαφρύ αν δεν πεινάς πολύ.`, `${intro} No major dietary gap appears in recent days. Today prefer variety and something lighter if you are not very hungry.`);
+            return t(`${intro} Δεν φαίνεται σοβαρό διατροφικό κενό τις τελευταίες μέρες. Σήμερα προτίμησε ποικιλία και κάτι πιο ελαφρύ αν δεν πεινάς πολύ.`, `${intro} No major dietary gap appears in recent days. Today prefer variety and something lighter if you are not very hungry.`);
         }
 
-        const missing = topDeficits.map(d => `${d.label} (${d.days5}/5)`).join(', ');
         const needProtein = Math.max(0, targets.protein - consumed.protein);
         const needKcal = Math.max(0, targets.kcal - consumed.kcal);
         const tail = needProtein > 25
             ? t(` Σήμερα σου λείπουν ακόμη περίπου ${needProtein}g πρωτεΐνης και ${needKcal} kcal, αλλά η προτεραιότητα είναι να καλύψεις και τα κενά ποικιλίας.`, ` You still need about ${needProtein}g protein and ${needKcal} kcal today, but the priority is to also cover variety gaps.`)
             : t(' Μην κυνηγήσεις μόνο παραπάνω πρωτεΐνη· κυνηγά και το κενό που λείπει από τις τελευταίες μέρες.', ' Do not chase extra protein only; cover what has been missing across recent days too.');
 
-        return t(`${intro} Τις τελευταίες 5 μέρες σου λείπουν περισσότερο: ${missing}.${tail}`, `${intro} Over the last 5 days your biggest gaps are: ${missing}.${tail}`);
+        return `${intro}${tail}`;
     }
 
     function buildGeneralSuggestions(deficits) {
@@ -335,29 +413,42 @@
         const stats5 = getHistoryStats(HISTORY_WINDOWS.mid);
         const stats7 = getHistoryStats(HISTORY_WINDOWS.long);
         const deficits = buildDeficits(stats3, stats5, stats7);
+        const itemCounts7 = getItemCounts(HISTORY_WINDOWS.long);
 
         const options = getTodayKoukiCandidates()
-            .map(item => ({ ...item, score: scoreCandidate(item, deficits, consumed, targets) }))
+            .map(item => {
+                const repeatCount7 = itemCounts7[normalizeDishKey(item.n)] || 0;
+                return { ...item, score: scoreCandidate(item, deficits, consumed, targets), repeatCount7 };
+            })
             .sort((a, b) => b.score - a.score)
             .slice(0, 4)
-            .map(item => ({
-                n: item.n,
-                t: item.t,
-                kcal: item.kcal,
-                protein: item.protein,
-                reason: buildTopReasons(item, deficits),
-                categories: item.categories
-            }));
+            .map((item, index) => {
+                const toneMeta = getOptionToneMeta(index, item.repeatCount7);
+                return {
+                    n: item.n,
+                    t: item.t,
+                    kcal: item.kcal,
+                    protein: item.protein,
+                    reason: buildTopReasons(item, deficits, item.repeatCount7),
+                    categories: item.categories,
+                    repeatCount7: item.repeatCount7,
+                    tone: toneMeta.tone,
+                    toneLabel: toneMeta.toneLabel
+                };
+            });
 
         return {
             msg: buildMessage(consumed, targets, deficits, stats5),
+            proteinLine: buildProteinProgressLine(consumed, targets),
+            deficitLine: buildDeficitSummary(deficits),
             options,
             consumed: { kcal: Math.round(consumed.kcal), protein: Math.round(consumed.protein) },
             targets,
             deficits,
             suggestions: buildGeneralSuggestions(deficits),
             history: { days3: stats3.dayCoverage, days5: stats5.dayCoverage, days7: stats7.dayCoverage },
-            todayMenuDay: getTodayDayKey()
+            todayMenuDay: getTodayDayKey(),
+            todayMenuDayLabel: getTodayDayLabel()
         };
     }
 
@@ -370,7 +461,7 @@
             lines.push('');
         }
         if (advice.options.length) {
-            lines.push(t(`Σήμερα από το Κούκι (${advice.todayMenuDay}):`, `Today from Kouki (${advice.todayMenuDay}):`));
+            lines.push(t(`Σήμερα από το Κούκι (${advice.todayMenuDayLabel || advice.todayMenuDay}):`, `Today from Kouki (${advice.todayMenuDayLabel || advice.todayMenuDay}):`));
             advice.options.forEach((opt, index) => {
                 lines.push(`${index + 1}. ${opt.n} — ${opt.kcal} kcal | ${opt.protein}g P`);
                 if (opt.reason) lines.push(`   ${opt.reason}`);

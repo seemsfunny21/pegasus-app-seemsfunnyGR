@@ -39,3 +39,9 @@ PEGASUS 72 / v19.2 Stable
 [v22.0 Stable]
 - Hard cache-bust release to force-load the latest desktop video resume + HOW TO updates after v21.8 caching issues.
 - Exposed openProgramGuide/showProgramGuide aliases for easier diagnostics and guide opening from console/tests.
+
+
+[v22.2 Stable]
+- Mobile Diet Advisor UI polish: added Greek subtitle under PEGASUS LOGIC, protein progress line, explicit deficit summary, and color-coded Kouki recommendations (green = top choices, orange = weaker fits, red = foods repeated often over the last 7 days).
+- Advisor add button now uses Pegasus-green styling instead of the previous yellow/black treatment.
+- Advisor day label now uses Greek day names in shared output.
