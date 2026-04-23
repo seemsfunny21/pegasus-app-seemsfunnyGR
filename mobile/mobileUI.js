@@ -133,7 +133,7 @@
                 settingsTile.innerHTML = `
                     <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; height: 100%;">
                         <span class="tile-icon" style="font-size: 20px; margin-right: 10px; margin-bottom: 0;">⚙️</span>
-                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
+                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ ΣΩΜΑΤΟΣ</span>
                     </div>
                 `;
                 container.appendChild(settingsTile);
