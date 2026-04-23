@@ -168,6 +168,7 @@ window.calculatePegasusBioMetrics = function(settingsObj) {
     const multiplier = 2.17;
     const autoProtein = Math.round(weight * multiplier);
 
+    localStorage.setItem(M?.diet?.goalProtein || 'pegasus_goal_protein', autoProtein);
     localStorage.setItem(M?.diet?.todayProtein || 'pegasus_today_protein', autoProtein);
 
     return autoProtein;

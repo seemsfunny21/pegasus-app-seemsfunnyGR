@@ -206,6 +206,7 @@ const PegasusCloud = {
             "pegasus_morning_checkin",
             "pegasus_stats",
             "pegasus_goal_protein",
+            "pegasus_today_protein_consumed",
             "pegasus_weather_code",
             "pegasus_mute_state",
             "pegasus_turbo_state",

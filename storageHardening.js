@@ -229,6 +229,7 @@
                 { key: manifest.user?.weight || "pegasus_weight", fallback: 74, min: 30, max: 300 },
                 { key: manifest.diet?.todayKcal || "pegasus_today_kcal", fallback: 2800, min: 1000, max: 6000 },
                 { key: manifest.diet?.todayProtein || "pegasus_today_protein", fallback: 160, min: 40, max: 400 },
+                { key: manifest.diet?.goalProtein || 'pegasus_goal_protein', fallback: 160, min: 40, max: 400 },
                 { key: "pegasus_session_kcal", fallback: 0, min: 0, max: 20000 },
                 { key: "pegasus_weekly_kcal", fallback: 0, min: 0, max: 100000 },
                 { key: "kouki_total_stock", fallback: 30, min: 0, max: 9999, integer: true }
@@ -350,6 +351,7 @@
             MANIFEST().user?.weight || "pegasus_weight",
             MANIFEST().diet?.todayKcal || "pegasus_today_kcal",
             MANIFEST().diet?.todayProtein || "pegasus_today_protein",
+            MANIFEST().diet?.goalProtein || 'pegasus_goal_protein',
             MANIFEST().workout?.weekly_history || "pegasus_weekly_history",
             MANIFEST().workout?.done || "pegasus_workouts_done",
             MANIFEST().workout?.calendarHistory || "pegasus_calendar_history",

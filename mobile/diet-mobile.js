@@ -383,7 +383,7 @@ window.PegasusDiet = {
             tp += parseFloat(item.protein || 0);
         });
 
-        localStorage.setItem(window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein", Math.round(tp));
+        localStorage.setItem(window.PegasusManifest?.diet?.consumedProtein || 'pegasus_today_protein_consumed', Math.round(tp));
 
         const targetKcal = this.getEffectiveTarget();
 
@@ -392,7 +392,7 @@ window.PegasusDiet = {
             txtKcal.textContent = `${Math.round(tk)} / ${targetKcal}`;
         }
 
-        const targetProt = localStorage.getItem("pegasus_goal_protein") || 160;
+        const targetProt = localStorage.getItem(window.PegasusManifest?.diet?.goalProtein || 'pegasus_goal_protein') || localStorage.getItem(window.PegasusManifest?.diet?.todayProtein || 'pegasus_today_protein') || 160;
         const txtProt = document.getElementById("txtProt");
         if (txtProt) {
             txtProt.textContent = `${Math.round(tp)} / ${targetProt}g`;

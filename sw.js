@@ -4,7 +4,7 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.35-CONSOLIDATED-PATCHES';
+const CACHE_NAME = 'pegasus-shield-v3.36-WEIGHT-PROTEIN-FIX';
 
 const ASSETS_TO_CACHE = [
     '.',

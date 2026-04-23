@@ -59,7 +59,7 @@ window.getPegasusSettings = function() {
             age: parseInt(localStorage.getItem(u.age || "pegasus_age"), 10) || DEFAULT_SETTINGS.age,
             gender: localStorage.getItem(u.gender || "pegasus_gender") || DEFAULT_SETTINGS.gender,
             goalKcal: parseInt(localStorage.getItem(d.todayKcal || "pegasus_today_kcal"), 10) || DEFAULT_SETTINGS.goalKcal,
-            goalProtein: parseInt(localStorage.getItem(d.todayProtein || "pegasus_today_protein"), 10) || DEFAULT_SETTINGS.goalProtein,
+            goalProtein: parseInt(localStorage.getItem(d.goalProtein || 'pegasus_goal_protein'), 10) || parseInt(localStorage.getItem(d.todayProtein || "pegasus_today_protein"), 10) || DEFAULT_SETTINGS.goalProtein,
             exTime: parseInt(localStorage.getItem(w.ex_time || "pegasus_ex_time"), 10) || DEFAULT_SETTINGS.exTime,
             restTime: parseInt(localStorage.getItem(w.rest_time || "pegasus_rest_time"), 10) || DEFAULT_SETTINGS.restTime,
             activeSplit: localStorage.getItem('pegasus_active_plan') || DEFAULT_SETTINGS.activeSplit,
@@ -202,6 +202,7 @@ window.savePegasusSettingsGlobal = function() {
 
         // Nutrition & Time
         localStorage.setItem(d.todayKcal || "pegasus_today_kcal", String(newSettings.goalKcal));
+        localStorage.setItem(d.goalProtein || 'pegasus_goal_protein', String(newSettings.goalProtein));
         localStorage.setItem(d.todayProtein || "pegasus_today_protein", String(newSettings.goalProtein));
         localStorage.setItem(w.ex_time || "pegasus_ex_time", String(newSettings.exTime));
         localStorage.setItem(w.rest_time || "pegasus_rest_time", String(newSettings.restTime));

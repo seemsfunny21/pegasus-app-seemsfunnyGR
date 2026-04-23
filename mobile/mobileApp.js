@@ -321,7 +321,7 @@
                 if (nDate) nDate.value = new Date().toLocaleDateString('el-GR');
                 window.PegasusProfile?.renderNotes();
             }
-            if (id === 'settings_panel') window.PegasusWeight?.updateUI();
+            if (id === 'settings_panel') { try { window.PegasusWeight?.updateUI(); } catch(_) {} try { window.PegasusWeight?.ensureSettingsCard?.(); } catch(_) {} }
             if (id === 'parking_panel') window.PegasusParking?.updateUI();
 
             const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
@@ -994,7 +994,7 @@
 /* ===== CONSOLIDATED FROM mobileServiceWorker.js ===== */
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.35')
+                navigator.serviceWorker.register('../sw.js?v=3.36')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

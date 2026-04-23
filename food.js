@@ -240,8 +240,8 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    const todayProtKey = M?.diet?.todayProtein || "pegasus_today_protein";
-    localStorage.setItem(todayProtKey, totalProtein.toFixed(0));
+    const consumedProtKey = M?.diet?.consumedProtein || 'pegasus_today_protein_consumed';
+    localStorage.setItem(consumedProtKey, totalProtein.toFixed(0));
 
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = totalKcal.toFixed(0);
@@ -298,7 +298,7 @@ window.deleteFoodItem = function(index) {
 
 function updateProgressBars(kcal, protein) {
     const goalKcal = calculateDailyCalorieTarget(window.currentFoodDate);
-    const goalProtein = 160;
+    const goalProtein = parseInt(localStorage.getItem(M?.diet?.goalProtein || 'pegasus_goal_protein'), 10) || 160;
 
     const kBar = document.getElementById('kcalBar');
     const pBar = document.getElementById('proteinBar');
