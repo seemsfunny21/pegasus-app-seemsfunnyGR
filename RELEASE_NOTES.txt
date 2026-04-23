@@ -26,3 +26,6 @@ PEGASUS 72 / v19.2 Stable
 
 [v21.5 Stable]
 - Fixed broken consolidation from v21.3 by removing stale script includes and cache references for merged files (desktopRender.js, achievements.js, inventoryHandler.js).
+
+[v21.6 Stable]
+- Consolidated mobileUI.js and mobileBridgeViews.js into mobile/mobileApp.js.

@@ -56,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v21.5 Stable"
+        engine_version: "v21.6 Stable"
     },
 
     // ---------------------------------------------------------
@@ -202,8 +202,7 @@ window.PegasusManifest = {
         "mobile/mobileDataRegistry.js": "Registry για persistent mobile module keys, backup contracts και sync-safe merge rules.",
         "mobile/mobileDataMigration.js": "Automatic mobile data safety bootstrap, migration restore και upgrade snapshots.",
         "mobile/mobileSettingsDataTools.js": "Mobile settings data safety status, modular backup/restore tools και sync/debug event log.",
-        "mobile/mobileUI.js": "Shared mobile UI shell helpers και panel/view management.",
-        "mobile/mobileApp.js": "Main mobile app bootstrap, wiring και route behavior.",
+                "mobile/mobileApp.js": "Main mobile app bootstrap, wiring και route behavior.",
         "mobile/diet-mobile.js": "Mobile nutrition/diet panel logic.",
         "mobile/cardio-mobile.js": "Mobile cardio panel and flow logic.",
         "mobile/profile-mobile.js": "Mobile profile/user info management views.",
