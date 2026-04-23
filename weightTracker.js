@@ -1,50 +1,107 @@
 /* ==========================================================================
-   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.9 - STABLE MOBILE SETTINGS CARD)
+   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v2.0 - HISTORY NORMALIZATION SAFE)
    Protocol: Daily Weight Logging, Moving Average & Master Variable Sync
-   Status: FINAL STABLE | FIXED: MANIFEST DESYNC & EVENT FALLBACKS
+   Status: FINAL STABLE | FIXED: LEGACY HISTORY PRESERVATION + SAFE NORMALIZATION
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
 const WEIGHT_KEY = M?.user?.weight || 'pegasus_weight';
 const HISTORY_KEY = M?.user?.weight_history || M?.user?.weightHistory || 'pegasus_weight_history';
+const HISTORY_BACKUP_KEY = HISTORY_KEY + '_backup';
+
+function toISODateKey(value) {
+    if (value == null) return null;
+    if (typeof value === 'string') {
+        const s = value.trim();
+        if (!s) return null;
+        const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+        const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (dmy) return `${dmy[3]}-${String(dmy[2]).padStart(2,'0')}-${String(dmy[1]).padStart(2,'0')}`;
+    }
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 function normalizeWeightHistory(raw) {
     if (!raw) return {};
+    const normalized = {};
+
+    const applyEntry = (dateCandidate, valueCandidate, fallbackKey = null) => {
+        const dateKey = toISODateKey(dateCandidate) || toISODateKey(fallbackKey);
+        const value = parseFloat(valueCandidate);
+        if (dateKey && !isNaN(value)) normalized[dateKey] = value;
+    };
+
     if (Array.isArray(raw)) {
-        const normalized = {};
         for (const entry of raw) {
-            if (!entry || typeof entry !== 'object') continue;
-            const dateKey = entry.date || entry.dateKey || entry.day || entry.ts || entry.timestamp;
-            const value = parseFloat(entry.weight ?? entry.value ?? entry.kg);
-            if (dateKey && !isNaN(value)) normalized[String(dateKey).slice(0, 10)] = value;
+            if (entry == null) continue;
+            if (typeof entry === 'object') {
+                applyEntry(entry.date || entry.dateKey || entry.day || entry.ts || entry.timestamp, entry.weight ?? entry.value ?? entry.kg, entry.key);
+            }
         }
         return normalized;
     }
+
     if (typeof raw === 'object') {
-        const normalized = {};
         Object.keys(raw).forEach(key => {
-            const value = parseFloat(raw[key]);
-            if (!isNaN(value)) normalized[key] = value;
+            const item = raw[key];
+            if (item && typeof item === 'object') {
+                applyEntry(item.date || item.dateKey || item.day || item.ts || item.timestamp || key, item.weight ?? item.value ?? item.kg, key);
+            } else {
+                applyEntry(key, item, key);
+            }
         });
         return normalized;
     }
-    return {};
+
+    return normalized;
+}
+
+function tryParseHistoryKey(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const normalized = normalizeWeightHistory(parsed);
+        return Object.keys(normalized).length ? normalized : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveWeightHistoryObject(history) {
+    const safeHistory = normalizeWeightHistory(history);
+    const serialized = JSON.stringify(safeHistory);
+    localStorage.setItem(HISTORY_KEY, serialized);
+    localStorage.setItem(HISTORY_BACKUP_KEY, serialized);
+    return safeHistory;
 }
 
 function loadWeightHistory() {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}');
-        const normalized = normalizeWeightHistory(parsed);
-        const rawString = JSON.stringify(parsed);
-        const normalizedString = JSON.stringify(normalized);
-        if (rawString !== normalizedString) {
-            localStorage.setItem(HISTORY_KEY, normalizedString);
+    const candidates = [
+        HISTORY_KEY,
+        M?.user?.weightHistory,
+        M?.user?.weight_history,
+        HISTORY_BACKUP_KEY,
+        'pegasus_weight_history',
+        'pegasus_weight_history_backup'
+    ].filter(Boolean);
+
+    for (const key of [...new Set(candidates)]) {
+        const history = tryParseHistoryKey(key);
+        if (history && Object.keys(history).length) {
+            saveWeightHistoryObject(history);
+            return history;
         }
-        return normalized;
-    } catch (e) {
-        localStorage.setItem(HISTORY_KEY, '{}');
-        return {};
     }
+
+    // keep the current storage untouched if unreadable; initialize only when truly empty
+    if (!localStorage.getItem(HISTORY_KEY)) {
+        saveWeightHistoryObject({});
+    }
+    return {};
 }
 
 
@@ -159,10 +216,10 @@ window.PegasusWeight = {
         
         let history = loadWeightHistory();
         history[dateKey] = weight;
+        history = saveWeightHistoryObject(history);
         
         // Αποθήκευση τοπικά μέσω Manifest Keys
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        localStorage.setItem(WEIGHT_KEY, weight);
+        localStorage.setItem(WEIGHT_KEY, String(weight));
         
         // 🟢 FORCE UPDATE: Ενημέρωση της κεντρικής μεταβλητής του app.js και της μηχανής μεταβολισμού
         if (typeof window !== 'undefined') {
@@ -252,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.PegasusWeight.updateUI();
 });
 
-console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v1.9).");
+console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v2.0).");
 
 
 window.addEventListener('pageshow', () => { try { ensureMobileWeightSettingsCard(); window.PegasusWeight.updateUI(); } catch(_) {} });
