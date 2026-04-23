@@ -1649,3 +1649,1246 @@ window.addEventListener("load", () => {
 });
 
 window.PegasusCloud = PegasusCloud;
+
+
+/* ===== CONSOLIDATED FROM syncHardening.js ===== */
+/* ==========================================================================
+   PEGASUS SYNC HARDENING
+   Adds public-entry guards, deferred sync recovery, and richer sync diagnostics
+   without changing the visible UI flow.
+   ========================================================================== */
+
+(function () {
+    function installSyncHardening() {
+        const cloud = window.PegasusCloud;
+        if (!cloud || cloud.__syncHardeningInstalled) return;
+
+        const state = {
+            phase: cloud.isUnlocked ? "online" : "locked",
+            lastCoarseStatus: cloud.lastStatus || (cloud.isUnlocked ? "online" : "locked"),
+            lastTransitionAt: Date.now(),
+            lastReason: "install",
+            lastRequestedAction: null,
+            restoreInFlight: false,
+            deferredPush: false,
+            deferredSync: false,
+            blockedRequest: null,
+            flushTimer: null,
+            recentNotes: [],
+            counters: {
+                blockedPush: 0,
+                blockedSync: 0,
+                deferredFlush: 0,
+                restoreCalls: 0,
+                restoreBlockedPush: 0,
+                pullDuringPush: 0,
+                pushQueued: 0,
+                phaseCorrections: 0,
+                deferredRetries: 0
+            }
+        };
+
+        const originalEmitSyncStatus = cloud.emitSyncStatus.bind(cloud);
+        const originalPush = cloud.push.bind(cloud);
+        const originalDoPush = cloud._doPush.bind(cloud);
+        const originalPull = cloud.pull.bind(cloud);
+        const originalSyncNow = cloud.syncNow.bind(cloud);
+        const originalRestoreApprovedDevice = cloud.restoreApprovedDevice.bind(cloud);
+
+        function isOnline() {
+            return typeof navigator === "undefined" ? true : !!navigator.onLine;
+        }
+
+        function hasDeferredWork() {
+            return !!(state.deferredPush || state.deferredSync);
+        }
+
+        function trace(status, extra) {
+            try {
+                window.PegasusRuntimeMonitor?.trace?.("syncHardening", "state", status, extra);
+            } catch (_) {}
+        }
+
+        function capture(action, error, extra) {
+            try {
+                window.PegasusRuntimeMonitor?.capture?.("syncHardening", action, error, extra);
+            } catch (_) {}
+        }
+
+        function addNote(type, extra) {
+            state.recentNotes.push({
+                type,
+                at: new Date().toISOString(),
+                extra: extra || null
+            });
+            if (state.recentNotes.length > 25) {
+                state.recentNotes = state.recentNotes.slice(-25);
+            }
+        }
+
+        function currentSnapshot() {
+            let pendingChanges = false;
+            let protectedRepairPending = false;
+            try {
+                pendingChanges = !!cloud.hasPendingChanges?.();
+                protectedRepairPending = !!cloud.hasProtectedRepairPending?.();
+            } catch (_) {}
+
+            return {
+                phase: state.phase,
+                coarseStatus: state.lastCoarseStatus,
+                lastTransitionAt: new Date(state.lastTransitionAt).toISOString(),
+                lastReason: state.lastReason,
+                lastRequestedAction: state.lastRequestedAction,
+                flags: {
+                    isUnlocked: !!cloud.isUnlocked,
+                    isPulling: !!cloud.isPulling,
+                    isPushing: !!cloud.isPushing,
+                    isApplyingRemote: !!cloud.isApplyingRemote,
+                    restoreInFlight: !!state.restoreInFlight,
+                    approvedRestoreCompleted: !!cloud.hasApprovedRestoreCompleted,
+                    pendingChanges,
+                    protectedRepairPending,
+                    online: isOnline()
+                },
+                deferred: {
+                    push: !!state.deferredPush,
+                    sync: !!state.deferredSync,
+                    blockedRequest: state.blockedRequest ? { ...state.blockedRequest } : null
+                },
+                counters: { ...state.counters },
+                recentNotes: state.recentNotes.slice(-10)
+            };
+        }
+
+        function dispatchStateEvent(source) {
+            try {
+                window.dispatchEvent(new CustomEvent("pegasus_sync_state", {
+                    detail: {
+                        source: source || "syncHardening",
+                        snapshot: currentSnapshot()
+                    }
+                }));
+            } catch (_) {}
+        }
+
+        function setPhase(phase, reason, extra) {
+            if (!phase) return;
+            state.phase = phase;
+            state.lastReason = reason || state.lastReason || "update";
+            state.lastTransitionAt = Date.now();
+            trace(phase, { reason: state.lastReason, ...(extra || {}) });
+            dispatchStateEvent(reason || "syncHardening");
+        }
+
+        function derivePhase() {
+            if (state.restoreInFlight) return "restoring";
+            if (cloud.isPushing) return "pushing";
+            if (cloud.isPulling) return "pulling";
+            if (!cloud.isUnlocked) return "locked";
+            if (!isOnline()) return "offline";
+            if (state.lastCoarseStatus === "error") return "error";
+            if (hasDeferredWork()) return "recovering";
+            if (state.lastCoarseStatus === "syncing") return "syncing";
+            return "online";
+        }
+
+        function syncDerivedPhase(reason, extra) {
+            const nextPhase = derivePhase();
+            if (state.phase !== nextPhase) {
+                state.counters.phaseCorrections += 1;
+            }
+            setPhase(nextPhase, reason, extra);
+            return nextPhase;
+        }
+
+        function rememberBlockedRequest(action, reason, extra) {
+            state.blockedRequest = {
+                action,
+                reason,
+                at: new Date().toISOString(),
+                extra: extra || null
+            };
+        }
+
+        function clearBlockedRequest(noteType) {
+            if (!state.blockedRequest) return;
+            addNote(noteType || "blocked_request_cleared", {
+                action: state.blockedRequest.action,
+                reason: state.blockedRequest.reason
+            });
+            state.blockedRequest = null;
+        }
+
+        async function flushDeferred(reason) {
+            if (state.flushTimer) {
+                clearTimeout(state.flushTimer);
+                state.flushTimer = null;
+            }
+
+            if (state.restoreInFlight || cloud.isPulling || cloud.isPushing) {
+                if (hasDeferredWork()) {
+                    state.counters.deferredRetries += 1;
+                    scheduleDeferredFlush(`${reason || "flush"}:busy_retry`, 180);
+                }
+                return false;
+            }
+
+            if (!cloud.isUnlocked || !isOnline()) {
+                syncDerivedPhase(reason || "flushDeferred:waiting");
+                return false;
+            }
+
+            const shouldSync = state.deferredSync;
+            const shouldPush = !shouldSync && state.deferredPush;
+            if (!shouldSync && !shouldPush) {
+                clearBlockedRequest("deferred_already_clear");
+                syncDerivedPhase(reason || "flushDeferred:idle");
+                return false;
+            }
+
+            state.deferredSync = false;
+            state.deferredPush = false;
+            state.counters.deferredFlush += 1;
+            addNote("deferred_flush", { reason, action: shouldSync ? "syncNow" : "push" });
+            clearBlockedRequest("deferred_flush_started");
+            setPhase("recovering", reason || "deferred_flush", { action: shouldSync ? "syncNow" : "push" });
+
+            try {
+                if (shouldSync) {
+                    return await originalSyncNow(true);
+                }
+                return await originalPush(true);
+            } catch (error) {
+                capture("flushDeferred", error, { reason, shouldSync, shouldPush });
+                return false;
+            } finally {
+                syncDerivedPhase("flushDeferred:done");
+            }
+        }
+
+        function scheduleDeferredFlush(reason, delay = 140) {
+            if (state.flushTimer) clearTimeout(state.flushTimer);
+            state.flushTimer = setTimeout(() => {
+                flushDeferred(reason);
+            }, delay);
+        }
+
+        cloud.emitSyncStatus = function patchedEmitSyncStatus(status, force = false) {
+            const result = originalEmitSyncStatus(status, force);
+            state.lastCoarseStatus = status;
+            syncDerivedPhase("emitSyncStatus", { status, force: !!force });
+            if (hasDeferredWork() && !state.restoreInFlight && !cloud.isPulling && !cloud.isPushing && cloud.isUnlocked && isOnline()) {
+                scheduleDeferredFlush("emitSyncStatus:ready");
+            }
+            return result;
+        };
+
+        cloud.restoreApprovedDevice = async function patchedRestoreApprovedDevice(options = {}) {
+            state.restoreInFlight = true;
+            state.counters.restoreCalls += 1;
+            state.lastRequestedAction = "restoreApprovedDevice";
+            setPhase("restoring", "restoreApprovedDevice:start", { requireValidWindow: options?.requireValidWindow !== false });
+
+            try {
+                const result = await originalRestoreApprovedDevice(options);
+                addNote("restore_complete", { result: !!result });
+                syncDerivedPhase("restoreApprovedDevice:done", { result: !!result });
+                return result;
+            } catch (error) {
+                capture("restoreApprovedDevice", error, options);
+                setPhase("error", "restoreApprovedDevice:error");
+                throw error;
+            } finally {
+                state.restoreInFlight = false;
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("restore_complete");
+                } else {
+                    syncDerivedPhase("restoreApprovedDevice:finalize");
+                }
+            }
+        };
+
+        cloud.pull = async function patchedPull(silent = false) {
+            state.lastRequestedAction = "pull";
+            if (cloud.isPushing) {
+                state.counters.pullDuringPush += 1;
+                addNote("pull_during_push", { silent: !!silent });
+            }
+            setPhase("pulling", "pull:start", { silent: !!silent, withinPush: !!cloud.isPushing });
+
+            try {
+                return await originalPull(silent);
+            } catch (error) {
+                capture("pull", error, { silent });
+                setPhase("error", "pull:error");
+                throw error;
+            } finally {
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("pull_complete");
+                } else {
+                    syncDerivedPhase("pull:done", { silent: !!silent });
+                }
+            }
+        };
+
+        cloud.syncNow = async function patchedSyncNow(silent = false) {
+            state.lastRequestedAction = "syncNow";
+            if (state.restoreInFlight || cloud.isPulling || cloud.isPushing) {
+                state.deferredSync = true;
+                state.counters.blockedSync += 1;
+                rememberBlockedRequest("syncNow", "syncNow:busy", {
+                    silent: !!silent,
+                    restoreInFlight: !!state.restoreInFlight,
+                    isPulling: !!cloud.isPulling,
+                    isPushing: !!cloud.isPushing
+                });
+                addNote("sync_blocked", {
+                    silent: !!silent,
+                    restoreInFlight: !!state.restoreInFlight,
+                    isPulling: !!cloud.isPulling,
+                    isPushing: !!cloud.isPushing
+                });
+                syncDerivedPhase("syncNow:busy", { silent: !!silent, deferredAction: "syncNow" });
+                return false;
+            }
+
+            clearBlockedRequest("sync_request_started");
+            setPhase("syncing", "syncNow:start", { silent: !!silent });
+            try {
+                return await originalSyncNow(silent);
+            } catch (error) {
+                capture("syncNow", error, { silent });
+                setPhase("error", "syncNow:error");
+                throw error;
+            } finally {
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("syncNow_complete");
+                } else {
+                    syncDerivedPhase("syncNow:done", { silent: !!silent });
+                }
+            }
+        };
+
+        cloud.push = function patchedPush(force = false) {
+            state.lastRequestedAction = force ? "push(force)" : "push";
+
+            if (state.restoreInFlight) {
+                state.deferredPush = true;
+                state.counters.blockedPush += 1;
+                state.counters.restoreBlockedPush += 1;
+                rememberBlockedRequest("push", "push:restore_in_flight", { force: !!force });
+                addNote("push_blocked_restore", { force: !!force });
+                syncDerivedPhase("push:restore_in_flight", { force: !!force, deferredAction: "push" });
+                return false;
+            }
+
+            if (cloud.isPulling || cloud.isPushing) {
+                state.deferredPush = true;
+                state.counters.blockedPush += 1;
+                rememberBlockedRequest("push", "push:busy", {
+                    force: !!force,
+                    isPulling: !!cloud.isPulling,
+                    isPushing: !!cloud.isPushing
+                });
+                addNote("push_blocked_busy", {
+                    force: !!force,
+                    isPulling: !!cloud.isPulling,
+                    isPushing: !!cloud.isPushing
+                });
+                syncDerivedPhase("push:busy", { force: !!force, deferredAction: "push" });
+                return false;
+            }
+
+            clearBlockedRequest(force ? "forced_push_started" : "queued_push_started");
+            if (!force) {
+                state.counters.pushQueued += 1;
+                setPhase("syncing", "push:queued", { force: false });
+            } else {
+                setPhase("pushing", "push:start", { force: true });
+            }
+
+            return originalPush(force);
+        };
+
+        cloud._doPush = async function patchedDoPush() {
+            state.lastRequestedAction = "_doPush";
+            if (state.restoreInFlight) {
+                state.deferredPush = true;
+                state.counters.blockedPush += 1;
+                rememberBlockedRequest("push", "_doPush:restore_in_flight", null);
+                addNote("doPush_blocked_restore", null);
+                syncDerivedPhase("_doPush:restore_in_flight", { deferredAction: "push" });
+                return false;
+            }
+
+            clearBlockedRequest("doPush_started");
+            setPhase("pushing", "_doPush:start", {
+                pendingChanges: !!cloud.hasPendingChanges?.(),
+                protectedRepairPending: !!cloud.hasProtectedRepairPending?.()
+            });
+
+            try {
+                return await originalDoPush();
+            } catch (error) {
+                capture("_doPush", error);
+                setPhase("error", "_doPush:error");
+                throw error;
+            } finally {
+                if (hasDeferredWork()) {
+                    scheduleDeferredFlush("push_complete");
+                } else {
+                    syncDerivedPhase("_doPush:done");
+                }
+            }
+        };
+
+        window.PegasusSyncHardening = {
+            getState() {
+                return currentSnapshot();
+            },
+            summary() {
+                const snapshot = currentSnapshot();
+                console.log("🛡️ PEGASUS SYNC HARDENING", snapshot);
+                return snapshot;
+            },
+            getRecentNotes() {
+                return state.recentNotes.slice();
+            },
+            async flushDeferredNow() {
+                return await flushDeferred("manual_flush");
+            }
+        };
+
+        window.addEventListener("online", () => {
+            if (hasDeferredWork()) {
+                scheduleDeferredFlush("browser_online", 60);
+            } else {
+                syncDerivedPhase("browser_online");
+            }
+        });
+
+        window.addEventListener("offline", () => {
+            syncDerivedPhase("browser_offline");
+        });
+
+        cloud.__syncHardeningInstalled = true;
+        cloud.__syncHardeningState = state;
+        addNote("installed", { phase: state.phase });
+        syncDerivedPhase("install");
+        console.log("🛡️ PEGASUS SYNC HARDENING: Active");
+    }
+
+    if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", installSyncHardening, { once: true });
+    } else {
+        installSyncHardening();
+    }
+})();
+
+
+/* ===== CONSOLIDATED FROM syncEdgeHardening.js ===== */
+/* ==========================================================================
+   PEGASUS SYNC EDGE HARDENING
+   Cross-tab lease coordination, silent-trigger dedupe, and reconnect guards
+   for safer sync behavior in multi-tab and fresh-session scenarios.
+   ========================================================================== */
+
+(function () {
+    function installSyncEdgeHardening() {
+        const cloud = window.PegasusCloud;
+        if (!cloud || cloud.__syncEdgeHardeningInstalled) return;
+
+        const STORAGE_KEY = "pegasus_sync_edge_lease_v1";
+        const TAB_ID = `tab_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+        const LEASE_TTL_MS = 9000;
+        const LEASE_REFRESH_MS = 2000;
+        const SILENT_SYNC_DEDUPE_MS = 1400;
+        const PUSH_DEDUPE_MS = 500;
+        const RETRY_JITTER_MS = 160;
+
+        const state = {
+            tabId: TAB_ID,
+            installedAt: new Date().toISOString(),
+            activeLeaseAction: null,
+            leaseRefreshTimer: null,
+            deferredSyncTimer: null,
+            deferredPushTimer: null,
+            lastSilentSyncAt: 0,
+            lastPushRequestAt: 0,
+            lastLeaseAt: 0,
+            recentNotes: [],
+            counters: {
+                leaseAcquired: 0,
+                leaseReleased: 0,
+                leaseBlockedSync: 0,
+                leaseBlockedPush: 0,
+                silentSyncDeduped: 0,
+                pushDeduped: 0,
+                deferredSyncScheduled: 0,
+                deferredPushScheduled: 0,
+                onlineResyncQueued: 0,
+                foreignLeaseObserved: 0
+            }
+        };
+
+        const originalSyncNow = cloud.syncNow.bind(cloud);
+        const originalDoPush = cloud._doPush.bind(cloud);
+        const originalRestoreApprovedDevice = cloud.restoreApprovedDevice.bind(cloud);
+        const originalPush = cloud.push.bind(cloud);
+
+        function now() {
+            return Date.now();
+        }
+
+        function isOnline() {
+            return typeof navigator === "undefined" ? true : !!navigator.onLine;
+        }
+
+        function addNote(type, extra) {
+            state.recentNotes.push({ type, at: new Date().toISOString(), extra: extra || null });
+            if (state.recentNotes.length > 30) {
+                state.recentNotes = state.recentNotes.slice(-30);
+            }
+        }
+
+        function trace(action, status, extra) {
+            try {
+                window.PegasusRuntimeMonitor?.trace?.("syncEdgeHardening", action, status, extra);
+            } catch (_) {}
+        }
+
+        function capture(action, error, extra) {
+            try {
+                window.PegasusRuntimeMonitor?.capture?.("syncEdgeHardening", action, error, extra);
+            } catch (_) {}
+        }
+
+        function safeParseLease(raw) {
+            if (!raw) return null;
+            try {
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== "object") return null;
+                return parsed;
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function readLease() {
+            return safeParseLease(localStorage.getItem(STORAGE_KEY));
+        }
+
+        function isLeaseValid(lease) {
+            return !!lease && Number.isFinite(Number(lease.expiresAt)) && Number(lease.expiresAt) > now();
+        }
+
+        function isOwnLease(lease) {
+            return !!lease && lease.owner === TAB_ID;
+        }
+
+        function clearLeaseIfOwned(reason) {
+            const lease = readLease();
+            if (!isOwnLease(lease)) return false;
+            localStorage.removeItem(STORAGE_KEY);
+            state.activeLeaseAction = null;
+            state.lastLeaseAt = now();
+            if (state.leaseRefreshTimer) {
+                clearInterval(state.leaseRefreshTimer);
+                state.leaseRefreshTimer = null;
+            }
+            state.counters.leaseReleased += 1;
+            addNote("lease_released", { reason, action: lease?.action || null });
+            trace("lease", "RELEASED", { reason, action: lease?.action || null });
+            return true;
+        }
+
+        function writeLease(action) {
+            const lease = {
+                owner: TAB_ID,
+                action,
+                createdAt: now(),
+                updatedAt: now(),
+                expiresAt: now() + LEASE_TTL_MS,
+                hidden: !!document.hidden
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(lease));
+            return lease;
+        }
+
+        function acquireLease(action) {
+            const existing = readLease();
+            if (isLeaseValid(existing) && !isOwnLease(existing)) {
+                state.counters.foreignLeaseObserved += 1;
+                return { ok: false, lease: existing };
+            }
+
+            const written = writeLease(action);
+            const confirmed = readLease();
+            if (isOwnLease(confirmed)) {
+                state.activeLeaseAction = action;
+                state.lastLeaseAt = now();
+                state.counters.leaseAcquired += 1;
+                if (state.leaseRefreshTimer) clearInterval(state.leaseRefreshTimer);
+                state.leaseRefreshTimer = setInterval(() => {
+                    const latest = readLease();
+                    if (!isOwnLease(latest)) {
+                        clearInterval(state.leaseRefreshTimer);
+                        state.leaseRefreshTimer = null;
+                        return;
+                    }
+                    try {
+                        writeLease(state.activeLeaseAction || action);
+                    } catch (_) {}
+                }, LEASE_REFRESH_MS);
+                addNote("lease_acquired", { action });
+                trace("lease", "ACQUIRED", { action });
+                return { ok: true, lease: confirmed || written };
+            }
+
+            return { ok: false, lease: confirmed || written };
+        }
+
+        function computeRetryDelay(lease) {
+            if (!lease || !Number.isFinite(Number(lease.expiresAt))) return 1200;
+            return Math.max(350, Math.min(2400, Number(lease.expiresAt) - now() + RETRY_JITTER_MS));
+        }
+
+        function scheduleDeferredSync(reason, delay) {
+            if (state.deferredSyncTimer) clearTimeout(state.deferredSyncTimer);
+            state.counters.deferredSyncScheduled += 1;
+            addNote("deferred_sync_scheduled", { reason, delay });
+            state.deferredSyncTimer = setTimeout(() => {
+                state.deferredSyncTimer = null;
+                if (!cloud.isUnlocked || !isOnline()) return;
+                cloud.syncNow(true).catch?.(() => {});
+            }, delay);
+        }
+
+        function scheduleDeferredPush(reason, delay, force) {
+            if (state.deferredPushTimer) clearTimeout(state.deferredPushTimer);
+            state.counters.deferredPushScheduled += 1;
+            addNote("deferred_push_scheduled", { reason, delay, force: !!force });
+            state.deferredPushTimer = setTimeout(() => {
+                state.deferredPushTimer = null;
+                if (!cloud.isUnlocked || !isOnline()) return;
+                cloud.push(!!force);
+            }, delay);
+        }
+
+        function observeForeignLease(action, lease, kind) {
+            const delay = computeRetryDelay(lease);
+            addNote("foreign_lease_observed", {
+                action,
+                kind,
+                leaseOwner: lease?.owner || null,
+                leaseAction: lease?.action || null,
+                retryDelay: delay
+            });
+            trace(action, "LEASE_BLOCKED", {
+                kind,
+                leaseOwner: lease?.owner || null,
+                leaseAction: lease?.action || null,
+                retryDelay: delay
+            });
+            return delay;
+        }
+
+        cloud.restoreApprovedDevice = async function patchedRestoreApprovedDevice(options = {}) {
+            const leaseAttempt = acquireLease("restoreApprovedDevice");
+            if (!leaseAttempt.ok) {
+                const delay = observeForeignLease("restoreApprovedDevice", leaseAttempt.lease, "restore");
+                state.counters.leaseBlockedSync += 1;
+                scheduleDeferredSync("restore_foreign_lease", delay);
+                return false;
+            }
+
+            try {
+                return await originalRestoreApprovedDevice(options);
+            } catch (error) {
+                capture("restoreApprovedDevice", error, options);
+                throw error;
+            } finally {
+                clearLeaseIfOwned("restoreApprovedDevice:done");
+            }
+        };
+
+        cloud.syncNow = async function patchedSyncNow(silent = false) {
+            const ts = now();
+            if (silent && (ts - state.lastSilentSyncAt) < SILENT_SYNC_DEDUPE_MS && !cloud.hasPendingChanges?.()) {
+                state.counters.silentSyncDeduped += 1;
+                addNote("silent_sync_deduped", { deltaMs: ts - state.lastSilentSyncAt });
+                trace("syncNow", "DEDUPED", { silent: true, deltaMs: ts - state.lastSilentSyncAt });
+                return false;
+            }
+            if (silent) state.lastSilentSyncAt = ts;
+
+            const leaseAttempt = acquireLease("syncNow");
+            if (!leaseAttempt.ok) {
+                state.counters.leaseBlockedSync += 1;
+                const delay = observeForeignLease("syncNow", leaseAttempt.lease, "sync");
+                scheduleDeferredSync("sync_foreign_lease", delay);
+                return false;
+            }
+
+            try {
+                return await originalSyncNow(silent);
+            } catch (error) {
+                capture("syncNow", error, { silent: !!silent });
+                throw error;
+            } finally {
+                clearLeaseIfOwned("syncNow:done");
+            }
+        };
+
+        cloud.push = function patchedPush(force = false) {
+            const ts = now();
+            if (!force && (ts - state.lastPushRequestAt) < PUSH_DEDUPE_MS) {
+                state.counters.pushDeduped += 1;
+                addNote("push_deduped", { deltaMs: ts - state.lastPushRequestAt });
+                trace("push", "DEDUPED", { force: false, deltaMs: ts - state.lastPushRequestAt });
+                return false;
+            }
+            state.lastPushRequestAt = ts;
+
+            const activeForeignLease = readLease();
+            if (isLeaseValid(activeForeignLease) && !isOwnLease(activeForeignLease)) {
+                state.counters.leaseBlockedPush += 1;
+                const delay = observeForeignLease("push", activeForeignLease, "push");
+                scheduleDeferredPush("push_foreign_lease", delay, force);
+                return false;
+            }
+
+            return originalPush(force);
+        };
+
+        cloud._doPush = async function patchedDoPush() {
+            const leaseAttempt = acquireLease("_doPush");
+            if (!leaseAttempt.ok) {
+                state.counters.leaseBlockedPush += 1;
+                const delay = observeForeignLease("_doPush", leaseAttempt.lease, "push");
+                scheduleDeferredPush("doPush_foreign_lease", delay, true);
+                return false;
+            }
+
+            try {
+                return await originalDoPush();
+            } catch (error) {
+                capture("_doPush", error);
+                throw error;
+            } finally {
+                clearLeaseIfOwned("_doPush:done");
+            }
+        };
+
+        function scheduleOnlineRecovery(reason) {
+            if (!cloud.isUnlocked || !isOnline()) return;
+            state.counters.onlineResyncQueued += 1;
+            addNote("online_recovery_scheduled", { reason });
+            setTimeout(() => {
+                if (!cloud.isUnlocked || !isOnline()) return;
+                cloud.syncNow(true).catch?.(() => {});
+            }, 220);
+        }
+
+        window.PegasusSyncEdgeHardening = {
+            getState() {
+                return {
+                    tabId: TAB_ID,
+                    installedAt: state.installedAt,
+                    activeLeaseAction: state.activeLeaseAction,
+                    hasDeferredSync: !!state.deferredSyncTimer,
+                    hasDeferredPush: !!state.deferredPushTimer,
+                    latestLease: readLease(),
+                    counters: { ...state.counters },
+                    recentNotes: state.recentNotes.slice(-12)
+                };
+            },
+            summary() {
+                const snapshot = this.getState();
+                console.log("🛡️ PEGASUS SYNC EDGE HARDENING", snapshot);
+                return snapshot;
+            },
+            getRecentNotes() {
+                return state.recentNotes.slice();
+            },
+            releaseLease(reason = "manual_release") {
+                return clearLeaseIfOwned(reason);
+            }
+        };
+
+        window.addEventListener("storage", (e) => {
+            if (e.key !== STORAGE_KEY || !e.newValue) return;
+            const lease = safeParseLease(e.newValue);
+            if (isLeaseValid(lease) && !isOwnLease(lease)) {
+                addNote("storage_foreign_lease", { owner: lease.owner, action: lease.action || null });
+            }
+        });
+
+        window.addEventListener("online", () => {
+            scheduleOnlineRecovery("browser_online");
+        });
+
+        window.addEventListener("pagehide", () => {
+            clearLeaseIfOwned("pagehide");
+        });
+
+        window.addEventListener("beforeunload", () => {
+            clearLeaseIfOwned("beforeunload");
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden && cloud.isUnlocked && isOnline()) {
+                scheduleOnlineRecovery("visibility_recovered");
+            }
+        });
+
+        setInterval(() => {
+            const lease = readLease();
+            if (!isOwnLease(lease) && state.leaseRefreshTimer) {
+                clearInterval(state.leaseRefreshTimer);
+                state.leaseRefreshTimer = null;
+                state.activeLeaseAction = null;
+            }
+            if (isOwnLease(lease) && !cloud.isPulling && !cloud.isPushing && !window.PegasusSyncHardening?.getState?.().flags?.restoreInFlight) {
+                clearLeaseIfOwned("watchdog_idle_cleanup");
+            }
+        }, 4500);
+
+        cloud.__syncEdgeHardeningInstalled = true;
+        cloud.__syncEdgeHardeningState = state;
+        addNote("installed", { tabId: TAB_ID });
+        console.log("🧷 PEGASUS SYNC EDGE HARDENING: Active");
+    }
+
+    if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", installSyncEdgeHardening, { once: true });
+    } else {
+        installSyncEdgeHardening();
+    }
+})();
+
+
+/* ===== CONSOLIDATED FROM syncDiagnostics.js ===== */
+/* ==========================================================================
+   PEGASUS SYNC DIAGNOSTICS
+   Observability layer for sync hardening and edge hardening.
+   Adds combined summaries, lightweight history, and clearer classification
+   without changing the sync flow or visible UI.
+   ========================================================================== */
+
+(function () {
+    const MAX_HISTORY = 180;
+    const POLL_MS = 1200;
+
+    function nowIso() {
+        return new Date().toISOString();
+    }
+
+    function getCloud() {
+        return window.PegasusCloud || null;
+    }
+
+    function getHardening() {
+        try {
+            return window.PegasusSyncHardening?.getState?.() || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function getEdge() {
+        try {
+            return window.PegasusSyncEdgeHardening?.getState?.() || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function safeLastPushStorage(cloud) {
+        try {
+            const key = cloud?.storage?.lastPush;
+            if (!key) return null;
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const parsed = parseInt(raw, 10);
+            return Number.isFinite(parsed) ? new Date(parsed).toISOString() : raw;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function toIso(value) {
+        if (!Number.isFinite(Number(value))) return null;
+        try {
+            return new Date(Number(value)).toISOString();
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function shallowSignature(obj) {
+        try {
+            return JSON.stringify(obj || null);
+        } catch (_) {
+            return String(Date.now());
+        }
+    }
+
+    function classifySummary(snapshot) {
+        const phase = String(snapshot?.sync?.phase || "unknown");
+        const coarseStatus = String(snapshot?.sync?.coarseStatus || "unknown");
+        const flags = snapshot?.sync?.flags || {};
+        const deferred = snapshot?.sync?.deferred || {};
+        const lease = snapshot?.lease || {};
+
+        if (phase === "error" || coarseStatus === "error") {
+            return { level: "error", label: "sync_error", reason: "Sync layer reported error state." };
+        }
+
+        if (phase === "offline" || flags.online === false) {
+            return { level: "warning", label: "offline_wait", reason: "Browser is offline, sync work is paused." };
+        }
+
+        if (phase === "locked" && (deferred.push || deferred.sync)) {
+            return { level: "warning", label: "locked_with_queue", reason: "Sync queue exists while vault is locked." };
+        }
+
+        if (lease.hasForeignLease && (lease.hasDeferredPush || lease.hasDeferredSync)) {
+            return { level: "guard", label: "foreign_lease_deferred", reason: "Another tab owns the lease, work is deferred safely." };
+        }
+
+        if (deferred.push || deferred.sync || deferred.blockedRequest) {
+            return { level: "guard", label: "local_queue_guard", reason: "A local sync request was safely deferred while busy." };
+        }
+
+        if (["restoring", "recovering"].includes(phase)) {
+            return { level: "recovery", label: phase, reason: "Sync layer is recovering or restoring session state." };
+        }
+
+        if (["pulling", "pushing", "syncing"].includes(phase)) {
+            return { level: "info", label: phase, reason: "Sync layer is actively processing normal work." };
+        }
+
+        if (phase === "online" && coarseStatus === "online") {
+            return { level: "ok", label: "healthy_online", reason: "Sync layer is idle and healthy." };
+        }
+
+        return { level: "info", label: phase || "unknown", reason: "Sync state is stable but not specially classified." };
+    }
+
+    function buildSnapshot() {
+        const cloud = getCloud();
+        const hardening = getHardening();
+        const edge = getEdge();
+        const lease = edge?.latestLease || null;
+        const currentTabId = edge?.tabId || null;
+        const cloudLastPushTs = toIso(cloud?.lastPushTs);
+        const summary = {
+            capturedAt: nowIso(),
+            currentTabId,
+            sync: hardening ? {
+                phase: hardening.phase,
+                coarseStatus: hardening.coarseStatus,
+                lastTransitionAt: hardening.lastTransitionAt,
+                lastReason: hardening.lastReason,
+                lastRequestedAction: hardening.lastRequestedAction,
+                flags: { ...(hardening.flags || {}) },
+                deferred: {
+                    push: !!hardening?.deferred?.push,
+                    sync: !!hardening?.deferred?.sync,
+                    blockedRequest: hardening?.deferred?.blockedRequest || null
+                },
+                counters: { ...(hardening.counters || {}) }
+            } : null,
+            lease: {
+                owner: lease?.owner || null,
+                action: lease?.action || null,
+                expiresAt: lease?.expiresAt ? toIso(lease.expiresAt) : null,
+                hidden: lease?.hidden ?? null,
+                currentTabOwnsLease: !!(lease?.owner && currentTabId && lease.owner === currentTabId),
+                hasForeignLease: !!(lease?.owner && currentTabId && lease.owner !== currentTabId),
+                activeLeaseAction: edge?.activeLeaseAction || null,
+                hasDeferredSync: !!edge?.hasDeferredSync,
+                hasDeferredPush: !!edge?.hasDeferredPush,
+                counters: { ...(edge?.counters || {}) }
+            },
+            cloud: cloud ? {
+                isUnlocked: !!cloud.isUnlocked,
+                isPulling: !!cloud.isPulling,
+                isPushing: !!cloud.isPushing,
+                isApplyingRemote: !!cloud.isApplyingRemote,
+                hasApprovedRestoreCompleted: !!cloud.hasApprovedRestoreCompleted,
+                hasSuccessfullyPulled: !!cloud.hasSuccessfullyPulled,
+                lastStatus: cloud.lastStatus || null,
+                lastPushTs: cloudLastPushTs,
+                lastPushStorage: safeLastPushStorage(cloud)
+            } : null
+        };
+        summary.classification = classifySummary(summary);
+        return summary;
+    }
+
+    const state = {
+        installedAt: nowIso(),
+        history: [],
+        lastSummarySignature: null,
+        lastEdgeSignature: null,
+        lastHistoryId: 0,
+        lastHealthyOnlineAt: null,
+        lastLeaseOwner: null,
+        pollTimer: null
+    };
+
+    function trimHistory() {
+        if (state.history.length > MAX_HISTORY) {
+            state.history = state.history.slice(-MAX_HISTORY);
+        }
+    }
+
+    function pushHistory(entry) {
+        state.lastHistoryId += 1;
+        state.history.push({
+            id: state.lastHistoryId,
+            at: nowIso(),
+            ...entry
+        });
+        trimHistory();
+    }
+
+    function trace(status, extra) {
+        try {
+            window.PegasusRuntimeMonitor?.trace?.("syncDiagnostics", "observe", status, extra);
+        } catch (_) {}
+    }
+
+    function recordSummaryChange(source, summary, extras) {
+        if (!summary) return;
+        const signature = shallowSignature({
+            phase: summary?.sync?.phase,
+            coarseStatus: summary?.sync?.coarseStatus,
+            reason: summary?.sync?.lastReason,
+            requested: summary?.sync?.lastRequestedAction,
+            deferred: summary?.sync?.deferred,
+            leaseOwner: summary?.lease?.owner,
+            leaseAction: summary?.lease?.action,
+            activeLeaseAction: summary?.lease?.activeLeaseAction,
+            edgeDeferredSync: summary?.lease?.hasDeferredSync,
+            edgeDeferredPush: summary?.lease?.hasDeferredPush,
+            unlocked: summary?.cloud?.isUnlocked,
+            pulling: summary?.cloud?.isPulling,
+            pushing: summary?.cloud?.isPushing,
+            lastStatus: summary?.cloud?.lastStatus,
+            classification: summary?.classification
+        });
+
+        if (signature === state.lastSummarySignature) return;
+        state.lastSummarySignature = signature;
+
+        if (summary?.classification?.label === "healthy_online") {
+            state.lastHealthyOnlineAt = nowIso();
+        }
+
+        pushHistory({
+            source: source || "summary",
+            kind: "summary_change",
+            level: summary?.classification?.level || "info",
+            label: summary?.classification?.label || "summary",
+            detail: {
+                reason: summary?.sync?.lastReason || null,
+                requestedAction: summary?.sync?.lastRequestedAction || null,
+                phase: summary?.sync?.phase || null,
+                coarseStatus: summary?.sync?.coarseStatus || null,
+                leaseOwner: summary?.lease?.owner || null,
+                leaseAction: summary?.lease?.action || null,
+                currentTabOwnsLease: !!summary?.lease?.currentTabOwnsLease,
+                deferred: {
+                    hardeningPush: !!summary?.sync?.deferred?.push,
+                    hardeningSync: !!summary?.sync?.deferred?.sync,
+                    edgePush: !!summary?.lease?.hasDeferredPush,
+                    edgeSync: !!summary?.lease?.hasDeferredSync
+                },
+                extra: extras || null
+            }
+        });
+    }
+
+    function recordEdgeNotes(reason) {
+        const edge = getEdge();
+        if (!edge) return;
+        const signature = shallowSignature({
+            owner: edge?.latestLease?.owner || null,
+            action: edge?.latestLease?.action || null,
+            expiresAt: edge?.latestLease?.expiresAt || null,
+            activeLeaseAction: edge?.activeLeaseAction || null,
+            hasDeferredSync: !!edge?.hasDeferredSync,
+            hasDeferredPush: !!edge?.hasDeferredPush,
+            counters: edge?.counters || null,
+            noteTail: (edge?.recentNotes || []).slice(-3)
+        });
+
+        if (signature === state.lastEdgeSignature) return;
+        state.lastEdgeSignature = signature;
+
+        const leaseOwner = edge?.latestLease?.owner || null;
+        if (leaseOwner !== state.lastLeaseOwner) {
+            pushHistory({
+                source: "syncEdgeHardening",
+                kind: "lease_owner_change",
+                level: leaseOwner ? "info" : "recovery",
+                label: leaseOwner ? "lease_acquired_somewhere" : "lease_released",
+                detail: {
+                    reason: reason || "poll",
+                    previousOwner: state.lastLeaseOwner,
+                    leaseOwner,
+                    leaseAction: edge?.latestLease?.action || null,
+                    currentTabId: edge?.tabId || null
+                }
+            });
+            state.lastLeaseOwner = leaseOwner;
+        }
+
+        const recent = edge?.recentNotes || [];
+        const note = recent.length ? recent[recent.length - 1] : null;
+        if (note) {
+            pushHistory({
+                source: "syncEdgeHardening",
+                kind: "edge_note",
+                level: /foreign_lease|deduped|scheduled/.test(String(note.type || "")) ? "guard" : "info",
+                label: note.type || "edge_note",
+                detail: {
+                    reason: reason || "poll",
+                    note
+                }
+            });
+        }
+    }
+
+    function recordBrowserEvent(type, detail) {
+        pushHistory({
+            source: "browser",
+            kind: "browser_event",
+            level: type === "offline" ? "warning" : "info",
+            label: type,
+            detail: detail || null
+        });
+    }
+
+    function buildPublicState() {
+        const summary = buildSnapshot();
+        return {
+            installedAt: state.installedAt,
+            lastHealthyOnlineAt: state.lastHealthyOnlineAt,
+            summary,
+            historySize: state.history.length
+        };
+    }
+
+    function installSyncDiagnostics() {
+        if (window.PegasusSyncDiagnostics) return;
+
+        window.addEventListener("pegasus_sync_state", (event) => {
+            const summary = buildSnapshot();
+            recordSummaryChange(event?.detail?.source || "syncHardening", summary, {
+                eventSource: event?.detail?.source || null
+            });
+            trace("state_event", {
+                phase: summary?.sync?.phase || null,
+                classification: summary?.classification?.label || null
+            });
+        });
+
+        window.addEventListener("online", () => {
+            recordBrowserEvent("online", { hidden: !!document.hidden });
+            recordSummaryChange("browser_online", buildSnapshot());
+        });
+
+        window.addEventListener("offline", () => {
+            recordBrowserEvent("offline", { hidden: !!document.hidden });
+            recordSummaryChange("browser_offline", buildSnapshot());
+        });
+
+        window.addEventListener("pagehide", () => {
+            recordBrowserEvent("pagehide", { hidden: !!document.hidden });
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            recordBrowserEvent("visibilitychange", { hidden: !!document.hidden });
+            recordSummaryChange("visibilitychange", buildSnapshot(), { hidden: !!document.hidden });
+        });
+
+        window.addEventListener("storage", (e) => {
+            if (!e?.key || String(e.key).indexOf("pegasus_sync_lease") === -1) return;
+            pushHistory({
+                source: "browser",
+                kind: "storage_event",
+                level: "info",
+                label: "lease_storage_event",
+                detail: {
+                    key: e.key,
+                    hasNewValue: !!e.newValue,
+                    hasOldValue: !!e.oldValue
+                }
+            });
+            recordEdgeNotes("storage_event");
+            recordSummaryChange("storage_event", buildSnapshot());
+        });
+
+        state.pollTimer = setInterval(() => {
+            recordEdgeNotes("poll");
+            recordSummaryChange("poll", buildSnapshot());
+        }, POLL_MS);
+
+        window.PegasusSyncDiagnostics = {
+            getState() {
+                return buildPublicState();
+            },
+            summary() {
+                const snapshot = buildSnapshot();
+                console.log("🧭 PEGASUS SYNC DIAGNOSTICS", snapshot);
+                return snapshot;
+            },
+            history(limit = 30) {
+                const n = Math.max(1, Math.min(120, Number(limit) || 30));
+                return state.history.slice(-n);
+            },
+            recent(limit = 12) {
+                return this.history(limit || 12);
+            },
+            leaseView() {
+                const summary = buildSnapshot();
+                return {
+                    currentTabId: summary.currentTabId,
+                    owner: summary.lease.owner,
+                    action: summary.lease.action,
+                    expiresAt: summary.lease.expiresAt,
+                    currentTabOwnsLease: summary.lease.currentTabOwnsLease,
+                    hasForeignLease: summary.lease.hasForeignLease,
+                    activeLeaseAction: summary.lease.activeLeaseAction,
+                    hasDeferredSync: summary.lease.hasDeferredSync,
+                    hasDeferredPush: summary.lease.hasDeferredPush
+                };
+            },
+            classifyCurrent() {
+                const summary = buildSnapshot();
+                return {
+                    classification: summary.classification,
+                    phase: summary?.sync?.phase || null,
+                    coarseStatus: summary?.sync?.coarseStatus || null,
+                    reason: summary?.sync?.lastReason || null
+                };
+            }
+        };
+
+        recordBrowserEvent("diagnostics_installed", { installedAt: state.installedAt });
+        recordSummaryChange("install", buildSnapshot());
+        recordEdgeNotes("install");
+        console.log("🧭 PEGASUS SYNC DIAGNOSTICS: Active");
+    }
+
+    if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", installSyncDiagnostics, { once: true });
+    } else {
+        installSyncDiagnostics();
+    }
+})();

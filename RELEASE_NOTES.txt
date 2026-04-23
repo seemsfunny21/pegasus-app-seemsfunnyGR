@@ -24,5 +24,5 @@ PEGASUS 72 / v19.2 Stable
 - Mobile: global bottom content boundary so page content ends exactly above the ghost Android-overlay nav while keeping ghost buttons at the same visual height.
 
 
-[v21.4 Stable]
+[v21.5 Stable]
 - Fixed broken consolidation from v21.3 by removing stale script includes and cache references for merged files (desktopRender.js, achievements.js, inventoryHandler.js).

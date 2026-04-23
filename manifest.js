@@ -56,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v21.4 Stable"
+        engine_version: "v21.5 Stable"
     },
 
     // ---------------------------------------------------------
@@ -166,10 +166,7 @@ window.PegasusManifest = {
         
         
         
-        "syncHardening.js": "Primary sync guard/state machine για overlap prevention.",
-        "syncEdgeHardening.js": "Cross-tab lease, dedupe και online/visibility sync edge-case protection.",
-        "syncDiagnostics.js": "High-level sync observability, lease/deferred diagnostics και summaries.",
-        "storageHardening.js": "LocalStorage audit/repair layer με safe defaults και schema guards.",
+                                "storageHardening.js": "LocalStorage audit/repair layer με safe defaults και schema guards.",
         "selfCheckRunner.js": "Regression/self-check runner για quick health snapshots.",
         "programGuide.js": "Interactive in-app How-To / system map / file reference guide.",
         
