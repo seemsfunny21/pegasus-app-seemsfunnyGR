@@ -1,12 +1,51 @@
 /* ==========================================================================
-   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.8 - STABLE MOBILE SETTINGS CARD)
+   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.9 - STABLE MOBILE SETTINGS CARD)
    Protocol: Daily Weight Logging, Moving Average & Master Variable Sync
    Status: FINAL STABLE | FIXED: MANIFEST DESYNC & EVENT FALLBACKS
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
 const WEIGHT_KEY = M?.user?.weight || 'pegasus_weight';
-const HISTORY_KEY = M?.user?.weight_history || 'pegasus_weight_history';
+const HISTORY_KEY = M?.user?.weight_history || M?.user?.weightHistory || 'pegasus_weight_history';
+
+function normalizeWeightHistory(raw) {
+    if (!raw) return {};
+    if (Array.isArray(raw)) {
+        const normalized = {};
+        for (const entry of raw) {
+            if (!entry || typeof entry !== 'object') continue;
+            const dateKey = entry.date || entry.dateKey || entry.day || entry.ts || entry.timestamp;
+            const value = parseFloat(entry.weight ?? entry.value ?? entry.kg);
+            if (dateKey && !isNaN(value)) normalized[String(dateKey).slice(0, 10)] = value;
+        }
+        return normalized;
+    }
+    if (typeof raw === 'object') {
+        const normalized = {};
+        Object.keys(raw).forEach(key => {
+            const value = parseFloat(raw[key]);
+            if (!isNaN(value)) normalized[key] = value;
+        });
+        return normalized;
+    }
+    return {};
+}
+
+function loadWeightHistory() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}');
+        const normalized = normalizeWeightHistory(parsed);
+        const rawString = JSON.stringify(parsed);
+        const normalizedString = JSON.stringify(normalized);
+        if (rawString !== normalizedString) {
+            localStorage.setItem(HISTORY_KEY, normalizedString);
+        }
+        return normalized;
+    } catch (e) {
+        localStorage.setItem(HISTORY_KEY, '{}');
+        return {};
+    }
+}
 
 
 function getPegasusProteinTargetKey() {
@@ -118,7 +157,7 @@ window.PegasusWeight = {
         const now = new Date();
         const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
-        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
+        let history = loadWeightHistory();
         history[dateKey] = weight;
         
         // Αποθήκευση τοπικά μέσω Manifest Keys
@@ -145,7 +184,7 @@ window.PegasusWeight = {
 
     // 2. Υπολογισμός μέσου όρου με Χρονολογική Ταξινόμηση
     getWeeklyAverage: function() {
-        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
+        const history = loadWeightHistory();
         
         const sortedKeys = Object.keys(history).sort();
         if (sortedKeys.length === 0) return null;
@@ -164,7 +203,7 @@ window.PegasusWeight = {
         const display = document.getElementById('mobileWeightAvg') || document.getElementById('weeklyWeightAvg');
         const inputEl = document.getElementById('mobileWeightInput') || document.getElementById('userWeightInput');
         
-        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
+        const history = loadWeightHistory();
         const sortedKeys = Object.keys(history).sort();
 
         // Ενημέρωση ένδειξης Μέσου Όρου
@@ -213,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.PegasusWeight.updateUI();
 });
 
-console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v1.8).");
+console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v1.9).");
 
 
 window.addEventListener('pageshow', () => { try { ensureMobileWeightSettingsCard(); window.PegasusWeight.updateUI(); } catch(_) {} });
