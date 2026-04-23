@@ -1,0 +1,263 @@
+/* ==========================================================================
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v20.5)
+   Protocol: Global Variable Re-declaration (Unlock M)
+   Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
+   ========================================================================== */
+
+window.PegasusManifest = {
+    // ---------------------------------------------------------
+    // 1. FORENSIC METADATA
+    // ---------------------------------------------------------
+    metadata: {
+        os: "Pegasus OS",
+        author: "Angelos & Gemini",
+        last_update: "2026-04-22",
+        logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
+        engine_version: "v20.5 Stable"
+    },
+
+    // ---------------------------------------------------------
+    // 2. EXECUTABLE DATA KEYS (Το Λεξικό της Μνήμης)
+    // ---------------------------------------------------------
+    system: {
+        logs: "pegasus_system_logs",
+        mute: "pegasus_mute_state",
+        turbo: "pegasus_turbo_state",
+        lastReset: "pegasus_last_reset",
+        lastResetTimestamp: "pegasus_last_reset_timestamp",
+        vaultPin: "pegasus_vault_pin",
+        vaultData: "pegasus_vault_data",
+        vaultTime: "pegasus_vault_time",
+        geminiKey: "pegasus_gemini_key",
+        errorLog: "pegasus_error_log",
+        cmdTrace: "pegasus_command_trace",
+        stats: "pegasus_stats",
+        lastPush: "pegasus_last_push",
+        lastReport: "pegasus_last_auto_report",
+        lastEmailSent: "pegasus_last_email_sent_date",
+        weatherCode: "pegasus_weather_code"
+    },
+
+    user: {
+        weight: "pegasus_weight",
+        weightHistory: "pegasus_weight_history",
+        legacyWeight: "weight_ΑΓΓΕΛΟΣ",
+        age: "pegasus_age",
+        height: "pegasus_height",
+        gender: "pegasus_gender",
+        specs: "pegasus_user_specs",
+        notes: "pegasus_notes",
+        contacts: "pegasus_contacts",
+        partners: "pegasus_partners_list"
+    },
+
+    workout: {
+        weekly_history: "pegasus_weekly_history",
+        done: "pegasus_workouts_done",
+        total: "pegasus_total_workouts",
+
+        // legacy compatibility key base
+        cardio_offset: "pegasus_cardio_offset_sets",
+
+        // canonical per-day cardio key prefix
+        cardio_daily_prefix: "pegasus_cardio_kcal_",
+
+        cardio_history: "pegasus_cardio_history",
+        activePlan: "pegasus_active_plan",
+        muscleTargets: "pegasus_muscle_targets",
+        calendarHistory: "pegasus_calendar_history",
+        exerciseWeights: "pegasus_exercise_weights",
+        ex_time: "pegasus_ex_time",
+        rest_time: "pegasus_rest_time"
+    },
+
+    nutrition: {
+        log_prefix: "food_log_"
+    },
+
+    diet: {
+        weekly_kcal: "pegasus_weekly_kcal",
+        weeklyKcal: "pegasus_weekly_kcal",      // alias compatibility
+
+        session_kcal: "pegasus_session_kcal",
+        sessionKcal: "pegasus_session_kcal",    // alias compatibility
+
+        inventory: "pegasus_supp_inventory",
+        foodLibrary: "pegasus_food_library",
+        todayKcal: "pegasus_today_kcal",
+        todayProtein: "pegasus_today_protein"
+    },
+
+    kouki: {
+        agreement: "kouki_agreement_log",
+        totalMeals: "kouki_meals_total",
+        remaining: "kouki_meals_remaining",
+        totalStock: "kouki_total_stock"
+    },
+
+    car: {
+        identity: "pegasus_car_identity",
+        dates: "pegasus_car_dates",
+        service: "pegasus_car_service",
+        legacySpecs: "pegasus_car_specs",
+        legacyService: "peg_car_service",
+        legacyDates: "peg_car_dates"
+    },
+
+    parking: {
+        loc: "pegasus_parking_loc",
+        history: "pegasus_parking_history"
+    },
+
+    // ---------------------------------------------------------
+    // 3. SYSTEM ARCHITECTURE
+    // ---------------------------------------------------------
+    architecture: {
+        "manifest.js": "Κεντρικός ορισμός LocalStorage keys, aliases και System Blueprint.",
+        "sw.js": "PWA service worker για precache, offline fallback και cache hygiene.",
+        "app.js": "Thin master orchestrator / compatibility shell για το desktop runtime.",
+        "runtimeBridge.js": "Bridge μεταξύ legacy UI flow και Pegasus core runtime state.",
+        "workoutTracking.js": "Workout tracking helpers, counters και session logging.",
+        "calorieRuntime.js": "Dynamic calorie/protein target calculation και UI runtime sync.",
+        "audioRuntime.js": "Audio unlock, beep control και runtime sound state manager.",
+        "weightState.js": "Saved exercise weights και active lifter state access layer.",
+        "diagnosticsRuntime.js": "Runtime warning/error bridge και high-level diagnostics hooks.",
+        "moduleIntegrity.js": "Checks αν critical modules/globals είναι loaded και healthy.",
+        "syncHardening.js": "Primary sync guard/state machine για overlap prevention.",
+        "syncEdgeHardening.js": "Cross-tab lease, dedupe και online/visibility sync edge-case protection.",
+        "syncDiagnostics.js": "High-level sync observability, lease/deferred diagnostics και summaries.",
+        "storageHardening.js": "LocalStorage audit/repair layer με safe defaults και schema guards.",
+        "selfCheckRunner.js": "Regression/self-check runner για quick health snapshots.",
+        "programGuide.js": "Interactive in-app How-To / system map / file reference guide.",
+        "desktopSyncController.js": "Desktop sync controller hooks και higher-level sync entry wiring.",
+        "desktopPanels.js": "Desktop panel open/render helpers για major UI windows.",
+        "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
+        "desktopRender.js": "Desktop-specific render/update helpers για workout UI.",
+        "desktopSyncUI.js": "Desktop sync panel rendering και initialization status UI.",
+        "desktopBoot.js": "Desktop startup bootstrap και initial app boot orchestration.",
+        "pegasusRuntimeMonitor.js": "Central runtime monitor for traces, warnings και problem snapshots.",
+        "pegasusCore.js": "Core training engine, session logic και canonical workout state.",
+        "data.js": "Master training data, program plans και day-by-day exercise definitions.",
+        "settings.js": "User settings defaults, persistence helpers και configuration access.",
+        "dialogs.js": "Shared dialog/modal rendering helpers και confirmations.",
+        "i18n.js": "Translation and language mapping layer για GR/EN strings.",
+        "dynamic.js": "Dynamic UI helpers και adaptive display utilities.",
+        "progressUI.js": "Muscle progress / status rendering helpers για workout progress UI.",
+        "weather.js": "Weather fetch and adaptation layer για outdoor/indoor adjustments.",
+        "backup.js": "Backup/export logic και manifest-based package creation.",
+        "inventoryHandler.js": "Inventory persistence helpers για consumables/resources.",
+        "cloudSync.js": "Security & persistence layer για cloud sync, vault και approved devices.",
+        "food.js": "Nutrition logging logic & Συμφωνία 30 Γευμάτων (Κούκι).",
+        "protcrea.js": "Inventory guard για πρωτεΐνη / κρεατίνη stock tracking.",
+        "dietAdvisor.js": "Nutritional intelligence engine και gap analysis layer.",
+        "optimizer.js": "AI training optimizer και dynamic weekly/workout adjustment logic.",
+        "extensions.js": "Extra productivity/routine modules και auxiliary daily logic.",
+        "ems.js": "Electro-Muscle Stimulation tracker, plan support και sync hooks.",
+        "cardio.js": "Cardio engine, offsets και target modifier logic.",
+        "calendar.js": "Calendar/history UI logic και date-linked workout records.",
+        "gallery.js": "IndexedDB gallery engine και media storage/view logic.",
+        "partner.js": "Smart co-lifter logic και dual weight memory helpers.",
+        "achievements.js": "Achievements/progression unlocks και milestone UI logic.",
+        "dragDrop.js": "Draggable window positioning και UI memory persistence.",
+        "reporting.js": "Automated reporting/email dispatcher timing layer.",
+        "metabolicEngine.js": "Metabolic calculations and body-composition support logic.",
+        "weightTracker.js": "Biometric trend analyzer και weight history helpers.",
+        "auditUI.js": "Real-time system integrity monitor και diagnostic overlay.",
+        "debug.js": "Tracer, health checks, calorie audit και runtime diagnostics tools.",
+        "mobile/mobileDataRegistry.js": "Registry για persistent mobile module keys, backup contracts και sync-safe merge rules.",
+        "mobile/mobileDataMigration.js": "Automatic mobile data safety bootstrap, migration restore και upgrade snapshots.",
+        "mobile/mobileSettingsDataTools.js": "Mobile settings data safety status, modular backup/restore tools και sync/debug event log.",
+        "mobile/mobileUI.js": "Shared mobile UI shell helpers και panel/view management.",
+        "mobile/mobileApp.js": "Main mobile app bootstrap, wiring και route behavior.",
+        "mobile/diet-mobile.js": "Mobile nutrition/diet panel logic.",
+        "mobile/cardio-mobile.js": "Mobile cardio panel and flow logic.",
+        "mobile/profile-mobile.js": "Mobile profile/user info management views.",
+        "mobile/car-mobile.js": "Mobile vehicle information and maintenance views.",
+        "mobile/parking-mobile.js": "Mobile parking/location history views.",
+        "mobile/inventory-mobile.js": "Mobile inventory and stock management views.",
+        "mobile/ems-mobile.js": "Mobile EMS tracking and control views.",
+        "mobile/supplies-mobile.js": "Mobile supplies/resource management views.",
+        "mobile/finance-mobile.js": "Mobile finance/expense tracking views.",
+        "mobile/social-mobile.js": "Mobile contacts/social utility views.",
+        "mobile/movies-mobile.js": "Mobile movies/media list utility views.",
+        "mobile/missions-mobile.js": "Mobile missions/tasks utility views.",
+        "mobile/biometrics-mobile.js": "Mobile biometrics/history views.",
+        "mobile/maintenance-mobile.js": "Mobile maintenance checklist/service views.",
+        "mobile/oracle-mobile.js": "Mobile oracle/assistant utility panel.",
+        "mobile/lifting-mobile.js": "Mobile lifting/workout quick-access views."
+    },
+
+    // ---------------------------------------------------------
+    // 4. CONSOLE FORENSIC TOOLS
+    // ---------------------------------------------------------
+    inspect: function() {
+        console.log("%c 🏛️ PEGASUS OS FULL SYSTEM INSPECTION", "color: #00ff41; font-size: 20px; font-weight: bold;");
+        console.table(this.metadata);
+        console.log("%c 📂 ARCHITECTURE:", "color: #f39c12; font-weight: bold;");
+        console.table(this.architecture);
+    },
+
+    whereIs: function(query) {
+        const q = String(query || "").toLowerCase();
+
+        for (let file in this.architecture) {
+            if (this.architecture[file].toLowerCase().includes(q)) {
+                return `📍 Η λογική '${query}' βρίσκεται στο: ${file}`;
+            }
+        }
+
+        return "❌ Δεν βρέθηκε αναφορά στο System Blueprint.";
+    },
+
+    auditData: function() {
+        console.log("%c🔍 PEGASUS DATA AUDIT STARTING...", "color: #00bcd4; font-weight: bold; font-size: 14px;");
+
+        const manifestStr = JSON.stringify(this);
+        const legacyCardioPrefix = (this.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_";
+        const canonicalCardioPrefix = this.workout?.cardio_daily_prefix || "pegasus_cardio_kcal_";
+
+        let orphanKeys = [];
+        let validKeys = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (!key) continue;
+
+            if (
+                key.startsWith("food_log_") ||
+                key.startsWith("weight_") ||
+                key.startsWith("pegasus_weight_") ||
+                key.startsWith(canonicalCardioPrefix) ||
+                key.startsWith(legacyCardioPrefix) ||
+                key.startsWith("pegasus_pos_") ||
+                key.startsWith("pegasus_routine_injected_") ||
+                key.startsWith("pegasus_history_") ||
+                key.startsWith("pegasus_day_status_") ||
+                key.startsWith("cardio_log_")
+            ) {
+                validKeys.push(key);
+                continue;
+            }
+
+            if (manifestStr.includes(`"${key}"`)) {
+                validKeys.push(key);
+            } else {
+                orphanKeys.push(key);
+            }
+        }
+
+        console.log(`✅ Καταγεγραμμένα & Έγκυρα Κλειδιά: ${validKeys.length}`);
+
+        if (orphanKeys.length > 0) {
+            console.warn(`⚠️ ΠΡΟΣΟΧΗ: Βρέθηκαν ${orphanKeys.length} Ορφανά Κλειδιά!`);
+            console.table(orphanKeys.map(k => ({ "Ορφανό Κλειδί": k })));
+        } else {
+            console.log("%c🛡️ ΣΥΣΤΗΜΑ ΚΑΘΑΡΟ.", "color: #4CAF50; font-weight: bold;");
+        }
+    }
+};
+
+// 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
+var M = window.PegasusManifest;
+
+console.log(`🏛️ PEGASUS MANIFEST ${window.PegasusManifest?.metadata?.engine_version || "UNKNOWN"} LOADED. GLOBAL UNLOCK ACTIVE.`);
