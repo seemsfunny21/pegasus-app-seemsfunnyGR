@@ -8,7 +8,12 @@
     <link rel="icon" type="image/png" href="images/favicon.png">
     <link rel="apple-touch-icon" href="images/favicon.png">
     
-    <script src="desktopRoute.js"></script>
+    <script>
+const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+if (isMobileAgent && !window.location.pathname.includes('/mobile/')) {
+  window.location.replace('mobile/mobile.html' + window.location.search + window.location.hash);
+}
+</script>
 </head>
 <body>
 
@@ -403,7 +408,6 @@
 <script src="reporting.js"></script>
 <script src="metabolicEngine.js"></script>
 <script src="weightTracker.js"></script>
-<script src="appState.js"></script>
 <script src="desktopPanels.js"></script>
 <script src="desktopActions.js"></script>
 <script src="desktopRender.js"></script>
@@ -426,8 +430,7 @@
 <script src="debug.js"></script>
 <script src="auditUI.js"></script>
 
-<script src="adaptiveTypographyLoader.js?v=19.3"></script>
-<script src="desktopBootEnhancements.js"></script>
+<script src="adaptiveTypography.js?v=20.2"></script>
 
 </body>
 </html>

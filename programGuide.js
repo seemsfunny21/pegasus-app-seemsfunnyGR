@@ -99,7 +99,7 @@
         'reporting.js': { category: 'Reporting', role: 'Morning report / manual report sending και reporting windows του συστήματος.' },
         'metabolicEngine.js': { category: 'Nutrition', role: 'Υπολογισμοί metabolism/targets και σταθεροποίηση related inputs.' },
         'weightTracker.js': { category: 'Tracking', role: 'Weight tracking module, sync-friendly καταγραφή βάρους και προβολή ιστορικού.' },
-        'appState.js': { category: 'App Coordination', role: 'Shared mutable state για το thin shell και τα runtime coordinator pieces.' },
+        'desktopPanels.js': { category: 'App Coordination', role: 'Shared mutable state για το thin shell και τα runtime coordinator pieces.' },
         'desktopPanels.js': { category: 'Desktop UI', role: 'Desktop panel helpers, ανοίγματα/κλεισίματα και panel-side wiring.' },
         'desktopActions.js': { category: 'Desktop UI', role: 'Desktop button actions και flows που συνδέουν UI με engine behaviors.' },
         'desktopRender.js': { category: 'Desktop UI', role: 'Desktop rendering του κύριου interface, labels, exercise list και visual refreshes.' },
@@ -119,8 +119,6 @@
         'moduleIntegrity.js': { category: 'Diagnostics', role: 'Επιβεβαιώνει ότι κρίσιμα globals και modules έχουν φορτώσει σωστά.' },
         'debug.js': { category: 'Diagnostics', role: 'Debug helpers, manual summaries, controls/uiState outputs και extra console utilities.' },
         'auditUI.js': { category: 'Diagnostics', role: 'Το SYSTEM STABLE / audit κουμπί και η λογική ελέγχου σταθερότητας του build.' },
-        'desktopBootEnhancements.js': { category: 'Desktop Boot', role: 'Συμπληρωματικά boot enhancements μετά το βασικό desktop load.' },
-        'desktopRoute.js': { category: 'Desktop Boot', role: 'Route helpers και desktop path decisions όπου χρειάζεται.' },
         'desktopSyncController.js': { category: 'Cloud Sync', role: 'Desktop-specific sync orchestration και glue γύρω από cloud entry points.' },
         'pegasusRuntimeMonitor.js': { category: 'Diagnostics', role: 'Κρατά runtime traces, latest problems, latest trace και συνολικά forensic στοιχεία.' },
         'sw.js': { category: 'PWA', role: 'Service worker για ασφαλή caching/PWA λειτουργία.' }

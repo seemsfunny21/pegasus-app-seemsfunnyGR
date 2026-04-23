@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.34 (CONSOLIDATION PASS)
+   PEGASUS PWA SERVICE WORKER - v3.35 (CONSOLIDATION PASS)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.34-CONSOLIDATED-PATCHES';
+const CACHE_NAME = 'pegasus-shield-v3.35-CONSOLIDATED-PATCHES';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -14,10 +14,8 @@ const ASSETS_TO_CACHE = [
     './mobile/style.css',
     './achievements.js',
     './app.js',
-    './appState.js',
     './audioRuntime.js',
     './adaptiveTypography.js',
-    './adaptiveTypographyLoader.js',
     './auditUI.js',
     './backup.js',
     './calendar.js',
@@ -28,10 +26,8 @@ const ASSETS_TO_CACHE = [
     './debug.js',
     './desktopActions.js',
     './desktopBoot.js',
-    './desktopBootEnhancements.js',
     './desktopPanels.js',
     './desktopRender.js',
-    './desktopRoute.js',
     './desktopSyncController.js',
     './desktopSyncUI.js',
     './diagnosticsRuntime.js',
@@ -81,12 +77,9 @@ const ASSETS_TO_CACHE = [
     './mobile/maintenance-mobile.js',
     './mobile/missions-mobile.js',
     './mobile/mobileApp.js',
-    './mobile/mobileErrorMonitor.js',
-    './mobile/mobileSafe.js',
     './mobile/mobileDataRegistry.js',
     './mobile/mobileDataMigration.js',
     './mobile/mobileSettingsDataTools.js',
-    './mobile/mobileServiceWorker.js',
     './mobile/mobileUI.js',
     './mobile/movies-mobile.js',
     './mobile/oracle-mobile.js',

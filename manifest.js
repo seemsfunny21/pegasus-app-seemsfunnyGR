@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v20.1)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v20.2)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-22",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v20.1 Stable"
+        engine_version: "v20.2 Stable"
     },
 
     // ---------------------------------------------------------
@@ -116,7 +116,6 @@ window.PegasusManifest = {
         "manifest.js": "Κεντρικός ορισμός LocalStorage keys, aliases και System Blueprint.",
         "sw.js": "PWA service worker για precache, offline fallback και cache hygiene.",
         "app.js": "Thin master orchestrator / compatibility shell για το desktop runtime.",
-        "appState.js": "Shared runtime state container για app/session coordination.",
         "runtimeBridge.js": "Bridge μεταξύ legacy UI flow και Pegasus core runtime state.",
         "workoutTracking.js": "Workout tracking helpers, counters και session logging.",
         "calorieRuntime.js": "Dynamic calorie/protein target calculation και UI runtime sync.",
@@ -130,14 +129,12 @@ window.PegasusManifest = {
         "storageHardening.js": "LocalStorage audit/repair layer με safe defaults και schema guards.",
         "selfCheckRunner.js": "Regression/self-check runner για quick health snapshots.",
         "programGuide.js": "Interactive in-app How-To / system map / file reference guide.",
-        "desktopRoute.js": "Desktop route/bootstrap branching και mode selection logic.",
         "desktopSyncController.js": "Desktop sync controller hooks και higher-level sync entry wiring.",
         "desktopPanels.js": "Desktop panel open/render helpers για major UI windows.",
         "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
         "desktopRender.js": "Desktop-specific render/update helpers για workout UI.",
         "desktopSyncUI.js": "Desktop sync panel rendering και initialization status UI.",
         "desktopBoot.js": "Desktop startup bootstrap και initial app boot orchestration.",
-        "desktopBootEnhancements.js": "Boot polish helpers, loader updates και service worker registration.",
         "pegasusRuntimeMonitor.js": "Central runtime monitor for traces, warnings και problem snapshots.",
         "pegasusCore.js": "Core training engine, session logic και canonical workout state.",
         "data.js": "Master training data, program plans και day-by-day exercise definitions.",
@@ -167,14 +164,11 @@ window.PegasusManifest = {
         "weightTracker.js": "Biometric trend analyzer και weight history helpers.",
         "auditUI.js": "Real-time system integrity monitor και diagnostic overlay.",
         "debug.js": "Tracer, health checks, calorie audit και runtime diagnostics tools.",
-        "mobile/mobileSafe.js": "Mobile safety bootstrap και guard layer πριν το main mobile app.",
         "mobile/mobileDataRegistry.js": "Registry για persistent mobile module keys, backup contracts και sync-safe merge rules.",
         "mobile/mobileDataMigration.js": "Automatic mobile data safety bootstrap, migration restore και upgrade snapshots.",
         "mobile/mobileSettingsDataTools.js": "Mobile settings data safety status, modular backup/restore tools και sync/debug event log.",
-        "mobile/mobileErrorMonitor.js": "Mobile runtime error tracing και safe diagnostics hooks.",
         "mobile/mobileUI.js": "Shared mobile UI shell helpers και panel/view management.",
         "mobile/mobileApp.js": "Main mobile app bootstrap, wiring και route behavior.",
-        "mobile/mobileServiceWorker.js": "Mobile-side service worker registration and update handling.",
         "mobile/diet-mobile.js": "Mobile nutrition/diet panel logic.",
         "mobile/cardio-mobile.js": "Mobile cardio panel and flow logic.",
         "mobile/profile-mobile.js": "Mobile profile/user info management views.",

@@ -1,3 +1,199 @@
+        window.PEGASUS_IS_MOBILE = true;
+
+        window.PegasusMobileSafe = window.PegasusMobileSafe || {
+            escapeHtml(value) {
+                return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[ch]));
+            },
+            safeJsonParse(raw, fallback) {
+                if (raw == null || raw === '') return fallback;
+                try {
+                    return JSON.parse(raw);
+                } catch (err) {
+                    return fallback;
+                }
+            },
+            safeReadStorage(key, fallback, opts = {}) {
+                const parsed = this.safeJsonParse(localStorage.getItem(key), fallback);
+                if (parsed === fallback && opts.repairOnFailure) {
+                    try { localStorage.removeItem(key); } catch (_) {}
+                }
+                return parsed;
+            },
+            isAllowedBackupKey(key) {
+                if (!key || key === '__proto__' || key === 'constructor' || key === 'prototype') return false;
+                return (
+                    key.startsWith('pegasus_') ||
+                    key.startsWith('peg_') ||
+                    key.startsWith('food_log_') ||
+                    key.startsWith('kouki_') ||
+                    key.startsWith('weight_') ||
+                    key.startsWith('finance_')
+                );
+            },
+            sanitizeBackupObject(input) {
+                if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
+                const cleaned = {};
+                for (const [key, value] of Object.entries(input)) {
+                    if (!this.isAllowedBackupKey(key)) continue;
+                    if (typeof value !== 'string') continue;
+                    if (value.length > 250000) continue;
+                    if (window.PegasusCloud?.isExportBlockedKey?.(key)) continue;
+                    if (window.PegasusCloud?.isLocalOnlyStorageKey?.(key)) continue;
+                    if (window.PegasusCloud?.isInternalStorageKey?.(key)) continue;
+                    cleaned[key] = value;
+                }
+                return cleaned;
+            }
+        };
+
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const now = Date.now();
+            const hasVersion = params.has('v');
+            const versionTs = hasVersion ? parseInt(params.get('v'), 10) : 0;
+            const hasSwController = !!navigator.serviceWorker?.controller;
+
+            if (
+                navigator.onLine &&
+                !hasSwController &&
+                (!hasVersion || isNaN(versionTs) || (now - versionTs > 600000))
+            ) {
+                window.location.replace(window.location.pathname + '?v=' + now + window.location.hash);
+            }
+        })();
+    
+
+
+(function(){
+  const STORAGE_KEY = 'pegasus_mobile_errors';
+  const LIMIT = 20;
+  const MAX_TEXT = 800;
+  let guard = false;
+
+  function nowIso() {
+    try { return new Date().toISOString(); } catch (_) { return String(Date.now()); }
+  }
+
+  function trimText(value) {
+    const text = String(value ?? '');
+    return text.length > MAX_TEXT ? text.slice(0, MAX_TEXT) + '…' : text;
+  }
+
+  function safeRead() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function safeWrite(entries) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(-LIMIT)));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function normalizeError(error) {
+    if (!error) return { message: 'Unknown error', stack: '' };
+    if (typeof error === 'string') return { message: trimText(error), stack: '' };
+
+    const message = trimText(error.message || error.reason?.message || error.reason || error.toString?.() || 'Unknown error');
+    const stack = trimText(error.stack || error.reason?.stack || '');
+    return { message, stack };
+  }
+
+  function buildEntry(level, moduleName, action, error, extra) {
+    const n = normalizeError(error);
+    return {
+      ts: nowIso(),
+      level: level || 'ERROR',
+      module: trimText(moduleName || 'UNKNOWN'),
+      action: trimText(action || 'runtime'),
+      message: n.message,
+      stack: n.stack,
+      path: trimText(location.pathname || ''),
+      online: !!navigator.onLine,
+      unlocked: !!window.PegasusCloud?.isUnlocked,
+      extra: extra ? trimText(typeof extra === 'string' ? extra : JSON.stringify(extra)) : ''
+    };
+  }
+
+  function capture(level, moduleName, action, error, extra) {
+    if (guard) return null;
+    guard = true;
+    try {
+      const entries = safeRead();
+      const entry = buildEntry(level, moduleName, action, error, extra);
+      entries.push(entry);
+      safeWrite(entries);
+      try {
+        if (level === "ERROR") window.PegasusRuntimeMonitor?.capture?.(moduleName || "UNKNOWN", action || "runtime", error, extra);
+        else if (level === "WARN") window.PegasusRuntimeMonitor?.warn?.(moduleName || "UNKNOWN", action || "runtime", error, extra);
+        else window.PegasusRuntimeMonitor?.info?.(moduleName || "UNKNOWN", action || "runtime", n.message, extra);
+      } catch (_) {}
+      return entry;
+    } finally {
+      guard = false;
+    }
+  }
+
+  window.PegasusMobileErrors = {
+    key: STORAGE_KEY,
+    limit: LIMIT,
+    capture(moduleName, action, error, extra) {
+      return capture('ERROR', moduleName, action, error, extra);
+    },
+    warn(moduleName, action, error, extra) {
+      return capture('WARN', moduleName, action, error, extra);
+    },
+    info(moduleName, action, message, extra) {
+      return capture('INFO', moduleName, action, message, extra);
+    },
+    getAll() {
+      return safeRead();
+    },
+    getLatest() {
+      const entries = safeRead();
+      return entries.length ? entries[entries.length - 1] : null;
+    },
+    getProblems() {
+      return safeRead().filter(entry => entry.level === "WARN" || entry.level === "ERROR");
+    },
+    getLatestProblem() {
+      const entries = safeRead().filter(entry => entry.level === "WARN" || entry.level === "ERROR");
+      return entries.length ? entries[entries.length - 1] : null;
+    },
+    clear() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    }
+  };
+
+  window.addEventListener('error', function(event){
+    const src = event.filename ? event.filename.split('/').pop() : 'runtime';
+    capture('ERROR', src || 'runtime', 'window.error', event.error || event.message || 'Window error', {
+      lineno: event.lineno || 0,
+      colno: event.colno || 0
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event){
+    capture('ERROR', 'promise', 'unhandledrejection', event.reason || 'Unhandled rejection');
+  });
+})();
+
+
     const PEGASUS = {
         key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
         bin: "69b6757ab7ec241ddc6d7230"
@@ -793,3 +989,31 @@
 
     console.log('📐 PEGASUS MOBILE BOTTOM BOUNDARY: Home hotfix active.');
 })();
+
+
+/* ===== CONSOLIDATED FROM mobileServiceWorker.js ===== */
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js?v=3.35')
+                    .then(reg => {
+                        console.log('📡 PEGASUS: Service Worker Registered.');
+                        reg.update();
+
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            if (!installingWorker) return;
+
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed') {
+                                    if (navigator.serviceWorker.controller) {
+                                        console.log('🔄 Νέο update στο background. Θα εφαρμοστεί στο επόμενο άνοιγμα.');
+                                    }
+                                }
+                            };
+                        };
+                    })
+                    .catch(err => console.error('❌ SW Registration Failed:', err));
+            }, { once: true });
+        }
+    
+
