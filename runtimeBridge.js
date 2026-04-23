@@ -4,27 +4,118 @@
    ========================================================================== */
 
 /* ===== 3. AUDIO SYSTEM ===== */
-let sysAudio = new Audio('videos/beep.mp3');
+let sysAudio = null;
 let audioUnlocked = false;
+let pegasusAudioCtx = null;
 
-document.addEventListener('click', function() {
-    if (!audioUnlocked) {
-        sysAudio.play().then(() => {
-            sysAudio.pause();
-            sysAudio.currentTime = 0;
-            audioUnlocked = true;
-            console.log("🔊 PEGASUS OS: Audio Unlocked & Ready.");
-        }).catch(err => console.warn("PEGASUS OS: Audio unlock pending user action", err));
+function ensurePegasusAudioElement() {
+    if (sysAudio) return sysAudio;
+    try {
+        sysAudio = new Audio('videos/beep.mp3');
+        sysAudio.preload = 'auto';
+    } catch (e) {
+        sysAudio = null;
     }
-}, { once: true });
+    return sysAudio;
+}
+
+function getPegasusAudioContext() {
+    if (pegasusAudioCtx) return pegasusAudioCtx;
+    try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        pegasusAudioCtx = Ctx ? new Ctx() : null;
+    } catch (e) {
+        pegasusAudioCtx = null;
+    }
+    return pegasusAudioCtx;
+}
+
+function fallbackBeep(volume = 1) {
+    const ctx = getPegasusAudioContext();
+    if (!ctx) return;
+    try {
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(Math.max(0.0001, Math.min(0.25, volume * 0.12)), ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.18);
+    } catch (e) {
+        console.log('PEGASUS OS: Fallback beep unavailable', e);
+    }
+}
+
+function unlockPegasusAudio() {
+    if (audioUnlocked) return;
+    const tasks = [];
+    const audio = ensurePegasusAudioElement();
+    const ctx = getPegasusAudioContext();
+
+    if (ctx && ctx.state === 'suspended') {
+        tasks.push(ctx.resume().catch(() => null));
+    }
+
+    if (audio) {
+        try {
+            tasks.push(
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }).catch(() => null)
+            );
+        } catch (e) {
+            tasks.push(Promise.resolve(null));
+        }
+    }
+
+    Promise.allSettled(tasks).then(() => {
+        audioUnlocked = true;
+        console.log('🔊 PEGASUS OS: Audio Unlocked & Ready.');
+    });
+}
+
+['click', 'pointerdown', 'touchstart'].forEach(evt => {
+    document.addEventListener(evt, unlockPegasusAudio, { once: true, passive: true });
+});
 
 const playBeep = (volume = 1) => {
-    if (!muted) {
-        sysAudio.volume = volume;
-        sysAudio.currentTime = 0;
-        sysAudio.play().catch(e => console.log("Audio execution blocked by browser policy", e));
+    const mutedState = (typeof muted !== 'undefined') ? muted : !!window.muted;
+    if (mutedState) return;
+
+    const audio = ensurePegasusAudioElement();
+    let usedHtmlAudio = false;
+
+    if (audio) {
+        try {
+            audio.volume = Math.max(0, Math.min(1, volume));
+            audio.currentTime = 0;
+            const maybePromise = audio.play();
+            if (maybePromise && typeof maybePromise.then === 'function') {
+                maybePromise.then(() => {
+                    usedHtmlAudio = true;
+                }).catch(() => {
+                    fallbackBeep(volume);
+                });
+            } else {
+                usedHtmlAudio = true;
+            }
+        } catch (e) {
+            fallbackBeep(volume);
+        }
+    }
+
+    if (!audio || !usedHtmlAudio) {
+        fallbackBeep(volume);
     }
 };
+
+window.playBeep = playBeep;
+window.unlockPegasusAudio = unlockPegasusAudio;
 
 /* ==========================================================================
    PEGASUS RUNTIME BRIDGE

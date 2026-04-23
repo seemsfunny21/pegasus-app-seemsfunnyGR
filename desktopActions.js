@@ -180,7 +180,7 @@ function runPhase() {
             clearInterval(timer);
             timer = null;
             phaseRemainingSeconds = null;
-            playBeep();
+            if (typeof window.playBeep === 'function') window.playBeep();
 
             if (phase === 0) {
                 phase = 1;
