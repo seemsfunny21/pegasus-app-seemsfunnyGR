@@ -1,958 +1,208 @@
 /* ==========================================================================
-   PEGASUS SYSTEM - COMPLETE UNIFIED STYLESHEET (STRICT GREEN EDITION v7.1)
-   Protocol: BULLETPROOF LEFT-ALIGNED DASHBOARD & iOS ZOOM PREVENTION
-   Status: FINAL STABLE | ZERO-BUG VERIFIED
+   PEGASUS OS - MOBILE STYLESHEET v16.0 (DYNAMIC GRID EDITION)
    ========================================================================== */
 
-/* ================= GLOBAL SETTINGS ================= */
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden; 
-    background: #000;
-    color: #4CAF50;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    scrollbar-width: none;
+:root { 
+    --main: #00ff41; --danger: #ff4444; --bg: #050505; 
+    --card: rgba(23, 23, 23, 0.85); --border: #00ff41; 
+    --pg-ghost-nav-reserve: 48px;
+    --pg-ghost-nav-height: 35px;
+    --pg-ghost-nav-bottom: 6px;
 }
 
-body::-webkit-scrollbar { display: none; }
-
-/* 🎯 FIXED: Αποτροπή iOS Auto-Zoom στα inputs */
-input[type="number"], input[type="text"], input[type="password"] {
-    font-size: 16px !important; 
+body, html { 
+    height: 100%; margin: 0; 
+    overflow-x: hidden; /* 🔒 ΚΛΕΙΔΩΜΑ ΟΡΙΖΟΝΤΙΑΣ ΚΙΝΗΣΗΣ */
+    overflow-y: hidden; 
+    background: var(--bg); 
+    color: #fff; font-family: 'Inter', sans-serif; text-align: center; 
+    overscroll-behavior: none; position: fixed; width: 100%; 
 }
 
-/* ================= NAVIGATION BAR (STRICT STATIC DESKTOP) ================= */
-.navbar {
-    display: flex;
-    flex-wrap: nowrap !important; 
-    background: #111;
-    height: 60px !important; 
-    border-bottom: 1px solid #222;
-    flex-shrink: 0;
-    width: 100%;
-    overflow-x: auto; 
-    scrollbar-width: none;
-}
-.navbar::-webkit-scrollbar { display: none; }
-
-.navbar button {
-    flex: 1 1 auto; 
-    min-width: 80px;
-    padding: 12px 5px;
-    font-size: 14px;
-    background: none;
-    border: none;
-    color: #333;
-    cursor: pointer;
-    transition: 0.3s;
-    text-transform: uppercase;
-    font-weight: bold;
-    white-space: nowrap;
+body { 
+    padding: 20px 15px; box-sizing: border-box; 
+    background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); 
+    display: flex; flex-direction: column; align-items: center; 
 }
 
-.navbar button.active {
-    color: #4CAF50;
-    border-bottom: 3px solid #4CAF50;
-    background: rgba(76, 175, 80, 0.1);
+#sync-indicator { font-size: 10px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 10px; text-transform: uppercase; text-shadow: 0 0 10px var(--main); }
+
+.header h1 { font-size: 38px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: uppercase; background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header p { font-size: 10px; color: var(--main); margin: 4px 0 20px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
+
+/* 🛡️ THE OLD GRID (Kept for fallback, but we use dynamic-grid now) */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; overflow-y: auto; scrollbar-width: none; }
+.grid::-webkit-scrollbar { display: none; }
+
+/* 🚀 THE NEW DYNAMIC GRID SYSTEM */
+.dynamic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; flex: 1 1 auto; min-height: 0; height: auto; max-height: none; padding-bottom: calc(var(--pg-ghost-nav-reserve) + 18px); overflow-y: auto; scrollbar-width: none; scroll-padding-bottom: calc(var(--pg-ghost-nav-reserve) + 18px); align-content: start; }
+.dynamic-grid::-webkit-scrollbar { display: none; }
+
+.log-item { 
+    background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; 
+    border: 1px solid var(--border); text-align: left; position: relative; 
+    margin-bottom: 12px; width: 100%; box-sizing: border-box; display: block; 
 }
 
-/* ================= CONTROL BAR & UI ELEMENTS ================= */
-.pegasus-control-bar {
-    position: relative;
-    display: flex;
-    flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; 
-    align-items: center;
-    gap: 6px !important; 
-    padding: 0 10px;
-    background: #1a1a1a;
-    border-bottom: 2px solid #333;
-    height: 60px !important; 
-    box-sizing: border-box;
-    flex-shrink: 0;
-    width: 100%;
-    overflow-x: auto; 
-    scrollbar-width: none;
-}
-.pegasus-control-bar::-webkit-scrollbar { display: none; }
-
-.control-buttons {
-    display: flex;
-    flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; 
-    align-items: center;
-    gap: 6px !important;
+.btn-del { 
+    position: absolute; top: 12px; right: 12px; color: var(--danger); 
+    background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger);
+    border-radius: 8px; padding: 5px 10px; font-size: 14px; font-weight: 900; cursor: pointer;
 }
 
-.info-display {
-    display: flex;
-    flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; 
-    align-items: center;
-    gap: 6px !important;
-    margin: 0 !important; 
-}
-
-.p-btn, .weather-text, .workout-count-text, #totalProgressContainer {
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #111;
-    color: #4CAF50;
-    border: 1px solid #4CAF50;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 13px;
-    white-space: nowrap !important; 
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    padding: 0 12px;
-    flex-shrink: 1; 
-}
-
-.p-btn { cursor: pointer; text-decoration: none; }
-.p-btn:hover { background: #4CAF50; color: #000; box-shadow: 0 0 12px rgba(76, 175, 80, 0.5); }
-
-#totalProgressContainer { width: 130px; padding: 0; position: relative; overflow: hidden; flex-shrink: 0; }
-#totalProgress { height: 100%; width: 0%; background: rgba(76, 175, 80, 0.3); transition: width 0.3s ease; }
-#totalProgressTime { position: absolute; width: 100%; text-align: center; line-height: 38px; font-weight: bold; color: #fff; z-index: 1; }
-
-/* 🚀 TACTICAL SCALING: ΕΞΥΠΝΗ ΣΥΜΠΙΕΣΗ ΓΙΑ ΜΙΚΡΕΣ ΟΘΟΝΕΣ */
-@media (max-width: 1350px) {
-    .pegasus-control-bar { gap: 4px !important; padding: 0 5px; }
-    .control-buttons, .info-display { gap: 4px !important; }
-    .p-btn, .weather-text, .workout-count-text {
-        padding: 0 8px; 
-        font-size: 11px; 
-    }
-    #totalProgressContainer { width: 100px; }
-    .navbar button { font-size: 12px; padding: 12px 2px; }
-}
-
-@media (max-width: 1050px) {
-    .p-btn, .weather-text, .workout-count-text {
-        padding: 0 6px;
-        font-size: 10px;
-    }
-    #totalProgressContainer { width: 85px; }
-    .navbar button { font-size: 11px; }
-}
-
-/* ================= MAIN CONTENT LAYOUT ================= */
-.content {
-    height: calc(100% - 120px); 
-    padding: 15px;
-    display: flex;
+.tile { 
+    background: var(--card); border: 2px solid var(--border); border-radius: 24px; 
+    padding: 15px 10px; /* Μικρύναμε ελάχιστα το εσωτερικό γέμισμα */
+    backdrop-filter: blur(12px); transition: 0.15s; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15); 
+    min-height: 85px; /* 🔴 ΑΛΛΑΓΗ ΕΔΩ: Από 100px έγινε 85px για να κάτσουν τέλεια 6 σειρές */
     box-sizing: border-box;
 }
+.tile:active { transform: scale(0.94); background: rgba(0,255,65,0.1); }
+.tile-icon { font-size: 26px; margin-bottom: 6px; }
+.tile-label { font-size: 9px; font-weight: 900; text-transform: uppercase; color: #fff; letter-spacing: 1px; }
 
-.exercise-container {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    gap: 15px;
-}
+/* 🛡️ FULL WIDTH MODIFIER (For odd-numbered grids) */
+.full-width { grid-column: span 2; width: 100%; }
 
-/* ================= EXERCISE LIST & DRAG ENGINE ================= */
-.exercise-list {
-    width: 300px;
-    height: 100%;
-    overflow-y: auto;
-    scrollbar-width: none;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    touch-action: none; /* 🎯 FIXED: Αποτροπή scroll κατά το drag στα κινητά */
-}
-
-.exercise-list::-webkit-scrollbar { display: none; }
-
-.exercise {
-    margin-bottom: 12px;
-    padding: 15px;
-    background: #111;
-    border-radius: 8px;
-    border: 1px solid #222;
-    cursor: grab;
-    transition: transform 0.2s, opacity 0.2s, border-color 0.3s;
-    position: relative;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-.exercise.dragging {
-    opacity: 0.4;
-    background: #1a1a1a;
-    border: 2px dashed #4CAF50 !important;
-    transform: scale(1.02);
-    z-index: 1000;
-}
-
-.exercise-skipped {
-    opacity: 0.25 !important; 
-    filter: grayscale(1) blur(0.5px);
-    border: 2px dotted #ff4444 !important; 
-    background: rgba(255, 0, 0, 0.05) !important;
-    transition: all 0.3s ease;
-}
-
-.exercise-skipped .exercise-info {
-    cursor: pointer;
-    pointer-events: auto; 
-}
-
-.exercise-skipped:hover {
-    opacity: 0.5 !important;
-}
-
-.exercise-info { 
-    display: flex; 
-    gap: 15px; 
-    align-items: center; 
-    margin-bottom: 10px; 
-    cursor: pointer;
+.view { 
+    display: none; 
+    flex: 1; /* Παίρνει αυτόματα όλο τον διαθέσιμο χώρο, εξαφανίζοντας το μαύρο κουτί */
+    height: 100%; 
+    flex-direction: column; 
     width: 100%; 
+    align-items: center; 
+    overflow-y: auto; /* Παραμένει auto για ασφάλεια σε πολύ μικρές οθόνες */
+    padding-bottom: calc(var(--pg-ghost-nav-reserve) + 10px); /* Το περιεχόμενο τελειώνει ακριβώς πάνω από το ghost nav */
+    scroll-padding-bottom: calc(var(--pg-ghost-nav-reserve) + 10px);
+    scrollbar-width: none; 
 }
+.view.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-.set-counter { min-width: 40px; color: #4CAF50; font-weight: bold; font-size: 17px; }
-.exercise-name { flex: 1; font-weight: bold; font-size: 14px; color: #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16px; color: #fff; padding: 14px; margin-bottom: 10px; font-size: 16px; box-sizing: border-box; text-align: center; outline: none; }
+.primary-btn { width: 100%; padding: 16px; background: var(--main); border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,255,65,0.2); }
+.secondary-btn { background: transparent; border: 1px solid var(--main); color: var(--main); padding: 14px; border-radius: 16px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; width: 100%; }
+.btn-back { background: rgba(255,255,255,0.05); border: none; color: var(--main); font-weight: 900; padding: 10px 20px; border-radius: 14px; margin-bottom: 20px; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
 
-.weight-input { 
-    width: 55px; 
-    height: 26px; 
-    background: #000; 
-    color: #4CAF50; 
-    border: 1px solid #333; 
-    border-radius: 4px; 
-    text-align: center; 
-    font-weight: bold;
-}
+.mini-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 20px; border: 1px solid #1a1a1a; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+.mini-label { font-size: 9px; font-weight: 800; color: var(--main); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: block; }
+.mini-val { font-size: 16px; font-weight: 900; color: #fff; }
 
-.progress-box { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
-.progress-bar { height: 100%; width: 0%; transition: width 0.3s; background: #4CAF50; }
-.status { font-size: 11px; text-align: right; color: #666; font-weight: bold; text-transform: uppercase; }
+.bar-bg { width: 100%; background: #000; height: 6px; border-radius: 3px; margin-top: 10px; overflow: hidden; border: 1px solid #111; }
+.bar-fill { height: 100%; background: var(--main); width: 0%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--main); }
 
-/* ================= PANELS (GENERAL) ================= */
-.pegasus-panel {
-    display: none;
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10001; /* Baseline Panel Z-Index */
-    background: #0f0f0f;
-    padding: 25px;
-    border-radius: 12px;
-    border: 2px solid #4CAF50;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.9);
-    max-height: 85vh;
-    overflow-y: auto;
-}
+.section-title { font-size: 11px; font-weight: 900; color: var(--main); text-transform: uppercase; letter-spacing: 2px; margin: 25px 0 12px; text-align: center; }
+.compact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 10px; }
+.input-label { font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; text-align: center; width: 100%; }
+.icon-parking { color: var(--main); text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); font-style: normal; font-weight: 900; }
 
-.pegasus-panel h3 { margin-top: 0; color: #4CAF50; text-align: center; text-transform: uppercase; font-size: 17px; letter-spacing: 2px; }
-
-/* ================= FOOD PANEL LAYOUT ================= */
-#foodPanel { 
-    width: 1350px !important; 
-    max-width: 98vw; 
-}
-
-.food-layout { 
-    display: flex !important; 
-    flex-direction: row !important;
-    flex-wrap: nowrap !important; 
-    gap: 15px; 
-    height: 500px; 
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.food-section { 
-    flex: 1 !important; 
-    min-width: 320px; 
-    background: rgba(255,255,255,0.02);
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #222;
-    overflow-y: auto; 
-}
-
-/* ================= VIDEO CONTAINER ================= */
-.video-container { 
-    flex: 1; 
-    background: #000; 
-    border-radius: 12px; 
-    border: 1px solid #4CAF50;
-    overflow: hidden; 
-    position: relative; 
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.1); 
-}
-.main-video { width: 100%; height: 100%; object-fit: contain; }
-
-#phaseTimer {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: #4CAF50;
-    text-shadow: 0 0 10px rgba(0,0,0,1);
-    pointer-events: none;
-}
-
-/* ================= THE ABSOLUTE GREEN PROTOCOL (ANTI-BLUE OVERRIDE) ================= */
-#btnAddFood, 
-button#btnAddFood, 
-.p-btn#btnAddFood {
-    all: unset !important; 
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-sizing: border-box !important;
-    
-    height: 38px !important;
-    padding: 0 20px !important;
-    background-color: #111 !important;
-    color: #4CAF50 !important;
-    border: 1px solid #4CAF50 !important;
-    border-radius: 6px !important;
-    
-    font-weight: bold !important;
-    font-size: 13px !important;
-    cursor: pointer !important;
-    text-transform: uppercase !important;
-    
-    -webkit-tap-highlight-color: transparent !important;
-    outline: none !important;
-    transition: 0.3s ease !important;
-}
-
-#btnAddFood:hover {
-    background-color: #4CAF50 !important;
-    color: #000 !important;
-    box-shadow: 0 0 12px rgba(76, 175, 80, 0.5) !important;
-}
-
-/* ================= UTILS - DELETE BUTTONS ================= */
-.delete-btn, 
-.btn-delete, 
-button[onclick*="delete"], 
-button[onclick*="remove"] {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    
-    background: #000 !important; 
-    border: 1px solid #4CAF50 !important; 
-    color: #4CAF50 !important; 
-    
-    width: 22px !important;
-    height: 22px !important;
-    min-width: 22px !important;
-    
-    border-radius: 4px !important;
-    cursor: pointer !important;
-    font-family: Arial, sans-serif !important;
-    font-size: 14px !important;
-    font-weight: bold !important;
-    line-height: 1 !important;
-    padding: 0 !important;
-    margin-left: 10px !important;
-    transition: 0.2s ease-in-out !important;
-}
-
-.delete-btn:empty::before, 
-.btn-delete:empty::before, 
-button[onclick*="delete"]:empty::before {
-    content: "×" !important; 
-}
-
-.delete-btn:hover, 
-.btn-delete:hover, 
-button[onclick*="delete"]:hover {
-    background: #ff4444 !important;
-    border-color: #ff4444 !important;
-    color: #fff !important;
-}
-
-#partnerNameInput, 
-#btnPartnerMode {
-    width: 100%;            
-    box-sizing: border-box; 
-    margin: 5px 0;          
-    max-width: 100%;        
-}
-
-.partner-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-}
-
-.panel-divider {
-    grid-column: span 2;    
-    border: 0;              
-    border-top: 1px solid #333; 
-    margin: 15px 0;         
-    width: 100%;
-}
-
-/* --- Pegasus Weekly Planner Styles --- */
-.planner-btn {
-    position: absolute;
-    top: 210px;
-    right: 20px;
-    background-color: transparent;
-    color: #4CAF50;
-    border: 1px solid #4CAF50;
-    padding: 0 15px;
-    height: 35px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    transition: all 0.3s ease;
-    letter-spacing: 0.5px;
-}
-
-.planner-btn:hover {
-    background-color: #4CAF50;
-    color: #000;
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
-    transform: translateY(-1px);
-}
-
-.planner-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 10005; /* 🎯 Πιο πάνω από τα απλά πάνελ */
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    backdrop-filter: blur(4px);
-}
-
-.planner-content {
-    background: #0a0a0a; 
-    border: 1px solid #4CAF50;
-    border-radius: 20px; 
-    width: 100%;
-    max-width: 360px; 
-    padding: 30px 25px;
-    position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-}
-
-.planner-item {
-    background: #161616;
-    border: 1px solid #222;
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background 0.2s;
-}
-
-.planner-item:hover {
-    background: #1c1c1c;
-    border-color: #333;
-}
-
-.planner-add-btn {
-    background: #4CAF50;
-    color: #000;
-    border: none;
-    width: 35px;
-    height: 35px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-}
-
-.planner-add-btn:hover {
-    transform: scale(1.1);
-    background: #45a049;
-}
-
-.weather-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin: 15px 0;
-    color: #4CAF50;
-    font-weight: bold;
-    font-size: 14px;
-    position: absolute;
-    bottom: 0px;
-    left:20px;
-}
-
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-}
-
-.switch input { opacity: 0; width: 0; height: 0; }
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #333;
-    transition: .4s;
-    border-radius: 24px;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 18px; width: 18px;
-    left: 3px; bottom: 3px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-}
-
-input:checked + .slider { background-color: #ff4b2b; }
-input:checked + .slider:before { transform: translateX(26px); }
-
-/* ================= PREVIEW PANEL - COMPACT TACTICAL ================= */
-#previewPanel {
-    transform: none;
-    position: fixed;
-    left: auto;
-    right: 20px;
-    top: 100px;
-    width: 660px !important; 
-    min-width: 320px;
-    height: auto !important; 
-    max-height: 85vh; 
-    background: #0a0a0a;
-    z-index: 10001;
-    border: 2px solid #4CAF50;
-    border-radius: 15px;
-    display: none;
-    flex-direction: column;
-    box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 20px rgba(76, 175, 80, 0.1);
-    padding-bottom: 10px;
-}
-
-#previewContent {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important;
-    gap: 10px;
-    padding: 15px;
-    height: auto !important;
-    max-height: none !important; 
-    overflow: visible !important; 
-}
-
-.preview-item {
-    flex: 0 0 calc(25% - 8px) !important;
-    max-width: calc(25% - 8px);
-    background: #111;
-    border: 1px solid #222;
-    border-radius: 10px;
-    padding: 8px;
-    text-align: center;
-    box-sizing: border-box;
-    transition: transform 0.2s ease;
-}
-
-.preview-item:hover {
-    border-color: #4CAF50;
-    transform: translateY(-2px);
-}
-
-.preview-item img {
-    width: 100% !important;
-    height: 90px !important; 
-    border: 1px solid #4CAF50;
-    border-radius: 6px;
-    object-fit: cover;
-    background: #000;
-}
-
-.preview-item p {
-    color: #4CAF50;
-    font-size: 9px;
-    margin-top: 6px;
-    text-transform: uppercase;
-    font-weight: bold;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* ================= UNIVERSAL PEGASUS GREEN OVERRIDE ================= */
-.progress-fill, 
-.progress-bar, 
-.muscle-bar-fill, 
-.stat-fill,
-[style*="background-color: orange"],
-[style*="background: orange"],
-[style*="background-color: rgb(255, 165, 0)"] {
-    background: #4CAF50 !important;
-    background-color: #4CAF50 !important;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4) !important;
-}
-
-.pegasus-panel, 
-.planner-modal, 
-#emsModal,
-#cardioPanel {
-    border: 2px solid #4CAF50 !important;
-    border-radius: 15px !important;
-    box-shadow: 0 0 30px rgba(0,0,0,1) !important;
-}
-
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #000; }
-::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 10px; }
-
-/* ================= PEGASUS KOUKI MENU - UI FIX ================= */
-#koukiQuickMenu button {
-    background-image: none !important;
+/* ==========================================================================
+   PEGASUS SEARCH FIX: Inline Expanding Dropdown (Mobile Optimized) 
+   ========================================================================== */
+#searchSuggestions {
+    position: relative !important;
+    z-index: 10 !important;
     background: #0a0a0a !important;
-    box-shadow: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    border: 1px solid #333 !important;
-    padding: 12px 10px !important;
-    height: auto !important; 
-    overflow: hidden;
-}
-
-#koukiQuickMenu strong, 
-#koukiQuickMenu .food-name,
-#koukiQuickMenu div[style*="color"] {
-    color: #eee !important; 
-    background: none !important;
-    text-shadow: none !important;
-    font-size: 12px !important;
-    margin-bottom: 4px !important;
-}
-
-#koukiQuickMenu span {
-    font-size: 10px !important;
-    letter-spacing: 0.5px;
-}
-
-#koukiQuickMenu div {
-    max-height: none !important; 
-    overflow: visible !important; 
-}
-
-#koukiQuickMenu button:hover {
-    border-color: #4CAF50 !important;
-    background: #111 !important;
-    transform: translateY(-1px);
-    transition: all 0.2s ease;
-}
-
-/* ================= PEGASUS MUSCLE PROGRESS ================= */
-#muscleProgressContainer {
-    display: block !important;
     width: 100% !important;
-    padding: 15px !important;
-    background: rgba(255, 255, 255, 0.02) !important;
-    border-radius: 10px;
-    box-sizing: border-box;
-    margin-bottom: 20px;
-}
-
-.muscle-progress-row {
-    margin-bottom: 12px;
-    width: 100%;
-}
-
-.muscle-label-wrapper {
-    display: flex;
-    justify-content: space-between;
-    color: #eee;
-    font-size: 11px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.muscle-bar-bg {
-    width: 100%;
-    height: 8px;
-    background: #222;
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1px solid #333;
-}
-
-.muscle-bar-fill {
-    height: 100%;
-    background: #4CAF50 !important;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
-    border-radius: 4px;
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ================= PEGASUS UNIFORM LOADER ================= */
-#pegasus-loader {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: #000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 99999; 
-}
-
-.loader-content { 
-    text-align: center; 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 15px; 
-}
-
-.pegasus-logo-anim {
-    font-size: 28px; 
-    font-weight: 900;
-    color: #4CAF50;
-    text-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
-    margin: 0;
-    letter-spacing: 1px;
-    animation: pulse 1.5s infinite;
-}
-
-.loader-text {
-    font-size: 14px; 
-    font-weight: 900;
-    color: #ffffff; 
-    margin: 0;
-    text-transform: lowercase;
-    letter-spacing: 1px;
-    font-family: inherit;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2); 
-}
-
-.loader-bar-container {
-    width: 250px;
-    height: 3px;
-    background: #111;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.loader-bar-fill {
-    width: 0%; 
-    height: 100%;
-    background: #4CAF50;
-    box-shadow: 0 0 10px #4CAF50;
-    transition: width 0.3s ease; 
-}
-
-.loader-branding {
-    font-size: 28px; 
-    font-weight: 900;
-    color: #4CAF50;
-    margin: 0;
-    letter-spacing: 1px;
-    text-transform: none;
-}
-
-@media (max-width: 800px) {
-    .pegasus-logo-anim, 
-    .loader-text, 
-    .loader-branding {
-        font-size: 20px;
-    }
-    .loader-bar-container { width: 180px; }
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 1; }
-    100% { transform: scale(1); opacity: 0.8; }
-}
-
-.dots {
-    display: inline-block;
-    width: 25px; 
+    max-height: 250px !important;
+    overflow-y: auto !important;
+    border: 1px solid var(--main) !important;
+    border-radius: 16px !important;
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.5), 0 5px 15px rgba(0,255,65,0.1) !important;
+    margin-top: 8px !important;
+    margin-bottom: 15px !important;
+    padding-top: 0px !important;
+    display: none;
     text-align: left;
-    margin-left: 2px;
-    color: #4CAF50; 
-    text-shadow: 0 0 8px rgba(76, 175, 80, 0.6); 
-    font-weight: bold;
+    flex-shrink: 0 !important;
 }
 
-.dots::after {
-    content: '';
-    animation: loading-dots 1.5s infinite;
+#fName {
+    position: relative;
+    z-index: 11;
+    transition: border-radius 0.2s;
 }
 
-@keyframes loading-dots {
-    0%   { content: ''; }
-    25%  { content: '.'; }
-    50%  { content: '..'; }
-    75%  { content: '...'; }
-    100% { content: ''; }
-}
-
-/* ================= UI POLISH: TOOLS & PLAN MODAL ================= */
-.tools-btn {
-    width: 100% !important;
-    display: flex !important;
-    justify-content: center !important; 
-    align-items: center !important;
-    gap: 10px !important; 
+.search-item {
     padding: 12px 15px !important;
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px;
-    text-align: center !important;
-}
-
-#planModal {
-    width: 400px !important;
-    max-width: 90vw;
-    padding: 30px 20px !important;
-    text-align: center;
-}
-
-#planModal h3 {
-    color: #4CAF50 !important; 
-    margin-bottom: 10px !important;
-}
-
-#planModal p {
-    font-size: 11px;
-    color: #888;
-    margin-bottom: 20px;
-    line-height: 1.4;
-}
-
-.plan-options-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.plan-btn {
-    width: 100% !important;
-    height: auto !important; 
-    flex-direction: column !important; 
-    align-items: center !important;
-    padding: 15px !important;
-    background: #111 !important;
-    border: 1px solid #333 !important;
-    white-space: normal !important; 
-}
-
-.plan-btn:hover {
-    border-color: #4CAF50 !important; 
-    background: rgba(76, 175, 80, 0.1) !important; 
-}
-
-.plan-title {
-    font-size: 15px;
-    font-weight: 900;
-    color: #eee;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-}
-
-.plan-subtitle {
-    font-size: 10px;
-    color: #aaa;
-    font-weight: normal;
-    text-transform: none; 
-}
-
-.plan-cancel-btn {
-    margin-top: 20px !important;
-    width: 100% !important;
-    border-color: #ff4444 !important;
-    color: #ff4444 !important;
-}
-
-.plan-cancel-btn:hover {
-    background: #ff4444 !important;
-    color: #000 !important;
-}
-
-/* ================= PEGASUS STATS & MODALS (FIXED SIZES) ================= */
-.modal, #pinModal, .pegasus-panel {
-    background: rgba(5, 5, 5, 0.98) !important; 
-    border: 2px solid #00ff41 !important;        
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);  
-    border-radius: 12px;
-    color: #fff;
-    z-index: 10001;
-}
-
-.modal input, #pinModal input {
-    background: #000 !important;
-    border: 1px solid #00ff41 !important;
-    color: #00ff41 !important;
-    text-align: center;
-    font-family: 'Inter', sans-serif;
-    border-radius: 5px;
-    padding: 10px;
-    font-size: 16px !important; 
-}
-
-/* 🎯 ΣΤΗΘΟΣ, ΠΛΑΤΗ, ΠΟΔΙΑ: Μέγεθος 12 & Ομοιόμορφα Κενά */
-#previewPanel .stat-label-row, 
-#previewPanel .muscle-label-wrapper,
-.stats-container .stat-label-row {
+    border-bottom: 1px solid rgba(0, 255, 65, 0.2) !important;
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
-    margin-bottom: 5px !important;
+    cursor: pointer;
 }
 
-#previewPanel .stat-label-row span, 
-#previewPanel .muscle-label-wrapper span,
-.stats-container span {
-    font-size: 12px !important; /* Το μέγεθος που ζήτησες */
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    color: #eee !important;
+.search-item:last-child {
+    border-bottom: none !important;
 }
 
-/* 🎯 Διόρθωση κενού (Πάνω-Κάτω Ίσα) στο Box των Stats */
-.stats-container, .muscle-groups-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    gap: 12px !important; /* Απόσταση μεταξύ των γραμμών για να γεμίσει το box */
-    padding: 20px 0 !important; /* Ίσο κενό πάνω και κάτω */
+.search-item:active { 
+    background: rgba(0, 255, 65, 0.15) !important; 
 }
+
+.search-item-name {
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+}
+
+.search-item-macros {
+    color: var(--main);
+    font-size: 11px;
+    font-weight: 900;
+    background: rgba(0, 255, 65, 0.1);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+
+#home {
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+#settings-anchor {
+    min-height: 0;
+    height: 0;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.view > *:last-child {
+    margin-bottom: 0;
+}
+
+        .ghost-nav-overlay {
+            position: fixed; 
+            bottom: 6px; 
+            width: 72%; /* Ρύθμισέ το ανάλογα με την οθόνη σου */
+            display: flex;
+            justify-content: space-around; 
+            align-items: center;
+            pointer-events: none; 
+            z-index: 9999;
+            box-sizing: border-box;
+        }
+
+        .nav-box {
+            width: 45px;
+            height: 35px;
+            background: rgba(0, 255, 65, 0.15);
+            border: 1px solid rgba(0, 255, 65, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            font-size: 19px;
+            color: var(--main);
+            line-height: 0;
+        }
