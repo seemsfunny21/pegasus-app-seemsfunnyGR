@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.31 (HOME GRID BOUNDARY FINAL)
+   PEGASUS PWA SERVICE WORKER - v3.32 (PARKING CURRENT ALIGN FIX)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.31-HOME-GRID-BOUNDARY-FINAL';
+const CACHE_NAME = 'pegasus-shield-v3.33-LIFTING-UI-TRANSLATION-FIX';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -96,6 +96,7 @@ const ASSETS_TO_CACHE = [
     './mobile/movies-mobile.js',
     './mobile/oracle-mobile.js',
     './mobile/parking-mobile.js',
+    './mobile/parking-current-fix.js',
     './mobile/profile-mobile.js',
     './mobile/social-mobile.js',
     './mobile/supplies-mobile.js',

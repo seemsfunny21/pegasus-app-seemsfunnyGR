@@ -43,12 +43,12 @@
 
         const suggestion = window.PegasusBridgeHub.getExerciseWeightBridge(input.value);
         if (!input.value.trim()) {
-            helper.textContent = 'BRIDGE: ΓΡΑΨΕ ΑΣΚΗΣΗ ΚΑΙ ΤΟ PEGASUS ΘΑ ΤΡΑΒΗΞΕΙ ΤΑ ΤΕΛΕΥΤΑΙΑ ΚΙΛΑ ΑΠΟ DESKTOP / HISTORY.';
+            helper.textContent = 'ΣΥΝΔΕΣΗ: ΓΡΑΨΕ ΑΣΚΗΣΗ ΚΑΙ ΤΟ PEGASUS ΘΑ ΠΡΟΤΕΙΝΕΙ ΤΑ ΤΕΛΕΥΤΑΙΑ ΚΙΛΑ ΑΠΟ DESKTOP / ΙΣΤΟΡΙΚΟ.';
             return;
         }
 
         if (!suggestion || isNaN(suggestion.value)) {
-            helper.textContent = 'BRIDGE: ΔΕΝ ΒΡΕΘΗΚΑΝ ΑΠΟΘΗΚΕΥΜΕΝΑ ΚΙΛΑ ΓΙΑ ΑΥΤΗ ΤΗΝ ΑΣΚΗΣΗ.';
+            helper.textContent = 'ΣΥΝΔΕΣΗ: ΔΕΝ ΒΡΕΘΗΚΑΝ ΑΠΟΘΗΚΕΥΜΕΝΑ ΚΙΛΑ ΓΙΑ ΑΥΤΗ ΤΗΝ ΑΣΚΗΣΗ.';
             return;
         }
 
@@ -56,7 +56,7 @@
             window.PegasusBridgeHub.prefillMobileLiftingWeight(input.value, { force: false });
         }
 
-        helper.textContent = `BRIDGE: ${suggestion.source === 'desktop' ? 'DESKTOP' : 'ΙΣΤΟΡΙΚΟ ΒΑΡΩΝ'} → ${suggestion.matchedName} · ${suggestion.value}kg`;
+        helper.textContent = `ΣΥΝΔΕΣΗ: ${suggestion.source === 'desktop' ? 'DESKTOP' : 'ΙΣΤΟΡΙΚΟ ΒΑΡΩΝ'} → ${suggestion.matchedName} · ${suggestion.value}kg`;
     }
 
     function attachLiftingListeners() {
@@ -80,7 +80,7 @@
         const n = state.nutrition;
         const c = state.cardio;
         box.innerHTML = `
-            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">BRIDGE · ΠΡΟΠΟΝΗΣΗ / ΔΙΑΤΡΟΦΗ</div>
+            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">ΣΥΝΔΕΣΗ · ΠΡΟΠΟΝΗΣΗ / ΔΙΑΤΡΟΦΗ</div>
             <div style="font-size:12px; color:#fff; font-weight:800; line-height:1.45; margin-bottom:10px;">${esc(state.headline)}</div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:11px;">
                 <div style="padding:10px; border:1px solid #173b1c; border-radius:10px; background:rgba(255,255,255,0.02);">
@@ -119,7 +119,7 @@
         `).join('');
 
         workoutBox.innerHTML = `
-            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">BRIDGE · DESKTOP ΠΡΟΓΡΑΜΜΑ / ΚΙΛΑ</div>
+            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">ΣΥΝΔΕΣΗ · DESKTOP ΠΡΟΓΡΑΜΜΑ / ΚΙΛΑ</div>
             <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:8px;">
                 <div style="font-size:12px; color:#fff; font-weight:900;">ΣΗΜΕΡΑ: ${esc(workout.todayDayName)}</div>
                 <div style="font-size:11px; color:#9adf9e; font-weight:800;">${workout.completedToday ? 'ΟΛΟΚΛΗΡΩΜΕΝΟ' : (workout.hasRemainingWork ? `${workout.remainingSetsCount} σετ υπολοιπο` : 'χωρις runtime υπολοιπο')}</div>
@@ -134,7 +134,7 @@
             : 'ΔΕΝ ΥΠΑΡΧΕΙ ΣΗΜΕΡΙΝΗ / ΤΕΛΕΥΤΑΙΑ ΒΙΟΜΕΤΡΙΚΗ ΚΑΤΑΓΡΑΦΗ.';
 
         bodyBox.innerHTML = `
-            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">BRIDGE · ΣΩΜΑ / ΑΝΑΡΡΩΣΗ / CARDIO</div>
+            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">ΣΥΝΔΕΣΗ · ΣΩΜΑ / ΑΝΑΡΡΩΣΗ / CARDIO</div>
             <div style="font-size:12px; color:#fff; font-weight:900; margin-bottom:6px;">ΒΑΡΟΣ: ${body.currentWeight || '--'}kg · M.O. 7ΗΜ: ${body.averageWeight || '--'}kg</div>
             <div style="font-size:11px; color:#aaa; margin-bottom:6px;">${esc(bioText)}</div>
             <div style="font-size:11px; color:#9adf9e; margin-bottom:6px;">ΚΑΡΔΙΟ ΣΗΜΕΡΑ: ${cardio.km}km · ${Math.round(cardio.kcal)} kcal</div>
@@ -152,7 +152,7 @@
         const supplies = window.PegasusBridgeHub.getSupplyContext();
         const alertLines = supplies.alerts.map(item => `<div style="color:#ffb74d; font-weight:800; font-size:11px; margin-top:6px;">• ${esc(item.title)}</div>`).join('');
         box.innerHTML = `
-            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">BRIDGE · SUPPLEMENTS / STOCK / MISSIONS</div>
+            <div style="font-size:10px; color:var(--main); font-weight:900; letter-spacing:1px; margin-bottom:8px;">ΣΥΝΔΕΣΗ · ΣΥΜΠΛΗΡΩΜΑΤΑ / ΑΠΟΘΕΜΑ / ΑΠΟΣΤΟΛΕΣ</div>
             <div style="font-size:11px; color:#fff; line-height:1.5;">
                 ΣΗΜΕΡΙΝΗ ΚΑΤΑΝΑΛΩΣΗ: WHEY ${supplies.wheyHits}x · ΚΡΕΑΤΙΝΗ ${supplies.creatineHits}x
             </div>
@@ -165,6 +165,7 @@
 
     function renderAll() {
         renderLiftingBridge();
+        try { window.renderLiftingQuickPicks?.(); } catch (_) {}
         renderDietBridge();
         renderPreviewBridge();
         renderSuppsBridge();

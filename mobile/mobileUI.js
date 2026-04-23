@@ -64,9 +64,9 @@
 
                 if (pageTxt) {
                     if (this.currentPage === 0) {
-                        pageTxt.textContent = "TACTICAL DATA INTERFACE";
+                        pageTxt.textContent = "ΚΕΝΤΡΟ ΔΕΔΟΜΕΝΩΝ / DATA INTERFACE";
                     } else {
-                        pageTxt.textContent = `EXTENDED TACTICAL MODULES (ΣΕΛ. ${this.currentPage + 1}/${maxPages})`;
+                        pageTxt.textContent = `ΕΠΕΚΤΑΣΙΜΑ MODULES / EXTENDED MODULES (${this.currentPage + 1}/${maxPages})`;
                     }
                 }
 

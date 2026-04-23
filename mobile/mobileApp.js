@@ -94,6 +94,11 @@
         const targetView = document.getElementById(id);
         if (targetView) {
             targetView.classList.add('active');
+            try { targetView.scrollTop = 0; } catch (_) {}
+            try {
+                const nestedScrollers = targetView.querySelectorAll('#dynamic-grid, .dynamic-grid, #lift-today, #lift-history');
+                nestedScrollers.forEach(el => { try { el.scrollTop = 0; } catch (_) {} });
+            } catch (_) {}
             refreshUIComponent(id);
 
             if (id === 'diet' && window.PegasusCloud?.isUnlocked && navigator.onLine) {

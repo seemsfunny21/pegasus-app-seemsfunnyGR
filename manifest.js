@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v19.8)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v20.0)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-22",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v19.8 Stable"
+        engine_version: "v20.0 Stable"
     },
 
     // ---------------------------------------------------------
