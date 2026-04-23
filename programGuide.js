@@ -82,7 +82,6 @@
         'progressUI.js': { category: 'UI Runtime', role: 'Μπάρες προόδου, indicators και οπτική παρακολούθηση της κατάστασης της προπόνησης.' },
         'weather.js': { category: 'Environment', role: 'Φέρνει και εφαρμόζει weather-based προσαρμογές, ειδικά για indoor/outdoor λογική.' },
         'backup.js': { category: 'Tools / Safety', role: 'Export/backup του προγράμματος και των δεδομένων με integrity-aware packaging.' },
-        'inventoryHandler.js': { category: 'Inventory', role: 'Χειρίζεται βοηθητικά inventories και εσωτερική λογική αποθήκης/consumables.' },
         'pegasusCore.js': { category: 'Core Engine', role: 'Ο βασικός engine της προπόνησης: state, progress, phase logic, persistable runtime snapshots και πυρήνας workout flow.' },
         'cloudSync.js': { category: 'Cloud Sync', role: 'Ο cloud κινητήρας για push, pull, unlock, approved device restore, secure sync και conflict-aware συγχρονισμό.' },
         'protcrea.js': { category: 'Inventory', role: 'Παρακολουθεί αποθέματα πρωτεΐνης/κρεατίνης και ενημερώνει labels/stock.' },

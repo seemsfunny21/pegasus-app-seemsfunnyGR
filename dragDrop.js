@@ -13,7 +13,7 @@ const PegasusUI = {
         this.initDraggablePanels();
         this.initClickOutside();
         this.initHotkeys(); 
-        console.log("✅ PEGASUS UI MANAGER: v4.6 Operational (Button Bridge Delegated to app.js)");
+        console.log("✅ PEGASUS UI MANAGER: v4.6 Operational (Button Bridge Delegated to desktopBoot.js)");
     },
 
     /**

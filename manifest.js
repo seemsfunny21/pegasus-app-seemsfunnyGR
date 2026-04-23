@@ -56,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v21.2 Stable"
+        engine_version: "v21.3 Stable"
     },
 
     // ---------------------------------------------------------
