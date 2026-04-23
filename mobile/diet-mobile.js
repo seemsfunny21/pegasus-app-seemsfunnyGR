@@ -232,7 +232,8 @@ window.PegasusDiet = {
         let html = `
             <div style="background:#111; border:1px solid #f39c12; padding:15px; border-radius:12px; margin:10px 0;">
                 <div style="color:#f39c12; font-weight:900; font-size:13px; margin-bottom:10px;">🧠 PEGASUS LOGIC</div>
-                <div style="color:#eee; font-size:14px; margin-bottom:15px; line-height:1.4;">${esc(advice.msg)}</div>
+                <div style="color:#eee; font-size:14px; margin-bottom:12px; line-height:1.45;">${esc(advice.msg)}</div>
+                ${(advice.suggestions || []).length ? `<div style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;">${advice.suggestions.map(s => `<div style="font-size:12px; color:#9fe870; font-weight:800;">• ${esc(s)}</div>`).join('')}</div>` : ''}
                 <div style="display:flex; flex-direction:column; gap:10px;">
         `;
 
@@ -242,10 +243,11 @@ window.PegasusDiet = {
                 : { kcal: 550, protein: 45 };
 
             html += `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
-                    <div style="text-align:left;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:#1a1a1a; padding:10px; border-radius:8px; border:1px solid #333;">
+                    <div style="text-align:left; flex:1;">
                         <div style="color:#fff; font-weight:bold; font-size:14px;">${esc(opt.n)}</div>
-                        <div style="color:#4CAF50; font-size:12px; font-weight:900;">🔥 ${Number(macros.kcal) || 0} kcal | 🍗 ${Number(macros.protein) || 0}g</div>
+                        <div style="color:#4CAF50; font-size:12px; font-weight:900; margin-top:2px;">🔥 ${Number(macros.kcal) || 0} kcal | 🍗 ${Number(macros.protein) || 0}g</div>
+                        ${opt.reason ? `<div style="color:#bfc9d1; font-size:11px; margin-top:6px; line-height:1.35;">${esc(opt.reason)}</div>` : ''}
                     </div>
                     <button data-pegasus-advisor-add="${idx}" style="background:#f39c12; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:900; font-size:11px;">
                         ΠΡΟΣΘΗΚΗ
