@@ -56,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v21.7 Stable"
+        engine_version: "v21.8 Stable"
     },
 
     // ---------------------------------------------------------
@@ -181,7 +181,6 @@ window.PegasusManifest = {
         "i18n.js": "Translation and language mapping layer για GR/EN strings.",
         "dynamic.js": "Dynamic UI helpers και adaptive display utilities.",
         "progressUI.js": "Muscle progress / status rendering helpers για workout progress UI.",
-        "backup.js": "Backup/export logic και manifest-based package creation.",
         "cloudSync.js": "Security & persistence layer για cloud sync, vault και approved devices.",
         "food.js": "Nutrition logging logic & Συμφωνία 30 Γευμάτων (Κούκι).",
         "protcrea.js": "Inventory guard για πρωτεΐνη / κρεατίνη stock tracking.",
@@ -190,7 +189,6 @@ window.PegasusManifest = {
         "extensions.js": "Extra productivity/routine modules και auxiliary daily logic.",
         "ems.js": "Electro-Muscle Stimulation tracker, plan support και sync hooks.",
         "cardio.js": "Cardio engine, offsets και target modifier logic.",
-        "calendar.js": "Calendar/history UI logic και date-linked workout records.",
         "gallery.js": "IndexedDB gallery engine και media storage/view logic.",
         "dragDrop.js": "Draggable window positioning και UI memory persistence.",
         "reporting.js": "Automated reporting/email dispatcher timing layer.",

@@ -397,3 +397,355 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(window.updateWeatherUI, 30 * 60 * 1000); // Ανανέωση κάθε 30 λεπτά
 });
 
+
+
+/* ==========================================================================
+   MERGED FROM backup.js during consolidation
+   ========================================================================== */
+
+/* ==========================================================================
+   PEGASUS BACKUP & RESTORE - MASTER MANIFEST EDITION (V10.2)
+   Protocol: Universal JSON Unwrapping, Date Padding & IndexedDB Recovery
+   Status: FINAL STABLE | ZERO-BUG VERIFIED
+   ========================================================================== */
+
+window.exportPegasusData = async function() {
+    if (!window.PegasusManifest) {
+        console.error("❌ CRITICAL: PegasusManifest not found.");
+        alert("ΣΦΑΛΜΑ: Λείπει το manifest.js. Η εξαγωγή ακυρώθηκε.");
+        return;
+    }
+
+    const data = { localStorage: {}, indexedDB: [] };
+    const M = window.PegasusManifest;
+    
+    console.log("%c[BACKUP] Starting Manifest-Based Scan...", "color: #00bcd4; font-weight: bold;");
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const val = localStorage.getItem(key);
+
+        const isOfficial = Object.values(M).some(category => 
+            Object.values(category).some(manifestKey => 
+                key === manifestKey || (typeof manifestKey === 'string' && key.startsWith(manifestKey))
+            )
+        );
+
+        const isBlocked = window.PegasusCloud?.isExportBlockedKey?.(key);
+
+        if (!isBlocked && (isOfficial || key.includes("ANGELOS") || key.startsWith("weight_"))) {
+            data.localStorage[key] = val;
+        }
+    }
+
+    const dbRequest = indexedDB.open("PegasusLevels", 1);
+    dbRequest.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("photos")) {
+            db.close();
+            finalizeExport(data);
+            return;
+        }
+
+        const tx = db.transaction("photos", "readonly");
+        const store = tx.objectStore("photos");
+        store.getAll().onsuccess = (ev) => {
+            data.indexedDB = ev.result || ev.target.result;
+            db.close();
+            finalizeExport(data);
+        };
+    };
+
+    dbRequest.onerror = () => {
+        console.warn("IndexedDB Access Failed. Exporting LocalStorage only.");
+        finalizeExport(data);
+    };
+};
+
+function finalizeExport(data) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const timestamp = new Date().toISOString().slice(0,10);
+    
+    a.href = url;
+    a.download = `PEGASUS_MASTER_BACKUP_${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    console.log("%c✅ PEGASUS: Backup Created with v10.2 Integrity Protocol.", "color: #4CAF50; font-weight: bold;");
+}
+
+/* ==========================================================================
+   RESTORE ENGINE (V10.2 - UNIVERSAL UNWRAP & MIGRATION)
+   ========================================================================== */
+window.importPegasusData = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            
+            // 🛡️ UNIVERSAL UNWRAP: Ανιχνεύει αν τα δεδομένα είναι μέσα στο "localStorage" wrapper
+            const payload = imported.localStorage ? imported.localStorage : imported;
+
+            if (window.GalleryEngine && window.GalleryEngine.db) {
+                window.GalleryEngine.db.close();
+            }
+
+            const msg = `🚨 PEGASUS OS: ΕΝΑΡΞΗ ΑΝΑΚΤΗΣΗΣ\n\nΘα γίνει αυτόματη διόρθωση ημερομηνιών και πλήρης επαναφορά.\nΤα τρέχοντα δεδομένα θα διαγραφούν. Συνέχεια;`;
+            if (!confirm(msg)) return;
+
+            console.log("%c[RECOVERY] Initializing Universal Migration Engine...", "color: #ff9800; font-weight: bold;");
+
+            const migratedStorage = {};
+            const dateKeys = ["food_log_", "pegasus_cardio_kcal_", "pegasus_routine_injected_", "weight_"];
+
+            Object.keys(payload).forEach(key => {
+                let newKey = key;
+                let val = payload[key];
+                
+                // 🎯 DATE PADDING MIGRATION
+                if (dateKeys.some(prefix => key.startsWith(prefix))) {
+                    const parts = key.split('_');
+                    const datePart = parts.pop();
+                    const dateParts = datePart.split('/');
+                    if (dateParts.length === 3) {
+                        const d = dateParts[0].padStart(2, '0');
+                        const m = dateParts[1].padStart(2, '0');
+                        const y = dateParts[2];
+                        newKey = parts.join('_') + `_${d}/${m}/${y}`;
+                    }
+                }
+                
+                // 🛡️ STRINGIFICATION SHIELD: Το LocalStorage δέχεται ΜΟΝΟ strings
+                migratedStorage[newKey] = (typeof val === 'object') ? JSON.stringify(val) : String(val);
+            });
+
+            const preserved = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
+                if (window.PegasusCloud?.isExportBlockedKey?.(key) || window.PegasusCloud?.isLocalOnlyStorageKey?.(key) || window.PegasusCloud?.isInternalStorageKey?.(key)) {
+                    preserved[key] = localStorage.getItem(key);
+                }
+            }
+
+            localStorage.clear();
+            Object.entries(migratedStorage).forEach(([k, v]) => localStorage.setItem(k, v));
+            Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+
+            if (!localStorage.getItem("pegasus_weight")) localStorage.setItem("pegasus_weight", "74");
+
+            // ΑΝΑΔΟΜΗΣΗ INDEXEDDB
+            setTimeout(() => {
+                const delReq = indexedDB.deleteDatabase("PegasusLevels");
+                delReq.onsuccess = () => {
+                    const dbReq = indexedDB.open("PegasusLevels", 1);
+                    dbReq.onupgradeneeded = (ev) => ev.target.result.createObjectStore("photos", { keyPath: "id" });
+                    dbReq.onsuccess = (ev) => {
+                        const db = ev.target.result;
+                        if (imported.indexedDB && imported.indexedDB.length > 0) {
+                            const tx = db.transaction("photos", "readwrite");
+                            imported.indexedDB.forEach(p => tx.objectStore("photos").add(p));
+                            tx.oncomplete = () => {
+                                db.close();
+                                finalizeRecovery();
+                            };
+                        } else {
+                            db.close();
+                            finalizeRecovery();
+                        }
+                    };
+                };
+            }, 600);
+
+        } catch (err) {
+            console.error("Critical Recovery Failure:", err);
+            alert("FATAL RESTORE ERROR: " + err.message);
+        }
+    };
+    reader.readAsText(file);
+};
+
+async function finalizeRecovery() {
+    console.log("📡 PEGASUS: Forcing Cloud Sync after recovery...");
+    if (window.PegasusCloud && window.PegasusCloud.push) {
+        await window.PegasusCloud.push(true);
+    }
+    alert("✅ Η ΑΝΑΚΤΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!\n\nΌλα τα δεδομένα διορθώθηκαν και συγχρονίστηκαν.");
+    window.location.reload();
+}
+
+window.triggerPegasusImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => window.importPegasusData(e);
+    input.click();
+};
+
+
+
+/* ==========================================================================
+   MERGED FROM calendar.js during consolidation
+   ========================================================================== */
+
+/* ==========================================================================
+   PEGASUS CALENDAR SYSTEM - v8.1 (MANIFEST ALIGNED)
+   Protocol: Data Over Plan Priority, Normalized Date Sync & Padding Alignment
+   Status: FINAL STABLE | FIXED: TIMEZONE TRAP & MANIFEST SYNC
+   ========================================================================== */
+
+
+
+// 🛡️ Global Safe Declaration
+var M = M || window.PegasusManifest;
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+window.selectedCalendarDate = null; 
+
+window.renderCalendar = function() {
+    const el = document.getElementById("calendarContent");
+    if (!el) return;
+
+    // 🎯 FIXED: Δυναμική ανάκτηση από Manifest
+  const doneKey = M?.workout?.done || "pegasus_workouts_done";
+    const data = JSON.parse(localStorage.getItem(doneKey) || "{}");
+    
+    const now = new Date();
+    // Κανονικοποίηση "Σήμερα" στο Midnight για ασφαλή σύγκριση
+    const todayNormalized = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    let html = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:#4CAF50;background:#111;padding:8px;border-radius:5px;border:1px solid #333;">
+        <span id="prevMonth" style="cursor:pointer;padding:0 10px; font-weight:bold; user-select:none;">&#8592;</span>
+        <span style="text-transform: capitalize; font-weight:bold; letter-spacing:1px;">${new Date(currentYear, currentMonth).toLocaleString("el-GR", { month: "long" })} ${currentYear}</span>
+        <span id="nextMonth" style="cursor:pointer;padding:0 10px; font-weight:bold; user-select:none;">&#8594;</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+    `;
+
+    const weekHeaders = ["Κ","Δ","Τ","Τ","Π","Π","Σ"];
+    weekHeaders.forEach(d => html += `<div style="text-align:center;opacity:.6;color:#4CAF50;font-size:11px;font-weight:900;">${d}</div>`);
+
+    // Κενά για την αρχή του μήνα
+    for (let i = 0; i < firstDayOfMonth; i++) html += `<div></div>`;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const loopDate = new Date(currentYear, currentMonth, day);
+        const loopDateTime = loopDate.getTime();
+        const dayOfWeek = loopDate.getDay(); 
+        
+        // 🎯 UNIFIED PADDING PROTOCOL
+        const dStr = String(day).padStart(2, '0');
+        const mStr = String(currentMonth + 1).padStart(2, '0');
+        const workoutKey = `${currentYear}-${mStr}-${dStr}`;
+        const foodDateString = `${dStr}/${mStr}/${currentYear}`;
+        
+        let bg = "#1a1a1a";
+        let border = "1px solid #333";
+        let color = "#fff";
+        let glow = "none";
+
+        const isRecoveryDay = (dayOfWeek === 1 || dayOfWeek === 4);
+
+        // --- STRICT PRIORITY RENDERING ---
+        if (data[workoutKey] === true) {
+            // 1. ΕΠΙΤΥΧΙΑ (Προπόνηση): ΠΡΑΣΙΝΟ
+            bg = "#4CAF50";
+            border = "1px solid #4CAF50";
+            color = "#000";
+        } 
+        else if (isRecoveryDay) {
+            // 2. ΠΛΑΝΟ ΑΠΟΘΕΡΑΠΕΙΑΣ: ΜΠΛΕ
+            bg = "#1e3a5f"; 
+            border = "1px solid #64B5F6";
+        }
+        else if (loopDateTime < todayNormalized) {
+            // 3. ΠΑΡΕΛΘΟΝ & ΧΑΣΙΜΟ (Όχι προπόνηση/Όχι recovery): ΚΟΚΚΙΝΟ
+            bg = "#b71c1c";
+            border = "1px solid #ff5252";
+        }
+
+        // Highlight Σήμερα (Χρυσό περίγραμμα)
+        if (loopDateTime === todayNormalized) {
+            border = "2px solid #FFD700";
+            glow = "0 0 10px rgba(255, 215, 0, 0.3)";
+            if (bg === "#1a1a1a") color = "#FFD700";
+        }
+
+        // Highlight Επιλεγμένης Μέρας (Focus - Green Matrix)
+        if (window.selectedCalendarDate === foodDateString) {
+            border = "2px solid #00ff41";
+            bg = "#002200";
+            color = "#00ff41";
+        }
+
+        html += `<div style="background:${bg};border:${border};color:${color};padding:8px 0;text-align:center;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;box-shadow:${glow};transition:0.2s;" 
+                    onclick="window.viewFoodFromCalendar('${foodDateString}')">
+                    ${day}
+                 </div>`;
+    }
+
+    html += `</div>`;
+    el.innerHTML = html;
+
+    // 🎯 FIXED: Re-binding listeners with cleanup logic
+    const pBtn = document.getElementById("prevMonth");
+    const nBtn = document.getElementById("nextMonth");
+    
+    if (pBtn) pBtn.onclick = (e) => { 
+        e.stopPropagation(); currentMonth--; 
+        if(currentMonth < 0){ currentMonth = 11; currentYear--; } 
+        window.renderCalendar(); 
+    };
+    if (nBtn) nBtn.onclick = (e) => { 
+        e.stopPropagation(); currentMonth++; 
+        if(currentMonth > 11){ currentMonth = 0; currentYear++; } 
+        window.renderCalendar(); 
+    };
+};
+
+/* --- ΣΥΝΔΕΣΗ ΗΜΕΡΟΛΟΓΙΟΥ ΜΕ DIET PANEL (STRICT SYNC) --- */
+window.viewFoodFromCalendar = function(dateStr) {
+    const parts = dateStr.split('/');
+    const selectedDate = new Date(parts[2], parts[1] - 1, parts[0]);
+    
+    // Ενημέρωση focus
+    window.selectedCalendarDate = dateStr;
+    window.currentFoodDate = selectedDate;
+    
+    // Re-render calendar για να φανεί η επιλογή
+    window.renderCalendar();
+    
+    // Κλείσιμο panels και άνοιγμα Food
+    document.querySelectorAll(".pegasus-panel").forEach(p => p.style.display = "none");
+    
+    const foodPanel = document.getElementById("foodPanel");
+    if (foodPanel) {
+        foodPanel.style.display = "block";
+        
+        // 🎯 FIXED: Ασφαλής κλήση UI update
+        if (typeof window.updateFoodUI === "function") {
+            window.updateFoodUI();
+        } else if (window.renderFood) {
+            window.renderFood();
+        }
+        
+        // Pegasus Green Force UI Adjustment
+        setTimeout(() => {
+            const crossBtn = document.getElementById("btnAddFood");
+            if (crossBtn) {
+                crossBtn.style.setProperty('color', '#4CAF50', 'important');
+                crossBtn.style.setProperty('border-color', '#4CAF50', 'important');
+            }
+        }, 50);
+    }
+};
+
