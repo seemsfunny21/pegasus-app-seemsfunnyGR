@@ -9,7 +9,7 @@
 ---
 
 ## 📖 Η Εισαγωγή: Η Ιδέα πίσω από το "Φαινόμενο"
-Το **Pegasus OS** δεν ξεκίνησε ως μια εφαρμογή, αλλά ως μια αντίδραση στο χάος. Η ιδέα του **seemsfunny** ήταν απλή αλλά τολμηρή: *Να δημιουργηθεί ένα σύστημα που να μην ακολουθεί τον χρήστη, αλλά να τον καθοδηγεί.* Ξεκινήσαμε με μια λευκή οθόνη και μερικές γραμμές κειμένου. Σήμερα, 30 ημέρες μετά, έχουμε ένα οικοσύστημα **28 αρχείων** που αντιλαμβάνεται τον καιρό, τις θερμίδες, την κόπωση και την πρόοδο, λειτουργώντας ως ένας ψηφιακός "φύλακας" της υγείας.
+Το **Pegasus OS** δεν ξεκίνησε ως μια εφαρμογή, αλλά ως μια αντίδραση στο χάος. Η ιδέα του **seemsfunny** ήταν απλή αλλά τολμηρή: *Να δημιουργηθεί ένα σύστημα που να μην ακολουθεί τον χρήστη, αλλά να τον καθοδηγεί.* Ξεκινήσαμε με μια λευκή οθόνη και μερικές γραμμές κειμένου. Σήμερα, μετά από πολλαπλά consolidation passes, έχουμε ένα πιο καθαρό και σταθερό οικοσύστημα αρχείων που αντιλαμβάνεται τον καιρό, τις θερμίδες, την κόπωση και την πρόοδο, λειτουργώντας ως ένας ψηφιακός "φύλακας" της υγείας.
 
 ---
 
@@ -49,7 +49,7 @@
 
 1. **The Constant Collision (v9.8):**
    * *Πρόβλημα:* Ο κώδικας κατέρρεε λόγω διένεξης στην κεντρική μεταβλητή `M`.
-   * *Λύση:* Δημιουργήσαμε το **Global Scope Shield**, επιτρέποντας στο `app.js` να επικοινωνεί με το `manifest.js` χωρίς συγκρούσεις.
+   * *Λύση:* Δημιουργήσαμε το **Global Scope Shield**, επιτρέποντας στο desktop boot/runtime layer να επικοινωνεί με το `manifest.js` χωρίς συγκρούσεις.
 
 2. **The Asset 404 War:**
    * *Πρόβλημα:* Οι εικόνες από το GitHub δεν φορτώνονταν λόγω ονοματολογίας.
@@ -61,13 +61,14 @@
 
 ---
 
-## 📊 Η Αρχιτεκτονική των 28 Αρχείων
-Χωρίσαμε το Pegasus σε ανεξάρτητες μονάδες για μέγιστη σταθερότητα:
+## 📊 Η Τωρινή Αρχιτεκτονική
+Η σύγχρονη σταθερή βάση του Pegasus οργανώνεται γύρω από λίγα βασικά layers:
 
-* **Governance:** `manifest.js`, `init.js`, `debug.js`
-* **Execution:** `app.js`, `optimizer.js`, `metabolic.js`
-* **UI/UX:** `dragDrop.js`, `modals.js`, `charts.js`, `gallery.js`
-* **Data:** `data.js`, `food.js`, `cloudSync.js`
+* **Governance / Foundation:** `manifest.js`, `storageHardening.js`, `i18n.js`, `settings.js`
+* **Desktop Runtime:** `desktopBoot.js`, `desktopActions.js`, `desktopPanels.js`, `runtimeBridge.js`
+* **Training / Nutrition:** `pegasusCore.js`, `optimizer.js`, `food.js`, `calorieRuntime.js`, `weightTracker.js`
+* **Cloud / Safety:** `cloudSync.js`, `mobile/mobileDataRegistry.js`, `mobile/mobileDataMigration.js`
+* **Mobile Runtime:** `mobile/mobileApp.js` + τα mobile module αρχεία
 
 ---
 

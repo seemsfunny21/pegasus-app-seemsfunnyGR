@@ -29,3 +29,8 @@ PEGASUS 72 / v19.2 Stable
 
 [v21.6 Stable]
 - Consolidated mobileUI.js and mobileBridgeViews.js into mobile/mobileApp.js.
+
+
+[v21.9 Stable]
+- Fixed desktop workout video resume so the current exercise video resumes playback after pause/continue instead of staying frozen when the source is unchanged.
+- Updated HOW TO / program-guide architecture references to match the consolidated file layout (desktopBoot.js, desktopActions.js, runtimeBridge.js, cloudSync.js, mobile/mobileApp.js).

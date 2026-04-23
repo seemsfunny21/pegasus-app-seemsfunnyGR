@@ -828,6 +828,7 @@ window.finishWorkout = finishWorkout;
                 window.syncPegasusProgressRuntime();
             }
 
+            if (phase !== 2 && typeof window.showVideo === 'function') window.showVideo(currentIdx);
             runPhasePatched();
         } else {
             clearInterval(timer);
@@ -977,6 +978,17 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
+    const safePlay = () => {
+        try {
+            if (vid.paused || vid.ended) {
+                const playPromise = vid.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => {});
+                }
+            }
+        } catch (e) {}
+    };
+
     const activeBtn = document.querySelector(".navbar button.active");
     const currentDay = activeBtn ? activeBtn.id.replace('nav-', '') : "";
     const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");
@@ -987,11 +999,16 @@ function showVideo(i) {
             vid.pause();
             vid.src = recoverySrc;
             vid.load();
-            vid.play().catch(e => console.log("Waiting for user..."));
-            if (label && isRecoveryDay) {
-                label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
-                label.style.color = "#00bcd4";
+            const playPromise = vid.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => console.log("Waiting for user..."));
             }
+        } else {
+            safePlay();
+        }
+        if (label && isRecoveryDay) {
+            label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
+            label.style.color = "#00bcd4";
         }
         return;
     }
@@ -1008,11 +1025,17 @@ function showVideo(i) {
         vid.pause();
         vid.src = newSrc;
         vid.load();
-        vid.play().catch(() => {
-            vid.src = "videos/warmup.mp4";
-            vid.load();
-            vid.play().catch(() => {});
-        });
+        const playPromise = vid.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {
+                vid.src = "videos/warmup.mp4";
+                vid.load();
+                const fallbackPlay = vid.play();
+                if (fallbackPlay && typeof fallbackPlay.catch === 'function') fallbackPlay.catch(() => {});
+            });
+        }
+    } else {
+        safePlay();
     }
 }
 
