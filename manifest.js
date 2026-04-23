@@ -56,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v21.1 Stable"
+        engine_version: "v21.2 Stable"
     },
 
     // ---------------------------------------------------------
@@ -159,7 +159,6 @@ window.PegasusManifest = {
     architecture: {
         "manifest.js": "Κεντρικός ορισμός LocalStorage keys, aliases και System Blueprint.",
         "sw.js": "PWA service worker για precache, offline fallback και cache hygiene.",
-        "app.js": "Thin master orchestrator / compatibility shell για το desktop runtime.",
         "runtimeBridge.js": "Bridge μεταξύ legacy UI flow και Pegasus core runtime state.",
         
         "calorieRuntime.js": "Dynamic calorie/protein target calculation και UI runtime sync.",
@@ -178,7 +177,7 @@ window.PegasusManifest = {
         "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
         "desktopRender.js": "Desktop-specific render/update helpers για workout UI.",
         "desktopSyncUI.js": "Desktop sync panel rendering και initialization status UI.",
-        "desktopBoot.js": "Desktop startup bootstrap και initial app boot orchestration.",
+        "desktopBoot.js": "Desktop startup bootstrap, app coordination και weather adaptation layer.",
         
         "pegasusCore.js": "Core training engine, session logic και canonical workout state.",
         "data.js": "Master training data, program plans και day-by-day exercise definitions.",
@@ -187,7 +186,6 @@ window.PegasusManifest = {
         "i18n.js": "Translation and language mapping layer για GR/EN strings.",
         "dynamic.js": "Dynamic UI helpers και adaptive display utilities.",
         "progressUI.js": "Muscle progress / status rendering helpers για workout progress UI.",
-        "weather.js": "Weather fetch and adaptation layer για outdoor/indoor adjustments.",
         "backup.js": "Backup/export logic και manifest-based package creation.",
         "inventoryHandler.js": "Inventory persistence helpers για consumables/resources.",
         "cloudSync.js": "Security & persistence layer για cloud sync, vault και approved devices.",
@@ -200,12 +198,11 @@ window.PegasusManifest = {
         "cardio.js": "Cardio engine, offsets και target modifier logic.",
         "calendar.js": "Calendar/history UI logic και date-linked workout records.",
         "gallery.js": "IndexedDB gallery engine και media storage/view logic.",
-        "partner.js": "Smart co-lifter logic και dual weight memory helpers.",
         "achievements.js": "Achievements/progression unlocks και milestone UI logic.",
         "dragDrop.js": "Draggable window positioning και UI memory persistence.",
         "reporting.js": "Automated reporting/email dispatcher timing layer.",
         "metabolicEngine.js": "Metabolic calculations and body-composition support logic.",
-        "weightTracker.js": "Biometric trend analyzer και weight history helpers.",
+        "weightTracker.js": "Biometric trend analyzer, weight history helpers και partner/co-lifter memory logic.",
         "auditUI.js": "Real-time system integrity monitor και diagnostic overlay.",
         "debug.js": "Tracer, health checks, calorie audit και runtime diagnostics tools.",
         "mobile/mobileDataRegistry.js": "Registry για persistent mobile module keys, backup contracts και sync-safe merge rules.",
