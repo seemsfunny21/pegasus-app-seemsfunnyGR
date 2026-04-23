@@ -56,7 +56,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-23",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v21.3 Stable"
+        engine_version: "v21.4 Stable"
     },
 
     // ---------------------------------------------------------
@@ -175,7 +175,6 @@ window.PegasusManifest = {
         
         "desktopPanels.js": "Desktop panel open/render helpers για major UI windows.",
         "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
-        "desktopRender.js": "Desktop-specific render/update helpers για workout UI.",
         "desktopSyncUI.js": "Desktop sync panel rendering και initialization status UI.",
         "desktopBoot.js": "Desktop startup bootstrap, app coordination και weather adaptation layer.",
         
@@ -187,7 +186,6 @@ window.PegasusManifest = {
         "dynamic.js": "Dynamic UI helpers και adaptive display utilities.",
         "progressUI.js": "Muscle progress / status rendering helpers για workout progress UI.",
         "backup.js": "Backup/export logic και manifest-based package creation.",
-        "inventoryHandler.js": "Inventory persistence helpers για consumables/resources.",
         "cloudSync.js": "Security & persistence layer για cloud sync, vault και approved devices.",
         "food.js": "Nutrition logging logic & Συμφωνία 30 Γευμάτων (Κούκι).",
         "protcrea.js": "Inventory guard για πρωτεΐνη / κρεατίνη stock tracking.",
@@ -198,7 +196,6 @@ window.PegasusManifest = {
         "cardio.js": "Cardio engine, offsets και target modifier logic.",
         "calendar.js": "Calendar/history UI logic και date-linked workout records.",
         "gallery.js": "IndexedDB gallery engine και media storage/view logic.",
-        "achievements.js": "Achievements/progression unlocks και milestone UI logic.",
         "dragDrop.js": "Draggable window positioning και UI memory persistence.",
         "reporting.js": "Automated reporting/email dispatcher timing layer.",
         "metabolicEngine.js": "Metabolic calculations and body-composition support logic.",
