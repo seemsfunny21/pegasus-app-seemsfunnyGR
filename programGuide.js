@@ -350,6 +350,10 @@
         })
     };
 
+
+    window.openProgramGuide = open;
+    window.showProgramGuide = open;
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', install);
     } else {

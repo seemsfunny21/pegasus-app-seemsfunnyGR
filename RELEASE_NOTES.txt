@@ -34,3 +34,8 @@ PEGASUS 72 / v19.2 Stable
 [v21.9 Stable]
 - Fixed desktop workout video resume so the current exercise video resumes playback after pause/continue instead of staying frozen when the source is unchanged.
 - Updated HOW TO / program-guide architecture references to match the consolidated file layout (desktopBoot.js, desktopActions.js, runtimeBridge.js, cloudSync.js, mobile/mobileApp.js).
+
+
+[v22.0 Stable]
+- Hard cache-bust release to force-load the latest desktop video resume + HOW TO updates after v21.8 caching issues.
+- Exposed openProgramGuide/showProgramGuide aliases for easier diagnostics and guide opening from console/tests.
