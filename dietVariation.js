@@ -1,49 +1,11 @@
 
 /* ==========================================================================
-   PEGASUS DIET VARIATION ENGINE - v2.0
-   Protocol: Weekly Meal-Slot Rotation + Kouki-First Suggestions
+   PEGASUS DIET VARIATION ENGINE - v3.0
+   Protocol: Family Registry + Kouki Rotation + Supermarket Replacements
    ========================================================================== */
 (function() {
-    const PREFS_KEY = 'pegasus_diet_variation_prefs_v2';
+    const PREFS_KEY = 'pegasus_diet_variation_prefs_v3';
     const HISTORY_DAYS = 7;
-
-    const EASY_SWAP_POOLS = {
-        fruit_rotation: [
-            { name: 'Μήλο', protein: 0, kcal: 80, budget: 'budget', ease: 5 },
-            { name: 'Πορτοκάλι', protein: 1, kcal: 70, budget: 'budget', ease: 5 },
-            { name: 'Αχλάδι', protein: 1, kcal: 95, budget: 'budget', ease: 4 },
-            { name: 'Μανταρίνι', protein: 1, kcal: 55, budget: 'budget', ease: 5 },
-            { name: 'Ακτινίδιο', protein: 1, kcal: 60, budget: 'standard', ease: 4 },
-            { name: 'Σταφύλι', protein: 1, kcal: 90, budget: 'standard', ease: 4 },
-            { name: 'Ροδάκινο', protein: 1, kcal: 65, budget: 'budget', ease: 4 }
-        ],
-        breakfast_variation: [
-            { name: '2 αυγά + γιαούρτι 2%', protein: 20, kcal: 220, budget: 'budget', ease: 5 },
-            { name: 'Τοστ ολικής + γαλοπούλα', protein: 18, kcal: 260, budget: 'budget', ease: 5 },
-            { name: 'Γιαούρτι 2% + whey', protein: 28, kcal: 250, budget: 'standard', ease: 4 },
-            { name: '3 αυγά + 1 φρούτο', protein: 19, kcal: 290, budget: 'budget', ease: 5 },
-            { name: '2 αυγά + τοστ ολικής', protein: 19, kcal: 250, budget: 'budget', ease: 5 }
-        ],
-        workmeal_variation: [
-            { name: '2 τοστ ολικής με γαλοπούλα', protein: 24, kcal: 430, budget: 'budget', ease: 5 },
-            { name: 'Τοστ ολικής + γιαούρτι 2%', protein: 22, kcal: 360, budget: 'budget', ease: 5 },
-            { name: '2 τοστ ολικής με λιγότερο τυρί', protein: 22, kcal: 390, budget: 'budget', ease: 5 },
-            { name: 'Τοστ ολικής + 2 αυγά βραστά', protein: 24, kcal: 370, budget: 'budget', ease: 4 },
-            { name: 'Τοστ ολικής + κεφίρ', protein: 21, kcal: 340, budget: 'standard', ease: 4 }
-        ],
-        dinner_variation: [
-            { name: 'Γιαούρτι 2% + φρούτο', protein: 20, kcal: 250, budget: 'budget', ease: 5 },
-            { name: 'Γιαούρτι 2% + μέλι χωρίς whey', protein: 16, kcal: 240, budget: 'budget', ease: 5 },
-            { name: 'Τοστ ολικής + γαλοπούλα', protein: 18, kcal: 260, budget: 'budget', ease: 5 },
-            { name: '2 αυγά + σαλάτα', protein: 14, kcal: 200, budget: 'budget', ease: 4 },
-            { name: 'Γιαούρτι 2% + αμύγδαλα', protein: 21, kcal: 310, budget: 'budget', ease: 5 }
-        ],
-        revythi_fallback: [
-            { name: 'Ρεβύθι', protein: 18, kcal: 420, budget: 'budget', ease: 4 },
-            { name: 'Ρεβύθι + σαλάτα', protein: 20, kcal: 470, budget: 'budget', ease: 4 },
-            { name: 'Ρεβύθι αντί για ίδιο Κούκι κρέας', protein: 18, kcal: 420, budget: 'budget', ease: 4 }
-        ]
-    };
 
     function getLang() {
         try {
@@ -54,23 +16,8 @@
     }
     function isEn() { return getLang() === 'en'; }
     function t(gr, en) { return isEn() ? en : gr; }
-
-    function normalizeText(value) {
-        return String(value || '')
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase()
-            .trim();
-    }
-
-    function normalizeKey(value) {
-        return normalizeText(value)
-            .replace(/\([^)]*\)/g, ' ')
-            .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-    }
-
+    function normalizeKey(v) { return window.PegasusFoodRegistry?.normalize ? window.PegasusFoodRegistry.normalize(v) : String(v || '').toLowerCase().trim(); }
+    function familyLabel(key) { return window.PegasusFoodRegistry?.familyLabel?.(key) || key; }
     function pad2(n) { return String(n).padStart(2, '0'); }
     function formatDate(d) { return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`; }
 
@@ -79,9 +26,7 @@
         try {
             const parsed = JSON.parse(localStorage.getItem(prefix + dateStr) || '[]');
             return Array.isArray(parsed) ? parsed : [];
-        } catch (_) {
-            return [];
-        }
+        } catch (_) { return []; }
     }
 
     function getRecentHistory(days) {
@@ -105,90 +50,19 @@
     function macrosFor(name, type, fallbackProtein, fallbackKcal) {
         if (typeof window.getPegasusMacros === 'function') {
             const m = window.getPegasusMacros(name, type);
-            const kcal = parseFloat(m?.kcal);
-            const protein = parseFloat(m?.protein);
             return {
-                kcal: isNaN(kcal) ? (fallbackKcal || 0) : kcal,
-                protein: isNaN(protein) ? (fallbackProtein || 0) : protein
+                kcal: parseFloat(m?.kcal || fallbackKcal || 0) || 0,
+                protein: parseFloat(m?.protein || fallbackProtein || 0) || 0
             };
         }
         return { kcal: fallbackKcal || 0, protein: fallbackProtein || 0 };
     }
 
-    function getTodayDayKey() {
-        const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return daysMap[new Date().getDay()];
-    }
-
-    function getKoukiMenuSet() {
-        const set = new Set();
-        const master = window.KOUKI_MASTER_MENU || {};
-        Object.values(master).forEach(list => {
-            (list || []).forEach(item => {
-                const name = String(item?.name || item?.n || '').trim();
-                if (name) set.add(normalizeKey(name));
-            });
-        });
-        (window.KOUKI_MASTER || []).forEach(item => {
-            const name = String(item?.name || item?.n || '').trim();
-            if (name) set.add(normalizeKey(name));
-        });
-        return set;
-    }
-
-    function getTodayKoukiCandidates() {
-        const dayKey = getTodayDayKey();
-        const items = (window.KOUKI_MASTER_MENU?.[dayKey] || []).map(item => {
-            const name = String(item?.name || item?.n || '').trim();
-            const type = item?.t || item?.type || '';
-            const macros = macrosFor(name, type, item?.protein, item?.kcal);
-            const cls = classifyFood(name, type);
-            return {
-                name,
-                type,
-                kcal: macros.kcal,
-                protein: macros.protein,
-                categories: Array.isArray(cls?.categories) ? cls.categories : []
-            };
-        });
-        const seen = new Set();
-        return items.filter(item => {
-            const key = normalizeKey(item.name);
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-    }
-
-    function inferSlot(name, categories) {
-        const key = normalizeKey(name);
-        if (key.includes('μπαναν')) return 'fruit_rotation';
-        if (key.includes('αυγ')) return 'breakfast_variation';
-        if (key.includes('τοστ')) return 'workmeal_variation';
-        if (key.includes('γιαουρτ') || key.includes('whey') || key.includes('πρωτειν')) return 'dinner_variation';
-        if (categories?.includes('legumes')) return 'legume_like';
-        if (categories?.includes('fish')) return 'fish_like';
-        return 'other';
-    }
-
     function readPrefs() {
-        try {
-            const parsed = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-            return parsed && typeof parsed === 'object' ? parsed : {};
-        } catch (_) {
-            return {};
-        }
+        try { const parsed = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'); return parsed && typeof parsed === 'object' ? parsed : {}; }
+        catch (_) { return {}; }
     }
-
-    function writePrefs(prefs) {
-        try {
-            localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-            return true;
-        } catch (_) {
-            return false;
-        }
-    }
-
+    function writePrefs(prefs) { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); return true; } catch (_) { return false; } }
     function getTopicPrefs(topicKey) {
         const prefs = readPrefs();
         prefs.rejectedByTopic = prefs.rejectedByTopic || {};
@@ -199,7 +73,6 @@
             accepted: Array.isArray(prefs.acceptedByTopic[topicKey]) ? prefs.acceptedByTopic[topicKey] : []
         };
     }
-
     function updateTopicPreference(topicKey, optionName, mode) {
         const { prefs, rejected, accepted } = getTopicPrefs(topicKey);
         const normalized = normalizeKey(optionName);
@@ -212,54 +85,67 @@
         writePrefs(prefs);
     }
 
+    function getTodayDayKey() {
+        const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return daysMap[new Date().getDay()];
+    }
+
+    function getTodayKoukiCandidates() {
+        const dayKey = getTodayDayKey();
+        const menu = window.KOUKI_MASTER_MENU?.[dayKey] || [];
+        const seen = new Set();
+        return menu.map(item => {
+            const name = String(item?.name || item?.n || '').trim();
+            const type = item?.t || item?.type || '';
+            const macros = macrosFor(name, type, item?.protein, item?.kcal);
+            const cls = classifyFood(name, type);
+            return { name, type, kcal: macros.kcal, protein: macros.protein, categories: Array.isArray(cls?.categories) ? cls.categories : [] };
+        }).filter(item => {
+            const key = normalizeKey(item.name);
+            if (!key || seen.has(key)) return false;
+            seen.add(key); return true;
+        });
+    }
+
+    function inferSlotByFamily(familyKey) {
+        switch (familyKey) {
+            case 'fruit': return 'fruit';
+            case 'eggs': return 'breakfast';
+            case 'toast_bread': return 'workmeal';
+            case 'yogurt':
+            case 'whey': return 'dinner';
+            default: return 'other';
+        }
+    }
+
     function countHistory(history) {
-        const koukiSet = getKoukiMenuSet();
-        const counts = {};
-        const slotCounts = {
-            fruit_rotation: 0,
-            breakfast_variation: 0,
-            workmeal_variation: 0,
-            dinner_variation: 0,
-            kouki_main: 0
-        };
+        const familyDays = {};
+        const itemDays = {};
         const categoryCoverage = { greens: 0, legumes: 0, fish: 0 };
+        const familyMeta = {};
         history.forEach(day => {
+            const dayFamilies = new Set();
+            const dayItems = new Set();
             const dayHit = { greens: false, legumes: false, fish: false };
             (day.log || []).forEach(item => {
                 const name = String(item?.name || item?.n || '').trim();
                 const type = item?.t || item?.type || '';
                 if (!name) return;
-                const key = normalizeKey(name);
+                const matched = window.PegasusFoodRegistry?.matchItem?.(name);
+                const family = matched?.family || 'other';
+                const slot = inferSlotByFamily(family);
+                const macros = macrosFor(name, type, matched?.protein, matched?.kcal);
                 const cls = classifyFood(name, type);
-                const macros = macrosFor(name, type, item?.protein, item?.kcal);
-                const slot = inferSlot(name, cls?.categories || []);
-                const isKouki = key.includes('κουκι') || koukiSet.has(key);
-
-                if (!counts[key]) {
-                    counts[key] = {
-                        name,
-                        count: 0,
-                        slot,
-                        isKouki,
-                        categories: Array.isArray(cls?.categories) ? cls.categories : [],
-                        protein: macros.protein,
-                        kcal: macros.kcal
-                    };
-                }
-                counts[key].count += 1;
-
-                if (slot in slotCounts) slotCounts[slot] += 1;
-                if (isKouki) slotCounts.kouki_main += 1;
-
-                counts[key].categories.forEach(cat => {
-                    if (cat in dayHit) dayHit[cat] = true;
-                });
+                familyMeta[family] = familyMeta[family] || { family, label: familyLabel(family), protein: macros.protein, kcal: macros.kcal, slot, example: name };
+                dayFamilies.add(family);
+                dayItems.add(normalizeKey(name));
+                (cls.categories || []).forEach(cat => { if (cat in dayHit) dayHit[cat] = true; });
             });
-            Object.keys(dayHit).forEach(cat => {
-                if (dayHit[cat]) categoryCoverage[cat] += 1;
-            });
+            dayFamilies.forEach(family => { familyDays[family] = (familyDays[family] || 0) + 1; });
+            dayItems.forEach(itemKey => { itemDays[itemKey] = (itemDays[itemKey] || 0) + 1; });
+            Object.keys(dayHit).forEach(cat => { if (dayHit[cat]) categoryCoverage[cat] += 1; });
         });
-        return { counts, slotCounts, categoryCoverage };
+        return { familyDays, itemDays, categoryCoverage, familyMeta };
     }
 
     function getRemainingProteinNeed() {
@@ -272,31 +158,24 @@
         const diff = Math.abs((candidateProtein || 0) - (targetProtein || 0));
         if (diff <= 5) return t('παρόμοια πρωτεΐνη', 'similar protein');
         if (diff <= 10) return t('λίγο διαφορετική πρωτεΐνη', 'slightly different protein');
-        return t('πιο χαμηλή / υψηλή πρωτεΐνη', 'more different protein');
+        return t('αρκετά διαφορετική πρωτεΐνη', 'more different protein');
     }
 
-    function rankStaticOptions(topicKey, baseProtein) {
+    function rankRegistryOptions(slotKey, baseProtein, sourceFamily, environment) {
+        const topicKey = `${slotKey}_variation`;
         const { rejected, accepted } = getTopicPrefs(topicKey);
         const rej = new Set(rejected);
         const acc = new Set(accepted);
-
-        return (EASY_SWAP_POOLS[topicKey] || [])
+        const dayMode = window.PegasusFoodRegistry?.getDayMode?.() || 'training';
+        return (window.PegasusFoodRegistry?.getCandidates?.(slotKey, baseProtein, { targetFamily: sourceFamily, environment, dayMode }) || [])
             .filter(opt => !rej.has(normalizeKey(opt.name)))
-            .map(opt => {
-                const proteinDiff = Math.abs((opt.protein || 0) - (baseProtein || 0));
-                const score =
-                    (acc.has(normalizeKey(opt.name)) ? 20 : 0) +
-                    (opt.budget === 'budget' ? 12 : 6) +
-                    (opt.ease || 0) * 3 -
-                    proteinDiff;
-                return {
-                    ...opt,
-                    state: acc.has(normalizeKey(opt.name)) ? 'accepted' : 'candidate',
-                    score,
-                    note: t(`~${opt.protein}g πρωτεΐνη • ${proteinBandLabel(opt.protein, baseProtein)} • εύκολη / οικονομική`, `~${opt.protein}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • easy / affordable`)
-                };
-            })
-            .sort((a, b) => b.score - a.score)
+            .map(opt => ({
+                ...opt,
+                state: acc.has(normalizeKey(opt.name)) ? 'accepted' : 'candidate',
+                note: t(`~${Math.round(opt.protein || 0)}g πρωτεΐνη • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'οικονομική' : 'οκ κόστος'} • ${environment === 'work' ? 'κατάλληλο για δουλειά' : 'για σπίτι'}`,
+                        `~${Math.round(opt.protein || 0)}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'budget' : 'standard'} • ${environment === 'work' ? 'work-safe' : 'home-safe'}`)
+            }))
+            .sort((a, b) => (b.score || 0) - (a.score || 0))
             .slice(0, 5);
     }
 
@@ -305,22 +184,18 @@
         const { rejected, accepted } = getTopicPrefs(topicKey);
         const rej = new Set(rejected);
         const acc = new Set(accepted);
-        const todayMenu = getTodayKoukiCandidates();
-
-        return todayMenu
+        const remainingProtein = getRemainingProteinNeed();
+        return getTodayKoukiCandidates()
             .filter(opt => !rej.has(normalizeKey(opt.name)))
             .map(opt => {
-                let score = 0;
-                const proteinDiff = Math.abs((opt.protein || 0) - (baseProtein || 0));
-                score -= proteinDiff * 0.8;
-                if ((opt.protein || 0) >= 25) score += 14;
-                if ((opt.protein || 0) >= getRemainingProteinNeed()) score += 8;
-                if ((categoryCoverage.greens || 0) <= 1 && opt.categories.includes('greens')) score += 20;
-                if ((categoryCoverage.legumes || 0) === 0 && opt.categories.includes('legumes')) score += 18;
-                if ((categoryCoverage.fish || 0) === 0 && opt.categories.includes('fish')) score += 16;
-                if (acc.has(normalizeKey(opt.name))) score += 10;
-                score += opt.categories.includes('veg') ? 6 : 0;
-
+                let score = 100;
+                score -= Math.abs((opt.protein || 0) - (baseProtein || 0)) * 1.6;
+                if ((opt.protein || 0) >= 25) score += 18;
+                if ((opt.protein || 0) >= remainingProtein) score += 10;
+                if ((categoryCoverage.greens || 0) <= 1 && opt.categories.includes('greens')) score += 22;
+                if ((categoryCoverage.legumes || 0) === 0 && opt.categories.includes('legumes')) score += 20;
+                if ((categoryCoverage.fish || 0) === 0 && opt.categories.includes('fish')) score += 18;
+                if (acc.has(normalizeKey(opt.name))) score += 8;
                 return {
                     ...opt,
                     state: acc.has(normalizeKey(opt.name)) ? 'accepted' : 'candidate',
@@ -328,7 +203,7 @@
                     note: t(`~${Math.round(opt.protein || 0)}g πρωτεΐνη • ${proteinBandLabel(opt.protein, baseProtein)} • από το Κούκι`, `~${Math.round(opt.protein || 0)}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • from Kouki`)
                 };
             })
-            .sort((a, b) => b.score - a.score)
+            .sort((a, b) => (b.score || 0) - (a.score || 0))
             .slice(0, 5);
     }
 
@@ -338,91 +213,76 @@
 
     function analyzeWeeklyVariation() {
         const history = getRecentHistory(HISTORY_DAYS);
-        const { counts, categoryCoverage } = countHistory(history);
-        const entries = Object.values(counts).sort((a, b) => b.count - a.count);
-
-        const overusedFoods = entries
-            .filter(entry => entry.count >= 4)
+        const { familyDays, itemDays, categoryCoverage, familyMeta } = countHistory(history);
+        const overusedFoods = Object.entries(familyDays)
+            .filter(([family, days]) => days >= 4 && family !== 'other')
+            .sort((a, b) => b[1] - a[1])
             .slice(0, 6)
-            .map(entry => ({
-                name: entry.name,
-                count: entry.count,
-                slot: entry.slot,
-                isKouki: entry.isKouki,
-                protein: Math.round(entry.protein || 0)
-            }));
+            .map(([family, days]) => ({ family, name: familyLabel(family), count: days, slot: familyMeta[family]?.slot || 'other', protein: Math.round(familyMeta[family]?.protein || 0) }));
 
         const missingCategories = [];
         if ((categoryCoverage.greens || 0) <= 1) missingCategories.push({ key: 'greens', label: t('χόρτα / πράσινα', 'greens') });
         if ((categoryCoverage.legumes || 0) === 0) missingCategories.push({ key: 'legumes', label: t('όσπρια', 'legumes') });
         if ((categoryCoverage.fish || 0) === 0) missingCategories.push({ key: 'fish', label: t('ψάρι / θαλασσινά', 'fish / seafood') });
 
-        const findMaxCount = matcher => entries.filter(matcher).sort((a, b) => b.count - a.count)[0] || null;
-
-        const bananaEntry = findMaxCount(entry => entry.slot === 'fruit_rotation');
-        const eggsEntry = findMaxCount(entry => entry.slot === 'breakfast_variation');
-        const toastEntry = findMaxCount(entry => entry.slot === 'workmeal_variation');
-        const yogurtEntry = findMaxCount(entry => entry.slot === 'dinner_variation');
-        const koukiRepeat = findMaxCount(entry => entry.isKouki);
+        const bananaDays = Object.entries(itemDays).filter(([k]) => k.includes('μπανανα')).reduce((m, [,v]) => Math.max(m,v), 0);
+        const eggsDays = familyDays.eggs || 0;
+        const toastDays = familyDays.toast_bread || 0;
+        const yogurtDays = familyDays.yogurt || 0;
 
         const variationPlans = [];
 
-        if (koukiRepeat) {
-            variationPlans.push(buildPlan(
-                'kouki_rotation',
-                t('Κυκλική αλλαγή Κούκι', 'Kouki rotation'),
-                t(`Το απογευματινό είναι πάντα από το Κούκι. Αντί να παίζεις το ίδιο, κάνε κύκλο στα πιάτα που σε κρατούν κοντά στην πρωτεΐνη στόχου.`, `Your afternoon meal is always from Kouki. Instead of repeating the same dish, rotate through dishes that keep you close to your protein target.`),
-                rankKoukiOptions(koukiRepeat.protein || 28, categoryCoverage),
-                'green'
-            ));
-        }
+        const koukiBaseProtein = Math.max(24, getRemainingProteinNeed() || 24);
+        variationPlans.push(buildPlan(
+            'kouki_rotation',
+            t('Κυκλική αλλαγή Κούκι', 'Kouki rotation'),
+            t('Το απογευματινό μένει πάντα από το Κούκι. Κάνε κύκλο σε πιάτα που σε κρατούν κοντά στην πρωτεΐνη και καλύπτουν ό,τι λείπει μέσα στην εβδομάδα.', 'Your afternoon meal stays Kouki-first. Rotate through dishes that keep you close to protein and cover what has been missing this week.'),
+            rankKoukiOptions(koukiBaseProtein, categoryCoverage),
+            'green'
+        ));
 
-        if (bananaEntry && bananaEntry.count >= 4) {
+        if (bananaDays >= 4) {
             variationPlans.push(buildPlan(
-                'fruit_rotation',
+                'fruit_variation',
                 t('Αλλαγή φρούτου', 'Fruit rotation'),
-                t(`Η μπανάνα παίζει ${bananaEntry.count}/7 μέρες. Κράτα το φρούτο, αλλά σπάσ’ το κυκλικά την επόμενη εβδομάδα.`, `Banana appears ${bananaEntry.count}/7 days. Keep the fruit slot, but rotate it next week.`),
-                rankStaticOptions('fruit_rotation', bananaEntry.protein || 1),
+                t(`Η μπανάνα παίζει ${bananaDays}/7 μέρες. Σπάσ’ την με άλλα φρούτα από σούπερ μάρκετ.`, `Banana appears ${bananaDays}/7 days. Break it up with other supermarket fruits.`),
+                rankRegistryOptions('fruit', 1, 'fruit', 'work'),
                 'orange'
             ));
         }
-
-        if (toastEntry && toastEntry.count >= 4) {
+        if (toastDays >= 4) {
             variationPlans.push(buildPlan(
                 'workmeal_variation',
-                t('Αλλαγή τοστ στη δουλειά', 'Work meal variation'),
-                t(`Τα 2 τοστ παίζουν πολύ συχνά (${toastEntry.count}/7). Οι αλλαγές μένουν εύκολες και κοντά στην πρωτεΐνη σου.`, `The 2 toasts appear very often (${toastEntry.count}/7). Swaps stay easy and close to your protein target.`),
-                rankStaticOptions('workmeal_variation', toastEntry.protein || 24),
+                t('Αλλαγή γεύματος δουλειάς', 'Work meal variation'),
+                t(`Τα τοστ παίζουν ${toastDays}/7 μέρες. Οι αλλαγές είναι low-odor, εύκολες και κοντά στην πρωτεΐνη σου.`, `Toasts appear ${toastDays}/7 days. Swaps stay low-odor, easy, and close to your protein target.`),
+                rankRegistryOptions('workmeal', familyMeta.toast_bread?.protein || 22, 'toast_bread', 'work'),
                 'orange'
             ));
         }
-
-        if (eggsEntry && eggsEntry.count >= 5) {
+        if (eggsDays >= 5) {
             variationPlans.push(buildPlan(
                 'breakfast_variation',
                 t('Αλλαγή πρωινού', 'Breakfast variation'),
-                t(`Τα αυγά παίζουν ${eggsEntry.count}/7 μέρες. Κράτα το εύκολο πρωινό, αλλά άλλαξε 1–2 μέρες.`, `Eggs appear ${eggsEntry.count}/7 days. Keep breakfast easy, but rotate 1–2 days.`),
-                rankStaticOptions('breakfast_variation', eggsEntry.protein || 18),
+                t(`Τα αυγά παίζουν ${eggsDays}/7 μέρες. Αντί για άλλη εκδοχή αυγών, δες τι άλλο μπορείς να αγοράσεις από σούπερ μάρκετ.`, `Eggs appear ${eggsDays}/7 days. Instead of another egg variant, see what else you can buy from the supermarket.`),
+                rankRegistryOptions('breakfast', familyMeta.eggs?.protein || 19, 'eggs', 'home'),
                 'orange'
             ));
         }
-
-        if (yogurtEntry && yogurtEntry.count >= 5) {
+        if (yogurtDays >= 5) {
             variationPlans.push(buildPlan(
                 'dinner_variation',
                 t('Αλλαγή βραδινού', 'Dinner variation'),
-                t(`Το γιαούρτι / whey παίζει πολύ συχνά (${yogurtEntry.count}/7). Οι αλλαγές κρατούν την πρωτεΐνη κοντά στον στόχο.`, `Yogurt / whey appears very often (${yogurtEntry.count}/7). Swaps keep protein close to target.`),
-                rankStaticOptions('dinner_variation', yogurtEntry.protein || 24),
+                t(`Το γιαούρτι παίζει ${yogurtDays}/7 μέρες. Οι αλλαγές κρατούν την πρωτεΐνη σχετικά κοντά, αλλά δεν μένουν στην ίδια οικογένεια γιαουρτιού.`, `Yogurt appears ${yogurtDays}/7 days. Swaps keep protein fairly close, but do not stay inside the same yogurt family.`),
+                rankRegistryOptions('dinner', familyMeta.yogurt?.protein || 20, 'yogurt', 'home'),
                 'orange'
             ));
         }
-
-        if (!variationPlans.some(p => p.topicKey === 'kouki_rotation') && missingCategories.some(x => x.key === 'legumes')) {
+        if (missingCategories.some(x => x.key === 'legumes')) {
             variationPlans.push(buildPlan(
-                'revythi_fallback',
+                'revythi_variation',
                 t('Ρεβύθι σαν fallback', 'Revythi fallback'),
-                t('Αν λείπουν όσπρια και δεν σε καλύπτει το Κούκι, βάλε ρεβύθι μέσα στην εβδομάδα.', 'If legumes are missing and Kouki does not cover them, use revythi during the week.'),
-                rankStaticOptions('revythi_fallback', 18),
+                t('Αν λείπουν όσπρια μέσα στην εβδομάδα, χρησιμοποίησε ρεβύθι σαν εύκολη και οικονομική λύση στο σπίτι.', 'If legumes are missing this week, use revythi as an easy and affordable at-home fallback.'),
+                [{ name: 'Ρεβύθι', family: 'legumes', protein: 18, kcal: 420, budget: 'budget', ease: 4, state: 'candidate', note: t('~18g πρωτεΐνη • οικονομική λύση όσπριου για το σπίτι', '~18g protein • affordable legume fallback for home') }],
                 'green'
             ));
         }
@@ -431,6 +291,7 @@
             historyDays: HISTORY_DAYS,
             overusedFoods,
             missingCategories,
+            familyRegistryCount: Object.keys(window.PegasusFoodRegistry?.families || {}).length,
             variationPlans: variationPlans.slice(0, 5)
         };
     }

@@ -71,3 +71,9 @@ PEGASUS 72 / v19.2 Stable
 [v23.1 Stable]
 - Diet Variation upgraded to meal-slot logic: Kouki-only rotation for the afternoon meal, plus easy protein-aware replacements for eggs, yogurt/whey, banana, and work toasts.
 - Suggestions now prioritize affordable, practical swaps with similar protein so the daily target remains realistic.
+
+
+[v23.2 Stable]
+- Added shared Food Registry foundation with 15 realistic food families covering routine foods, Kouki meals, and common outside meals.
+- Diet Variation now uses family-level logic so yogurt variants remain one family, eggs remain one family, and supermarket replacements come from different families instead of micro-variations of the same food.
+- Work-meal swaps now prioritize low-odor, practical supermarket options, while home dinner swaps may include stronger-smelling proteins.

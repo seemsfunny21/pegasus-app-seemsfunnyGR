@@ -32,7 +32,7 @@
         return `
             <div class="variation-panel">
                 <div class="variation-title">🧠 WEEKLY LOGIC</div>
-                <div class="variation-subtitle">Κύκλος Κούκι + εύκολες αλλαγές για αυγά / γιαούρτι / μπανάνα / τοστ</div>
+                <div class="variation-subtitle">Κύκλος Κούκι + supermarket αλλαγές για αυγά / γιαούρτι / μπανάνα / τοστ</div>
                 <div class="variation-mini-section">
                     <div class="variation-mini-title">ΤΙ ΠΑΙΖΕΙ ΠΟΛΥ</div>
                     <div class="variation-chip-row">${overused || `<div class="variation-summary-item variation-neutral">Δεν βρέθηκε έντονη μονοτονία.</div>`}</div>

@@ -23,6 +23,7 @@ const ASSETS_TO_CACHE = [
     './desktopBoot.js',
     './desktopPanels.js',
     './dialogs.js',
+    './foodRegistry.js',
     './dietAdvisor.js',
     './dietVariation.js',
     './dragDrop.js',

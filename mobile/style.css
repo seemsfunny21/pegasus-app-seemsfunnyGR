@@ -541,3 +541,5 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     line-height: 1.35;
     margin-bottom: 8px;
 }
+
+.variation-option-meta { color:#8cc79a; font-size:10px; margin-top:4px; }
