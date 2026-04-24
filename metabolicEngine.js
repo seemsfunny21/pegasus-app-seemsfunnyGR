@@ -1,5 +1,5 @@
 /* =============================================================
-   PEGASUS UNIFIED METABOLIC ENGINE - v16.7 (SAFE SHARED TARGET CORE)
+   PEGASUS UNIFIED METABOLIC ENGINE - v16.8 (SAFE SHARED TARGET CORE)
    Merged: calories.js + metabolic.js
    Protocol: Strict Session Isolation, Midnight Guard & Shared Target Logic
    Status: FINAL STABLE | FIXED: ACTIVE INPUT TARGETING + STORAGE SAFETY
@@ -99,10 +99,104 @@ const PegasusMetabolic = {
         return 0;
     },
 
-    getBaseDailyTarget: function(settingsObj) {
-        const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-        const dayName = greekDays[new Date().getDay()];
+    getRestDailyTarget: function() {
+        return 2100;
+    },
 
+    getTodayDayName: function() {
+        return ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"][new Date().getDay()];
+    },
+
+    getTodayProgramEntries: function(dayName) {
+        const targetDay = dayName || this.getTodayDayName();
+        let entries = Array.isArray(window.program?.[targetDay]) ? window.program[targetDay].map(ex => ({ ...ex })) : [];
+        try {
+            if (window.PegasusOptimizer?.apply && entries.length) {
+                entries = window.PegasusOptimizer.apply(targetDay, entries).map(ex => ({ ...ex }));
+            }
+        } catch (e) {}
+        return entries;
+    },
+
+    getStrengthWorkoutLoadInfo: function(settingsObj) {
+        const dayName = this.getTodayDayName();
+        const settings = settingsObj || (typeof window.getPegasusSettings === "function" ? window.getPegasusSettings() : { activeSplit: "IRON" });
+        const activePlan = settings?.activeSplit || "IRON";
+        const entries = this.getTodayProgramEntries(dayName);
+        const strengthEntries = entries.filter(ex => {
+            const name = String(ex?.name || '').toLowerCase();
+            if (!name) return false;
+            if (name.includes('stretch')) return false;
+            if (name.includes('cycling') || name.includes('ποδηλα')) return false;
+            if (name.includes('ems')) return false;
+            return (parseFloat(ex?.adjustedSets || ex?.sets || 0) || 0) > 0;
+        });
+
+        if (!strengthEntries.length) {
+            localStorage.setItem('pegasus_strength_bonus_today', '0');
+            localStorage.setItem('pegasus_strength_load_today', '0');
+            return {
+                dayName,
+                activePlan,
+                exerciseCount: 0,
+                totalSets: 0,
+                weightedLoad: 0,
+                bonus: 0,
+                source: 'none',
+                exercises: []
+            };
+        }
+
+        const domWeights = {};
+        document.querySelectorAll('.exercise .weight-input').forEach(input => {
+            const name = String(input?.getAttribute('data-name') || '').trim();
+            const val = parseFloat(input?.value);
+            if (name && Number.isFinite(val) && val >= 0) domWeights[name] = val;
+        });
+
+        const exerciseSummaries = strengthEntries.map(ex => {
+            const cleanName = String(ex?.name || '').trim();
+            const sets = Math.max(1, Math.round(parseFloat(ex?.adjustedSets || ex?.sets || 1) || 1));
+            let weight = 0;
+            if (Object.prototype.hasOwnProperty.call(domWeights, cleanName)) {
+                weight = Number(domWeights[cleanName]) || 0;
+            } else if (typeof window.getSavedWeight === 'function') {
+                weight = parseFloat(window.getSavedWeight(cleanName)) || 0;
+            }
+            if (!weight) weight = parseFloat(ex?.weight || 0) || 0;
+
+            const nameLower = cleanName.toLowerCase();
+            let factor = 1.0;
+            if (/(leg|squat|extension|lunge|calf|hip|deadlift|rower)/i.test(nameLower)) factor = 1.2;
+            else if (/(press|row|pulldown|pushup|fly|chest|lat)/i.test(nameLower)) factor = 1.1;
+            else if (/(bicep|tricep|curl|crunch|plank|raise|abs|upright)/i.test(nameLower)) factor = 0.9;
+
+            const load = Math.max(0, weight) * sets * factor;
+            return { name: cleanName, sets, weight, factor, load };
+        });
+
+        const exerciseCount = exerciseSummaries.length;
+        const totalSets = exerciseSummaries.reduce((acc, ex) => acc + ex.sets, 0);
+        const weightedLoad = Math.round(exerciseSummaries.reduce((acc, ex) => acc + ex.load, 0));
+        let bonus = Math.round(180 + (exerciseCount * 20) + (totalSets * 12) + (weightedLoad / 5));
+        bonus = Math.max(300, Math.min(950, bonus));
+
+        localStorage.setItem('pegasus_strength_bonus_today', String(bonus));
+        localStorage.setItem('pegasus_strength_load_today', String(weightedLoad));
+
+        return {
+            dayName,
+            activePlan,
+            exerciseCount,
+            totalSets,
+            weightedLoad,
+            bonus,
+            source: Object.keys(domWeights).length ? 'dom+saved' : 'saved+program',
+            exercises: exerciseSummaries
+        };
+    },
+
+    getBaseDailyTarget: function(settingsObj) {
         const settings = settingsObj || (
             typeof window.getPegasusSettings === "function"
                 ? window.getPegasusSettings()
@@ -110,28 +204,17 @@ const PegasusMetabolic = {
         );
 
         const activePlan = settings?.activeSplit || "IRON";
+        const dayName = this.getTodayDayName();
+        const restBase = this.getRestDailyTarget();
 
-        const KCAL_REST = 2100;
-        const KCAL_WEIGHTS = 2800;
-        const KCAL_EMS = 2700;
-        const KCAL_BIKE = 3100;
+        if (activePlan === 'EMS_ONLY' && dayName === 'Τετάρτη') return 2700;
 
-        if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return KCAL_REST;
-
-        switch (activePlan) {
-            case "EMS_ONLY":
-                return dayName === "Τετάρτη" ? KCAL_EMS : KCAL_WEIGHTS;
-            case "BIKE_ONLY":
-                return (dayName === "Σάββατο" || dayName === "Κυριακή") ? KCAL_BIKE : KCAL_WEIGHTS;
-            case "HYBRID":
-                if (dayName === "Τετάρτη") return KCAL_EMS;
-                if (dayName === "Σάββατο" || dayName === "Κυριακή") return KCAL_BIKE;
-                return KCAL_WEIGHTS;
-            case "UPPER_LOWER":
-            case "IRON":
-            default:
-                return KCAL_WEIGHTS;
+        const strengthInfo = this.getStrengthWorkoutLoadInfo(settings);
+        if (strengthInfo.exerciseCount > 0) {
+            return Math.round(restBase + strengthInfo.bonus);
         }
+
+        return restBase;
     },
 
     getEffectiveDailyTarget: function(settingsObj) {
@@ -319,7 +402,9 @@ window.trackSetCalories = PegasusMetabolic.updateTracking.bind(PegasusMetabolic)
 
 window.getPegasusTodayDateStr = PegasusMetabolic.getTodayDateStr.bind(PegasusMetabolic);
 window.getPegasusTodayCardioOffset = PegasusMetabolic.getTodayCardioOffset.bind(PegasusMetabolic);
+window.getPegasusRestDailyTarget = PegasusMetabolic.getRestDailyTarget.bind(PegasusMetabolic);
 window.getPegasusBaseDailyTarget = PegasusMetabolic.getBaseDailyTarget.bind(PegasusMetabolic);
+window.getPegasusStrengthWorkoutLoadInfo = PegasusMetabolic.getStrengthWorkoutLoadInfo.bind(PegasusMetabolic);
 window.getPegasusEffectiveDailyTarget = PegasusMetabolic.getEffectiveDailyTarget.bind(PegasusMetabolic);
 
 /* =========================================================

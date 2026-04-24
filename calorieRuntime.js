@@ -57,42 +57,23 @@ window.getPegasusTodayCardioOffset = function() {
     return 0;
 };
 
+window.getPegasusRestDailyTarget = function() {
+    if (window.PegasusMetabolic?.getRestDailyTarget) return window.PegasusMetabolic.getRestDailyTarget();
+    return 2100;
+};
+
 window.getPegasusBaseDailyTarget = function(settingsObj) {
-    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const dayName = greekDays[new Date().getDay()];
+    if (window.PegasusMetabolic?.getBaseDailyTarget) return window.PegasusMetabolic.getBaseDailyTarget(settingsObj);
+    return window.getPegasusRestDailyTarget();
+};
 
-    const settings = settingsObj || (
-        typeof window.getPegasusSettings === "function"
-            ? window.getPegasusSettings()
-            : { activeSplit: "IRON" }
-    );
-
-    const activePlan = settings?.activeSplit || "IRON";
-
-    const KCAL_REST = 2100;
-    const KCAL_WEIGHTS = 2800;
-    const KCAL_EMS = 2700;
-    const KCAL_BIKE = 3100;
-
-    if (dayName === "Δευτέρα" || dayName === "Πέμπτη") return KCAL_REST;
-
-    switch (activePlan) {
-        case "EMS_ONLY":
-            return dayName === "Τετάρτη" ? KCAL_EMS : KCAL_WEIGHTS;
-        case "BIKE_ONLY":
-            return (dayName === "Σάββατο" || dayName === "Κυριακή") ? KCAL_BIKE : KCAL_WEIGHTS;
-        case "HYBRID":
-            if (dayName === "Τετάρτη") return KCAL_EMS;
-            if (dayName === "Σάββατο" || dayName === "Κυριακή") return KCAL_BIKE;
-            return KCAL_WEIGHTS;
-        case "IRON":
-        case "UPPER_LOWER":
-        default:
-            return KCAL_WEIGHTS;
-    }
+window.getPegasusStrengthWorkoutLoadInfo = function(settingsObj) {
+    if (window.PegasusMetabolic?.getStrengthWorkoutLoadInfo) return window.PegasusMetabolic.getStrengthWorkoutLoadInfo(settingsObj);
+    return { exerciseCount: 0, totalSets: 0, weightedLoad: 0, bonus: 0, source: 'fallback', exercises: [] };
 };
 
 window.getPegasusEffectiveDailyTarget = function(settingsObj) {
+    if (window.PegasusMetabolic?.getEffectiveDailyTarget) return window.PegasusMetabolic.getEffectiveDailyTarget(settingsObj);
     const baseTarget = window.getPegasusBaseDailyTarget(settingsObj);
     const cardioOffset = window.getPegasusTodayCardioOffset();
     return Math.round(baseTarget + cardioOffset);
@@ -148,13 +129,16 @@ window.calculatePegasusDailyTarget = function() {
         : { activeSplit: 'IRON' };
 
     const dynamicProtein = window.calculatePegasusBioMetrics(settings);
+    const strengthInfo = window.getPegasusStrengthWorkoutLoadInfo ? window.getPegasusStrengthWorkoutLoadInfo(settings) : { bonus: 0, weightedLoad: 0, exerciseCount: 0, totalSets: 0 };
     const baseTarget = window.getPegasusBaseDailyTarget(settings);
     const cardioOffset = window.getPegasusTodayCardioOffset();
     const effectiveTarget = Math.round(baseTarget + cardioOffset);
 
-    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', baseTarget);
+    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', String(baseTarget));
+    localStorage.setItem('pegasus_strength_bonus_today', String(strengthInfo?.bonus || 0));
+    localStorage.setItem('pegasus_strength_load_today', String(strengthInfo?.weightedLoad || 0));
 
-    console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Στόχος Βάσης: ${baseTarget} kcal | Cardio: +${cardioOffset} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
+    console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Βάση Ξεκούρασης: ${window.getPegasusRestDailyTarget ? window.getPegasusRestDailyTarget() : 2100} kcal | Strength Bonus: +${strengthInfo?.bonus || 0} | Cardio: +${cardioOffset} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
 
     window._isCalculatingTarget = false;
     return effectiveTarget;

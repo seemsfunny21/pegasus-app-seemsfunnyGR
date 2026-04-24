@@ -52,3 +52,8 @@ PEGASUS 72 / v19.2 Stable
 
 [v22.6 Stable]
 - Diet Advisor red-state tuning: repeated exact Kouki dishes now turn red sooner, and similar dish families can also be marked red when they have been repeated often over the last 7 days.
+
+
+[v22.8 Stable]
+- Daily kcal target now uses rest base + strength workout bonus + exact cardio kcal.
+- Strength workout bonus estimates load from today's program, sets, and exercise weights (current boxes first, then saved weights, then program defaults).
