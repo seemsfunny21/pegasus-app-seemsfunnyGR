@@ -43,3 +43,8 @@ PEGASUS 72 / v19.2 Stable
 
 [v22.3 Stable]
 - Mobile Diet Advisor toggle fixed: tap once to show the advisor panel, tap again to hide it.
+
+
+[v22.4 Stable]
+- Restored Pegasus-green visual style in the mobile Diet Advisor while keeping the new recommendation color coding.
+- Advisor toggle now treats visible content as the open state, preventing stale expanded flags from inverting the first tap.

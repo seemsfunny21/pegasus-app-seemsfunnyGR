@@ -226,7 +226,7 @@ window.PegasusDiet = {
         if (!window.PegasusDietAdvisor) return alert("Advisor Offline");
         if (!container) return;
 
-        const isVisible = container.dataset.expanded === "true" && container.innerHTML.trim() !== "";
+        const isVisible = container.innerHTML.trim() !== "";
         if (isVisible) {
             container.innerHTML = "";
             container.dataset.expanded = "false";
@@ -234,6 +234,7 @@ window.PegasusDiet = {
             return;
         }
 
+        container.dataset.expanded = "false";
         const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
         const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
 
