@@ -61,3 +61,8 @@ PEGASUS 72 / v19.2 Stable
 
 [v22.9 Stable]
 - Audit/debug calorie wording now shows the new metabolic breakdown clearly: rest base + strength bonus + cardio = effective target.
+
+
+[v23.0 Stable]
+- Added modular mobile module 'Αλλαγή Διατροφής' with 7-day diet variety analysis.
+- New weekly variation engine suggests 3-5 swaps, supports accept/reject, and replaces rejected options with new alternatives.
