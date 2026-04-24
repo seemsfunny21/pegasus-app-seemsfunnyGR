@@ -79,6 +79,38 @@ window.PegasusAuditUI = {
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
+
+    getRestBaseTarget() {
+        if (typeof window.getPegasusRestDailyTarget === "function") {
+            const target = parseFloat(window.getPegasusRestDailyTarget());
+            return Math.round(isNaN(target) ? 2100 : target);
+        }
+        if (typeof window.PegasusMetabolic?.getRestDailyTarget === "function") {
+            const target = parseFloat(window.PegasusMetabolic.getRestDailyTarget());
+            return Math.round(isNaN(target) ? 2100 : target);
+        }
+        return 2100;
+    },
+
+    getStrengthBonus() {
+        if (typeof window.PegasusMetabolic?.getStrengthWorkoutLoadInfo === "function") {
+            const info = window.PegasusMetabolic.getStrengthWorkoutLoadInfo();
+            const bonus = parseFloat(info?.bonus);
+            if (!isNaN(bonus)) return Math.round(bonus);
+        }
+        const stored = parseFloat(localStorage.getItem("pegasus_strength_bonus_today"));
+        return isNaN(stored) ? 0 : Math.round(stored);
+    },
+
+    getMetabolicBreakdownLabel(targetKcal, cardioOffset) {
+        const restBase = this.getRestBaseTarget();
+        const strengthBonus = this.getStrengthBonus();
+        if (strengthBonus > 0) {
+            return `${targetKcal} kcal | rest ${restBase} + strength ${strengthBonus} + cardio ${cardioOffset}`;
+        }
+        return `${targetKcal} kcal | rest ${restBase} + cardio ${cardioOffset}`;
+    },
+
     getTodayCardioOffset() {
         if (typeof window.getPegasusTodayCardioOffset === "function") {
             const offset = parseFloat(window.getPegasusTodayCardioOffset());
@@ -201,7 +233,7 @@ window.PegasusAuditUI = {
 
         if (!isAnomalous) {
             console.log(
-                `%c 🟢 AUDIT: Metabolic Alignment OK (${targetKcal} kcal | base ${baseTarget} + cardio ${cardioOffset})`,
+                `%c 🟢 AUDIT: Metabolic Alignment OK (${this.getMetabolicBreakdownLabel(targetKcal, cardioOffset)})`,
                 "color: #4CAF50"
             );
         }

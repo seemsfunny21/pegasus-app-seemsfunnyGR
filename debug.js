@@ -201,6 +201,25 @@ window.PegasusDebugHelpers = {
         }
     },
 
+
+    getRestBaseTarget: function() {
+        if (typeof window.getPegasusRestDailyTarget === "function") {
+            const val = parseFloat(window.getPegasusRestDailyTarget());
+            return isNaN(val) ? 2100 : val;
+        }
+        return 2100;
+    },
+
+    getStrengthBonus: function() {
+        if (typeof window.getPegasusStrengthWorkoutLoadInfo === "function") {
+            const info = window.getPegasusStrengthWorkoutLoadInfo();
+            const val = parseFloat(info?.bonus);
+            if (!isNaN(val)) return Math.round(val);
+        }
+        const stored = parseFloat(localStorage.getItem("pegasus_strength_bonus_today"));
+        return isNaN(stored) ? 0 : Math.round(stored);
+    },
+
     getEffectiveTarget: function() {
         if (typeof window.getPegasusEffectiveDailyTarget === "function") {
             const target = parseFloat(window.getPegasusEffectiveDailyTarget());
@@ -278,6 +297,8 @@ window.verifyCalorieLogic = () => {
     const tdee = Math.round(bmr * 1.55);
 
     const baseTarget = window.PegasusDebugHelpers.getBaseTarget();
+    const restBase = window.PegasusDebugHelpers.getRestBaseTarget();
+    const strengthBonus = window.PegasusDebugHelpers.getStrengthBonus();
     const cardioOffset = window.PegasusDebugHelpers.getTodayCardioOffset();
     const target = window.PegasusDebugHelpers.getEffectiveTarget();
 
@@ -286,9 +307,11 @@ window.verifyCalorieLogic = () => {
         "0": { Parameter: "Active Weight", Value: `${activeWeight} kg`, Status: "OK" },
         "1": { Parameter: "BMR (Current)", Value: `${bmr.toFixed(0)} kcal`, Status: "NOMINAL" },
         "2": { Parameter: "TDEE (1.55x)", Value: `${tdee} kcal`, Status: "NOMINAL" },
-        "3": { Parameter: "Base Strategy", Value: `${baseTarget} kcal`, Status: "PLAN-DRIVEN" },
-        "4": { Parameter: "Cardio Offset", Value: `${cardioOffset} kcal`, Status: cardioOffset > 0 ? "ADDED" : "NONE" },
-        "5": { Parameter: "Effective Target", Value: `${target} kcal`, Status: "DYNAMIC" }
+        "3": { Parameter: "Rest Base", Value: `${restBase} kcal`, Status: "BASE" },
+        "4": { Parameter: "Strength Bonus", Value: `${strengthBonus} kcal`, Status: strengthBonus > 0 ? "ADDED" : "NONE" },
+        "5": { Parameter: "Base Strategy", Value: `${baseTarget} kcal`, Status: "PLAN-DRIVEN" },
+        "6": { Parameter: "Cardio Offset", Value: `${cardioOffset} kcal`, Status: cardioOffset > 0 ? "ADDED" : "NONE" },
+        "7": { Parameter: "Effective Target", Value: `${target} kcal`, Status: "DYNAMIC" }
     });
 
     if (currentWeight > 150 || (currentWeight < 40 && currentWeight !== 0)) {

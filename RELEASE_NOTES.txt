@@ -57,3 +57,7 @@ PEGASUS 72 / v19.2 Stable
 [v22.8 Stable]
 - Daily kcal target now uses rest base + strength workout bonus + exact cardio kcal.
 - Strength workout bonus estimates load from today's program, sets, and exercise weights (current boxes first, then saved weights, then program defaults).
+
+
+[v22.9 Stable]
+- Audit/debug calorie wording now shows the new metabolic breakdown clearly: rest base + strength bonus + cardio = effective target.
