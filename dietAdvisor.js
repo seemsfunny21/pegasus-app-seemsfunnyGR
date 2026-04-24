@@ -156,16 +156,31 @@
             .trim();
     }
 
+    const FAMILY_STOPWORDS = new Set(['με', 'και', 'στο', 'στη', 'στην', 'στον', 'των', 'των', 'του', 'της', 'το', 'τα', 'την', 'τις', 'σε']);
+
+    function getDishFamilyTokens(value) {
+        return normalizeDishKey(value)
+            .split(' ')
+            .map(token => token.trim())
+            .filter(token => token.length >= 4 && !FAMILY_STOPWORDS.has(token));
+    }
+
     function getItemCounts(days) {
-        const counts = {};
+        const exactCounts = {};
+        const familyCounts = {};
         getRecentHistory(days).forEach(day => {
             (day.log || []).forEach(item => {
                 const key = normalizeDishKey(item?.name || item?.n || '');
                 if (!key) return;
-                counts[key] = (counts[key] || 0) + 1;
+                exactCounts[key] = (exactCounts[key] || 0) + 1;
+
+                const uniqueTokens = Array.from(new Set(getDishFamilyTokens(key)));
+                uniqueTokens.forEach(token => {
+                    familyCounts[token] = (familyCounts[token] || 0) + 1;
+                });
             });
         });
-        return counts;
+        return { exactCounts, familyCounts };
     }
 
     function getMacros(name, type, fallbackKcal, fallbackProtein) {
@@ -296,7 +311,7 @@
         return list;
     }
 
-    function scoreCandidate(item, deficits, consumed, targets) {
+    function scoreCandidate(item, deficits, consumed, targets, repeatSignal7) {
         const deficitMap = deficits.reduce((acc, d) => { acc[d.key] = d.score; return acc; }, {});
         const categories = item.categories || [];
         let score = 0;
@@ -315,11 +330,12 @@
         score += proteinDensity * 18;
 
         if (proteinNeed <= 15 && (categories.includes('meat') || categories.includes('poultry')) && !categories.includes('veg') && !categories.includes('greens') && !categories.includes('legumes') && !categories.includes('fish')) score -= 10;
+        score -= Math.min(repeatSignal7 || 0, 3) * 8;
         if (!categories.length) score -= 4;
         return score;
     }
 
-    function buildTopReasons(item, deficits, repeatCount7) {
+    function buildTopReasons(item, deficits, exactRepeatCount7, familyRepeatCount7) {
         const labels = deficits.filter(d => d.score > 0 && item.categories.includes(d.key)).slice(0, 2).map(d => d.label);
         let reason = '';
         if (labels.length) reason = t(`Καλύπτει κενό σε ${labels.join(' / ')}.`, `Covers a gap in ${labels.join(' / ')}.`);
@@ -328,8 +344,12 @@
         else if (item.categories.includes('fish')) reason = t('Σου δίνει ψάρι/θαλασσινά αντί για ίδια πρωτεΐνη.', 'Gives you fish/seafood instead of repeating the same protein.');
         else reason = t('Είναι η πιο ισορροπημένη επιλογή για σήμερα.', 'It is the most balanced choice for today.');
 
-        if ((repeatCount7 || 0) >= 2) {
-            reason += ' ' + t(`Το έχεις ήδη φάει ${repeatCount7} φορές τις τελευταίες 7 μέρες.`, `You already had it ${repeatCount7} times over the last 7 days.`);
+        if ((exactRepeatCount7 || 0) >= 2) {
+            reason += ' ' + t(`Το έχεις ήδη φάει ${exactRepeatCount7} φορές τις τελευταίες 7 μέρες.`, `You already had it ${exactRepeatCount7} times over the last 7 days.`);
+        } else if ((exactRepeatCount7 || 0) >= 1) {
+            reason += ' ' + t('Το έχεις ήδη φάει πρόσφατα αυτή την εβδομάδα.', 'You already ate it recently this week.');
+        } else if ((familyRepeatCount7 || 0) >= 2) {
+            reason += ' ' + t(`Παίζει πολύ συχνά παρόμοιο πιάτο (${familyRepeatCount7}x / 7 ημέρες).`, `A very similar dish appears often (${familyRepeatCount7}x / 7 days).`);
         }
 
         return reason.trim();
@@ -353,11 +373,23 @@
         );
     }
 
-    function getOptionToneMeta(rank, repeatCount7) {
-        if ((repeatCount7 || 0) >= 2) {
+    function getOptionToneMeta(rank, exactRepeatCount7, familyRepeatCount7) {
+        if ((exactRepeatCount7 || 0) >= 2) {
             return {
                 tone: 'red',
-                toneLabel: t(`Κόψε το λίγο • ${repeatCount7}x / 7 ημέρες`, `Ease off • ${repeatCount7}x / 7 days`)
+                toneLabel: t(`Συχνή επανάληψη • ${exactRepeatCount7}x / 7 ημέρες`, `Frequent repeat • ${exactRepeatCount7}x / 7 days`)
+            };
+        }
+        if ((exactRepeatCount7 || 0) >= 1) {
+            return {
+                tone: 'red',
+                toneLabel: t('Το έχεις ήδη φάει', 'Already eaten recently')
+            };
+        }
+        if ((familyRepeatCount7 || 0) >= 2 && rank > 0) {
+            return {
+                tone: 'red',
+                toneLabel: t(`Παρόμοιο μοτίβο • ${familyRepeatCount7}x / 7 ημέρες`, `Similar pattern • ${familyRepeatCount7}x / 7 days`)
             };
         }
         if (rank === 0) {
@@ -417,21 +449,33 @@
 
         const options = getTodayKoukiCandidates()
             .map(item => {
-                const repeatCount7 = itemCounts7[normalizeDishKey(item.n)] || 0;
-                return { ...item, score: scoreCandidate(item, deficits, consumed, targets), repeatCount7 };
+                const normalizedName = normalizeDishKey(item.n);
+                const exactRepeatCount7 = itemCounts7.exactCounts[normalizedName] || 0;
+                const familyRepeatCount7 = getDishFamilyTokens(item.n).reduce((maxCount, token) => {
+                    return Math.max(maxCount, itemCounts7.familyCounts[token] || 0);
+                }, 0);
+                const repeatSignal7 = Math.max(exactRepeatCount7, familyRepeatCount7);
+                return {
+                    ...item,
+                    exactRepeatCount7,
+                    familyRepeatCount7,
+                    repeatSignal7,
+                    score: scoreCandidate(item, deficits, consumed, targets, repeatSignal7)
+                };
             })
             .sort((a, b) => b.score - a.score)
             .slice(0, 4)
             .map((item, index) => {
-                const toneMeta = getOptionToneMeta(index, item.repeatCount7);
+                const toneMeta = getOptionToneMeta(index, item.exactRepeatCount7, item.familyRepeatCount7);
                 return {
                     n: item.n,
                     t: item.t,
                     kcal: item.kcal,
                     protein: item.protein,
-                    reason: buildTopReasons(item, deficits, item.repeatCount7),
+                    reason: buildTopReasons(item, deficits, item.exactRepeatCount7, item.familyRepeatCount7),
                     categories: item.categories,
-                    repeatCount7: item.repeatCount7,
+                    repeatCount7: item.exactRepeatCount7,
+                    familyRepeatCount7: item.familyRepeatCount7,
                     tone: toneMeta.tone,
                     toneLabel: toneMeta.toneLabel
                 };
