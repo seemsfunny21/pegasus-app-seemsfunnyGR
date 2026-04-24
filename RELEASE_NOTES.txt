@@ -41,7 +41,5 @@ PEGASUS 72 / v19.2 Stable
 - Exposed openProgramGuide/showProgramGuide aliases for easier diagnostics and guide opening from console/tests.
 
 
-[v22.2 Stable]
-- Mobile Diet Advisor UI polish: added Greek subtitle under PEGASUS LOGIC, protein progress line, explicit deficit summary, and color-coded Kouki recommendations (green = top choices, orange = weaker fits, red = foods repeated often over the last 7 days).
-- Advisor add button now uses Pegasus-green styling instead of the previous yellow/black treatment.
-- Advisor day label now uses Greek day names in shared output.
+[v22.3 Stable]
+- Mobile Diet Advisor toggle fixed: tap once to show the advisor panel, tap again to hide it.

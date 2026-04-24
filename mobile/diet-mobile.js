@@ -221,13 +221,21 @@ window.PegasusDiet = {
         if (window.PegasusCloud) await window.PegasusCloud.push(true);
     },
     askAdvisor: function() {
+        const container = document.getElementById("advisorMobileResult");
+        const triggerBtn = document.getElementById("dietAdvisorToggleBtn");
         if (!window.PegasusDietAdvisor) return alert("Advisor Offline");
+        if (!container) return;
+
+        const isVisible = container.dataset.expanded === "true" && container.innerHTML.trim() !== "";
+        if (isVisible) {
+            container.innerHTML = "";
+            container.dataset.expanded = "false";
+            if (triggerBtn) triggerBtn.innerHTML = "🧠 ΡΩΤΑ ΤΟΝ PEGASUS ADVISOR";
+            return;
+        }
 
         const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
-        const container = document.getElementById("advisorMobileResult");
         const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
-
-        if (!container) return;
 
         let html = `
             <div class="advisor-panel">
@@ -261,6 +269,8 @@ window.PegasusDiet = {
 
         html += `</div></div>`;
         container.innerHTML = html;
+        container.dataset.expanded = "true";
+        if (triggerBtn) triggerBtn.innerHTML = "🧠 ΑΠΟΚΡΥΨΗ PEGASUS ADVISOR";
         container.querySelectorAll('button[data-pegasus-advisor-add]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const opt = advice.options[Number(btn.dataset.pegasusAdvisorAdd)];
@@ -270,6 +280,9 @@ window.PegasusDiet = {
                     : { kcal: 550, protein: 45 };
                 window.PegasusDiet.quickAdd(`${opt.n} (Κούκι)`, Number(macros.kcal) || 0, Number(macros.protein) || 0);
                 document.getElementById('advisorMobileResult').innerHTML = '';
+                document.getElementById('advisorMobileResult').dataset.expanded = "false";
+                const btnEl = document.getElementById('dietAdvisorToggleBtn');
+                if (btnEl) btnEl.innerHTML = "🧠 ΡΩΤΑ ΤΟΝ PEGASUS ADVISOR";
             });
         });
     },

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v22.2</title>
+    <title>Pegasus Mobile v22.0</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -52,7 +52,7 @@
             <div class="mini-card"><span class="mini-label">ΘΕΡΜΙΔΕΣ</span><div id="txtKcal" class="mini-val">0 / 2800</div></div>
             <div class="mini-card"><span class="mini-label">ΠΡΩΤΕΙΝΗ</span><div id="txtProt" class="mini-val">0 / 160g</div></div>
         </div>
-        <button class="secondary-btn" style="border-color: #f39c12; color: #f39c12; margin-bottom: 15px;" onclick="window.PegasusDiet.askAdvisor()">🧠 ΡΩΤΑ ΤΟΝ PEGASUS ADVISOR</button>
+        <button id="dietAdvisorToggleBtn" class="secondary-btn" style="border-color: #f39c12; color: #f39c12; margin-bottom: 15px;" onclick="window.PegasusDiet.askAdvisor()">🧠 ΡΩΤΑ ΤΟΝ PEGASUS ADVISOR</button>
         <div id="advisorMobileResult" style="width: 100%; margin-bottom: 15px;"></div>
         <input type="text" id="fName" placeholder="🔍 Αναζήτηση Φαγητού..." oninput="window.PegasusDiet.handleSearch(this.value)" autocomplete="off">
         <div id="searchSuggestions" class="search-results"></div>
@@ -245,7 +245,7 @@
     <script src="../data.js"></script>
     <script src="../extensions.js"></script>
     <script src="../metabolicEngine.js"></script>
-    <script src="../dietAdvisor.js?v=22.2"></script>
+    <script src="../dietAdvisor.js?v=22.3"></script>
     <script src="../cloudSync.js"></script>
     <script src="../weightTracker.js"></script>
     <script src="../pegasusBridgeHub.js"></script>
@@ -268,7 +268,7 @@
     <script src="lifting-mobile.js"></script>
         <script src="youtube-mobile.js"></script>
 
-    <script src="../adaptiveTypography.js?v=22.2"></script>
+    <script src="../adaptiveTypography.js?v=22.3"></script>
 
     <script src="mobileApp.js"></script>
     <script src="mobileSettingsDataTools.js"></script>
