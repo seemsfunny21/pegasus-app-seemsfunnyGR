@@ -66,3 +66,8 @@ PEGASUS 72 / v19.2 Stable
 [v23.0 Stable]
 - Added modular mobile module 'Αλλαγή Διατροφής' with 7-day diet variety analysis.
 - New weekly variation engine suggests 3-5 swaps, supports accept/reject, and replaces rejected options with new alternatives.
+
+
+[v23.1 Stable]
+- Diet Variation upgraded to meal-slot logic: Kouki-only rotation for the afternoon meal, plus easy protein-aware replacements for eggs, yogurt/whey, banana, and work toasts.
+- Suggestions now prioritize affordable, practical swaps with similar protein so the daily target remains realistic.

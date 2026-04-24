@@ -533,3 +533,11 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     color: #ff8f8f;
     border: 1px solid rgba(255,68,68,0.28);
 }
+
+
+.variation-option-note {
+    color: #a9d7b5;
+    font-size: 11px;
+    line-height: 1.35;
+    margin-bottom: 8px;
+}
