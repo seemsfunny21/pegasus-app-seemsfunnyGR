@@ -105,3 +105,8 @@ PEGASUS 72 / v19.2 Stable
 
 [v23.8 Stable]
 - Fixed Diet Variation accept interaction on mobile/desktop by preventing text selection side-effects and adding a clear accepted state badge/button style.
+
+
+[v23.9 Stable]
+- Fixed mobile Diet Variation action handling by switching accept/reject buttons to data-driven delegated click handlers, preventing broken taps on slots with special characters in item names.
+- Accepted and rejected options are now hidden globally after selection, so chosen foods disappear from the lists instead of remaining visible in the same or other slots.

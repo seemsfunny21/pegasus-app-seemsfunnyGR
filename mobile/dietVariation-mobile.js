@@ -1,6 +1,7 @@
 
 (function() {
     const esc = (value) => window.PegasusMobileSafe?.escapeHtml ? window.PegasusMobileSafe.escapeHtml(value) : String(value ?? '');
+    const enc = (value) => encodeURIComponent(String(value ?? ''));
 
     function injectViewLayer() {
         if (document.getElementById('diet_variation')) return;
@@ -48,18 +49,26 @@
     function renderPlanCard(plan) {
         const toneClass = plan.severity === 'green' ? 'variation-plan-green' : 'variation-plan-orange';
         const optionsHtml = (plan.options || []).map(option => {
-            const isAccepted = option.state === 'accepted';
-            const optionTone = isAccepted ? 'variation-option-accepted' : 'variation-option-candidate';
             const note = option.note ? `<div class="variation-option-note">${esc(option.note)}</div>` : '';
-            const acceptedBadge = isAccepted ? `<div class="variation-option-badge">✓ ΕΠΙΛΕΓΜΕΝΟ</div>` : '';
             return `
-                <div class="variation-option ${optionTone}">
+                <div class="variation-option variation-option-candidate" data-variation-item="1">
                     <div class="variation-option-name">${esc(option.name)}</div>
-                    ${acceptedBadge}
                     ${note}
                     <div class="variation-option-actions">
-                        <button type="button" class="variation-btn variation-btn-accept ${isAccepted ? 'variation-btn-accept-active' : ''}" onclick="return window.PegasusDietVariationMobile.acceptOption(event, '${esc(plan.topicKey)}', '${esc(option.name)}')">${isAccepted ? 'ΕΠΙΛΕΓΜΕΝΟ' : 'ΑΠΟΔΟΧΗ'}</button>
-                        <button type="button" class="variation-btn variation-btn-reject" onclick="return window.PegasusDietVariationMobile.rejectOption(event, '${esc(plan.topicKey)}', '${esc(option.name)}')">ΑΠΟΡΡΙΨΗ</button>
+                        <button
+                            type="button"
+                            class="variation-btn variation-btn-accept"
+                            data-variation-action="accept"
+                            data-topic-key="${enc(plan.topicKey)}"
+                            data-option-name="${enc(option.name)}"
+                        >ΑΠΟΔΟΧΗ</button>
+                        <button
+                            type="button"
+                            class="variation-btn variation-btn-reject"
+                            data-variation-action="reject"
+                            data-topic-key="${enc(plan.topicKey)}"
+                            data-option-name="${enc(option.name)}"
+                        >ΑΠΟΡΡΙΨΗ</button>
                     </div>
                 </div>
             `;
@@ -76,6 +85,26 @@
         `;
     }
 
+    function bindActionBridge() {
+        if (document.body.dataset.pegasusDietVariationBound === 'true') return;
+        document.body.dataset.pegasusDietVariationBound = 'true';
+        document.body.addEventListener('click', (event) => {
+            const btn = event.target?.closest?.('[data-variation-action]');
+            if (!btn) return;
+            event.preventDefault?.();
+            event.stopPropagation?.();
+            if (window.getSelection) {
+                try { window.getSelection().removeAllRanges(); } catch (_) {}
+            }
+            const action = btn.getAttribute('data-variation-action');
+            const topicKey = decodeURIComponent(btn.getAttribute('data-topic-key') || '');
+            const optionName = decodeURIComponent(btn.getAttribute('data-option-name') || '');
+            if (!topicKey || !optionName || !window.PegasusDietVariationEngine) return;
+            window.PegasusDietVariationEngine.updateTopicPreference(topicKey, optionName, action === 'accept' ? 'accept' : 'reject');
+            window.PegasusDietVariationMobile?.render?.();
+        }, true);
+    }
+
     window.PegasusDietVariationMobile = {
         render: function() {
             const summaryBox = document.getElementById('dietVariationSummary');
@@ -88,28 +117,6 @@
                 : `<div class="variation-panel"><div class="variation-title">✅ OK</div><div class="variation-subtitle">Δεν βρέθηκαν δυνατές ανάγκες αλλαγής αυτή την εβδομάδα.</div></div>`;
         },
 
-        acceptOption: function(event, topicKey, optionName) {
-            event?.preventDefault?.();
-            event?.stopPropagation?.();
-            if (window.getSelection) {
-                try { window.getSelection().removeAllRanges(); } catch (_) {}
-            }
-            window.PegasusDietVariationEngine?.updateTopicPreference?.(topicKey, optionName, 'accept');
-            this.render();
-            return false;
-        },
-
-        rejectOption: function(event, topicKey, optionName) {
-            event?.preventDefault?.();
-            event?.stopPropagation?.();
-            if (window.getSelection) {
-                try { window.getSelection().removeAllRanges(); } catch (_) {}
-            }
-            window.PegasusDietVariationEngine?.updateTopicPreference?.(topicKey, optionName, 'reject');
-            this.render();
-            return false;
-        },
-
         resetPrefs: function() {
             try { localStorage.removeItem('pegasus_diet_variation_prefs_v3'); } catch (_) {}
             this.render();
@@ -118,6 +125,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
+        bindActionBridge();
         window.PegasusDietVariationMobile.render();
         if (window.registerPegasusModule) {
             window.registerPegasusModule({

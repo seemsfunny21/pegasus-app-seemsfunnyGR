@@ -78,6 +78,20 @@
             accepted: Array.isArray(prefs.acceptedByTopic[topicKey]) ? prefs.acceptedByTopic[topicKey] : []
         };
     }
+
+    function getGlobalHiddenNames() {
+        const prefs = readPrefs();
+        const out = new Set();
+        ['acceptedByTopic', 'rejectedByTopic'].forEach(key => {
+            const map = prefs?.[key];
+            if (!map || typeof map !== 'object') return;
+            Object.values(map).forEach(values => {
+                if (!Array.isArray(values)) return;
+                values.forEach(value => out.add(String(value || '').trim()));
+            });
+        });
+        return out;
+    }
     function updateTopicPreference(topicKey, optionName, mode) {
         const { prefs, rejected, accepted } = getTopicPrefs(topicKey);
         const normalized = normalizeKey(optionName);
@@ -176,14 +190,18 @@
         const { rejected, accepted } = getTopicPrefs(topicKey);
         const rej = new Set(rejected);
         const acc = new Set(accepted);
+        const hiddenGlobal = getGlobalHiddenNames();
         const dayMode = window.PegasusFoodRegistry?.getDayMode?.() || 'training';
         const poolKey = slotCandidatePool(slotKey) || slotKey;
         const env = environment || slotEnvironment(slotKey);
         return (window.PegasusFoodRegistry?.getCandidates?.(poolKey, baseProtein, { targetFamily: sourceFamily, environment: env, dayMode }) || [])
-            .filter(opt => !rej.has(normalizeKey(opt.name)))
+            .filter(opt => {
+                const key = normalizeKey(opt.name);
+                return !rej.has(key) && !acc.has(key) && !hiddenGlobal.has(key);
+            })
             .map(opt => ({
                 ...opt,
-                state: acc.has(normalizeKey(opt.name)) ? 'accepted' : 'candidate',
+                state: 'candidate',
                 note: t(`~${Math.round(opt.protein || 0)}g πρωτεΐνη • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'οικονομική' : 'οκ κόστος'} • ${env === 'work' ? 'κατάλληλο για δουλειά' : 'για σπίτι'}`,
                         `~${Math.round(opt.protein || 0)}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'budget' : 'standard'} • ${env === 'work' ? 'work-safe' : 'home-safe'}`)
             }))
@@ -196,9 +214,13 @@
         const { rejected, accepted } = getTopicPrefs(topicKey);
         const rej = new Set(rejected);
         const acc = new Set(accepted);
+        const hiddenGlobal = getGlobalHiddenNames();
         const remainingProtein = getRemainingProteinNeed();
         return getTodayKoukiCandidates()
-            .filter(opt => !rej.has(normalizeKey(opt.name)))
+            .filter(opt => {
+                const key = normalizeKey(opt.name);
+                return !rej.has(key) && !acc.has(key) && !hiddenGlobal.has(key);
+            })
             .map(opt => {
                 let score = 100;
                 score -= Math.abs((opt.protein || 0) - (baseProtein || 0)) * 1.6;
@@ -207,10 +229,9 @@
                 if ((categoryCoverage.greens || 0) <= 1 && opt.categories.includes('greens')) score += 22;
                 if ((categoryCoverage.legumes || 0) === 0 && opt.categories.includes('legumes')) score += 20;
                 if ((categoryCoverage.fish || 0) === 0 && opt.categories.includes('fish')) score += 18;
-                if (acc.has(normalizeKey(opt.name))) score += 8;
                 return {
                     ...opt,
-                    state: acc.has(normalizeKey(opt.name)) ? 'accepted' : 'candidate',
+                    state: 'candidate',
                     score,
                     note: t(`~${Math.round(opt.protein || 0)}g πρωτεΐνη • ${proteinBandLabel(opt.protein, baseProtein)} • από το Κούκι`, `~${Math.round(opt.protein || 0)}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • from Kouki`)
                 };
@@ -318,6 +339,8 @@
             { slot: 'night_meal', label: slotLabel('night_meal'), defaultFamily: slotDefaultFamily('night_meal'), repeatedDays: yogurtDays }
         ];
 
+        const visiblePlans = variationPlans.filter(plan => Array.isArray(plan?.options) && plan.options.length > 0).slice(0, 6);
+
         return {
             historyDays: HISTORY_DAYS,
             overusedFoods,
@@ -325,7 +348,7 @@
             familyRegistryCount: Object.keys(window.PegasusFoodRegistry?.families || {}).length,
             slotRegistryCount: window.PegasusSlotRegistry?.count?.() || 0,
             slotPlans,
-            variationPlans: variationPlans.slice(0, 6)
+            variationPlans: visiblePlans
         };
     }
 
