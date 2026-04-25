@@ -82,3 +82,7 @@ PEGASUS 72 / v19.2 Stable
 [v23.3 Stable]
 - Added shared Slot Registry with 6 meal slots based on the real user timeline.
 - Diet Variation now outputs slot-based plans (Slot 1 to Slot 6), including a dedicated protein-slot replacement flow for whey.
+
+
+[v23.4 Stable]
+- Fixed Slot Registry diet variation runtime bug where the dedicated whey/protein-slot counter was referenced before being initialized.

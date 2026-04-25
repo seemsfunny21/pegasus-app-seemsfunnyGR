@@ -239,6 +239,7 @@
 
         const bananaDays = Object.entries(itemDays).filter(([k]) => k.includes('μπανανα')).reduce((m, [,v]) => Math.max(m,v), 0);
         const eggsDays = familyDays.eggs || 0;
+        const wheyDays = familyDays.whey || 0;
         const toastDays = familyDays.toast_bread || 0;
         const yogurtDays = familyDays.yogurt || 0;
 
