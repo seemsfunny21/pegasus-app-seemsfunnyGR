@@ -86,3 +86,8 @@ PEGASUS 72 / v19.2 Stable
 
 [v23.4 Stable]
 - Fixed Slot Registry diet variation runtime bug where the dedicated whey/protein-slot counter was referenced before being initialized.
+
+
+[v23.5 Stable]
+- Refined slot candidate foods to category-level choices in practice: eggs, yogurt, whey, toast/bread, deli protein, cottage, kefir, fruit, Kouki, etc.
+- Mobile diet variation reset now clears the active v3 preference key correctly.

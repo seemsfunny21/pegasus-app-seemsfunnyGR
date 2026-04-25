@@ -1,6 +1,6 @@
 
 /* ==========================================================================
-   PEGASUS DIET VARIATION ENGINE - v3.1
+   PEGASUS DIET VARIATION ENGINE - v3.2
    Protocol: Family Registry + Kouki Rotation + Supermarket Replacements
    ========================================================================== */
 (function() {
@@ -276,7 +276,7 @@
             variationPlans.push(buildPlan(
                 'breakfast_variation',
                 `Slot 1 · ${slotLabel('breakfast_main')}`,
-                t(`Τα αυγά παίζουν ${eggsDays}/7 μέρες. Αντί για άλλη εκδοχή αυγών, δες τι άλλο μπορείς να αγοράσεις από σούπερ μάρκετ για το πρωινό βάσης.`, `Eggs appear ${eggsDays}/7 days. Instead of another egg variant, see what else you can buy from the supermarket for your main breakfast slot.`),
+                t(`Τα αυγά παίζουν ${eggsDays}/7 μέρες. Αντί για άλλη εκδοχή αυγών, δες τι άλλη κατηγορία μπορείς να αγοράσεις από σούπερ μάρκετ για το πρωινό βάσης.`, `Eggs appear ${eggsDays}/7 days. Instead of another egg variant, see what else you can buy from the supermarket for your main breakfast slot.`),
                 rankRegistryOptions('breakfast_main', familyMeta.eggs?.protein || 19, 'eggs', 'home'),
                 'orange'
             ));
@@ -294,7 +294,7 @@
             variationPlans.push(buildPlan(
                 'dinner_variation',
                 `Slot 6 · ${slotLabel('night_meal')}`,
-                t(`Το γιαούρτι παίζει ${yogurtDays}/7 μέρες. Οι αλλαγές κρατούν την πρωτεΐνη σχετικά κοντά, αλλά δεν μένουν στην ίδια οικογένεια γιαουρτιού.`, `Yogurt appears ${yogurtDays}/7 days. Swaps keep protein fairly close, but do not stay inside the same yogurt family.`),
+                t(`Το γιαούρτι παίζει ${yogurtDays}/7 μέρες. Οι αλλαγές κρατούν την πρωτεΐνη σχετικά κοντά, αλλά δεν μένουν στην ίδια κατηγορία γιαουρτιού.`, `Yogurt appears ${yogurtDays}/7 days. Swaps keep protein fairly close, but do not stay inside the same yogurt family.`),
                 rankRegistryOptions('night_meal', familyMeta.yogurt?.protein || 20, 'yogurt', 'home'),
                 'orange'
             ));

@@ -32,7 +32,7 @@
         return `
             <div class="variation-panel">
                 <div class="variation-title">🧠 WEEKLY LOGIC</div>
-                <div class="variation-subtitle">Meal slots: πρωινό βάσης, protein slot, δουλειά, fruit slot, Κούκι, βραδινό</div>
+                <div class="variation-subtitle">Meal slots με σωστές κατηγορίες: αυγά, γιαούρτι, whey, τοστ, φρούτο, Κούκι, βραδινό</div>
                 <div class="variation-mini-section">
                     <div class="variation-mini-title">ΤΙ ΠΑΙΖΕΙ ΠΟΛΥ</div>
                     <div class="variation-chip-row">${overused || `<div class="variation-summary-item variation-neutral">Δεν βρέθηκε έντονη μονοτονία.</div>`}</div>
@@ -96,7 +96,7 @@
         },
 
         resetPrefs: function() {
-            try { localStorage.removeItem('pegasus_diet_variation_prefs_v2'); } catch (_) {}
+            try { localStorage.removeItem('pegasus_diet_variation_prefs_v3'); } catch (_) {}
             this.render();
         }
     };
