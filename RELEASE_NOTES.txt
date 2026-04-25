@@ -96,3 +96,8 @@ PEGASUS 72 / v19.2 Stable
 [v23.6 Stable]
 - Expanded slot candidate libraries to 15 options per slot so Diet Variation can suggest a broader monthly-realistic set of foods instead of repeating the same few choices.
 - Added a dedicated 15-option protein-slot pool and broadened outside-meal coverage.
+
+
+[v23.7 Stable]
+- Curated the 15-option slot libraries with more realistic breakfast, protein, work, fruit, and dinner foods.
+- Hard-excluded the same target family from non-fruit replacement lists so true substitutions appear instead of the same category again.

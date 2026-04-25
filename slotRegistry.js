@@ -55,7 +55,7 @@
     };
 
     window.PegasusSlotRegistry = {
-        version: 'v1.1',
+        version: 'v1.2',
         slots: SLOTS,
         getAll() { return SLOTS; },
         get(key) { return SLOTS[key] || null; },
