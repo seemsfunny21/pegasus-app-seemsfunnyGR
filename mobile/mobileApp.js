@@ -340,6 +340,8 @@
         if (now - window._pegasusLastUiRefreshTs < 250) return;
         window._pegasusLastUiRefreshTs = now;
 
+        try { window.PegasusMetabolic?.syncStoredTargets?.(); } catch (_) {}
+
         window.PegasusDiet?.updateUI();
         window.PegasusInventory?.updateUI?.();
         window.PegasusWeight?.updateUI();
@@ -349,6 +351,7 @@
 
         if (typeof updateMuscleUI === "function") updateMuscleUI();
         if (typeof updateSuppUI === "function") updateSuppUI();
+        try { renderAll(); } catch (_) {}
     }
 
     function updateSuppUI() {

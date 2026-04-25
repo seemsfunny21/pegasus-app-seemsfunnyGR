@@ -110,3 +110,8 @@ PEGASUS 72 / v19.2 Stable
 [v23.9 Stable]
 - Fixed mobile Diet Variation action handling by switching accept/reject buttons to data-driven delegated click handlers, preventing broken taps on slots with special characters in item names.
 - Accepted and rejected options are now hidden globally after selection, so chosen foods disappear from the lists instead of remaining visible in the same or other slots.
+
+
+[v24.0 Stable]
+- Fixed sticky daily kcal target handling across mobile/APK and desktop: stored today kcal is now treated as source-of-truth and cannot be overwritten by a lower recomputed target during boot/sync.
+- Mobile refresh now re-syncs stored metabolic targets before rerender, so top kcal bar and bridge summary stay aligned after unlock/sync.

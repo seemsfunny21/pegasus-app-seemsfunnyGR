@@ -70,11 +70,7 @@ window.PegasusDiet = {
         }
     },
 
-    getBaseTarget: function() {
-        if (typeof window.getPegasusBaseDailyTarget === "function") {
-            return window.getPegasusBaseDailyTarget();
-        }
-
+    getCalculatedBaseTarget: function() {
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const dayName = greekDays[new Date().getDay()];
 
@@ -110,6 +106,23 @@ window.PegasusDiet = {
         }
     },
 
+    getBaseTarget: function() {
+        if (typeof window.getPegasusBaseDailyTarget === "function") {
+            return window.getPegasusBaseDailyTarget();
+        }
+
+        const todayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
+        const storedToday = parseFloat(localStorage.getItem(todayKey));
+        const cardio = this.getCardioOffset(this.getStrictDateStr());
+        const calculated = this.getCalculatedBaseTarget();
+
+        if (!isNaN(storedToday) && storedToday > 0) {
+            return Math.max(calculated, Math.max(0, storedToday - cardio));
+        }
+
+        return calculated;
+    },
+
     getCardioOffset: function(dateStr) {
         if (typeof window.getPegasusTodayCardioOffset === "function") {
             return window.getPegasusTodayCardioOffset();
@@ -134,7 +147,15 @@ window.PegasusDiet = {
             return window.getPegasusEffectiveDailyTarget();
         }
 
-        return Math.round(this.getBaseTarget() + this.getCardioOffset(this.getStrictDateStr()));
+        const todayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
+        const storedToday = parseFloat(localStorage.getItem(todayKey));
+        const calculated = Math.round(this.getBaseTarget() + this.getCardioOffset(this.getStrictDateStr()));
+
+        if (!isNaN(storedToday) && storedToday > 0) {
+            return Math.max(calculated, storedToday);
+        }
+
+        return calculated;
     },
 
     checkDailyRoutine: function() {

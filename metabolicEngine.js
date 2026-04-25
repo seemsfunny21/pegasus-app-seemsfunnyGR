@@ -196,7 +196,13 @@ const PegasusMetabolic = {
         };
     },
 
-    getBaseDailyTarget: function(settingsObj) {
+    getStoredTodayKcalTarget: function() {
+        const keys = this.getKeys();
+        const stored = parseFloat(localStorage.getItem(keys.todayKcal));
+        return !isNaN(stored) ? stored : 0;
+    },
+
+    getCalculatedBaseDailyTarget: function(settingsObj) {
         const settings = settingsObj || (
             typeof window.getPegasusSettings === "function"
                 ? window.getPegasusSettings()
@@ -217,15 +223,25 @@ const PegasusMetabolic = {
         return restBase;
     },
 
+    getBaseDailyTarget: function(settingsObj) {
+        const calculatedBase = this.getCalculatedBaseDailyTarget(settingsObj);
+        const cardio = this.getTodayCardioOffset();
+        const storedToday = this.getStoredTodayKcalTarget();
+        const normalizedStoredBase = storedToday > 0 ? Math.max(0, storedToday - cardio) : 0;
+        return Math.round(Math.max(calculatedBase, normalizedStoredBase));
+    },
+
     getEffectiveDailyTarget: function(settingsObj) {
-        return Math.round(this.getBaseDailyTarget(settingsObj) + this.getTodayCardioOffset());
+        const calculatedEffective = Math.round(this.getCalculatedBaseDailyTarget(settingsObj) + this.getTodayCardioOffset());
+        const storedToday = this.getStoredTodayKcalTarget();
+        return Math.round(Math.max(calculatedEffective, storedToday || 0));
     },
 
     syncStoredTargets: function(settingsObj) {
-        const baseTarget = this.getBaseDailyTarget(settingsObj);
         const keys = this.getKeys();
-        localStorage.setItem(keys.todayKcal, String(baseTarget));
-        return baseTarget;
+        const stickyTarget = this.getEffectiveDailyTarget(settingsObj);
+        localStorage.setItem(keys.todayKcal, String(stickyTarget));
+        return stickyTarget;
     },
 
     /* =========================================================
