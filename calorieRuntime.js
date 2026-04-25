@@ -134,11 +134,12 @@ window.calculatePegasusDailyTarget = function() {
     const cardioOffset = window.getPegasusTodayCardioOffset();
     const effectiveTarget = Math.round(baseTarget + cardioOffset);
 
-    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', String(baseTarget));
+    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', String(effectiveTarget));
     localStorage.setItem('pegasus_strength_bonus_today', String(strengthInfo?.bonus || 0));
     localStorage.setItem('pegasus_strength_load_today', String(strengthInfo?.weightedLoad || 0));
 
     console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Βάση Ξεκούρασης: ${window.getPegasusRestDailyTarget ? window.getPegasusRestDailyTarget() : 2100} kcal | Strength Bonus: +${strengthInfo?.bonus || 0} | Cardio: +${cardioOffset} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
+    console.log(`💾 PEGASUS TARGET STORE: Saved effective target ${effectiveTarget} kcal to ${M?.diet?.todayKcal || 'pegasus_today_kcal'}`);
 
     window._isCalculatingTarget = false;
     return effectiveTarget;

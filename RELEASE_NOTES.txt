@@ -115,3 +115,8 @@ PEGASUS 72 / v19.2 Stable
 [v24.0 Stable]
 - Fixed sticky daily kcal target handling across mobile/APK and desktop: stored today kcal is now treated as source-of-truth and cannot be overwritten by a lower recomputed target during boot/sync.
 - Mobile refresh now re-syncs stored metabolic targets before rerender, so top kcal bar and bridge summary stay aligned after unlock/sync.
+
+
+[v24.1 Stable]
+- Fixed calorieRuntime storing the wrong daily kcal source: it now saves the effective daily target (base + strength + cardio) instead of only the base target.
+- This prevents cloud/mobile drift where desktop calculated the correct effective target but persisted a lower stale today-kcal value.
