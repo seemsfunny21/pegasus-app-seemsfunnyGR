@@ -44,11 +44,36 @@
         breakfast: [
             { name: 'Αυγά', family: 'eggs', protein: 19, kcal: 210, budget: 'budget', ease: 5, workSafe: false, homeSafe: true, odor: 'medium' },
             { name: 'Γιαούρτι', family: 'yogurt', protein: 20, kcal: 180, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Whey', family: 'whey', protein: 24, kcal: 120, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Τοστ / ψωμί ολικής', family: 'toast_bread', protein: 22, kcal: 380, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Γαλοπούλα', family: 'deli_protein', protein: 18, kcal: 120, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Cottage / ανθότυρο', family: 'cottage_soft_cheese', protein: 20, kcal: 190, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Κεφίρ', family: 'dairy_drinks', protein: 15, kcal: 170, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Φρούτο', family: 'fruit', protein: 1, kcal: 80, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Ξηροί καρποί', family: 'nuts', protein: 6, kcal: 180, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Όσπρια / ρεβύθι', family: 'legumes', protein: 18, kcal: 420, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Χόρτα / πράσινα', family: 'greens', protein: 5, kcal: 120, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Λαχανικά / λαδερά', family: 'veg_meals', protein: 10, kcal: 300, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Ψάρι / θαλασσινά', family: 'fish_seafood', protein: 28, kcal: 320, budget: 'standard', ease: 3, workSafe: false, homeSafe: true, odor: 'high' },
+            { name: 'Κρέας / κοτόπουλο', family: 'meat_main', protein: 28, kcal: 330, budget: 'standard', ease: 3, workSafe: false, homeSafe: true, odor: 'medium' },
+            { name: 'Έξω / πρόχειρο γεύμα', family: 'outside_meals', protein: 24, kcal: 520, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' }
+        ],
+        protein: [
+            { name: 'Whey', family: 'whey', protein: 24, kcal: 120, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Γιαούρτι', family: 'yogurt', protein: 20, kcal: 180, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Cottage / ανθότυρο', family: 'cottage_soft_cheese', protein: 20, kcal: 190, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Κεφίρ', family: 'dairy_drinks', protein: 15, kcal: 170, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Γαλοπούλα', family: 'deli_protein', protein: 18, kcal: 120, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Αυγά', family: 'eggs', protein: 19, kcal: 210, budget: 'budget', ease: 5, workSafe: false, homeSafe: true, odor: 'medium' },
             { name: 'Τοστ / ψωμί ολικής', family: 'toast_bread', protein: 22, kcal: 380, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
-            { name: 'Whey', family: 'whey', protein: 24, kcal: 120, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' }
+            { name: 'Κρέας / κοτόπουλο', family: 'meat_main', protein: 28, kcal: 330, budget: 'standard', ease: 3, workSafe: false, homeSafe: true, odor: 'medium' },
+            { name: 'Ψάρι / θαλασσινά', family: 'fish_seafood', protein: 28, kcal: 320, budget: 'standard', ease: 3, workSafe: false, homeSafe: true, odor: 'high' },
+            { name: 'Όσπρια / ρεβύθι', family: 'legumes', protein: 18, kcal: 420, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Ξηροί καρποί', family: 'nuts', protein: 6, kcal: 180, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Φρούτο', family: 'fruit', protein: 1, kcal: 80, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Χόρτα / πράσινα', family: 'greens', protein: 5, kcal: 120, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Λαχανικά / λαδερά', family: 'veg_meals', protein: 10, kcal: 300, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Έξω / πρόχειρο γεύμα', family: 'outside_meals', protein: 24, kcal: 520, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' }
         ],
         workmeal: [
             { name: 'Τοστ / ψωμί ολικής', family: 'toast_bread', protein: 22, kcal: 380, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
@@ -56,8 +81,16 @@
             { name: 'Γιαούρτι', family: 'yogurt', protein: 20, kcal: 180, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Cottage / ανθότυρο', family: 'cottage_soft_cheese', protein: 20, kcal: 190, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Κεφίρ', family: 'dairy_drinks', protein: 15, kcal: 170, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Whey', family: 'whey', protein: 24, kcal: 120, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Φρούτο', family: 'fruit', protein: 1, kcal: 80, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
-            { name: 'Whey', family: 'whey', protein: 24, kcal: 120, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' }
+            { name: 'Ξηροί καρποί', family: 'nuts', protein: 6, kcal: 180, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Χόρτα / πράσινα', family: 'greens', protein: 5, kcal: 120, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Λαχανικά / λαδερά', family: 'veg_meals', protein: 10, kcal: 300, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Όσπρια / ρεβύθι', family: 'legumes', protein: 18, kcal: 420, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Κρέας / κοτόπουλο', family: 'meat_main', protein: 28, kcal: 330, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Έξω / πρόχειρο γεύμα', family: 'outside_meals', protein: 24, kcal: 520, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Αυγά', family: 'eggs', protein: 19, kcal: 210, budget: 'budget', ease: 5, workSafe: false, homeSafe: true, odor: 'medium' },
+            { name: 'Ψάρι / θαλασσινά', family: 'fish_seafood', protein: 28, kcal: 320, budget: 'standard', ease: 3, workSafe: false, homeSafe: true, odor: 'high' }
         ],
         fruit: [
             { name: 'Μήλο', family: 'fruit', protein: 0, kcal: 80, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
@@ -65,7 +98,16 @@
             { name: 'Αχλάδι', family: 'fruit', protein: 1, kcal: 95, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Μανταρίνι', family: 'fruit', protein: 1, kcal: 55, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
             { name: 'Ακτινίδιο', family: 'fruit', protein: 1, kcal: 60, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
-            { name: 'Ροδάκινο', family: 'fruit', protein: 1, kcal: 65, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' }
+            { name: 'Ροδάκινο', family: 'fruit', protein: 1, kcal: 65, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Νεκταρίνι', family: 'fruit', protein: 1, kcal: 65, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Σταφύλι', family: 'fruit', protein: 1, kcal: 90, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Φράουλες', family: 'fruit', protein: 1, kcal: 50, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Κεράσια', family: 'fruit', protein: 1, kcal: 70, budget: 'standard', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Βερίκοκα', family: 'fruit', protein: 1, kcal: 55, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Δαμάσκηνα', family: 'fruit', protein: 1, kcal: 60, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Πεπόνι', family: 'fruit', protein: 1, kcal: 50, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Καρπούζι', family: 'fruit', protein: 1, kcal: 45, budget: 'budget', ease: 4, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Μπανάνα', family: 'fruit', protein: 1, kcal: 90, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' }
         ],
         dinner: [
             { name: 'Γιαούρτι', family: 'yogurt', protein: 20, kcal: 180, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
@@ -75,14 +117,31 @@
             { name: 'Αυγά', family: 'eggs', protein: 19, kcal: 210, budget: 'budget', ease: 5, workSafe: false, homeSafe: true, odor: 'medium' },
             { name: 'Ψάρι / θαλασσινά', family: 'fish_seafood', protein: 28, kcal: 320, budget: 'standard', ease: 3, workSafe: false, homeSafe: true, odor: 'high' },
             { name: 'Τοστ / ψωμί ολικής', family: 'toast_bread', protein: 22, kcal: 380, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
-            { name: 'Whey', family: 'whey', protein: 24, kcal: 120, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' }
+            { name: 'Whey', family: 'whey', protein: 24, kcal: 120, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Κρέας / κοτόπουλο', family: 'meat_main', protein: 28, kcal: 330, budget: 'standard', ease: 3, workSafe: false, homeSafe: true, odor: 'medium' },
+            { name: 'Όσπρια / ρεβύθι', family: 'legumes', protein: 18, kcal: 420, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Χόρτα / πράσινα', family: 'greens', protein: 5, kcal: 120, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Λαχανικά / λαδερά', family: 'veg_meals', protein: 10, kcal: 300, budget: 'budget', ease: 4, workSafe: false, homeSafe: true, odor: 'low' },
+            { name: 'Ξηροί καρποί', family: 'nuts', protein: 6, kcal: 180, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Φρούτο', family: 'fruit', protein: 1, kcal: 80, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Έξω / πρόχειρο γεύμα', family: 'outside_meals', protein: 24, kcal: 520, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' }
         ],
         outside: [
             { name: 'Πίτα γύρο', family: 'outside_meals', protein: 24, kcal: 520, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
             { name: 'Κρέπα', family: 'outside_meals', protein: 20, kcal: 600, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
             { name: 'Πίτσα', family: 'outside_meals', protein: 22, kcal: 650, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
             { name: 'Σάντουιτς', family: 'outside_meals', protein: 20, kcal: 450, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
-            { name: 'Σουβλάκια', family: 'outside_meals', protein: 30, kcal: 620, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' }
+            { name: 'Σουβλάκια', family: 'outside_meals', protein: 30, kcal: 620, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Burger', family: 'outside_meals', protein: 28, kcal: 700, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Club sandwich', family: 'outside_meals', protein: 24, kcal: 680, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Σφολιάτα', family: 'outside_meals', protein: 14, kcal: 450, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Τυρόπιτα', family: 'outside_meals', protein: 14, kcal: 420, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Κουλούρι + γαλοπούλα', family: 'outside_meals', protein: 18, kcal: 360, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Wrap', family: 'outside_meals', protein: 22, kcal: 480, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'low' },
+            { name: 'Burrito', family: 'outside_meals', protein: 24, kcal: 620, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Hot dog', family: 'outside_meals', protein: 16, kcal: 430, budget: 'budget', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Pasta take-away', family: 'outside_meals', protein: 18, kcal: 590, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'medium' },
+            { name: 'Rice bowl', family: 'outside_meals', protein: 22, kcal: 540, budget: 'standard', ease: 5, workSafe: true, homeSafe: true, odor: 'low' }
         ]
     };
 
@@ -139,13 +198,13 @@
             score -= Math.max(0, (candidate.kcal || 0) - 260) * 0.08;
         }
         if (ctx.targetFamily && candidate.family === ctx.targetFamily && ctx.allowSameFamily !== true) {
-            score -= 100;
+            score -= 220;
         }
         return score;
     }
 
     window.PegasusFoodRegistry = {
-        version: 'v1.1',
+        version: 'v1.2',
         families: FAMILIES,
         items: ITEMS,
         slotCandidates: SLOT_CANDIDATES,

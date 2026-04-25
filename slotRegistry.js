@@ -16,7 +16,7 @@
             label: 'Πρωινό protein slot',
             time: '08:00',
             environment: 'home',
-            candidatePool: 'dinner',
+            candidatePool: 'protein',
             defaultFamily: 'whey',
             allowedFamilies: ['whey', 'yogurt', 'cottage_soft_cheese', 'dairy_drinks', 'deli_protein', 'eggs']
         },
@@ -48,14 +48,14 @@
             label: 'Βραδινό slot',
             time: '22:30',
             environment: 'home',
-            candidatePool: 'dinner',
+            candidatePool: 'protein',
             defaultFamily: 'yogurt',
             allowedFamilies: ['yogurt', 'cottage_soft_cheese', 'dairy_drinks', 'deli_protein', 'eggs', 'fish_seafood', 'toast_bread']
         }
     };
 
     window.PegasusSlotRegistry = {
-        version: 'v1.0',
+        version: 'v1.1',
         slots: SLOTS,
         getAll() { return SLOTS; },
         get(key) { return SLOTS[key] || null; },

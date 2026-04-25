@@ -188,7 +188,7 @@
                         `~${Math.round(opt.protein || 0)}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'budget' : 'standard'} • ${env === 'work' ? 'work-safe' : 'home-safe'}`)
             }))
             .sort((a, b) => (b.score || 0) - (a.score || 0))
-            .slice(0, 5);
+            .slice(0, 15);
     }
 
     function rankKoukiOptions(baseProtein, categoryCoverage) {
@@ -216,7 +216,7 @@
                 };
             })
             .sort((a, b) => (b.score || 0) - (a.score || 0))
-            .slice(0, 5);
+            .slice(0, 15);
     }
 
     function buildPlan(topicKey, title, reason, options, severity) {

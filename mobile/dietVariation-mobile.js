@@ -32,7 +32,7 @@
         return `
             <div class="variation-panel">
                 <div class="variation-title">🧠 WEEKLY LOGIC</div>
-                <div class="variation-subtitle">Meal slots με σωστές κατηγορίες: αυγά, γιαούρτι, whey, τοστ, φρούτο, Κούκι, βραδινό</div>
+                <div class="variation-subtitle">15 επιλογές ανά slot για να βάλεις νέα πράγματα στη διατροφή σου</div>
                 <div class="variation-mini-section">
                     <div class="variation-mini-title">ΤΙ ΠΑΙΖΕΙ ΠΟΛΥ</div>
                     <div class="variation-chip-row">${overused || `<div class="variation-summary-item variation-neutral">Δεν βρέθηκε έντονη μονοτονία.</div>`}</div>

@@ -91,3 +91,8 @@ PEGASUS 72 / v19.2 Stable
 [v23.5 Stable]
 - Refined slot candidate foods to category-level choices in practice: eggs, yogurt, whey, toast/bread, deli protein, cottage, kefir, fruit, Kouki, etc.
 - Mobile diet variation reset now clears the active v3 preference key correctly.
+
+
+[v23.6 Stable]
+- Expanded slot candidate libraries to 15 options per slot so Diet Variation can suggest a broader monthly-realistic set of foods instead of repeating the same few choices.
+- Added a dedicated 15-option protein-slot pool and broadened outside-meal coverage.
