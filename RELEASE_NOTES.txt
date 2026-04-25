@@ -120,3 +120,8 @@ PEGASUS 72 / v19.2 Stable
 [v24.1 Stable]
 - Fixed calorieRuntime storing the wrong daily kcal source: it now saves the effective daily target (base + strength + cardio) instead of only the base target.
 - This prevents cloud/mobile drift where desktop calculated the correct effective target but persisted a lower stale today-kcal value.
+
+
+[v24.2 Stable]
+- Reporting/email polish: subject/date params now use plain numeric subject-safe dates consistently to avoid encoded slash entities in subject lines.
+- Reporting now exports multiple protein total aliases plus goal/consumed protein fields so the email template can render total protein reliably.

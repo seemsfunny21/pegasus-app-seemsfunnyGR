@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V4.2 (STRICT SINGLE MORNING DISPATCH)
+   PEGASUS REPORTING SYSTEM - V4.3 (STRICT SINGLE MORNING DISPATCH)
    Protocol: Daily Send Lock, Syntax Validation & Date Padding Alignment
    Status: FINAL STABLE | FIXED: SYNTAX STRUCTURE & LOG KEY MATCHING
    ========================================================================== */
@@ -23,6 +23,7 @@ const PegasusReporting = {
             m,
             y,
             display: `${d}/${m}/${y}`,
+            displayDots: `${d}.${m}.${y}`,
             subjectSafe: `${d}-${m}-${y}`,
             workoutKey: `${y}-${m}-${d}`
         };
@@ -56,6 +57,17 @@ const PegasusReporting = {
         } catch (e) {}
 
         return null;
+    },
+
+    getProteinTargets: function() {
+        const goalKey = M?.diet?.goalProtein || 'pegasus_goal_protein';
+        const todayKey = M?.diet?.todayProtein || 'pegasus_today_protein';
+        const goalProtein = parseFloat(localStorage.getItem(goalKey) || localStorage.getItem(todayKey) || '160') || 160;
+        const consumedProtein = parseFloat(localStorage.getItem(M?.diet?.consumedProtein || 'pegasus_today_protein_consumed') || '0') || 0;
+        return {
+            goalProtein: Math.round(goalProtein),
+            consumedProtein: Math.round(consumedProtein)
+        };
     },
 
     saveWorkout: function(kcalVal, memoryData = null) {
@@ -120,6 +132,8 @@ const PegasusReporting = {
             "0.0";
 
         const totalFoodKcal = targetFood.reduce((sum, f) => sum + parseFloat(f.kcal || 0), 0);
+        const totalFoodProtein = targetFood.reduce((sum, f) => sum + parseFloat(f.protein || 0), 0);
+        const proteinTargets = this.getProteinTargets();
 
         const cardioSummary = cardioData
             ? `🚲 ${cardioData.km || 0}km${cardioData.route ? ` (${cardioData.route})` : ""}${cardioData.kcal ? ` | ${cardioData.kcal} kcal` : ""}`
@@ -127,22 +141,37 @@ const PegasusReporting = {
 
         const pendingData = {
             dateSent: dateParts.display,
+            reportDateDisplay: dateParts.display,
             templateParams: {
                 name: "Άγγελος",
 
-                // Display date
-                workout_date: dateParts.display,
+                // Use subject-safe numeric date anywhere a subject template may reuse the date field.
+                workout_date: dateParts.subjectSafe,
+                workout_date_display: dateParts.display,
+                report_date_display: dateParts.display,
+                report_date_subject: dateParts.subjectSafe,
 
                 // ASCII-safe date/subject params for EmailJS subject
                 workout_date_subject: dateParts.subjectSafe,
                 subject_date: dateParts.subjectSafe,
                 email_subject: `PEGASUS REPORT - ${dateParts.subjectSafe}`,
+                subject: `PEGASUS REPORT - ${dateParts.subjectSafe}`,
+                subject_line: `PEGASUS REPORT - ${dateParts.subjectSafe}`,
+                report_subject: `PEGASUS REPORT - ${dateParts.subjectSafe}`,
 
                 calories: resolvedKcal,
                 weights_summary: summary.length > 0 ? summary.join("\n") : "Workout data committed.",
                 food_summary: targetFood.length > 0 ? targetFood.map(f => `• ${f.name} (${f.kcal}kcal)`).join("\n") : "No food logged",
                 cardio_activity: cardioSummary,
-                total_food_kcal: totalFoodKcal,
+                total_food_kcal: Math.round(totalFoodKcal),
+                food_protein_total: Math.round(totalFoodProtein),
+                total_food_protein: Math.round(totalFoodProtein),
+                protein_total: Math.round(totalFoodProtein),
+                total_protein: Math.round(totalFoodProtein),
+                consumed_protein: proteinTargets.consumedProtein,
+                goal_protein: proteinTargets.goalProtein,
+                protein_goal: proteinTargets.goalProtein,
+                protein_summary_text: `${Math.round(totalFoodProtein)}g / ${proteinTargets.goalProtein}g`,
                 recovery_status: recovery.msg || "Updated",
                 nutrition_advice: recovery.nutrition || "Maintain macro balance"
             }
@@ -309,19 +338,38 @@ document.addEventListener("DOMContentLoaded", () => {
     function enrichPendingReportForReportDate(reporting, pending) {
         if (!pending || !pending.templateParams) return pending;
 
-        const reportDateDisplay = pending.reportDateDisplay || pending.dateSent || pending.templateParams.workout_date;
+        const reportDateDisplay = pending.reportDateDisplay || pending.dateSent || pending.templateParams.workout_date_display || pending.templateParams.report_date_display || pending.templateParams.workout_date;
         if (!reportDateDisplay) return pending;
 
+        const reportDateObj = parseDisplayDate(reportDateDisplay);
+        const reportDateParts = reporting.getTodayDateParts(reportDateObj || new Date());
         const nutrition = getFoodSummaryForDate(reportDateDisplay);
         const recovery = getRecoveryForDate(reportDateDisplay);
         const cardioSummary = getCardioSummaryForDate(reporting, reportDateDisplay);
+        const proteinTargets = reporting.getProteinTargets();
 
         const enriched = JSON.parse(JSON.stringify(pending));
         enriched.reportDateDisplay = reportDateDisplay;
-        enriched.templateParams.workout_date = reportDateDisplay;
+        enriched.templateParams.workout_date = reportDateParts.subjectSafe;
+        enriched.templateParams.workout_date_display = reportDateDisplay;
+        enriched.templateParams.report_date_display = reportDateDisplay;
+        enriched.templateParams.report_date_subject = reportDateParts.subjectSafe;
+        enriched.templateParams.workout_date_subject = reportDateParts.subjectSafe;
+        enriched.templateParams.subject_date = reportDateParts.subjectSafe;
+        enriched.templateParams.email_subject = `PEGASUS REPORT - ${reportDateParts.subjectSafe}`;
+        enriched.templateParams.subject = `PEGASUS REPORT - ${reportDateParts.subjectSafe}`;
+        enriched.templateParams.subject_line = `PEGASUS REPORT - ${reportDateParts.subjectSafe}`;
+        enriched.templateParams.report_subject = `PEGASUS REPORT - ${reportDateParts.subjectSafe}`;
         enriched.templateParams.food_summary = nutrition.foodSummary;
-        enriched.templateParams.total_food_kcal = nutrition.totalFoodKcal;
-        enriched.templateParams.food_protein_total = nutrition.totalFoodProtein;
+        enriched.templateParams.total_food_kcal = Math.round(nutrition.totalFoodKcal);
+        enriched.templateParams.food_protein_total = Math.round(nutrition.totalFoodProtein);
+        enriched.templateParams.total_food_protein = Math.round(nutrition.totalFoodProtein);
+        enriched.templateParams.protein_total = Math.round(nutrition.totalFoodProtein);
+        enriched.templateParams.total_protein = Math.round(nutrition.totalFoodProtein);
+        enriched.templateParams.consumed_protein = proteinTargets.consumedProtein;
+        enriched.templateParams.goal_protein = proteinTargets.goalProtein;
+        enriched.templateParams.protein_goal = proteinTargets.goalProtein;
+        enriched.templateParams.protein_summary_text = `${Math.round(nutrition.totalFoodProtein)}g / ${proteinTargets.goalProtein}g`;
         enriched.templateParams.cardio_activity = cardioSummary;
         enriched.templateParams.recovery_status = recovery.msg || 'Updated';
         enriched.templateParams.nutrition_advice = recovery.nutrition || 'Maintain macro balance';
