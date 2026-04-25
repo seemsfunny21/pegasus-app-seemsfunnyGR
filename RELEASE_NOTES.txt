@@ -101,3 +101,7 @@ PEGASUS 72 / v19.2 Stable
 [v23.7 Stable]
 - Curated the 15-option slot libraries with more realistic breakfast, protein, work, fruit, and dinner foods.
 - Hard-excluded the same target family from non-fruit replacement lists so true substitutions appear instead of the same category again.
+
+
+[v23.8 Stable]
+- Fixed Diet Variation accept interaction on mobile/desktop by preventing text selection side-effects and adding a clear accepted state badge/button style.

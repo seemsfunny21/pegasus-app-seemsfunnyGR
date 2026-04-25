@@ -48,15 +48,18 @@
     function renderPlanCard(plan) {
         const toneClass = plan.severity === 'green' ? 'variation-plan-green' : 'variation-plan-orange';
         const optionsHtml = (plan.options || []).map(option => {
-            const optionTone = option.state === 'accepted' ? 'variation-option-accepted' : 'variation-option-candidate';
+            const isAccepted = option.state === 'accepted';
+            const optionTone = isAccepted ? 'variation-option-accepted' : 'variation-option-candidate';
             const note = option.note ? `<div class="variation-option-note">${esc(option.note)}</div>` : '';
+            const acceptedBadge = isAccepted ? `<div class="variation-option-badge">✓ ΕΠΙΛΕΓΜΕΝΟ</div>` : '';
             return `
                 <div class="variation-option ${optionTone}">
                     <div class="variation-option-name">${esc(option.name)}</div>
+                    ${acceptedBadge}
                     ${note}
                     <div class="variation-option-actions">
-                        <button class="variation-btn variation-btn-accept" onclick="window.PegasusDietVariationMobile.acceptOption('${esc(plan.topicKey)}', '${esc(option.name)}')">ΑΠΟΔΟΧΗ</button>
-                        <button class="variation-btn variation-btn-reject" onclick="window.PegasusDietVariationMobile.rejectOption('${esc(plan.topicKey)}', '${esc(option.name)}')">ΑΠΟΡΡΙΨΗ</button>
+                        <button type="button" class="variation-btn variation-btn-accept ${isAccepted ? 'variation-btn-accept-active' : ''}" onclick="return window.PegasusDietVariationMobile.acceptOption(event, '${esc(plan.topicKey)}', '${esc(option.name)}')">${isAccepted ? 'ΕΠΙΛΕΓΜΕΝΟ' : 'ΑΠΟΔΟΧΗ'}</button>
+                        <button type="button" class="variation-btn variation-btn-reject" onclick="return window.PegasusDietVariationMobile.rejectOption(event, '${esc(plan.topicKey)}', '${esc(option.name)}')">ΑΠΟΡΡΙΨΗ</button>
                     </div>
                 </div>
             `;
@@ -85,14 +88,26 @@
                 : `<div class="variation-panel"><div class="variation-title">✅ OK</div><div class="variation-subtitle">Δεν βρέθηκαν δυνατές ανάγκες αλλαγής αυτή την εβδομάδα.</div></div>`;
         },
 
-        acceptOption: function(topicKey, optionName) {
+        acceptOption: function(event, topicKey, optionName) {
+            event?.preventDefault?.();
+            event?.stopPropagation?.();
+            if (window.getSelection) {
+                try { window.getSelection().removeAllRanges(); } catch (_) {}
+            }
             window.PegasusDietVariationEngine?.updateTopicPreference?.(topicKey, optionName, 'accept');
             this.render();
+            return false;
         },
 
-        rejectOption: function(topicKey, optionName) {
+        rejectOption: function(event, topicKey, optionName) {
+            event?.preventDefault?.();
+            event?.stopPropagation?.();
+            if (window.getSelection) {
+                try { window.getSelection().removeAllRanges(); } catch (_) {}
+            }
             window.PegasusDietVariationEngine?.updateTopicPreference?.(topicKey, optionName, 'reject');
             this.render();
+            return false;
         },
 
         resetPrefs: function() {

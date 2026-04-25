@@ -543,3 +543,38 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 }
 
 .variation-option-meta { color:#8cc79a; font-size:10px; margin-top:4px; }
+
+
+.variation-option,
+.variation-option *,
+.variation-btn {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.variation-option {
+    touch-action: manipulation;
+}
+.variation-option-badge {
+    display:inline-block;
+    margin-bottom:8px;
+    padding:4px 8px;
+    border-radius:999px;
+    background: rgba(0,255,65,0.16);
+    color: var(--main);
+    border: 1px solid rgba(0,255,65,0.35);
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:.6px;
+}
+.variation-option-accepted {
+    border-color: rgba(0,255,65,0.50);
+    background: rgba(0,255,65,0.10);
+    box-shadow: 0 0 0 1px rgba(0,255,65,0.10) inset;
+}
+.variation-btn-accept-active {
+    background: rgba(0,255,65,0.22);
+    color: #001a08;
+    border-color: rgba(0,255,65,0.65);
+    box-shadow: 0 0 12px rgba(0,255,65,0.12);
+}
