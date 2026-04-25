@@ -77,3 +77,8 @@ PEGASUS 72 / v19.2 Stable
 - Added shared Food Registry foundation with 15 realistic food families covering routine foods, Kouki meals, and common outside meals.
 - Diet Variation now uses family-level logic so yogurt variants remain one family, eggs remain one family, and supermarket replacements come from different families instead of micro-variations of the same food.
 - Work-meal swaps now prioritize low-odor, practical supermarket options, while home dinner swaps may include stronger-smelling proteins.
+
+
+[v23.3 Stable]
+- Added shared Slot Registry with 6 meal slots based on the real user timeline.
+- Diet Variation now outputs slot-based plans (Slot 1 to Slot 6), including a dedicated protein-slot replacement flow for whey.

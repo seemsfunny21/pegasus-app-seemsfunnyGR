@@ -4,7 +4,7 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.45-FINAL-105';
+const CACHE_NAME = 'pegasus-shield-v3.49-FINAL-113';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -24,6 +24,7 @@ const ASSETS_TO_CACHE = [
     './desktopPanels.js',
     './dialogs.js',
     './foodRegistry.js',
+    './slotRegistry.js',
     './dietAdvisor.js',
     './dietVariation.js',
     './dragDrop.js',

@@ -1,6 +1,6 @@
 
 /* ==========================================================================
-   PEGASUS DIET VARIATION ENGINE - v3.0
+   PEGASUS DIET VARIATION ENGINE - v3.1
    Protocol: Family Registry + Kouki Rotation + Supermarket Replacements
    ========================================================================== */
 (function() {
@@ -18,6 +18,11 @@
     function t(gr, en) { return isEn() ? en : gr; }
     function normalizeKey(v) { return window.PegasusFoodRegistry?.normalize ? window.PegasusFoodRegistry.normalize(v) : String(v || '').toLowerCase().trim(); }
     function familyLabel(key) { return window.PegasusFoodRegistry?.familyLabel?.(key) || key; }
+    function slotMeta(slotKey) { return window.PegasusSlotRegistry?.get?.(slotKey) || null; }
+    function slotLabel(slotKey) { return slotMeta(slotKey)?.label || slotKey; }
+    function slotEnvironment(slotKey) { return slotMeta(slotKey)?.environment || 'home'; }
+    function slotCandidatePool(slotKey) { return slotMeta(slotKey)?.candidatePool || null; }
+    function slotDefaultFamily(slotKey) { return slotMeta(slotKey)?.defaultFamily || null; }
     function pad2(n) { return String(n).padStart(2, '0'); }
     function formatDate(d) { return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`; }
 
@@ -109,11 +114,16 @@
 
     function inferSlotByFamily(familyKey) {
         switch (familyKey) {
-            case 'fruit': return 'fruit';
-            case 'eggs': return 'breakfast';
-            case 'toast_bread': return 'workmeal';
-            case 'yogurt':
-            case 'whey': return 'dinner';
+            case 'fruit': return 'fruit_slot';
+            case 'eggs': return 'breakfast_main';
+            case 'toast_bread': return 'work_meal';
+            case 'whey': return 'breakfast_protein';
+            case 'yogurt': return 'night_meal';
+            case 'legumes':
+            case 'greens':
+            case 'veg_meals':
+            case 'fish_seafood':
+            case 'meat_main': return 'kouki_main';
             default: return 'other';
         }
     }
@@ -167,13 +177,15 @@
         const rej = new Set(rejected);
         const acc = new Set(accepted);
         const dayMode = window.PegasusFoodRegistry?.getDayMode?.() || 'training';
-        return (window.PegasusFoodRegistry?.getCandidates?.(slotKey, baseProtein, { targetFamily: sourceFamily, environment, dayMode }) || [])
+        const poolKey = slotCandidatePool(slotKey) || slotKey;
+        const env = environment || slotEnvironment(slotKey);
+        return (window.PegasusFoodRegistry?.getCandidates?.(poolKey, baseProtein, { targetFamily: sourceFamily, environment: env, dayMode }) || [])
             .filter(opt => !rej.has(normalizeKey(opt.name)))
             .map(opt => ({
                 ...opt,
                 state: acc.has(normalizeKey(opt.name)) ? 'accepted' : 'candidate',
-                note: t(`~${Math.round(opt.protein || 0)}g πρωτεΐνη • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'οικονομική' : 'οκ κόστος'} • ${environment === 'work' ? 'κατάλληλο για δουλειά' : 'για σπίτι'}`,
-                        `~${Math.round(opt.protein || 0)}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'budget' : 'standard'} • ${environment === 'work' ? 'work-safe' : 'home-safe'}`)
+                note: t(`~${Math.round(opt.protein || 0)}g πρωτεΐνη • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'οικονομική' : 'οκ κόστος'} • ${env === 'work' ? 'κατάλληλο για δουλειά' : 'για σπίτι'}`,
+                        `~${Math.round(opt.protein || 0)}g protein • ${proteinBandLabel(opt.protein, baseProtein)} • ${opt.budget === 'budget' ? 'budget' : 'standard'} • ${env === 'work' ? 'work-safe' : 'home-safe'}`)
             }))
             .sort((a, b) => (b.score || 0) - (a.score || 0))
             .slice(0, 5);
@@ -235,7 +247,7 @@
         const koukiBaseProtein = Math.max(24, getRemainingProteinNeed() || 24);
         variationPlans.push(buildPlan(
             'kouki_rotation',
-            t('Κυκλική αλλαγή Κούκι', 'Kouki rotation'),
+            `Slot 5 · ${slotLabel('kouki_main')}`,
             t('Το απογευματινό μένει πάντα από το Κούκι. Κάνε κύκλο σε πιάτα που σε κρατούν κοντά στην πρωτεΐνη και καλύπτουν ό,τι λείπει μέσα στην εβδομάδα.', 'Your afternoon meal stays Kouki-first. Rotate through dishes that keep you close to protein and cover what has been missing this week.'),
             rankKoukiOptions(koukiBaseProtein, categoryCoverage),
             'green'
@@ -244,55 +256,75 @@
         if (bananaDays >= 4) {
             variationPlans.push(buildPlan(
                 'fruit_variation',
-                t('Αλλαγή φρούτου', 'Fruit rotation'),
+                `Slot 4 · ${slotLabel('fruit_slot')}`,
                 t(`Η μπανάνα παίζει ${bananaDays}/7 μέρες. Σπάσ’ την με άλλα φρούτα από σούπερ μάρκετ.`, `Banana appears ${bananaDays}/7 days. Break it up with other supermarket fruits.`),
-                rankRegistryOptions('fruit', 1, 'fruit', 'work'),
+                rankRegistryOptions('fruit_slot', 1, 'fruit', 'work'),
                 'orange'
             ));
         }
         if (toastDays >= 4) {
             variationPlans.push(buildPlan(
                 'workmeal_variation',
-                t('Αλλαγή γεύματος δουλειάς', 'Work meal variation'),
+                `Slot 3 · ${slotLabel('work_meal')}`,
                 t(`Τα τοστ παίζουν ${toastDays}/7 μέρες. Οι αλλαγές είναι low-odor, εύκολες και κοντά στην πρωτεΐνη σου.`, `Toasts appear ${toastDays}/7 days. Swaps stay low-odor, easy, and close to your protein target.`),
-                rankRegistryOptions('workmeal', familyMeta.toast_bread?.protein || 22, 'toast_bread', 'work'),
+                rankRegistryOptions('work_meal', familyMeta.toast_bread?.protein || 22, 'toast_bread', 'work'),
                 'orange'
             ));
         }
         if (eggsDays >= 5) {
             variationPlans.push(buildPlan(
                 'breakfast_variation',
-                t('Αλλαγή πρωινού', 'Breakfast variation'),
-                t(`Τα αυγά παίζουν ${eggsDays}/7 μέρες. Αντί για άλλη εκδοχή αυγών, δες τι άλλο μπορείς να αγοράσεις από σούπερ μάρκετ.`, `Eggs appear ${eggsDays}/7 days. Instead of another egg variant, see what else you can buy from the supermarket.`),
-                rankRegistryOptions('breakfast', familyMeta.eggs?.protein || 19, 'eggs', 'home'),
+                `Slot 1 · ${slotLabel('breakfast_main')}`,
+                t(`Τα αυγά παίζουν ${eggsDays}/7 μέρες. Αντί για άλλη εκδοχή αυγών, δες τι άλλο μπορείς να αγοράσεις από σούπερ μάρκετ για το πρωινό βάσης.`, `Eggs appear ${eggsDays}/7 days. Instead of another egg variant, see what else you can buy from the supermarket for your main breakfast slot.`),
+                rankRegistryOptions('breakfast_main', familyMeta.eggs?.protein || 19, 'eggs', 'home'),
+                'orange'
+            ));
+        }
+        if (wheyDays >= 5) {
+            variationPlans.push(buildPlan(
+                'breakfast_protein_variation',
+                `Slot 2 · ${slotLabel('breakfast_protein')}`,
+                t(`Το protein slot παίζει πολύ συχνά με whey (${wheyDays}/7). Εδώ ψάχνουμε γρήγορες πρωτεϊνικές λύσεις από άλλη οικογένεια.`, `The protein slot uses whey very often (${wheyDays}/7). Here we look for quick protein options from a different family.`),
+                rankRegistryOptions('breakfast_protein', familyMeta.whey?.protein || 24, 'whey', 'home'),
                 'orange'
             ));
         }
         if (yogurtDays >= 5) {
             variationPlans.push(buildPlan(
                 'dinner_variation',
-                t('Αλλαγή βραδινού', 'Dinner variation'),
+                `Slot 6 · ${slotLabel('night_meal')}`,
                 t(`Το γιαούρτι παίζει ${yogurtDays}/7 μέρες. Οι αλλαγές κρατούν την πρωτεΐνη σχετικά κοντά, αλλά δεν μένουν στην ίδια οικογένεια γιαουρτιού.`, `Yogurt appears ${yogurtDays}/7 days. Swaps keep protein fairly close, but do not stay inside the same yogurt family.`),
-                rankRegistryOptions('dinner', familyMeta.yogurt?.protein || 20, 'yogurt', 'home'),
+                rankRegistryOptions('night_meal', familyMeta.yogurt?.protein || 20, 'yogurt', 'home'),
                 'orange'
             ));
         }
         if (missingCategories.some(x => x.key === 'legumes')) {
             variationPlans.push(buildPlan(
                 'revythi_variation',
-                t('Ρεβύθι σαν fallback', 'Revythi fallback'),
+                `Slot 5 · ${t('Ρεβύθι σαν fallback', 'Revythi fallback')}`,
                 t('Αν λείπουν όσπρια μέσα στην εβδομάδα, χρησιμοποίησε ρεβύθι σαν εύκολη και οικονομική λύση στο σπίτι.', 'If legumes are missing this week, use revythi as an easy and affordable at-home fallback.'),
                 [{ name: 'Ρεβύθι', family: 'legumes', protein: 18, kcal: 420, budget: 'budget', ease: 4, state: 'candidate', note: t('~18g πρωτεΐνη • οικονομική λύση όσπριου για το σπίτι', '~18g protein • affordable legume fallback for home') }],
                 'green'
             ));
         }
 
+        const slotPlans = [
+            { slot: 'breakfast_main', label: slotLabel('breakfast_main'), defaultFamily: slotDefaultFamily('breakfast_main'), repeatedDays: eggsDays },
+            { slot: 'breakfast_protein', label: slotLabel('breakfast_protein'), defaultFamily: slotDefaultFamily('breakfast_protein'), repeatedDays: wheyDays },
+            { slot: 'work_meal', label: slotLabel('work_meal'), defaultFamily: slotDefaultFamily('work_meal'), repeatedDays: toastDays },
+            { slot: 'fruit_slot', label: slotLabel('fruit_slot'), defaultFamily: slotDefaultFamily('fruit_slot'), repeatedDays: bananaDays },
+            { slot: 'kouki_main', label: slotLabel('kouki_main'), defaultFamily: slotDefaultFamily('kouki_main'), repeatedDays: 1 },
+            { slot: 'night_meal', label: slotLabel('night_meal'), defaultFamily: slotDefaultFamily('night_meal'), repeatedDays: yogurtDays }
+        ];
+
         return {
             historyDays: HISTORY_DAYS,
             overusedFoods,
             missingCategories,
             familyRegistryCount: Object.keys(window.PegasusFoodRegistry?.families || {}).length,
-            variationPlans: variationPlans.slice(0, 5)
+            slotRegistryCount: window.PegasusSlotRegistry?.count?.() || 0,
+            slotPlans,
+            variationPlans: variationPlans.slice(0, 6)
         };
     }
 
