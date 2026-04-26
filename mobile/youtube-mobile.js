@@ -28,6 +28,40 @@
         }
     }
 
+    function extractYoutubeId(url) {
+        try {
+            const parsed = new URL(normalizeUrl(url));
+            const host = parsed.hostname.toLowerCase();
+            const pathParts = parsed.pathname.split('/').filter(Boolean);
+
+            if (host === 'youtu.be') return cleanYoutubeId(pathParts[0]);
+
+            const v = parsed.searchParams.get('v');
+            if (v) return cleanYoutubeId(v);
+
+            const knownPathIds = ['embed', 'shorts', 'live', 'v'];
+            const markerIndex = pathParts.findIndex(part => knownPathIds.includes(part.toLowerCase()));
+            if (markerIndex !== -1 && pathParts[markerIndex + 1]) {
+                return cleanYoutubeId(pathParts[markerIndex + 1]);
+            }
+
+            return '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function cleanYoutubeId(value) {
+        const id = String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g, '');
+        return id.length >= 6 ? id.slice(0, 32) : '';
+    }
+
+    function getThumbnailUrl(url, storedThumbnailUrl) {
+        if (storedThumbnailUrl) return String(storedThumbnailUrl);
+        const videoId = extractYoutubeId(url);
+        return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
+    }
+
     function getYoutubeEntries() {
         const items = JSON.parse(localStorage.getItem(YOUTUBE_DATA_KEY) || '[]');
         return Array.isArray(items) ? items : [];
@@ -64,6 +98,36 @@
         }
     }
 
+    function bindYoutubeListEvents(list) {
+        if (!list || list.dataset.youtubeEventsBound === '1') return;
+        list.dataset.youtubeEventsBound = '1';
+
+        list.addEventListener('click', event => {
+            const deleteBtn = event.target.closest('[data-youtube-delete-id]');
+            if (deleteBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                window.PegasusYouTube.deleteEntry(deleteBtn.dataset.youtubeDeleteId || '');
+                return;
+            }
+
+            const openCard = event.target.closest('[data-youtube-open-url]');
+            if (openCard) {
+                event.preventDefault();
+                window.PegasusYouTube.openUrl(openCard.dataset.youtubeOpenUrl || '');
+            }
+        });
+
+        list.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            const openCard = event.target.closest('[data-youtube-open-url]');
+            if (openCard) {
+                event.preventDefault();
+                window.PegasusYouTube.openUrl(openCard.dataset.youtubeOpenUrl || '');
+            }
+        });
+    }
+
     function injectViewLayer() {
         if (document.getElementById('youtube')) return;
 
@@ -84,10 +148,11 @@
 
             <input type="text" id="youtubeSearchInput" placeholder="🔍 Αναζήτηση YouTube link..." oninput="window.PegasusYouTube.handleSearch(this.value)" autocomplete="off">
             <div id="youtubeCounter" style="font-size: 10px; color: var(--main); font-weight: 800; margin: 12px 0; text-align: center; opacity: 0.9;"></div>
-            <div id="youtubeList" style="width: 100%; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px;"></div>
+            <div id="youtubeList" style="width: 100%; display: flex; flex-direction: column; gap: 12px; padding-bottom: 80px;"></div>
         `;
 
         document.body.appendChild(viewDiv);
+        bindYoutubeListEvents(document.getElementById('youtubeList'));
     }
 
     window.PegasusYouTube = {
@@ -118,9 +183,13 @@
                 return;
             }
 
+            const videoId = extractYoutubeId(normalizedUrl);
+
             items.unshift({
                 id: `yt_${Date.now()}`,
                 url: normalizedUrl,
+                videoId,
+                thumbnailUrl: videoId ? getThumbnailUrl(normalizedUrl) : '',
                 title: sanitizeHTML(title || inferTitleFromUrl(normalizedUrl)),
                 tag: sanitizeHTML(tag),
                 dateAdded: new Date().toLocaleDateString('el-GR')
@@ -138,6 +207,12 @@
             const items = getYoutubeEntries().filter(item => item.id !== id);
             saveYoutubeEntries(items);
             this.renderContent();
+        },
+
+        openUrl: function(url) {
+            const normalizedUrl = normalizeUrl(url);
+            if (!normalizedUrl || !isYoutubeUrl(normalizedUrl)) return;
+            window.location.href = normalizedUrl;
         },
 
         handleSearch: function(term) {
@@ -164,22 +239,37 @@
                     : `${items.length} YOUTUBE LINK${items.length === 1 ? '' : 'S'}`;
             }
 
-            list.innerHTML = items.length ? items.map(item => `
-                <div class="mini-card" style="border-left: 4px solid var(--main); padding: 14px; background: rgba(8,20,10,0.95); box-shadow: 0 0 12px rgba(0,255,136,0.10);">
-                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:10px;">
+            list.innerHTML = items.length ? items.map(item => {
+                const safeUrl = sanitizeHTML(item.url || '');
+                const safeId = sanitizeHTML(item.id || '');
+                const thumbUrl = getThumbnailUrl(item.url, item.thumbnailUrl);
+                const thumbHtml = thumbUrl
+                    ? `<div style="position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; border:1px solid rgba(0,255,136,0.24); background:linear-gradient(135deg, rgba(0,255,136,0.10), rgba(0,0,0,0.92)); box-shadow:inset 0 0 18px rgba(0,255,136,0.08); margin-bottom:12px;">
+                            <img src="${sanitizeHTML(thumbUrl)}" alt="YouTube thumbnail" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block; opacity:0.92;" onerror="this.style.display='none';">
+                            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.45)); pointer-events:none;">
+                                <span style="width:54px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(0,255,136,0.90); color:#04110a; font-size:20px; font-weight:900; box-shadow:0 0 18px rgba(0,255,136,0.35);">▶</span>
+                            </div>
+                       </div>`
+                    : `<div style="width:100%; aspect-ratio:16/9; border-radius:14px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,255,136,0.22); background:linear-gradient(135deg, rgba(0,255,136,0.10), rgba(0,0,0,0.92)); color:var(--main); font-size:34px; font-weight:900; margin-bottom:12px; box-shadow:inset 0 0 18px rgba(0,255,136,0.08);">▶</div>`;
+
+                return `
+                <div class="mini-card" data-youtube-open-url="${safeUrl}" tabindex="0" role="button" aria-label="Άνοιγμα YouTube video" style="border-left: 4px solid var(--main); padding: 14px; background: rgba(8,20,10,0.95); box-shadow: 0 0 12px rgba(0,255,136,0.10); cursor:pointer; transition: transform 0.12s ease, box-shadow 0.12s ease;">
+                    ${thumbHtml}
+                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
                         <div style="min-width:0; flex:1;">
-                            <div style="font-size: 14px; font-weight: 900; color: #fff; word-break: break-word;">${item.title || 'YOUTUBE LINK'}</div>
-                            ${item.tag ? `<div style="font-size: 10px; color: var(--main); font-weight: 800; margin-top: 4px; word-break: break-word; opacity:0.95;">${item.tag}</div>` : ''}
-                            <div style="font-size: 9px; color: #777; margin-top: 5px; word-break: break-all;">${item.url}</div>
-                            <div style="font-size: 9px; color: #555; margin-top: 4px;">Προστέθηκε: ${item.dateAdded}</div>
+                            <div style="font-size: 14px; font-weight: 900; color: #fff; word-break: break-word; line-height:1.35;">${sanitizeHTML(item.title || 'YOUTUBE LINK')}</div>
+                            ${item.tag ? `<div style="font-size: 10px; color: var(--main); font-weight: 800; margin-top: 4px; word-break: break-word; opacity:0.95;">${sanitizeHTML(item.tag)}</div>` : ''}
+                            <div style="font-size: 9px; color: #777; margin-top: 5px; word-break: break-all;">${safeUrl}</div>
+                            <div style="font-size: 9px; color: #555; margin-top: 4px;">Προστέθηκε: ${sanitizeHTML(item.dateAdded || '')}</div>
                         </div>
-                        <button onclick="window.PegasusYouTube.deleteEntry('${item.id}')" style="background: transparent; border: none; color: var(--main); font-size: 16px; padding: 0 5px; cursor: pointer;">🗑️</button>
+                        <button data-youtube-delete-id="${safeId}" style="background: transparent; border: none; color: var(--main); font-size: 16px; padding: 0 5px; cursor: pointer;">🗑️</button>
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="primary-btn" style="flex:1; margin:0; text-decoration:none; text-align:center; background:var(--main); border-color:var(--main); color:#04110a; box-shadow:0 0 10px rgba(0,255,136,0.2);">ΑΝΟΙΓΜΑ</a>
-                    </div>
+                    <div style="font-size:9px; color:var(--main); opacity:0.75; font-weight:800; margin-top:10px; text-align:center; letter-spacing:0.6px;">ΠΑΤΑ ΤΗΝ ΚΑΡΤΑ ΓΙΑ ΑΝΟΙΓΜΑ</div>
                 </div>
-            `).join('') : '<div style="color:#555; font-size:11px; text-align:center;">ΔΕΝ ΥΠΑΡΧΟΥΝ ΑΠΟΘΗΚΕΥΜΕΝΑ YOUTUBE LINKS</div>';
+            `;
+            }).join('') : '<div style="color:#555; font-size:11px; text-align:center;">ΔΕΝ ΥΠΑΡΧΟΥΝ ΑΠΟΘΗΚΕΥΜΕΝΑ YOUTUBE LINKS</div>';
+
+            bindYoutubeListEvents(list);
         }
     };
 

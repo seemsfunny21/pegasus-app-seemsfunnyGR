@@ -12,6 +12,59 @@ const PegasusReporting = {
     pendingReportKey: M?.system?.pendingReport || "pegasus_pending_report",
     historyKey: M?.workout?.weekly_history || "pegasus_weekly_history",
     lastSentKey: M?.system?.lastEmailSentDate || "pegasus_last_email_sent_date",
+    emailPublicKey: "qsfyDrneUHP7zEFui",
+    emailServiceId: "service_4znxhn4",
+    emailTemplateId: "template_e1cqkme",
+    emailJsInitialized: false,
+    emailSendInProgress: false,
+    emailRetryTimer: null,
+    emailRetryCount: 0,
+    emailMaxRetries: 18,
+    emailRetryDelayMs: 10000,
+
+    ensureEmailJsReady: function() {
+        if (typeof emailjs === 'undefined' || typeof emailjs.send !== 'function') {
+            return false;
+        }
+
+        if (!this.emailJsInitialized && typeof emailjs.init === 'function') {
+            try {
+                emailjs.init(this.emailPublicKey);
+                this.emailJsInitialized = true;
+                console.log("✅ PEGASUS: EmailJS initialized by Reporting Engine.");
+            } catch (e) {
+                console.warn("PEGASUS: EmailJS init failed; will retry.", e);
+                return false;
+            }
+        }
+
+        return true;
+    },
+
+    resetReportRetry: function() {
+        this.emailRetryCount = 0;
+        if (this.emailRetryTimer) {
+            clearTimeout(this.emailRetryTimer);
+            this.emailRetryTimer = null;
+        }
+    },
+
+    scheduleMorningReportRetry: function(forceSend = false, reason = 'not-ready') {
+        if (this.emailRetryTimer) return;
+
+        if (this.emailRetryCount >= this.emailMaxRetries) {
+            console.warn(`PEGASUS: Morning report retry limit reached (${reason}). Pending report kept for next open/manual send.`);
+            return;
+        }
+
+        this.emailRetryCount += 1;
+        console.warn(`PEGASUS: Morning report send delayed (${reason}). Retry ${this.emailRetryCount}/${this.emailMaxRetries}.`);
+
+        this.emailRetryTimer = setTimeout(() => {
+            this.emailRetryTimer = null;
+            this.checkAndSendMorningReport(forceSend);
+        }, this.emailRetryDelayMs);
+    },
 
     getTodayDateParts: function(dateObj = new Date()) {
         const d = String(dateObj.getDate()).padStart(2, '0');
@@ -216,43 +269,56 @@ const PegasusReporting = {
             }
 
             const isMorningWindow = currentHour >= 5 && currentHour <= 11;
-            const isOldReport = pending.dateSent !== dateParts.display;
+            const pendingDisplayDate = pending.reportDateDisplay || pending.dateSent || pending?.templateParams?.report_date_display || pending?.templateParams?.workout_date_display;
+            const isOldReport = pendingDisplayDate !== dateParts.display;
+            const isRetryingPendingReport = this.emailRetryCount > 0;
 
-            if (!isMorningWindow && !isOldReport) {
+            if (!isMorningWindow && !isOldReport && !isRetryingPendingReport) {
                 console.log("⏳ PEGASUS: Report pending. Waiting for the morning window...");
                 return;
             }
         }
 
-        if (typeof emailjs !== 'undefined') {
-            console.log("⏳ PEGASUS: Transmitting Morning Report to Cloud Server...");
-
-            emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
-                .then(() => {
-                    console.log("✅ PEGASUS: Morning Report Sent Successfully.");
-
-                    // 🔒 Κλειδώνουμε το σύστημα για τη σημερινή μέρα
-                    localStorage.setItem(this.lastSentKey, dateParts.subjectSafe);
-                    localStorage.removeItem(this.pendingReportKey);
-
-                    const btn = document.getElementById('btnManualEmail');
-                    if (btn) {
-                        btn.style.background = '#4CAF50';
-                        btn.style.color = '#000';
-                        btn.textContent = 'ΕΠΙΤΥΧΙΑ';
-                        setTimeout(() => {
-                            btn.style.background = '';
-                            btn.style.color = '';
-                            btn.textContent = 'EMAIL';
-                        }, 3000);
-                    }
-                })
-                .catch(err => {
-                    console.error("❌ PEGASUS: Email Error", err);
-                });
-        } else {
-            console.warn("PEGASUS: EmailJS not loaded. Sending failed.");
+        if (!this.ensureEmailJsReady()) {
+            this.scheduleMorningReportRetry(forceSend, 'emailjs-not-ready');
+            return;
         }
+
+        if (this.emailSendInProgress) {
+            console.log("⏳ PEGASUS: Morning report send already in progress.");
+            return;
+        }
+
+        this.emailSendInProgress = true;
+        console.log("⏳ PEGASUS: Transmitting Morning Report to Cloud Server...");
+
+        emailjs.send(this.emailServiceId, this.emailTemplateId, pending.templateParams)
+            .then(() => {
+                this.emailSendInProgress = false;
+                this.resetReportRetry();
+                console.log("✅ PEGASUS: Morning Report Sent Successfully.");
+
+                // 🔒 Κλειδώνουμε το σύστημα για τη σημερινή μέρα
+                localStorage.setItem(this.lastSentKey, dateParts.subjectSafe);
+                localStorage.removeItem(this.pendingReportKey);
+
+                const btn = document.getElementById('btnManualEmail');
+                if (btn) {
+                    btn.style.background = '#4CAF50';
+                    btn.style.color = '#000';
+                    btn.textContent = 'ΕΠΙΤΥΧΙΑ';
+                    setTimeout(() => {
+                        btn.style.background = '';
+                        btn.style.color = '';
+                        btn.textContent = 'EMAIL';
+                    }, 3000);
+                }
+            })
+            .catch(err => {
+                this.emailSendInProgress = false;
+                console.error("❌ PEGASUS: Email Error", err);
+                this.scheduleMorningReportRetry(forceSend, 'send-error');
+            });
     }
 };
 

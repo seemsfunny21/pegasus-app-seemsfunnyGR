@@ -1,3 +1,11 @@
+
+PEGASUS 123 - YouTube Mobile Thumbnails + Morning Report Reliability
+- Mobile YouTube cards now show automatic thumbnails for standard YouTube, youtu.be, Shorts, Live, and Embed links.
+- The whole YouTube mobile card/thumbnail is now tappable and opens the video immediately.
+- Existing saved YouTube links get thumbnails automatically at render time when a video id can be inferred.
+- Morning email reporting now initializes EmailJS inside the reporting engine and retries when EmailJS is not ready or a send attempt fails, keeping the pending report instead of silently dropping it.
+- Service worker cache bumped to v3.58-FINAL-123 so the updated mobile/reporting files refresh cleanly.
+
 PEGASUS FINAL POLISHED
 
 Baseline:
