@@ -4,7 +4,7 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.58-FINAL-123';
+const CACHE_NAME = 'pegasus-shield-v3.59-FINAL-124';
 
 const ASSETS_TO_CACHE = [
     '.',
@@ -43,6 +43,7 @@ const ASSETS_TO_CACHE = [
     './progressUI.js',
     './protcrea.js',
     './reporting.js',
+    './reportingAutoFallback.js',
     './runtimeBridge.js',
     './selfCheckRunner.js',
     './settings.js',

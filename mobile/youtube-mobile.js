@@ -190,8 +190,8 @@
                 url: normalizedUrl,
                 videoId,
                 thumbnailUrl: videoId ? getThumbnailUrl(normalizedUrl) : '',
-                title: sanitizeHTML(title || inferTitleFromUrl(normalizedUrl)),
-                tag: sanitizeHTML(tag),
+                title: title || inferTitleFromUrl(normalizedUrl),
+                tag: tag,
                 dateAdded: new Date().toLocaleDateString('el-GR')
             });
 

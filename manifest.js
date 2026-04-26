@@ -192,6 +192,7 @@ window.PegasusManifest = {
         "gallery.js": "IndexedDB gallery engine και media storage/view logic.",
         "dragDrop.js": "Draggable window positioning και UI memory persistence.",
         "reporting.js": "Automated reporting/email dispatcher timing layer.",
+        "reportingAutoFallback.js": "Fallback morning/manual email report builder from saved food/cardio/workout logs.",
         "metabolicEngine.js": "Metabolic calculations and body-composition support logic.",
         "weightTracker.js": "Biometric trend analyzer, weight history helpers και partner/co-lifter memory logic.",
         "auditUI.js": "Real-time system integrity monitor και diagnostic overlay.",

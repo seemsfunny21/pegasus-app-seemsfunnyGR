@@ -94,6 +94,7 @@
         'achievements.js': { category: 'Feature Module', role: 'Leveling, achievements και reward/progress layer.' },
         'dragDrop.js': { category: 'UI Runtime', role: 'Draggable panels, panel toggles, click-outside behavior και hotkeys του desktop UI.' },
         'reporting.js': { category: 'Reporting', role: 'Morning report / manual report sending και reporting windows του συστήματος.' },
+        'reportingAutoFallback.js': { category: 'Reporting', role: 'Fallback builder που φτιάχνει morning/manual email report από food/cardio/workout logs όταν λείπει pending report.' },
         'metabolicEngine.js': { category: 'Nutrition', role: 'Υπολογισμοί metabolism/targets και σταθεροποίηση related inputs.' },
         'weightTracker.js': { category: 'Tracking', role: 'Weight tracking module, sync-friendly καταγραφή βάρους και προβολή ιστορικού.' },
         'desktopPanels.js': { category: 'Desktop UI', role: 'Desktop panel helpers, shared state για panel ανοίγματα/κλεισίματα και shell-side wiring.' },
