@@ -1,13 +1,13 @@
 /* ==========================================================================
-   PEGASUS REPORTING AUTO FALLBACK - v1.0
-   Protocol: Build morning/manual email report from saved daily logs when no
-             pegasus_pending_report exists.
-   Status: STABLE | FIXED: Manual EMAIL no longer stops at "no data" if food,
-           cardio, or workout completion data exists in LocalStorage.
+   PEGASUS REPORTING AUTO FALLBACK - v1.1
+   Protocol: Auto morning email sends yesterday's report. Manual EMAIL sends
+             today's current report from saved daily logs without consuming any
+             pending previous-day report.
+   Status: STABLE | FIXED: manual and automatic report flows are separated.
    ========================================================================== */
 
 (function () {
-    const VERSION = 'v1.0';
+    const VERSION = 'v1.1';
     const INSTALL_FLAG = '__autoFallbackPatchInstalled';
 
     function getManifest() {
@@ -171,39 +171,19 @@
         };
     }
 
-    function getCandidateSnapshots(forceSend) {
-        const now = new Date();
-        const hour = now.getHours();
-        const candidates = [];
+    function markSnapshot(snapshot) {
+        snapshot.hasData = hasMeaningfulData(snapshot);
+        return snapshot;
+    }
 
-        // Morning reports should prefer the fully completed previous day.
-        candidates.push(addDays(now, -1));
+    function getAutomaticSnapshots() {
+        // Automatic morning reports are intentionally strict: yesterday only.
+        return [markSnapshot(createDailySnapshot(addDays(new Date(), -1)))];
+    }
 
-        // Manual EMAIL can also send today's report when there is already saved data.
-        if (forceSend) {
-            if (hour >= 12) {
-                candidates.unshift(addDays(now, 0));
-            } else {
-                candidates.push(addDays(now, 0));
-            }
-        }
-
-        // Rescue missed reports from the last few days if yesterday has no data.
-        candidates.push(addDays(now, -2));
-        candidates.push(addDays(now, -3));
-
-        const seen = new Set();
-        return candidates
-            .map(createDailySnapshot)
-            .filter(snapshot => {
-                if (seen.has(snapshot.parts.display)) return false;
-                seen.add(snapshot.parts.display);
-                return true;
-            })
-            .map(snapshot => {
-                snapshot.hasData = hasMeaningfulData(snapshot);
-                return snapshot;
-            });
+    function getManualTodaySnapshot() {
+        // Manual EMAIL is a live same-day report: whatever exists today, now.
+        return markSnapshot(createDailySnapshot(addDays(new Date(), 0)));
     }
 
     function buildTemplateParams(snapshot) {
@@ -272,6 +252,61 @@
         }, 3500);
     }
 
+    function getPendingReportDisplayDate(reporting) {
+        try {
+            const raw = localStorage.getItem(reporting.pendingReportKey);
+            if (!raw) return '';
+            const pending = JSON.parse(raw);
+            return pending.reportDateDisplay || pending.dateSent || pending?.templateParams?.report_date_display || pending?.templateParams?.workout_date_display || '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function sendManualTodayReport(reporting, snapshot) {
+        if (!snapshot || !snapshot.hasData) {
+            setButtonStatus('ΑΔΕΙΟ', '#ff9800');
+            console.warn(`PEGASUS MANUAL REPORT: No saved logs for today (${snapshot?.parts?.display || 'unknown date'}).`);
+            return;
+        }
+
+        if (typeof reporting.ensureEmailJsReady === 'function' && !reporting.ensureEmailJsReady()) {
+            setButtonStatus('ΑΝΑΜΟΝΗ', '#ff9800');
+            console.warn('PEGASUS MANUAL REPORT: EmailJS not ready. Try EMAIL again after the page finishes loading.');
+            return;
+        }
+
+        if (reporting.emailSendInProgress) {
+            console.log('⏳ PEGASUS MANUAL REPORT: Email send already in progress.');
+            return;
+        }
+
+        const params = buildTemplateParams(snapshot);
+        params.report_source = 'manual-today-localstorage';
+        params.report_mode = 'manual-today';
+        params.email_subject = `PEGASUS TODAY REPORT - ${snapshot.parts.subjectSafe}`;
+        params.subject = params.email_subject;
+        params.subject_line = params.email_subject;
+        params.report_subject = params.email_subject;
+
+        reporting.emailSendInProgress = true;
+        setButtonStatus('ΣΤΕΛΝΕΙ', '#2196F3');
+        console.log(`📨 PEGASUS MANUAL REPORT: Sending today's report for ${snapshot.parts.display}.`);
+
+        emailjs.send(reporting.emailServiceId, reporting.emailTemplateId, params)
+            .then(() => {
+                reporting.emailSendInProgress = false;
+                if (typeof reporting.resetReportRetry === 'function') reporting.resetReportRetry();
+                setButtonStatus('ΕΠΙΤΥΧΙΑ', '#4CAF50');
+                console.log(`✅ PEGASUS MANUAL REPORT: Today's report sent for ${snapshot.parts.display}. Pending previous-day report was preserved.`);
+            })
+            .catch(err => {
+                reporting.emailSendInProgress = false;
+                setButtonStatus('ΣΦΑΛΜΑ', '#f44336');
+                console.error('❌ PEGASUS MANUAL REPORT: Email Error', err);
+            });
+    }
+
     function installPatch() {
         const reporting = window.PegasusReporting;
         if (!reporting || reporting[INSTALL_FLAG]) return false;
@@ -282,12 +317,12 @@
 
         if (!originalCheck) return false;
 
-        reporting.buildPendingReportFromSavedLogs = function (forceSend = false) {
-            const snapshots = getCandidateSnapshots(forceSend);
+        reporting.buildPendingReportFromSavedLogs = function () {
+            const snapshots = getAutomaticSnapshots();
             const selected = snapshots.find(snapshot => snapshot.hasData);
 
             if (!selected) {
-                console.warn('PEGASUS REPORT FALLBACK: No saved daily logs found for fallback email.', formatDiagnostics(snapshots));
+                console.warn('PEGASUS REPORT FALLBACK: No saved daily logs found for automatic yesterday report.', formatDiagnostics(snapshots));
                 return null;
             }
 
@@ -296,30 +331,39 @@
                 reportDateDisplay: selected.parts.display,
                 templateParams: buildTemplateParams(selected),
                 autoGeneratedPending: true,
+                reportMode: 'automatic-yesterday',
                 generatedFrom: 'reportingAutoFallback.js',
                 generatedAt: new Date().toISOString()
             };
 
             localStorage.setItem(this.pendingReportKey, JSON.stringify(pendingData));
-            console.log(`🛠️ PEGASUS REPORT FALLBACK: Pending report built from saved logs for ${selected.parts.display}.`);
+            console.log(`🛠️ PEGASUS REPORT FALLBACK: Automatic yesterday report built from saved logs for ${selected.parts.display}.`);
             return pendingData;
         };
 
         reporting.checkAndSendMorningReport = function (forceSend = false) {
-            const hasPending = !!localStorage.getItem(this.pendingReportKey);
+            if (forceSend) {
+                // Manual button must always send today's current data and must not
+                // overwrite/remove a pending previous-day automatic report.
+                return sendManualTodayReport(this, getManualTodaySnapshot());
+            }
 
-            if (!hasPending) {
-                const built = this.buildPendingReportFromSavedLogs(forceSend);
-                if (!built) {
-                    if (forceSend) {
-                        setButtonStatus('ΑΔΕΙΟ', '#ff9800');
-                        console.warn('PEGASUS: Δεν βρέθηκαν food/cardio/workout logs για δημιουργία report. Άνοιξε Διατροφή ή ολοκλήρωσε προπόνηση και ξαναπάτα EMAIL.');
-                    }
+            const hasPending = !!localStorage.getItem(this.pendingReportKey);
+            if (hasPending) {
+                const pendingDisplayDate = getPendingReportDisplayDate(this);
+                const todayDisplayDate = getDateParts(new Date()).display;
+                if (pendingDisplayDate === todayDisplayDate) {
+                    console.log('🛡️ PEGASUS REPORT FALLBACK: Automatic send skipped because pending report is for today, not yesterday.');
                     return;
                 }
             }
 
-            return originalCheck(forceSend);
+            if (!hasPending) {
+                const built = this.buildPendingReportFromSavedLogs();
+                if (!built) return;
+            }
+
+            return originalCheck(false);
         };
 
         reporting[INSTALL_FLAG] = true;

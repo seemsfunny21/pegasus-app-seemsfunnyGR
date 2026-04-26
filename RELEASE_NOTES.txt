@@ -1,15 +1,16 @@
-PEGASUS 124 - YouTube Mobile Thumbnails + Reporting Fallback Fix
+PEGASUS 125 - Reporting Flow Split + YouTube Mobile Thumbnails
 ================================================================
 
-YouTube Mobile
-- Mobile YouTube entries now show thumbnails automatically for youtube.com/watch, youtu.be, shorts, live, and embed links.
-- The video card/thumbnail is clickable and opens the original YouTube link immediately.
-- Existing saved YouTube links remain compatible and receive thumbnails when a video id can be detected.
-
 Reporting / Morning Email
-- Added reportingAutoFallback.js as a separate PEGASUS module.
-- Fixes the case where manual EMAIL or the morning auto-send says "Δεν υπάρχουν δεδομένα προς αποστολή" because pegasus_pending_report was never created.
-- When no pending report exists, PEGASUS now builds a report from saved daily logs: food_log_DD/MM/YYYY, cardio logs/history, and workout completion flags.
-- Morning fallback prefers yesterday's data; manual EMAIL can also use today's saved data when appropriate.
-- If there is truly no food/cardio/workout data, the EMAIL button briefly shows ΑΔΕΙΟ and the console prints diagnostics for the checked dates.
-- Service worker cache bumped to pegasus-shield-v3.59-FINAL-124.
+- Corrected the reporting protocol:
+  - Automatic morning send = yesterday's completed report only.
+  - Manual EMAIL/report button = today's current saved data only.
+- Manual EMAIL now sends today's live food/cardio/workout data directly, without consuming or deleting any pending previous-day report.
+- Automatic fallback no longer chooses today or older rescue dates. It builds only yesterday's report when pegasus_pending_report is missing.
+- If a pending report is for today, the automatic morning path skips it instead of sending the wrong day.
+- Service worker cache bumped to pegasus-shield-v3.60-FINAL-125.
+
+YouTube Mobile
+- Mobile YouTube entries keep thumbnails automatically for youtube.com/watch, youtu.be, shorts, live, and embed links.
+- The video card/thumbnail remains clickable and opens the original YouTube link immediately.
+- Existing saved YouTube links remain compatible.
