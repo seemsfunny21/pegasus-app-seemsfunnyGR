@@ -127,7 +127,12 @@ window.PegasusManifest = {
 
         inventory: "pegasus_supp_inventory",
         foodLibrary: "pegasus_food_library",
+        // Manual/user kcal target used by Settings. Keep todayKcal as legacy mirror only.
+        goalKcal: "pegasus_goal_kcal",
         todayKcal: "pegasus_today_kcal",
+        // Runtime-computed daily target. The engine must write here, not into Settings.
+        effectiveTodayKcal: "pegasus_effective_today_kcal",
+        effectiveTodayDate: "pegasus_effective_today_date",
         todayProtein: "pegasus_today_protein",
         goalProtein: "pegasus_goal_protein"
     },

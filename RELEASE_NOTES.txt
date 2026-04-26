@@ -1,50 +1,10 @@
-PEGASUS 126
-- Fixed automatic morning report lock: yesterday report now uses report-date lock, not same-day send lock.
-- Automatic morning email sends yesterday only and will not be blocked by stale pegasus_last_email_sent_date.
-- Manual EMAIL continues to send today only and preserves pending yesterday reports.
-- Added desktopVaultBridge.js to restore global attemptVaultUnlock/skipVault handlers for the desktop sync modal.
-- Cache bumped to pegasus-shield-v3.61-FINAL-126.
+PEGASUS 131
 
-PEGASUS 125 - Reporting Flow Split + YouTube Mobile Thumbnails
-================================================================
-
-Reporting / Morning Email
-- Corrected the reporting protocol:
-  - Automatic morning send = yesterday's completed report only.
-  - Manual EMAIL/report button = today's current saved data only.
-- Manual EMAIL now sends today's live food/cardio/workout data directly, without consuming or deleting any pending previous-day report.
-- Automatic fallback no longer chooses today or older rescue dates. It builds only yesterday's report when pegasus_pending_report is missing.
-- If a pending report is for today, the automatic morning path skips it instead of sending the wrong day.
-- Service worker cache bumped to pegasus-shield-v3.60-FINAL-125.
-
-YouTube Mobile
-- Mobile YouTube entries keep thumbnails automatically for youtube.com/watch, youtu.be, shorts, live, and embed links.
-- The video card/thumbnail remains clickable and opens the original YouTube link immediately.
-- Existing saved YouTube links remain compatible.
-
-PEGASUS 127
-- Added desktopSyncStatusLabel.js to keep the desktop sync button aligned after refresh.
-- Approved desktop sessions now show ΕΝΕΡΓΟ / ΣΥΝΔΕΔΕΜΕΝΟ instead of falling back visually to ΣΥΓΧΡΟΝΙΣΜΟΣ.
-- Added silent approved-device restore on boot, without asking for PIN/master key when the stored vault window is valid.
-- Cache bumped to pegasus-shield-v3.62-FINAL-127.
-- Superseded by 128 cleanup: patch files are now consolidated into original modules.
-
-
-PEGASUS 128 CLEANUP
-- Consolidated reportingAutoFallback.js into reporting.js.
-- Consolidated desktopVaultBridge.js and desktopSyncStatusLabel.js into desktopBoot.js.
-- Removed the extra script tags and service-worker cache entries for those three patch files.
-- Cache bumped to pegasus-shield-v3.63-FINAL-128.
-
-PEGASUS 129
-- Fixed duplicate exercise preview cards inside ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ.
-- Kept muscle progress bars in MuscleProgressUI and exercise thumbnails only in previewContent.
-- No new JS files added; patch applied inside progressUI.js.
-- Service worker cache bumped to pegasus-shield-v3.64-FINAL-129.
-
-PEGASUS 130
-- Fixed muscle group typography in ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ.
-- Removed tiny inline 8px labels and moved the muscle progress UI back to uniform PEGASUS CSS classes.
-- Muscle group names and progress counts now use responsive clamp typography aligned with the rest of the page.
-- No new JS files added; patch applied inside progressUI.js and style.css.
-- Service worker cache bumped to pegasus-shield-v3.65-FINAL-130.
+- Fixed calorie target storage separation.
+- Settings/manual kcal target now uses pegasus_goal_kcal.
+- Runtime-computed daily target now uses pegasus_effective_today_kcal.
+- pegasus_today_kcal is kept only as a legacy/manual mirror, not overwritten by runtime.
+- Added automatic cleanup for polluted legacy kcal values such as 3642 shown inside Settings.
+- Updated metabolic runtime, reporting, diet advisor, mobile diet fallback, audit, storage hardening, and cloud key list.
+- No new .js files added.
+- Cache: pegasus-shield-v3.66-FINAL-131.

@@ -35,6 +35,56 @@ function clonePegasusSettings(value) {
     }
 }
 
+function getPegasusGoalKcalKey() {
+    return M?.diet?.goalKcal || "pegasus_goal_kcal";
+}
+
+function getPegasusLegacyTodayKcalKey() {
+    return M?.diet?.todayKcal || "pegasus_today_kcal";
+}
+
+function getPegasusEffectiveTodayKcalKey() {
+    return M?.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal";
+}
+
+function isValidPegasusKcal(value) {
+    return Number.isFinite(value) && value >= 1000 && value <= 6000;
+}
+
+function resolvePegasusManualGoalKcal() {
+    const manualKey = getPegasusGoalKcalKey();
+    const legacyKey = getPegasusLegacyTodayKcalKey();
+
+    const manual = parseInt(localStorage.getItem(manualKey), 10);
+    const legacy = parseInt(localStorage.getItem(legacyKey), 10);
+    const looksLikeRuntimeTarget = isValidPegasusKcal(legacy) && legacy > 3200;
+
+    if (isValidPegasusKcal(manual)) {
+        if (looksLikeRuntimeTarget) {
+            localStorage.setItem(legacyKey, String(manual));
+        }
+        return manual;
+    }
+
+    const resolved = (isValidPegasusKcal(legacy) && !looksLikeRuntimeTarget)
+        ? legacy
+        : DEFAULT_SETTINGS.goalKcal;
+
+    localStorage.setItem(manualKey, String(resolved));
+
+    // Keep legacy pegasus_today_kcal as a manual/settings mirror only.
+    // Runtime-computed targets are stored in pegasus_effective_today_kcal.
+    if (!isValidPegasusKcal(legacy) || looksLikeRuntimeTarget) {
+        localStorage.setItem(legacyKey, String(resolved));
+    }
+
+    return resolved;
+}
+
+window.getPegasusManualKcalTarget = resolvePegasusManualGoalKcal;
+window.getPegasusGoalKcalKey = getPegasusGoalKcalKey;
+window.getPegasusEffectiveTodayKcalKey = getPegasusEffectiveTodayKcalKey;
+
 /**
  * 1. GLOBAL ACCESSOR
  */
@@ -58,7 +108,7 @@ window.getPegasusSettings = function() {
             height: parseFloat(localStorage.getItem(u.height || "pegasus_height")) || DEFAULT_SETTINGS.height,
             age: parseInt(localStorage.getItem(u.age || "pegasus_age"), 10) || DEFAULT_SETTINGS.age,
             gender: localStorage.getItem(u.gender || "pegasus_gender") || DEFAULT_SETTINGS.gender,
-            goalKcal: parseInt(localStorage.getItem(d.todayKcal || "pegasus_today_kcal"), 10) || DEFAULT_SETTINGS.goalKcal,
+            goalKcal: resolvePegasusManualGoalKcal(),
             goalProtein: parseInt(localStorage.getItem(d.goalProtein || 'pegasus_goal_protein'), 10) || parseInt(localStorage.getItem(d.todayProtein || "pegasus_today_protein"), 10) || DEFAULT_SETTINGS.goalProtein,
             exTime: parseInt(localStorage.getItem(w.ex_time || "pegasus_ex_time"), 10) || DEFAULT_SETTINGS.exTime,
             restTime: parseInt(localStorage.getItem(w.rest_time || "pegasus_rest_time"), 10) || DEFAULT_SETTINGS.restTime,
@@ -201,6 +251,7 @@ window.savePegasusSettingsGlobal = function() {
         localStorage.setItem(u.gender || "pegasus_gender", newSettings.gender);
 
         // Nutrition & Time
+        localStorage.setItem(d.goalKcal || "pegasus_goal_kcal", String(newSettings.goalKcal));
         localStorage.setItem(d.todayKcal || "pegasus_today_kcal", String(newSettings.goalKcal));
         localStorage.setItem(d.goalProtein || 'pegasus_goal_protein', String(newSettings.goalProtein));
         localStorage.setItem(d.todayProtein || "pegasus_today_protein", String(newSettings.goalProtein));

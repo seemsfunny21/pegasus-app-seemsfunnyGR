@@ -178,8 +178,17 @@ const PegasusReporting = {
             ? { msg: "Recovery Day Active", nutrition: "Focus on hydration & stretching" }
             : { msg: "Training Day", nutrition: "High protein intake required" };
 
+        let effectiveTodayKcal = null;
+        try {
+            effectiveTodayKcal = (typeof window.getPegasusEffectiveDailyTarget === 'function')
+                ? window.getPegasusEffectiveDailyTarget()
+                : localStorage.getItem(M?.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal");
+        } catch (e) {}
+
         const resolvedKcal =
             kcal ||
+            effectiveTodayKcal ||
+            localStorage.getItem(M?.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal") ||
             localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal") ||
             localStorage.getItem(M?.diet?.session_kcal || "pegasus_session_kcal") ||
             "0.0";
@@ -652,7 +661,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const dateParts = getDateParts(dateObj);
         if (todayParts.display === dateParts.display) {
             const M = getManifest();
-            const todayKcal = parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal'));
+            const todayKcal = parseFloat(
+                localStorage.getItem(M?.diet?.effectiveTodayKcal || 'pegasus_effective_today_kcal') ||
+                localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal')
+            );
             if (!Number.isNaN(todayKcal) && todayKcal > 0) return Math.round(todayKcal);
         }
 
