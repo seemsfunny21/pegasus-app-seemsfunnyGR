@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.6 (SYNC & SELECTOR FIX)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.7 (SYNC & SELECTOR FIX)
    Protocol: Dynamic Target Priority, Weekly Reset Safety & Active DOM Alignment
-   Status: FINAL STABLE | FIXED: MOBILE/DESKTOP MUSCLE BAR CONSISTENCY
+   Status: FINAL STABLE | FIXED: PREVIEW DUPLICATE THUMBNAILS
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -119,27 +119,9 @@ window.MuscleProgressUI = {
 
         htmlString += `</div>`;
 
-        if (activeExercises.length > 0) {
-            htmlString += `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; justify-items: center;">`;
-
-            activeExercises.forEach(ex => {
-                const imgPath = this.getImagePath(ex.name);
-
-                htmlString += `
-                <div style="text-align: center; width: 100%; background: rgba(255,255,255,0.02); padding: 5px; border-radius: 6px; border: 1px solid #222;">
-                    <div style="width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 4px; overflow: hidden; margin-bottom: 4px; border: 1px solid ${pegasusGreen}11;">
-                        <img src="${imgPath}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='images/placeholder.jpg';">
-                    </div>
-                    <div style="color: #fff; font-size: 7.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px;">
-                        ${ex.name}
-                    </div>
-                </div>`;
-            });
-
-            htmlString += `</div>`;
-        }
-
+        // ✅ v7.7: Το exercise thumbnail preview ανήκει στο #previewContent.
+        // Το MuscleProgressUI κρατά μόνο τις μπάρες προόδου για να μην εμφανίζονται
+        // διπλές κάρτες ασκήσεων μέσα στο panel "ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ".
         htmlString += `</div>`;
 
         container.innerHTML = htmlString;
