@@ -1,3 +1,10 @@
+PEGASUS 126
+- Fixed automatic morning report lock: yesterday report now uses report-date lock, not same-day send lock.
+- Automatic morning email sends yesterday only and will not be blocked by stale pegasus_last_email_sent_date.
+- Manual EMAIL continues to send today only and preserves pending yesterday reports.
+- Added desktopVaultBridge.js to restore global attemptVaultUnlock/skipVault handlers for the desktop sync modal.
+- Cache bumped to pegasus-shield-v3.61-FINAL-126.
+
 PEGASUS 125 - Reporting Flow Split + YouTube Mobile Thumbnails
 ================================================================
 
