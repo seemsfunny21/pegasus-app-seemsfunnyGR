@@ -172,7 +172,7 @@ window.PegasusManifest = {
         
         "desktopPanels.js": "Desktop panel open/render helpers για major UI windows.",
         "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
-                "desktopBoot.js": "Desktop startup bootstrap, app coordination και weather adaptation layer.",
+                "desktopBoot.js": "Desktop startup bootstrap, app coordination, weather adaptation, sync modal bridge και desktop sync status label.",
         
         "pegasusCore.js": "Core training engine, session logic και canonical workout state.",
         "data.js": "Master training data, program plans και day-by-day exercise definitions.",
@@ -191,8 +191,7 @@ window.PegasusManifest = {
         "cardio.js": "Cardio engine, offsets και target modifier logic.",
         "gallery.js": "IndexedDB gallery engine και media storage/view logic.",
         "dragDrop.js": "Draggable window positioning και UI memory persistence.",
-        "reporting.js": "Automated reporting/email dispatcher timing layer.",
-        "reportingAutoFallback.js": "Fallback morning/manual email report builder from saved food/cardio/workout logs.",
+        "reporting.js": "Automated reporting/email dispatcher, previous-day finalizer και fallback builder from saved food/cardio/workout logs.",
         "metabolicEngine.js": "Metabolic calculations and body-composition support logic.",
         "weightTracker.js": "Biometric trend analyzer, weight history helpers και partner/co-lifter memory logic.",
         "auditUI.js": "Real-time system integrity monitor και diagnostic overlay.",

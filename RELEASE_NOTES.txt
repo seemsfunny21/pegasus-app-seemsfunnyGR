@@ -21,3 +21,17 @@ YouTube Mobile
 - Mobile YouTube entries keep thumbnails automatically for youtube.com/watch, youtu.be, shorts, live, and embed links.
 - The video card/thumbnail remains clickable and opens the original YouTube link immediately.
 - Existing saved YouTube links remain compatible.
+
+PEGASUS 127
+- Added desktopSyncStatusLabel.js to keep the desktop sync button aligned after refresh.
+- Approved desktop sessions now show ΕΝΕΡΓΟ / ΣΥΝΔΕΔΕΜΕΝΟ instead of falling back visually to ΣΥΓΧΡΟΝΙΣΜΟΣ.
+- Added silent approved-device restore on boot, without asking for PIN/master key when the stored vault window is valid.
+- Cache bumped to pegasus-shield-v3.62-FINAL-127.
+- Superseded by 128 cleanup: patch files are now consolidated into original modules.
+
+
+PEGASUS 128 CLEANUP
+- Consolidated reportingAutoFallback.js into reporting.js.
+- Consolidated desktopVaultBridge.js and desktopSyncStatusLabel.js into desktopBoot.js.
+- Removed the extra script tags and service-worker cache entries for those three patch files.
+- Cache bumped to pegasus-shield-v3.63-FINAL-128.
