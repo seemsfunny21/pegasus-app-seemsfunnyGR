@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.7 (SYNC & SELECTOR FIX)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.8 (SYNC & SELECTOR FIX)
    Protocol: Dynamic Target Priority, Weekly Reset Safety & Active DOM Alignment
-   Status: FINAL STABLE | FIXED: PREVIEW DUPLICATE THUMBNAILS
+   Status: FINAL STABLE | FIXED: PREVIEW TYPOGRAPHY ALIGNMENT
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -94,8 +94,8 @@ window.MuscleProgressUI = {
         const pegasusGreen = "#00ff41";
 
         let htmlString = `
-        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+        <div class="pegasus-muscle-progress-box">
+            <div class="pegasus-muscle-progress-grid">`;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
 
@@ -106,13 +106,13 @@ window.MuscleProgressUI = {
             const isDone = target > 0 && done >= target;
 
             htmlString += `
-            <div style="background: rgba(255,255,255,0.03); padding: 6px 8px; border-radius: 6px; border: 1px solid #222; display: flex; flex-direction: column; justify-content: center;">
-                <div style="display: flex; justify-content: space-between; font-size: 8px; color: #aaa; margin-bottom: 3px; font-weight: 800; text-transform: uppercase;">
-                    <span>${name}</span>
-                    <span style="color: ${pegasusGreen};">${done}/${target}${isDone ? " 🎯" : ""}</span>
+            <div class="muscle-progress-row">
+                <div class="muscle-label-wrapper">
+                    <span class="muscle-label-name">${name}</span>
+                    <span class="muscle-label-count">${done}/${target}${isDone ? " 🎯" : ""}</span>
                 </div>
-                <div style="width: 100%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; border: 0.5px solid #333;">
-                    <div style="width: ${percent}%; height: 100%; background: ${pegasusGreen}; box-shadow: 0 0 6px ${pegasusGreen}aa; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
+                <div class="muscle-bar-bg">
+                    <div class="muscle-bar-fill" style="width: ${percent}%;"></div>
                 </div>
             </div>`;
         });

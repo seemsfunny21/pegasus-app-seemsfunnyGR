@@ -41,3 +41,10 @@ PEGASUS 129
 - Kept muscle progress bars in MuscleProgressUI and exercise thumbnails only in previewContent.
 - No new JS files added; patch applied inside progressUI.js.
 - Service worker cache bumped to pegasus-shield-v3.64-FINAL-129.
+
+PEGASUS 130
+- Fixed muscle group typography in ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ.
+- Removed tiny inline 8px labels and moved the muscle progress UI back to uniform PEGASUS CSS classes.
+- Muscle group names and progress counts now use responsive clamp typography aligned with the rest of the page.
+- No new JS files added; patch applied inside progressUI.js and style.css.
+- Service worker cache bumped to pegasus-shield-v3.65-FINAL-130.
