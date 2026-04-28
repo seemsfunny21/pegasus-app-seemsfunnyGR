@@ -62,10 +62,7 @@ const PegasusMetabolic = {
        ========================================================= */
     getKeys: function() {
         return {
-            goalKcal: window.PegasusManifest?.diet?.goalKcal || "pegasus_goal_kcal",
             todayKcal: window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal",
-            effectiveTodayKcal: window.PegasusManifest?.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal",
-            effectiveTodayDate: window.PegasusManifest?.diet?.effectiveTodayDate || "pegasus_effective_today_date",
             todayProtein: window.PegasusManifest?.diet?.todayProtein || "pegasus_today_protein",
             sessionKcal: window.PegasusManifest?.diet?.session_kcal || "pegasus_session_kcal",
             weeklyKcal: window.PegasusManifest?.diet?.weeklyKcal || window.PegasusManifest?.diet?.weekly_kcal || "pegasus_weekly_kcal",
@@ -201,18 +198,8 @@ const PegasusMetabolic = {
 
     getStoredTodayKcalTarget: function() {
         const keys = this.getKeys();
-
-        if (typeof window.getPegasusManualKcalTarget === "function") {
-            const manual = parseFloat(window.getPegasusManualKcalTarget());
-            return !isNaN(manual) ? manual : 0;
-        }
-
-        const manual = parseFloat(localStorage.getItem(keys.goalKcal));
-        if (!isNaN(manual) && manual >= 1000 && manual <= 6000) return manual;
-
-        const legacy = parseFloat(localStorage.getItem(keys.todayKcal));
-        // Legacy todayKcal may have been polluted by runtime-computed targets.
-        return (!isNaN(legacy) && legacy >= 1000 && legacy <= 3200) ? legacy : 0;
+        const stored = parseFloat(localStorage.getItem(keys.todayKcal));
+        return !isNaN(stored) ? stored : 0;
     },
 
     getCalculatedBaseDailyTarget: function(settingsObj) {
@@ -253,8 +240,7 @@ const PegasusMetabolic = {
     syncStoredTargets: function(settingsObj) {
         const keys = this.getKeys();
         const stickyTarget = this.getEffectiveDailyTarget(settingsObj);
-        localStorage.setItem(keys.effectiveTodayKcal, String(stickyTarget));
-        localStorage.setItem(keys.effectiveTodayDate, this.getTodayWorkoutKey());
+        localStorage.setItem(keys.todayKcal, String(stickyTarget));
         return stickyTarget;
     },
 

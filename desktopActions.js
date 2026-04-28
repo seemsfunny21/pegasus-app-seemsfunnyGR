@@ -1138,6 +1138,10 @@ function openExercisePreview() {
         `;
     });
 
+    if (window.MuscleProgressUI?.render) {
+        setTimeout(() => window.MuscleProgressUI.render(true), 20);
+    }
+
     if (typeof window.forcePegasusRender === "function") {
         setTimeout(() => window.forcePegasusRender(), 50);
     }

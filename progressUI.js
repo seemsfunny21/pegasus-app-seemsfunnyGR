@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.8 (SYNC & SELECTOR FIX)
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.7 (LIVE DAILY PREVIEW FIX)
    Protocol: Dynamic Target Priority, Weekly Reset Safety & Active DOM Alignment
-   Status: FINAL STABLE | FIXED: PREVIEW TYPOGRAPHY ALIGNMENT
+   Status: FINAL STABLE | FIXED: LIVE DAILY SET AGGREGATION IN PREVIEW
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -25,6 +25,35 @@ window.MuscleProgressUI = {
     },
 
     calculateStats() {
+        const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+        const emptyMap = () => ({ "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
+
+        const liveTargets = emptyMap();
+        const liveHistory = emptyMap();
+        const activeExerciseElements = Array.from(document.querySelectorAll(".exercise"));
+
+        if (activeExerciseElements.length > 0) {
+            activeExerciseElements.forEach(el => {
+                const name = el.querySelector(".exercise-name")?.innerText?.trim() || "";
+                if (!name) return;
+
+                const match = Array.isArray(window.exercisesDB)
+                    ? window.exercisesDB.find(ex => (ex?.name || "").trim() === name)
+                    : null;
+                const muscle = match?.muscleGroup || "Άλλο";
+                if (!strictGroups.includes(muscle)) return;
+
+                const total = Math.max(0, parseFloat(el.dataset.total) || 0);
+                const doneRaw = Math.max(0, parseFloat(el.dataset.done) || 0);
+                const done = Math.min(total, doneRaw);
+
+                liveTargets[muscle] += total;
+                liveHistory[muscle] += done;
+            });
+
+            return { history: liveHistory, targets: liveTargets, source: "daily_live" };
+        }
+
         const historyKey = M?.workout?.weekly_history || "pegasus_weekly_history";
         const history = JSON.parse(localStorage.getItem(historyKey) || "{}");
 
@@ -45,21 +74,25 @@ window.MuscleProgressUI = {
                 };
         }
 
-        return { history, targets };
+        return { history, targets, source: "weekly_fallback" };
     },
 
     getActiveExercises() {
-        // ✅ FIX: Το app.js χτίζει .exercise και .exercise-name, όχι .exercise-item / .ex-name
         const activeExerciseElements = document.querySelectorAll(".exercise");
 
         return Array.from(activeExerciseElements)
             .map(el => {
+                const total = Math.max(0, parseFloat(el.dataset.total) || 0);
+                const done = Math.max(0, parseFloat(el.dataset.done) || 0);
                 return {
                     name: el.querySelector(".exercise-name")?.innerText?.trim() || "",
-                    isSkipped: el.classList.contains("exercise-skipped")
+                    isSkipped: el.classList.contains("exercise-skipped"),
+                    total,
+                    done,
+                    isCompleted: total > 0 && done >= total
                 };
             })
-            .filter(ex => ex.name !== "" && !ex.isSkipped);
+            .filter(ex => ex.name !== "");
     },
 
     getImagePath(exerciseName) {
@@ -80,7 +113,7 @@ window.MuscleProgressUI = {
         const container = document.getElementById("muscleProgressContainer");
         if (!container) return;
 
-        const { history, targets } = this.calculateStats();
+        const { history, targets, source } = this.calculateStats();
         const activeExercises = this.getActiveExercises();
 
         const currentHash =
@@ -93,9 +126,16 @@ window.MuscleProgressUI = {
 
         const pegasusGreen = "#00ff41";
 
+        const sourceLabel = source === "daily_live" ? "ΣΗΜΕΡΙΝΗ ΠΡΟΟΔΟΣ" : "ΕΒΔΟΜΑΔΙΑΙΑ ΠΡΟΟΔΟΣ";
+
         let htmlString = `
-        <div class="pegasus-muscle-progress-box">
-            <div class="pegasus-muscle-progress-grid">`;
+        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px;">
+            <div style="display:flex; justify-content:center; margin-bottom: 2px;">
+                <div style="font-size: 8px; font-weight: 900; letter-spacing: 0.8px; color: ${pegasusGreen}; background: rgba(0,255,65,0.08); border: 1px solid ${pegasusGreen}33; border-radius: 999px; padding: 4px 10px;">
+                    ${sourceLabel}
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
 
@@ -106,22 +146,43 @@ window.MuscleProgressUI = {
             const isDone = target > 0 && done >= target;
 
             htmlString += `
-            <div class="muscle-progress-row">
-                <div class="muscle-label-wrapper">
-                    <span class="muscle-label-name">${name}</span>
-                    <span class="muscle-label-count">${done}/${target}${isDone ? " 🎯" : ""}</span>
+            <div style="background: rgba(255,255,255,0.03); padding: 6px 8px; border-radius: 6px; border: 1px solid #222; display: flex; flex-direction: column; justify-content: center;">
+                <div style="display: flex; justify-content: space-between; font-size: 8px; color: #aaa; margin-bottom: 3px; font-weight: 800; text-transform: uppercase;">
+                    <span>${name}</span>
+                    <span style="color: ${pegasusGreen};">${done}/${target}${isDone ? " 🎯" : ""}</span>
                 </div>
-                <div class="muscle-bar-bg">
-                    <div class="muscle-bar-fill" style="width: ${percent}%;"></div>
+                <div style="width: 100%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; border: 0.5px solid #333;">
+                    <div style="width: ${percent}%; height: 100%; background: ${pegasusGreen}; box-shadow: 0 0 6px ${pegasusGreen}aa; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
                 </div>
             </div>`;
         });
 
         htmlString += `</div>`;
 
-        // ✅ v7.7: Το exercise thumbnail preview ανήκει στο #previewContent.
-        // Το MuscleProgressUI κρατά μόνο τις μπάρες προόδου για να μην εμφανίζονται
-        // διπλές κάρτες ασκήσεων μέσα στο panel "ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ".
+        if (activeExercises.length > 0) {
+            htmlString += `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; justify-items: center;">`;
+
+            activeExercises.forEach(ex => {
+                const imgPath = this.getImagePath(ex.name);
+
+                htmlString += `
+                <div style="text-align: center; width: 100%; background: rgba(255,255,255,0.02); padding: 5px; border-radius: 6px; border: 1px solid #222;">
+                    <div style="width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 4px; overflow: hidden; margin-bottom: 4px; border: 1px solid ${pegasusGreen}11;">
+                        <img src="${imgPath}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='images/placeholder.jpg';">
+                    </div>
+                    <div style="color: #fff; font-size: 7.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px;">
+                        ${ex.name}
+                    </div>
+                    <div style="color: ${pegasusGreen}; font-size: 7px; font-weight: 800; margin-top: 2px;">
+                        ${Math.min(ex.done || 0, ex.total || 0)}/${ex.total || 0} SET
+                    </div>
+                </div>`;
+            });
+
+            htmlString += `</div>`;
+        }
+
         htmlString += `</div>`;
 
         container.innerHTML = htmlString;

@@ -122,10 +122,7 @@
         } else if (typeof window.getPegasusEffectiveDailyTarget === 'function') {
             kcal = parseFloat(window.getPegasusEffectiveDailyTarget()) || kcal;
         } else {
-            kcal = parseFloat(
-                localStorage.getItem(M?.diet?.effectiveTodayKcal || 'pegasus_effective_today_kcal') ||
-                localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal')
-            ) || kcal;
+            kcal = parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal')) || kcal;
         }
 
         return { kcal: Math.round(kcal), protein: Math.round(protein) };

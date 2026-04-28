@@ -227,9 +227,7 @@
             ],
             numbers: [
                 { key: manifest.user?.weight || "pegasus_weight", fallback: 74, min: 30, max: 300 },
-                { key: manifest.diet?.goalKcal || "pegasus_goal_kcal", fallback: 2800, min: 1000, max: 6000 },
                 { key: manifest.diet?.todayKcal || "pegasus_today_kcal", fallback: 2800, min: 1000, max: 6000 },
-                { key: manifest.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal", fallback: 2800, min: 1000, max: 6000 },
                 { key: manifest.diet?.todayProtein || "pegasus_today_protein", fallback: 160, min: 40, max: 400 },
                 { key: manifest.diet?.goalProtein || 'pegasus_goal_protein', fallback: 160, min: 40, max: 400 },
                 { key: "pegasus_session_kcal", fallback: 0, min: 0, max: 20000 },
@@ -351,9 +349,7 @@
         const watchedKeys = new Set([
             "pegasus_active_plan",
             MANIFEST().user?.weight || "pegasus_weight",
-            MANIFEST().diet?.goalKcal || "pegasus_goal_kcal",
             MANIFEST().diet?.todayKcal || "pegasus_today_kcal",
-            MANIFEST().diet?.effectiveTodayKcal || "pegasus_effective_today_kcal",
             MANIFEST().diet?.todayProtein || "pegasus_today_protein",
             MANIFEST().diet?.goalProtein || 'pegasus_goal_protein',
             MANIFEST().workout?.weekly_history || "pegasus_weekly_history",

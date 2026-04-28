@@ -111,18 +111,13 @@ window.PegasusDiet = {
             return window.getPegasusBaseDailyTarget();
         }
 
-        const goalKey = window.PegasusManifest?.diet?.goalKcal || "pegasus_goal_kcal";
-        const legacyTodayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
-        const manualGoal = parseFloat(localStorage.getItem(goalKey));
-        const legacyGoal = parseFloat(localStorage.getItem(legacyTodayKey));
-        const storedManual = (!isNaN(manualGoal) && manualGoal > 0)
-            ? manualGoal
-            : (!isNaN(legacyGoal) && legacyGoal > 0 && legacyGoal <= 3200 ? legacyGoal : 0);
+        const todayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
+        const storedToday = parseFloat(localStorage.getItem(todayKey));
         const cardio = this.getCardioOffset(this.getStrictDateStr());
         const calculated = this.getCalculatedBaseTarget();
 
-        if (storedManual > 0) {
-            return Math.max(calculated, Math.max(0, storedManual - cardio));
+        if (!isNaN(storedToday) && storedToday > 0) {
+            return Math.max(calculated, Math.max(0, storedToday - cardio));
         }
 
         return calculated;
@@ -152,17 +147,13 @@ window.PegasusDiet = {
             return window.getPegasusEffectiveDailyTarget();
         }
 
-        const effectiveKey = window.PegasusManifest?.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal";
-        const goalKey = window.PegasusManifest?.diet?.goalKcal || "pegasus_goal_kcal";
-        const legacyTodayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
-        const storedEffective = parseFloat(localStorage.getItem(effectiveKey));
-        const manualGoal = parseFloat(localStorage.getItem(goalKey));
-        const legacyGoal = parseFloat(localStorage.getItem(legacyTodayKey));
+        const todayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
+        const storedToday = parseFloat(localStorage.getItem(todayKey));
         const calculated = Math.round(this.getBaseTarget() + this.getCardioOffset(this.getStrictDateStr()));
 
-        if (!isNaN(storedEffective) && storedEffective > 0) return Math.max(calculated, storedEffective);
-        if (!isNaN(manualGoal) && manualGoal > 0) return Math.max(calculated, manualGoal);
-        if (!isNaN(legacyGoal) && legacyGoal > 0 && legacyGoal <= 3200) return Math.max(calculated, legacyGoal);
+        if (!isNaN(storedToday) && storedToday > 0) {
+            return Math.max(calculated, storedToday);
+        }
 
         return calculated;
     },
