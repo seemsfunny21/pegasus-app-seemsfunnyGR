@@ -137,3 +137,9 @@ PEGASUS 72 / v19.2 Stable
 - Mobile Preview now uses the same weekly history + dynamic weekly targets and displays compact completed/target counters.
 - Mobile Contacts add form is permanently open; the close/hide toggle was removed so name + link can be entered immediately.
 - Supplement inventory deduction is diet-only; manual mobile decrement buttons were disabled, and deleting protein/creatine diet entries restores stock.
+PEGASUS 125 - WEEKLY PROGRESS LEDGER + TYPOGRAPHY FIX
+- Fixes Preview & Progress staying at 0/target after workout by adding a counted weekly-progress ledger.
+- Completed sets are written to pegasus_weekly_history with delta protection, so repeated renders do not double-count.
+- Adds safe repair from today's completed exercise totals only when weekly history missed the writes.
+- Preview still displays weekly accumulated progress as completed weekly sets / weekly target.
+- Removes inline font-size from the weekly progress render so adaptive typography controls the text again.

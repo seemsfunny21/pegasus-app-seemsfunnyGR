@@ -202,7 +202,7 @@ function runPhase() {
                 localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
 
                 if (window.updateAchievements) window.updateAchievements(exName);
-                if (window.logPegasusSet) window.logPegasusSet(exName);
+                if (window.logPegasusSet) window.logPegasusSet(exName, done);
                 if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
 
                 phase = 2;
@@ -257,7 +257,7 @@ function skipToNextExercise() {
         dailyProg.exercises[exName] = done;
         localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
 
-        if (window.logPegasusSet) window.logPegasusSet(exName);
+        if (window.logPegasusSet) window.logPegasusSet(exName, done);
     }
 
     if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
@@ -719,7 +719,7 @@ window.finishWorkout = finishWorkout;
                         localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
 
                         if (window.updateAchievements) window.updateAchievements(exName);
-                        if (window.logPegasusSet) window.logPegasusSet(exName);
+                        if (window.logPegasusSet) window.logPegasusSet(exName, done);
                     } catch (err) {
                         console.warn('⚠️ PEGASUS DESKTOP RESUME PATCH: completion guard', err);
                     }
@@ -865,7 +865,7 @@ window.finishWorkout = finishWorkout;
             if (dailyProg.date !== todayStr) dailyProg = { date: todayStr, exercises: {} };
             dailyProg.exercises[exName] = done;
             localStorage.setItem('pegasus_daily_progress', JSON.stringify(dailyProg));
-            if (window.logPegasusSet) window.logPegasusSet(exName);
+            if (window.logPegasusSet) window.logPegasusSet(exName, done);
         }
 
         if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') window.PegasusCloud.push();
@@ -929,29 +929,116 @@ window.finishWorkout = finishWorkout;
    ========================================================================== */
 
 window.logPegasusSet = function(exName) {
-    let historyKey = P_M?.workout?.weekly_history || 'pegasus_weekly_history';
-    let history = JSON.parse(localStorage.getItem(historyKey) || "{}");
-    if (!history || typeof history !== "object") {
-        history = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-    }
+    const manifest =
+        window.PegasusManifest ||
+        window.M ||
+        (typeof M !== "undefined" ? M : null) ||
+        (typeof P_M !== "undefined" ? P_M : null) ||
+        {};
 
-    let muscle = (window.exercisesDB?.find(ex => ex.name.trim() === exName.trim()))?.muscleGroup || "Άλλο";
+    const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+    const emptyHistory = () => ({
+        "Στήθος": 0,
+        "Πλάτη": 0,
+        "Πόδια": 0,
+        "Χέρια": 0,
+        "Ώμοι": 0,
+        "Κορμός": 0
+    });
+
+    const safeParse = (raw, fallback) => {
+        try {
+            const parsed = JSON.parse(raw || "{}");
+            return parsed && typeof parsed === "object" ? parsed : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    };
+
+    const normalizeName = (value) => String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\u0370-\u03ff]+/g, "");
+
+    const collectExerciseRecords = () => {
+        const records = [];
+        if (Array.isArray(window.exercisesDB)) records.push(...window.exercisesDB);
+        if (window.program && typeof window.program === "object") {
+            Object.values(window.program).forEach(dayItems => {
+                if (Array.isArray(dayItems)) records.push(...dayItems);
+            });
+        }
+        return records.filter(item => item && item.name);
+    };
+
+    const resolveMuscleGroup = (name) => {
+        const cleanName = String(name || "").trim();
+        const compactName = normalizeName(cleanName);
+        if (!compactName) return "";
+
+        const directRecord = collectExerciseRecords().find(record =>
+            normalizeName(record.name) === compactName ||
+            compactName.includes(normalizeName(record.name)) ||
+            normalizeName(record.name).includes(compactName)
+        );
+
+        if (strictGroups.includes(directRecord?.muscleGroup)) {
+            return directRecord.muscleGroup;
+        }
+
+        const aliases = [
+            { group: "Στήθος", keys: ["chest", "press", "fly", "pushup", "στηθος"] },
+            { group: "Πλάτη", keys: ["lat", "row", "pulldown", "back", "ems", "πλατη"] },
+            { group: "Πόδια", keys: ["leg", "cycling", "bike", "ποδηλα", "ποδια"] },
+            { group: "Χέρια", keys: ["bicep", "tricep", "curl", "χερια"] },
+            { group: "Ώμοι", keys: ["upright", "shoulder", "ωμοι"] },
+            { group: "Κορμός", keys: ["ab", "crunch", "plank", "situp", "knee", "core", "κορμος", "κοιλιακ"] }
+        ];
+
+        const match = aliases.find(alias => alias.keys.some(key => compactName.includes(normalizeName(key))));
+        return match?.group || "";
+    };
+
+    const historyKey = manifest?.workout?.weekly_history || "pegasus_weekly_history";
+    const rawHistory = safeParse(localStorage.getItem(historyKey), emptyHistory());
+    const history = emptyHistory();
+    strictGroups.forEach(group => {
+        const value = Number(rawHistory?.[group]);
+        history[group] = Number.isFinite(value) ? Math.max(0, value) : 0;
+    });
+
+    const cleanName = String(exName || "").trim();
+    const upperName = cleanName.toUpperCase();
+    let muscle = resolveMuscleGroup(cleanName);
     let value = 1;
 
-    const cleanName = exName.trim().toUpperCase();
-    if (cleanName.includes("ΠΟΔΗΛΑΣΙΑ") || cleanName.includes("CYCLING")) {
+    if (upperName.includes("ΠΟΔΗΛΑΣΙΑ") || upperName.includes("CYCLING")) {
         muscle = "Πόδια";
         value = 18;
-    } else if (cleanName.includes("EMS ΠΟΔΙΩΝ")) {
+    } else if (upperName.includes("EMS ΠΟΔΙΩΝ") || upperName.includes("EMS LEGS")) {
         muscle = "Πόδια";
         value = 6;
     }
 
-    if (history.hasOwnProperty(muscle)) {
-        history[muscle] += value;
-        localStorage.setItem(historyKey, JSON.stringify(history));
-        if (window.MuscleProgressUI?.render) setTimeout(() => window.MuscleProgressUI.render(), 50);
+    if (!strictGroups.includes(muscle)) {
+        console.warn("⚠️ PEGASUS WEEKLY HISTORY: Unknown muscle group, set not counted:", cleanName);
+        return false;
     }
+
+    history[muscle] = Math.max(0, Number(history[muscle] || 0)) + value;
+    localStorage.setItem(historyKey, JSON.stringify(history));
+
+    window.dispatchEvent(new CustomEvent("pegasus_weekly_history_updated", {
+        detail: { exercise: cleanName, muscle, value, history: { ...history } }
+    }));
+
+    if (window.MuscleProgressUI?.render) {
+        setTimeout(() => window.MuscleProgressUI.render(true), 50);
+    }
+
+    return true;
 };
 
 window.updateTotalWorkoutCount = function() {

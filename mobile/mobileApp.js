@@ -378,6 +378,12 @@
     }
 
     function updateMuscleUI() {
+        if (window.PegasusWeeklyProgress?.reconcile) {
+            try { window.PegasusWeeklyProgress.reconcile({ source: "mobile-muscle-render", push: false }); } catch (e) {}
+        } else if (typeof window.reconcilePegasusWeeklyHistoryFromDailyProgress === "function") {
+            try { window.reconcilePegasusWeeklyHistoryFromDailyProgress({ source: "mobile-muscle-render", push: false }); } catch (e) {}
+        }
+
         const container = document.getElementById("muscle-container");
         if (!container) return;
 

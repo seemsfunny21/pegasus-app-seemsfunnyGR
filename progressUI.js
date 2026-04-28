@@ -10,6 +10,91 @@ var M = M || window.PegasusManifest;
 window.MuscleProgressUI = {
     lastDataHash: null,
 
+    ensureStyles() {
+        if (document.getElementById("pegasus-weekly-progress-style")) return;
+
+        const style = document.createElement("style");
+        style.id = "pegasus-weekly-progress-style";
+        style.textContent = `
+            .pegasus-weekly-progress-card {
+                background: rgba(0,0,0,0.85);
+                border: 1px solid rgba(0,255,65,0.27);
+                border-radius: 12px;
+                padding: 15px;
+                width: 100%;
+                box-sizing: border-box;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+
+            .pegasus-weekly-progress-title-wrap {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 2px;
+            }
+
+            .pegasus-weekly-progress-title {
+                font-size: var(--pg-font-status, 11px);
+                font-weight: 900;
+                letter-spacing: 0.08em;
+                color: var(--main, #00ff41);
+                background: rgba(0,255,65,0.08);
+                border: 1px solid rgba(0,255,65,0.2);
+                border-radius: 999px;
+                padding: 4px 10px;
+            }
+
+            .pegasus-weekly-progress-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .pegasus-weekly-progress-item {
+                background: rgba(255,255,255,0.03);
+                padding: 6px 8px;
+                border-radius: 6px;
+                border: 1px solid #222;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .pegasus-weekly-progress-label {
+                display: flex;
+                justify-content: space-between;
+                color: #aaa;
+                margin-bottom: 3px;
+                font-weight: 800;
+                text-transform: uppercase;
+                font-size: var(--pg-font-status, 11px);
+            }
+
+            .pegasus-weekly-progress-value {
+                color: var(--main, #00ff41);
+            }
+
+            .pegasus-weekly-progress-track {
+                width: 100%;
+                height: 4px;
+                background: #111;
+                border-radius: 2px;
+                overflow: hidden;
+                border: 0.5px solid #333;
+            }
+
+            .pegasus-weekly-progress-fill {
+                height: 100%;
+                background: var(--main, #00ff41);
+                box-shadow: 0 0 6px rgba(0,255,65,0.67);
+                transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            }
+        `;
+        document.head.appendChild(style);
+    },
+
     init() {
         try {
             this.checkWeeklyReset();
@@ -25,6 +110,12 @@ window.MuscleProgressUI = {
     },
 
     calculateStats() {
+        if (window.PegasusWeeklyProgress?.reconcile) {
+            try { window.PegasusWeeklyProgress.reconcile({ source: "progress-ui-render", push: false }); } catch (e) {}
+        } else if (typeof window.reconcilePegasusWeeklyHistoryFromDailyProgress === "function") {
+            try { window.reconcilePegasusWeeklyHistoryFromDailyProgress({ source: "progress-ui-render", push: false }); } catch (e) {}
+        }
+
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
         const emptyMap = () => ({ "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
 
@@ -108,6 +199,7 @@ window.MuscleProgressUI = {
     },
 
     render(force = false) {
+        this.ensureStyles();
         const container = document.getElementById("muscleProgressContainer");
         if (!container) return;
 
@@ -127,13 +219,13 @@ window.MuscleProgressUI = {
         const sourceLabel = "ΕΒΔΟΜΑΔΙΑΙΑ ΠΡΟΟΔΟΣ";
 
         let htmlString = `
-        <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px;">
-            <div style="display:flex; justify-content:center; margin-bottom: 2px;">
-                <div style="font-size: 8px; font-weight: 900; letter-spacing: 0.8px; color: ${pegasusGreen}; background: rgba(0,255,65,0.08); border: 1px solid ${pegasusGreen}33; border-radius: 999px; padding: 4px 10px;">
+        <div class="pegasus-weekly-progress-card">
+            <div class="pegasus-weekly-progress-title-wrap">
+                <div class="pegasus-weekly-progress-title">
                     ${sourceLabel}
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+            <div class="pegasus-weekly-progress-grid">`;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
 
@@ -144,13 +236,13 @@ window.MuscleProgressUI = {
             const isDone = target > 0 && done >= target;
 
             htmlString += `
-            <div style="background: rgba(255,255,255,0.03); padding: 6px 8px; border-radius: 6px; border: 1px solid #222; display: flex; flex-direction: column; justify-content: center;">
-                <div style="display: flex; justify-content: space-between; font-size: 8px; color: #aaa; margin-bottom: 3px; font-weight: 800; text-transform: uppercase;">
+            <div class="pegasus-weekly-progress-item">
+                <div class="pegasus-weekly-progress-label">
                     <span>${name}</span>
-                    <span style="color: ${pegasusGreen};">${done}/${target}${isDone ? " 🎯" : ""}</span>
+                    <span class="pegasus-weekly-progress-value">${done}/${target}${isDone ? " 🎯" : ""}</span>
                 </div>
-                <div style="width: 100%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; border: 0.5px solid #333;">
-                    <div style="width: ${percent}%; height: 100%; background: ${pegasusGreen}; box-shadow: 0 0 6px ${pegasusGreen}aa; transition: width 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
+                <div class="pegasus-weekly-progress-track">
+                    <div class="pegasus-weekly-progress-fill" style="width: ${percent}%;"></div>
                 </div>
             </div>`;
         });
@@ -162,6 +254,7 @@ window.MuscleProgressUI = {
 
         htmlString += `</div>`;
 
+        htmlString = htmlString.replace(/font-size:\s*[^;"]+;?/g, "");
         container.innerHTML = htmlString;
         container.style.display = "block";
     },
