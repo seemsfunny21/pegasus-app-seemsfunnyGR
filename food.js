@@ -289,7 +289,22 @@ window.deleteFoodItem = function(index) {
     const logKey = logPrefix + dateStr;
 
     let foodLog = JSON.parse(localStorage.getItem(logKey) || "[]");
-    foodLog.splice(index, 1);
+    const removedItem = foodLog.splice(index, 1)[0];
+
+    if (removedItem?.name) {
+        if (window.PegasusInventoryPC?.restoreEntry) {
+            window.PegasusInventoryPC.restoreEntry(removedItem.name);
+        } else if (window.restoreSupp) {
+            const removedName = String(removedItem.name || "").toLowerCase();
+            if (removedName.includes("whey") || removedName.includes("πρωτεΐνη") || removedName.includes("πρωτεινη")) {
+                window.restoreSupp('prot', 30, false);
+            }
+            if (removedName.includes("κρεατίνη") || removedName.includes("κρεατινη") || removedName.includes("creatine")) {
+                window.restoreSupp('crea', 5, false);
+            }
+        }
+    }
+
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
     window.updateFoodUI();

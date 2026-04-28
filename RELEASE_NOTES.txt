@@ -130,3 +130,10 @@ PEGASUS 72 / v19.2 Stable
 [v24.3 Stable]
 - Fixed Preview & Progress counters to aggregate live daily workout sets from the current exercise runtime instead of reading the weekly history bars.
 - Opening the preview now forces an immediate muscle-progress rerender, so completed set counts show correctly without waiting for the background interval.
+
+[v24.4 Stable]
+- Fixed Preview & Progress to read weekly accumulated muscle history only and render completed weekly sets / weekly target (e.g. 5/17), never daily_live aggregation.
+- Removed live daily set badges from the muscle progress box; exercise thumbnails remain in the separate preview list.
+- Mobile Preview now uses the same weekly history + dynamic weekly targets and displays compact completed/target counters.
+- Mobile Contacts add form is permanently open; the close/hide toggle was removed so name + link can be entered immediately.
+- Supplement inventory deduction is diet-only; manual mobile decrement buttons were disabled, and deleting protein/creatine diet entries restores stock.

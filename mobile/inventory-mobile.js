@@ -1,6 +1,6 @@
 /* ==========================================================================
-   📦 PEGASUS INVENTORY SYSTEM (MOBILE v2.3 QUIET STABLE)
-   Protocol: Strict Null-Safe DOM Binding & Legacy Bridge Integration
+   📦 PEGASUS INVENTORY SYSTEM (MOBILE v2.4 DIET-ONLY DEDUCTION)
+   Protocol: Strict Null-Safe DOM Binding, Restore Bridge & Diet-Only Flow
    Status: FINAL STABLE | REDUCED CONSOLE SPAM | CROSS-PLATFORM COMPATIBLE
    ========================================================================== */
 
@@ -72,6 +72,22 @@ window.PegasusInventory = {
         }
     },
 
+    restore: function(type, amount, push = true) {
+        let s = this.getState();
+
+        if (!Object.prototype.hasOwnProperty.call(s, type)) return;
+        if (isNaN(amount) || amount <= 0) return;
+
+        s[type] = Math.max(0, s[type] + amount);
+        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+
+        this.updateUI(true);
+
+        if (push && window.PegasusCloud) {
+            window.PegasusCloud.push(true);
+        }
+    },
+
     refill: function(type, amount) {
         let s = this.getState();
 
@@ -97,5 +113,11 @@ window.PegasusInventory = {
 window.consumeSupp = function(type, amount, push = true) {
     if (window.PegasusInventory) {
         window.PegasusInventory.consume(type, amount, push);
+    }
+};
+
+window.restoreSupp = function(type, amount, push = true) {
+    if (window.PegasusInventory?.restore) {
+        window.PegasusInventory.restore(type, amount, push);
     }
 };

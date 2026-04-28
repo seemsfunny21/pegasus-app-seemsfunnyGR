@@ -378,25 +378,46 @@
     }
 
     function updateMuscleUI() {
-        const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         const container = document.getElementById("muscle-container");
         if (!container) return;
 
-        const targets = typeof window.getDynamicTargets === 'function'
-            ? window.getDynamicTargets()
-            : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+        const fallbackTargets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        const safeParseObject = (raw, fallback) => {
+            try {
+                const parsed = JSON.parse(raw || "{}");
+                return parsed && typeof parsed === "object" ? parsed : fallback;
+            } catch (_) {
+                return fallback;
+            }
+        };
 
-        container.innerHTML = Object.keys(targets).map(g => {
-            const targetSets = targets[g];
+        const historyKey = window.PegasusManifest?.workout?.weekly_history || 'pegasus_weekly_history';
+        const targetsKey = window.PegasusManifest?.workout?.muscleTargets || 'pegasus_muscle_targets';
+        const h = safeParseObject(localStorage.getItem(historyKey), {});
+
+        let rawTargets = null;
+        if (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === 'function') {
+            rawTargets = window.PegasusOptimizer.getTargets();
+        } else if (typeof window.getDynamicTargets === 'function') {
+            rawTargets = window.getDynamicTargets();
+        } else {
+            rawTargets = safeParseObject(localStorage.getItem(targetsKey), fallbackTargets);
+        }
+
+        const targets = { ...fallbackTargets, ...(rawTargets || {}) };
+
+        container.innerHTML = strictGroups.map(g => {
+            const targetSets = Math.max(0, parseInt(targets[g], 10) || 0);
             if (targetSets === 0) return '';
 
-            const v = h[g] || 0;
+            const v = Math.max(0, parseInt(h[g], 10) || 0);
             const p = Math.min((v / targetSets) * 100, 100);
 
             return `
                 <div class="mini-card">
                     <span class="mini-label">${g}</span>
-                    <div class="mini-val">${v} / ${targetSets}</div>
+                    <div class="mini-val">${v}/${targetSets}</div>
                     <div class="bar-bg">
                         <div class="bar-fill" style="width:${p}%;"></div>
                     </div>

@@ -235,16 +235,34 @@ function consumeSupp(type, grams, shouldPush = true) {
     if (shouldPush) pushInventoryRefresh();
     return inv;
 }
-
-function consumeDailySupplements() {
+function restoreSupp(type, grams, shouldPush = true) {
+    const actualKey = normalizeSuppKey(type);
     let inv = initSupplementInventory();
 
-    inv.prot = Math.max(0, inv.prot - SUPPLEMENT_CONFIG.doses.protein);
-    inv.crea = Math.max(0, inv.crea - SUPPLEMENT_CONFIG.doses.creatine);
+    if (inv[actualKey] === undefined) return inv;
+
+    const amount = Math.max(0, parseFloat(grams) || 0);
+    inv[actualKey] = Math.max(0, inv[actualKey] + amount);
 
     setSupplementInventory(inv);
-    pushInventoryRefresh();
 
+    if (window.PegasusEngine?.dispatch) {
+        window.PegasusEngine.dispatch({
+            type: "SUPPLEMENT_RESTORED",
+            payload: { type: actualKey, grams: amount, remaining: inv[actualKey] }
+        });
+    }
+
+    if (shouldPush) pushInventoryRefresh();
+    return inv;
+}
+
+
+function consumeDailySupplements() {
+    // Inventory deduction is intentionally diet-only.
+    // Protein/creatine stock changes when entries are added to the Diet log.
+    const inv = initSupplementInventory();
+    pushInventoryRefresh();
     return checkSupplementAlerts(inv);
 }
 
@@ -329,17 +347,44 @@ function processFoodEntry(entryName) {
     return impact;
 }
 
+function restoreFoodEntry(entryName) {
+    const impact = getEntrySupplementImpact(entryName);
+    let touched = false;
+
+    if (impact.prot > 0) {
+        restoreSupp('prot', impact.prot, false);
+        touched = true;
+    }
+
+    if (impact.crea > 0) {
+        restoreSupp('crea', impact.crea, false);
+        touched = true;
+    }
+
+    if (touched) {
+        pushInventoryRefresh();
+    }
+
+    return impact;
+}
+
 /* --- 3. GLOBAL BRIDGES --- */
 
 window.PegasusInventoryPC = window.PegasusInventoryPC || {
     processEntry: function(name) {
         return processFoodEntry(name);
     },
+    restoreEntry: function(name) {
+        return restoreFoodEntry(name);
+    },
     getInventory: function() {
         return initSupplementInventory();
     },
     consume: function(type, grams, shouldPush = true) {
         return consumeSupp(type, grams, shouldPush);
+    },
+    restore: function(type, grams, shouldPush = true) {
+        return restoreSupp(type, grams, shouldPush);
     },
     restock: function(type, grams) {
         return restockSupplement(type, grams);
@@ -350,6 +395,9 @@ window.PegasusInventory = window.PegasusInventory || {
     consume: function(type, grams, shouldPush = true) {
         return consumeSupp(type, grams, shouldPush);
     },
+    restore: function(type, grams, shouldPush = true) {
+        return restoreSupp(type, grams, shouldPush);
+    },
     getInventory: function() {
         return initSupplementInventory();
     }
@@ -357,6 +405,7 @@ window.PegasusInventory = window.PegasusInventory || {
 
 // Legacy compatibility
 window.consumeSupp = consumeSupp;
+window.restoreSupp = restoreSupp;
 
 // Global Exports
 window.getSmartDailyProgram = getSmartDailyProgram;
@@ -368,6 +417,7 @@ window.resetWeeklyInventory = resetWeeklyInventory;
 window.consumeDailySupplements = consumeDailySupplements;
 window.calculateOrderTotals = calculateOrderTotals;
 window.restockSupplement = restockSupplement;
+window.restoreSupplement = restoreSupp;
 window.initSupplementInventory = initSupplementInventory;
 
 

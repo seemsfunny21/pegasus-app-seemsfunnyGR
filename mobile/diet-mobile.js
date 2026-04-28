@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.0 SHARED CORE PATCH)
-   Protocol: Shared Metabolic Helpers, Safe Daily Targets & Cross-Device Consistency
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.1 INVENTORY RESTORE PATCH)
+   Protocol: Shared Metabolic Helpers, Diet-Only Inventory & Delete Restore
    Status: FINAL STABLE | FIXED: DUPLICATE TARGET LOGIC REMOVED
    ========================================================================== */
 
@@ -67,6 +67,18 @@ window.PegasusDiet = {
 
         if (impact.crea > 0 && window.PegasusInventory?.consume) {
             window.PegasusInventory.consume('crea', impact.crea);
+        }
+    },
+
+    restoreInventoryImpact: function(name) {
+        const impact = this.getInventoryImpact(name);
+
+        if (impact.prot > 0 && window.PegasusInventory?.restore) {
+            window.PegasusInventory.restore('prot', impact.prot);
+        }
+
+        if (impact.crea > 0 && window.PegasusInventory?.restore) {
+            window.PegasusInventory.restore('crea', impact.crea);
         }
     },
 
@@ -458,7 +470,11 @@ window.PegasusDiet = {
     delete: async function(idx) {
         const dateStr = this.getStrictDateStr();
         let log = this.getLog(dateStr);
-        log.splice(idx, 1);
+        const removedItem = log.splice(idx, 1)[0];
+
+        if (removedItem?.name) {
+            this.restoreInventoryImpact(removedItem.name);
+        }
 
         localStorage.setItem(this.getFoodLogKey(dateStr), JSON.stringify(log));
 

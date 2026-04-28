@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.7 (LIVE DAILY PREVIEW FIX)
-   Protocol: Dynamic Target Priority, Weekly Reset Safety & Active DOM Alignment
-   Status: FINAL STABLE | FIXED: LIVE DAILY SET AGGREGATION IN PREVIEW
+   PEGASUS MUSCLE PROGRESS VISUALIZER - v7.8 (STRICT WEEKLY PREVIEW FIX)
+   Protocol: Weekly Accumulated Progress, Dynamic Targets & No Daily-Live Badges
+   Status: FINAL STABLE | FIXED: PREVIEW READS WEEKLY HISTORY ONLY
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -28,53 +28,51 @@ window.MuscleProgressUI = {
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
         const emptyMap = () => ({ "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 });
 
-        const liveTargets = emptyMap();
-        const liveHistory = emptyMap();
-        const activeExerciseElements = Array.from(document.querySelectorAll(".exercise"));
+        const safeJson = (raw, fallback) => {
+            try {
+                const parsed = JSON.parse(raw || "{}");
+                return parsed && typeof parsed === "object" ? parsed : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        };
 
-        if (activeExerciseElements.length > 0) {
-            activeExerciseElements.forEach(el => {
-                const name = el.querySelector(".exercise-name")?.innerText?.trim() || "";
-                if (!name) return;
-
-                const match = Array.isArray(window.exercisesDB)
-                    ? window.exercisesDB.find(ex => (ex?.name || "").trim() === name)
-                    : null;
-                const muscle = match?.muscleGroup || "Άλλο";
-                if (!strictGroups.includes(muscle)) return;
-
-                const total = Math.max(0, parseFloat(el.dataset.total) || 0);
-                const doneRaw = Math.max(0, parseFloat(el.dataset.done) || 0);
-                const done = Math.min(total, doneRaw);
-
-                liveTargets[muscle] += total;
-                liveHistory[muscle] += done;
+        const normalizeMap = (source, fallback) => {
+            const base = emptyMap();
+            strictGroups.forEach(group => {
+                const value = parseFloat(source?.[group]);
+                const fallbackValue = parseFloat(fallback?.[group]);
+                base[group] = Math.max(0, Number.isFinite(value) ? value : (Number.isFinite(fallbackValue) ? fallbackValue : 0));
             });
-
-            return { history: liveHistory, targets: liveTargets, source: "daily_live" };
-        }
+            return base;
+        };
 
         const historyKey = M?.workout?.weekly_history || "pegasus_weekly_history";
-        const history = JSON.parse(localStorage.getItem(historyKey) || "{}");
+        const targetsKey = M?.workout?.muscleTargets || "pegasus_muscle_targets";
 
-        let targets;
-        if (typeof window.getDynamicTargets === "function") {
-            targets = window.getDynamicTargets();
+        const storedHistory = safeJson(localStorage.getItem(historyKey), emptyMap());
+        const history = normalizeMap(storedHistory, emptyMap());
+
+        let rawTargets = null;
+        if (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === "function") {
+            rawTargets = window.PegasusOptimizer.getTargets();
+        } else if (typeof window.getDynamicTargets === "function") {
+            rawTargets = window.getDynamicTargets();
         } else {
-            const stored = localStorage.getItem(M?.workout?.muscleTargets || "pegasus_muscle_targets");
-            targets = stored
-                ? JSON.parse(stored)
-                : {
-                    "Στήθος": 24,
-                    "Πλάτη": 24,
-                    "Πόδια": 24,
-                    "Χέρια": 16,
-                    "Ώμοι": 16,
-                    "Κορμός": 12
-                };
+            rawTargets = safeJson(localStorage.getItem(targetsKey), null);
         }
 
-        return { history, targets, source: "weekly_fallback" };
+        const fallbackTargets = {
+            "Στήθος": 24,
+            "Πλάτη": 24,
+            "Πόδια": 24,
+            "Χέρια": 16,
+            "Ώμοι": 16,
+            "Κορμός": 12
+        };
+        const targets = normalizeMap(rawTargets, fallbackTargets);
+
+        return { history, targets, source: "weekly_accumulated" };
     },
 
     getActiveExercises() {
@@ -126,7 +124,7 @@ window.MuscleProgressUI = {
 
         const pegasusGreen = "#00ff41";
 
-        const sourceLabel = source === "daily_live" ? "ΣΗΜΕΡΙΝΗ ΠΡΟΟΔΟΣ" : "ΕΒΔΟΜΑΔΙΑΙΑ ΠΡΟΟΔΟΣ";
+        const sourceLabel = "ΕΒΔΟΜΑΔΙΑΙΑ ΠΡΟΟΔΟΣ";
 
         let htmlString = `
         <div style="background: rgba(0,0,0,0.85); border: 1px solid ${pegasusGreen}44; border-radius: 12px; padding: 15px; width: 100%; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px;">
@@ -159,29 +157,8 @@ window.MuscleProgressUI = {
 
         htmlString += `</div>`;
 
-        if (activeExercises.length > 0) {
-            htmlString += `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(85px, 1fr)); gap: 8px; justify-items: center;">`;
-
-            activeExercises.forEach(ex => {
-                const imgPath = this.getImagePath(ex.name);
-
-                htmlString += `
-                <div style="text-align: center; width: 100%; background: rgba(255,255,255,0.02); padding: 5px; border-radius: 6px; border: 1px solid #222;">
-                    <div style="width: 100%; aspect-ratio: 1/1; background: #000; border-radius: 4px; overflow: hidden; margin-bottom: 4px; border: 1px solid ${pegasusGreen}11;">
-                        <img src="${imgPath}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='images/placeholder.jpg';">
-                    </div>
-                    <div style="color: #fff; font-size: 7.5px; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px;">
-                        ${ex.name}
-                    </div>
-                    <div style="color: ${pegasusGreen}; font-size: 7px; font-weight: 800; margin-top: 2px;">
-                        ${Math.min(ex.done || 0, ex.total || 0)}/${ex.total || 0} SET
-                    </div>
-                </div>`;
-            });
-
-            htmlString += `</div>`;
-        }
+        // Strict weekly preview: no daily-live exercise/set badges here.
+        // The exercise thumbnails remain in #previewContent; this box stays weekly-only.
 
         htmlString += `</div>`;
 

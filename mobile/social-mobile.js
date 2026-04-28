@@ -1,6 +1,6 @@
 /* ==========================================================================
-   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.6)
-   Protocol: Fortress Security, XSS Protection, Anti-Tabnabbing & PIN Lock
+   💬 PEGASUS MODULE: BEHAVIORAL TRACKER (SOCIAL METRICS v1.7)
+   Protocol: Fortress Security, Permanent Add Form, Anti-Tabnabbing & PIN Lock
    ========================================================================== */
 
 (function() {
@@ -44,6 +44,7 @@
                 document.getElementById('pinError').style.display = 'none';
                 
                 this.handleSearch(""); // Reset search and Load Data
+                this.ensureAddFormOpen();
             } else {
                 // 🛑 UNAUTHORIZED ACCESS: Lockdown Mode
                 isUnlocked = false;
@@ -102,20 +103,27 @@
             }
         },
 
-        toggleAddForm: function() {
+        ensureAddFormOpen: function() {
             const form = document.getElementById('addSocialForm');
             const btn = document.getElementById('btnAddSocial');
-            if(form.style.display === 'none') {
+
+            if (form) {
                 form.style.display = 'block';
-                btn.innerHTML = 'Χ ΚΛΕΙΣΙΜΟ';
-                btn.style.background = '#ff4444';
-                btn.style.color = '#fff';
-            } else {
-                form.style.display = 'none';
+            }
+
+            if (btn) {
                 btn.innerHTML = '+ ΝΕΑ ΕΓΓΡΑΦΗ';
                 btn.style.background = 'var(--main)';
                 btn.style.color = '#000';
             }
+
+            const input = document.getElementById('newSocialName');
+            if (input) setTimeout(() => input.focus(), 0);
+        },
+
+        toggleAddForm: function() {
+            // Kept as a compatibility alias: the add form is permanently open.
+            this.ensureAddFormOpen();
         },
 
         addNewEntry: function() {
@@ -134,8 +142,8 @@
 
             entities.unshift(newEntry);
             this.saveAndRender(entities);
-            this.toggleAddForm();
             document.getElementById('newSocialName').value = '';
+            this.ensureAddFormOpen();
         },
 
         handleSearch: function(term) {
@@ -192,12 +200,12 @@
                     <button id="btnSortSocial" class="secondary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 10px; border-radius: 8px; background: transparent; border: 1px solid #00ff41; color: #00ff41; font-weight: 900;" onclick="window.PegasusSocial.toggleSort()">
                         🔽 ΥΨΗΛΗ ΒΑΘΜΟΛΟΓΙΑ
                     </button>
-                    <button id="btnAddSocial" class="primary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 11px; border-radius: 8px; color: #000;" onclick="window.PegasusSocial.toggleAddForm()">
+                    <button id="btnAddSocial" class="primary-btn" style="flex: 1; margin: 0; padding: 8px 5px; font-size: 11px; border-radius: 8px; color: #000;" onclick="window.PegasusSocial.ensureAddFormOpen()">
                         + ΝΕΑ ΕΓΓΡΑΦΗ
                     </button>
                 </div>
 
-                <div id="addSocialForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
+                <div id="addSocialForm" class="mini-card" style="display: block; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
                     <input type="text" id="newSocialName" placeholder="Όνομα & Link Προφίλ..." style="margin-bottom: 15px; border: 2px solid #444;">
                     <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
                 </div>
