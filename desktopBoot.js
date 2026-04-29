@@ -190,7 +190,17 @@ window.PegasusDesktopBoot = window.PegasusDesktopBoot || {
                 const todayDateStr = window.getPegasusLocalDateKey();
                 if (lastReset !== todayDateStr) {
                     const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+                    const weekKey = (() => {
+                        const d = new Date();
+                        const day = d.getDay() || 7;
+                        const monday = new Date(d);
+                        monday.setHours(0, 0, 0, 0);
+                        monday.setDate(d.getDate() - day + 1);
+                        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+                    })();
                     localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
+                    localStorage.setItem('pegasus_weekly_history_week_key', weekKey);
+                    localStorage.setItem('pegasus_weekly_history_counted_v2', JSON.stringify({ weekKey, exercises: {}, resetAt: Date.now() }));
                     localStorage.setItem('pegasus_weekly_kcal', "0.0");
                     localStorage.setItem('pegasus_last_reset', todayDateStr);
                     if (window.PegasusCloud?.push) window.PegasusCloud.push();

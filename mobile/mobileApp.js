@@ -388,7 +388,7 @@
         if (!container) return;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
-        const fallbackTargets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        const fallbackTargets = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
         const safeParseObject = (raw, fallback) => {
             try {
                 const parsed = JSON.parse(raw || "{}");

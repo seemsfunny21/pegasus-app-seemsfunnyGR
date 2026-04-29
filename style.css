@@ -221,6 +221,38 @@ input[type="number"], input[type="text"], input[type="password"] {
 .set-counter { min-width: 40px; color: #4CAF50; font-weight: bold; font-size: 17px; }
 .exercise-name { flex: 1; font-weight: bold; font-size: 14px; color: #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+.exercise-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.exercise-muscle-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,255,65,0.25);
+    background: rgba(0,255,65,0.08);
+    color: var(--main, #00ff41);
+    font-size: var(--pg-font-status, 11px);
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.preview-muscle-badge {
+    margin: 4px auto 0;
+    justify-content: center;
+}
+
+
+
 .weight-input { 
     width: 55px; 
     height: 26px; 

@@ -179,6 +179,9 @@ const PegasusCloud = {
             "pegasus_language",
             "pegasus_lang",
             "pegasus_weekly_history",
+            "pegasus_weekly_history_week_key",
+            "pegasus_weekly_history_counted_v2",
+            "pegasus_manual_weekly_adjustments_v1",
             "pegasus_workouts_done",
             "pegasus_total_workouts",
             "pegasus_active_plan",
@@ -333,7 +336,156 @@ const PegasusCloud = {
     },
 
 
+    getPegasusCurrentWeekKey() {
+        const d = new Date();
+        const day = d.getDay() || 7;
+        const monday = new Date(d);
+        monday.setHours(0, 0, 0, 0);
+        monday.setDate(d.getDate() - day + 1);
+        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+    },
+
+    safeParseStorageObject(value, fallback = {}) {
+        try {
+            if (value && typeof value === "object") return value;
+            const parsed = JSON.parse(value || "null");
+            return parsed && typeof parsed === "object" ? parsed : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    },
+
+    normalizeWeeklyHistoryObject(value) {
+        const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+        const parsed = this.safeParseStorageObject(value, {});
+        const clean = {};
+        groups.forEach(group => {
+            const amount = Number(parsed?.[group]);
+            clean[group] = Number.isFinite(amount) ? Math.max(0, amount) : 0;
+        });
+        return clean;
+    },
+
+    getWeeklyHistoryTotalValue(history) {
+        return Object.values(history || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    },
+
+    mergeWeeklyHistoryValue(localValue, remoteValue) {
+        const localHistory = this.normalizeWeeklyHistoryObject(localValue);
+        const remoteHistory = this.normalizeWeeklyHistoryObject(remoteValue);
+        const localTotal = this.getWeeklyHistoryTotalValue(localHistory);
+        const remoteTotal = this.getWeeklyHistoryTotalValue(remoteHistory);
+        const currentWeek = this.getPegasusCurrentWeekKey();
+
+        const remoteStorage = this._remoteStorageMergeContext || {};
+        const remoteWeek = String(remoteStorage.pegasus_weekly_history_week_key || "").trim();
+        const localWeek = String(localStorage.getItem("pegasus_weekly_history_week_key") || currentWeek).trim();
+
+        // Remote old-week zero must never wipe a current local workout week.
+        if (localWeek === currentWeek && remoteWeek && remoteWeek !== currentWeek && localTotal > 0) {
+            return JSON.stringify(localHistory);
+        }
+
+        // Current-week remote can initialize a fresh local device.
+        if (remoteWeek === currentWeek && localWeek !== currentWeek) {
+            localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
+            return JSON.stringify(remoteHistory);
+        }
+
+        // Same/unknown current week: merge by max per muscle group.
+        const merged = this.normalizeWeeklyHistoryObject({});
+        Object.keys(merged).forEach(group => {
+            merged[group] = Math.max(Number(localHistory[group] || 0), Number(remoteHistory[group] || 0));
+        });
+
+        // Extra guard: if remote is all-zero and local has data, keep local.
+        if (remoteTotal === 0 && localTotal > 0) return JSON.stringify(localHistory);
+
+        localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
+        return JSON.stringify(merged);
+    },
+
+    mergeWeeklyLedgerValue(localValue, remoteValue) {
+        const currentWeek = this.getPegasusCurrentWeekKey();
+        const local = this.safeParseStorageObject(localValue, null);
+        const remote = this.safeParseStorageObject(remoteValue, null);
+
+        const localWeek = String(local?.weekKey || localStorage.getItem("pegasus_weekly_history_week_key") || currentWeek);
+        const remoteWeek = String(remote?.weekKey || this._remoteStorageMergeContext?.pegasus_weekly_history_week_key || currentWeek);
+
+        if (localWeek === currentWeek && remoteWeek !== currentWeek && local?.exercises) {
+            return JSON.stringify(local);
+        }
+
+        if (remoteWeek === currentWeek && localWeek !== currentWeek) {
+            return JSON.stringify({
+                weekKey: currentWeek,
+                exercises: remote?.exercises && typeof remote.exercises === "object" ? remote.exercises : {},
+                updatedAt: Math.max(Number(remote?.updatedAt) || 0, Date.now())
+            });
+        }
+
+        const merged = {
+            weekKey: currentWeek,
+            exercises: {},
+            updatedAt: Math.max(Number(local?.updatedAt) || 0, Number(remote?.updatedAt) || 0, Date.now())
+        };
+
+        const apply = (obj) => {
+            if (!obj?.exercises || typeof obj.exercises !== "object") return;
+            Object.entries(obj.exercises).forEach(([key, count]) => {
+                const value = Math.max(0, Number(count) || 0);
+                merged.exercises[key] = Math.max(Number(merged.exercises[key] || 0), value);
+            });
+        };
+
+        apply(local);
+        apply(remote);
+
+        return JSON.stringify(merged);
+    },
+
+    mergeMuscleTargetsValue(localValue, remoteValue) {
+        const nextDefaults = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
+        const oldDefaults = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        const groups = Object.keys(nextDefaults);
+        const local = this.safeParseStorageObject(localValue, null);
+        const remote = this.safeParseStorageObject(remoteValue, null);
+
+        const looksOld = obj => obj && groups.every(group => Number(obj[group]) === Number(oldDefaults[group]));
+        const clean = obj => {
+            const out = { ...nextDefaults };
+            if (obj && typeof obj === "object") {
+                groups.forEach(group => {
+                    const value = Number(obj[group]);
+                    if (Number.isFinite(value) && value > 0) out[group] = value;
+                });
+            }
+            return out;
+        };
+
+        if (looksOld(remote)) return JSON.stringify(clean(local || nextDefaults));
+        if (looksOld(local)) return JSON.stringify(clean(remote || nextDefaults));
+        return JSON.stringify(clean(remote || local || nextDefaults));
+    },
+
     mergeManagedStorageValue(key, localValue, remoteValue) {
+        if (key === "pegasus_weekly_history") {
+            return this.mergeWeeklyHistoryValue(localValue, remoteValue);
+        }
+        if (key === "pegasus_weekly_history_counted_v2") {
+            return this.mergeWeeklyLedgerValue(localValue, remoteValue);
+        }
+        if (key === "pegasus_weekly_history_week_key") {
+            const currentWeek = this.getPegasusCurrentWeekKey();
+            const localWeek = String(localValue || "").trim();
+            const remoteWeek = String(remoteValue || "").trim();
+            if (localWeek === currentWeek || remoteWeek === currentWeek) return currentWeek;
+            return remoteWeek || localWeek || currentWeek;
+        }
+        if (key === "pegasus_muscle_targets") {
+            return this.mergeMuscleTargetsValue(localValue, remoteValue);
+        }
         const registry = window.PegasusMobileDataRegistry;
         if (!registry?.getDescriptor?.(key)) return remoteValue;
         return registry.mergeManagedRawValue(key, localValue, remoteValue);
@@ -1209,6 +1361,7 @@ const PegasusCloud = {
                 changed = true;
 
                 this.isApplyingRemote = true;
+                this._remoteStorageMergeContext = remoteStorage;
                 try {
                     const localGeneralKeys = this.getLocalManagedKeys({ includeProtected: false });
                     const remoteGeneralKeys = new Set(Object.keys(remoteStorage));
@@ -1246,6 +1399,7 @@ const PegasusCloud = {
                         }
                     }
                 } finally {
+                    this._remoteStorageMergeContext = null;
                     this.isApplyingRemote = false;
                 }
 

@@ -159,7 +159,10 @@ function selectDay(btn, day) {
         d.innerHTML = `
             <div class="exercise-info">
                 <div class="set-counter">${doneSoFar}/${finalSets}</div>
-                <div class="exercise-name"></div>
+                <div class="exercise-main">
+                    <div class="exercise-name"></div>
+                    <div class="exercise-muscle-badge"></div>
+                </div>
                 <input type="number" id="weight-${renderIdx}" class="weight-input" placeholder="kg">
             </div>
             <div class="progress-box"><div class="progress-bar"></div></div>
@@ -167,6 +170,15 @@ function selectDay(btn, day) {
 
         const nameNode = d.querySelector(".exercise-name");
         if (nameNode) nameNode.textContent = cleanName;
+
+        const badgeNode = d.querySelector(".exercise-muscle-badge");
+        if (badgeNode) {
+            const badge = typeof window.getPegasusMuscleBadge === "function"
+                ? window.getPegasusMuscleBadge(e)
+                : (e.muscleGroup || "");
+            badgeNode.textContent = badge;
+            if (!badge) badgeNode.style.display = "none";
+        }
 
         const weightInputEl = d.querySelector(".weight-input");
         if (weightInputEl) {

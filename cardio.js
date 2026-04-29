@@ -77,13 +77,42 @@ window.saveCardioData = async function() {
     const workoutKey = `${y}-${m}-${d}`;
 
     /* --- 1. ΜΥΪΚΗ ΟΜΑΔΑ & XP (LIFETIME STATS) --- */
-    const credit = 18;
+    const rawCredit = 18;
     const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+    const targetKey = M?.workout?.muscleTargets || 'pegasus_muscle_targets';
     const statsKey = M?.system?.stats || 'pegasus_stats';
 
+    const getWeekKey = () => {
+        const dObj = new Date();
+        const day = dObj.getDay() || 7;
+        const monday = new Date(dObj);
+        monday.setHours(0, 0, 0, 0);
+        monday.setDate(dObj.getDate() - day + 1);
+        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+    };
+
+    const targets = JSON.parse(localStorage.getItem(targetKey) || '{"Πόδια":24}');
+    const legsTarget = Math.max(0, Number(targets["Πόδια"]) || 24);
+
     let historySets = JSON.parse(localStorage.getItem(historyKey) || "{}");
-    historySets["Πόδια"] = (historySets["Πόδια"] || 0) + credit;
-    localStorage.setItem(historyKey, JSON.stringify(historySets));
+    if (!historySets || typeof historySets !== "object") historySets = {};
+    const currentLegs = Math.max(0, Number(historySets["Πόδια"] || 0));
+    const credit = Math.min(rawCredit, Math.max(0, legsTarget - currentLegs));
+
+    if (credit > 0) {
+        historySets["Πόδια"] = currentLegs + credit;
+        localStorage.setItem(historyKey, JSON.stringify(historySets));
+        localStorage.setItem('pegasus_weekly_history_week_key', getWeekKey());
+
+        const ledgerKey = 'pegasus_weekly_history_counted_v2';
+        let ledger = JSON.parse(localStorage.getItem(ledgerKey) || "null");
+        if (!ledger || ledger.weekKey !== getWeekKey() || typeof ledger.exercises !== "object") {
+            ledger = { weekKey: getWeekKey(), exercises: {} };
+        }
+        ledger.exercises[`${workoutKey}|cycling`] = Math.max(Number(ledger.exercises[`${workoutKey}|cycling`] || 0), credit / rawCredit);
+        ledger.updatedAt = Date.now();
+        localStorage.setItem(ledgerKey, JSON.stringify(ledger));
+    }
 
     let stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
     if (!stats || typeof stats !== "object") stats = {};
@@ -135,7 +164,7 @@ window.saveCardioData = async function() {
     localStorage.setItem("pegasus_cardio_history", JSON.stringify(historyLog.slice(0, 50)));
 
     /* --- 5. UI REFRESH --- */
-    alert(`✅ ΚΑΤΑΧΩΡΗΘΗΚΕ!\nΘερμίδες: ${kcal} kcal\nLeveling: +18 σετ στα Πόδια.`);
+    alert(`✅ ΚΑΤΑΧΩΡΗΘΗΚΕ!\nΘερμίδες: ${kcal} kcal\nLeveling: +${credit} σετ στα Πόδια.`);
 
     window.PegasusCardio.close();
 

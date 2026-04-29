@@ -344,11 +344,34 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
             clean[group] = Number.isFinite(value) ? Math.max(0, value) : 0;
         });
         localStorage.setItem(getPegasusWeeklyHistoryKey(), JSON.stringify(clean));
+        localStorage.setItem('pegasus_weekly_history_week_key', getPegasusWeekKey());
         return clean;
     }
 
     function getWeeklyHistoryTotal(history) {
         return Object.values(history || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    }
+
+    function readWeeklyTargets() {
+        const fallback = {
+            'Στήθος': 16,
+            'Πλάτη': 16,
+            'Πόδια': 24,
+            'Χέρια': 14,
+            'Ώμοι': 12,
+            'Κορμός': 18
+        };
+
+        try {
+            if (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === 'function') {
+                return { ...fallback, ...window.PegasusOptimizer.getTargets() };
+            }
+            const key = (window.PegasusManifest || window.M || {})?.workout?.muscleTargets || 'pegasus_muscle_targets';
+            const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+            return parsed && typeof parsed === 'object' ? { ...fallback, ...parsed } : fallback;
+        } catch (e) {
+            return fallback;
+        }
     }
 
     function readWeeklyLedger() {
@@ -456,7 +479,20 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
             return false;
         }
 
-        history[muscle] = Math.max(0, Number(history[muscle] || 0)) + (deltaSets * perSetValue);
+        const targets = readWeeklyTargets();
+        const groupTarget = Math.max(0, Number(targets[muscle]) || 0);
+        const currentGroupValue = Math.max(0, Number(history[muscle] || 0));
+        const rawAddValue = deltaSets * perSetValue;
+        const addValue = groupTarget > 0 ? Math.min(rawAddValue, Math.max(0, groupTarget - currentGroupValue)) : rawAddValue;
+
+        if (addValue <= 0) {
+            ledger.exercises[key] = nextCounted;
+            ledger.updatedAt = Date.now();
+            writeWeeklyLedger(ledger);
+            return false;
+        }
+
+        history[muscle] = currentGroupValue + addValue;
         const cleanHistory = writeWeeklyHistory(history);
         ledger.exercises[key] = nextCounted;
         ledger.updatedAt = Date.now();
@@ -466,7 +502,7 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
             detail: {
                 exercise: rawName,
                 muscle,
-                value: deltaSets * perSetValue,
+                value: addValue,
                 deltaSets,
                 source: options.source || 'record',
                 history: { ...cleanHistory }

@@ -25,12 +25,40 @@ window.PegasusCardio = {
 
         /* --- 1. ΕΚΤΙΜΗΣΗ ΚΟΠΩΣΗΣ & LIFETIME STATS (XP) --- */
         if (km > 0) {
-            const credit = 18;
+            const rawCredit = 18;
 
-            // Weekly Progress Update
+            // Weekly Progress Update (PEGASUS 134 cloud-safe/capped cycling credit)
+            const getWeekKey = () => {
+                const now = new Date();
+                const day = now.getDay() || 7;
+                const monday = new Date(now);
+                monday.setHours(0, 0, 0, 0);
+                monday.setDate(now.getDate() - day + 1);
+                return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+            };
+
+            const targetKey = window.PegasusManifest?.workout?.muscleTargets || 'pegasus_muscle_targets';
+            const targets = JSON.parse(localStorage.getItem(targetKey) || '{"Πόδια":24}');
+            const legsTarget = Math.max(0, Number(targets["Πόδια"]) || 24);
             let history = JSON.parse(localStorage.getItem('pegasus_weekly_history') || "{}");
-            history["Πόδια"] = (history["Πόδια"] || 0) + credit;
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+            if (!history || typeof history !== "object") history = {};
+            const currentLegs = Math.max(0, Number(history["Πόδια"] || 0));
+            const credit = Math.min(rawCredit, Math.max(0, legsTarget - currentLegs));
+
+            if (credit > 0) {
+                history["Πόδια"] = currentLegs + credit;
+                localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+                localStorage.setItem('pegasus_weekly_history_week_key', getWeekKey());
+
+                const ledgerKey = 'pegasus_weekly_history_counted_v2';
+                let ledger = JSON.parse(localStorage.getItem(ledgerKey) || "null");
+                if (!ledger || ledger.weekKey !== getWeekKey() || typeof ledger.exercises !== "object") {
+                    ledger = { weekKey: getWeekKey(), exercises: {} };
+                }
+                ledger.exercises[`${workoutKey}|cycling`] = Math.max(Number(ledger.exercises[`${workoutKey}|cycling`] || 0), credit / rawCredit);
+                ledger.updatedAt = Date.now();
+                localStorage.setItem(ledgerKey, JSON.stringify(ledger));
+            }
 
             // Lifetime Stats / XP
             let stats = JSON.parse(localStorage.getItem('pegasus_stats') || "{}");

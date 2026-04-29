@@ -1186,20 +1186,24 @@ function openExercisePreview() {
     const currentDay = activeBtn.id.replace('nav-', '');
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
 
-    let rawData = (typeof window.calculateDailyProgram !== 'undefined')
-        ? window.calculateDailyProgram(currentDay, isRainy)
-        : ((window.program && window.program[currentDay]) ? [...window.program[currentDay]] : []);
+    let rawData = [];
 
-    if (currentDay === "Παρασκευή" && !isRainy && window.program && window.program["Κυριακή"]) {
-        const bonus = window.program["Κυριακή"]
-            .filter(ex => !ex.name.includes("Ποδηλασία") && !ex.name.includes("Cycling"))
-            .map(ex => ({ ...ex, isSpillover: false }));
-        rawData = [...rawData, ...bonus];
+    if ((currentDay === "Σάββατο" || currentDay === "Κυριακή") && isRainy) {
+        rawData = [
+            { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
+            { name: "Low Seated Row", sets: 5, muscleGroup: "Πλάτη" },
+            { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός" }
+        ];
+    } else {
+        rawData = (window.program && window.program[currentDay]) ? [...window.program[currentDay]] : [];
     }
 
-    const dayExercises = window.PegasusOptimizer
+    // PEGASUS 134: Preview must match the actual optimized workout list exactly; no hidden Sunday spillover.
+
+    const dayExercises = (window.PegasusOptimizer
         ? window.PegasusOptimizer.apply(currentDay, rawData)
-        : rawData.map(e => ({ ...e, adjustedSets: e.sets }));
+        : rawData.map(e => ({ ...e, adjustedSets: e.sets })))
+        .sort((a, b) => parseFloat(b.adjustedSets || b.sets) - parseFloat(a.adjustedSets || a.sets));
 
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
@@ -1217,10 +1221,14 @@ function openExercisePreview() {
         if (!imgBase) imgBase = cleanName.replace(/\s+/g, '').toLowerCase();
 
         const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
+        const badge = typeof window.getPegasusMuscleBadge === "function"
+            ? window.getPegasusMuscleBadge(ex)
+            : (ex.muscleGroup || "");
         content.innerHTML += `
             <div class="preview-item">
                 <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';" alt="${cleanName}">
                 <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
+                ${badge ? `<span class="exercise-muscle-badge preview-muscle-badge">${badge}</span>` : ""}
             </div>
         `;
     });

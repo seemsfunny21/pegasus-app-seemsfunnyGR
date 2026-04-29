@@ -1,5 +1,5 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v17.5 (PROGRAM REBALANCE: ABS PRIORITY / CYCLING-AWARE)
+   📦 PEGASUS DATA ENGINE - v17.6 (PEGASUS 134 PUSH/PULL/CYCLING SPLIT)
    Protocol: 10" Prep | 45" Work | 60" Rest
    Status: PRODUCTION READY (Final Mapping)
    ========================================================================== */
@@ -95,44 +95,40 @@ window.setPegasusPlan = function(planKey) {
 (function applyPegasusSplit() {
     const activePlan = window.getPegasusActivePlan();
     const days = {
+        // PEGASUS 134: 3 βασικές προπονήσεις + προαιρετικό Σ/Κ catch-up.
+        // Πόδια: μόνο cycling credit Σάββατο/Κυριακή, χωρίς leg filler ασκήσεις.
         iron_tuesday: [
             { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
             { name: "Chest Flys", sets: 3, muscleGroup: "Στήθος", weight: "42" },
             { name: "Pushups", sets: 3, muscleGroup: "Στήθος", weight: "0" },
-            { name: "Upright Rows", sets: 3, muscleGroup: "Ώμοι", weight: "30" },
-            { name: "Ab Crunches", sets: 4, muscleGroup: "Κορμός", weight: "30" },
-            { name: "Leg Raise Hip Lift", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Plank", sets: 3, muscleGroup: "Κορμός", weight: "0" }
+            { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" },
+            { name: "Tricep Pulldowns", sets: 4, muscleGroup: "Χέρια", weight: "20" },
+            { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: "30" },
+            { name: "Leg Raise Hip Lift", sets: 3, muscleGroup: "Κορμός", weight: "0" }
         ],
         iron_wednesday: [
             { name: "Lat Pulldowns", sets: 4, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Seated Rows", sets: 3, muscleGroup: "Πλάτη", weight: "66" },
+            { name: "Seated Rows", sets: 4, muscleGroup: "Πλάτη", weight: "66" },
             { name: "Bicep Curls", sets: 4, muscleGroup: "Χέρια", weight: "30" },
-            { name: "Tricep Pulldowns", sets: 4, muscleGroup: "Χέρια", weight: "20" },
             { name: "Lying Knee Raise", sets: 3, muscleGroup: "Κορμός", weight: "0" },
             { name: "Reverse Crunch", sets: 3, muscleGroup: "Κορμός", weight: "0" }
         ],
         iron_friday: [
-            { name: "Lat Pulldowns Close", sets: 3, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Low Rows Seated", sets: 3, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
+            { name: "Lat Pulldowns Close", sets: 4, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Low Rows Seated", sets: 4, muscleGroup: "Πλάτη", weight: "36" },
             { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" },
-            { name: "Preacher Bicep Curls", sets: 3, muscleGroup: "Χέρια", weight: "30" },
-            { name: "Chest Press", sets: 3, muscleGroup: "Στήθος", weight: "54" },
+            { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια", weight: "30" },
+            { name: "Tricep Pulldowns", sets: 3, muscleGroup: "Χέρια", weight: "20" },
+            { name: "Plank", sets: 3, muscleGroup: "Κορμός", weight: "0" },
             { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: "30" }
         ],
         iron_saturday: [
-            { name: "Leg Extensions", sets: 3, muscleGroup: "Πόδια", weight: "36" },
-            { name: "Situps", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Reverse Crunch", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Plank", sets: 3, muscleGroup: "Κορμός", weight: "0" }
+            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" }
         ],
         iron_sunday: [
-            { name: "Chest Flys", sets: 3, muscleGroup: "Στήθος", weight: "42" },
-            { name: "Standing Bicep Curls", sets: 3, muscleGroup: "Χέρια", weight: "30" },
-            { name: "Tricep Pulldowns", sets: 3, muscleGroup: "Χέρια", weight: "20" },
-            { name: "Upright Rows", sets: 3, muscleGroup: "Ώμοι", weight: "30" },
-            { name: "Leg Raise Hip Lift", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Plank", sets: 2, muscleGroup: "Κορμός", weight: "0" }
+            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" },
+            { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" }
         ],
         ems_wednesday: [
             { name: "EMS Training", sets: 1, muscleGroup: "Πλάτη", weight: "0" },
@@ -151,27 +147,27 @@ window.setPegasusPlan = function(planKey) {
             { name: "Reverse Crunch", sets: 3, muscleGroup: "Κορμός", weight: "0" }
         ],
         bike_only_tuesday: [
-            { name: "Chest Press", sets: 4, muscleGroup: "Στήθος", weight: "54" },
+            { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
             { name: "Chest Flys", sets: 3, muscleGroup: "Στήθος", weight: "42" },
             { name: "Pushups", sets: 3, muscleGroup: "Στήθος", weight: "0" },
-            { name: "Lat Pulldowns", sets: 3, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Ab Crunches", sets: 4, muscleGroup: "Κορμός", weight: "30" },
+            { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" },
+            { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: "30" },
             { name: "Plank", sets: 3, muscleGroup: "Κορμός", weight: "0" }
         ],
         bike_only_wednesday: [
-            { name: "Seated Rows", sets: 3, muscleGroup: "Πλάτη", weight: "66" },
-            { name: "Lat Pulldowns Close", sets: 3, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Lat Pulldowns", sets: 4, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Seated Rows", sets: 4, muscleGroup: "Πλάτη", weight: "66" },
             { name: "Bicep Curls", sets: 4, muscleGroup: "Χέρια", weight: "30" },
             { name: "Tricep Pulldowns", sets: 3, muscleGroup: "Χέρια", weight: "20" },
             { name: "Lying Knee Raise", sets: 3, muscleGroup: "Κορμός", weight: "0" },
             { name: "Reverse Crunch", sets: 3, muscleGroup: "Κορμός", weight: "0" }
         ],
         bike_only_friday: [
+            { name: "Chest Press", sets: 5, muscleGroup: "Στήθος", weight: "54" },
+            { name: "Lat Pulldowns Close", sets: 4, muscleGroup: "Πλάτη", weight: "36" },
+            { name: "Low Rows Seated", sets: 4, muscleGroup: "Πλάτη", weight: "36" },
             { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" },
-            { name: "Low Rows Seated", sets: 3, muscleGroup: "Πλάτη", weight: "36" },
-            { name: "Preacher Bicep Curls", sets: 3, muscleGroup: "Χέρια", weight: "30" },
-            { name: "Chest Press", sets: 3, muscleGroup: "Στήθος", weight: "54" },
-            { name: "Straight Arm Pulldowns", sets: 2, muscleGroup: "Πλάτη", weight: "30" },
+            { name: "Bicep Curls", sets: 3, muscleGroup: "Χέρια", weight: "30" },
             { name: "Leg Raise Hip Lift", sets: 3, muscleGroup: "Κορμός", weight: "0" }
         ],
         hybrid_tuesday: [
@@ -191,16 +187,11 @@ window.setPegasusPlan = function(planKey) {
             { name: "Leg Raise Hip Lift", sets: 4, muscleGroup: "Κορμός", weight: "0" }
         ],
         bike_saturday: [
-            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" },
-            { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Plank", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Reverse Crunch", sets: 2, muscleGroup: "Κορμός", weight: "0" }
+            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" }
         ],
         bike_sunday: [
             { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" },
-            { name: "Lying Knee Raise", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Leg Raise Hip Lift", sets: 3, muscleGroup: "Κορμός", weight: "0" },
-            { name: "Plank", sets: 2, muscleGroup: "Κορμός", weight: "0" }
+            { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" }
         ]
     };
 
@@ -261,6 +252,31 @@ window.getPegasusProgramSnapshot = function(dayName) {
         snapshot[day] = (window.program[day] || []).map(ex => ({ ...ex }));
     });
     return snapshot;
+};
+
+
+// 4.5 MUSCLE BADGE HELPERS (PEGASUS 134)
+window.PegasusMuscleEmojiMap = {
+    "Στήθος": "🟩",
+    "Πλάτη": "🪽",
+    "Πόδια": "🦵",
+    "Χέρια": "💪",
+    "Ώμοι": "🔺",
+    "Κορμός": "🧱",
+    "None": "🌿",
+    "Άλλο": "▫️"
+};
+
+window.getPegasusMuscleEmoji = function(group) {
+    return window.PegasusMuscleEmojiMap[group] || window.PegasusMuscleEmojiMap["Άλλο"];
+};
+
+window.getPegasusMuscleBadge = function(exerciseOrGroup) {
+    const group = (typeof exerciseOrGroup === "string" && window.PegasusMuscleEmojiMap[exerciseOrGroup])
+        ? exerciseOrGroup
+        : window.getPegasusExerciseGroup(exerciseOrGroup?.name || exerciseOrGroup || "");
+    if (!group || group === "None") return "";
+    return `${window.getPegasusMuscleEmoji(group)} ${group}`;
 };
 
 // 5. KOUKI MENU CONSOLIDATION
@@ -341,15 +357,12 @@ window.getPegasusMacros = function(foodName, fallbackType) {
 };
 
 window.getDynamicTargets = function() {
-    const targets = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Πόδια": 0, "Κορμός": 0 };
-
-    Object.values(window.program).forEach(dayExercises => {
-        dayExercises.forEach(ex => {
-            if (targets.hasOwnProperty(ex.muscleGroup)) {
-                targets[ex.muscleGroup] += parseInt(ex.sets, 10);
-            }
-        });
-    });
-
-    return targets;
+    const fallbackTargets = { "Στήθος": 16, "Πλάτη": 16, "Ώμοι": 12, "Χέρια": 14, "Πόδια": 24, "Κορμός": 18 };
+    try {
+        const key = window.PegasusManifest?.workout?.muscleTargets || "pegasus_muscle_targets";
+        const stored = JSON.parse(localStorage.getItem(key) || "null");
+        return stored && typeof stored === "object" ? { ...fallbackTargets, ...stored } : fallbackTargets;
+    } catch (e) {
+        return fallbackTargets;
+    }
 };

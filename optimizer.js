@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v2.7 (IRON CYCLE EDITION)
+   PEGASUS DYNAMIC OPTIMIZER - v2.8 (PEGASUS 134 CYCLING-ONLY LEGS)
    Protocol: Monday Week Reset, 18-Set Cycling Credit & Raise Mapping
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
@@ -10,12 +10,12 @@ var M = M || window.PegasusManifest;
 window.PegasusOptimizer = {
     getDefaultTargets: function() {
         return {
-            "Στήθος": 24,
-            "Πλάτη": 24,
+            "Στήθος": 16,
+            "Πλάτη": 16,
             "Πόδια": 24,
-            "Χέρια": 16,
-            "Ώμοι": 16,
-            "Κορμός": 12
+            "Χέρια": 14,
+            "Ώμοι": 12,
+            "Κορμός": 18
         };
     },
 
@@ -51,6 +51,15 @@ window.PegasusOptimizer = {
         };
     },
 
+    getCurrentWeekKey: function() {
+        const d = new Date();
+        const day = d.getDay() || 7;
+        const monday = new Date(d);
+        monday.setHours(0, 0, 0, 0);
+        monday.setDate(d.getDate() - day + 1);
+        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+    },
+
     apply: function(day, sessionExercises) {
         const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
         let progress = this.getProgressSnapshot();
@@ -64,11 +73,22 @@ window.PegasusOptimizer = {
         const daysSinceReset = (now.getTime() - lastResetTime) / (1000 * 3600 * 24);
 
         // 🛡️ TACTICAL RESET EXECUTION (Persistence Patch)
-        const shouldResetThisWeek = (day === "Δευτέρα" && lastReset !== todayDate) || daysSinceReset >= 7;
+        // PEGASUS 134: never wipe a current non-zero week just because lastReset is missing.
+        // Reset is allowed only on Monday or when an existing reset marker is stale.
+        if (!lastReset) {
+            localStorage.setItem(lastResetKey, todayDate);
+        }
+        const shouldResetThisWeek = (day === "Δευτέρα" && lastReset !== todayDate) || (!!lastReset && daysSinceReset >= 7);
         if (shouldResetThisWeek) {
             console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
             progress = this.getEmptyProgress();
             localStorage.setItem(historyKey, JSON.stringify(progress));
+            localStorage.setItem("pegasus_weekly_history_week_key", this.getCurrentWeekKey ? this.getCurrentWeekKey() : todayDate);
+            localStorage.setItem("pegasus_weekly_history_counted_v2", JSON.stringify({
+                weekKey: this.getCurrentWeekKey ? this.getCurrentWeekKey() : todayDate,
+                exercises: {},
+                resetAt: Date.now()
+            }));
             localStorage.setItem(lastResetKey, todayDate);
 
             if (window.PegasusEngine?.dispatch) {
@@ -92,7 +112,7 @@ window.PegasusOptimizer = {
         if ((day === "Παρασκευή" || day === "Σάββατο" || day === "Κυριακή") && currentMinutes < 40) {
             const priorities = {
                 "Παρασκευή": ["Πλάτη", "Ώμοι", "Χέρια", "Κορμός"],
-                "Σάββατο": ["Πόδια", "Κορμός", "Στήθος"],
+                "Σάββατο": ["Κορμός", "Στήθος"],
                 "Κυριακή": ["Στήθος", "Χέρια", "Κορμός", "Πλάτη"]
             };
             const searchGroups = priorities[day] || ["Κορμός"];
@@ -106,7 +126,8 @@ window.PegasusOptimizer = {
                 for (let sEx of potentialEx) {
                     if (currentMinutes >= 45) break;
                     if (sEx.name.includes("Ποδηλασία") || sEx.name.includes("Cycling") || sEx.name.includes("Stretching") || sEx.name.includes("Warmup")) continue;
-                    if (day === "Παρασκευή" && sEx.muscleGroup === "Πόδια") continue;
+                    // PEGASUS 134: Τα πόδια συμπληρώνονται μόνο από cycling Σ/Κ, ποτέ με gym-leg filler.
+                    if (sEx.muscleGroup === "Πόδια") continue;
 
                     const done = sessionTracker[groupName] || 0;
                     const target = currentTargets[groupName] || 24;
