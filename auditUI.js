@@ -134,8 +134,12 @@ window.PegasusAuditUI = {
             return Math.round(isNaN(target) ? 2800 : target);
         }
 
-        const stored = parseFloat(localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal"));
-        const base = isNaN(stored) ? this.getExpectedBaseTarget() : stored;
+        const stored = parseFloat(
+            localStorage.getItem(M?.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal") ||
+            localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal")
+        );
+        if (!isNaN(stored) && stored > 0) return Math.round(stored);
+        const base = this.getExpectedBaseTarget();
         const cardio = this.getTodayCardioOffset();
         return Math.round(base + cardio);
     },
@@ -194,7 +198,7 @@ window.PegasusAuditUI = {
             report.warnings.push(`Storage High: ${storageMB.toFixed(2)}MB`);
         }
 
-        const keysToTest = ['pegasus_weight', 'pegasus_today_kcal', 'pegasus_weekly_kcal'];
+        const keysToTest = ['pegasus_weight', 'pegasus_today_kcal', 'pegasus_goal_kcal', 'pegasus_effective_today_kcal', 'pegasus_weekly_kcal'];
         keysToTest.forEach(k => {
             const raw = localStorage.getItem(k);
             if (raw !== null && raw !== "" && isNaN(parseFloat(raw))) {

@@ -623,3 +623,181 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
     window.addEventListener('orientationchange', scheduleApply);
     console.log('✅ PEGASUS ADAPTIVE TYPOGRAPHY: Active.');
 })();
+
+/* ==========================================================================
+   PEGASUS 133 WEEKLY PROGRESS DOUBLE-COUNT REPAIR
+   Reporting no longer writes weekly sets. This one-time repair only subtracts
+   the old current-day reporting duplicate when detected above the counted ledger.
+   ========================================================================== */
+(function () {
+    const GROUPS = ['Στήθος', 'Πλάτη', 'Πόδια', 'Χέρια', 'Ώμοι', 'Κορμός'];
+
+    function normalize(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\u0370-\u03ff]+/g, '');
+    }
+
+    function todayKey() {
+        if (typeof window.getPegasusLocalDateKey === 'function') return window.getPegasusLocalDateKey();
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function weekKey() {
+        const d = new Date();
+        const day = d.getDay() || 7;
+        const monday = new Date(d);
+        monday.setHours(0, 0, 0, 0);
+        monday.setDate(d.getDate() - day + 1);
+        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+    }
+
+    function emptyHistory() {
+        return { 'Στήθος': 0, 'Πλάτη': 0, 'Πόδια': 0, 'Χέρια': 0, 'Ώμοι': 0, 'Κορμός': 0 };
+    }
+
+    function readObject(key, fallback) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            const parsed = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? parsed : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function historyKey() {
+        const manifest = window.PegasusManifest || window.M || {};
+        return manifest?.workout?.weekly_history || 'pegasus_weekly_history';
+    }
+
+    function readHistory() {
+        const raw = readObject(historyKey(), {});
+        const clean = emptyHistory();
+        GROUPS.forEach(group => {
+            const value = Number(raw?.[group]);
+            clean[group] = Number.isFinite(value) ? Math.max(0, value) : 0;
+        });
+        return clean;
+    }
+
+    function writeHistory(history) {
+        const clean = emptyHistory();
+        GROUPS.forEach(group => {
+            const value = Number(history?.[group]);
+            clean[group] = Number.isFinite(value) ? Math.max(0, value) : 0;
+        });
+        localStorage.setItem(historyKey(), JSON.stringify(clean));
+        return clean;
+    }
+
+    function collectRecords() {
+        const records = [];
+        if (Array.isArray(window.exercisesDB)) records.push(...window.exercisesDB);
+        if (window.program && typeof window.program === 'object') {
+            Object.values(window.program).forEach(items => {
+                if (Array.isArray(items)) records.push(...items);
+            });
+        }
+        return records.filter(item => item && item.name);
+    }
+
+    function resolveGroup(name) {
+        const clean = normalize(name);
+        if (!clean) return '';
+
+        const record = collectRecords().find(item => {
+            const itemName = normalize(item.name);
+            return itemName && (itemName === clean || clean.includes(itemName) || itemName.includes(clean));
+        });
+        if (GROUPS.includes(record?.muscleGroup)) return record.muscleGroup;
+
+        const aliases = [
+            { group: 'Στήθος', keys: ['chest', 'press', 'fly', 'pushup', 'pushups', 'στηθος'] },
+            { group: 'Πλάτη', keys: ['lat', 'row', 'pulldown', 'back', 'πλατη'] },
+            { group: 'Πόδια', keys: ['leg', 'legs', 'cycling', 'bike', 'ποδηλα', 'ποδια'] },
+            { group: 'Χέρια', keys: ['bicep', 'tricep', 'curl', 'χερια'] },
+            { group: 'Ώμοι', keys: ['upright', 'shoulder', 'ωμοι'] },
+            { group: 'Κορμός', keys: ['ab', 'crunch', 'plank', 'situp', 'knee', 'core', 'raise', 'κορμος', 'κοιλιακ'] }
+        ];
+        const alias = aliases.find(entry => entry.keys.some(key => clean.includes(normalize(key))));
+        return alias?.group || '';
+    }
+
+    function setValue(name, group) {
+        const upper = String(name || '').toUpperCase();
+        if (upper.includes('ΠΟΔΗΛΑΣΙΑ') || upper.includes('CYCLING')) return 18;
+        if (upper.includes('EMS ΠΟΔΙΩΝ') || upper.includes('EMS LEGS')) return 6;
+        if (upper.includes('STRETCHING') || group === 'None') return 0;
+        return 1;
+    }
+
+    function ledgerTotals() {
+        const totals = emptyHistory();
+        const ledger = readObject('pegasus_weekly_history_counted_v2', null);
+        if (!ledger || ledger.weekKey !== weekKey() || typeof ledger.exercises !== 'object') return totals;
+
+        Object.entries(ledger.exercises).forEach(([key, count]) => {
+            const name = String(key || '').split('|').slice(1).join('|');
+            const group = resolveGroup(name);
+            const amount = Number(count) || 0;
+            if (GROUPS.includes(group) && amount > 0) totals[group] += amount * setValue(name, group);
+        });
+        return totals;
+    }
+
+    function dailyTotals() {
+        const totals = emptyHistory();
+        const daily = readObject('pegasus_daily_progress', null);
+        if (daily?.date === todayKey() && daily.exercises && typeof daily.exercises === 'object') {
+            Object.entries(daily.exercises).forEach(([name, done]) => {
+                const group = resolveGroup(name);
+                const amount = Number(done) || 0;
+                if (GROUPS.includes(group) && amount > 0) totals[group] += amount * setValue(name, group);
+            });
+        }
+        return totals;
+    }
+
+    function repairOnce() {
+        const marker = `pegasus_weekly_reporting_doublecount_repair_v133_${weekKey()}_${todayKey()}`;
+        if (localStorage.getItem(marker) === 'done') return false;
+
+        const history = readHistory();
+        const counted = ledgerTotals();
+        const daily = dailyTotals();
+        const next = { ...history };
+        let changed = false;
+
+        GROUPS.forEach(group => {
+            const d = Number(daily[group] || 0);
+            if (d <= 0) return;
+            const current = Number(history[group] || 0);
+            const ledger = Number(counted[group] || 0);
+            if (current === ledger + d) {
+                next[group] = Math.max(0, current - d);
+                changed = true;
+            }
+        });
+
+        if (changed) {
+            const fixed = writeHistory(next);
+            window.dispatchEvent(new CustomEvent('pegasus_weekly_history_updated', {
+                detail: { source: 'reporting-doublecount-repair-v133', history: fixed }
+            }));
+            if (window.MuscleProgressUI?.render) setTimeout(() => window.MuscleProgressUI.render(true), 50);
+            if (window.PegasusCloud?.push) setTimeout(() => window.PegasusCloud.push(), 120);
+        }
+
+        localStorage.setItem(marker, 'done');
+        return changed;
+    }
+
+    window.repairPegasusWeeklyProgressDoubleCount = repairOnce;
+    window.addEventListener('load', () => setTimeout(repairOnce, 1200), { once: true });
+})();

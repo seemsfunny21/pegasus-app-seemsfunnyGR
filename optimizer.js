@@ -1,6 +1,6 @@
 /* ==========================================================================
    PEGASUS DYNAMIC OPTIMIZER - v2.7 (IRON CYCLE EDITION)
-   Protocol: Saturday Anchor Reset, 18-Set Cycling Credit & Raise Mapping
+   Protocol: Monday Week Reset, 18-Set Cycling Credit & Raise Mapping
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
@@ -64,7 +64,8 @@ window.PegasusOptimizer = {
         const daysSinceReset = (now.getTime() - lastResetTime) / (1000 * 3600 * 24);
 
         // 🛡️ TACTICAL RESET EXECUTION (Persistence Patch)
-        if ((day === "Σάββατο" && lastReset !== todayDate) || daysSinceReset >= 6.5) {
+        const shouldResetThisWeek = (day === "Δευτέρα" && lastReset !== todayDate) || daysSinceReset >= 7;
+        if (shouldResetThisWeek) {
             console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
             progress = this.getEmptyProgress();
             localStorage.setItem(historyKey, JSON.stringify(progress));

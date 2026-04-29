@@ -77,9 +77,6 @@ const PegasusReporting = {
 
     prepareAndSaveReport: function(kcal, sessionData = null) {
         let dailyMax = {};
-        let weeklyHistory = JSON.parse(localStorage.getItem(this.historyKey)) || {
-            "Πλάτη": 0, "Στήθος": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0, "Ώμοι": 0, "Άλλο": 0
-        };
 
         const sourceData = sessionData || Array.from(document.querySelectorAll('.exercise'))
             .map(node => ({
@@ -93,24 +90,14 @@ const PegasusReporting = {
         if (sourceData && sourceData.length > 0) {
             sourceData.forEach(ex => {
                 if (!dailyMax[ex.name] || ex.weight > dailyMax[ex.name]) dailyMax[ex.name] = ex.weight;
-
-                let group = ex.group;
-                if (!group && window.exercisesDB) {
-                    const exDb = window.exercisesDB.find(db => db.name === ex.name);
-                    if (exDb) group = exDb.muscleGroup;
-                }
-                if (!group && typeof window.getMuscleGroup === "function") group = window.getMuscleGroup(ex.name);
-                if (!group) group = "Άλλο";
-
-                if (weeklyHistory[group] !== undefined) {
-                    weeklyHistory[group] += ex.done;
-                } else {
-                    weeklyHistory["Άλλο"] = (weeklyHistory["Άλλο"] || 0) + ex.done;
-                }
             });
-
-            localStorage.setItem(this.historyKey, JSON.stringify(weeklyHistory));
         }
+
+        // PEGASUS 159 FIX:
+        // Weekly muscle progress is now written only by the completed-set logger
+        // (window.logPegasusSet / PegasusWeeklyProgress counted ledger). Reporting must
+        // never mutate pegasus_weekly_history, otherwise every finished workout is counted
+        // once during the session and again when the report is prepared.
 
         let summary = Object.entries(dailyMax).map(([name, weight]) => `• ${name}: ${weight}kg`);
         const today = new Date();

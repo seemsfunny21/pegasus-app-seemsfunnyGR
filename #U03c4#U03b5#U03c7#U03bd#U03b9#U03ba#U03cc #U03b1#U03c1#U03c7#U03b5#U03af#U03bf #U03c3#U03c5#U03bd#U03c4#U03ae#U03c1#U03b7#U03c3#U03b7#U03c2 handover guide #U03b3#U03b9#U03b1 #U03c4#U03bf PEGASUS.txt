@@ -1,0 +1,959 @@
+PEGASUS — ΟΔΗΓΟΣ ΣΥΝΤΗΡΗΣΗΣ / ΜΕΛΛΟΝΤΙΚΩΝ ΑΛΛΑΓΩΝ
+1. Τι είναι αυτό το αρχείο
+
+Αυτό το κείμενο είναι ο οδηγός για το πώς δουλεύει πλέον το PEGASUS μετά το refactor και πού αλλάζεις τι, ώστε στο μέλλον:
+
+να ξέρεις ποιο αρχείο πειράζει ποιο subsystem
+να μη σπάσεις το app από λάθος αλλαγή
+να ξέρεις ποια είναι η σωστή σειρά φόρτωσης των scripts
+να ξέρεις ποια tests πρέπει να τρέχεις μετά από αλλαγές
+να ξέρεις τι έγινε στο refactor και τι κερδίσαμε
+
+Το τωρινό baseline θεωρείται:
+
+PEGASUS_FINAL_POLISHED
+
+2. Τελική κατάσταση του project
+
+Το core refactor ολοκληρώθηκε πρακτικά.
+
+Έχουν κλείσει:
+
+central engine / reducer-style state
+semantic workout actions
+progress runtime sync
+selector-based UI state
+replay / checkpoints / action history
+persisted runtime state
+control-state selectors
+ui-state bundle
+custom dialogs
+i18n layer
+final audit pass
+
+Το build που πέρασε είναι:
+
+P1 PASS
+P2 PASS
+P3.3 PASS
+P4.1 PASS
+P5 PASS
+P6 PASS
+P7 PASS
+P8 PASS
+P9 PASS
+P10 PASS
+P11 PASS
+MAX FINAL AUDIT PASS
+
+Άρα το app θεωρείται stable / release-ready.
+
+3. Τι κερδίσαμε από το refactor
+Σαν χρήστης
+
+Κέρδισες:
+
+πιο σταθερό app
+πιο αξιόπιστο Start / Pause / Next
+σωστότερο state όταν αλλάζεις ημέρα
+λιγότερα random bugs από ασύνδετα globals
+καλύτερη συμπεριφορά στο mid-session state
+πιο σταθερό sync / reporting / persistence
+καλύτερη βάση για GR/EN και μελλοντικά features
+Σαν developer
+
+Κέρδισες:
+
+central engine state
+semantic actions αντί για σκόρπιες αλλαγές
+selectors για UI
+persisted runtime
+replay / checkpoints / action history
+πολύ καλύτερο debugging
+καλύτερη επεκτασιμότητα
+ασφαλέστερες μελλοντικές αλλαγές
+Τι χάθηκε
+
+Δεν χάθηκαν features. Δεν χάθηκαν panels. Δεν χάθηκε cloud/reporting/gallery/settings/workout flow.
+
+Το μόνο που “χάθηκε” τεχνικά είναι η παλιά πρόχειρη απλότητα:
+
+παλιά μπορούσες να αλλάξεις κάτι πιο χύμα
+τώρα ο κώδικας είναι πιο πειθαρχημένος και έχει περισσότερα layers
+
+Αυτό είναι καλό για σταθερότητα, αλλά θέλει πιο σωστό τρόπο αλλαγών.
+
+4. Γενική αρχιτεκτονική
+
+Το σύστημα πλέον έχει επίπεδα.
+
+4.1 Manifest layer
+
+manifest.js
+
+Εδώ βρίσκονται:
+
+βασικά keys
+namespace mapping
+global configuration
+manifest metadata
+
+Αν αλλάξεις storage key, feature namespace ή global naming, πρώτα κοιτάς εδώ.
+
+4.2 Data / content layer
+
+data.js
+
+Εδώ βρίσκονται:
+
+πρόγραμμα ημερών
+exercisesDB
+videoMap
+menu / KOUKI data
+στόχοι από exercise grouping
+εβδομαδιαίο πρόγραμμα ανά split
+
+Αν θες να αλλάξεις:
+
+άσκηση
+sets
+muscle group
+mapping video
+ημερήσιο πρόγραμμα
+split logic περιεχομένου
+
+πρώτα κοιτάς εδώ.
+
+4.3 Settings layer
+
+settings.js
+
+Εδώ βρίσκονται:
+
+default settings
+getPegasusSettings()
+savePegasusSettingsGlobal()
+BMR / TDEE helper
+split selection persistence
+στόχοι μυϊκών ομάδων
+time settings
+
+Αν αλλάξεις:
+
+default κιλά/ύψος/ηλικία
+default protein/kcal
+active split
+muscle targets
+settings UI logic
+
+τότε πειράζεις εδώ.
+
+4.4 Optimizer layer
+
+optimizer.js
+
+Εδώ βρίσκονται:
+
+target-based προσαρμογή προγράμματος
+weekly history logic
+Saturday reset
+cycling credit
+spillover / filler logic
+mapping exercise → group
+
+Αν αλλάξεις:
+
+πώς προσαρμόζονται τα sets
+πόσο μετράει το cycling
+πότε γίνεται reset
+πώς υπολογίζεται το remaining target
+
+τότε κοιτάς εδώ.
+
+4.5 Core Engine layer
+
+pegasusCore.js
+
+Αυτό είναι πλέον η καρδιά του νέου state model.
+
+Εδώ βρίσκονται:
+
+engine state
+state reducers / patching
+semantic workout runtime actions
+progress snapshot logic
+selectors
+replay / checkpoints
+persisted runtime state
+ui state bundle
+
+Αυτό είναι το πιο κρίσιμο αρχείο της νέας αρχιτεκτονικής.
+
+Δεν πειράζεις εδώ “γρήγορα και χύμα”.
+Πειράζεις μόνο όταν θες να αλλάξεις τον τρόπο που λειτουργεί ο κεντρικός state engine.
+
+4.6 App orchestration layer
+
+app.js
+
+Αυτό είναι το κύριο orchestration αρχείο του desktop app.
+
+Εδώ βρίσκονται:
+
+boot logic
+navbar/day selection
+workout DOM rendering
+Start / Pause / Next flow
+video switching
+calorie/timer UI updates
+button bridge
+loader hide/show
+bridge με engine
+legacy runtime refs
+app-level selectors exposure
+
+Με απλά λόγια:
+
+το pegasusCore.js κρατάει το “τι είναι η αλήθεια”
+το app.js το εφαρμόζει πάνω στο legacy UI και στο DOM
+4.7 UI feature modules
+
+Εδώ ανήκουν:
+
+progressUI.js
+dynamic.js
+dragDrop.js
+gallery.js
+weather.js
+achievements.js
+calendar.js
+backup.js
+
+Αυτά είναι feature/UI submodules και δεν πρέπει να κρατάνε ανεξάρτητη αλήθεια για core workout state.
+
+4.8 Nutrition / inventory / metabolic layer
+
+Εδώ ανήκουν:
+
+food.js
+dietAdvisor.js
+inventoryHandler.js
+protcrea.js
+extensions.js
+metabolicEngine.js
+
+Αυτά διαχειρίζονται:
+
+τροφές
+ρουτίνες διατροφής
+αποθέματα συμπληρωμάτων
+θερμίδες/στόχους
+agreement/KOUKI logic
+4.9 Cloud / reporting / persistence layer
+
+Εδώ ανήκουν:
+
+cloudSync.js
+reporting.js
+μέρος του pegasusCore.js για persisted runtime
+
+Αυτά διαχειρίζονται:
+
+cloud unlock / pull / push
+allowed keys
+report queue / morning dispatch
+runtime state persistence
+4.10 Debug / audit layer
+
+Εδώ ανήκουν:
+
+debug.js
+auditUI.js
+
+Αυτά κρατάνε:
+
+health checks
+calorie audits
+logs
+runtime tracer
+audit snapshots
+4.11 Dialog / I18N layer
+
+Εδώ ανήκουν:
+
+dialogs.js
+i18n.js
+
+Αυτά διαχειρίζονται:
+
+custom alert / confirm / prompt
+translated labels / texts
+language state
+GR / EN handling
+5. Η σωστή σειρά scripts στο desktop index
+
+Η σωστή σειρά που πρέπει να μείνει είναι αυτή:
+
+<script src="manifest.js"></script>
+<script src="dialogs.js"></script>
+<script src="i18n.js"></script>
+<script src="data.js"></script>
+<script src="settings.js"></script>
+<script src="optimizer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="dynamic.js"></script>
+<script src="progressUI.js"></script>
+<script src="weather.js"></script>
+<script src="backup.js"></script>
+<script src="inventoryHandler.js"></script>
+<script src="pegasusCore.js"></script>
+<script src="cloudSync.js"></script>
+<script src="protcrea.js"></script>
+<script src="food.js"></script>
+<script src="dietAdvisor.js"></script>
+<script src="extensions.js"></script>
+<script src="ems.js"></script>
+<script src="cardio.js"></script>
+<script src="calendar.js"></script>
+<script src="gallery.js"></script>
+<script src="partner.js"></script>
+<script src="achievements.js"></script>
+<script src="dragDrop.js"></script>
+<script src="reporting.js"></script>
+<script src="metabolicEngine.js"></script>
+<script src="weightTracker.js"></script>
+<script src="app.js"></script>
+<script src="debug.js"></script>
+<script src="auditUI.js"></script>
+
+Αν αλλάξει αυτή η σειρά, μπορεί να ξανασπάσει το app.
+
+6. Η σωστή σειρά scripts στο mobile
+
+Το mobile χρησιμοποιεί shared core αλλά έχει δικά του modules.
+
+Βασικά φορτώνει:
+
+manifest
+data
+extensions
+metabolicEngine
+dietAdvisor
+cloudSync
+weightTracker
+μετά τα mobile-specific js
+
+Αν πειράξεις mobile boot, κράτα τη λογική:
+
+shared core πρώτα
+mobile ui modules μετά
+7. Χρυσοί κανόνες συντήρησης
+Κανόνας 1
+
+Μην αλλάζεις το ίδιο πράγμα σε 3 διαφορετικά αρχεία.
+
+Παράδειγμα:
+
+πρόγραμμα ημερών στο data.js
+όχι ταυτόχρονα και στο app.js
+όχι duplicated mappings σε άσχετα αρχεία
+Κανόνας 2
+
+Μην βάζεις νέα “πηγή αλήθειας” έξω από engine αν πρόκειται για:
+
+selectedDay
+running state
+progress
+currentIdx
+phase
+timer state
+controls state
+
+Αυτά πρέπει να θεωρούνται engine-owned.
+
+Κανόνας 3
+
+Για UI labels να προτιμάς selectors και i18n, όχι random textContent = ... από παντού.
+
+Κανόνας 4
+
+Για runtime sync να χρησιμοποιείς:
+
+engine action
+selector
+controlled bridge
+
+όχι ανεξέλεγκτα direct overwrites.
+
+Κανόνας 5
+
+Για νέα feature, πρώτα αποφάσισε:
+
+είναι content;
+είναι UI only;
+είναι core state;
+είναι persistence/cloud;
+και μετά διάλεξε σωστό αρχείο.
+8. Ποιο αρχείο αλλάζω για κάθε αλλαγή
+8.1 Θέλω να αλλάξω πρόγραμμα ημέρας
+
+Πείραξε:
+
+data.js
+
+Εκεί αλλάζεις:
+
+exercises ανά ημέρα
+sets
+weights
+split content
+8.2 Θέλω να αλλάξω όνομα άσκησης
+
+Πείραξε:
+
+data.js
+videoMap
+όπου υπάρχει manual mapping σε optimizer/debug/inventory helper αν υπάρχει σχετικό keyword match
+
+Πολύ σημαντικό:
+αν αλλάξει exercise name, έλεγξε:
+
+exercisesDB
+videoMap
+τυχόν keyword mapping
+τυχόν saved weight keys
+achievements / tracking consistency
+8.3 Θέλω να προσθέσω νέα άσκηση
+
+Πείραξε:
+
+data.js → exercisesDB
+videoMap
+το πρόγραμμα ημέρας που τη χρησιμοποιεί
+αν χρειάζεται keyword mapping στο optimizer
+
+Και μετά κάνε test:
+
+render της ημέρας
+video load
+group mapping
+progress count
+set logging
+8.4 Θέλω να αλλάξω video mapping
+
+Πείραξε:
+
+data.js → videoMap
+
+Μην το αλλάξεις στο app.js αν δεν υπάρχει σοβαρός λόγος.
+
+8.5 Θέλω να αλλάξω χρόνους prep/work/rest
+
+Κοίτα:
+
+settings.js για defaults
+app.js για actual runtime usage
+selectors/timer logic μόνο αν αλλάζει η αρχιτεκτονική
+
+Για απλή αλλαγή default χρόνου, ξεκίνα από settings.js.
+
+8.6 Θέλω να αλλάξω daily kcal/protein strategy
+
+Κοίτα:
+
+metabolicEngine.js
+app.js για display bridge
+settings.js για defaults
+debug.js / auditUI.js αν θες να συμφωνούν τα audits
+8.7 Θέλω να αλλάξω food/inventory behavior
+
+Κοίτα:
+
+food.js
+inventoryHandler.js
+protcrea.js
+extensions.js
+
+Ανάλογα τι αλλάζεις:
+
+add food
+routine injection
+whey/creatine consumption
+agreement meals
+supplement stock
+8.8 Θέλω να αλλάξω cloud sync
+
+Κοίτα:
+
+cloudSync.js
+
+Εδώ αλλάζεις:
+
+pull interval
+throttling
+allow/block keys
+push/pull behavior
+unlock logic
+
+Μην αλλάζεις cloud logic από app.js εκτός αν είναι μόνο UI trigger.
+
+8.9 Θέλω να αλλάξω reporting/email
+
+Κοίτα:
+
+reporting.js
+
+Εδώ αλλάζεις:
+
+pending report structure
+morning window
+lock key logic
+email template params
+send queue flow
+8.10 Θέλω να αλλάξω settings UI ή save behavior
+
+Κοίτα:
+
+settings.js
+8.11 Θέλω να αλλάξω weather panel / weather behavior
+
+Κοίτα:
+
+weather.js
+8.12 Θέλω να αλλάξω gallery
+
+Κοίτα:
+
+gallery.js
+8.13 Θέλω να αλλάξω achievements
+
+Κοίτα:
+
+achievements.js
+8.14 Θέλω να αλλάξω dialogs
+
+Κοίτα:
+
+dialogs.js
+
+Εδώ πρέπει να μείνουν:
+
+custom styled alert
+custom styled confirm
+custom styled prompt
+
+Στόχος:
+να μην εμφανίζεται ποτέ native γκρι browser popup.
+
+8.15 Θέλω να αλλάξω GR/EN
+
+Κοίτα:
+
+i18n.js
+
+Εκεί πρέπει να μπαίνουν:
+
+labels
+panel titles
+dynamic messages
+button text
+phase names
+tool labels
+8.16 Θέλω να αλλάξω core state / control flow
+
+Κοίτα πρώτα:
+
+pegasusCore.js
+και μετά:
+app.js
+
+Αυτό είναι το πιο επικίνδυνο σημείο. Μην κάνεις αλλαγές εδώ αν είναι κάτι που μπορεί να λυθεί μόνο με content/UI.
+
+9. Πώς δουλεύει τώρα ο engine
+
+Ο engine είναι το κεντρικό σημείο truth για το workout runtime state.
+
+Κρατάει πράγματα όπως:
+
+selectedDay
+currentIdx
+phase
+running
+totalSeconds
+remainingSeconds
+phaseRemainingSeconds
+sessionKcal
+remainingSets
+user/mute/turbo/session user state
+summary/control/ui derived state
+Semantic actions
+
+Πλέον υπάρχουν actions τύπου:
+
+select day
+start workout
+pause workout
+next exercise
+complete set
+finish workout
+patch progress runtime
+patch user runtime
+patch timer runtime
+restore persisted runtime
+create checkpoint
+
+Αυτό σημαίνει ότι το app δεν αλλάζει τα πάντα άναρχα.
+Καταγράφει γεγονότα με νόημα.
+
+10. Selectors που υπάρχουν πλέον
+
+Αυτά είναι πολύ σημαντικά. Προτίμησέ τα αντί να διαβάζεις raw state από παντού.
+
+Engine selectors
+getState()
+getSelectedDay()
+getProgressSnapshot()
+getTimerDisplayState()
+getRuntimeSummary()
+getControlState()
+getUiState()
+getCheckpoints()
+replayProgress()
+getPersistedRuntime()
+App-level exposure
+getPegasusSessionState()
+getPegasusProgressState()
+getPegasusTimerDisplayState()
+getPegasusRuntimeSummary()
+getPegasusControlState()
+getPegasusUiState()
+getPegasusPersistedProgress()
+restorePegasusPersistedProgress()
+clearPegasusPersistedProgress()
+11. Debug APIs που υπάρχουν
+
+Αυτά είναι τα πιο χρήσιμα όταν κάτι χαλάσει.
+
+PegasusDebug.session()
+PegasusDebug.workout()
+PegasusDebug.timers()
+PegasusDebug.user()
+PegasusDebug.progress()
+PegasusDebug.summary()
+PegasusDebug.timerDisplay()
+PegasusDebug.controls()
+PegasusDebug.uiState()
+PegasusDebug.actionEntries(limit)
+PegasusDebug.workoutActions(limit)
+PegasusDebug.checkpoints(limit)
+PegasusDebug.replayProgress(limit)
+PegasusDebug.persistedProgress()
+PegasusDebug.actions() αν υπάρχει στο build
+PegasusDebug.logs() για system logs
+
+Όταν έχεις bug, αυτά είναι το πρώτο πράγμα που τσεκάρεις.
+
+12. Τι να κάνεις αν χαλάσει η προπόνηση
+Περίπτωση Α: αλλάζω ημέρα και δείχνει recovery ενώ δεν πρέπει
+
+Τσέκαρε:
+
+data.js πρόγραμμα ημέρας
+optimizer.js
+app.js render flow
+window.PegasusDebug.uiState()
+window.PegasusDebug.progress()
+αν το exercises DOM array έχει χαλάσει
+Περίπτωση Β: Start δεν ξεκινάει
+
+Τσέκαρε:
+
+btnStart
+getPegasusControlState()
+PegasusDebug.controls()
+PegasusDebug.progress()
+runtime errors στην κονσόλα
+Περίπτωση Γ: κάνει instant finish
+
+Τσέκαρε:
+
+remainingSets
+totalSeconds
+persisted runtime
+progress snapshot
+αν patch timer runtime έσβησε valid workout data
+Περίπτωση Δ: Pause/Next χαλάει sequence
+
+Τσέκαρε:
+
+PegasusDebug.workoutActions(20)
+PegasusDebug.checkpoints(20)
+PegasusDebug.replayProgress(20)
+13. Πώς προσθέτεις νέο panel σωστά
+
+Αν θέλεις νέο panel/button:
+
+Βάλε το βασικό κουμπί στο index.html
+Βάλε το panel container επίσης στο index.html
+Δώσε του σταθερό id
+Σύνδεσέ το μέσω app.js button bridge
+Βάλε το feature logic σε ξεχωριστό .js αρχείο
+Μη βάζεις business logic μέσα στο html inline πέρα από ασφαλές bridge call
+
+Αρχή του project πλέον:
+
+τα βασικά κουμπιά να υπάρχουν κυρίως στο HTML
+τα dynamic κουμπιά να δημιουργούνται από JS μόνο όταν το feature το απαιτεί
+14. Πώς αλλάζεις UI labels σωστά
+
+Για σταθερά labels:
+
+ξεκίνα από index.html
+
+Για δυναμικά labels:
+
+ξεκίνα από i18n.js
+και μετά δες πού injectάρονται από JS
+
+Για labels των controls:
+
+προτίμησε selectors/control state
+όχι σκόρπια hardcoded text writes
+15. Πώς αλλάζεις GR / EN σωστά
+
+Όταν βρεις hardcoded κείμενο:
+
+δες αν είναι στο HTML
+δες αν είναι σε dynamic JS render
+βάλε το στο translation layer
+βεβαιώσου ότι το toggle το αλλάζει live
+τσέκαρε tools, settings, preview, workout labels, popups
+
+Τα πιο συχνά σημεία που ξεφεύγουν:
+
+tools menu
+workout phase labels
+recovery messages
+preview labels
+generated buttons μέσα από JS templates
+alerts/confirm text
+advisor messages
+reporting messages στην κονσόλα ή UI
+16. Πώς αλλάζεις dialogs σωστά
+
+Στόχος:
+να μη μείνει πουθενά native browser dialog.
+
+Όταν αλλάζεις κάποιο alert/confirm/prompt:
+
+προτίμησε pegasusAlert
+προτίμησε pegasusConfirm
+προτίμησε pegasusPrompt
+
+Αν βάλεις native alert() προσωρινά στο development, αργότερα βγάλ’ το.
+
+17. Πώς αλλάζεις persistence χωρίς να το σπάσεις
+
+Persistence πλέον υπάρχει σε 2 λογικές:
+
+Α. Legacy feature storage
+
+π.χ.
+
+food logs
+weight
+weekly history
+workouts done
+supplement inventory
+Β. Persisted runtime progress
+
+π.χ.
+
+selectedDay
+remainingSeconds
+totalSeconds
+currentIdx
+phase
+running
+remainingSets
+
+Μην μπερδεύεις αυτά τα δύο.
+
+Αν πειράξεις runtime persistence:
+
+ξεκίνα από pegasusCore.js
+όχι από random localStorage writes στο app.js
+18. Τι να ΜΗΝ πειράζεις χωρίς λόγο
+
+Μην πειράζεις χωρίς σοβαρό λόγο:
+
+script order
+engine selector names
+semantic action names
+persisted runtime shape
+ui state bundle shape
+manifest key names
+cloud allowed keys logic
+button ids στο index
+
+Αν αλλάξεις αυτά, πρέπει μετά να περάσεις full regression.
+
+19. Βασική διαδικασία ασφαλούς αλλαγής
+
+Κάθε φορά που κάνεις αλλαγή:
+
+Κράτα backup
+Άλλαξε μόνο ένα subsystem κάθε φορά
+Άνοιξε app
+Δες αν φορτώνει χωρίς runtime error
+Δοκίμασε:
+αλλαγή ημέρας
+Start
+Pause
+Next
+Preview
+Tools
+Τρέξε debug helpers αν χρειάζεται
+Τρέξε το MAX FINAL AUDIT
+Κάνε commit μόνο αν όλα περνάνε
+20. MAX FINAL AUDIT
+
+Το μεγάλο script της κονσόλας είναι πλέον το βασικό τεστ αποδοχής.
+
+Αν βγάλει:
+MAX FINAL AUDIT PASS
+τότε το build θεωρείται production-safe.
+
+Το audit ελέγχει:
+
+modules
+engine APIs
+app APIs
+debug APIs
+DOM
+dialogs
+i18n
+cloud
+workout flow
+replay/checkpoints
+persisted runtime
+selectors
+21. Σημεία που είχαν βγάλει bug κατά το refactor
+
+Αυτά είναι σημαντικά για να μη γυρίσουμε πίσω στα ίδια λάθη.
+
+Bug 1: DOM exercise refs overwrite
+
+Πρόβλημα:
+το engine ή bridge έγραφε πάνω στο DOM exercises array σαν να ήταν serializable data.
+
+Αποτέλεσμα:
+
+οι ασκήσεις φαίνονταν
+και μετά εξαφανίζονταν
+και έδειχνε recovery day
+
+Μάθημα:
+το DOM exercise array δεν πρέπει να treated σαν κανονικό persisted state.
+
+Bug 2: timer patch έσβηνε workout arrays
+
+Πρόβλημα:
+timer-only patch έκανε overwrite στο workout runtime.
+
+Αποτέλεσμα:
+instant finish ή σπασμένο Start.
+
+Μάθημα:
+timer patches πρέπει να αγγίζουν μόνο timer/progress fields.
+
+Bug 3: test false fail λόγω μικρού action window
+
+Πρόβλημα:
+το test κοίταζε πολύ μικρό recent action history.
+
+Αποτέλεσμα:
+λειτουργικά pass αλλά test fail.
+
+Μάθημα:
+σε replay/history tests κοίτα μεγαλύτερο action window ή semantic sequence μετά από αυτοματοποιημένα clicks.
+
+22. Πώς να σκέφτεσαι κάθε μελλοντική αλλαγή
+
+Ρώτα πάντα πρώτα:
+
+Είναι content αλλαγή;
+
+Παράδειγμα:
+
+νέο set
+νέα άσκηση
+νέα ημέρα
+νέο menu item
+
+Τότε:
+
+data.js
+Είναι feature logic αλλαγή;
+
+Παράδειγμα:
+
+optimizer
+inventory
+reporting
+cloud
+
+Τότε:
+
+το αντίστοιχο feature file
+Είναι core runtime / workout state αλλαγή;
+
+Παράδειγμα:
+
+progress
+timer
+selectedDay
+control labels
+start/pause flow
+
+Τότε:
+
+pegasusCore.js
+app.js
+Είναι UI label / language αλλαγή;
+
+Τότε:
+
+i18n.js
+index.html
+23. Τελικό baseline που θεωρείται σωστό
+
+Το σωστό τελικό baseline είναι:
+
+PEGASUS_FINAL_POLISHED
+
+Αυτό είναι το build που:
+
+φόρτωσε σωστά
+πέρασε όλα τα phases
+πέρασε το MAX FINAL AUDIT
+
+Αν στο μέλλον γίνει μεγάλη αλλαγή και κάτι σπάσει, πάντα επιστρέφεις σε αυτό το baseline.
+
+24. Τελική σύνοψη
+
+Το PEGASUS πλέον είναι:
+
+πιο σταθερό
+πιο δομημένο
+πιο εύκολο στο debugging
+πιο ασφαλές σε μελλοντικές αλλαγές
+πιο κοντά σε engine-first architecture
+χωρίς να έχει χαθεί το legacy UI / behavior που ήδη δουλεύει
+
+Η σωστή νοοτροπία από εδώ και πέρα είναι:
+
+content στο σωστό feature file,
+core state στον engine,
+UI από selectors,
+tests μετά από κάθε αλλαγή.

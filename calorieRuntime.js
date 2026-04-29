@@ -102,7 +102,7 @@ window.updateKcalUI = function() {
     } else {
         const dailyTarget = (typeof window.getPegasusEffectiveDailyTarget === "function")
             ? window.getPegasusEffectiveDailyTarget()
-            : (localStorage.getItem('pegasus_today_kcal') || "2100");
+            : (localStorage.getItem(M?.diet?.effectiveTodayKcal || 'pegasus_effective_today_kcal') || localStorage.getItem('pegasus_today_kcal') || "2100");
 
         kcalDisplay.textContent = dailyTarget;
         kcalDisplay.style.color = "#4CAF50";
@@ -116,7 +116,7 @@ window._isCalculatingTarget = false;
 window.calculatePegasusDailyTarget = function() {
     const storedEffective = window.getPegasusEffectiveDailyTarget
         ? window.getPegasusEffectiveDailyTarget()
-        : parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal')) || 2100;
+        : parseFloat(localStorage.getItem(M?.diet?.effectiveTodayKcal || 'pegasus_effective_today_kcal')) || parseFloat(localStorage.getItem(M?.diet?.todayKcal || 'pegasus_today_kcal')) || 2100;
 
     if (window._isCalculatingTarget) {
         return storedEffective;
@@ -134,12 +134,14 @@ window.calculatePegasusDailyTarget = function() {
     const cardioOffset = window.getPegasusTodayCardioOffset();
     const effectiveTarget = Math.round(baseTarget + cardioOffset);
 
-    localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', String(effectiveTarget));
+    const effectiveKcalKey = M?.diet?.effectiveTodayKcal || 'pegasus_effective_today_kcal';
+    localStorage.setItem(effectiveKcalKey, String(effectiveTarget));
+    localStorage.setItem(M?.diet?.effectiveTodayDate || 'pegasus_effective_today_date', window.getPegasusLocalDateKey ? window.getPegasusLocalDateKey() : new Date().toISOString().slice(0, 10));
     localStorage.setItem('pegasus_strength_bonus_today', String(strengthInfo?.bonus || 0));
     localStorage.setItem('pegasus_strength_load_today', String(strengthInfo?.weightedLoad || 0));
 
     console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Βάση Ξεκούρασης: ${window.getPegasusRestDailyTarget ? window.getPegasusRestDailyTarget() : 2100} kcal | Strength Bonus: +${strengthInfo?.bonus || 0} | Cardio: +${cardioOffset} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
-    console.log(`💾 PEGASUS TARGET STORE: Saved effective target ${effectiveTarget} kcal to ${M?.diet?.todayKcal || 'pegasus_today_kcal'}`);
+    console.log(`💾 PEGASUS TARGET STORE: Saved effective target ${effectiveTarget} kcal to ${effectiveKcalKey}`);
 
     window._isCalculatingTarget = false;
     return effectiveTarget;

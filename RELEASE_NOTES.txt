@@ -1,145 +1,18 @@
-PEGASUS FINAL POLISHED
+PEGASUS 131
 
-Baseline:
-- Stable post-P11 architecture build
-- Reducer/runtime bridge, semantic workout actions, replay/checkpoints,
-  persisted runtime, selector-driven UI state, control state selectors.
+- Fixed calorie target storage separation.
+- Settings/manual kcal target now uses pegasus_goal_kcal.
+- Runtime-computed daily target now uses pegasus_effective_today_kcal.
+- pegasus_today_kcal is kept only as a legacy/manual mirror, not overwritten by runtime.
+- Added automatic cleanup for polluted legacy kcal values such as 3642 shown inside Settings.
+- Updated metabolic runtime, reporting, diet advisor, mobile diet fallback, audit, storage hardening, and cloud key list.
+- No new .js files added.
+- Cache: pegasus-shield-v3.66-FINAL-131.
 
-Recommended validation:
-- Run the MAX FINAL AUDIT script from the ChatGPT thread after deploy.
-- Smoke-test: select day, start, pause, next, food/inventory, cloud sync.
-
-Package type:
-- Production-oriented stable build
-
-PEGASUS 72 / v19.2 Stable
-- Desktop workout resume patch: fixes stuck 0-set transition edge case and restores remaining workout time correctly after refresh.
-
-
-[v19.4 Stable]
-- Morning email report now refreshes food log/cardio for the report date right before send, so the next-day email reflects the full previous day diet instead of an early routine-only snapshot.
-
-
-[v19.7 Stable]
-- Mobile: global bottom content boundary so page content ends exactly above the ghost Android-overlay nav while keeping ghost buttons at the same visual height.
-
-
-[v21.5 Stable]
-- Fixed broken consolidation from v21.3 by removing stale script includes and cache references for merged files (desktopRender.js, achievements.js, inventoryHandler.js).
-
-[v21.6 Stable]
-- Consolidated mobileUI.js and mobileBridgeViews.js into mobile/mobileApp.js.
-
-
-[v21.9 Stable]
-- Fixed desktop workout video resume so the current exercise video resumes playback after pause/continue instead of staying frozen when the source is unchanged.
-- Updated HOW TO / program-guide architecture references to match the consolidated file layout (desktopBoot.js, desktopActions.js, runtimeBridge.js, cloudSync.js, mobile/mobileApp.js).
-
-
-[v22.0 Stable]
-- Hard cache-bust release to force-load the latest desktop video resume + HOW TO updates after v21.8 caching issues.
-- Exposed openProgramGuide/showProgramGuide aliases for easier diagnostics and guide opening from console/tests.
-
-
-[v22.3 Stable]
-- Mobile Diet Advisor toggle fixed: tap once to show the advisor panel, tap again to hide it.
-
-
-[v22.5 Stable]
-- Restored Pegasus-green visual style in the mobile Diet Advisor while keeping the new recommendation color coding.
-- Advisor toggle now treats visible content as the open state, preventing stale expanded flags from inverting the first tap.
-
-
-[v22.6 Stable]
-- Diet Advisor red-state tuning: repeated exact Kouki dishes now turn red sooner, and similar dish families can also be marked red when they have been repeated often over the last 7 days.
-
-
-[v22.8 Stable]
-- Daily kcal target now uses rest base + strength workout bonus + exact cardio kcal.
-- Strength workout bonus estimates load from today's program, sets, and exercise weights (current boxes first, then saved weights, then program defaults).
-
-
-[v22.9 Stable]
-- Audit/debug calorie wording now shows the new metabolic breakdown clearly: rest base + strength bonus + cardio = effective target.
-
-
-[v23.0 Stable]
-- Added modular mobile module 'Αλλαγή Διατροφής' with 7-day diet variety analysis.
-- New weekly variation engine suggests 3-5 swaps, supports accept/reject, and replaces rejected options with new alternatives.
-
-
-[v23.1 Stable]
-- Diet Variation upgraded to meal-slot logic: Kouki-only rotation for the afternoon meal, plus easy protein-aware replacements for eggs, yogurt/whey, banana, and work toasts.
-- Suggestions now prioritize affordable, practical swaps with similar protein so the daily target remains realistic.
-
-
-[v23.2 Stable]
-- Added shared Food Registry foundation with 15 realistic food families covering routine foods, Kouki meals, and common outside meals.
-- Diet Variation now uses family-level logic so yogurt variants remain one family, eggs remain one family, and supermarket replacements come from different families instead of micro-variations of the same food.
-- Work-meal swaps now prioritize low-odor, practical supermarket options, while home dinner swaps may include stronger-smelling proteins.
-
-
-[v23.3 Stable]
-- Added shared Slot Registry with 6 meal slots based on the real user timeline.
-- Diet Variation now outputs slot-based plans (Slot 1 to Slot 6), including a dedicated protein-slot replacement flow for whey.
-
-
-[v23.4 Stable]
-- Fixed Slot Registry diet variation runtime bug where the dedicated whey/protein-slot counter was referenced before being initialized.
-
-
-[v23.5 Stable]
-- Refined slot candidate foods to category-level choices in practice: eggs, yogurt, whey, toast/bread, deli protein, cottage, kefir, fruit, Kouki, etc.
-- Mobile diet variation reset now clears the active v3 preference key correctly.
-
-
-[v23.6 Stable]
-- Expanded slot candidate libraries to 15 options per slot so Diet Variation can suggest a broader monthly-realistic set of foods instead of repeating the same few choices.
-- Added a dedicated 15-option protein-slot pool and broadened outside-meal coverage.
-
-
-[v23.7 Stable]
-- Curated the 15-option slot libraries with more realistic breakfast, protein, work, fruit, and dinner foods.
-- Hard-excluded the same target family from non-fruit replacement lists so true substitutions appear instead of the same category again.
-
-
-[v23.8 Stable]
-- Fixed Diet Variation accept interaction on mobile/desktop by preventing text selection side-effects and adding a clear accepted state badge/button style.
-
-
-[v23.9 Stable]
-- Fixed mobile Diet Variation action handling by switching accept/reject buttons to data-driven delegated click handlers, preventing broken taps on slots with special characters in item names.
-- Accepted and rejected options are now hidden globally after selection, so chosen foods disappear from the lists instead of remaining visible in the same or other slots.
-
-
-[v24.0 Stable]
-- Fixed sticky daily kcal target handling across mobile/APK and desktop: stored today kcal is now treated as source-of-truth and cannot be overwritten by a lower recomputed target during boot/sync.
-- Mobile refresh now re-syncs stored metabolic targets before rerender, so top kcal bar and bridge summary stay aligned after unlock/sync.
-
-
-[v24.1 Stable]
-- Fixed calorieRuntime storing the wrong daily kcal source: it now saves the effective daily target (base + strength + cardio) instead of only the base target.
-- This prevents cloud/mobile drift where desktop calculated the correct effective target but persisted a lower stale today-kcal value.
-
-
-[v24.2 Stable]
-- Reporting/email polish: subject/date params now use plain numeric subject-safe dates consistently to avoid encoded slash entities in subject lines.
-- Reporting now exports multiple protein total aliases plus goal/consumed protein fields so the email template can render total protein reliably.
-
-
-[v24.3 Stable]
-- Fixed Preview & Progress counters to aggregate live daily workout sets from the current exercise runtime instead of reading the weekly history bars.
-- Opening the preview now forces an immediate muscle-progress rerender, so completed set counts show correctly without waiting for the background interval.
-
-[v24.4 Stable]
-- Fixed Preview & Progress to read weekly accumulated muscle history only and render completed weekly sets / weekly target (e.g. 5/17), never daily_live aggregation.
-- Removed live daily set badges from the muscle progress box; exercise thumbnails remain in the separate preview list.
-- Mobile Preview now uses the same weekly history + dynamic weekly targets and displays compact completed/target counters.
-- Mobile Contacts add form is permanently open; the close/hide toggle was removed so name + link can be entered immediately.
-- Supplement inventory deduction is diet-only; manual mobile decrement buttons were disabled, and deleting protein/creatine diet entries restores stock.
-PEGASUS 125 - WEEKLY PROGRESS LEDGER + TYPOGRAPHY FIX
-- Fixes Preview & Progress staying at 0/target after workout by adding a counted weekly-progress ledger.
-- Completed sets are written to pegasus_weekly_history with delta protection, so repeated renders do not double-count.
-- Adds safe repair from today's completed exercise totals only when weekly history missed the writes.
-- Preview still displays weekly accumulated progress as completed weekly sets / weekly target.
-- Removes inline font-size from the weekly progress render so adaptive typography controls the text again.
+PEGASUS 133 - CLEAN 131 STRUCTURE + WEEKLY SETS BUGFIX
+- Built from PEGASUS 131 clean 67-file structure.
+- Restores weekly progress counted ledger without adding new files.
+- Reporting no longer mutates pegasus_weekly_history, preventing completed-set double counting.
+- Weekly reset now runs at the start of the week, not on Saturday cycling day.
+- Double-count repair is exact-match only so cycling/EMS credits are not removed.
+- Service worker cache bumped to pegasus-shield-v3.68-FINAL-133.
