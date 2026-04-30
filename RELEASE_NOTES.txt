@@ -1,0 +1,40 @@
+PEGASUS FINAL POLISHED
+
+Baseline:
+- Stable post-P11 architecture build
+- Reducer/runtime bridge, semantic workout actions, replay/checkpoints,
+  persisted runtime, selector-driven UI state, control state selectors.
+
+Recommended validation:
+- Run the MAX FINAL AUDIT script from the ChatGPT thread after deploy.
+- Smoke-test: select day, start, pause, next, food/inventory, cloud sync.
+
+Package type:
+- Production-oriented stable build
+
+PEGASUS 135 - PEG.ZIP BASELINE MERGE
+- Built directly on the user-provided peg.zip baseline.
+- Ported the latest locked fixes from peg134 without adding desktop refactor modules.
+- Added only required standalone modules: foodRegistry.js, slotRegistry.js, dietVariation.js, adaptiveTypography.js.
+- Updated weekly plan: Tue Push, Wed Pull, Fri Upper mixed, weekend cycling-only legs.
+- Targets: Chest 16, Back 16, Legs 24, Arms 14, Shoulders 12, Core 18.
+- Added cloud-safe weekly history merge and synced counted weekly ledger.
+- Reporting no longer mutates pegasus_weekly_history.
+- Added emoji muscle badges in desktop exercise list and preview.
+- Mobile Contacts add form stays permanently open.
+- Diet inventory remains diet-only with stock restore on deletion.
+
+PEGASUS 136 - PLAN SELECTOR + TYPOGRAPHY/AUDIT FIX
+- Fixed Tools > ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ so the 4 plan cards open reliably.
+- Plan selection now syncs both pegasus_active_plan and pegasus_settings.activeSplit.
+- Cloud push failures can no longer block plan change reload.
+- Mobile now loads adaptiveTypography.js directly.
+- Service worker cache list aligned with active desktop/mobile scripts.
+
+PEGASUS 137 - INVENTORY RESTORE + CYCLING CONSISTENCY
+- Restores whey/creatine stock when desktop diet entries are deleted.
+- Exposes PegasusInventory.restore / restoreEntry for mobile and shared delete flows.
+- Keeps cycling leg credit capped by the remaining weekly leg target, matching workout logging and optimizer behavior.
+- Removes obsolete encoded TXT documentation artifacts from the clean zip.
+- Service worker cache version bumped to pegasus-shield-v3.70-FINAL-137.
+- Mobile supplement decrement buttons are disabled; supplement stock is consumed only through Diet entries and restored on Diet deletion.

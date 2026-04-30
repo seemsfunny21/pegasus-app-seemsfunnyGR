@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pegasus Mobile v18.0</title>
+    <link rel="icon" type="image/png" href="../images/favicon.png">
+    <link rel="apple-touch-icon" href="../images/favicon.png">
+
+    <script>
+        window.PEGASUS_IS_MOBILE = true;
+
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const now = Date.now();
+            const hasVersion = params.has('v');
+            const versionTs = hasVersion ? parseInt(params.get('v'), 10) : 0;
+            const hasSwController = !!navigator.serviceWorker?.controller;
+
+            if (
+                navigator.onLine &&
+                !hasSwController &&
+                (!hasVersion || isNaN(versionTs) || (now - versionTs > 600000))
+            ) {
+                window.location.replace(window.location.pathname + '?v=' + now + window.location.hash);
+            }
+        })();
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="pinModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 9999; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="background:#0a0a0a; border:2px solid #00ff41; padding:40px 30px; border-radius:30px; text-align:center; width:85%; max-width: 320px; box-shadow: 0 0 50px rgba(0,255,65,0.15);">
+            <div style="font-size:35px; margin-bottom:15px;">🛡️</div>
+            <div style="color:#00ff41; font-weight:900; margin-bottom:5px; letter-spacing:1px; font-size: 20px;">PEGASUS OS</div>
+            <div style="color:#555; font-size: 10px; font-weight: 800; margin-bottom: 25px; letter-spacing: 2px;">ΑΣΦΑΛΗΣ ΤΑΥΤΟΠΟΙΗΣΗ</div>
+            <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px; border-color: #333; margin-bottom: 12px;" inputmode="numeric" maxlength="4" placeholder="••••">
+            <input type="password" id="masterKeyInput" style="font-size:14px; letter-spacing:2px; border-color:#333; margin-bottom: 12px; text-align:center;" autocomplete="off" placeholder="MASTER KEY">
+            <div style="color:#555; font-size:10px; font-weight:800; margin-bottom:12px; letter-spacing:1px;">PIN + MASTER KEY ΜΙΑ ΦΟΡΑ ΤΗΝ ΗΜΕΡΑ · ΕΠΑΝΑΦΟΡΑ ΜΕΤΑ ΤΙΣ 07:00</div>
+            <div id="pinError" style="color:#ff4444; font-size:11px; font-weight:800; min-height:14px; margin-bottom:12px;"></div>
+            <button class="primary-btn" onclick="attemptVaultUnlock()" style="font-size: 14px; padding: 20px;">ΑΠΑΣΦΑΛΙΣΗ</button>
+            <button class="secondary-btn" style="margin-top: 15px; border-color: #222; color: #555;" onclick="skipVault()">ΛΕΙΤΟΥΡΓΙΑ OFFLINE</button>
+        </div>
+    </div>
+
+    <div id="sync-indicator">ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ</div>
+    <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;"></div>
+
+    <div id="home" class="view active">
+        <div class="header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px; position: relative; box-sizing: border-box;">
+            <button id="prevPage" onclick="window.PegasusMobileUI.changePage(-1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">◀</button>
+
+            <div style="text-align:center; flex: 1;">
+                <h1 style="font-size: 32px; margin: 0; line-height: 1;">PEGASUS</h1>
+                <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">TACTICAL DATA INTERFACE</p>
+            </div>
+
+            <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">▶</button>
+        </div>
+
+        <div id="dynamic-grid" class="dynamic-grid"></div>
+        <div id="settings-anchor"></div>
+    </div>
+
+    <div id="diet" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="compact-grid">
+            <div class="mini-card"><span class="mini-label">ΘΕΡΜΙΔΕΣ</span><div id="txtKcal" class="mini-val">0 / 2800</div></div>
+            <div class="mini-card"><span class="mini-label">ΠΡΩΤΕΪΝΗ</span><div id="txtProt" class="mini-val">0 / 160g</div></div>
+        </div>
+        <button class="secondary-btn" style="border-color: #f39c12; color: #f39c12; margin-bottom: 15px;" onclick="window.PegasusDiet.askAdvisor()">🧠 ΡΩΤΑ ΤΟΝ PEGASUS ADVISOR</button>
+        <div id="advisorMobileResult" style="width: 100%; margin-bottom: 15px;"></div>
+        <input type="text" id="fName" placeholder="🔍 Αναζήτηση Φαγητού..." oninput="window.PegasusDiet.handleSearch(this.value)" autocomplete="off">
+        <div id="searchSuggestions" class="search-results"></div>
+        <div id="foodHistoryList" style="width:100%; margin-top:10px;"></div>
+    </div>
+
+    <div id="library" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΗΜΕΡΗΣΙΟ ΜΕΝΟΥ (ΚΟΥΚΙ)</div>
+        <div id="libraryContainer" style="width:100%;"></div>
+    </div>
+
+    <div id="cardio" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΚΑΤΑΓΡΑΦΗ ΠΟΔΗΛΑΣΙΑΣ</div>
+        <input type="hidden" id="cdRoute" value="ΠΟΔΗΛΑΣΙΑ">
+        <div class="compact-grid">
+            <div><div class="input-label">ΧΙΛΙΟΜΕΤΡΑ</div><input type="number" id="cdKm" placeholder="Km" step="0.1" inputmode="decimal"></div>
+            <div><div class="input-label">KCAL</div><input type="number" id="cdKcalBurned" placeholder="Kcal" inputmode="numeric"></div>
+        </div>
+        <button class="primary-btn" onclick="window.PegasusCardio?.save()">ΑΠΟΘΗΚΕΥΣΗ</button>
+    </div>
+
+    <div id="ems_panel" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΣΥΝΕΔΡΙΑ IMS / EMS</div>
+        <div class="mini-card" style="padding: 25px;">
+            <div id="totalProgress" style="font-size: 12px; font-weight: 900; margin-bottom: 10px;">0% ΟΛΟΚΛΗΡΩΣΗ</div>
+            <div class="bar-bg"><div id="mainProgressBar" class="bar-fill"></div></div>
+            <div id="phaseTimer" style="font-size:55px; font-weight:900; color:#00ff41; margin:20px 0; font-variant-numeric: tabular-nums;">25:00</div>
+        </div>
+        <button id="btnStart" class="primary-btn" onclick="PegasusEMS.start()">ΕΝΑΡΞΗ ΣΥΝΕΔΡΙΑΣ</button>
+    </div>
+
+    <div id="preview" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΕΒΔΟΜΑΔΙΑΙΑ ΣΤΟΧΕΥΣΗ</div>
+        <div id="muscle-container" class="compact-grid"></div>
+    </div>
+
+    <div id="profile" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΠΡΟΣΩΠΙΚΑ ΕΓΓΡΑΦΑ</div>
+        <div class="input-label">ΠΡΟΣΩΠΙΚΟΣ ΑΡΙΘΜΟΣ</div><input type="text" id="pPA" readonly>
+        <div class="input-label">ΑΔΤ</div><input type="text" id="pADT" readonly>
+        <div class="input-label">ΑΦΜ</div><input type="text" id="pAFM" readonly>
+        <div class="input-label">ΑΜΚΑ</div><input type="text" id="pAMKA" readonly>
+        <div class="input-label">IBAN</div><input type="text" id="pIban" readonly>
+        <div class="compact-grid">
+            <button class="secondary-btn" onclick="unlockFields('profile')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
+            <button class="primary-btn" onclick="PegasusProfile.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+        </div>
+    </div>
+
+    <div id="car" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ</div>
+        <div class="input-label">ΠΙΝΑΚΙΔΑ</div><input type="text" id="carPlate" readonly>
+        <div class="input-label">ΜΟΝΤΕΛΟ</div><input type="text" id="carModel" readonly>
+        <div class="input-label">VIN (ΠΛΑΙΣΙΟ)</div><input type="text" id="carVin" readonly>
+        <div class="compact-grid">
+            <div><div class="input-label">ΚΥΒΙΚΑ (cc)</div><input type="text" id="carEngine" readonly></div>
+            <div><div class="input-label">ΙΠΠΟΙ (hp)</div><input type="text" id="carPower" readonly></div>
+        </div>
+        <div class="section-title" style="margin-top:15px; color: #555;">ΗΜΕΡΟΜΗΝΙΕΣ & ΣΕΡΒΙΣ</div>
+        <div class="input-label">ΛΗΞΗ ΑΣΦΑΛΕΙΑΣ</div><input type="text" id="carIns" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
+        <div class="input-label">ΛΗΞΗ ΚΤΕΟ</div><input type="text" id="carKteo" placeholder="ΗΗ/ΜΜ/ΕΕΕΕ" readonly>
+        <div class="input-label">ΕΠΟΜΕΝΟ SERVICE (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000" readonly>
+        <div class="compact-grid">
+            <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
+            <button class="primary-btn" onclick="window.PegasusCar.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+        </div>
+        <div class="section-title">ΙΣΤΟΡΙΚΟ SERVICE</div>
+        <div class="mini-card">
+            <input type="text" id="srvTask" placeholder="Εργασία (π.χ. Λάδια)">
+            <input type="number" id="srvKm" placeholder="Χιλιόμετρα">
+            <button class="primary-btn" onclick="window.PegasusCar.addService()">ΠΡΟΣΘΗΚΗ</button>
+        </div>
+        <div id="serviceLogList" style="width:100%; margin-top:10px;"></div>
+    </div>
+
+    <div id="notes" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΠΡΟΣΩΠΙΚΕΣ ΣΗΜΕΙΩΣΕΙΣ</div>
+        <input type="text" id="nDate" readonly style="color:var(--main); font-weight:bold; border-color:var(--main);">
+        <input type="text" id="nText" placeholder="Πληκτρολόγησε σημείωση...">
+        <button class="primary-btn" onclick="PegasusProfile.addNote()">ΠΡΟΣΘΗΚΗ ΣΗΜΕΙΩΣΗΣ</button>
+        <div id="notesList" style="width:100%; margin-top: 15px;"></div>
+    </div>
+
+    <div id="supps" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΑΠΟΘΕΜΑ ΣΥΜΠΛΗΡΩΜΑΤΩΝ</div>
+        <div class="mini-card" style="border-left: 4px solid #00bcd4;">
+            <span class="mini-label">ΠΡΩΤΕΪΝΗ WHEY</span>
+            <div id="protLevelText" class="mini-val">--- / 2500g</div>
+            <div class="bar-bg"><div id="protBar" class="bar-fill" style="background:#00bcd4;"></div></div>
+            <div class="compact-grid" style="margin-top:15px;">
+                <button class="secondary-btn" disabled title="Η αφαίρεση γίνεται μόνο από τη Διατροφή">ΜΟΝΟ ΔΙΑΤΡΟΦΗ</button>
+                <button class="primary-btn" onclick="PegasusInventory.refill('prot', 2500)">ΑΝΑΠΛΗΡΩΣΗ</button>
+            </div>
+        </div>
+        <div class="mini-card" style="border-left: 4px solid #9c27b0;">
+            <span class="mini-label">ΚΡΕΑΤΙΝΗ</span>
+            <div id="creaLevelText" class="mini-val">--- / 1000g</div>
+            <div class="bar-bg"><div id="creaBar" class="bar-fill" style="background:#9c27b0;"></div></div>
+            <div class="compact-grid" style="margin-top:15px;">
+                <button class="secondary-btn" disabled title="Η αφαίρεση γίνεται μόνο από τη Διατροφή">ΜΟΝΟ ΔΙΑΤΡΟΦΗ</button>
+                <button class="primary-btn" onclick="PegasusInventory.refill('crea', 1000)">ΑΝΑΠΛΗΡΩΣΗ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="parking_panel" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
+        <div class="mini-card" style="border-left: 4px solid #ff9800;">
+            <span class="mini-label">ΝΕΑ ΠΕΡΙΟΧΗ / ΘΕΣΗ</span>
+            <input type="text" id="parkingInput" placeholder="π.χ. Γιάννενα, Κέντρο...">
+            <button class="primary-btn" onclick="window.PegasusParking.save()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ CLOUD</button>
+        </div>
+        <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (TOP 10)</div>
+        <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <div id="settings_panel" class="view">
+        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+
+        <div class="mini-card" style="border: 1px solid var(--main); padding: 25px 20px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,65,0.05);">
+            <div style="position: absolute; top: -10px; right: -10px; opacity: 0.05; font-size: 100px; pointer-events: none;">⚖️</div>
+            <span class="mini-label" style="font-size: 11px; margin-bottom: 15px; display: block;">ΚΑΤΑΓΡΑΦΗ ΒΑΡΟΥΣ ΣΩΜΑΤΟΣ</span>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                <input type="number" id="mobileWeightInput" placeholder="74.0" step="0.1" style="margin: 0; font-size: 24px; font-weight: 900; height: 60px; color: var(--main); background: rgba(0,255,65,0.05); border: 2px solid rgba(0,255,65,0.2); border-radius: 14px;">
+                <button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value);" style="height: 60px; margin: 0; flex-shrink: 0; width: 120px; font-size: 11px; border-radius: 14px;">ΕΝΗΜΕΡΩΣΗ</button>
+            </div>
+            <div id="mobileWeightAvg" style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; font-size: 12px; color: var(--main); font-weight: 900; border: 1px dashed rgba(0,255,65,0.3); letter-spacing: 1px; text-transform: uppercase;">
+                M.O. Εβδομάδας: -- kg
+            </div>
+        </div>
+
+        <div class="mini-card" style="margin-top: 30px; padding: 20px; border-color: var(--main); background: rgba(0,255,65,0.04);">
+            <span class="mini-label" style="margin-bottom: 12px; display: block;">ΓΛΩΣΣΑ ΔΙΕΠΑΦΗΣ</span>
+            <button id="btnLangToggle" class="secondary-btn pegasus-lang-toggle" style="width:100%; margin:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px;">
+                <span aria-hidden="true" style="font-size:22px; line-height:1;">🇬🇷</span>
+                <span style="flex:1; text-align:center; font-weight:900; letter-spacing:0.8px;">ΕΛΛΗΝΙΚΑ / ENGLISH</span>
+                <span aria-hidden="true" style="font-size:22px; line-height:1;">🇬🇧</span>
+            </button>
+        </div>
+
+        <div class="section-title" style="margin-top: 30px;">ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ (CLOUD / LOCAL)</div>
+
+        <div class="mini-card" style="padding: 20px; border-color: #222; background: rgba(20,20,20,0.8);">
+            <div class="compact-grid">
+                <button class="secondary-btn" style="border-color: #4CAF50; color: #4CAF50; display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 20px 10px;" onclick="exportData()">
+                    <span style="font-size: 24px;">⬇️</span>
+                    <span style="font-size: 9px; font-weight: 900;">ΛΗΨΗ BACKUP</span>
+                </button>
+
+                <label class="secondary-btn" style="border-color: #2196F3; color: #2196F3; display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 20px 10px; cursor: pointer; margin: 0;">
+                    <span style="font-size: 24px;">⬆️</span>
+                    <span style="font-size: 9px; font-weight: 900;">ΕΠΑΝΑΦΟΡΑ DATA</span>
+                    <input type="file" id="importFile" style="display:none;" onchange="importData(event)" accept=".json">
+                </label>
+            </div>
+            <hr style="border: none; border-top: 1px solid #222; margin: 20px 0;">
+            <button class="primary-btn" style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; box-shadow: none; font-size: 11px; padding: 18px;" onclick="hardResetSystem()">
+                🚨 ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.PegasusMobileUI = {
+            currentPage: 0,
+            modulesPerPage: 10,
+
+            coreModules: [
+                { id: 'diet', icon: '🥗', label: 'Διατροφή' },
+                { id: 'library', icon: '🍽️', label: 'Γεύματα' },
+                { id: 'cardio', icon: '🚴', label: 'Αερόβια' },
+                { id: 'ems_panel', icon: '⚡', label: 'EMS' },
+                { id: 'preview', icon: '🎯', label: 'Στόχοι' },
+                { id: 'profile', icon: '👤', label: 'Έγγραφα' },
+                { id: 'car', icon: '🚗', label: 'Όχημα' },
+                { id: 'notes', icon: '📝', label: 'Σημειώσεις' }
+            ],
+
+            extraModules: [],
+
+            registerModule: function(module) {
+                if (this.coreModules.some(m => m.id === module.id)) return;
+                if (this.extraModules.some(m => m.id === module.id)) return;
+
+                this.extraModules.push(module);
+
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", () => this.render(), { once: true });
+                } else {
+                    this.render();
+                }
+            },
+
+            changePage: function(direction) {
+                const extraPages = Math.ceil(this.extraModules.length / this.modulesPerPage);
+                const maxPages = Math.max(1, 1 + extraPages);
+
+                this.currentPage = Math.max(0, Math.min(this.currentPage + direction, maxPages - 1));
+                this.render();
+            },
+
+            render: function() {
+                const grid = document.getElementById('dynamic-grid');
+                const pageTxt = document.getElementById('pageIndicator');
+                const btnPrev = document.getElementById('prevPage');
+                const btnNext = document.getElementById('nextPage');
+                if (!grid) return;
+
+                const extraPages = Math.ceil(this.extraModules.length / this.modulesPerPage);
+                const maxPages = Math.max(1, 1 + extraPages);
+
+                if (this.currentPage >= maxPages) this.currentPage = Math.max(0, maxPages - 1);
+
+                grid.innerHTML = "";
+
+                if (this.currentPage === 0) {
+                    this.coreModules.forEach(m => this.createTile(grid, m));
+                    this.injectParkingTile(grid);
+                    this.injectSuppsTile(grid);
+                    this.injectSettingsTile(grid);
+                } else {
+                    const start = (this.currentPage - 1) * this.modulesPerPage;
+                    const end = start + this.modulesPerPage;
+                    const pageItems = this.extraModules.slice(start, end);
+                    pageItems.forEach(m => this.createTile(grid, m));
+                }
+
+                if (pageTxt) {
+                    if (this.currentPage === 0) {
+                        pageTxt.textContent = "TACTICAL DATA INTERFACE";
+                    } else {
+                        pageTxt.textContent = `EXTENDED TACTICAL MODULES (ΣΕΛ. ${this.currentPage + 1}/${maxPages})`;
+                    }
+                }
+
+                if (btnPrev) {
+                    btnPrev.style.opacity = this.currentPage === 0 ? "0.1" : "1";
+                    btnPrev.style.pointerEvents = this.currentPage === 0 ? "none" : "auto";
+                }
+
+                if (btnNext) {
+                    btnNext.style.opacity = this.currentPage >= maxPages - 1 ? "0.1" : "1";
+                    btnNext.style.pointerEvents = this.currentPage >= maxPages - 1 ? "none" : "auto";
+                }
+
+                if (window.PegasusInventory && typeof window.PegasusInventory.updateUI === "function") {
+                    window.PegasusInventory.updateUI();
+                }
+            },
+
+            createTile: function(container, m) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.onclick = () => openView(m.id);
+                tile.innerHTML = `<span class="tile-icon">${m.icon}</span><span class="tile-label">${m.label}</span>`;
+                container.appendChild(tile);
+            },
+
+            injectParkingTile: function(container) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.onclick = () => openView('parking_panel');
+                tile.innerHTML = `<span class="tile-icon icon-parking">P</span><span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>`;
+                container.appendChild(tile);
+            },
+
+            injectSuppsTile: function(container) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.onclick = () => openView('supps');
+                tile.style.padding = "10px 8px";
+                tile.innerHTML = `
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;">
+                            <span>WHEY</span><span id="homeProtTxt" style="color: var(--main);">--%</span>
+                        </div>
+                        <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
+                            <div id="homeProtBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
+                        </div>
+                        <div style="font-size: 7px; color: #fff; display: flex; justify-content: space-between; font-weight: 900;">
+                            <span>CREA</span><span id="homeCreaTxt" style="color: var(--main);">--%</span>
+                        </div>
+                        <div class="bar-bg" style="height: 4px; margin: 0; background: rgba(0,0,0,0.5);">
+                            <div id="homeCreaBar" class="bar-fill" style="background: var(--main); box-shadow: 0 0 8px var(--main);"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(tile);
+            },
+
+            injectSettingsTile: function(container) {
+                const settingsTile = document.createElement('div');
+                settingsTile.className = 'tile full-width';
+                settingsTile.onclick = () => openView('settings_panel');
+                settingsTile.style.borderColor = "var(--main)";
+                settingsTile.innerHTML = `
+                    <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                        <span class="tile-icon" style="font-size: 20px; margin-right: 10px; margin-bottom: 0;">⚙️</span>
+                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
+                    </div>
+                `;
+                container.appendChild(settingsTile);
+            }
+        };
+
+        window.registerPegasusModule = function(module) {
+            window.PegasusMobileUI.registerModule(module);
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            window.PegasusMobileUI.render();
+        }, { once: true });
+    </script>
+
+    <script src="../manifest.js"></script>
+    <script src="../dialogs.js"></script>
+    <script src="../i18n.js"></script>
+    <script src="../data.js"></script>
+    <script src="../extensions.js"></script>
+    <script src="../metabolicEngine.js"></script>
+    <script src="../dietAdvisor.js"></script>
+    <script src="../cloudSync.js"></script>
+    <script src="../weightTracker.js"></script>
+<script src="../adaptiveTypography.js"></script>
+
+    <script src="diet-mobile.js"></script>
+    <script src="cardio-mobile.js"></script>
+    <script src="profile-mobile.js"></script>
+    <script src="car-mobile.js"></script>
+    <script src="parking-mobile.js"></script>
+    <script src="inventory-mobile.js"></script>
+    <script src="ems-mobile.js"></script>
+    <script src="supplies-mobile.js"></script>
+    <script src="finance-mobile.js"></script>
+    <script src="social-mobile.js"></script>
+    <script src="movies-mobile.js"></script>
+    <script src="missions-mobile.js"></script>
+    <script src="biometrics-mobile.js"></script>
+    <script src="maintenance-mobile.js"></script>
+    <script src="oracle-mobile.js"></script>
+    <script src="lifting-mobile.js"></script>
+
+<script>
+    const PEGASUS = {
+        key: "$2a$10$oU/TyQjSeNEVr/k5dnFS8ulKZkbb9gUWd5xuXijAYFCBijuXrYAFC",
+        bin: "69b6757ab7ec241ddc6d7230"
+    };
+
+    let isUnlocked = false;
+
+    window._pegasusMobileSyncTimer = null;
+    window._pegasusMobileSyncBusy = false;
+    window._pegasusLastUiRefreshTs = 0;
+
+    function getMobileDateStr() {
+        if (typeof window.getPegasusTodayDateStr === "function") {
+            return window.getPegasusTodayDateStr();
+        }
+
+        const d = new Date();
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
+    function getMobileFoodLogKey(dateStr) {
+        const prefix = window.PegasusManifest?.nutrition?.log_prefix || "food_log_";
+        return prefix + dateStr;
+    }
+
+    function installMobileInventoryBridges() {
+        window.PegasusInventory = window.PegasusInventory || {};
+
+        if (typeof window.PegasusInventory.getInventory !== "function") {
+            window.PegasusInventory.getInventory = function() {
+                return JSON.parse(localStorage.getItem('pegasus_supp_inventory') || '{"prot":2500,"crea":1000}');
+            };
+        }
+
+        if (typeof window.PegasusInventory.updateUI !== "function") {
+            window.PegasusInventory.updateUI = function() {
+                updateSuppUI();
+            };
+        }
+
+        if (typeof window.PegasusInventory.refill !== "function") {
+            window.PegasusInventory.refill = function(type, grams) {
+                if (typeof window.restockSupplement === "function") {
+                    const inv = window.restockSupplement(type, grams);
+                    updateSuppUI();
+                    return inv;
+                }
+
+                const stock = JSON.parse(localStorage.getItem('pegasus_supp_inventory') || '{"prot":2500,"crea":1000}');
+                const key = (type === 'protein') ? 'prot' : (type === 'creatine' ? 'crea' : type);
+
+                if (stock[key] !== undefined) {
+                    stock[key] = (parseFloat(stock[key]) || 0) + (parseFloat(grams) || 0);
+                    localStorage.setItem('pegasus_supp_inventory', JSON.stringify(stock));
+                    updateSuppUI();
+                    if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
+                }
+
+                return stock;
+            };
+        }
+    }
+
+    async function reconcileMobileDailyRoutine() {
+        const dateStr = getMobileDateStr();
+        const logKey = getMobileFoodLogKey(dateStr);
+        const log = window.PegasusDiet?.getLog
+            ? (window.PegasusDiet.getLog(dateStr) || [])
+            : JSON.parse(localStorage.getItem(logKey) || "[]");
+
+        const hasYogurt = log.some(item => item?.name === "Γιαούρτι 2% + Whey (Ρουτίνα)");
+        const hasEggs = log.some(item => item?.name === "3 Αυγά (Ρουτίνα)");
+        const hasCreatine = log.some(item => item?.name === "Κρεατίνη 5g (Ρουτίνα)");
+
+        if (!window.PegasusDiet?.add) return;
+
+        if (!hasYogurt) {
+            await window.PegasusDiet.add("Γιαούρτι 2% + Whey (Ρουτίνα)", 250, 35);
+        }
+
+        if (!hasEggs) {
+            await window.PegasusDiet.add("3 Αυγά (Ρουτίνα)", 210, 18);
+        }
+
+        if (!hasCreatine) {
+            await window.PegasusDiet.add("Κρεατίνη 5g (Ρουτίνα)", 0, 0);
+        }
+
+        window.PegasusInventory?.updateUI?.();
+    }
+
+    function openView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        const targetView = document.getElementById(id);
+        if (targetView) {
+            targetView.classList.add('active');
+            refreshUIComponent(id);
+
+            if (id === 'diet' && window.PegasusCloud?.isUnlocked && navigator.onLine) {
+                setTimeout(() => {
+                    runMobileSyncHeartbeat();
+                }, 50);
+            }
+        }
+    }
+
+    function refreshUIComponent(id) {
+        try {
+            if (id === 'diet') window.PegasusDiet?.updateUI();
+            if (id === 'library') window.PegasusDiet?.renderDailyKouki();
+            if (id === 'supps') {
+                window.PegasusInventory?.updateUI?.();
+                updateSuppUI();
+            }
+            if (id === 'preview') updateMuscleUI();
+            if (id === 'profile') window.PegasusProfile?.load();
+            if (id === 'car') window.PegasusCar?.load();
+            if (id === 'notes') {
+                const nDate = document.getElementById('nDate');
+                if (nDate) nDate.value = new Date().toLocaleDateString('el-GR');
+                window.PegasusProfile?.renderNotes();
+            }
+            if (id === 'settings_panel') window.PegasusWeight?.updateUI();
+            if (id === 'parking_panel') window.PegasusParking?.updateUI();
+
+            const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
+            if (typeof window[dynamicRenderName] === 'function') {
+                window[dynamicRenderName]();
+            }
+        } catch (e) {
+            console.error("Refresh Error:", e);
+        }
+    }
+
+    function refreshAllUI() {
+        const now = Date.now();
+        if (now - window._pegasusLastUiRefreshTs < 250) return;
+        window._pegasusLastUiRefreshTs = now;
+
+        window.PegasusDiet?.updateUI();
+        window.PegasusInventory?.updateUI?.();
+        window.PegasusWeight?.updateUI();
+        window.PegasusParking?.updateUI();
+        window.PegasusCar?.load();
+        window.PegasusProfile?.load();
+
+        if (typeof updateMuscleUI === "function") updateMuscleUI();
+        if (typeof updateSuppUI === "function") updateSuppUI();
+    }
+
+    function updateSuppUI() {
+        const s = JSON.parse(localStorage.getItem('pegasus_supp_inventory') || '{"prot":2500,"crea":1000}');
+        const pPct = Math.max(0, Math.min(100, (s.prot / 2500) * 100));
+        const cPct = Math.max(0, Math.min(100, (s.crea / 1000) * 100));
+
+        if (document.getElementById('homeProtTxt')) document.getElementById('homeProtTxt').textContent = Math.round(pPct) + '%';
+        if (document.getElementById('homeProtBar')) document.getElementById('homeProtBar').style.width = pPct + '%';
+        if (document.getElementById('homeCreaTxt')) document.getElementById('homeCreaTxt').textContent = Math.round(cPct) + '%';
+        if (document.getElementById('homeCreaBar')) document.getElementById('homeCreaBar').style.width = cPct + '%';
+
+        if (document.getElementById('protLevelText')) document.getElementById('protLevelText').textContent = `${Math.round(s.prot)} / 2500g`;
+        if (document.getElementById('creaLevelText')) document.getElementById('creaLevelText').textContent = `${Math.round(s.crea)} / 1000g`;
+        if (document.getElementById('protBar')) document.getElementById('protBar').style.width = pPct + '%';
+        if (document.getElementById('creaBar')) document.getElementById('creaBar').style.width = cPct + '%';
+    }
+
+    function unlockFields(v) {
+        document.querySelectorAll(`#${v} input[readonly]`).forEach(el => {
+            el.removeAttribute('readonly');
+            el.style.border = "1px solid #00ff41";
+        });
+    }
+
+    function updateMuscleUI() {
+        const h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        const container = document.getElementById("muscle-container");
+        if (!container) return;
+
+        const targets = typeof window.getDynamicTargets === 'function'
+            ? window.getDynamicTargets()
+            : { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+
+        container.innerHTML = Object.keys(targets).map(g => {
+            const targetSets = targets[g];
+            if (targetSets === 0) return '';
+
+            const v = h[g] || 0;
+            const p = Math.min((v / targetSets) * 100, 100);
+
+            return `
+                <div class="mini-card">
+                    <span class="mini-label">${g}</span>
+                    <div class="mini-val">${v} / ${targetSets}</div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" style="width:${p}%;"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    const MOBILE_SYNC_CYCLE_MS = () => Math.max(10000, Number(window.PegasusCloud?.config?.pullInterval || 30000));
+    let mobileSyncCountdownTimer = null;
+    let mobileLastSyncPulseTs = 0;
+    let mobileNextSyncAt = 0;
+
+    function scheduleNextMobileSyncCycle(fromNow = true) {
+        const cycleMs = MOBILE_SYNC_CYCLE_MS();
+        mobileNextSyncAt = Date.now() + (fromNow ? cycleMs : 0);
+    }
+
+    function renderMobileSyncCycleStatus() {
+        const e = document.getElementById("sync-indicator");
+        if (!e) return;
+        if (!window.PegasusCloud?.isUnlocked) {
+            e.textContent = "LOCKED";
+            e.style.color = "#888";
+            return;
+        }
+        if (!navigator.onLine) {
+            e.textContent = "OFFLINE";
+            e.style.color = "#ff4444";
+            return;
+        }
+
+        const now = Date.now();
+        if (mobileLastSyncPulseTs && (now - mobileLastSyncPulseTs) < 1200) {
+            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
+            e.style.color = "#00bcd4";
+            return;
+        }
+
+        if (!mobileNextSyncAt || mobileNextSyncAt <= now) {
+            scheduleNextMobileSyncCycle(true);
+        }
+
+        const remainingSec = Math.max(0, Math.ceil((mobileNextSyncAt - now) / 1000));
+        if (remainingSec > 20) {
+            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
+            e.style.color = "#00ff41";
+        } else if (remainingSec > 10) {
+            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
+            e.style.color = "#ff9800";
+        } else {
+            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
+            e.style.color = "#ff4444";
+        }
+    }
+
+    function startMobileSyncCountdown() {
+        stopMobileSyncCountdown();
+        if (!window.PegasusCloud?.isUnlocked) return;
+        renderMobileSyncCycleStatus();
+        mobileSyncCountdownTimer = setInterval(() => {
+            renderMobileSyncCycleStatus();
+        }, 1000);
+    }
+
+    function stopMobileSyncCountdown() {
+        if (mobileSyncCountdownTimer) {
+            clearInterval(mobileSyncCountdownTimer);
+            mobileSyncCountdownTimer = null;
+        }
+    }
+
+    function setSyncStatus(status) {
+        const e = document.getElementById("sync-indicator");
+        if (!e) return;
+
+        if (status === 'online') {
+            startMobileSyncCountdown();
+            renderMobileSyncCycleStatus();
+        } else if (status === 'offline') {
+            stopMobileSyncCountdown();
+            e.textContent = "OFFLINE";
+            e.style.color = "#ff4444";
+        } else if (status === 'syncing') {
+            mobileLastSyncPulseTs = Date.now();
+            scheduleNextMobileSyncCycle(true);
+            startMobileSyncCountdown();
+            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
+            e.style.color = "#00bcd4";
+        } else if (status === 'error') {
+            stopMobileSyncCountdown();
+            e.textContent = "ΣΦΑΛΜΑ SYNC";
+            e.style.color = "#ff9800";
+        } else if (status === 'locked') {
+            stopMobileSyncCountdown();
+            e.textContent = "LOCKED";
+            e.style.color = "#888";
+        } else {
+            stopMobileSyncCountdown();
+            e.textContent = "ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ";
+            e.style.color = "#00bcd4";
+        }
+    }
+
+    async function runMobileSyncHeartbeat() {
+        if (window._pegasusMobileSyncBusy) return false;
+
+        if (!window.PegasusCloud?.isUnlocked) {
+            setSyncStatus('locked');
+            return false;
+        }
+
+        if (document.hidden) return false;
+
+        if (!navigator.onLine) {
+            setSyncStatus('offline');
+            return false;
+        }
+
+        window._pegasusMobileSyncBusy = true;
+        setSyncStatus('syncing');
+
+        try {
+            const changed = await window.PegasusCloud.syncNow(true);
+
+            if (changed) {
+                refreshAllUI();
+            }
+
+            if (window.PegasusCloud?.isUnlocked) {
+                setSyncStatus('online');
+            } else {
+                setSyncStatus('locked');
+            }
+
+            return !!changed;
+        } catch (e) {
+            console.error("📡 Mobile Heartbeat Error:", e);
+            setSyncStatus('error');
+            return false;
+        } finally {
+            window._pegasusMobileSyncBusy = false;
+        }
+    }
+
+    function startMobileSyncHeartbeat() {
+        stopMobileSyncHeartbeat();
+
+        if (!window.PegasusCloud?.isUnlocked) return;
+        if (document.hidden) return;
+
+        scheduleNextMobileSyncCycle(true);
+        startMobileSyncCountdown();
+
+        window._pegasusMobileSyncTimer = setInterval(() => {
+            if (
+                !document.hidden &&
+                window.PegasusCloud?.isUnlocked &&
+                !window.PegasusCloud.isPulling &&
+                !window.PegasusCloud.isPushing &&
+                !window._pegasusMobileSyncBusy
+            ) {
+                runMobileSyncHeartbeat();
+            }
+        }, MOBILE_SYNC_CYCLE_MS());
+    }
+
+    function stopMobileSyncHeartbeat() {
+        if (window._pegasusMobileSyncTimer) {
+            clearInterval(window._pegasusMobileSyncTimer);
+            window._pegasusMobileSyncTimer = null;
+        }
+        stopMobileSyncCountdown();
+    }
+
+    window.addEventListener("pegasus_sync_status", (e) => {
+        const status = e.detail?.status;
+        const effectivelyUnlocked = !!(isUnlocked || window.PegasusCloud?.isUnlocked);
+
+        if (!effectivelyUnlocked && status !== "locked") {
+            setSyncStatus("locked");
+            return;
+        }
+
+        if (status === "online") setSyncStatus("online");
+        else if (status === "offline") setSyncStatus("offline");
+        else if (status === "syncing") setSyncStatus("syncing");
+        else if (status === "error") setSyncStatus("error");
+        else if (status === "locked") setSyncStatus("locked");
+    });
+
+    window.addEventListener("focus", () => {
+        if (window.PegasusCloud?.isUnlocked) {
+            runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            stopMobileSyncHeartbeat();
+        } else if (window.PegasusCloud?.isUnlocked) {
+            runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        }
+    });
+
+    window.addEventListener("online", () => {
+        if (window.PegasusCloud?.isUnlocked) {
+            runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        } else {
+            setSyncStatus('locked');
+        }
+    });
+
+    window.addEventListener("offline", () => {
+        stopMobileSyncHeartbeat();
+        setSyncStatus(isUnlocked ? 'offline' : 'locked');
+    });
+
+    window.addEventListener("pegasus_sync_complete", () => {
+        refreshAllUI();
+        mobileLastSyncPulseTs = Date.now();
+        scheduleNextMobileSyncCycle(true);
+        if (window.PegasusCloud?.isUnlocked && !window.PegasusCloud?.isPulling && !window.PegasusCloud?.isPushing) {
+            setSyncStatus('online');
+        }
+    });
+
+    async function attemptVaultUnlock() {
+        const pinInput = document.getElementById("pinInput");
+        const masterInput = document.getElementById("masterKeyInput");
+        const errorDiv = document.getElementById("pinError");
+        const pin = pinInput ? pinInput.value.trim() : "";
+        const masterKey = masterInput ? masterInput.value.trim() : "";
+
+        if (errorDiv) errorDiv.textContent = "";
+
+        if (!pin || !masterKey) {
+            if (errorDiv) errorDiv.textContent = "ΣΥΜΠΛΗΡΩΣΕ PIN ΚΑΙ MASTER KEY";
+            return;
+        }
+
+        const success = await window.PegasusCloud?.unlock(pin, masterKey);
+
+        if (success) {
+            document.getElementById("pinModal").style.display = "none";
+            isUnlocked = true;
+            mobileLastSyncPulseTs = Date.now();
+            scheduleNextMobileSyncCycle(true);
+            setSyncStatus(window.PegasusCloud?.isUnlocked ? (navigator.onLine ? 'online' : 'offline') : 'locked');
+
+            await reconcileMobileDailyRoutine();
+            await runMobileSyncHeartbeat();
+            startMobileSyncHeartbeat();
+        } else {
+            if (errorDiv) errorDiv.textContent = "ΛΑΘΟΣ PIN / MASTER KEY";
+            if (pinInput) pinInput.value = "";
+            if (masterInput) masterInput.value = "";
+        }
+    }
+
+    function skipVault() {
+        document.getElementById("pinModal").style.display = "none";
+        stopMobileSyncHeartbeat();
+        isUnlocked = false;
+        setSyncStatus('locked');
+        refreshAllUI();
+    }
+
+    async function hardResetSystem() {
+        if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {
+            try {
+                stopMobileSyncHeartbeat();
+
+                if ('serviceWorker' in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of regs) {
+                        await reg.unregister();
+                    }
+                }
+
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                }
+            } catch (e) {
+                console.error("Hard Reset Cleanup Error:", e);
+            }
+
+            if (window.PegasusCloud?.clearLocalSecurityState) {
+                window.PegasusCloud.clearLocalSecurityState();
+            }
+            location.replace(location.pathname + '?v=' + Date.now());
+        }
+    }
+
+    function exportData() {
+        const backup = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k) continue;
+
+            const shouldSkip = window.PegasusCloud?.isExportBlockedKey?.(k);
+            if (shouldSkip) continue;
+
+            if (k.includes("pegasus_") || k.includes("food_log_") || k.startsWith("peg_") || k.startsWith("kouki_") || k.startsWith("weight_")) {
+                backup[k] = localStorage.getItem(k);
+            }
+        }
+
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `PEGASUS_MOBILE_BKP.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function importData(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (confirm("🚨 Επαναφορά δεδομένων;")) {
+                    const preserved = {};
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (!key) continue;
+                        if (window.PegasusCloud?.isExportBlockedKey?.(key) || window.PegasusCloud?.isLocalOnlyStorageKey?.(key) || window.PegasusCloud?.isInternalStorageKey?.(key)) {
+                            preserved[key] = localStorage.getItem(key);
+                        }
+                    }
+
+                    localStorage.clear();
+                    Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+                    Object.keys(preserved).forEach(k => localStorage.setItem(k, preserved[k]));
+                    location.reload();
+                }
+            } catch (err) {
+                alert("❌ Μη έγκυρο αρχείο.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    (async function boot() {
+        console.log("⚡ PEGASUS: Fast Boot...");
+
+        installMobileInventoryBridges();
+        refreshAllUI();
+        updateSuppUI();
+
+        try {
+            if (window.PegasusCloud?.canAutoUnlock?.()) {
+                setSyncStatus('syncing');
+                const success = await window.PegasusCloud.tryAutoUnlock();
+
+                if (success) {
+                    console.log("📡 Cloud Sync: Fully Connected.");
+                    isUnlocked = true;
+                    await reconcileMobileDailyRoutine();
+                    await runMobileSyncHeartbeat();
+                    startMobileSyncHeartbeat();
+                    setTimeout(() => {
+                        refreshAllUI();
+                        updateSuppUI();
+                    }, 500);
+                    return;
+                }
+            }
+
+            const modal = document.getElementById("pinModal");
+            if (modal) modal.style.display = "flex";
+            isUnlocked = false;
+            setSyncStatus('locked');
+        } catch (e) {
+            console.error("📡 Cloud Boot Error:", e);
+            isUnlocked = false;
+            setSyncStatus('locked');
+            const modal = document.getElementById("pinModal");
+            if (modal) modal.style.display = "flex";
+        }
+    })();
+</script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js?v=3.12')
+                    .then(reg => {
+                        console.log('📡 PEGASUS: Service Worker Registered.');
+                        reg.update();
+
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            if (!installingWorker) return;
+
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed') {
+                                    if (navigator.serviceWorker.controller) {
+                                        console.log('🔄 Νέο update στο background. Θα εφαρμοστεί στο επόμενο άνοιγμα.');
+                                    }
+                                }
+                            };
+                        };
+                    })
+                    .catch(err => console.error('❌ SW Registration Failed:', err));
+            }, { once: true });
+        }
+    </script>
+
+    <div class="ghost-nav-overlay">
+        <div class="nav-box">☰</div>
+        <div class="nav-box">⬔</div>
+        <div class="nav-box">◀</div>
+    </div>
+
+</body>
+</html>
