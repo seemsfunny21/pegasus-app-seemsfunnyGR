@@ -88,6 +88,31 @@
         return lang === 'en' ? pair[1] : pair[0];
     }
 
+    function escapeRegex(value) {
+        return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function replacePhraseSafely(text, from, to) {
+        if (!from || !String(text).includes(from)) return text;
+
+        // PEGASUS 139 FIX: do not translate short English status tokens inside
+        // program names such as IRON or EMS ONLY. Previously ON -> ΕΝΕΡΓΟΣ
+        // corrupted labels into IRENERGOS / ENERGOSLY.
+        if (/^[A-Za-z]{1,3}$/.test(from)) {
+            const re = new RegExp('(^|[^A-Za-z])(' + escapeRegex(from) + ')(?=$|[^A-Za-z])', 'g');
+            return String(text).replace(re, function(match, prefix) {
+                return prefix + to;
+            });
+        }
+
+        return String(text).split(from).join(to);
+    }
+
+    function shouldSkipI18n(node) {
+        const el = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+        return !!el?.closest?.('[data-no-i18n="true"], .no-i18n');
+    }
+
     function translateLoose(text, forcedLang) {
         const lang = forcedLang || getLanguage();
         const raw = String(text ?? '');
@@ -101,7 +126,7 @@
         phrasePairs.forEach((phrasePair) => {
             const from = lang === 'en' ? phrasePair[0] : phrasePair[1];
             const to = lang === 'en' ? phrasePair[1] : phrasePair[0];
-            if (from && translated.includes(from)) translated = translated.split(from).join(to);
+            translated = replacePhraseSafely(translated, from, to);
         });
         return translated;
     }
@@ -116,6 +141,7 @@
 
     function translateTextNode(node) {
         if (!node?.nodeValue) return;
+        if (shouldSkipI18n(node)) return;
         const parent = node.parentElement;
         if (!parent || ['SCRIPT','STYLE','TEXTAREA'].includes(parent.tagName)) return;
         const translated = translateLoose(node.nodeValue);
@@ -123,6 +149,7 @@
     }
 
     function translateElementAttributes(el) {
+        if (shouldSkipI18n(el)) return;
         ['placeholder', 'title', 'aria-label'].forEach(attr => {
             const val = el.getAttribute?.(attr);
             if (!val) return;
@@ -145,6 +172,7 @@
         if (!root || !document.body) return;
         if (root.nodeType === Node.TEXT_NODE) { translateTextNode(root); return; }
         if (root.nodeType !== Node.ELEMENT_NODE) return;
+        if (shouldSkipI18n(root)) return;
         translateElementAttributes(root);
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null);
         let node = walker.currentNode;

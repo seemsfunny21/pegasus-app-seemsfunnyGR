@@ -75,27 +75,45 @@ window.getPegasusActivePlan = function() {
     return localStorage.getItem('pegasus_active_plan') || 'IRON';
 };
 
+function renderPegasusPlanSelectorContent(modal) {
+    const activePlan = window.getPegasusActivePlan();
+    const plans = [
+        { key: 'IRON', title: 'IRON', desc: 'Push / Pull / Upper + Ποδήλατο', color: '#4CAF50' },
+        { key: 'EMS_ONLY', title: 'EMS ONLY', desc: 'Βάρη + IMS / EMS', color: '#00bcd4' },
+        { key: 'BIKE_ONLY', title: 'BIKE ONLY', desc: 'Βάρη + Ποδήλατο Σ/Κ', color: '#ff9800' },
+        { key: 'HYBRID', title: 'HYBRID', desc: 'Βάρη + EMS + Ποδήλατο', color: '#e91e63' }
+    ];
+
+    modal.setAttribute('data-no-i18n', 'true');
+    modal.innerHTML = `
+        <button type="button" onclick="window.closePegasusPlanModal()" class="pegasus-plan-close">✕</button>
+        <h3 class="pegasus-plan-title">ΕΠΙΛΟΓΗ ΠΡΟΓΡΑΜΜΑΤΟΣ</h3>
+        <div class="pegasus-plan-grid">
+            ${plans.map(plan => `
+                <button type="button" onclick="window.setPegasusPlan('${plan.key}')" class="pegasus-plan-option${activePlan === plan.key ? ' selected' : ''}" style="--plan-color:${plan.color};">
+                    <span class="pegasus-plan-name">${plan.title}</span>
+                    <small class="pegasus-plan-desc">${plan.desc}</small>
+                    ${activePlan === plan.key ? '<em class="pegasus-plan-selected">✓ ΕΠΙΛΕΓΜΕΝΟ</em>' : ''}
+                </button>
+            `).join('')}
+        </div>
+    `;
+}
+
 window.openPegasusPlanModal = function() {
     let modal = document.getElementById('planModal');
 
-    // PEGASUS 138 FIX: the selector must open even if the legacy HTML block
-    // is missing, hidden below the page flow, or another panel handler already ran.
+    // PEGASUS 139 FIX: always normalize the legacy selector into one stable,
+    // no-i18n modal so labels like IRON / EMS ONLY / BIKE ONLY never become
+    // IRENERGOS / ENERGOSLY and the panel always appears above the workout UI.
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'planModal';
         modal.className = 'pegasus-panel';
-        modal.innerHTML = `
-            <button type="button" onclick="window.closePegasusPlanModal()" style="position:absolute; top:10px; right:12px; background:#111; border:1px solid #333; color:#aaa; border-radius:10px; padding:7px 10px; cursor:pointer; font-weight:900;">✕</button>
-            <h3 style="text-align:center; color:#4CAF50; font-size:22px; letter-spacing:2px; margin-top:0; margin-bottom:25px; font-weight:900; text-transform:uppercase;">ΕΠΙΛΟΓΗ ΠΡΟΓΡΑΜΜΑΤΟΣ</h3>
-            <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
-                <button type="button" onclick="window.setPegasusPlan('IRON')" class="pegasus-plan-option"><span>IRON</span><small>Push / Pull / Upper + Ποδήλατο</small></button>
-                <button type="button" onclick="window.setPegasusPlan('EMS_ONLY')" class="pegasus-plan-option"><span>EMS ONLY</span><small>Βάρη + IMS / EMS</small></button>
-                <button type="button" onclick="window.setPegasusPlan('BIKE_ONLY')" class="pegasus-plan-option"><span>BIKE ONLY</span><small>Βάρη + Ποδήλατο Σ/Κ</small></button>
-                <button type="button" onclick="window.setPegasusPlan('HYBRID')" class="pegasus-plan-option"><span>HYBRID</span><small>Βάρη + EMS + Ποδήλατο</small></button>
-            </div>
-        `;
         document.body.appendChild(modal);
     }
+
+    renderPegasusPlanSelectorContent(modal);
 
     document.querySelectorAll('.pegasus-panel, #emsModal').forEach(panel => {
         if (panel !== modal) panel.style.display = 'none';
@@ -116,36 +134,8 @@ window.openPegasusPlanModal = function() {
         border: '2px solid #4CAF50',
         boxShadow: '0 0 45px rgba(76, 175, 80, 0.35), 0 0 0 9999px rgba(0,0,0,0.72)',
         background: '#0a0a0a',
-        borderRadius: '20px'
-    });
-
-    modal.querySelectorAll('.pegasus-plan-option').forEach(btn => {
-        btn.style.background = '#111';
-        btn.style.border = '1px solid #333';
-        btn.style.color = '#fff';
-        btn.style.padding = '22px 14px';
-        btn.style.borderRadius = '14px';
-        btn.style.minHeight = '132px';
-        btn.style.display = 'flex';
-        btn.style.flexDirection = 'column';
-        btn.style.alignItems = 'center';
-        btn.style.justifyContent = 'center';
-        btn.style.gap = '10px';
-        btn.style.cursor = 'pointer';
-        btn.style.fontWeight = '900';
-    });
-
-    modal.querySelectorAll('.pegasus-plan-option span').forEach(span => {
-        span.style.color = '#4CAF50';
-        span.style.fontSize = '15px';
-        span.style.letterSpacing = '1px';
-    });
-
-    modal.querySelectorAll('.pegasus-plan-option small').forEach(small => {
-        small.style.color = '#ddd';
-        small.style.fontSize = '11px';
-        small.style.lineHeight = '1.35';
-        small.style.textAlign = 'center';
+        borderRadius: '20px',
+        boxSizing: 'border-box'
     });
 
     console.log('✅ PEGASUS PLAN: Selector opened.');
