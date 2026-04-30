@@ -94,7 +94,7 @@
         // --- 🧠 PEGASUS NEXUS: Cross-Data Correlation ---
         try {
             const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-            const targets = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
+            const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
             
             let currentLoad = 0;
             let totalCapacity = 116; 

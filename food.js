@@ -240,8 +240,8 @@ window.updateFoodUI = function() {
         listContainer.appendChild(div);
     });
 
-    const consumedProtKey = M?.diet?.consumedProtein || 'pegasus_today_protein_consumed';
-    localStorage.setItem(consumedProtKey, totalProtein.toFixed(0));
+    const todayProtKey = M?.diet?.todayProtein || "pegasus_today_protein";
+    localStorage.setItem(todayProtKey, totalProtein.toFixed(0));
 
     const kcalNum = document.getElementById('todayTotalKcal');
     if (kcalNum) kcalNum.textContent = totalKcal.toFixed(0);
@@ -289,22 +289,7 @@ window.deleteFoodItem = function(index) {
     const logKey = logPrefix + dateStr;
 
     let foodLog = JSON.parse(localStorage.getItem(logKey) || "[]");
-    const removedItem = foodLog.splice(index, 1)[0];
-
-    if (removedItem?.name) {
-        if (window.PegasusInventoryPC?.restoreEntry) {
-            window.PegasusInventoryPC.restoreEntry(removedItem.name);
-        } else if (window.restoreSupp) {
-            const removedName = String(removedItem.name || "").toLowerCase();
-            if (removedName.includes("whey") || removedName.includes("πρωτεΐνη") || removedName.includes("πρωτεινη")) {
-                window.restoreSupp('prot', 30, false);
-            }
-            if (removedName.includes("κρεατίνη") || removedName.includes("κρεατινη") || removedName.includes("creatine")) {
-                window.restoreSupp('crea', 5, false);
-            }
-        }
-    }
-
+    foodLog.splice(index, 1);
     localStorage.setItem(logKey, JSON.stringify(foodLog));
 
     window.updateFoodUI();
@@ -313,7 +298,7 @@ window.deleteFoodItem = function(index) {
 
 function updateProgressBars(kcal, protein) {
     const goalKcal = calculateDailyCalorieTarget(window.currentFoodDate);
-    const goalProtein = parseInt(localStorage.getItem(M?.diet?.goalProtein || 'pegasus_goal_protein'), 10) || 160;
+    const goalProtein = 160;
 
     const kBar = document.getElementById('kcalBar');
     const pBar = document.getElementById('proteinBar');

@@ -1,48 +1,5 @@
-(function(){
-  const scope = (location.pathname || '').includes('/mobile/') ? 'mobile' : 'desktop';
-  const ERROR_KEY = `pegasus_${scope}_runtime_errors`;
-  const TRACE_KEY = `pegasus_${scope}_runtime_trace`;
-  const MAX_ERRORS = 40;
-  const MAX_TRACE = 80;
-  const MAX_TEXT = 900;
-  function nowIso(){ try { return new Date().toISOString(); } catch(_) { return String(Date.now()); } }
-  function trimText(value){ const text = String(value ?? ''); return text.length > MAX_TEXT ? text.slice(0, MAX_TEXT) + '…' : text; }
-  function safeRead(key){ try { const raw = localStorage.getItem(key); if(!raw) return []; const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch(_) { return []; } }
-  function safeWrite(key, entries, limit){ try { localStorage.setItem(key, JSON.stringify(entries.slice(-limit))); return true; } catch(_) { return false; } }
-  function normalizeError(error){ if(!error) return { message: 'Unknown error', stack: '' }; if(typeof error === 'string') return { message: trimText(error), stack: '' }; const message = trimText(error.message || error.reason?.message || error.reason || error.toString?.() || 'Unknown error'); const stack = trimText(error.stack || error.reason?.stack || ''); return { message, stack }; }
-  function getLatestTrace(){ const entries = safeRead(TRACE_KEY); return entries.length ? entries[entries.length - 1] : null; }
-  function buildTrace(moduleName, action, status, extra){ return { ts: nowIso(), scope, module: trimText(moduleName || 'UNKNOWN'), action: trimText(action || 'runtime'), status: trimText(status || 'STEP'), path: trimText(location.pathname || ''), online: !!navigator.onLine, unlocked: !!window.PegasusCloud?.isUnlocked, extra: extra ? trimText(typeof extra === 'string' ? extra : JSON.stringify(extra)) : '' }; }
-  function buildError(level, moduleName, action, error, extra){ const n = normalizeError(error); const latestTrace = getLatestTrace(); return { ts: nowIso(), scope, level: trimText(level || 'ERROR'), module: trimText(moduleName || 'UNKNOWN'), action: trimText(action || 'runtime'), message: n.message, stack: n.stack, path: trimText(location.pathname || ''), online: !!navigator.onLine, unlocked: !!window.PegasusCloud?.isUnlocked, lastTrace: latestTrace ? `${latestTrace.module}:${latestTrace.action}:${latestTrace.status}` : '', extra: extra ? trimText(typeof extra === 'string' ? extra : JSON.stringify(extra)) : '' }; }
-  function pushTrace(moduleName, action, status, extra){ const entries = safeRead(TRACE_KEY); const entry = buildTrace(moduleName, action, status, extra); entries.push(entry); safeWrite(TRACE_KEY, entries, MAX_TRACE); return entry; }
-  function pushError(level, moduleName, action, error, extra){ const entries = safeRead(ERROR_KEY); const entry = buildError(level, moduleName, action, error, extra); entries.push(entry); safeWrite(ERROR_KEY, entries, MAX_ERRORS); return entry; }
-  function getLatestError(){ const entries = safeRead(ERROR_KEY); return entries.length ? entries[entries.length - 1] : null; }
-  window.PegasusRuntimeMonitor = {
-    scope,
-    errorKey: ERROR_KEY,
-    traceKey: TRACE_KEY,
-    trace(moduleName, action, status, extra){ return pushTrace(moduleName, action, status || 'STEP', extra); },
-    mark(moduleName, action, status, extra){ return pushTrace(moduleName, action, status || 'STEP', extra); },
-    capture(moduleName, action, error, extra){ return pushError('ERROR', moduleName, action, error, extra); },
-    warn(moduleName, action, error, extra){ return pushError('WARN', moduleName, action, error, extra); },
-    info(moduleName, action, message, extra){ return pushError('INFO', moduleName, action, message, extra); },
-    getErrors(){ return safeRead(ERROR_KEY); },
-    getLatestError,
-    getProblems(){ return safeRead(ERROR_KEY).filter(entry => entry.level === 'WARN' || entry.level === 'ERROR'); },
-    getLatestProblem(){ const problems = safeRead(ERROR_KEY).filter(entry => entry.level === 'WARN' || entry.level === 'ERROR'); return problems.length ? problems[problems.length - 1] : null; },
-    getTrace(){ return safeRead(TRACE_KEY); },
-    getLatestTrace,
-    clearErrors(){ try { localStorage.removeItem(ERROR_KEY); } catch(_) {} },
-    clearTrace(){ try { localStorage.removeItem(TRACE_KEY); } catch(_) {} },
-    clearAll(){ try { localStorage.removeItem(ERROR_KEY); } catch(_) {} try { localStorage.removeItem(TRACE_KEY); } catch(_) {} }
-  };
-  if(scope === 'desktop'){
-    window.addEventListener('error', function(event){ const src = event.filename ? event.filename.split('/').pop() : 'runtime'; pushError('ERROR', src || 'runtime', 'window.error', event.error || event.message || 'Window error', { lineno: event.lineno || 0, colno: event.colno || 0 }); });
-    window.addEventListener('unhandledrejection', function(event){ pushError('ERROR', 'promise', 'unhandledrejection', event.reason || 'Unhandled rejection'); });
-  }
-})();
-
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v24.2)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.5)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -54,9 +11,9 @@ window.PegasusManifest = {
     metadata: {
         os: "Pegasus OS",
         author: "Angelos & Gemini",
-        last_update: "2026-04-23",
+        last_update: "2026-04-19",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v24.2 Stable"
+        engine_version: "v18.5 Stable"
     },
 
     // ---------------------------------------------------------
@@ -127,14 +84,8 @@ window.PegasusManifest = {
 
         inventory: "pegasus_supp_inventory",
         foodLibrary: "pegasus_food_library",
-        // Manual/user kcal target used by Settings. Keep todayKcal as legacy mirror only.
-        goalKcal: "pegasus_goal_kcal",
         todayKcal: "pegasus_today_kcal",
-        // Runtime-computed daily target. The engine must write here, not into Settings.
-        effectiveTodayKcal: "pegasus_effective_today_kcal",
-        effectiveTodayDate: "pegasus_effective_today_date",
-        todayProtein: "pegasus_today_protein",
-        goalProtein: "pegasus_goal_protein"
+        todayProtein: "pegasus_today_protein"
     },
 
     kouki: {
@@ -162,65 +113,23 @@ window.PegasusManifest = {
     // 3. SYSTEM ARCHITECTURE
     // ---------------------------------------------------------
     architecture: {
-        "manifest.js": "Κεντρικός ορισμός LocalStorage keys, aliases και System Blueprint.",
-        "sw.js": "PWA service worker για precache, offline fallback και cache hygiene.",
-        "runtimeBridge.js": "Bridge μεταξύ legacy UI flow και Pegasus core runtime state.",
-        
-        "calorieRuntime.js": "Dynamic calorie/protein target calculation και UI runtime sync.",
-        
-        
-        
-        
-                                "storageHardening.js": "LocalStorage audit/repair layer με safe defaults και schema guards.",
-        "selfCheckRunner.js": "Regression/self-check runner για quick health snapshots.",
-        "programGuide.js": "Interactive in-app How-To / system map / file reference guide.",
-        
-        "desktopPanels.js": "Desktop panel open/render helpers για major UI windows.",
-        "desktopActions.js": "Desktop action handlers για buttons και workout commands.",
-                "desktopBoot.js": "Desktop startup bootstrap, app coordination, weather adaptation, sync modal bridge και desktop sync status label.",
-        
-        "pegasusCore.js": "Core training engine, session logic και canonical workout state.",
-        "data.js": "Master training data, program plans και day-by-day exercise definitions.",
-        "settings.js": "User settings defaults, persistence helpers και configuration access.",
-        "dialogs.js": "Shared dialog/modal rendering helpers και confirmations.",
-        "i18n.js": "Translation and language mapping layer για GR/EN strings.",
-        "dynamic.js": "Dynamic UI helpers και adaptive display utilities.",
-        "progressUI.js": "Muscle progress / status rendering helpers για workout progress UI.",
-        "cloudSync.js": "Security & persistence layer για cloud sync, vault και approved devices.",
-        "food.js": "Nutrition logging logic & Συμφωνία 30 Γευμάτων (Κούκι).",
-        "protcrea.js": "Inventory guard για πρωτεΐνη / κρεατίνη stock tracking.",
-        "dietAdvisor.js": "Nutritional intelligence engine και gap analysis layer.",
-        "optimizer.js": "AI training optimizer και dynamic weekly/workout adjustment logic.",
-        "extensions.js": "Extra productivity/routine modules και auxiliary daily logic.",
-        "ems.js": "Electro-Muscle Stimulation tracker, plan support και sync hooks.",
-        "cardio.js": "Cardio engine, offsets και target modifier logic.",
-        "gallery.js": "IndexedDB gallery engine και media storage/view logic.",
-        "dragDrop.js": "Draggable window positioning και UI memory persistence.",
-        "reporting.js": "Automated reporting/email dispatcher, previous-day finalizer και fallback builder from saved food/cardio/workout logs.",
-        "metabolicEngine.js": "Metabolic calculations and body-composition support logic.",
-        "weightTracker.js": "Biometric trend analyzer, weight history helpers και partner/co-lifter memory logic.",
-        "auditUI.js": "Real-time system integrity monitor και diagnostic overlay.",
-        "debug.js": "Tracer, health checks, calorie audit και runtime diagnostics tools.",
-        "mobile/mobileDataRegistry.js": "Registry για persistent mobile module keys, backup contracts και sync-safe merge rules.",
-        "mobile/mobileDataMigration.js": "Automatic mobile data safety bootstrap, migration restore και upgrade snapshots.",
-        "mobile/mobileSettingsDataTools.js": "Mobile settings data safety status, modular backup/restore tools και sync/debug event log.",
-                "mobile/mobileApp.js": "Main mobile app bootstrap, wiring και route behavior.",
-        "mobile/diet-mobile.js": "Mobile nutrition/diet panel logic.",
-        "mobile/cardio-mobile.js": "Mobile cardio panel and flow logic.",
-        "mobile/profile-mobile.js": "Mobile profile/user info management views.",
-        "mobile/car-mobile.js": "Mobile vehicle information and maintenance views.",
-        "mobile/parking-mobile.js": "Mobile parking/location history views.",
-        "mobile/inventory-mobile.js": "Mobile inventory and stock management views.",
-        "mobile/ems-mobile.js": "Mobile EMS tracking and control views.",
-        "mobile/supplies-mobile.js": "Mobile supplies/resource management views.",
-        "mobile/finance-mobile.js": "Mobile finance/expense tracking views.",
-        "mobile/social-mobile.js": "Mobile contacts/social utility views.",
-        "mobile/movies-mobile.js": "Mobile movies/media list utility views.",
-        "mobile/missions-mobile.js": "Mobile missions/tasks utility views.",
-        "mobile/biometrics-mobile.js": "Mobile biometrics/history views.",
-        "mobile/maintenance-mobile.js": "Mobile maintenance checklist/service views.",
-        "mobile/oracle-mobile.js": "Mobile oracle/assistant utility panel.",
-        "mobile/lifting-mobile.js": "Mobile lifting/workout quick-access views."
+        "manifest.js": "Κεντρικός ορισμός LocalStorage keys & System Blueprint.",
+        "app.js": "Master Orchestrator / Event Bus (UI & Workout Timer).",
+        "food.js": "Nutrition Logic & Συμφωνία 30 Γευμάτων (Κούκι).",
+        "protcrea.js": "Inventory Guard (Πρωτεΐνη 2500g / Κρεατίνη 1000g).",
+        "weightTracker.js": "Biometric Trend Analyzer (Moving Average).",
+        "dietAdvisor.js": "Nutritional Intelligence Engine (Gap Analysis).",
+        "optimizer.js": "AI Training Volumizer (Dynamic Set Adjustment).",
+        "cloudSync.js": "Security & Persistence Layer (API & Vault PIN).",
+        "cardio.js": "Cardio Engine (+18 σετ πόδια & Kcal target modifier).",
+        "auditUI.js": "Real-time System Integrity Monitor & Diagnostic Tool.",
+        "debug.js": "Tracer, health checks, calorie audit and runtime diagnostics.",
+        "car.js": "Vehicle Management Module.",
+        "parking.js": "Geolocation Tracking Module.",
+        "dragDrop.js": "UI Window Positioning Memory.",
+        "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
+        "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
+        "reporting.js": "EmailJS Automated Morning Dispatcher."
     },
 
     // ---------------------------------------------------------
@@ -296,4 +205,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log(`🏛️ PEGASUS MANIFEST ${window.PegasusManifest?.metadata?.engine_version || "UNKNOWN"} LOADED. GLOBAL UNLOCK ACTIVE.`);
+console.log("🏛️ PEGASUS MANIFEST v18.5 LOADED. GLOBAL UNLOCK ACTIVE.");

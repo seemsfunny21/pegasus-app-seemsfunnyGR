@@ -1,345 +1,12 @@
 /* ==========================================================================
-   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v2.0 - HISTORY NORMALIZATION SAFE)
+   PEGASUS OS - BIOMETRIC WEIGHT TRACKER (v1.4 - MANIFEST ALIGNED)
    Protocol: Daily Weight Logging, Moving Average & Master Variable Sync
-   Status: FINAL STABLE | FIXED: LEGACY HISTORY PRESERVATION + SAFE NORMALIZATION
+   Status: FINAL STABLE | FIXED: MANIFEST DESYNC & EVENT FALLBACKS
    ========================================================================== */
 
 var M = M || window.PegasusManifest;
 const WEIGHT_KEY = M?.user?.weight || 'pegasus_weight';
-const HISTORY_KEY = M?.user?.weight_history || M?.user?.weightHistory || 'pegasus_weight_history';
-const HISTORY_BACKUP_KEY = HISTORY_KEY + '_backup';
-
-function toISODateKey(value) {
-    if (value == null) return null;
-    if (typeof value === 'string') {
-        const s = value.trim();
-        if (!s) return null;
-        const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-        const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-        if (dmy) return `${dmy[3]}-${String(dmy[2]).padStart(2,'0')}-${String(dmy[1]).padStart(2,'0')}`;
-    }
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return null;
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-function normalizeWeightHistory(raw) {
-    if (!raw) return {};
-    const normalized = {};
-
-    const applyEntry = (dateCandidate, valueCandidate, fallbackKey = null) => {
-        const dateKey = toISODateKey(dateCandidate) || toISODateKey(fallbackKey);
-        const value = parseFloat(valueCandidate);
-        if (dateKey && !isNaN(value)) normalized[dateKey] = value;
-    };
-
-    if (Array.isArray(raw)) {
-        for (const entry of raw) {
-            if (entry == null) continue;
-            if (typeof entry === 'object') {
-                applyEntry(entry.date || entry.dateKey || entry.day || entry.ts || entry.timestamp, entry.weight ?? entry.value ?? entry.kg, entry.key);
-            }
-        }
-        return normalized;
-    }
-
-    if (typeof raw === 'object') {
-        Object.keys(raw).forEach(key => {
-            const item = raw[key];
-            if (item && typeof item === 'object') {
-                applyEntry(item.date || item.dateKey || item.day || item.ts || item.timestamp || key, item.weight ?? item.value ?? item.kg, key);
-            } else {
-                applyEntry(key, item, key);
-            }
-        });
-        return normalized;
-    }
-
-    return normalized;
-}
-
-function tryParseHistoryKey(key) {
-    try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        const normalized = normalizeWeightHistory(parsed);
-        return Object.keys(normalized).length ? normalized : null;
-    } catch (e) {
-        return null;
-    }
-}
-
-function saveWeightHistoryObject(history) {
-    const safeHistory = normalizeWeightHistory(history);
-    const serialized = JSON.stringify(safeHistory);
-    localStorage.setItem(HISTORY_KEY, serialized);
-    localStorage.setItem(HISTORY_BACKUP_KEY, serialized);
-    return safeHistory;
-}
-
-function loadWeightHistory() {
-    const candidates = [
-        HISTORY_KEY,
-        M?.user?.weightHistory,
-        M?.user?.weight_history,
-        HISTORY_BACKUP_KEY,
-        'pegasus_weight_history',
-        'pegasus_weight_history_backup'
-    ].filter(Boolean);
-
-    for (const key of [...new Set(candidates)]) {
-        const history = tryParseHistoryKey(key);
-        if (history && Object.keys(history).length) {
-            saveWeightHistoryObject(history);
-            return history;
-        }
-    }
-
-    // keep the current storage untouched if unreadable; initialize only when truly empty
-    if (!localStorage.getItem(HISTORY_KEY)) {
-        saveWeightHistoryObject({});
-    }
-    return {};
-}
-
-
-function getPegasusProteinTargetKey() {
-    return window.PegasusManifest?.diet?.goalProtein || 'pegasus_goal_protein';
-}
-
-function ensureMobileWeightSettingsCard() {
-    const panel = document.getElementById('settings_panel');
-    if (!panel) return null;
-
-    let card = document.getElementById('mobileBodyWeightCard');
-    if (!card) {
-        const firstCard = panel.querySelector('.mini-card');
-        if (firstCard) {
-            card = firstCard;
-            card.id = 'mobileBodyWeightCard';
-        }
-    }
-    if (!card) return null;
-
-    const expectedMarkup = `
-        <div style="position:absolute; top:-10px; right:-10px; opacity:0.05; font-size:100px; pointer-events:none;">⚖️</div>
-        <span class="mini-label" style="font-size:11px; margin-bottom:15px; display:block; position:relative; z-index:1;">ΚΑΤΑΓΡΑΦΗ ΒΑΡΟΥΣ ΣΩΜΑΤΟΣ</span>
-        <div id="mobileWeightRow" style="display:flex; gap:10px; align-items:center; margin-bottom:15px; position:relative; z-index:1;">
-            <input type="number" id="mobileWeightInput" placeholder="74.0" step="0.1" style="margin:0; font-size:24px; font-weight:900; height:60px; color:var(--main); background:rgba(0,255,65,0.05); border:2px solid rgba(0,255,65,0.2); border-radius:14px; display:block; visibility:visible; opacity:1; width:100%; flex:1 1 auto; min-width:0;">
-            <button id="mobileWeightSaveBtn" class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value);" style="height:60px; margin:0; flex-shrink:0; width:120px; font-size:11px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; visibility:visible; opacity:1;">ΕΝΗΜΕΡΩΣΗ</button>
-        </div>
-        <div id="mobileWeightAvg" style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; font-size:12px; color:var(--main); font-weight:900; border:1px dashed rgba(0,255,65,0.3); letter-spacing:1px; text-transform:uppercase; display:block; visibility:visible; opacity:1; position:relative; z-index:1;">
-            M.O. Εβδομάδας: -- kg
-        </div>
-    `;
-
-    const needsRebuild = !document.getElementById('mobileWeightInput') || !document.getElementById('mobileWeightAvg') || card.getBoundingClientRect().height < 120;
-    if (needsRebuild) {
-        card.innerHTML = expectedMarkup;
-    }
-
-    card.style.display = 'block';
-    card.style.visibility = 'visible';
-    card.style.opacity = '1';
-    card.style.minHeight = '190px';
-    card.style.height = 'auto';
-    card.style.maxHeight = 'none';
-    card.style.overflow = 'visible';
-    card.style.position = 'relative';
-    card.style.border = '1px solid var(--main)';
-    card.style.padding = '25px 20px';
-    card.style.boxShadow = '0 10px 25px rgba(0,255,65,0.05)';
-
-    const row = document.getElementById('mobileWeightRow');
-    const input = document.getElementById('mobileWeightInput');
-    const saveBtn = document.getElementById('mobileWeightSaveBtn');
-    const avg = document.getElementById('mobileWeightAvg');
-
-    if (row) {
-        row.style.display = 'flex';
-        row.style.visibility = 'visible';
-        row.style.opacity = '1';
-        row.style.alignItems = 'center';
-        row.style.gap = '10px';
-        row.style.marginBottom = '15px';
-    }
-    if (input) {
-        input.style.display = 'block';
-        input.style.visibility = 'visible';
-        input.style.opacity = '1';
-        input.style.position = 'static';
-        input.style.height = '60px';
-    }
-    if (saveBtn) {
-        saveBtn.style.display = 'inline-flex';
-        saveBtn.style.visibility = 'visible';
-        saveBtn.style.opacity = '1';
-        saveBtn.style.position = 'static';
-        saveBtn.style.height = '60px';
-    }
-    if (avg) {
-        avg.style.display = 'block';
-        avg.style.visibility = 'visible';
-        avg.style.opacity = '1';
-        avg.style.position = 'static';
-    }
-    return card;
-}
-
-
-/* ===== CONSOLIDATED FROM partner.js ===== */
-/* ==========================================================================
-   PEGASUS PARTNER ENGINE - ULTIMATE SMART LIST (STRICT v16.2 PATCHED)
-   Protocol: Global Scope Shielding, State Reset & Cloud Sync
-   Status: FINAL STABLE | FIXED: STATE BLEED & REFERENCE ERRORS
-   ========================================================================== */
-
-// 🛡️ Global Safe Declaration
-var M = M || window.PegasusManifest;
-
-// 🎯 FIXED: Σύνδεση στο window για να είναι προσβάσιμο από παντού (app.js)
-window.partnerData = {
-    isActive: false,
-    currentPartner: "", 
-    isUser1Turn: true
-};
-
-// 1. ΕΝΕΡΓΟΠΟΙΗΣΗ / ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
-window.togglePartnerMode = function() {
-    const nameInput = document.getElementById('partnerNameInput');
-    const btn = document.getElementById('btnPartnerMode');
-    
-    if (!window.partnerData.isActive) {
-        let rawName = nameInput ? nameInput.value.trim() : "";
-        let upperName = rawName.toLocaleUpperCase('el-GR');
-
-        if (rawName === "" || upperName === "ANGELOS" || upperName === "ΑΓΓΕΛΟΣ" || upperName === "ZZ") {
-            alert("PEGASUS STRICT: Γράψε ένα έγκυρο όνομα συνεργάτη!");
-            return;
-        }
-
-        window.partnerData.isActive = true;
-        window.partnerData.currentPartner = upperName;
-        window.partnerData.isUser1Turn = true; // Ο Άγγελος ξεκινάει πάντα πρώτος
-        
-        // ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΛΙΣΤΑ ΟΝΟΜΑΤΩΝ
-        window.savePartnerNameToList(upperName);
-        window.updatePartnerDatalist();
-        
-        if (btn) {
-            btn.textContent = `ΣΥΝΕΡΓΑΤΗΣ: ${upperName} (ON)`;
-            btn.style.background = "#4CAF50";
-            btn.style.color = "#000";
-        }
-        if (nameInput) nameInput.disabled = true;
-        
-        console.log(`🤝 PARTNER MODE: Activated with ${upperName}`);
-
-    } else {
-        // 🎯 FIXED: Πλήρες State Reset για αποφυγή Data Bleed
-        window.partnerData.isActive = false;
-        window.partnerData.currentPartner = "";
-        window.partnerData.isUser1Turn = true; // Κλείδωμα πίσω στον Άγγελο
-        
-        if (btn) {
-            btn.textContent = "ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ";
-            btn.style.background = "#222";
-            btn.style.color = "#4CAF50";
-        }
-        if (nameInput) {
-            nameInput.disabled = false;
-            nameInput.value = ""; 
-        }
-        
-        console.log("🤝 PARTNER MODE: Deactivated. System reverted to Master User.");
-    }
-};
-
-// 2. ΑΠΟΘΗΚΕΥΣΗ ΟΝΟΜΑΤΟΣ ΣΕ ΕΙΔΙΚΗ ΛΙΣΤΑ
-window.savePartnerNameToList = function(name) {
-  const listKey = M?.workout?.partnersList || "pegasus_partners_list";
-let list = JSON.parse(localStorage.getItem(listKey) || "[]");
-    if (!list.includes(name)) {
-        list.push(name);
-     localStorage.setItem(listKey, JSON.stringify(list));
-        
-        // 🎯 FIXED: Cloud Sync για μεταφορά των ονομάτων στο κινητό
-        if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
-            window.PegasusCloud.push(true);
-        }
-    }
-};
-
-// 3. ΑΝΑΝΕΩΣΗ ΤΗΣ ΛΙΣΤΑΣ ΠΡΟΤΑΣΕΩΝ
-window.updatePartnerDatalist = function() {
-    const dataList = document.getElementById('partnerList');
-    if (!dataList) return;
-
-    // Περνάμε τα ονόματα από 2 φίλτρα για να είμαστε σίγουροι
-    let partnerNames = new Set();
-
-    // Φίλτρο Α: Από την ειδική λίστα ονομάτων (Μπλοκάρει Λατινικά & Ελληνικά)
-    const listKey = M?.workout?.partnersList || "pegasus_partners_list";
-let list = JSON.parse(localStorage.getItem(listKey) || "[]");
-    list.forEach(n => {
-        if(n !== "ZZ" && n !== "ANGELOS" && n !== "ΑΓΓΕΛΟΣ") partnerNames.add(n);
-    });
-
-    // Φίλτρο Β: Από υπάρχοντα βάρη (για παλιούς συνεργάτες)
-    Object.keys(localStorage).forEach(key => {
-        if (key.startsWith("weight_") && !key.startsWith("weight_ANGELOS_") && !key.startsWith("weight_ΑΓΓΕΛΟΣ_")) {
-            const parts = key.split('_');
-            if (parts.length >= 3) {
-                const foundName = parts[1];
-                if (foundName !== "ANGELOS" && foundName !== "ΑΓΓΕΛΟΣ" && foundName !== "" && foundName !== "ZZ") {
-                    partnerNames.add(foundName);
-                }
-            }
-        }
-    });
-
-    dataList.innerHTML = ""; 
-    partnerNames.forEach(name => {
-        const option = document.createElement('option');
-        option.value = name;
-        dataList.appendChild(option);
-    });
-};
-
-// 4. ΑΠΟΘΗΚΕΥΣΗ / ΦΟΡΤΩΣΗ ΚΙΛΩΝ
-window.savePartnerWeight = function(exerciseName, weight) {
-    if (!exerciseName) return;
-    
-    // 🎯 Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
-    const userKey = window.partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : window.partnerData.currentPartner;
-    localStorage.setItem(`weight_${userKey}_${exerciseName.trim()}`, weight);
-    
-    // Legacy support: Αποθηκεύουμε και στο γενικό κλειδί αν είναι ο Άγγελος
-    if (window.partnerData.isUser1Turn) {
-        localStorage.setItem(`weight_${exerciseName.trim()}`, weight);
-    }
-};
-
-window.loadPartnerWeight = function(exerciseName) {
-    if (!exerciseName) return "";
-    
-    // 🎯 Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
-    const userKey = window.partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : window.partnerData.currentPartner;
-    
-    // Διαβάζει πρώτα από το Partner Key, μετά από το Legacy Key
-    return localStorage.getItem(`weight_${userKey}_${exerciseName.trim()}`) || 
-           localStorage.getItem(`weight_${exerciseName.trim()}`) || "";
-};
-
-// 5. INITIALIZATION
-window.addEventListener('DOMContentLoaded', () => {
-    const nameInput = document.getElementById('partnerNameInput');
-    if (nameInput) nameInput.value = ""; 
-    window.updatePartnerDatalist();
-});
-
+const HISTORY_KEY = M?.user?.weight_history || 'pegasus_weight_history';
 
 window.PegasusWeight = {
     // 1. Καταγραφή βάρους (Συμβατό με Mobile & Desktop)
@@ -367,12 +34,12 @@ window.PegasusWeight = {
         const now = new Date();
         const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
-        let history = loadWeightHistory();
+        let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
         history[dateKey] = weight;
-        history = saveWeightHistoryObject(history);
         
         // Αποθήκευση τοπικά μέσω Manifest Keys
-        localStorage.setItem(WEIGHT_KEY, String(weight));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        localStorage.setItem(WEIGHT_KEY, weight);
         
         // 🟢 FORCE UPDATE: Ενημέρωση της κεντρικής μεταβλητής του app.js και της μηχανής μεταβολισμού
         if (typeof window !== 'undefined') {
@@ -394,7 +61,7 @@ window.PegasusWeight = {
 
     // 2. Υπολογισμός μέσου όρου με Χρονολογική Ταξινόμηση
     getWeeklyAverage: function() {
-        const history = loadWeightHistory();
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
         
         const sortedKeys = Object.keys(history).sort();
         if (sortedKeys.length === 0) return null;
@@ -408,12 +75,11 @@ window.PegasusWeight = {
 
     // 3. Ενημέρωση UI 
     updateUI: function() {
-        ensureMobileWeightSettingsCard();
         const avg = this.getWeeklyAverage();
         const display = document.getElementById('mobileWeightAvg') || document.getElementById('weeklyWeightAvg');
         const inputEl = document.getElementById('mobileWeightInput') || document.getElementById('userWeightInput');
         
-        const history = loadWeightHistory();
+        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}");
         const sortedKeys = Object.keys(history).sort();
 
         // Ενημέρωση ένδειξης Μέσου Όρου
@@ -426,10 +92,6 @@ window.PegasusWeight = {
             const lastKey = sortedKeys[sortedKeys.length - 1];
             inputEl.value = history[lastKey];
         }
-    },
-
-    ensureSettingsCard: function() {
-        return ensureMobileWeightSettingsCard();
     },
 
     // 4. 🛡️ MASTER CLOUD ALIGNMENT
@@ -458,62 +120,7 @@ window.PegasusWeight = {
 
 // 5. AUTO-BOOT BRIDGE
 document.addEventListener('DOMContentLoaded', () => {
-    ensureMobileWeightSettingsCard();
     window.PegasusWeight.updateUI();
 });
 
-console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v2.0).");
-
-
-window.addEventListener('pageshow', () => { try { ensureMobileWeightSettingsCard(); window.PegasusWeight.updateUI(); } catch(_) {} });
-
-window.addEventListener('pageshow', () => { try { ensureMobileWeightSettingsCard(); window.PegasusWeight.updateUI(); } catch(_) {} });
-
-
-/* ===== MERGED FROM weightState.js ===== */
-/* ==========================================================================
-   PEGASUS WEIGHT STATE
-   Active lifter and per-exercise saved weight persistence.
-   ========================================================================== */
-
-window.getActiveLifter = function() {
-    if (window.partnerData && window.partnerData.isActive && window.partnerData.currentPartner !== "") {
-        return window.partnerData.currentPartner;
-    }
-    return "ΑΓΓΕΛΟΣ";
-};
-
-window.getSavedWeight = function(exerciseName) {
-    const cleanName = exerciseName.trim();
-    const lifter = window.getActiveLifter();
-    let allWeights = JSON.parse(localStorage.getItem(M?.workout?.exerciseWeights || "pegasus_exercise_weights") || "{}");
-
-    if (allWeights[lifter] && allWeights[lifter][cleanName] !== undefined) return allWeights[lifter][cleanName];
-
-    if (lifter === "ΑΓΓΕΛΟΣ") {
-        let old1 = localStorage.getItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`);
-        let old2 = localStorage.getItem(`weight_${cleanName}`);
-        if (old1) return old1;
-        if (old2) return old2;
-    }
-    return "";
-};
-
-window.saveWeight = function(name, val) {
-    const cleanName = name.trim();
-    const lifter = window.getActiveLifter();
-    let allWeights = JSON.parse(localStorage.getItem(M?.workout?.exerciseWeights || "pegasus_exercise_weights") || "{}");
-
-    if (!allWeights[lifter]) allWeights[lifter] = {};
-    allWeights[lifter][cleanName] = val;
-    localStorage.setItem(M?.workout?.exerciseWeights || "pegasus_exercise_weights", JSON.stringify(allWeights));
-
-    if (lifter === "ΑΓΓΕΛΟΣ") {
-        localStorage.setItem(`weight_ΑΓΓΕΛΟΣ_${cleanName}`, val);
-    }
-
-    syncPegasusUserRuntime();
-
-    if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render();
-    if (window.PegasusCloud?.push) window.PegasusCloud.push();
-};
+console.log("⚖️ PEGASUS WEIGHT: Module Operational & Hardened (v1.4).");

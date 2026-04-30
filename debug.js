@@ -1,61 +1,4 @@
 /* ==========================================================================
-   PEGASUS DIAGNOSTICS RUNTIME
-   Extracted from app.js to preserve behavior while shrinking the main runtime.
-   ========================================================================== */
-
-/* ===== 1. ISSUE LOGGER (DIAGNOSTIC MODE) ===== */
-window.pegasusLogs = (() => { try { return JSON.parse(localStorage.getItem(P_M?.system?.logs || "pegasus_system_logs") || "[]"); } catch (e) { console.warn("⚠️ PEGASUS LOGS RESET:", e); return []; } })();
-const originalError = console.error;
-const originalWarn = console.warn;
-
-console.error = function(...args) {
-    window.pegasusLogs.push({ type: "ERROR", time: new Date().toLocaleTimeString('el-GR'), msg: args.join(" ") });
-    localStorage.setItem(P_M?.system?.logs || "pegasus_system_logs", JSON.stringify(window.pegasusLogs.slice(-50)));
-    originalError.apply(console, args);
-};
-
-console.warn = function(...args) {
-    window.pegasusLogs.push({ type: "WARNING", time: new Date().toLocaleTimeString('el-GR'), msg: args.join(" ") });
-    localStorage.setItem(P_M?.system?.logs || "pegasus_system_logs", JSON.stringify(window.pegasusLogs.slice(-50)));
-    originalWarn.apply(console, args);
-};
-
-window.addEventListener('error', function(event) {
-    console.error(`Runtime Error: ${event.message} at ${event.filename}:${event.lineno}`);
-});
-
-window.PegasusDebug = {
-    state: () => ({ exercises, remainingSets, currentIdx, running, phase, phaseRemainingSeconds }),
-    session: () => (typeof window.getPegasusSessionState === "function" ? window.getPegasusSessionState() : null),
-    progress: () => (typeof window.getPegasusProgressState === "function" ? window.getPegasusProgressState() : null),
-    summary: () => (typeof window.getPegasusRuntimeSummary === "function" ? window.getPegasusRuntimeSummary() : null),
-    timerDisplay: () => (typeof window.getPegasusTimerDisplayState === "function" ? window.getPegasusTimerDisplayState() : null),
-    controls: () => (typeof window.getPegasusControlState === "function" ? window.getPegasusControlState() : null),
-    uiState: () => (typeof window.getPegasusUiState === "function" ? window.getPegasusUiState() : null),
-    replayProgress: (limit) => (typeof window.getPegasusReplayProgress === "function" ? window.getPegasusReplayProgress(limit) : null),
-    persistedProgress: () => (typeof window.getPegasusPersistedProgress === "function" ? window.getPegasusPersistedProgress() : null),
-    restorePersistedProgress: () => (typeof window.restorePegasusPersistedProgress === "function" ? window.restorePegasusPersistedProgress() : null),
-    clearPersistedProgress: () => (typeof window.clearPegasusPersistedProgress === "function" ? window.clearPegasusPersistedProgress() : null),
-    actions: (limit) => (window.PegasusEngine?.getActionTypes ? window.PegasusEngine.getActionTypes(limit || 25) : ((window.PegasusEngine?.getEventBuffer ? window.PegasusEngine.getEventBuffer() : []).slice(-(limit || 25)).map(ev => ev.type))),
-    actionEntries: (limit) => (window.PegasusEngine?.getActionEntries ? window.PegasusEngine.getActionEntries(limit || 25) : []),
-    checkpoints: (limit) => (window.PegasusEngine?.getCheckpoints ? window.PegasusEngine.getCheckpoints(limit || 10) : []),
-    workoutActions: (limit) => (window.PegasusEngine?.getWorkoutActionTypes ? window.PegasusEngine.getWorkoutActionTypes(limit || 25) : []),
-    workout: () => (window.PegasusEngine?.getWorkoutState ? window.PegasusEngine.getWorkoutState() : null),
-    timers: () => (window.PegasusEngine?.getTimerState ? window.PegasusEngine.getTimerState() : null),
-    user: () => (window.PegasusEngine?.getUserState ? window.PegasusEngine.getUserState() : null),
-    engineState: () => (window.PegasusEngine?.getState ? window.PegasusEngine.getState() : null),
-    replay: (limit) => (window.PegasusEngine?.replay ? window.PegasusEngine.replay(limit) : null),
-    manifest: () => P_M,
-    testImage: (name) => {
-        const testImg = new Image();
-        testImg.onload = () => console.log(`%c ✅ ASSET FOUND: ${name}.png`, "color: #4CAF50; font-weight: bold;");
-        testImg.onerror = () => console.error(`%c ❌ ASSET 404: ${name}.png is missing from GitHub!`, "color: #ff4444;");
-        testImg.src = `images/${name}.png`;
-    },
-    logs: () => window.pegasusLogs
-};
-
-/* ==========================================================================
    PEGASUS COMMAND TRACER & HEALTH - v5.4 (DOUBLE-CARDIO FIX)
    Protocol: Scope Isolation, Global Var Protection & Dynamic Metabolic Audit
    Status: FINAL STABLE | FIXED: EFFECTIVE TARGET DOUBLE COUNT
@@ -201,25 +144,6 @@ window.PegasusDebugHelpers = {
         }
     },
 
-
-    getRestBaseTarget: function() {
-        if (typeof window.getPegasusRestDailyTarget === "function") {
-            const val = parseFloat(window.getPegasusRestDailyTarget());
-            return isNaN(val) ? 2100 : val;
-        }
-        return 2100;
-    },
-
-    getStrengthBonus: function() {
-        if (typeof window.getPegasusStrengthWorkoutLoadInfo === "function") {
-            const info = window.getPegasusStrengthWorkoutLoadInfo();
-            const val = parseFloat(info?.bonus);
-            if (!isNaN(val)) return Math.round(val);
-        }
-        const stored = parseFloat(localStorage.getItem("pegasus_strength_bonus_today"));
-        return isNaN(stored) ? 0 : Math.round(stored);
-    },
-
     getEffectiveTarget: function() {
         if (typeof window.getPegasusEffectiveDailyTarget === "function") {
             const target = parseFloat(window.getPegasusEffectiveDailyTarget());
@@ -297,8 +221,6 @@ window.verifyCalorieLogic = () => {
     const tdee = Math.round(bmr * 1.55);
 
     const baseTarget = window.PegasusDebugHelpers.getBaseTarget();
-    const restBase = window.PegasusDebugHelpers.getRestBaseTarget();
-    const strengthBonus = window.PegasusDebugHelpers.getStrengthBonus();
     const cardioOffset = window.PegasusDebugHelpers.getTodayCardioOffset();
     const target = window.PegasusDebugHelpers.getEffectiveTarget();
 
@@ -307,11 +229,9 @@ window.verifyCalorieLogic = () => {
         "0": { Parameter: "Active Weight", Value: `${activeWeight} kg`, Status: "OK" },
         "1": { Parameter: "BMR (Current)", Value: `${bmr.toFixed(0)} kcal`, Status: "NOMINAL" },
         "2": { Parameter: "TDEE (1.55x)", Value: `${tdee} kcal`, Status: "NOMINAL" },
-        "3": { Parameter: "Rest Base", Value: `${restBase} kcal`, Status: "BASE" },
-        "4": { Parameter: "Strength Bonus", Value: `${strengthBonus} kcal`, Status: strengthBonus > 0 ? "ADDED" : "NONE" },
-        "5": { Parameter: "Base Strategy", Value: `${baseTarget} kcal`, Status: "PLAN-DRIVEN" },
-        "6": { Parameter: "Cardio Offset", Value: `${cardioOffset} kcal`, Status: cardioOffset > 0 ? "ADDED" : "NONE" },
-        "7": { Parameter: "Effective Target", Value: `${target} kcal`, Status: "DYNAMIC" }
+        "3": { Parameter: "Base Strategy", Value: `${baseTarget} kcal`, Status: "PLAN-DRIVEN" },
+        "4": { Parameter: "Cardio Offset", Value: `${cardioOffset} kcal`, Status: cardioOffset > 0 ? "ADDED" : "NONE" },
+        "5": { Parameter: "Effective Target", Value: `${target} kcal`, Status: "DYNAMIC" }
     });
 
     if (currentWeight > 150 || (currentWeight < 40 && currentWeight !== 0)) {
@@ -330,11 +250,14 @@ window.pegasusHealthCheck = async function() {
     let errors = [];
     let warnings = [];
 
-    const isMobile = window.location.pathname.includes("mobile.html");
+    const isMobile = window.location.pathname.includes("mobile.html") || window.innerWidth <= 800;
 
     if (typeof window.program === 'undefined') errors.push("Critical: data.js not loaded.");
     if (!window.PegasusManifest) errors.push("Critical: manifest.js missing.");
     if (!window.PegasusDebugHelpers.isEngineReady()) errors.push("Critical: pegasusCore.js not loaded.");
+
+    const lastPush = localStorage.getItem("pegasus_last_push");
+    if (!lastPush) warnings.push("Sync: No Cloud Push history.");
 
     const essential = isMobile
         ? ["sync-indicator"]

@@ -17,7 +17,7 @@ optimize: function() {
         // 🔄 Σύνδεση με τον Optimizer για κοινούς στόχους
         const targets = (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === "function")
             ? window.PegasusOptimizer.getTargets()
-            : { "Στήθος": 16, "Πλάτη": 16, "Ώμοι": 12, "Χέρια": 14, "Πόδια": 24, "Κορμός": 18 };
+            : { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Πόδια": 24, "Κορμός": 12 };
         
         // 1. Υπολογισμός Ελλείψεων
         let deficits = {};

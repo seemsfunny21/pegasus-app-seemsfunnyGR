@@ -93,7 +93,7 @@
                 return;
             }
 
-            const transactions = (window.PegasusMobileSafe?.safeReadStorage(FINANCE_DATA_KEY, [], { repairOnFailure: true })) || [];
+            const transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
             const newEntry = {
                 id: Date.now(),
                 date: new Date().toLocaleDateString('el-GR'),
@@ -111,7 +111,7 @@
 
         deleteTransaction: function(id) {
             if(confirm('Οριστική διαγραφή συναλλαγής;')) {
-                let transactions = (window.PegasusMobileSafe?.safeReadStorage(FINANCE_DATA_KEY, [], { repairOnFailure: true })) || [];
+                let transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
                 transactions = transactions.filter(t => t.id !== id);
                 this.saveAndRender(transactions);
             }
@@ -122,7 +122,7 @@
             const balanceDisplay = document.getElementById('totalBalance');
             if (!historyContainer) return;
 
-            const transactions = (window.PegasusMobileSafe?.safeReadStorage(FINANCE_DATA_KEY, [], { repairOnFailure: true })) || [];
+            const transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
             let total = 0;
             let html = '';
 
@@ -134,8 +134,8 @@
                 html += `
                     <div class="mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-color: #222; background: rgba(20,20,20,0.8);">
                         <div style="flex: 1; text-align: left;">
-                            <div style="font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 2px;">${(window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? "")))(t.desc)}</div>
-                            <div style="font-size: 9px; color: #555; font-weight: 800; letter-spacing: 1px;">${(window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? "")))(t.date)}</div>
+                            <div style="font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 2px;">${t.desc}</div>
+                            <div style="font-size: 9px; color: #555; font-weight: 800; letter-spacing: 1px;">${t.date}</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <div style="font-weight: 900; color: ${color}; font-size: 16px;">${sign}${t.amount.toFixed(2)}€</div>

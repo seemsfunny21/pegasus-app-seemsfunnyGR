@@ -9,11 +9,14 @@
     <link rel="apple-touch-icon" href="images/favicon.png">
     
     <script>
-const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-if (isMobileAgent && !window.location.pathname.includes('/mobile/')) {
-  window.location.replace('mobile/mobile.html' + window.location.search + window.location.hash);
-}
-</script>
+        /* PEGASUS DEVICE ROUTING PROTOCOL v16.0 */
+        const isMobileAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isSmallScreen = window.innerWidth <= 800;
+
+        if (isMobileAgent || isSmallScreen) {
+           window.location.replace("mobile/mobile.html" + window.location.search + window.location.hash);
+        }
+    </script>
 </head>
 <body>
 
@@ -372,13 +375,107 @@ if (isMobileAgent && !window.location.pathname.includes('/mobile/')) {
     </div>
 </div>
 
+<script>
+    /* PEGASUS SECURITY PROTOCOL - DESKTOP ON-DEMAND SYNC (v18.3) */
+    function updateVaultButton(isConnected) {
+        const vaultBtn = document.getElementById("btnMasterVault");
+        if (!vaultBtn) return;
 
+        if (isConnected) {
+            vaultBtn.textContent = "☁️ CLOUD: ΣΥΝΔΕΔΕΜΕΝΟ";
+            vaultBtn.style.borderColor = "#00ff41";
+            vaultBtn.style.color = "#00ff41";
+        } else {
+            vaultBtn.textContent = "🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ";
+            vaultBtn.style.borderColor = "#00bcd4";
+            vaultBtn.style.color = "#00bcd4";
+        }
+    }
 
+    function openVaultModal() {
+        const modal = document.getElementById("pinModal");
+        if (!modal) return;
+        modal.style.display = "flex";
+        const pinInput = document.getElementById("pinInput");
+        if (pinInput) setTimeout(() => pinInput.focus(), 60);
+    }
+
+    async function handleDesktopSyncOpen() {
+        try {
+            if (window.PegasusCloud?.isUnlocked) {
+                updateVaultButton(true);
+                if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
+                    await window.PegasusCloud.syncNow(true);
+                }
+                if (typeof refreshAllUI === 'function') refreshAllUI();
+                return;
+            }
+
+            if (window.PegasusCloud?.canAutoUnlock?.()) {
+                const ok = await window.PegasusCloud.tryAutoUnlock();
+                updateVaultButton(!!ok);
+                if (ok) {
+                    if (navigator.onLine && typeof window.PegasusCloud.syncNow === "function") {
+                        await window.PegasusCloud.syncNow(true);
+                    }
+                    if (typeof refreshAllUI === 'function') refreshAllUI();
+                    return;
+                }
+            }
+
+            openVaultModal();
+        } catch (e) {
+            console.error("Desktop Vault Open Error:", e);
+            updateVaultButton(false);
+            openVaultModal();
+        }
+    }
+
+    async function attemptVaultUnlock() {
+        const pinInput = document.getElementById("pinInput");
+        const masterInput = document.getElementById("masterKeyInput");
+        const errorDiv = document.getElementById("pinError");
+        const pin = pinInput ? pinInput.value.trim() : "";
+        const masterKey = masterInput ? masterInput.value.trim() : "";
+
+        if (errorDiv) errorDiv.textContent = "";
+        if (!pin || !masterKey) {
+            if (errorDiv) errorDiv.textContent = "ΣΥΜΠΛΗΡΩΣΕ PIN ΚΑΙ MASTER KEY";
+            return;
+        }
+
+        const success = await window.PegasusCloud?.unlock(pin, masterKey);
+
+        if (success) {
+            document.getElementById("pinModal").style.display = "none";
+            updateVaultButton(true);
+            if (navigator.onLine && typeof window.PegasusCloud?.syncNow === "function") {
+                await window.PegasusCloud.syncNow(true);
+            }
+            if (typeof refreshAllUI === 'function') refreshAllUI();
+        } else {
+            if (errorDiv) errorDiv.textContent = "ΑΡΝΗΣΗ ΠΡΟΣΒΑΣΗΣ: ΛΑΘΟΣ PIN / MASTER KEY";
+            if (pinInput) pinInput.value = "";
+            if (masterInput) masterInput.value = "";
+        }
+    }
+
+    function skipVault() {
+        document.getElementById("pinModal").style.display = "none";
+        updateVaultButton(false);
+    }
+
+    window.addEventListener("load", () => {
+        updateVaultButton(false);
+    });
+
+    window.addEventListener("pegasus_sync_status", (e) => {
+        const status = e?.detail?.status || "";
+        updateVaultButton(status === "online" || status === "syncing");
+    });
+</script>
 
 <script src="manifest.js"></script>
-<script src="mobile/mobileDataRegistry.js"></script>
-<script src="mobile/mobileDataMigration.js"></script>
-<script src="storageHardening.js"></script>
 <script src="dialogs.js"></script>
 <script src="i18n.js"></script>
 <script src="data.js"></script>
@@ -387,33 +484,82 @@ if (isMobileAgent && !window.location.pathname.includes('/mobile/')) {
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" defer></script>
 <script src="dynamic.js"></script> 
 <script src="progressUI.js"></script>
+<script src="weather.js"></script>
+<script src="backup.js"></script>
+<script src="inventoryHandler.js"></script>
 <script src="pegasusCore.js"></script>
 <script src="cloudSync.js"></script>
 <script src="protcrea.js"></script>
 <script src="food.js"></script> 
-<script src="foodRegistry.js?v=24.2"></script>
-<script src="slotRegistry.js?v=24.2"></script>
-<script src="dietAdvisor.js?v=24.2"></script>
+<script src="foodRegistry.js"></script>
+<script src="slotRegistry.js"></script>
+<script src="dietAdvisor.js"></script>
+<script src="dietVariation.js"></script>
 <script src="extensions.js"></script>
 <script src="ems.js"></script>
 <script src="cardio.js"></script>
+<script src="calendar.js"></script>
 <script src="gallery.js"></script>
+<script src="partner.js"></script>
+<script src="achievements.js"></script>
 <script src="dragDrop.js"></script>
 <script src="reporting.js"></script>
 <script src="metabolicEngine.js"></script>
 <script src="weightTracker.js"></script>
-<script src="desktopPanels.js"></script>
-<script src="desktopActions.js"></script>
-<script src="desktopBoot.js"></script>
-<script src="calorieRuntime.js"></script>
-<script src="runtimeBridge.js"></script>
-<script src="pegasusBridgeHub.js"></script>
-<script src="selfCheckRunner.js"></script>
-<script src="programGuide.js"></script>
+<script src="app.js"></script> 
 <script src="debug.js"></script>
 <script src="auditUI.js"></script>
+<script src="adaptiveTypography.js"></script>
 
-<script src="adaptiveTypography.js?v=24.2"></script>
+<script>
+    /* PEGASUS ANTI-AUTOCOMPLETE PROTOCOL */
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('input').forEach(input => {
+            input.setAttribute('autocomplete', 'off');
+            input.setAttribute('autocorrect', 'off');
+            input.setAttribute('autocapitalize', 'off');
+            input.setAttribute('spellcheck', 'false');
+        });
+    });
 
+    /* 📊 DYNAMIC UI BRIDGE (v16.4 ALIGNED) */
+    window.forcePegasusRender = function() {
+        if (window.MuscleProgressUI && typeof window.MuscleProgressUI.render === "function") {
+            window.MuscleProgressUI.render(true);
+        } else {
+            console.warn("⚠️ PEGASUS: MuscleProgressUI module not loaded yet.");
+        }
+    };
+
+    const btnPreview = document.getElementById('btnPreviewUI');
+    if (btnPreview) {
+        btnPreview.addEventListener('click', () => { 
+            setTimeout(window.forcePegasusRender, 200); 
+        });
+    }
+
+    /* 🛡️ SERVICE WORKER & LOADER PROTOCOL */
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data && event.data.type === 'CACHE_PROGRESS') {
+                const percent = event.data.percent;
+                const loaderBar = document.querySelector('.loader-bar-fill');
+                const loaderText = document.querySelector('.loader-text');
+                if (loaderBar) loaderBar.style.width = percent + '%';
+                if (loaderText) loaderText.textContent = `STORAGE INITIALIZATION: ${percent}%`;
+                if (percent === 100) {
+                    setTimeout(() => {
+                        if (loaderText) loaderText.textContent = "SYSTEM READY - ENCRYPTED";
+                    }, 500);
+                }
+            }
+        });
+
+        window.addEventListener('load', () => {
+            const swPath = window.location.pathname.includes('mobile/') ? '../sw.js' : './sw.js';
+            navigator.serviceWorker.register(swPath + '?v=3.12').catch(err => console.error("🛡️ SW Error:", err));
+        });
+    }
+</script>
 </body>
 </html>

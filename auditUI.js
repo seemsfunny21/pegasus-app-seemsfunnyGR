@@ -79,38 +79,6 @@ window.PegasusAuditUI = {
         return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     },
 
-
-    getRestBaseTarget() {
-        if (typeof window.getPegasusRestDailyTarget === "function") {
-            const target = parseFloat(window.getPegasusRestDailyTarget());
-            return Math.round(isNaN(target) ? 2100 : target);
-        }
-        if (typeof window.PegasusMetabolic?.getRestDailyTarget === "function") {
-            const target = parseFloat(window.PegasusMetabolic.getRestDailyTarget());
-            return Math.round(isNaN(target) ? 2100 : target);
-        }
-        return 2100;
-    },
-
-    getStrengthBonus() {
-        if (typeof window.PegasusMetabolic?.getStrengthWorkoutLoadInfo === "function") {
-            const info = window.PegasusMetabolic.getStrengthWorkoutLoadInfo();
-            const bonus = parseFloat(info?.bonus);
-            if (!isNaN(bonus)) return Math.round(bonus);
-        }
-        const stored = parseFloat(localStorage.getItem("pegasus_strength_bonus_today"));
-        return isNaN(stored) ? 0 : Math.round(stored);
-    },
-
-    getMetabolicBreakdownLabel(targetKcal, cardioOffset) {
-        const restBase = this.getRestBaseTarget();
-        const strengthBonus = this.getStrengthBonus();
-        if (strengthBonus > 0) {
-            return `${targetKcal} kcal | rest ${restBase} + strength ${strengthBonus} + cardio ${cardioOffset}`;
-        }
-        return `${targetKcal} kcal | rest ${restBase} + cardio ${cardioOffset}`;
-    },
-
     getTodayCardioOffset() {
         if (typeof window.getPegasusTodayCardioOffset === "function") {
             const offset = parseFloat(window.getPegasusTodayCardioOffset());
@@ -134,12 +102,8 @@ window.PegasusAuditUI = {
             return Math.round(isNaN(target) ? 2800 : target);
         }
 
-        const stored = parseFloat(
-            localStorage.getItem(M?.diet?.effectiveTodayKcal || "pegasus_effective_today_kcal") ||
-            localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal")
-        );
-        if (!isNaN(stored) && stored > 0) return Math.round(stored);
-        const base = this.getExpectedBaseTarget();
+        const stored = parseFloat(localStorage.getItem(M?.diet?.todayKcal || "pegasus_today_kcal"));
+        const base = isNaN(stored) ? this.getExpectedBaseTarget() : stored;
         const cardio = this.getTodayCardioOffset();
         return Math.round(base + cardio);
     },
@@ -198,7 +162,7 @@ window.PegasusAuditUI = {
             report.warnings.push(`Storage High: ${storageMB.toFixed(2)}MB`);
         }
 
-        const keysToTest = ['pegasus_weight', 'pegasus_today_kcal', 'pegasus_goal_kcal', 'pegasus_effective_today_kcal', 'pegasus_weekly_kcal'];
+        const keysToTest = ['pegasus_weight', 'pegasus_today_kcal', 'pegasus_weekly_kcal'];
         keysToTest.forEach(k => {
             const raw = localStorage.getItem(k);
             if (raw !== null && raw !== "" && isNaN(parseFloat(raw))) {
@@ -237,7 +201,7 @@ window.PegasusAuditUI = {
 
         if (!isAnomalous) {
             console.log(
-                `%c 🟢 AUDIT: Metabolic Alignment OK (${this.getMetabolicBreakdownLabel(targetKcal, cardioOffset)})`,
+                `%c 🟢 AUDIT: Metabolic Alignment OK (${targetKcal} kcal | base ${baseTarget} + cardio ${cardioOffset})`,
                 "color: #4CAF50"
             );
         }

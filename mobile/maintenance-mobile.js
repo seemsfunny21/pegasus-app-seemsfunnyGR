@@ -30,7 +30,7 @@
                 return;
             }
 
-            let tasks = (window.PegasusMobileSafe?.safeReadStorage(MAINTENANCE_DATA_KEY, [], { repairOnFailure: true })) || [];
+            let tasks = JSON.parse(localStorage.getItem(MAINTENANCE_DATA_KEY)) || [];
             
             const newEntry = {
                 id: 'maint_' + Date.now(),
@@ -47,7 +47,7 @@
         },
 
         resetTask: function(id) {
-            let tasks = (window.PegasusMobileSafe?.safeReadStorage(MAINTENANCE_DATA_KEY, [], { repairOnFailure: true })) || [];
+            let tasks = JSON.parse(localStorage.getItem(MAINTENANCE_DATA_KEY)) || [];
             const idx = tasks.findIndex(t => t.id === id);
             if (idx === -1) return;
 
@@ -57,7 +57,7 @@
 
         deleteTask: function(id) {
             if(confirm('Οριστική διαγραφή αυτού του καθήκοντος;')) {
-                let tasks = (window.PegasusMobileSafe?.safeReadStorage(MAINTENANCE_DATA_KEY, [], { repairOnFailure: true })) || [];
+                let tasks = JSON.parse(localStorage.getItem(MAINTENANCE_DATA_KEY)) || [];
                 tasks = tasks.filter(t => t.id !== id);
                 this.saveAndRender(tasks);
             }
@@ -103,7 +103,7 @@
         const container = document.getElementById('maint-content');
         if (!container) return;
 
-        const tasks = (window.PegasusMobileSafe?.safeReadStorage(MAINTENANCE_DATA_KEY, [], { repairOnFailure: true })) || [];
+        const tasks = JSON.parse(localStorage.getItem(MAINTENANCE_DATA_KEY)) || [];
         
         // 🚀 ΝΕΑ ΛΟΓΙΚΗ: Ημερολογιακός Υπολογισμός (Μεσάνυχτα)
         const now = new Date();
@@ -133,16 +133,14 @@
             // Υπολογισμός ποσοστού για την μπάρα
             const pct = Math.max(0, Math.min(100, (diffDays / task.interval) * 100));
 
-            const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
-            const safeId = encodeURIComponent(String(task.id || ''));
             return `
                 <div class="mini-card" style="border-left: 4px solid ${statusColor}; padding: 15px; position: relative;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                         <div>
-                            <div style="font-weight: 900; font-size: 14px; color: #fff; text-transform: uppercase;">${esc(task.label)}</div>
-                            <div style="font-size: 10px; color: ${statusColor}; font-weight: 800; margin-top: 2px;">ΚΑΤΑΣΤΑΣΗ: ${esc(statusTxt)}</div>
+                            <div style="font-weight: 900; font-size: 14px; color: #fff; text-transform: uppercase;">${task.label}</div>
+                            <div style="font-size: 10px; color: ${statusColor}; font-weight: 800; margin-top: 2px;">ΚΑΤΑΣΤΑΣΗ: ${statusTxt}</div>
                         </div>
-                        <button onclick="window.PegasusMaintenance.deleteTask(decodeURIComponent('${safeId}'))" style="background:none; border:none; color:#333; font-size:12px; cursor: pointer;">🗑️</button>
+                        <button onclick="window.PegasusMaintenance.deleteTask('${task.id}')" style="background:none; border:none; color:#333; font-size:12px; cursor: pointer;">🗑️</button>
                     </div>
                     
                     <div class="bar-bg" style="height: 4px; margin-bottom: 15px;">
@@ -150,7 +148,7 @@
                     </div>
                     
                     <button class="primary-btn" style="padding: 10px; font-size: 11px; background: rgba(0,255,65,0.05); border-color: ${statusColor}; color: ${statusColor};" 
-                            onclick="window.PegasusMaintenance.resetTask(decodeURIComponent('${safeId}'))">
+                            onclick="window.PegasusMaintenance.resetTask('${task.id}')">
                         ✅ ΟΛΟΚΛΗΡΩΘΗΚΕ (RESET)
                     </button>
                 </div>
