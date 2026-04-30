@@ -43,3 +43,8 @@ PEGASUS 141 - MANUAL DAY SWITCH EXERCISE CARD LAYOUT FIX
 - Fixed the manual day-switch layout bug where the dynamic optimizer forced exercise cards to display:flex.
 - Exercise cards now keep their CSS block/grid structure after selecting a day manually.
 - Service worker cache version bumped to pegasus-shield-v3.74-FINAL-141.
+
+PEGASUS 142 - PREVIEW TITLE CLEANUP
+- Removed the duplicate “ΕΒΔΟΜΑΔΙΑΙΑ ΠΡΟΟΔΟΣ” pill from Preview & Progress.
+- Kept weekly progress bars, done/target counters, and daily exercise preview unchanged.
+- Service worker cache version bumped to pegasus-shield-v3.75-FINAL-142.

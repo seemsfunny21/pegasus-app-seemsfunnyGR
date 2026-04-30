@@ -216,15 +216,8 @@ window.MuscleProgressUI = {
 
         const pegasusGreen = "#00ff41";
 
-        const sourceLabel = "ΕΒΔΟΜΑΔΙΑΙΑ ΠΡΟΟΔΟΣ";
-
         let htmlString = `
         <div class="pegasus-weekly-progress-card">
-            <div class="pegasus-weekly-progress-title-wrap">
-                <div class="pegasus-weekly-progress-title">
-                    ${sourceLabel}
-                </div>
-            </div>
             <div class="pegasus-weekly-progress-grid">`;
 
         const strictGroups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
