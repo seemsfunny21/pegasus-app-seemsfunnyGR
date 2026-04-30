@@ -75,17 +75,80 @@ window.getPegasusActivePlan = function() {
     return localStorage.getItem('pegasus_active_plan') || 'IRON';
 };
 
-window.openPegasusPlanModal = window.openPegasusPlanModal || function() {
-    const modal = document.getElementById('planModal');
+window.openPegasusPlanModal = function() {
+    let modal = document.getElementById('planModal');
+
+    // PEGASUS 138 FIX: the selector must open even if the legacy HTML block
+    // is missing, hidden below the page flow, or another panel handler already ran.
     if (!modal) {
-        console.warn('⚠️ PEGASUS PLAN: planModal not found.');
-        return false;
+        modal = document.createElement('div');
+        modal.id = 'planModal';
+        modal.className = 'pegasus-panel';
+        modal.innerHTML = `
+            <button type="button" onclick="window.closePegasusPlanModal()" style="position:absolute; top:10px; right:12px; background:#111; border:1px solid #333; color:#aaa; border-radius:10px; padding:7px 10px; cursor:pointer; font-weight:900;">✕</button>
+            <h3 style="text-align:center; color:#4CAF50; font-size:22px; letter-spacing:2px; margin-top:0; margin-bottom:25px; font-weight:900; text-transform:uppercase;">ΕΠΙΛΟΓΗ ΠΡΟΓΡΑΜΜΑΤΟΣ</h3>
+            <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+                <button type="button" onclick="window.setPegasusPlan('IRON')" class="pegasus-plan-option"><span>IRON</span><small>Push / Pull / Upper + Ποδήλατο</small></button>
+                <button type="button" onclick="window.setPegasusPlan('EMS_ONLY')" class="pegasus-plan-option"><span>EMS ONLY</span><small>Βάρη + IMS / EMS</small></button>
+                <button type="button" onclick="window.setPegasusPlan('BIKE_ONLY')" class="pegasus-plan-option"><span>BIKE ONLY</span><small>Βάρη + Ποδήλατο Σ/Κ</small></button>
+                <button type="button" onclick="window.setPegasusPlan('HYBRID')" class="pegasus-plan-option"><span>HYBRID</span><small>Βάρη + EMS + Ποδήλατο</small></button>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
-    document.querySelectorAll?.('.pegasus-panel, #emsModal')?.forEach(panel => {
+
+    document.querySelectorAll('.pegasus-panel, #emsModal').forEach(panel => {
         if (panel !== modal) panel.style.display = 'none';
     });
-    modal.style.display = 'block';
-    modal.style.zIndex = '10050';
+
+    Object.assign(modal.style, {
+        display: 'block',
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '580px',
+        maxWidth: '94vw',
+        maxHeight: '88vh',
+        overflowY: 'auto',
+        padding: '35px 25px',
+        zIndex: '100500',
+        border: '2px solid #4CAF50',
+        boxShadow: '0 0 45px rgba(76, 175, 80, 0.35), 0 0 0 9999px rgba(0,0,0,0.72)',
+        background: '#0a0a0a',
+        borderRadius: '20px'
+    });
+
+    modal.querySelectorAll('.pegasus-plan-option').forEach(btn => {
+        btn.style.background = '#111';
+        btn.style.border = '1px solid #333';
+        btn.style.color = '#fff';
+        btn.style.padding = '22px 14px';
+        btn.style.borderRadius = '14px';
+        btn.style.minHeight = '132px';
+        btn.style.display = 'flex';
+        btn.style.flexDirection = 'column';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.style.gap = '10px';
+        btn.style.cursor = 'pointer';
+        btn.style.fontWeight = '900';
+    });
+
+    modal.querySelectorAll('.pegasus-plan-option span').forEach(span => {
+        span.style.color = '#4CAF50';
+        span.style.fontSize = '15px';
+        span.style.letterSpacing = '1px';
+    });
+
+    modal.querySelectorAll('.pegasus-plan-option small').forEach(small => {
+        small.style.color = '#ddd';
+        small.style.fontSize = '11px';
+        small.style.lineHeight = '1.35';
+        small.style.textAlign = 'center';
+    });
+
+    console.log('✅ PEGASUS PLAN: Selector opened.');
     return true;
 };
 
