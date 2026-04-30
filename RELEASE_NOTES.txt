@@ -38,3 +38,8 @@ PEGASUS 137 - INVENTORY RESTORE + CYCLING CONSISTENCY
 - Removes obsolete encoded TXT documentation artifacts from the clean zip.
 - Service worker cache version bumped to pegasus-shield-v3.70-FINAL-137.
 - Mobile supplement decrement buttons are disabled; supplement stock is consumed only through Diet entries and restored on Diet deletion.
+
+PEGASUS 141 - MANUAL DAY SWITCH EXERCISE CARD LAYOUT FIX
+- Fixed the manual day-switch layout bug where the dynamic optimizer forced exercise cards to display:flex.
+- Exercise cards now keep their CSS block/grid structure after selecting a day manually.
+- Service worker cache version bumped to pegasus-shield-v3.74-FINAL-141.

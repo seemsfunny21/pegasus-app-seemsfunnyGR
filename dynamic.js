@@ -50,7 +50,9 @@ optimize: function() {
                 // Αν το τρέχον σύνολο + ο νέος χρόνος <= 60 λεπτά
                 if ((totalSets * this.setDuration) + cost <= this.maxMinutes) {
                     if (!isStretching) totalSets += sets;
-                    ex.style.display = "flex"; 
+                    // PEGASUS 141 FIX: keep exercise card CSS layout on manual day switch.
+                    ex.style.display = "";
+                    ex.style.flexDirection = ""; 
                     ex.setAttribute("data-active", "true"); // Safety flag
                     ex.style.opacity = "1";
                     fragment.appendChild(ex);
