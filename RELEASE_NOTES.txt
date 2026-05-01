@@ -60,3 +60,8 @@ PEGASUS 144 - FAST BOOT RESTORE
 - Reverted the long post-load sync gate from peg143 because it made startup feel too slow.
 - Restored fast boot behavior from peg142: the app opens quickly and cloud sync continues in the background.
 - Kept the stable peg142 fixes and cache version bumped to pegasus-shield-v3.77-FINAL-144.
+
+PEGASUS 145 - VIDEO RESUME FIX
+- Fixed workout Pause → Συνέχεια behavior where the exercise video could remain frozen if the same video src was already loaded.
+- showVideo now resumes playback when running and the current video source is unchanged.
+- Service worker cache bumped to pegasus-shield-v3.78-FINAL-145.

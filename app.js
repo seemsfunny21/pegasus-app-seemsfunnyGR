@@ -1379,6 +1379,11 @@ function showVideo(i) {
             vid.load();
             vid.play().catch(() => {});
         });
+    } else if (running && vid.paused) {
+        // PEGASUS 145: Pause/Resume video recovery.
+        // When resuming the same exercise, src does not change, so the old
+        // showVideo branch skipped play() and the video stayed frozen.
+        vid.play().catch(() => {});
     }
 }
 
