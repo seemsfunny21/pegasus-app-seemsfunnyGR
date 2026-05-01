@@ -55,3 +55,8 @@ PEGASUS 143 - POST-LOAD SYNC GATE
 - Prevents the desktop from briefly showing stale cardio calories or weekly sets right after page load.
 - No new JS files added; bug/security sync polish only.
 - Service worker cache version bumped to pegasus-shield-v3.76-FINAL-143.
+
+PEGASUS 144 - FAST BOOT RESTORE
+- Reverted the long post-load sync gate from peg143 because it made startup feel too slow.
+- Restored fast boot behavior from peg142: the app opens quickly and cloud sync continues in the background.
+- Kept the stable peg142 fixes and cache version bumped to pegasus-shield-v3.77-FINAL-144.
