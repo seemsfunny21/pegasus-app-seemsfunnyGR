@@ -443,6 +443,40 @@ function getPegasusUiState() {
 
 window.getPegasusUiState = getPegasusUiState;
 
+
+/* ===== PEGASUS 146: AUTO-SCROLL ACTIVE EXERCISE ===== */
+function scrollPegasusActiveExerciseIntoView(idx = currentIdx, options = {}) {
+    try {
+        const list = document.getElementById("exList");
+        const ex = Array.isArray(exercises) ? exercises[idx] : null;
+        if (!list || !ex || typeof ex.getBoundingClientRect !== "function") return;
+
+        const activeEl = document.activeElement;
+        if (activeEl && activeEl.classList && activeEl.classList.contains("weight-input") && !options.force) {
+            return;
+        }
+
+        const listRect = list.getBoundingClientRect();
+        const exRect = ex.getBoundingClientRect();
+        const margin = Number(options.margin || 18);
+        const comfortablyVisible = exRect.top >= (listRect.top + margin) && exRect.bottom <= (listRect.bottom - margin);
+
+        if (comfortablyVisible && !options.force) return;
+
+        const targetTop = list.scrollTop + (exRect.top - listRect.top) - ((list.clientHeight - ex.offsetHeight) / 2);
+        const maxTop = Math.max(0, list.scrollHeight - list.clientHeight);
+        const nextTop = Math.max(0, Math.min(maxTop, targetTop));
+
+        list.scrollTo({
+            top: nextTop,
+            behavior: options.instant ? "auto" : "smooth"
+        });
+    } catch (e) {
+        console.warn("⚠️ PEGASUS AUTO-SCROLL: skipped", e);
+    }
+}
+window.scrollPegasusActiveExerciseIntoView = scrollPegasusActiveExerciseIntoView;
+
 function renderPegasusControlState() {
     const uiState = getPegasusUiState();
     const controls = uiState?.controls || getPegasusControlState();
@@ -961,6 +995,9 @@ function selectDay(btn, day) {
 
     setTimeout(() => {
         if (typeof showVideo === "function") showVideo(0);
+        if (typeof scrollPegasusActiveExerciseIntoView === "function") {
+            scrollPegasusActiveExerciseIntoView(0, { force: true, instant: true });
+        }
         if (exercises.length === 0) {
             list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
         }
@@ -1092,6 +1129,10 @@ function runPhase() {
     });
     e.style.borderColor = "#4CAF50";
     e.style.background = "rgba(76, 175, 80, 0.1)";
+
+    if (typeof scrollPegasusActiveExerciseIntoView === "function") {
+        requestAnimationFrame(() => scrollPegasusActiveExerciseIntoView(currentIdx));
+    }
 
     const config = getPegasusTimerConfig();
     if (phase === 2 && (!Number.isFinite(config.rest) || config.rest <= 0)) {
@@ -1240,7 +1281,12 @@ function skipToNextExercise() {
         syncPegasusProgressRuntime();
         dispatchPegasusWorkoutAction("WORKOUT_NEXT_RUNTIME");
         if (running) runPhase();
-        else showVideo(currentIdx);
+        else {
+            showVideo(currentIdx);
+            if (typeof scrollPegasusActiveExerciseIntoView === "function") {
+                requestAnimationFrame(() => scrollPegasusActiveExerciseIntoView(currentIdx, { force: true }));
+            }
+        }
     } else {
         finishWorkout();
     }
@@ -1289,6 +1335,10 @@ window.toggleSkipExercise = function(idx, auto = false) {
         exDiv.style.setProperty('opacity', '1', 'important');
         exDiv.style.setProperty('filter', 'none', 'important');
         remainingSets[idx] = Math.max(0, originalSets - done);
+    }
+
+    if (typeof scrollPegasusActiveExerciseIntoView === "function") {
+        requestAnimationFrame(() => scrollPegasusActiveExerciseIntoView(currentIdx));
     }
 
     calculateTotalTime(true);
