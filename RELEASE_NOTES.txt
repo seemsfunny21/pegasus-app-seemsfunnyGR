@@ -48,3 +48,10 @@ PEGASUS 142 - PREVIEW TITLE CLEANUP
 - Removed the duplicate “ΕΒΔΟΜΑΔΙΑΙΑ ΠΡΟΟΔΟΣ” pill from Preview & Progress.
 - Kept weekly progress bars, done/target counters, and daily exercise preview unchanged.
 - Service worker cache version bumped to pegasus-shield-v3.75-FINAL-142.
+
+PEGASUS 143 - POST-LOAD SYNC GATE
+- Desktop boot loader now waits for the first available cloud sync/auto-unlock before hiding.
+- After the initial pull, the desktop refreshes kcal target, food UI, supplement UI and weekly preview.
+- Prevents the desktop from briefly showing stale cardio calories or weekly sets right after page load.
+- No new JS files added; bug/security sync polish only.
+- Service worker cache version bumped to pegasus-shield-v3.76-FINAL-143.

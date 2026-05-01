@@ -1726,6 +1726,76 @@ window.updateTotalWorkoutCount = function() {
     }
 };
 
+
+/* ===== 10.9 POST-LOAD SYNC GATE (PEGASUS 143) ===== */
+function setPegasusBootLoaderStatus(message, percent) {
+    const loaderText = document.querySelector('.loader-text');
+    const loaderBar = document.querySelector('.loader-bar-fill');
+    if (loaderText && message) {
+        loaderText.innerHTML = `${message}<span class="dots"></span>`;
+    }
+    if (loaderBar && typeof percent === 'number') {
+        loaderBar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+    }
+}
+
+function refreshPegasusUiAfterCloudSync() {
+    const safe = (fn) => { try { if (typeof fn === 'function') fn(); } catch (e) { console.warn('⚠️ POST-LOAD REFRESH SKIPPED:', e); } };
+
+    safe(window.updateKcalUI);
+    safe(window.updateFoodUI);
+    safe(window.renderFood);
+    safe(window.updateSuppUI);
+    safe(window.renderCalendar);
+
+    try { window.MuscleProgressUI?.render?.(true); } catch (e) { console.warn('⚠️ POST-LOAD PREVIEW REFRESH SKIPPED:', e); }
+    try { window.PegasusDiet?.updateUI?.(); } catch (e) { console.warn('⚠️ POST-LOAD DIET REFRESH SKIPPED:', e); }
+    try { window.PegasusAdaptiveTypography?.refresh?.(); } catch (e) {}
+}
+
+function waitForPegasusCloudIdle(timeoutMs = 7000) {
+    return new Promise(resolve => {
+        const started = Date.now();
+        const tick = () => {
+            const cloud = window.PegasusCloud;
+            const busy = !!(cloud?.isPulling || cloud?.isPushing);
+            if (!busy || Date.now() - started >= timeoutMs) {
+                resolve(!busy);
+                return;
+            }
+            setTimeout(tick, 120);
+        };
+        tick();
+    });
+}
+
+async function runPegasusPostLoadSyncGate() {
+    const cloud = window.PegasusCloud;
+    if (!cloud || !navigator.onLine) {
+        refreshPegasusUiAfterCloudSync();
+        return false;
+    }
+
+    setPegasusBootLoaderStatus('συγχρονισμος δεδομενων', 82);
+
+    try {
+        if (!cloud.isUnlocked && typeof cloud.canAutoUnlock === 'function' && cloud.canAutoUnlock()) {
+            await cloud.tryAutoUnlock?.();
+        } else if (cloud.isUnlocked && typeof cloud.syncNow === 'function') {
+            await cloud.syncNow(true);
+        }
+
+        await waitForPegasusCloudIdle(7500);
+        refreshPegasusUiAfterCloudSync();
+        setPegasusBootLoaderStatus('ενημερωση προβολης', 96);
+        return !!cloud.hasSuccessfullyPulled || !!cloud.isUnlocked;
+    } catch (e) {
+        console.warn('⚠️ PEGASUS POST-LOAD SYNC GATE: Sync skipped.', e);
+        refreshPegasusUiAfterCloudSync();
+        return false;
+    }
+}
+
 /* ===== 11. BOOT SEQUENCE ===== */
 window.onload = () => {
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
@@ -1912,12 +1982,8 @@ window.onload = () => {
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
-    setTimeout(() => {
-        const loader = document.getElementById('pegasus-loader');
-        if (loader) {
-            loader.style.opacity = '0';
-            loader.style.visibility = 'hidden';
-        }
+    setTimeout(async () => {
+        await runPegasusPostLoadSyncGate();
 
         syncPegasusSelectedDay(todayName);
 
@@ -1929,7 +1995,16 @@ window.onload = () => {
         syncPegasusUserRuntime();
         renderPegasusControlState();
 
-        console.log("🛡️ PEGASUS OS: Initializing Complete. Welcome back, Angelos.");
+        const loader = document.getElementById('pegasus-loader');
+        if (loader) {
+            setPegasusBootLoaderStatus('system ready', 100);
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
+            }, 180);
+        }
+
+        console.log("🛡️ PEGASUS OS: Initializing Complete after post-load sync gate. Welcome back, Angelos.");
     }, 1000);
 };
 
