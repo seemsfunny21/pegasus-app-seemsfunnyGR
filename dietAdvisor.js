@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DIET ADVISOR - v2.2 (14-DAY ANALYST CLEANUP)
-   Protocol: 14-Day Nutrition Gap Scoring + Compact Recommendation UI
+   PEGASUS DIET ADVISOR - v2.3 (KOUKI DAILY MENU ROUTING)
+   Protocol: 14-Day Nutrition Gap Scoring + Daily Kouki Menu Recommendations
    ========================================================================== */
 (function() {
     var M = M || window.PegasusManifest;
@@ -134,7 +134,7 @@
         if (family === 'yogurt' || family === 'dairy_drinks' || family === 'cottage_soft_cheese' || hasAny(key, ['γιαουρτ', 'κεφιρ', 'cottage', 'τυρ'])) categories.add('dairy');
         if (family === 'whey' || hasAny(key, ['whey', 'πρωτειν', 'πρωτεινη'])) categories.add('whey');
         if (family === 'outside_meals' || hasAny(key, ['γυρο', 'πιτσα', 'burger', 'κρεπα', 'club', 'wrap', 'σουβλακ'])) categories.add('outside');
-        if (rawType === 'carb' || hasAny(key, ['μακαρον', 'παστιτσιο', 'μουσακα', 'λαζαν', 'κανελον'])) categories.add('carb');
+        if (rawType === 'carb' || rawType === 'pita' || rawType === 'dessert' || hasAny(key, ['μακαρον', 'παστιτσιο', 'μουσακα', 'λαζαν', 'κανελον', 'πιτα'])) categories.add('carb');
 
         return {
             family: family || (categories.has('chicken') || categories.has('red_meat') ? 'meat_main' : 'other'),
@@ -211,13 +211,16 @@
         if (!macros.kcal && !macros.protein) return;
 
         const cls = classifyFood(name, type);
+        const price = Number(raw?.price ?? raw?.p);
         seen.add(key);
         list.push({
             n: name,
             t: type,
             kcal: Math.round(macros.kcal),
             protein: Math.round(macros.protein),
+            price: Number.isFinite(price) ? price : null,
             source,
+            sourceLabel: source === 'today' ? t('Κούκι σήμερα', 'Kouki today') : (source === 'rotation' ? t('Εναλλακτική', 'Alternative') : 'Kouki'),
             family: cls.family,
             categories: cls.categories,
             key
@@ -227,9 +230,18 @@
     function getCandidates() {
         const candidates = [];
         const seen = new Set();
+        const todayKey = getTodayDayKey();
+        const todayMenu = window.KOUKI_MASTER_MENU?.[todayKey] || [];
 
-        // Purpose-built rotation options. These guarantee the advisor can actively
-        // correct low greens/legumes/fish even when today's Kouki menu is meat-heavy.
+        // Main rule: when Kouki has a menu for the current day, the advisor ranks
+        // only today's actual dishes. This keeps recommendations tied to the day
+        // instead of suggesting food from another weekday.
+        if (todayMenu.length) {
+            todayMenu.forEach(item => pushCandidate(candidates, seen, item, 'today'));
+            return candidates;
+        }
+
+        // Fallback only if the daily Kouki menu is unavailable.
         [
             { name: 'Χόρτα / πράσινα', type: 'greens', kcal: 120, protein: 5 },
             { name: 'Φασόλια / Φασολάδα', type: 'ospro', kcal: 400, protein: 18 },
@@ -239,10 +251,6 @@
             { name: 'Φρούτο', type: 'fruit', kcal: 80, protein: 1 },
             { name: 'Γιαούρτι', type: 'yogurt', kcal: 180, protein: 20 }
         ].forEach(item => pushCandidate(candidates, seen, item, 'rotation'));
-
-        const todayKey = getTodayDayKey();
-        const todayMenu = window.KOUKI_MASTER_MENU?.[todayKey] || [];
-        todayMenu.forEach(item => pushCandidate(candidates, seen, item, 'today'));
 
         const dbMenu = Array.isArray(window.PegasusKoukiDB) ? window.PegasusKoukiDB : [];
         dbMenu.forEach(item => pushCandidate(candidates, seen, item, 'kouki'));
@@ -385,18 +393,18 @@
             (kcalOvershoot / 100)
         );
 
-        const practicalBonus = item.source === 'today' ? 18 : (item.source === 'rotation' ? 25 : 0);
+        const practicalBonus = item.source === 'today' ? 55 : (item.source === 'rotation' ? 18 : 0);
         const score = macroScore + priority.boost + practicalBonus - repeat.penalty;
 
         let tone = 'orange';
-        let toneLabel = t('ΟΚ ΕΠΙΛΟΓΗ', 'OK OPTION');
+        let toneLabel = item.source === 'today' ? t('ΣΗΜΕΡΑ ΚΟΥΚΙ', 'TODAY AT KOUKI') : t('ΟΚ ΕΠΙΛΟΓΗ', 'OK OPTION');
         if (priority.boost >= 160) {
             tone = 'green';
-            toneLabel = t('ΠΡΟΤΕΙΝΕΤΑΙ ΠΡΩΤΑ', 'FIRST CHOICE');
+            toneLabel = item.source === 'today' ? t('ΣΗΜΕΡΙΝΗ ΠΡΟΤΕΡΑΙΟΤΗΤΑ', 'TODAY PRIORITY') : t('ΠΡΟΤΕΙΝΕΤΑΙ ΠΡΩΤΑ', 'FIRST CHOICE');
         }
         if (repeat.penalty >= 180 && priority.boost < 120) {
             tone = 'red';
-            toneLabel = t('ΤΕΛΕΥΤΑΙΑ ΕΠΙΛΟΓΗ', 'LAST OPTION');
+            toneLabel = item.source === 'today' ? t('ΤΕΛΕΥΤΑΙΑ ΑΠΟ ΣΗΜΕΡΑ', 'LAST FROM TODAY') : t('ΤΕΛΕΥΤΑΙΑ ΕΠΙΛΟΓΗ', 'LAST OPTION');
         }
 
         const reason = [...priority.reasons, ...repeat.notes].slice(0, 2).join(' ')
@@ -514,6 +522,9 @@
                 t: item.t,
                 kcal: item.kcal,
                 protein: item.protein,
+                price: item.price,
+                source: item.source,
+                sourceLabel: item.sourceLabel,
                 reason: item.reason,
                 tone: item.tone,
                 toneLabel: item.toneLabel,
@@ -570,7 +581,9 @@
                     <div class="advisor-option-body">
                         ${opt.toneLabel ? `<div class="advisor-option-badge ${tone}">${esc(opt.toneLabel)}</div>` : ''}
                         <div class="advisor-option-name">${esc(opt.n)}</div>
-                        <div class="advisor-option-macros">🔥 ${Number(opt.kcal) || 0} kcal | 🍗 ${Number(opt.protein) || 0}g</div>
+                        <div class="advisor-option-macros">🔥 ${Number(opt.kcal) || 0} kcal | 🍗 ${Number(opt.protein) || 0}g${opt.price !== null && opt.price !== undefined && Number.isFinite(Number(opt.price)) ? ` | 💶 ${Number(opt.price).toFixed(2)}€` : ''}</div>
+                        ${opt.sourceLabel ? `<div class="advisor-option-source">📍 ${esc(opt.sourceLabel)}</div>` : ''}
+                        ${opt.reason ? `<div class="advisor-option-reason">${esc(opt.reason)}</div>` : ''}
                     </div>
                 </div>
             `;

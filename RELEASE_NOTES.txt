@@ -213,3 +213,13 @@ PEGASUS 175 - MOBILE ORACLE STATIC DASHBOARD FIX
 - Kept PEGASUS 174 touch/swipe warning cleanup unchanged.
 - No new files added.
 - Service worker cache version bumped to pegasus-shield-v3.107-FINAL-175.
+
+PEGASUS 176 - KOUKI DAILY ADVISOR MENU ROUTING
+- Updated Kouki weekly menu with the full Monday-Sunday list provided by the user.
+- Expanded PegasusKoukiDB to cover all listed Kouki dishes, prices, estimated kcal and estimated protein.
+- Advisor recommendations now rank the current weekday's Kouki menu first and do not suggest dishes from other weekdays when today's menu exists.
+- Advisor cards now show Kouki daily source and price next to kcal/protein.
+- Added mobile and desktop advisor detail lines for source/reason.
+- Kept mobile static Oracle/status header behavior from 175 and touch/swipe cleanup from 174.
+- No new files added; expected package file count remains 59.
+- Service worker cache version bumped to pegasus-shield-v3.108-FINAL-176.

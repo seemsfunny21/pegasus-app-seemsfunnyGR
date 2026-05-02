@@ -387,59 +387,83 @@ window.getPegasusMuscleBadge = function(exerciseOrGroup) {
 
 // 5. KOUKI MENU CONSOLIDATION
 window.PegasusKoukiDB = [
-    { name: "Κοτόπουλο αλά κρεμ", type: "poulika", price: 6.00, kcal: 620, protein: 50 },
-    { name: "Κοτόπουλο γλυκόξινο", type: "poulika", price: 6.00, kcal: 580, protein: 48 },
-    { name: "Κοτόπουλο φούρνου", type: "poulika", price: 6.00, kcal: 600, protein: 52 },
-    { name: "Μοσχάρι κοκκινιστό", type: "kreas", price: 6.50, kcal: 640, protein: 45 },
-    { name: "Μοσχάρι γιουβέτσι", type: "kreas", price: 6.50, kcal: 620, protein: 45 },
-    { name: "Μακαρόνια με κιμά", type: "carb", price: 5.50, kcal: 600, protein: 30 },
-    { name: "Μουσακάς", type: "carb", price: 6.00, kcal: 830, protein: 26 },
-    { name: "Παστίτσιο", type: "carb", price: 6.00, kcal: 750, protein: 35 },
+    { name: "Μουσακάς", type: "carb", price: 6.00, kcal: 830, protein: 26, side: false },
+    { name: "Παστίτσιο", type: "carb", price: 6.00, kcal: 750, protein: 35, side: false },
+    { name: "Μπακαλιάρος σκορδαλιά", type: "psari", price: 6.50, kcal: 550, protein: 35 },
     { name: "Κοτόσουπα", type: "soup", price: 4.50, kcal: 400, protein: 30 },
+    { name: "Μοσχάρι κοκκινιστό", type: "kreas", price: 6.50, kcal: 640, protein: 45 },
+    { name: "Μοσχάρι γιουβέτσι", type: "kreas", price: 6.50, kcal: 640, protein: 45 },
+    { name: "Γεμιστά με ρύζι", type: "ladero", price: 5.00, kcal: 450, protein: 10 },
     { name: "Φασολάδα", type: "ospro", price: 4.50, kcal: 400, protein: 18 },
     { name: "Γίγαντες πλακί", type: "ospro", price: 6.00, kcal: 500, protein: 20 },
     { name: "Μπάμιες με κοτόπουλο", type: "poulika", price: 6.00, kcal: 520, protein: 45 },
+    { name: "Μακαρόνια με κιμά", type: "carb", price: 5.50, kcal: 600, protein: 30, side: false },
     { name: "Φασολάκια", type: "ladero", price: 4.50, kcal: 350, protein: 8 },
-    { name: "Μπακαλιάρος σκορδαλιά", type: "psari", price: 6.50, kcal: 550, protein: 35 },
-    { name: "Μπιφτέκι μοσχαρίσιο", type: "kreas", price: 6.00, kcal: 500, protein: 45 },
+    { name: "Κοτόπουλο αλά κρεμ", type: "poulika", price: 6.00, kcal: 620, protein: 50 },
+    { name: "Κοτόπουλο γλυκόξινο", type: "poulika", price: 6.00, kcal: 580, protein: 48 },
+    { name: "Κοτόπουλο φούρνου", type: "poulika", price: 6.00, kcal: 600, protein: 52 },
     { name: "Μπριζόλα χοιρινή", type: "kreas", price: 6.00, kcal: 550, protein: 42 },
     { name: "Μπριζόλα μοσχαρίσια", type: "kreas", price: 8.50, kcal: 600, protein: 50 },
-    { name: "Γεμιστά με ρύζι", type: "ladero", price: 5.00, kcal: 450, protein: 10 },
-    { name: "Κανελόνια", type: "carb", price: 6.00, kcal: 700, protein: 28 },
+    { name: "Μπιφτέκι μοσχαρίσιο", type: "kreas", price: 6.00, kcal: 520, protein: 42 },
+    { name: "Μπριάμ", type: "ladero", price: 5.50, kcal: 420, protein: 9 },
+    { name: "Λαχανόπιτα", type: "pita", price: 2.00, kcal: 340, protein: 10, side: false },
+    { name: "Γαλατόπιτα", type: "dessert", price: 2.00, kcal: 330, protein: 9, side: false },
+    { name: "Αλευρόπιτα", type: "pita", price: 1.50, kcal: 300, protein: 8, side: false },
+    { name: "Κανελόνια", type: "carb", price: 6.00, kcal: 700, protein: 28, side: false },
     { name: "Αρακάς", type: "ladero", price: 4.50, kcal: 380, protein: 12 },
     { name: "Ρεβύθια πλακί", type: "ospro", price: 5.00, kcal: 480, protein: 19 },
     { name: "Γεμιστά με κιμά", type: "kreas", price: 6.00, kcal: 550, protein: 30 },
     { name: "Κεφτεδάκια τηγανητά", type: "kreas", price: 6.50, kcal: 600, protein: 35 },
     { name: "Γιουβαρλάκια", type: "kreas", price: 5.50, kcal: 520, protein: 32 },
     { name: "Σνίτσελ κοτόπουλο", type: "poulika", price: 6.00, kcal: 650, protein: 45 },
-    { name: "Λαζάνια με κιμά", type: "carb", price: 6.00, kcal: 720, protein: 32 },
+    { name: "Κοντοσούβλι κοτόπουλο", type: "poulika", price: 6.00, kcal: 560, protein: 50 },
+    { name: "Λαζάνια με κιμά", type: "carb", price: 6.00, kcal: 720, protein: 32, side: false },
+    { name: "Μοσχάρι βραστό", type: "kreas", price: 6.00, kcal: 640, protein: 45 },
     { name: "Μπιφτέκι κοτόπουλο", type: "poulika", price: 6.00, kcal: 480, protein: 45 },
+    { name: "Γίγαντες με χόρτα", type: "ospro", price: 6.00, kcal: 500, protein: 20 },
+    { name: "Χταπόδι με κοφτό μακαρονάκι", type: "psari", price: 7.00, kcal: 620, protein: 34, side: false },
+    { name: "Σακές", type: "ladero", price: 4.50, kcal: 420, protein: 14 },
     { name: "Σολομός φούρνου", type: "psari", price: 8.00, kcal: 550, protein: 40 },
+    { name: "Μπατσαρία", type: "pita", price: 2.00, kcal: 320, protein: 10, side: false },
+    { name: "Κοτόπιτα", type: "pita", price: 2.50, kcal: 420, protein: 20, side: false },
+    { name: "Μοσχάρι με μελιτζάνες", type: "kreas", price: 6.50, kcal: 640, protein: 45 },
     { name: "Σουπιές με σπανάκι", type: "psari", price: 7.00, kcal: 450, protein: 35 },
-    { name: "Γαριδομακαρονάδα", type: "psari", price: 6.50, kcal: 650, protein: 30 },
+    { name: "Μελιτζάνες ιμάμ", type: "ladero", price: 6.00, kcal: 520, protein: 12 },
+    { name: "Γαριδομακαρονάδα", type: "psari", price: 6.50, kcal: 650, protein: 30, side: false },
+    { name: "Φιλέτο κοτόπουλο με καρότα", type: "poulika", price: 6.00, kcal: 420, protein: 48 },
+    { name: "Μακαρονόπιτα", type: "pita", price: 2.00, kcal: 450, protein: 15, side: false },
+    { name: "Λαζάνια με κοτόπουλο", type: "carb", price: 6.00, kcal: 700, protein: 34 },
     { name: "Παπουτσάκια", type: "ladero", price: 6.00, kcal: 580, protein: 20 },
+    { name: "Σπανακόρυζο", type: "ladero", price: 4.50, kcal: 390, protein: 10 },
+    { name: "Μπιφτέκι γεμιστό", type: "kreas", price: 6.50, kcal: 520, protein: 42 },
     { name: "Σουτζουκάκια", type: "kreas", price: 6.50, kcal: 620, protein: 35 },
+    { name: "Ογκρατέν ζυμαρικών", type: "carb", price: 6.00, kcal: 650, protein: 24, side: false },
+    { name: "Μπακαλιάρος με κρεμμύδια", type: "psari", price: 6.00, kcal: 550, protein: 35 },
+    { name: "Μπάμιες", type: "ladero", price: 5.00, kcal: 360, protein: 8 },
+    { name: "Γεμιστά κολοκυθάκια", type: "ladero", price: 6.00, kcal: 430, protein: 10 },
+    { name: "Τσιπούρα φούρνου", type: "psari", price: 8.00, kcal: 520, protein: 42 },
     { name: "Αρνί με πατάτες", type: "kreas", price: 7.50, kcal: 750, protein: 45 },
+    { name: "Κοντοσούβλι χοιρινό", type: "kreas", price: 6.00, kcal: 640, protein: 45 },
     { name: "Πέρκα φούρνου", type: "psari", price: 7.00, kcal: 500, protein: 40 }
 ];
 
 // 6. DYNAMIC WEEKLY BRIDGE & HELPERS
 (function buildWeeklyMenu() {
     const rawMenu = {
-        "Monday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Κοτόσουπα", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Γεμιστά με ρύζι", "Φασολάδα", "Γίγαντες πλακί", "Μπάμιες με κοτόπουλο", "Μακαρόνια με κιμά", "Φασολάκια", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Μπιφτέκι μοσχαρίσιο"],
-        "Tuesday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Αρακάς", "Ρεβύθια πλακί", "Γεμιστά με κιμά", "Μοσχάρι κοκκινιστό", "Κεφτεδάκια τηγανητά", "Γιουβαρλάκια", "Μακαρόνια με κιμά", "Σνίτσελ κοτόπουλο", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"],
-        "Wednesday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κιμά", "Μπιφτέκι κοτόπουλο", "Μακαρόνια με κιμά", "Γεμιστά με ρύζι", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Σολομός φούρνου", "Κοτόπουλο φούρνου", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
-        "Thursday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Κεφτεδάκια τηγανητά", "Γεμιστά με κιμά", "Σουπιές με σπανάκι", "Φασολάκια", "Κοτόσουπα", "Γαριδομακαρονάδα", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"],
-        "Friday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Παπουτσάκια", "Φασολάδα", "Γεμιστά με ρύζι", "Γίγαντες πλακί", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόπουλο φούρνου", "Μακαρόνια με κιμά", "Σουτζουκάκια", "Κοτόσουπα", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο"],
-        "Saturday": ["Μουσακάς", "Παστίτσιο", "Γεμιστά με ρύζι", "Μπιφτέκι κοτόπουλο", "Γιουβαρλάκια", "Αρνί με πατάτες", "Μοσχάρι γιουβέτσι", "Κοτόπουλο φούρνου", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά"],
-        "Sunday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόσουπα", "Πέρκα φούρνου", "Κεφτεδάκια τηγανητά", "Γαριδομακαρονάδα", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια"]
+        "Monday": ["Μουσακάς", "Παστίτσιο", "Μπακαλιάρος σκορδαλιά", "Κοτόσουπα", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Γεμιστά με ρύζι", "Φασολάδα", "Γίγαντες πλακί", "Μπάμιες με κοτόπουλο", "Μακαρόνια με κιμά", "Φασολάκια", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Μπιφτέκι μοσχαρίσιο", "Μπριάμ", "Λαχανόπιτα", "Γαλατόπιτα", "Αλευρόπιτα"],
+        "Tuesday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Αρακάς", "Ρεβύθια πλακί", "Γεμιστά με κιμά", "Μοσχάρι κοκκινιστό", "Κεφτεδάκια τηγανητά", "Γιουβαρλάκια", "Μακαρόνια με κιμά", "Σνίτσελ κοτόπουλο", "Κοντοσούβλι κοτόπουλο", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Λαχανόπιτα", "Γαλατόπιτα", "Αλευρόπιτα"],
+        "Wednesday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κιμά", "Μοσχάρι βραστό", "Μπιφτέκι κοτόπουλο", "Γίγαντες με χόρτα", "Χταπόδι με κοφτό μακαρονάκι", "Μακαρόνια με κιμά", "Γεμιστά με ρύζι", "Μοσχάρι κοκκινιστό", "Μοσχάρι γιουβέτσι", "Σακές", "Σολομός φούρνου", "Κοτόπουλο φούρνου", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Μπατσαρία", "Κοτόπιτα", "Γαλατόπιτα"],
+        "Thursday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Κεφτεδάκια τηγανητά", "Μοσχάρι με μελιτζάνες", "Γεμιστά με κιμά", "Σουπιές με σπανάκι", "Φασολάκια", "Μελιτζάνες ιμάμ", "Κοτόσουπα", "Γαριδομακαρονάδα", "Μοσχάρι κοκκινιστό", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Φιλέτο κοτόπουλο με καρότα", "Λαχανόπιτα", "Μακαρονόπιτα", "Αλευρόπιτα"],
+        "Friday": ["Μουσακάς", "Παστίτσιο", "Λαζάνια με κοτόπουλο", "Μπακαλιάρος σκορδαλιά", "Παπουτσάκια", "Φασολάδα", "Σπανακόρυζο", "Γεμιστά με ρύζι", "Μπιφτέκι γεμιστό", "Γίγαντες πλακί", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Κοτόπουλο φούρνου", "Μακαρόνια με κιμά", "Σουτζουκάκια", "Κοτόσουπα", "Κοτόπουλο αλά κρεμ", "Κοτόπουλο γλυκόξινο", "Λαχανόπιτα", "Κοτόπιτα", "Αλευρόπιτα"],
+        "Saturday": ["Μουσακάς", "Παστίτσιο", "Ογκρατέν ζυμαρικών", "Μπακαλιάρος με κρεμμύδια", "Μπάμιες", "Γεμιστά με ρύζι", "Μπιφτέκι κοτόπουλο", "Γεμιστά κολοκυθάκια", "Γιουβαρλάκια", "Τσιπούρα φούρνου", "Αρνί με πατάτες", "Μοσχάρι γιουβέτσι", "Κοτόπουλο φούρνου", "Μοσχάρι κοκκινιστό", "Κοντοσούβλι χοιρινό", "Μακαρόνια με κιμά", "Λαχανόπιτα", "Γαλατόπιτα", "Αλευρόπιτα"],
+        "Sunday": ["Μουσακάς", "Παστίτσιο", "Κανελόνια", "Μοσχάρι γιουβέτσι", "Μοσχάρι κοκκινιστό", "Γίγαντες με χόρτα", "Κοτόσουπα", "Πέρκα φούρνου", "Μπιφτέκι γεμιστό", "Κεφτεδάκια τηγανητά", "Γαριδομακαρονάδα", "Μακαρόνια με κιμά", "Κοτόπουλο φούρνου", "Μπριζόλα χοιρινή", "Μπριζόλα μοσχαρίσια", "Λαχανόπιτα", "Γαλατόπιτα", "Αλευρόπιτα"]
     };
 
     window.KOUKI_MASTER_MENU = {};
     for (const day in rawMenu) {
         window.KOUKI_MASTER_MENU[day] = rawMenu[day].map(foodName => {
-            const data = window.PegasusKoukiDB.find(f => f.name === foodName) || { price: 6.00, type: "kreas" };
-            return { n: foodName, p: data.price, t: data.type };
+            const data = window.PegasusKoukiDB.find(f => f.name === foodName) || { price: 6.00, type: "kreas", kcal: 550, protein: 30 };
+            return { n: foodName, p: data.price, t: data.type, kcal: data.kcal, protein: data.protein, side: data.side };
         });
     }
 })();
@@ -447,7 +471,8 @@ window.PegasusKoukiDB = [
 window.getPegasusMacros = function(foodName, fallbackType) {
     const item = window.PegasusKoukiDB.find(f => f.name === foodName || f.name.includes(foodName));
     const type = item ? item.type : fallbackType;
-    const needsRice = !["carb", "soup"].includes(type);
+    const noSideTypes = ["carb", "soup", "pita", "dessert"];
+    const needsRice = item?.side === false ? false : !noSideTypes.includes(type);
     const riceKcal = needsRice ? 280 : 0;
     const riceProt = needsRice ? 6 : 0;
 

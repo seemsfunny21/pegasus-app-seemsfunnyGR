@@ -356,7 +356,9 @@ window.PegasusDiet = {
                     <div class="advisor-option-body">
                         ${opt.toneLabel ? `<div class="advisor-option-badge ${tone}">${esc(opt.toneLabel)}</div>` : ''}
                         <div class="advisor-option-name">${esc(opt.n)}</div>
-                        <div class="advisor-option-macros">🔥 ${Number(macros.kcal) || 0} kcal | 🍗 ${Number(macros.protein) || 0}g</div>
+                        <div class="advisor-option-macros">🔥 ${Number(macros.kcal) || 0} kcal | 🍗 ${Number(macros.protein) || 0}g${opt.price !== null && opt.price !== undefined && Number.isFinite(Number(opt.price)) ? ` | 💶 ${Number(opt.price).toFixed(2)}€` : ''}</div>
+                        ${opt.sourceLabel ? `<div class="advisor-option-source">📍 ${esc(opt.sourceLabel)}</div>` : ''}
+                        ${opt.reason ? `<div class="advisor-option-reason">${esc(opt.reason)}</div>` : ''}
                     </div>
                     <button data-pegasus-advisor-add="${idx}" class="advisor-add-btn">ΠΡΟΣΘΗΚΗ</button>
                 </div>

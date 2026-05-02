@@ -1175,4 +1175,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .advisor-option-badge.red { background: rgba(255,68,68,0.14); color: #ff9a9a; }
 .advisor-option-name { color: #fff; font-size: 13px; font-weight: 900; }
 .advisor-option-macros { color: #9cffb0; font-size: 11px; font-weight: 900; margin-top: 3px; }
+.advisor-option-source { color: #ffcc66; font-size: 10px; font-weight: 900; margin-top: 3px; }
+.advisor-option-reason { color: #b8ffd0; font-size: 10px; font-weight: 700; margin-top: 4px; line-height: 1.25; opacity: 0.9; }
+
 @media (max-width: 720px) { .advisor-history-grid { grid-template-columns: 1fr 1fr; } }
