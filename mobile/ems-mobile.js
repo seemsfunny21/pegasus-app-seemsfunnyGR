@@ -78,6 +78,13 @@ window.PegasusEMS = {
 
         // --- 3. FINAL SAVE & SYNC ---
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(h));
+        const weekDay = rawDate.getDay() || 7;
+        const weekMonday = new Date(rawDate);
+        weekMonday.setHours(0, 0, 0, 0);
+        weekMonday.setDate(rawDate.getDate() - weekDay + 1);
+        const weekKey = `${weekMonday.getFullYear()}-${String(weekMonday.getMonth() + 1).padStart(2, '0')}-${String(weekMonday.getDate()).padStart(2, '0')}`;
+        localStorage.setItem('pegasus_weekly_history_week_key', weekKey);
+        window.dispatchEvent?.(new CustomEvent('pegasus_weekly_history_updated', { detail: { source: 'mobile-ems', history: { ...h } } }));
 
         alert("⚡ EMS SESSION COMPLETE!\n36 Sets added to XP.\nLeg sets skipped if cardio was detected.");
 

@@ -371,36 +371,123 @@ const PegasusCloud = {
         return Object.values(history || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
     },
 
+    normalizeWeeklyExerciseName(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\u0370-\u03ff]+/g, "");
+    },
+
+    resolveWeeklyLedgerMuscle(exerciseName) {
+        const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+        const cleanName = this.normalizeWeeklyExerciseName(exerciseName);
+        if (!cleanName) return "";
+
+        const records = [];
+        if (Array.isArray(window.exercisesDB)) records.push(...window.exercisesDB);
+        if (window.program && typeof window.program === "object") {
+            Object.values(window.program).forEach(items => {
+                if (Array.isArray(items)) records.push(...items);
+            });
+        }
+
+        const record = records.find(item => {
+            const itemName = this.normalizeWeeklyExerciseName(item?.name);
+            return itemName && (itemName === cleanName || cleanName.includes(itemName) || itemName.includes(cleanName));
+        });
+        if (groups.includes(record?.muscleGroup)) return record.muscleGroup;
+
+        const aliases = [
+            { group: "Στήθος", keys: ["chest", "press", "fly", "pushup", "pushups", "στηθος"] },
+            { group: "Πλάτη", keys: ["lat", "row", "pulldown", "back", "πλατη"] },
+            { group: "Πόδια", keys: ["leg", "legs", "cycling", "bike", "ποδηλα", "ποδια"] },
+            { group: "Χέρια", keys: ["bicep", "tricep", "curl", "χερια"] },
+            { group: "Ώμοι", keys: ["upright", "shoulder", "ωμοι"] },
+            { group: "Κορμός", keys: ["ab", "crunch", "plank", "situp", "knee", "core", "raise", "κορμος", "κοιλιακ"] }
+        ];
+        const alias = aliases.find(entry => entry.keys.some(key => cleanName.includes(this.normalizeWeeklyExerciseName(key))));
+        return alias?.group || "";
+    },
+
+    getWeeklyLedgerSetValue(exerciseName, muscle) {
+        const upper = String(exerciseName || "").toUpperCase();
+        if (upper.includes("ΠΟΔΗΛΑΣΙΑ") || upper.includes("CYCLING")) return 24;
+        if (upper.includes("EMS ΠΟΔΙΩΝ") || upper.includes("EMS LEGS")) return 6;
+        if (upper.includes("STRETCHING") || muscle === "None") return 0;
+        return 1;
+    },
+
+    weeklyHistoryFromLedgerValue(ledgerValue) {
+        const currentWeek = this.getPegasusCurrentWeekKey();
+        const ledger = this.safeParseStorageObject(ledgerValue, null);
+        const totals = this.normalizeWeeklyHistoryObject({});
+        if (!ledger || ledger.weekKey !== currentWeek || !ledger.exercises || typeof ledger.exercises !== "object") return totals;
+
+        Object.entries(ledger.exercises).forEach(([key, rawCount]) => {
+            const count = Math.max(0, Number(rawCount) || 0);
+            if (count <= 0) return;
+            const parts = String(key || "").split("|");
+            const exerciseName = parts.length > 1 ? parts.slice(1).join("|") : String(key || "");
+            const muscle = this.resolveWeeklyLedgerMuscle(exerciseName);
+            if (!Object.prototype.hasOwnProperty.call(totals, muscle)) return;
+            const setValue = this.getWeeklyLedgerSetValue(exerciseName, muscle);
+            if (setValue <= 0) return;
+            totals[muscle] = Math.max(0, Number(totals[muscle] || 0)) + (count * setValue);
+        });
+
+        const targets = this.safeParseStorageObject(localStorage.getItem("pegasus_muscle_targets"), { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 });
+        Object.keys(totals).forEach(group => {
+            const target = Math.max(0, Number(targets?.[group]) || 0);
+            if (target > 0) totals[group] = Math.min(totals[group], target);
+        });
+
+        return totals;
+    },
+
+    maxWeeklyHistories(...items) {
+        const merged = this.normalizeWeeklyHistoryObject({});
+        items.forEach(item => {
+            const clean = this.normalizeWeeklyHistoryObject(item);
+            Object.keys(merged).forEach(group => {
+                merged[group] = Math.max(Number(merged[group] || 0), Number(clean[group] || 0));
+            });
+        });
+        return merged;
+    },
+
     mergeWeeklyHistoryValue(localValue, remoteValue) {
         const localHistory = this.normalizeWeeklyHistoryObject(localValue);
         const remoteHistory = this.normalizeWeeklyHistoryObject(remoteValue);
-        const localTotal = this.getWeeklyHistoryTotalValue(localHistory);
-        const remoteTotal = this.getWeeklyHistoryTotalValue(remoteHistory);
         const currentWeek = this.getPegasusCurrentWeekKey();
 
         const remoteStorage = this._remoteStorageMergeContext || {};
         const remoteWeek = String(remoteStorage.pegasus_weekly_history_week_key || "").trim();
         const localWeek = String(localStorage.getItem("pegasus_weekly_history_week_key") || currentWeek).trim();
+        const localLedgerHistory = this.weeklyHistoryFromLedgerValue(localStorage.getItem("pegasus_weekly_history_counted_v2"));
+        const remoteLedgerHistory = this.weeklyHistoryFromLedgerValue(remoteStorage.pegasus_weekly_history_counted_v2);
+        const localCandidate = this.maxWeeklyHistories(localHistory, localLedgerHistory);
+        const remoteCandidate = this.maxWeeklyHistories(remoteHistory, remoteLedgerHistory);
+        const localTotal = this.getWeeklyHistoryTotalValue(localCandidate);
+        const remoteTotal = this.getWeeklyHistoryTotalValue(remoteCandidate);
 
         // Remote old-week zero must never wipe a current local workout week.
         if (localWeek === currentWeek && remoteWeek && remoteWeek !== currentWeek && localTotal > 0) {
-            return JSON.stringify(localHistory);
+            return JSON.stringify(localCandidate);
         }
 
-        // Current-week remote can initialize a fresh local device.
+        // Current-week remote can initialize a fresh local device, but it may need ledger repair.
         if (remoteWeek === currentWeek && localWeek !== currentWeek) {
             localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
-            return JSON.stringify(remoteHistory);
+            return JSON.stringify(remoteCandidate);
         }
 
-        // Same/unknown current week: merge by max per muscle group.
-        const merged = this.normalizeWeeklyHistoryObject({});
-        Object.keys(merged).forEach(group => {
-            merged[group] = Math.max(Number(localHistory[group] || 0), Number(remoteHistory[group] || 0));
-        });
+        // Same/unknown current week: merge by max per muscle group, including counted ledger totals.
+        const merged = this.maxWeeklyHistories(localCandidate, remoteCandidate);
 
-        // Extra guard: if remote is all-zero and local has data, keep local.
-        if (remoteTotal === 0 && localTotal > 0) return JSON.stringify(localHistory);
+        // Extra guard: if remote is all-zero and local has data, keep local candidate.
+        if (remoteTotal === 0 && localTotal > 0) return JSON.stringify(localCandidate);
 
         localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
         return JSON.stringify(merged);

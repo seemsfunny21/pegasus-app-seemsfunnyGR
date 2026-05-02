@@ -393,6 +393,88 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
         return next;
     }
 
+    function getLedgerExerciseNameFromKey(key) {
+        const parts = String(key || '').split('|');
+        return parts.length > 1 ? parts.slice(1).join('|') : String(key || '');
+    }
+
+    function computeWeeklyHistoryFromLedger(ledger = readWeeklyLedger()) {
+        const totals = getEmptyWeeklyHistory();
+        if (!ledger || ledger.weekKey !== getPegasusWeekKey() || !ledger.exercises || typeof ledger.exercises !== 'object') {
+            return totals;
+        }
+
+        Object.entries(ledger.exercises).forEach(([key, rawCount]) => {
+            const count = Math.max(0, Number(rawCount) || 0);
+            if (count <= 0) return;
+
+            const exerciseName = getLedgerExerciseNameFromKey(key);
+            const muscle = resolvePegasusMuscleGroup(exerciseName);
+            if (!PEGASUS_WEEKLY_GROUPS.includes(muscle)) return;
+
+            const perSetValue = getPegasusSetValue(exerciseName, muscle);
+            if (perSetValue <= 0) return;
+
+            totals[muscle] = Math.max(0, Number(totals[muscle] || 0)) + (count * perSetValue);
+        });
+
+        const targets = readWeeklyTargets();
+        Object.keys(totals).forEach(group => {
+            const target = Math.max(0, Number(targets[group]) || 0);
+            if (target > 0) totals[group] = Math.min(totals[group], target);
+        });
+
+        return totals;
+    }
+
+    function repairWeeklyHistoryFromLedger(options = {}) {
+        const ledger = readWeeklyLedger();
+        const ledgerTotals = computeWeeklyHistoryFromLedger(ledger);
+        const ledgerTotal = getWeeklyHistoryTotal(ledgerTotals);
+        if (ledgerTotal <= 0) return false;
+
+        const history = readWeeklyHistory();
+        const next = { ...history };
+        let changed = false;
+
+        PEGASUS_WEEKLY_GROUPS.forEach(group => {
+            const ledgerValue = Math.max(0, Number(ledgerTotals[group]) || 0);
+            const currentValue = Math.max(0, Number(history[group]) || 0);
+            if (ledgerValue > currentValue) {
+                next[group] = ledgerValue;
+                changed = true;
+            }
+        });
+
+        if (!changed) return false;
+
+        const cleanHistory = writeWeeklyHistory(next);
+        window.dispatchEvent(new CustomEvent('pegasus_weekly_history_updated', {
+            detail: {
+                source: options.source || 'ledger-repair',
+                history: { ...cleanHistory },
+                ledger: { ...ledgerTotals }
+            }
+        }));
+
+        if (window.MuscleProgressUI?.render) {
+            setTimeout(() => window.MuscleProgressUI.render(true), 50);
+        }
+
+        if (window.PegasusCloud?.push && options.push !== false) {
+            setTimeout(() => window.PegasusCloud.push(), 120);
+        }
+
+        console.log('🛡️ PEGASUS WEEKLY HISTORY: Restored progress from counted ledger.', cleanHistory);
+        return true;
+    }
+
+    function hasCurrentWeekLedgerEntries() {
+        const ledger = readWeeklyLedger();
+        if (!ledger || ledger.weekKey !== getPegasusWeekKey() || !ledger.exercises || typeof ledger.exercises !== 'object') return false;
+        return Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+    }
+
     function collectPegasusExerciseRecords() {
         const records = [];
         if (Array.isArray(window.exercisesDB)) records.push(...window.exercisesDB);
@@ -542,10 +624,10 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
     }
 
     function reconcilePegasusWeeklyHistoryFromDailyProgress(options = {}) {
+        let changed = repairWeeklyHistoryFromLedger({ source: options.source || 'daily-reconcile-ledger-repair', push: false });
         const history = readWeeklyHistory();
         const historyTotal = getWeeklyHistoryTotal(history);
         const dailyDone = collectDailyProgressExercises();
-        let changed = false;
 
         Object.entries(dailyDone).forEach(([name, done]) => {
             const source = historyTotal === 0 ? 'zero-history-repair' : (options.source || 'daily-reconcile');
@@ -576,6 +658,9 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
             installed: true,
             recordSet: window.logPegasusSet,
             reconcile: reconcilePegasusWeeklyHistoryFromDailyProgress,
+            repairFromLedger: repairWeeklyHistoryFromLedger,
+            computeFromLedger: computeWeeklyHistoryFromLedger,
+            hasCurrentWeekLedgerEntries: hasCurrentWeekLedgerEntries,
             resolveMuscleGroup: resolvePegasusMuscleGroup,
             readHistory: readWeeklyHistory
         };

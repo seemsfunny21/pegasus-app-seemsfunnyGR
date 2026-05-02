@@ -49,7 +49,7 @@ const KOUKI_MENU = [
     { name: "Σουπιές με σπανάκι", kcal: 420, protein: 38, type: "fish" },
     { name: "Ψάρι φιλέτο (Γλώσσα) με λαχανικά", kcal: 400, protein: 42, type: "fish" },
     { name: "Τσιπούρα ψητή", kcal: 420, protein: 45, type: "fish" },
-    { name: "Παστίτσιο", kcal: 950, protein: 42, type: "cheat" },
+    { name: "Παστίτσιο", kcal: 720, protein: 22, type: "cheat" },
     { name: "Μουσακάς", kcal: 830, protein: 26, type: "cheat" }
 ];
 

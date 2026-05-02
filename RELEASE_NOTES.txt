@@ -232,3 +232,12 @@ PEGASUS 177 - MOBILE FOOD SEARCH VISIBILITY + LIBRARY READ FIX
 - Strengthened mobile CSS for the suggestion dropdown so results remain visible under the input.
 - No new files added; changed mobile/diet-mobile.js, mobile/style.css, mobile/mobile.html, sw.js, RELEASE_NOTES.txt.
 - Service worker cache version bumped to pegasus-shield-v3.109-FINAL-177.
+
+PEGASUS 178 - WEEKLY MUSCLE PROGRESS LEDGER HARDENING
+- Added a weekly progress safety repair that rebuilds muscle-group progress from the counted set ledger if the visible weekly totals are accidentally zeroed.
+- Protected Monday weekly reset from running after current-week sets have already been logged, preventing late boot/reset from wiping today's workout.
+- Cloud merge now compares weekly totals together with counted-ledger totals, so a zeroed device cannot overwrite a device that still has current-week workout sets.
+- Desktop and mobile keep pegasus_weekly_history_week_key aligned when cardio/EMS/mobile progress updates weekly history directly.
+- Kept mobile food search fix from 177, Kouki advisor routing from 176, and static mobile Oracle/status header from 175.
+- No new files added; changed adaptiveTypography.js, progressUI.js, app.js, cloudSync.js, mobile/cardio-mobile.js, mobile/ems-mobile.js, mobile/mobile.html, sw.js, RELEASE_NOTES.txt.
+- Service worker cache version bumped to pegasus-shield-v3.110-FINAL-178.

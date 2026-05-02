@@ -1791,14 +1791,45 @@ window.onload = () => {
         try {
             const lastReset = localStorage.getItem('pegasus_last_reset');
             const todayDateStr = window.getPegasusLocalDateKey();
+            const currentWeekKey = todayDateStr;
             if (lastReset !== todayDateStr) {
-                const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-                localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
-                localStorage.setItem('pegasus_weekly_history_week_key', todayDateStr);
-                localStorage.removeItem('pegasus_weekly_history_counted_v2');
-                localStorage.setItem('pegasus_weekly_kcal', "0.0");
-                localStorage.setItem('pegasus_last_reset', todayDateStr);
-                if (window.PegasusCloud?.push) window.PegasusCloud.push();
+                const safeRead = (key, fallback) => {
+                    try {
+                        const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+                        return parsed && typeof parsed === 'object' ? parsed : fallback;
+                    } catch (err) {
+                        return fallback;
+                    }
+                };
+                const ledger = safeRead('pegasus_weekly_history_counted_v2', null);
+                const daily = safeRead('pegasus_daily_progress', null);
+                const hasCurrentLedger = ledger?.weekKey === currentWeekKey
+                    && ledger.exercises
+                    && typeof ledger.exercises === 'object'
+                    && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+                const hasTodayDaily = daily?.date === todayDateStr
+                    && daily.exercises
+                    && typeof daily.exercises === 'object'
+                    && Object.values(daily.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+
+                if (hasCurrentLedger || hasTodayDaily) {
+                    localStorage.setItem('pegasus_weekly_history_week_key', currentWeekKey);
+                    localStorage.setItem('pegasus_last_reset', todayDateStr);
+                    localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
+                    if (window.PegasusWeeklyProgress?.repairFromLedger) {
+                        setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: 'desktop-monday-reset-guard' }), 100);
+                    }
+                    console.log('🛡️ PEGASUS RESET: Skipped Monday zero because current-week sets already exist.');
+                } else {
+                    const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
+                    localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
+                    localStorage.setItem('pegasus_weekly_history_week_key', currentWeekKey);
+                    localStorage.removeItem('pegasus_weekly_history_counted_v2');
+                    localStorage.setItem('pegasus_weekly_kcal', "0.0");
+                    localStorage.setItem('pegasus_last_reset', todayDateStr);
+                    localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
+                    if (window.PegasusCloud?.push) window.PegasusCloud.push();
+                }
             }
         } catch (e) {
             console.error("🛡️ PEGASUS RESET ERROR:", e);

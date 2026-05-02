@@ -259,9 +259,47 @@ window.MuscleProgressUI = {
         const lastResetDate = localStorage.getItem(lastResetKey);
         const now = new Date();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        const day = now.getDay() || 7;
+        const monday = new Date(now);
+        monday.setHours(0, 0, 0, 0);
+        monday.setDate(now.getDate() - day + 1);
+        const currentWeekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
 
-        // ✅ Κρατάμε Monday reset για να είναι aligned με το corrected app flow
+        const safeJson = (key, fallback) => {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(key) || "null");
+                return parsed && typeof parsed === "object" ? parsed : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        };
+
+        const ledger = safeJson("pegasus_weekly_history_counted_v2", null);
+        const hasCurrentLedger = ledger?.weekKey === currentWeekKey
+            && ledger.exercises
+            && typeof ledger.exercises === "object"
+            && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+
+        const daily = safeJson("pegasus_daily_progress", null);
+        const hasTodayDaily = daily?.date === todayStr
+            && daily.exercises
+            && typeof daily.exercises === "object"
+            && Object.values(daily.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+
+        // ✅ Κρατάμε Monday reset, αλλά δεν μηδενίζουμε ποτέ αφού έχουν ήδη γραφτεί set της τρέχουσας εβδομάδας.
         if (now.getDay() === 1 && lastResetDate !== todayStr) {
+            if (hasCurrentLedger || hasTodayDaily) {
+                localStorage.setItem(lastResetKey, todayStr);
+                localStorage.setItem("pegasus_last_reset", todayStr);
+                localStorage.setItem("pegasus_weekly_history_week_key", currentWeekKey);
+                this.lastDataHash = null;
+                if (window.PegasusWeeklyProgress?.repairFromLedger) {
+                    setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: "monday-reset-guard" }), 50);
+                }
+                console.log("🛡️ PEGASUS UI: Monday reset skipped because current-week sets already exist.");
+                return;
+            }
+
             const emptyHistory = {
                 "Στήθος": 0,
                 "Πλάτη": 0,
@@ -272,7 +310,10 @@ window.MuscleProgressUI = {
             };
 
             localStorage.setItem(historyKey, JSON.stringify(emptyHistory));
+            localStorage.setItem("pegasus_weekly_history_week_key", currentWeekKey);
+            localStorage.removeItem("pegasus_weekly_history_counted_v2");
             localStorage.setItem(lastResetKey, todayStr);
+            localStorage.setItem("pegasus_last_reset", todayStr);
             this.lastDataHash = null;
 
             if (window.PegasusCloud?.push) {

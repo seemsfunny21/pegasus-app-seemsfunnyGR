@@ -36,6 +36,13 @@ window.PegasusCardio = {
 
             history["Πόδια"] = Math.min(legTarget, currentLegSets + credit);
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+            const weekDay = rawDate.getDay() || 7;
+            const weekMonday = new Date(rawDate);
+            weekMonday.setHours(0, 0, 0, 0);
+            weekMonday.setDate(rawDate.getDate() - weekDay + 1);
+            const weekKey = `${weekMonday.getFullYear()}-${String(weekMonday.getMonth() + 1).padStart(2, '0')}-${String(weekMonday.getDate()).padStart(2, '0')}`;
+            localStorage.setItem('pegasus_weekly_history_week_key', weekKey);
+            window.dispatchEvent?.(new CustomEvent('pegasus_weekly_history_updated', { detail: { source: 'mobile-cardio', history: { ...history } } }));
 
             // Lifetime Stats / XP
             let stats = JSON.parse(localStorage.getItem('pegasus_stats') || "{}");
