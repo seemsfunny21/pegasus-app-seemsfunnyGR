@@ -161,8 +161,10 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 
         .ghost-nav-overlay {
             position: fixed;
-            bottom: 6px;
-            width: 72%; /* Ρύθμισέ το ανάλογα με την οθόνη σου */
+            left: 50%;
+            bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+            transform: translateX(-50%);
+            width: min(72%, 330px);
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -183,7 +185,82 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
             align-items: center;
             font-size: 19px;
             color: var(--main);
-            line-height: 0;
+            line-height: 1;
+            pointer-events: auto;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-box:active {
+            transform: scale(0.92);
+            background: rgba(0, 255, 65, 0.28);
+            box-shadow: 0 0 16px rgba(0, 255, 65, 0.35);
+        }
+
+        .ghost-order-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ghost-order-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid rgba(0, 255, 65, 0.18);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.32);
+        }
+
+        .ghost-order-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .ghost-order-icon {
+            width: 36px;
+            height: 28px;
+            border: 1px solid rgba(0, 255, 65, 0.45);
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--main);
+            background: rgba(0, 255, 65, 0.12);
+            box-shadow: 0 0 8px rgba(0, 255, 65, 0.15);
+            font-size: 16px;
+        }
+
+        .ghost-order-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .ghost-order-controls button {
+            width: 34px;
+            height: 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 65, 0.45);
+            background: rgba(0, 255, 65, 0.08);
+            color: var(--main);
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        .ghost-order-controls button:disabled {
+            opacity: 0.25;
+            border-color: #333;
+            color: #555;
         }
 
 /* ==========================================================================

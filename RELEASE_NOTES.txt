@@ -155,3 +155,12 @@ PEGASUS 157 - LAZY PERMANENT OFFLINE VIDEO CACHE
 - Cached videos survive normal app shell cache version purges.
 - Adds Range request support so cached videos can play offline instead of showing black frames.
 - No new JS files added.
+
+PEGASUS 158 - MOBILE GHOST NAV + SWIPE POLISH
+- Adds local-per-device ghost button order settings in the mobile settings panel.
+- The ghost back button now performs the same action as the mobile ΕΠΙΣΤΡΟΦΗ button.
+- Adds swipe navigation on the mobile home screen: swipe left for the second page, swipe right for the first page.
+- Stores ghost button order as local-only device preference and keeps it out of cloud sync/backup export.
+- No new JS files added; changed mobile/mobile.html, mobile/style.css, cloudSync.js, sw.js.
+- Service worker cache version bumped to pegasus-shield-v3.91-FINAL-158.
+

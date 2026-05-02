@@ -265,7 +265,8 @@ const PegasusCloud = {
             "pegasus_car_dates",
             "pegasus_car_specs",
             "peg_car_dates",
-            "pegasus_master_pin"
+            "pegasus_master_pin",
+            "pegasus_mobile_ghost_order_v1"
         ];
         const dynamicKeys = window.PegasusMobileDataRegistry?.getLocalOnlyExactKeys?.() || [];
         return Array.from(new Set([...baseKeys, ...dynamicKeys]));
