@@ -25,11 +25,16 @@ window.PegasusCardio = {
 
         /* --- 1. ΕΚΤΙΜΗΣΗ ΚΟΠΩΣΗΣ & LIFETIME STATS (XP) --- */
         if (km > 0) {
-            const credit = 18;
+            const maxCyclingCredit = 18;
 
-            // Weekly Progress Update
+            // Weekly Progress Update: cycling is logged from Cardio and capped by the weekly leg target.
             let history = JSON.parse(localStorage.getItem('pegasus_weekly_history') || "{}");
-            history["Πόδια"] = (history["Πόδια"] || 0) + credit;
+            const targets = JSON.parse(localStorage.getItem('pegasus_muscle_targets') || "null") || { "Πόδια": 24 };
+            const legTarget = Math.max(1, parseInt(targets["Πόδια"] || 24, 10));
+            const currentLegSets = Math.max(0, parseInt(history["Πόδια"] || 0, 10));
+            const credit = Math.max(0, Math.min(maxCyclingCredit, legTarget - currentLegSets));
+
+            history["Πόδια"] = Math.min(legTarget, currentLegSets + credit);
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
 
             // Lifetime Stats / XP
@@ -55,7 +60,7 @@ window.PegasusCardio = {
 
             localStorage.setItem("pegasus_cardio_history", JSON.stringify(cardioLog.slice(0, 50)));
 
-            console.log(`🚴 CARDIO: ${km}km logged. ${credit} sets credited to Legs & XP.`);
+            console.log(`🚴 CARDIO: ${km}km logged. ${credit} capped sets credited to Legs & XP.`);
         }
 
         /* --- 2. ΜΕΤΑΒΟΛΙΚΗ ΣΥΝΔΕΣΗ (UNIFIED MOBILE + DESKTOP SYNC) --- */

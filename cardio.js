@@ -77,12 +77,18 @@ window.saveCardioData = async function() {
     const workoutKey = `${y}-${m}-${d}`;
 
     /* --- 1. ΜΥΪΚΗ ΟΜΑΔΑ & XP (LIFETIME STATS) --- */
-    const credit = 18;
+    const maxCyclingCredit = 18;
     const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
+    const targetsKey = M?.workout?.muscleTargets || 'pegasus_muscle_targets';
     const statsKey = M?.system?.stats || 'pegasus_stats';
 
     let historySets = JSON.parse(localStorage.getItem(historyKey) || "{}");
-    historySets["Πόδια"] = (historySets["Πόδια"] || 0) + credit;
+    const targets = JSON.parse(localStorage.getItem(targetsKey) || "null") || { "Πόδια": 24 };
+    const legTarget = Math.max(1, parseInt(targets["Πόδια"] || 24, 10));
+    const currentLegSets = Math.max(0, parseInt(historySets["Πόδια"] || 0, 10));
+    const credit = Math.max(0, Math.min(maxCyclingCredit, legTarget - currentLegSets));
+
+    historySets["Πόδια"] = Math.min(legTarget, currentLegSets + credit);
     localStorage.setItem(historyKey, JSON.stringify(historySets));
 
     let stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
@@ -135,7 +141,9 @@ window.saveCardioData = async function() {
     localStorage.setItem("pegasus_cardio_history", JSON.stringify(historyLog.slice(0, 50)));
 
     /* --- 5. UI REFRESH --- */
-    alert(`✅ ΚΑΤΑΧΩΡΗΘΗΚΕ!\nΘερμίδες: ${kcal} kcal\nLeveling: +18 σετ στα Πόδια.`);
+    alert(`✅ ΚΑΤΑΧΩΡΗΘΗΚΕ!
+Θερμίδες: ${kcal} kcal
+Πόδια: +${credit} σετ από ποδηλασία.`);
 
     window.PegasusCardio.close();
 

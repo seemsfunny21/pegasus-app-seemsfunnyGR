@@ -233,11 +233,9 @@ window.setPegasusPlan = function(planKey) {
             { name: "Plank", sets: 3, muscleGroup: "Κορμός", weight: "0" },
             { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: "30" }
         ],
-        iron_saturday: [
-            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" }
-        ],
+        // Cycling is logged through the Cardio module (km/kcal), not as a workout exercise.
+        iron_saturday: [],
         iron_sunday: [
-            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" },
             { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" }
         ],
         ems_wednesday: [
@@ -296,11 +294,9 @@ window.setPegasusPlan = function(planKey) {
             { name: "Low Rows Seated", sets: 3, muscleGroup: "Πλάτη", weight: "36" },
             { name: "Leg Raise Hip Lift", sets: 4, muscleGroup: "Κορμός", weight: "0" }
         ],
-        bike_saturday: [
-            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" }
-        ],
+        // Cycling is logged through the Cardio module (km/kcal), not as a workout exercise.
+        bike_saturday: [],
         bike_sunday: [
-            { name: "Cycling", sets: 1, muscleGroup: "Πόδια", weight: "0" },
             { name: "Upright Rows", sets: 4, muscleGroup: "Ώμοι", weight: "30" }
         ]
     };

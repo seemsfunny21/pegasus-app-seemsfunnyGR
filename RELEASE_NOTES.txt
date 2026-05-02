@@ -72,3 +72,10 @@ PEGASUS 146 - WORKOUT AUTO-SCROLL POLISH
 - Supports moving down and back up when circuit order wraps, reducing mouse use mid-workout.
 - Keeps the fix inside app.js; no new JS file added.
 - Service worker cache version bumped to pegasus-shield-v3.79-FINAL-146.
+
+
+PEGASUS 147 - CYCLING CARDIO-ONLY CLEANUP
+- Removed Cycling from the visible weekend workout exercise lists.
+- Cycling remains available in the cardio database/history and is logged only through km/kcal entry.
+- Desktop and mobile cardio leg credit is capped by the remaining weekly leg target.
+- Service worker cache version bumped to pegasus-shield-v3.80-FINAL-147.
