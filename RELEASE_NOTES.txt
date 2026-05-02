@@ -223,3 +223,12 @@ PEGASUS 176 - KOUKI DAILY ADVISOR MENU ROUTING
 - Kept mobile static Oracle/status header behavior from 175 and touch/swipe cleanup from 174.
 - No new files added; expected package file count remains 59.
 - Service worker cache version bumped to pegasus-shield-v3.108-FINAL-176.
+
+PEGASUS 177 - MOBILE FOOD SEARCH VISIBILITY + LIBRARY READ FIX
+- Fixed mobile food search suggestions not appearing while typing.
+- Replaced the missing PegasusMobileSafe.safeReadStorage dependency with a direct safe localStorage reader for the food library.
+- Search now works from the first typed character and is accent-insensitive for Greek food names.
+- Shows a small inline message when the library is empty or no food matches, so the dropdown is no longer silently invisible.
+- Strengthened mobile CSS for the suggestion dropdown so results remain visible under the input.
+- No new files added; changed mobile/diet-mobile.js, mobile/style.css, mobile/mobile.html, sw.js, RELEASE_NOTES.txt.
+- Service worker cache version bumped to pegasus-shield-v3.109-FINAL-177.

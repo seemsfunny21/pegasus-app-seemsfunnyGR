@@ -382,20 +382,72 @@ window.PegasusDiet = {
             });
         });
     },
+    normalizeSearchText: function(value) {
+        return String(value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/ς/g, 'σ')
+            .trim();
+    },
+
+    readFoodLibraryForSearch: function() {
+        const primaryKey = window.PegasusManifest?.diet?.foodLibrary || "pegasus_food_library";
+        const candidateKeys = Array.from(new Set([
+            primaryKey,
+            "pegasus_food_library",
+            "food_library",
+            "foods_library"
+        ]));
+
+        for (const key of candidateKeys) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length) return parsed;
+            } catch (e) {
+                console.warn("PEGASUS MOBILE FOOD SEARCH: bad library payload", key, e);
+            }
+        }
+
+        return [];
+    },
+
+    showSearchMessage: function(resBox, message) {
+        const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
+        resBox.innerHTML = `<div class="search-item search-item-empty"><span class="search-item-name">${esc(message)}</span></div>`;
+        resBox.classList.add("is-visible");
+        resBox.style.display = "block";
+    },
+
     handleSearch: function(term) {
         const resBox = document.getElementById("searchSuggestions");
         const fNameInput = document.getElementById("fName");
         const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
+        const rawTerm = String(term || '').trim();
+        const searchTerm = this.normalizeSearchText(rawTerm);
 
         if (!resBox) return;
-        if (!term || term.length < 2) {
+        resBox.classList.remove("is-visible");
+
+        if (!searchTerm) {
             resBox.style.display = "none";
+            resBox.innerHTML = "";
             if (fNameInput) fNameInput.style.borderRadius = "16px";
             return;
         }
 
-        const lib = window.PegasusMobileSafe?.safeReadStorage(window.PegasusManifest?.diet?.foodLibrary || "pegasus_food_library", [], { repairOnFailure: false }) || [];
-        const matches = lib.filter(i => String(i?.name || '').toLowerCase().includes(term.toLowerCase())).slice(0, 5);
+        const lib = this.readFoodLibraryForSearch();
+        if (!lib.length) {
+            this.showSearchMessage(resBox, "Δεν βρέθηκε αποθηκευμένη βιβλιοθήκη φαγητών.");
+            if (fNameInput) fNameInput.style.borderRadius = "16px";
+            return;
+        }
+
+        const matches = lib
+            .filter(i => this.normalizeSearchText(i?.name).includes(searchTerm))
+            .slice(0, 8);
 
         if (matches.length > 0) {
             resBox.innerHTML = matches.map((i, idx) => `
@@ -410,10 +462,11 @@ window.PegasusDiet = {
                     if (item) window.PegasusDiet.selectSuggested(String(item.name || ''), Number(item.kcal) || 0, Number(item.protein) || 0);
                 });
             });
+            resBox.classList.add("is-visible");
             resBox.style.display = "block";
             if (fNameInput) fNameInput.style.borderRadius = "16px";
         } else {
-            resBox.style.display = "none";
+            this.showSearchMessage(resBox, "Δεν βρέθηκε φαγητό στη βιβλιοθήκη.");
             if (fNameInput) fNameInput.style.borderRadius = "16px";
         }
     },
