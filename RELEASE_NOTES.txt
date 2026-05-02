@@ -210,3 +210,10 @@ PEGASUS 164 - MOBILE BODY CHECK-IN AUTO RETURN
 - Prevents unnecessary extra back tap after completing the daily body check-in.
 - No new JS files; mobile biometric logic only.
 
+
+PEGASUS 165 - MOBILE TILE MORPH ANIMATION POLISH
+- Replaces the mobile page-switch vanish effect with a tactical morph animation.
+- Menu tiles now move slightly, blur, change content, and sharpen back into the next page.
+- Keeps the static top mobile section and ghost keys unchanged.
+- No new JS files; mobile animation polish only.
+- Service worker cache version bumped to pegasus-shield-v3.98-FINAL-165.

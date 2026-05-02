@@ -108,23 +108,50 @@ body {
 }
 
 .tile.pg-tile-exit {
-    animation: pegasusTileExit 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+    animation: pegasusTileMorphOut 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 .tile.pg-tile-enter {
-    opacity: 0;
-    transform: translateY(18px) scale(0.94);
-    animation: pegasusTileEnter 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0.42;
+    transform: translateX(calc(var(--pg-tile-dx, 16px) * -1)) translateY(8px) scale(0.96);
+    filter: blur(3px);
+    animation: pegasusTileMorphIn 0.30s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-@keyframes pegasusTileExit {
-    0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-    100% { opacity: 0; transform: translateY(-14px) scale(0.94); filter: blur(2px); }
+@keyframes pegasusTileMorphOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+        filter: blur(0);
+    }
+    45% {
+        opacity: 0.78;
+        transform: translateX(calc(var(--pg-tile-dx, 16px) * 0.38)) translateY(4px) scale(0.985) rotate(0.35deg);
+        filter: blur(1.2px);
+    }
+    100% {
+        opacity: 0.42;
+        transform: translateX(var(--pg-tile-dx, 16px)) translateY(8px) scale(0.96) rotate(-0.2deg);
+        filter: blur(3px);
+    }
 }
 
-@keyframes pegasusTileEnter {
-    0% { opacity: 0; transform: translateY(18px) scale(0.94); filter: blur(2px); }
-    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+@keyframes pegasusTileMorphIn {
+    0% {
+        opacity: 0.42;
+        transform: translateX(calc(var(--pg-tile-dx, 16px) * -1)) translateY(8px) scale(0.96) rotate(0.2deg);
+        filter: blur(3px);
+    }
+    60% {
+        opacity: 0.9;
+        transform: translateX(calc(var(--pg-tile-dx, 16px) * -0.18)) translateY(2px) scale(1.01) rotate(-0.15deg);
+        filter: blur(0.8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+        filter: blur(0);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

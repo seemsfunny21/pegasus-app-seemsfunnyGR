@@ -335,8 +335,10 @@
                     return true;
                 }
 
+                const dir = Number(direction) >= 0 ? 1 : -1;
                 this.isAnimating = true;
                 grid.classList.add('is-page-transitioning');
+                grid.style.setProperty('--pg-tile-dx', `${dir * 16}px`);
 
                 tiles.forEach((tile, visualIndex) => {
                     const reverseIndex = tiles.length - 1 - visualIndex;
@@ -345,15 +347,16 @@
                     tile.classList.add('pg-tile-exit');
                 });
 
-                const exitTotal = Math.max(240, tiles.length * this.exitStepMs + 220);
+                const exitTotal = Math.max(210, tiles.length * this.exitStepMs + 170);
                 window.setTimeout(() => {
                     this.currentPage = nextPage;
-                    this.render({ animateIn: true, direction });
+                    this.render({ animateIn: true, direction: dir });
 
                     const enterCount = grid.children.length;
-                    const enterTotal = Math.max(260, enterCount * this.enterStepMs + 280);
+                    const enterTotal = Math.max(250, enterCount * this.enterStepMs + 250);
                     window.setTimeout(() => {
                         grid.classList.remove('is-page-transitioning');
+                        grid.style.removeProperty('--pg-tile-dx');
                         Array.from(grid.children).forEach(tile => {
                             tile.classList.remove('pg-tile-enter');
                             tile.style.animationDelay = '';
