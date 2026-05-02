@@ -104,3 +104,10 @@ PEGASUS 150 - RICH DIET ADVISOR UI + FULL 14-DAY LOG ANALYST
 - Ranking still uses today's kcal/protein deficit plus 14-day variety gaps.
 - No new JS files added; logic stays in dietAdvisor.js and mobile/diet-mobile.js.
 - Service worker cache version bumped to pegasus-shield-v3.83-FINAL-150.
+
+PEGASUS 151 - ADVISOR CLEAN UI
+- Advisor keeps the 14-day food-log reasoning internal.
+- Removed visible explanatory paragraphs, audit line, protein/deficit chips and bullet reasoning from advisor output.
+- Desktop and mobile now show clean Pegasus recommendation cards only.
+- No new JS files; changed dietAdvisor.js, mobile/diet-mobile.js, sw.js.
+- Service worker cache version bumped to pegasus-shield-v3.84-FINAL-151.

@@ -285,17 +285,12 @@ window.PegasusDiet = {
             ? `<div class="advisor-repeat-strip">${(insights.repeatedCategories || []).map(item => `<span>${esc(item.icon || '•')} ${esc(item.label)}: ${esc(item.count)}x</span>`).join('')}</div>`
             : '';
 
+        // PEGASUS 151: Keep the 14-day food-log analysis internal.
+        // The advisor uses it for ranking, but mobile shows only clean recommendation cards.
         let html = `
             <div class="advisor-panel pegasus-advisor-rich">
                 <div class="advisor-title">🧠 PEGASUS ADVISOR</div>
-                <div class="advisor-subtitle">Ανάλυση 14 ημερών από το ημερολόγιο διατροφής</div>
-                ${advice.proteinLine ? `<div class="advisor-chip">${esc(advice.proteinLine)}</div>` : ''}
-                ${advice.deficitLine ? `<div class="advisor-chip warn">${esc(advice.deficitLine)}</div>` : ''}
-                ${insights.auditLine ? `<div class="advisor-audit-line">${esc(insights.auditLine)}</div>` : ''}
-                <div class="advisor-history-grid">${historyCards}</div>
-                ${repeatedStrip}
-                <div class="advisor-message">${esc(advice.msg)}</div>
-                ${(advice.suggestions || []).length ? `<div class="advisor-suggestions">${advice.suggestions.map(s => `<div class="advisor-suggestion">• ${esc(s)}</div>`).join('')}</div>` : ''}
+                <div class="advisor-subtitle">Προτάσεις διατροφής</div>
                 <div class="advisor-options">
         `;
 
@@ -314,7 +309,6 @@ window.PegasusDiet = {
                         ${opt.toneLabel ? `<div class="advisor-option-badge ${tone}">${esc(opt.toneLabel)}</div>` : ''}
                         <div class="advisor-option-name">${esc(opt.n)}</div>
                         <div class="advisor-option-macros">🔥 ${Number(macros.kcal) || 0} kcal | 🍗 ${Number(macros.protein) || 0}g</div>
-                        ${opt.reason ? `<div class="advisor-option-reason">${esc(opt.reason)}</div>` : ''}
                     </div>
                     <button data-pegasus-advisor-add="${idx}" class="advisor-add-btn">ΠΡΟΣΘΗΚΗ</button>
                 </div>

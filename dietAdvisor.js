@@ -647,28 +647,23 @@
                         ${opt.toneLabel ? `<div class="advisor-option-badge ${tone}">${esc(opt.toneLabel)}</div>` : ''}
                         <div class="advisor-option-name">${esc(opt.n)}</div>
                         <div class="advisor-option-macros">🔥 ${Number(opt.kcal) || 0} kcal | 🍗 ${Number(opt.protein) || 0}g</div>
-                        ${opt.reason ? `<div class="advisor-option-reason">${esc(opt.reason)}</div>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
 
+        // PEGASUS 151: Keep the 14-day food-log analysis internal.
+        // The advisor still scores options using history, deficits and repetition,
+        // but the UI shows only clean Pegasus recommendation cards.
         return `
             <div class="advisor-panel pegasus-advisor-rich">
                 <div class="advisor-header-row">
                     <div>
                         <div class="advisor-title">🧠 PEGASUS ADVISOR</div>
-                        <div class="advisor-subtitle">${t('Ανάλυση από το ημερολόγιο διατροφής 14 ημερών', '14-day food-log analysis')}</div>
+                        <div class="advisor-subtitle">${t('Προτάσεις διατροφής', 'Nutrition recommendations')}</div>
                     </div>
                     ${closeButton ? `<button class="advisor-close-btn" onclick="window.closePegasusAdvisorModal?.()">×</button>` : ''}
                 </div>
-                ${advice.proteinLine ? `<div class="advisor-chip">${esc(advice.proteinLine)}</div>` : ''}
-                ${advice.deficitLine ? `<div class="advisor-chip warn">${esc(advice.deficitLine)}</div>` : ''}
-                ${insights.auditLine ? `<div class="advisor-audit-line">${esc(insights.auditLine)}</div>` : ''}
-                <div class="advisor-history-grid">${cards}</div>
-                ${repeated}
-                <div class="advisor-message">${esc(advice.msg)}</div>
-                ${(advice.suggestions || []).length ? `<div class="advisor-suggestions">${advice.suggestions.map(s => `<div class="advisor-suggestion">• ${esc(s)}</div>`).join('')}</div>` : ''}
                 <div class="advisor-options">${options}</div>
             </div>
         `;
