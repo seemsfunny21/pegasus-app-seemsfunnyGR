@@ -65,13 +65,13 @@ window.GalleryEngine = {
                     date: dateStr,
                     src: e.target.result // Base64
                 });
-                
+
                 request.onsuccess = () => resolve();
                 request.onerror = () => reject(request.error);
             });
 
             this.render();
-            
+
             // Αυτόματο Push στο Cloud μετά το upload
             if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
                 window.PegasusCloud.push(true);
@@ -129,9 +129,9 @@ window.GalleryEngine = {
         const zone = document.getElementById('comparisonZone');
         const flex = document.getElementById('comparisonFlex');
         if (!zone || !flex) return;
-        
+
         zone.style.display = 'block';
-        
+
         let html = '';
         this.selectedPhotos.forEach((p, i) => {
             const label = i === 0 ? 'BEFORE' : 'AFTER';
@@ -147,14 +147,14 @@ window.GalleryEngine = {
         flex.innerHTML = html;
     },
 
-    clearComparison() { 
-        this.selectedPhotos = []; 
-        this.render(); 
+    clearComparison() {
+        this.selectedPhotos = [];
+        this.render();
     },
 
     async delete(id) {
         if (!confirm("🚨 ΕΠΙΒΕΒΑΙΩΣΗ: Οριστική διαγραφή φωτογραφίας;")) return;
-        
+
         // 🎯 FIXED: Proper Promise wrapper for IndexedDB Delete
         await new Promise((resolve, reject) => {
             const tx = this.db.transaction("photos", "readwrite");

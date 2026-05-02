@@ -125,3 +125,25 @@ PEGASUS 153 - MAINTENANCE CLEANUP 1
 - Removed unused advisor CSS classes from desktop/mobile styles.
 - No new files and no functional behavior change intended.
 - Service worker cache version bumped to pegasus-shield-v3.86-FINAL-153.
+
+
+PEGASUS 154 - ADVISOR MAINTENANCE CLEANUP 2
+- Cleaned no-longer-displayed advisor audit text generation from dietAdvisor.js.
+- Mobile advisor now uses the shared history-days value instead of a hardcoded 14 in its compact category cards.
+- Deduplicated mobile advisor macro resolution inside the existing function.
+- No feature or UI behavior change; no new .js files.
+- Service worker cache version bumped to pegasus-shield-v3.87-FINAL-154.
+
+PEGASUS 155 - MOBILE DIET ROUTINE CLEANUP
+- Consolidated the mobile routine-delete suppression patch into mobile/diet-mobile.js core methods.
+- Removed the old appended patch wrapper while keeping the same behavior: deleted routine entries do not auto-return the same day.
+- Kept whey/creatine inventory restore behavior unchanged.
+- No new files and no feature/UI behavior change intended.
+- Service worker cache version bumped to pegasus-shield-v3.88-FINAL-155.
+
+PEGASUS 156 - BULK SAFE MAINTENANCE CLEANUP
+- Bulk whitespace normalization across text/code files: LF line endings, no trailing whitespace, collapsed oversized blank runs.
+- Removed one unused achievements.js constant that was not referenced anywhere.
+- Removed duplicate trailing semicolon after the data.js split IIFE.
+- No UI/logic/file-structure changes. No new .js files.
+- Service worker cache version bumped to pegasus-shield-v3.89-FINAL-156.

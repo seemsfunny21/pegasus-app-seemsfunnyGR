@@ -18,7 +18,7 @@
             let sleep = 0; if (bio.length > 0) sleep = bio[0].sleep;
             let completed = missions.filter(m => m.completed).length;
             let pct = missions.length > 0 ? (completed / missions.length) * 100 : 0;
-            
+
             let row1 = { icon: '🟢', color: '#00ff41', txt: "Όλα τα συστήματα λειτουργούν φυσιολογικά." };
 
             if (sleep >= 9) {
@@ -34,10 +34,10 @@
             // --- 2. ΕΠΙΚΕΙΜΕΝΑ ΚΑΘΗΚΟΝΤΑ (🟠) ---
             let low = supplies.filter(s => { const r = s.amount/s.portion; return r > 0 && r <= 1.1; }).map(s => s.label);
             let todayMaint = maint.filter(t => Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay) === 0).map(t => t.label);
-            
+
             let warningTxt = "Κανένα επικείμενο καθήκον.";
             let hasWarning = low.length > 0 || todayMaint.length > 0;
-            
+
             if (hasWarning) {
                 let parts = [];
                 if (low.length > 0) parts.push(`Οριακά: ${low.join(', ')}`);
@@ -48,7 +48,7 @@
             // --- 3. ΚΡΙΣΙΜΑ (🔴) ---
             let empty = supplies.filter(s => (s.amount/s.portion) <= 0).map(s => s.label);
             let overdue = maint.filter(t => Math.ceil(((t.lastDone + (t.interval * oneDay)) - now) / oneDay) < 0).map(t => t.label);
-            
+
             let criticalTxt = "Καμία κρίσιμη προειδοποίηση.";
             let hasCritical = empty.length > 0 || overdue.length > 0;
 
@@ -82,9 +82,9 @@
             const rows = this.analyzeData();
             const dashboard = document.createElement('div');
             dashboard.id = 'oracle-dashboard';
-            
+
             dashboard.style.cssText = `
-                grid-column: 1 / -1; 
+                grid-column: 1 / -1;
                 background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
                 border-radius: 16px;
@@ -135,7 +135,7 @@
 
         // 🛑 ΕΛΕΓΧΟΣ: Μετά τις 08:00 ΚΑΙ να μην έχει εμφανιστεί ήδη σήμερα
         if (currentHour >= 8 && lastCheckin !== today) {
-            
+
             // Καταγραφή στο μητρώο για να μην ξαναβγεί
             localStorage.setItem('pegasus_morning_checkin', today);
 
@@ -167,8 +167,8 @@
                     ΠΡΩΙΝΗ ΑΝΑΦΟΡΑ
                 </div>
                 <div style="font-size: 11px; color: #ddd; font-weight: 600; line-height: 1.5;">
-                    Συστήματα ενεργά. Παρακαλώ μην ξεχάσετε να καταχωρήσετε το 
-                    <span style="color:#00ff41; font-weight:900;">Βάρος</span> και τον 
+                    Συστήματα ενεργά. Παρακαλώ μην ξεχάσετε να καταχωρήσετε το
+                    <span style="color:#00ff41; font-weight:900;">Βάρος</span> και τον
                     <span style="color:#00ff41; font-weight:900;">Ύπνο</span> σας.
                 </div>
             `;
@@ -177,11 +177,11 @@
 
             // ⏱️ ΧΡΟΝΟΔΙΑΓΡΑΜΜΑ (TIMELINE)
             setTimeout(() => promptBox.style.opacity = '1', 500); // 0.5s μετά: Εμφάνιση
-            
+
             setTimeout(() => {
                 promptBox.style.opacity = '0'; // Μετά από 2.5s: Σβήσιμο
                 setTimeout(() => promptBox.remove(), 500); // Καθαρισμός DOM
-            }, 5500); 
+            }, 5500);
         }
     }
 

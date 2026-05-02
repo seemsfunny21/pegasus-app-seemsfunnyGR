@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.1 INVENTORY RESTORE PATCH)
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.2 ROUTINE CLEANUP)
    Protocol: Shared Metabolic Helpers, Diet-Only Inventory & Delete Restore
-   Status: FINAL STABLE | FIXED: DUPLICATE TARGET LOGIC REMOVED
+   Status: FINAL STABLE | MAINTENANCE: ROUTINE DELETE PATCH CONSOLIDATED
    ========================================================================== */
 
 window.PegasusDiet = {
@@ -31,13 +31,49 @@ window.PegasusDiet = {
         }
     },
 
-    getRoutineTemplates: function() {
+    getBaseRoutineTemplates: function() {
         return [
             { name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, tsOffset: 1000 },
             { name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, tsOffset: 2000 },
             { name: "Πρωτεΐνη 1 Scoop (Ρουτίνα)", kcal: 120, protein: 24, tsOffset: 2500 },
             { name: "Κρεατίνη 5g (Ρουτίνα)", kcal: 0, protein: 0, tsOffset: 3000 }
         ];
+    },
+
+    getRoutineSuppressionKey: function(dateStr) {
+        return `pegasus_mobile_deleted_routine_${dateStr || this.getStrictDateStr()}`;
+    },
+
+    getSuppressedRoutineNames: function(dateStr) {
+        return this.safeParseLog(localStorage.getItem(this.getRoutineSuppressionKey(dateStr)));
+    },
+
+    setSuppressedRoutineNames: function(dateStr, names) {
+        const uniqueNames = Array.from(new Set((names || []).filter(Boolean)));
+        localStorage.setItem(this.getRoutineSuppressionKey(dateStr), JSON.stringify(uniqueNames));
+    },
+
+    isRoutineName: function(name) {
+        const cleanName = String(name || "");
+        return this.getBaseRoutineTemplates().some(item => item?.name === cleanName);
+    },
+
+    suppressRoutineName: function(dateStr, name) {
+        if (!this.isRoutineName(name)) return;
+        const next = this.getSuppressedRoutineNames(dateStr);
+        next.push(name);
+        this.setSuppressedRoutineNames(dateStr, next);
+    },
+
+    unsuppressRoutineName: function(dateStr, name) {
+        const next = this.getSuppressedRoutineNames(dateStr).filter(entry => entry !== name);
+        this.setSuppressedRoutineNames(dateStr, next);
+    },
+
+    getRoutineTemplates: function() {
+        const dateStr = this.getStrictDateStr();
+        const blocked = new Set(this.getSuppressedRoutineNames(dateStr));
+        return this.getBaseRoutineTemplates().filter(item => !blocked.has(item?.name));
     },
 
     getInventoryImpact: function(name) {
@@ -225,22 +261,30 @@ window.PegasusDiet = {
 
         if (!name || name.trim() === "") return;
 
-        this.applyInventoryImpact(name);
+        const cleanName = String(name).trim();
+        const dateStr = this.getStrictDateStr();
+        const suppressedRoutineNames = new Set(this.getSuppressedRoutineNames(dateStr));
 
-        if (name.includes("(Κούκι)")) {
+        if (this.isRoutineName(cleanName)) {
+            if (suppressedRoutineNames.has(cleanName)) return false;
+            this.unsuppressRoutineName(dateStr, cleanName);
+        }
+
+        this.applyInventoryImpact(cleanName);
+
+        if (cleanName.includes("(Κούκι)")) {
             let agreementLog = JSON.parse(localStorage.getItem('kouki_agreement_log') || "[]");
             agreementLog.push({
                 date: this.getStrictDateStr(),
-                food: name
+                food: cleanName
             });
             localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
         }
 
-        const dateStr = this.getStrictDateStr();
         let log = this.getLog(dateStr);
 
         log.unshift({
-            name: name,
+            name: cleanName,
             kcal: kcal,
             protein: prot,
             ts: Date.now()
@@ -272,12 +316,20 @@ window.PegasusDiet = {
         const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
         const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
         const insights = advice.historyInsights || {};
+        const historyDays = Number(advice?.history?.days || 14);
+        const getOptionMacros = (opt) => {
+            if (Number.isFinite(Number(opt?.kcal)) || Number.isFinite(Number(opt?.protein))) {
+                return { kcal: Number(opt.kcal) || 0, protein: Number(opt.protein) || 0 };
+            }
+            if (typeof window.getPegasusMacros === 'function') return window.getPegasusMacros(opt.n, opt.t);
+            return { kcal: 550, protein: 45 };
+        };
         const historyCards = (insights.categories || []).slice(0, 7).map(item => `
             <div class="advisor-history-card ${esc(item.tone || 'ok')}">
                 <div class="advisor-history-icon">${esc(item.icon || '•')}</div>
                 <div class="advisor-history-main">
                     <div class="advisor-history-label">${esc(item.label)}</div>
-                    <div class="advisor-history-count">${esc(item.daysSeen)}/14 ημέρες</div>
+                    <div class="advisor-history-count">${esc(item.daysSeen)}/${historyDays} ημέρες</div>
                 </div>
             </div>
         `).join('');
@@ -285,8 +337,6 @@ window.PegasusDiet = {
             ? `<div class="advisor-repeat-strip">${(insights.repeatedCategories || []).map(item => `<span>${esc(item.icon || '•')} ${esc(item.label)}: ${esc(item.count)}x</span>`).join('')}</div>`
             : '';
 
-        // PEGASUS 152: Keep reasoning internal, restore compact category icons.
-        // The advisor uses it for ranking, but mobile shows only clean recommendation cards.
         let html = `
             <div class="advisor-panel pegasus-advisor-rich">
                 <div class="advisor-title">🧠 PEGASUS ADVISOR</div>
@@ -297,11 +347,7 @@ window.PegasusDiet = {
         `;
 
         advice.options.forEach((opt, idx) => {
-            const macros = (Number.isFinite(Number(opt.kcal)) || Number.isFinite(Number(opt.protein)))
-                ? { kcal: Number(opt.kcal) || 0, protein: Number(opt.protein) || 0 }
-                : ((typeof window.getPegasusMacros === "function")
-                    ? window.getPegasusMacros(opt.n, opt.t)
-                    : { kcal: 550, protein: 45 });
+            const macros = getOptionMacros(opt);
             const tone = ['green', 'orange', 'red'].includes(opt?.tone) ? opt.tone : 'orange';
 
             html += `
@@ -325,11 +371,7 @@ window.PegasusDiet = {
             btn.addEventListener('click', () => {
                 const opt = advice.options[Number(btn.dataset.pegasusAdvisorAdd)];
                 if (!opt) return;
-                const macros = (Number.isFinite(Number(opt.kcal)) || Number.isFinite(Number(opt.protein)))
-                    ? { kcal: Number(opt.kcal) || 0, protein: Number(opt.protein) || 0 }
-                    : ((typeof window.getPegasusMacros === 'function')
-                        ? window.getPegasusMacros(opt.n, opt.t)
-                        : { kcal: 550, protein: 45 });
+                const macros = getOptionMacros(opt);
                 window.PegasusDiet.quickAdd(`${opt.n} (Κούκι)`, Number(macros.kcal) || 0, Number(macros.protein) || 0);
                 document.getElementById('advisorMobileResult').innerHTML = '';
                 document.getElementById('advisorMobileResult').dataset.expanded = "false";
@@ -491,6 +533,9 @@ window.PegasusDiet = {
         const removedItem = log.splice(idx, 1)[0];
 
         if (removedItem?.name) {
+            if (this.isRoutineName(removedItem.name)) {
+                this.suppressRoutineName(dateStr, removedItem.name);
+            }
             this.restoreInventoryImpact(removedItem.name);
         }
 
@@ -509,110 +554,3 @@ window.PegasusDiet = {
         if (typeof openView === "function") openView('diet');
     }
 };
-
-
-/* ===== CONSOLIDATED FROM diet-delete-routine-fix.js ===== */
-/* ==========================================================================
-   PEGASUS OS - MOBILE DIET DELETE ROUTINE FIX v1.0
-   Purpose: Allow same-day deletion of auto-injected routine meals on mobile
-   Scope: Mobile diet only | Non-invasive patch layer
-   ========================================================================== */
-
-(function installMobileDietDeleteRoutineFix() {
-    if (!window.PegasusDiet || window.PegasusDiet.__routineDeleteFixInstalled) return;
-
-    const diet = window.PegasusDiet;
-    const originalGetRoutineTemplates = typeof diet.getRoutineTemplates === "function"
-        ? diet.getRoutineTemplates.bind(diet)
-        : () => [];
-    const originalAdd = typeof diet.add === "function"
-        ? diet.add.bind(diet)
-        : null;
-    const originalDelete = typeof diet.delete === "function"
-        ? diet.delete.bind(diet)
-        : null;
-
-    const suppressionKey = (dateStr) => `pegasus_mobile_deleted_routine_${dateStr}`;
-
-    function getDateStr() {
-        return typeof diet.getStrictDateStr === "function"
-            ? diet.getStrictDateStr()
-            : `${String(new Date().getDate()).padStart(2, '0')}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-    }
-
-    function safeParse(raw) {
-        try {
-            const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-            return [];
-        }
-    }
-
-    function getSuppressed(dateStr) {
-        return safeParse(localStorage.getItem(suppressionKey(dateStr)));
-    }
-
-    function setSuppressed(dateStr, names) {
-        const uniqueNames = Array.from(new Set((names || []).filter(Boolean)));
-        localStorage.setItem(suppressionKey(dateStr), JSON.stringify(uniqueNames));
-    }
-
-    function addSuppressed(dateStr, name) {
-        const next = getSuppressed(dateStr);
-        next.push(name);
-        setSuppressed(dateStr, next);
-    }
-
-    function removeSuppressed(dateStr, name) {
-        const next = getSuppressed(dateStr).filter(entry => entry !== name);
-        setSuppressed(dateStr, next);
-    }
-
-    function isRoutineName(name) {
-        const allRoutineNames = originalGetRoutineTemplates().map(item => item?.name).filter(Boolean);
-        return allRoutineNames.includes(String(name || ""));
-    }
-
-    diet.getRoutineTemplates = function() {
-        const dateStr = getDateStr();
-        const blocked = new Set(getSuppressed(dateStr));
-        return originalGetRoutineTemplates().filter(item => !blocked.has(item?.name));
-    };
-
-    if (originalAdd) {
-        diet.add = async function(n, k, p) {
-            const dateStr = getDateStr();
-            const name = String(n || document.getElementById("fName")?.value || "").trim();
-
-            if (name && isRoutineName(name)) {
-                const blocked = new Set(getSuppressed(dateStr));
-                if (blocked.has(name)) {
-                    console.log("🛡️ DIET MOBILE PATCH: Suppressed routine re-add blocked:", name);
-                    return false;
-                }
-
-                removeSuppressed(dateStr, name);
-            }
-
-            return originalAdd(n, k, p);
-        };
-    }
-
-    if (originalDelete) {
-        diet.delete = async function(idx) {
-            const dateStr = getDateStr();
-            const log = typeof diet.getLog === "function" ? (diet.getLog(dateStr) || []) : [];
-            const target = log[idx];
-
-            if (target?.name && isRoutineName(target.name)) {
-                addSuppressed(dateStr, target.name);
-            }
-
-            return originalDelete(idx);
-        };
-    }
-
-    diet.__routineDeleteFixInstalled = true;
-    console.log("✅ DIET MOBILE PATCH: Routine delete suppression active.");
-})();

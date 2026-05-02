@@ -18,7 +18,7 @@ window.isRaining = function() {
     const code = parseInt(localStorage.getItem('pegasus_weather_code')) || 0;
     // WMO Codes: 51-67 (Drizzle/Rain), 71-77 (Snow), 80-82 (Showers), 95-99 (Thunderstorm)
     const badWeather = (code >= 51 && code <= 67) || (code >= 71 && code <= 77) || (code >= 80 && code <= 82) || (code >= 95);
-    
+
     if (badWeather) {
         console.log("🌧️ PEGASUS WEATHER: Βροχή/Κακοκαιρία ανιχνεύθηκε. Το πρόγραμμα προσαρμόζεται σε Indoor.");
     }
@@ -45,7 +45,7 @@ window.updateWeatherUI = async function() {
                 weatherEl.innerHTML = `${emoji} ${temp}°C`;
             }
             console.log(`[WEATHER UI] Sync Complete: ${temp}°C ${emoji} (Code: ${code})`);
-            
+
             // 🎯 Αν είναι Σ/Κ και ο καιρός άλλαξε ενώ η εφαρμογή είναι ανοιχτή, κάνουμε force re-render
             const today = new Date().getDay();
             if ((today === 0 || today === 6) && window.masterUI && typeof window.forcePegasusRender === 'function') {
@@ -62,6 +62,6 @@ window.updateWeatherUI = async function() {
 
 // Εκκίνηση με το φόρτωμα της σελίδας
 document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(window.updateWeatherUI, 1500); 
+    setTimeout(window.updateWeatherUI, 1500);
     setInterval(window.updateWeatherUI, 30 * 60 * 1000); // Ανανέωση κάθε 30 λεπτά
 });

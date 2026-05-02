@@ -13,15 +13,15 @@ window.exportPegasusData = async function() {
 
     const data = { localStorage: {}, indexedDB: [] };
     const M = window.PegasusManifest;
-    
+
     console.log("%c[BACKUP] Starting Manifest-Based Scan...", "color: #00bcd4; font-weight: bold;");
 
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         const val = localStorage.getItem(key);
 
-        const isOfficial = Object.values(M).some(category => 
-            Object.values(category).some(manifestKey => 
+        const isOfficial = Object.values(M).some(category =>
+            Object.values(category).some(manifestKey =>
                 key === manifestKey || (typeof manifestKey === 'string' && key.startsWith(manifestKey))
             )
         );
@@ -62,7 +62,7 @@ function finalizeExport(data) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const timestamp = new Date().toISOString().slice(0,10);
-    
+
     a.href = url;
     a.download = `PEGASUS_MASTER_BACKUP_${timestamp}.json`;
     document.body.appendChild(a);
@@ -82,7 +82,7 @@ window.importPegasusData = function(event) {
     reader.onload = async (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-            
+
             // 🛡️ UNIVERSAL UNWRAP: Ανιχνεύει αν τα δεδομένα είναι μέσα στο "localStorage" wrapper
             const payload = imported.localStorage ? imported.localStorage : imported;
 
@@ -101,7 +101,7 @@ window.importPegasusData = function(event) {
             Object.keys(payload).forEach(key => {
                 let newKey = key;
                 let val = payload[key];
-                
+
                 // 🎯 DATE PADDING MIGRATION
                 if (dateKeys.some(prefix => key.startsWith(prefix))) {
                     const parts = key.split('_');
@@ -114,7 +114,7 @@ window.importPegasusData = function(event) {
                         newKey = parts.join('_') + `_${d}/${m}/${y}`;
                     }
                 }
-                
+
                 // 🛡️ STRINGIFICATION SHIELD: Το LocalStorage δέχεται ΜΟΝΟ strings
                 migratedStorage[newKey] = (typeof val === 'object') ? JSON.stringify(val) : String(val);
             });

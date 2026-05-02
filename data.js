@@ -326,7 +326,7 @@ window.setPegasusPlan = function(planKey) {
         window.program["Σάββατο"] = days.bike_saturday;
         window.program["Κυριακή"] = days.bike_sunday;
     }
-})();;
+})();
 
 // Shared helpers for engine / reporting / optimizer
 window.getPegasusExerciseGroup = function(exerciseName) {

@@ -10,7 +10,7 @@ var M = M || window.PegasusManifest;
 // 🎯 FIXED: Σύνδεση στο window για να είναι προσβάσιμο από παντού (app.js)
 window.partnerData = {
     isActive: false,
-    currentPartner: "", 
+    currentPartner: "",
     isUser1Turn: true
 };
 
@@ -18,7 +18,7 @@ window.partnerData = {
 window.togglePartnerMode = function() {
     const nameInput = document.getElementById('partnerNameInput');
     const btn = document.getElementById('btnPartnerMode');
-    
+
     if (!window.partnerData.isActive) {
         let rawName = nameInput ? nameInput.value.trim() : "";
         let upperName = rawName.toLocaleUpperCase('el-GR');
@@ -31,18 +31,18 @@ window.togglePartnerMode = function() {
         window.partnerData.isActive = true;
         window.partnerData.currentPartner = upperName;
         window.partnerData.isUser1Turn = true; // Ο Άγγελος ξεκινάει πάντα πρώτος
-        
+
         // ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΛΙΣΤΑ ΟΝΟΜΑΤΩΝ
         window.savePartnerNameToList(upperName);
         window.updatePartnerDatalist();
-        
+
         if (btn) {
             btn.textContent = `ΣΥΝΕΡΓΑΤΗΣ: ${upperName} (ON)`;
             btn.style.background = "#4CAF50";
             btn.style.color = "#000";
         }
         if (nameInput) nameInput.disabled = true;
-        
+
         console.log(`🤝 PARTNER MODE: Activated with ${upperName}`);
 
     } else {
@@ -50,7 +50,7 @@ window.togglePartnerMode = function() {
         window.partnerData.isActive = false;
         window.partnerData.currentPartner = "";
         window.partnerData.isUser1Turn = true; // Κλείδωμα πίσω στον Άγγελο
-        
+
         if (btn) {
             btn.textContent = "ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ";
             btn.style.background = "#222";
@@ -58,9 +58,9 @@ window.togglePartnerMode = function() {
         }
         if (nameInput) {
             nameInput.disabled = false;
-            nameInput.value = ""; 
+            nameInput.value = "";
         }
-        
+
         console.log("🤝 PARTNER MODE: Deactivated. System reverted to Master User.");
     }
 };
@@ -72,7 +72,7 @@ let list = JSON.parse(localStorage.getItem(listKey) || "[]");
     if (!list.includes(name)) {
         list.push(name);
      localStorage.setItem(listKey, JSON.stringify(list));
-        
+
         // 🎯 FIXED: Cloud Sync για μεταφορά των ονομάτων στο κινητό
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
             window.PegasusCloud.push(true);
@@ -108,7 +108,7 @@ let list = JSON.parse(localStorage.getItem(listKey) || "[]");
         }
     });
 
-    dataList.innerHTML = ""; 
+    dataList.innerHTML = "";
     partnerNames.forEach(name => {
         const option = document.createElement('option');
         option.value = name;
@@ -119,11 +119,11 @@ let list = JSON.parse(localStorage.getItem(listKey) || "[]");
 // 4. ΑΠΟΘΗΚΕΥΣΗ / ΦΟΡΤΩΣΗ ΚΙΛΩΝ
 window.savePartnerWeight = function(exerciseName, weight) {
     if (!exerciseName) return;
-    
+
     // 🎯 Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
     const userKey = window.partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : window.partnerData.currentPartner;
     localStorage.setItem(`weight_${userKey}_${exerciseName.trim()}`, weight);
-    
+
     // Legacy support: Αποθηκεύουμε και στο γενικό κλειδί αν είναι ο Άγγελος
     if (window.partnerData.isUser1Turn) {
         localStorage.setItem(`weight_${exerciseName.trim()}`, weight);
@@ -132,18 +132,18 @@ window.savePartnerWeight = function(exerciseName, weight) {
 
 window.loadPartnerWeight = function(exerciseName) {
     if (!exerciseName) return "";
-    
+
     // 🎯 Ενιαία Ελληνική ονοματολογία ID ("ΑΓΓΕΛΟΣ")
     const userKey = window.partnerData.isUser1Turn ? "ΑΓΓΕΛΟΣ" : window.partnerData.currentPartner;
-    
+
     // Διαβάζει πρώτα από το Partner Key, μετά από το Legacy Key
-    return localStorage.getItem(`weight_${userKey}_${exerciseName.trim()}`) || 
+    return localStorage.getItem(`weight_${userKey}_${exerciseName.trim()}`) ||
            localStorage.getItem(`weight_${exerciseName.trim()}`) || "";
 };
 
 // 5. INITIALIZATION
 window.addEventListener('DOMContentLoaded', () => {
     const nameInput = document.getElementById('partnerNameInput');
-    if (nameInput) nameInput.value = ""; 
+    if (nameInput) nameInput.value = "";
     window.updatePartnerDatalist();
 });

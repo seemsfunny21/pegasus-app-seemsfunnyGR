@@ -34,10 +34,10 @@ window.PegasusEMS = {
     updateUI: function() {
         const min = String(Math.floor(this.seconds/60)).padStart(2,'0');
         const sec = String(this.seconds%60).padStart(2,'0');
-        
+
         const timerEl = document.getElementById('phaseTimer');
         const fillEl = document.getElementById('phaseProgressFill');
-        
+
         if (timerEl) timerEl.textContent = `${min}:${sec}`;
         if (fillEl) {
             const pct = (this.seconds / 1500) * 100;
@@ -47,17 +47,17 @@ window.PegasusEMS = {
 
     complete: async function() {
         console.log("⚡ EMS: Session Completed. Running Final Pulse Protocol...");
-        
+
         // --- 0. DATA SOURCE RECOVERY ---
         let h = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
-        
+
         // --- 0.1 DATE PREPARATION (UNIFIED PADDING PROTOCOL) ---
         const rawDate = new Date();
         const dStr = String(rawDate.getDate()).padStart(2, '0');
         const mStr = String(rawDate.getMonth() + 1).padStart(2, '0');
         const dateStr = `${dStr}/${mStr}/${rawDate.getFullYear()}`;
-        
+
         // --- 1. CARDIO GUARD: Έλεγχος αν έγινε ποδήλατο σήμερα (PC ή Mobile) ---
         const hasCardio = localStorage.getItem("pegasus_cardio_kcal_" + dateStr);
 
@@ -78,14 +78,14 @@ window.PegasusEMS = {
 
         // --- 3. FINAL SAVE & SYNC ---
         localStorage.setItem('pegasus_weekly_history', JSON.stringify(h));
-        
+
         alert("⚡ EMS SESSION COMPLETE!\n36 Sets added to XP.\nLeg sets skipped if cardio was detected.");
-        
+
         if (window.PegasusCloud) {
             // Χρήση true για άμεσο συγχρονισμό μετά από μεγάλο session
             await window.PegasusCloud.push(true);
         }
-        
+
         if (typeof openView === "function") openView('home');
         location.reload(); // Refresh για ενημέρωση των progress bars
     }

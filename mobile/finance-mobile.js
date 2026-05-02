@@ -16,7 +16,7 @@
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div class="section-title">ΟΙΚΟΝΟΜΙΚΗ ΔΙΑΧΕΙΡΙΣΗ</div>
-            
+
             <div class="mini-card" style="border-left: 4px solid var(--main); margin-bottom: 20px; background: rgba(0,255,65,0.05);">
                 <span class="mini-label" style="color: var(--main); opacity: 1;">ΤΡΕΧΟΝ ΥΠΟΛΟΙΠΟ</span>
                 <div id="totalBalance" class="mini-val" style="font-size: 36px; text-shadow: 0 0 15px rgba(0,255,65,0.3);">0.00€</div>
@@ -27,18 +27,18 @@
                     <div style="font-size: 10px; color: #777; font-weight: 800; margin-bottom: 5px; letter-spacing: 1px;">ΠΕΡΙΓΡΑΦΗ ΣΥΝΑΛΛΑΓΗΣ</div>
                     <input type="text" id="finDesc" placeholder="π.χ. Σούπερ Μάρκετ" style="opacity: 1; border: 2px solid #444; color: #fff; background: #000;">
                 </div>
-                
+
                 <div style="margin-bottom: 15px;">
                     <div style="font-size: 10px; color: #777; font-weight: 800; margin-bottom: 5px; letter-spacing: 1px;">ΠΟΣΟ ΣΕ ΕΥΡΩ (€)</div>
                     <input type="number" id="finAmount" placeholder="0.00" inputmode="decimal" style="opacity: 1; border: 2px solid #444; color: #fff; background: #000; font-size: 20px; font-weight: 900;">
                 </div>
 
                 <div class="compact-grid" style="gap: 15px;">
-                    <button class="primary-btn" onclick="window.PegasusFinance.addTransaction('income')" 
+                    <button class="primary-btn" onclick="window.PegasusFinance.addTransaction('income')"
                         style="background: #008f25; border: 2px solid #00ff41; color: #fff; font-weight: 900; height: 55px; opacity: 1; box-shadow: 0 4px 15px rgba(0,255,65,0.2);">
                         + ΕΣΟΔΟ
                     </button>
-                    <button class="primary-btn" onclick="window.PegasusFinance.addTransaction('expense')" 
+                    <button class="primary-btn" onclick="window.PegasusFinance.addTransaction('expense')"
                         style="background: #8f0000; border: 2px solid #ff4444; color: #fff; font-weight: 900; height: 55px; opacity: 1; box-shadow: 0 4px 15px rgba(255,68,68,0.2);">
                         - ΕΞΟΔΟ
                     </button>
@@ -62,13 +62,13 @@
 
             // Τοπική αποθήκευση
             localStorage.setItem(FINANCE_DATA_KEY, JSON.stringify(data));
-            
+
             // Ανανέωση UI
             this.render();
 
             // ☁️ REAL-TIME CLOUD TRIGGER (Bypass debounce)
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(true); 
+                window.PegasusCloud.push(true);
             }
         },
 
@@ -80,9 +80,9 @@
 
             const descInput = document.getElementById('finDesc');
             const amountInput = document.getElementById('finAmount');
-            
+
             const desc = descInput.value;
-            
+
             // 🛡️ NaN GUARD: Μετατροπή κόμματος σε τελεία πριν την ανάλυση
             const safeAmountStr = String(amountInput.value).replace(',', '.');
             const amount = parseFloat(safeAmountStr);
@@ -102,10 +102,10 @@
             };
 
             transactions.unshift(newEntry);
-            
+
             descInput.value = '';
             amountInput.value = '';
-            
+
             this.saveAndRender(transactions);
         },
 
@@ -130,7 +130,7 @@
                 total += t.amount;
                 const color = t.amount > 0 ? '#00ff41' : '#ff4444';
                 const sign = t.amount > 0 ? '+' : '';
-                
+
                 html += `
                     <div class="mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-color: #222; background: rgba(20,20,20,0.8);">
                         <div style="flex: 1; text-align: left;">
@@ -139,7 +139,7 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <div style="font-weight: 900; color: ${color}; font-size: 16px;">${sign}${t.amount.toFixed(2)}€</div>
-                            <button onclick="window.PegasusFinance.deleteTransaction(${t.id})" 
+                            <button onclick="window.PegasusFinance.deleteTransaction(${t.id})"
                                     style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 8px; font-size: 14px; cursor: pointer;">
                                 🗑️
                             </button>

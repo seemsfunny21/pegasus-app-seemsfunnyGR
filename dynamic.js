@@ -11,14 +11,14 @@ window.PegasusDynamic = {
 
 optimize: function() {
         console.log("⏱️ DYNAMIC ENGINE: Calculating Time Budget...");
-        
+
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
-        
+
         // 🔄 Σύνδεση με τον Optimizer για κοινούς στόχους
         const targets = (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === "function")
             ? window.PegasusOptimizer.getTargets()
             : { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Πόδια": 24, "Κορμός": 12 };
-        
+
         // 1. Υπολογισμός Ελλείψεων
         let deficits = {};
         Object.keys(targets).forEach(m => {
@@ -38,11 +38,11 @@ optimize: function() {
             // 3. TIME AUDIT: Υπολογισμός και Περικοπή
             let totalSets = 0;
             const fragment = document.createDocumentFragment(); // 🎯 FIXED: Αποτροπή DOM Reflow Thrashing
-            
+
             window.exercises.forEach(ex => {
                 // Υποστήριξη πολλαπλών attributes σε περίπτωση αλλαγής δομής στο app.js
                 let sets = parseInt(ex.dataset.total || ex.dataset.sets || ex.getAttribute('data-sets')) || 4;
-                
+
                 // Εξαίρεση: Το Stretching δεν κοστίζει τον ίδιο χρόνο
                 const isStretching = ex.innerHTML.includes("Stretching");
                 const cost = isStretching ? 2 : (sets * this.setDuration);
@@ -52,14 +52,14 @@ optimize: function() {
                     if (!isStretching) totalSets += sets;
                     // PEGASUS 141 FIX: keep exercise card CSS layout on manual day switch.
                     ex.style.display = "";
-                    ex.style.flexDirection = ""; 
+                    ex.style.flexDirection = "";
                     ex.setAttribute("data-active", "true"); // Safety flag
                     ex.style.opacity = "1";
                     fragment.appendChild(ex);
                 } else {
                     // Περικοπή
-                    ex.style.display = "none"; 
-                    ex.setAttribute("data-active", "false"); 
+                    ex.style.display = "none";
+                    ex.setAttribute("data-active", "false");
                     console.log(`✂️ Time Cap: Removed exercise to enforce 60-min window.`);
                     fragment.appendChild(ex); // Το κρατάμε στο DOM αλλά κρυφό
                 }
@@ -71,10 +71,10 @@ optimize: function() {
                 container.innerHTML = ""; // Καθαρισμός παλιών
                 container.appendChild(fragment); // Εισαγωγή νέων ταξινομημένων
             }
-            
+
             const totalMins = Math.round(totalSets * this.setDuration);
             console.log(`✅ DYNAMIC UI: Final Plan - ${totalSets} sets (~${totalMins} mins)`);
-            
+
             // Οπτική ειδοποίηση στο UI αν ξεπεράσαμε το όριο
             if (window.PegasusLogger && totalMins > 55) {
                 window.PegasusLogger.log(`Time Budget Critical: ${totalMins}/60 mins allocated.`, "INFO");

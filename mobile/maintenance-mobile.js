@@ -31,7 +31,7 @@
             }
 
             let tasks = JSON.parse(localStorage.getItem(MAINTENANCE_DATA_KEY)) || [];
-            
+
             const newEntry = {
                 id: 'maint_' + Date.now(),
                 label: label.trim(),
@@ -78,7 +78,7 @@
         const viewDiv = document.createElement('div');
         viewDiv.id = 'maintenance';
         viewDiv.className = 'view';
-        
+
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -104,7 +104,7 @@
         if (!container) return;
 
         const tasks = JSON.parse(localStorage.getItem(MAINTENANCE_DATA_KEY)) || [];
-        
+
         // 🚀 ΝΕΑ ΛΟΓΙΚΗ: Ημερολογιακός Υπολογισμός (Μεσάνυχτα)
         const now = new Date();
         now.setHours(0, 0, 0, 0); // Σημερινή ημέρα ακριβώς τα μεσάνυχτα
@@ -112,16 +112,16 @@
         container.innerHTML = tasks.map(task => {
             const lastDoneDate = new Date(task.lastDone);
             lastDoneDate.setHours(0, 0, 0, 0); // Ημέρα τελευταίας εκτέλεσης τα μεσάνυχτα
-            
+
             const oneDay = 24 * 60 * 60 * 1000; // Χιλιοστά του δευτερολέπτου σε 1 μέρα
-            
+
             // Υπολογισμός πραγματικών ημερολογιακών ημερών που πέρασαν
             const daysElapsed = Math.floor((now.getTime() - lastDoneDate.getTime()) / oneDay);
             const diffDays = task.interval - daysElapsed;
-            
+
             let statusColor = '#00ff41';
             let statusTxt = `${diffDays} ΗΜΕΡΕΣ`;
-            
+
             if (diffDays <= 0) {
                 statusColor = '#ff4444';
                 statusTxt = 'ΛΗΞΗ - ΕΚΤΕΛΕΣΗ ΤΩΡΑ';
@@ -142,12 +142,12 @@
                         </div>
                         <button onclick="window.PegasusMaintenance.deleteTask('${task.id}')" style="background:none; border:none; color:#333; font-size:12px; cursor: pointer;">🗑️</button>
                     </div>
-                    
+
                     <div class="bar-bg" style="height: 4px; margin-bottom: 15px;">
                         <div class="bar-fill" style="width: ${pct}%; background: ${statusColor}; transition: width 0.5s ease;"></div>
                     </div>
-                    
-                    <button class="primary-btn" style="padding: 10px; font-size: 11px; background: rgba(0,255,65,0.05); border-color: ${statusColor}; color: ${statusColor};" 
+
+                    <button class="primary-btn" style="padding: 10px; font-size: 11px; background: rgba(0,255,65,0.05); border-color: ${statusColor}; color: ${statusColor};"
                             onclick="window.PegasusMaintenance.resetTask('${task.id}')">
                         ✅ ΟΛΟΚΛΗΡΩΘΗΚΕ (RESET)
                     </button>

@@ -7,13 +7,6 @@
 // 🛡️ Global Safe Declaration
 var M = M || window.PegasusManifest;
 
-const allExercises = [
-    "Seated Chest Press", "Pec Deck", "Pushups",
-    "Lat Pulldown", "Low Seated Row", "Close Grip Pulldown", "Behind the Neck Pulldown", "Reverse Row",
-    "Preacher Curl", "Standing Bicep Curl", "Triceps Overhead Extension", "Triceps Press",
-    "Leg Extension", "Plank", "Lying Knee Raise", "Reverse Crunch", "Leg Raise Hip Lift",
-    "Stretching", "EMS Κοιλιακών", "EMS Πλάτης", "EMS Ποδιών", "Προθέρμανση"
-];
 
 function getPegasusCoreEngine() {
     if (window.PegasusEngine && window.PegasusEngine.__isCoreEngine) {

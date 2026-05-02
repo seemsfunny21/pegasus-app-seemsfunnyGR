@@ -8,7 +8,7 @@ const CAR_M = window.PegasusManifest || { car: { identity: "pegasus_car_identity
 window.PegasusCar = {
     saveSpecs: async function() {
         console.log("🚗 CAR: Initiating Save Protocol...");
-        
+
         const identity = {
             plate: document.getElementById('carPlate')?.value || "",
             model: document.getElementById('carModel')?.value || "",
@@ -25,28 +25,28 @@ window.PegasusCar = {
 
         localStorage.setItem(CAR_M.car.identity, JSON.stringify(identity));
         localStorage.setItem(CAR_M.car.dates, JSON.stringify(dates));
-        localStorage.setItem(CAR_M.car.legacySpecs, JSON.stringify(identity)); 
-        
+        localStorage.setItem(CAR_M.car.legacySpecs, JSON.stringify(identity));
+
         document.querySelectorAll('#car input').forEach(el => el.setAttribute('readonly', true));
-        
+
         if (window.PegasusCloud) {
             if (typeof setSyncStatus === "function") setSyncStatus('ΑΠΟΣΤΟΛΗ...');
             await window.PegasusCloud.push(true);
             if (typeof setSyncStatus === "function") setSyncStatus('online');
             console.log("📡 CAR: Cloud Sync Successful.");
         }
-        
+
         this.load();
         alert("Τα στοιχεία του οχήματος αποθηκεύτηκαν και συγχρονίστηκαν.");
     },
 
     load: function() {
-        const identity = JSON.parse(localStorage.getItem(CAR_M.car.identity)) || 
+        const identity = JSON.parse(localStorage.getItem(CAR_M.car.identity)) ||
                          JSON.parse(localStorage.getItem(CAR_M.car.legacySpecs)) || {};
-        
-        const dates = JSON.parse(localStorage.getItem(CAR_M.car.dates)) || 
+
+        const dates = JSON.parse(localStorage.getItem(CAR_M.car.dates)) ||
                       JSON.parse(localStorage.getItem(CAR_M.car.legacyDates)) || {};
-        
+
         const fields = {
             'carPlate': identity.plate, 'carModel': identity.model,
             'carVin': identity.vin, 'carEngine': identity.eng,
@@ -67,25 +67,25 @@ window.PegasusCar = {
         if (!t || !k) return;
 
         let logs = JSON.parse(localStorage.getItem(CAR_M.car.service)) || [];
-        
+
         // 🛡️ DATE FORMAT FIX: Αποφυγή el-GR format trap
         const rawDate = new Date();
         const dateStrSafe = `${rawDate.getDate()}/${rawDate.getMonth() + 1}/${rawDate.getFullYear()}`;
 
         logs.unshift({ t: t.toUpperCase(), k: k.toLocaleString('el-GR'), d: dateStrSafe });
-        
+
         localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
-        
+
         if(document.getElementById('srvTask')) document.getElementById('srvTask').value = "";
         if(document.getElementById('srvKm')) document.getElementById('srvKm').value = "";
-        
+
         this.renderServiceLog();
         if (window.PegasusCloud) await window.PegasusCloud.push(true);
     },
 
     renderServiceLog: function() {
         let logs = JSON.parse(localStorage.getItem(CAR_M.car.service));
-        
+
         if (!logs || logs.length === 0) {
             logs = JSON.parse(localStorage.getItem(CAR_M.car.legacyService)) || [];
             if (logs.length > 0) localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
@@ -117,7 +117,7 @@ window.PegasusCar = {
         let logs = JSON.parse(localStorage.getItem(CAR_M.car.service)) || [];
         logs.splice(idx, 1);
         localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
-        
+
         this.renderServiceLog();
         if (window.PegasusCloud) await window.PegasusCloud.push(true);
     }

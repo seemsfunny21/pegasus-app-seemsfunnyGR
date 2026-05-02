@@ -26,7 +26,7 @@
                 console.log("🎯 MISSIONS: New day detected. Resetting progress...");
                 let missions = JSON.parse(localStorage.getItem(MISSIONS_DATA_KEY)) || [];
                 missions.forEach(m => m.completed = false);
-                
+
                 localStorage.setItem(MISSIONS_DATA_KEY, JSON.stringify(missions));
                 localStorage.setItem(MISSIONS_DATE_KEY, today);
             }
@@ -67,7 +67,7 @@
             }
 
             let missions = JSON.parse(localStorage.getItem(MISSIONS_DATA_KEY)) || [];
-            
+
             const newEntry = {
                 id: 'mis_' + Date.now(),
                 title: title.trim(),
@@ -92,12 +92,12 @@
         saveAndRender: async function(data) {
             localStorage.setItem(MISSIONS_DATA_KEY, JSON.stringify(data));
             localStorage.setItem(MISSIONS_DATE_KEY, getStrictDateStr());
-            
+
             window.renderMissionsContent();
 
             // 🛡️ Instant Cloud Sync για το Mobile Interface
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                await window.PegasusCloud.push(true); 
+                await window.PegasusCloud.push(true);
             }
         }
     };
@@ -107,7 +107,7 @@
         const viewDiv = document.createElement('div');
         viewDiv.id = 'missions';
         viewDiv.className = 'view';
-        
+
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -138,13 +138,13 @@
         const pctTxt = document.getElementById('missionPctTxt');
         const progressBar = document.getElementById('missionProgressBar');
         const dateTxt = document.getElementById('missionDate');
-        
+
         if (!container) return;
 
-        window.PegasusMissions.checkDailyReset(); 
+        window.PegasusMissions.checkDailyReset();
 
         const missions = JSON.parse(localStorage.getItem(MISSIONS_DATA_KEY)) || [];
-        
+
         if (dateTxt) dateTxt.textContent = getStrictDateStr();
 
         let completedCount = 0;
@@ -152,7 +152,7 @@
 
         missions.forEach(mission => {
             if (mission.completed) completedCount++;
-            
+
             const isDone = mission.completed;
             const bgColor = isDone ? 'rgba(0,255,65,0.1)' : 'rgba(15,15,15,0.95)';
             const borderColor = isDone ? 'var(--main)' : '#333';
@@ -165,7 +165,7 @@
                         <div style="font-size: 20px;">${icon}</div>
                         <div style="font-size: 14px; font-weight: 800; ${textStyle}">${mission.title}</div>
                     </div>
-                    <button onclick="window.PegasusMissions.deleteMission('${mission.id}')" 
+                    <button onclick="window.PegasusMissions.deleteMission('${mission.id}')"
                             style="background: transparent; border: none; color: #555; font-size: 14px; padding: 5px; cursor: pointer;">
                         🗑️
                     </button>
@@ -178,7 +178,7 @@
 
         if (pctTxt) pctTxt.textContent = `${percentage}%`;
         if (progressBar) progressBar.style.width = `${percentage}%`;
-        
+
         if (percentage === 100 && total > 0) {
             if(pctTxt) {
                 pctTxt.style.color = '#00ff41';
@@ -197,12 +197,12 @@
     document.addEventListener("DOMContentLoaded", () => {
         injectViewLayer();
         window.renderMissionsContent();
-        
+
         if (window.registerPegasusModule) {
-            window.registerPegasusModule({ 
-                id: 'missions', 
-                label: 'Δραστηριότητες', 
-                icon: '📋' 
+            window.registerPegasusModule({
+                id: 'missions',
+                label: 'Δραστηριότητες',
+                icon: '📋'
             });
         }
     });

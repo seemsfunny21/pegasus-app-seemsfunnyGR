@@ -10,7 +10,7 @@ html, body {
     padding: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden; 
+    overflow: hidden;
     background: #000;
     color: #4CAF50;
     font-family: 'Segoe UI', Arial, sans-serif;
@@ -21,25 +21,25 @@ body::-webkit-scrollbar { display: none; }
 
 /* 🎯 FIXED: Αποτροπή iOS Auto-Zoom στα inputs */
 input[type="number"], input[type="text"], input[type="password"] {
-    font-size: 16px !important; 
+    font-size: 16px !important;
 }
 
 /* ================= NAVIGATION BAR (STRICT STATIC DESKTOP) ================= */
 .navbar {
     display: flex;
-    flex-wrap: nowrap !important; 
+    flex-wrap: nowrap !important;
     background: #111;
-    height: 60px !important; 
+    height: 60px !important;
     border-bottom: 1px solid #222;
     flex-shrink: 0;
     width: 100%;
-    overflow-x: auto; 
+    overflow-x: auto;
     scrollbar-width: none;
 }
 .navbar::-webkit-scrollbar { display: none; }
 
 .navbar button {
-    flex: 1 1 auto; 
+    flex: 1 1 auto;
     min-width: 80px;
     padding: 12px 5px;
     font-size: 14px;
@@ -63,37 +63,37 @@ input[type="number"], input[type="text"], input[type="password"] {
 .pegasus-control-bar {
     position: relative;
     display: flex;
-    flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; 
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
     align-items: center;
-    gap: 6px !important; 
+    gap: 6px !important;
     padding: 0 10px;
     background: #1a1a1a;
     border-bottom: 2px solid #333;
-    height: 60px !important; 
+    height: 60px !important;
     box-sizing: border-box;
     flex-shrink: 0;
     width: 100%;
-    overflow-x: auto; 
+    overflow-x: auto;
     scrollbar-width: none;
 }
 .pegasus-control-bar::-webkit-scrollbar { display: none; }
 
 .control-buttons {
     display: flex;
-    flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; 
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
     align-items: center;
     gap: 6px !important;
 }
 
 .info-display {
     display: flex;
-    flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; 
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
     align-items: center;
     gap: 6px !important;
-    margin: 0 !important; 
+    margin: 0 !important;
 }
 
 .p-btn, .weather-text, .workout-count-text, #totalProgressContainer {
@@ -107,11 +107,11 @@ input[type="number"], input[type="text"], input[type="password"] {
     border-radius: 6px;
     font-weight: bold;
     font-size: 13px;
-    white-space: nowrap !important; 
+    white-space: nowrap !important;
     transition: all 0.3s ease;
     box-sizing: border-box;
     padding: 0 12px;
-    flex-shrink: 1; 
+    flex-shrink: 1;
 }
 
 .p-btn { cursor: pointer; text-decoration: none; }
@@ -126,8 +126,8 @@ input[type="number"], input[type="text"], input[type="password"] {
     .pegasus-control-bar { gap: 4px !important; padding: 0 5px; }
     .control-buttons, .info-display { gap: 4px !important; }
     .p-btn, .weather-text, .workout-count-text {
-        padding: 0 8px; 
-        font-size: 11px; 
+        padding: 0 8px;
+        font-size: 11px;
     }
     #totalProgressContainer { width: 100px; }
     .navbar button { font-size: 12px; padding: 12px 2px; }
@@ -144,7 +144,7 @@ input[type="number"], input[type="text"], input[type="password"] {
 
 /* ================= MAIN CONTENT LAYOUT ================= */
 .content {
-    height: calc(100% - 120px); 
+    height: calc(100% - 120px);
     padding: 15px;
     display: flex;
     box-sizing: border-box;
@@ -193,42 +193,42 @@ input[type="number"], input[type="text"], input[type="password"] {
 }
 
 .exercise-skipped {
-    opacity: 0.25 !important; 
+    opacity: 0.25 !important;
     filter: grayscale(1) blur(0.5px);
-    border: 2px dotted #ff4444 !important; 
+    border: 2px dotted #ff4444 !important;
     background: rgba(255, 0, 0, 0.05) !important;
     transition: all 0.3s ease;
 }
 
 .exercise-skipped .exercise-info {
     cursor: pointer;
-    pointer-events: auto; 
+    pointer-events: auto;
 }
 
 .exercise-skipped:hover {
     opacity: 0.5 !important;
 }
 
-.exercise-info { 
-    display: flex; 
-    gap: 15px; 
-    align-items: center; 
-    margin-bottom: 10px; 
+.exercise-info {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 10px;
     cursor: pointer;
-    width: 100%; 
+    width: 100%;
 }
 
 .set-counter { min-width: 40px; color: #4CAF50; font-weight: bold; font-size: 17px; }
 .exercise-name { flex: 1; font-weight: bold; font-size: 14px; color: #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.weight-input { 
-    width: 55px; 
-    height: 26px; 
-    background: #000; 
-    color: #4CAF50; 
-    border: 1px solid #333; 
-    border-radius: 4px; 
-    text-align: center; 
+.weight-input {
+    width: 55px;
+    height: 26px;
+    background: #000;
+    color: #4CAF50;
+    border: 1px solid #333;
+    border-radius: 4px;
+    text-align: center;
     font-weight: bold;
 }
 
@@ -255,40 +255,40 @@ input[type="number"], input[type="text"], input[type="password"] {
 .pegasus-panel h3 { margin-top: 0; color: #4CAF50; text-align: center; text-transform: uppercase; font-size: 17px; letter-spacing: 2px; }
 
 /* ================= FOOD PANEL LAYOUT ================= */
-#foodPanel { 
-    width: 1350px !important; 
-    max-width: 98vw; 
+#foodPanel {
+    width: 1350px !important;
+    max-width: 98vw;
 }
 
-.food-layout { 
-    display: flex !important; 
+.food-layout {
+    display: flex !important;
     flex-direction: row !important;
-    flex-wrap: nowrap !important; 
-    gap: 15px; 
-    height: 500px; 
+    flex-wrap: nowrap !important;
+    gap: 15px;
+    height: 500px;
     width: 100%;
     box-sizing: border-box;
 }
 
-.food-section { 
-    flex: 1 !important; 
-    min-width: 320px; 
+.food-section {
+    flex: 1 !important;
+    min-width: 320px;
     background: rgba(255,255,255,0.02);
     padding: 10px;
     border-radius: 8px;
     border: 1px solid #222;
-    overflow-y: auto; 
+    overflow-y: auto;
 }
 
 /* ================= VIDEO CONTAINER ================= */
-.video-container { 
-    flex: 1; 
-    background: #000; 
-    border-radius: 12px; 
+.video-container {
+    flex: 1;
+    background: #000;
+    border-radius: 12px;
     border: 1px solid #4CAF50;
-    overflow: hidden; 
-    position: relative; 
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.1); 
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.1);
 }
 .main-video { width: 100%; height: 100%; object-fit: contain; }
 
@@ -305,27 +305,27 @@ input[type="number"], input[type="text"], input[type="password"] {
 }
 
 /* ================= THE ABSOLUTE GREEN PROTOCOL (ANTI-BLUE OVERRIDE) ================= */
-#btnAddFood, 
-button#btnAddFood, 
+#btnAddFood,
+button#btnAddFood,
 .p-btn#btnAddFood {
-    all: unset !important; 
+    all: unset !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     box-sizing: border-box !important;
-    
+
     height: 38px !important;
     padding: 0 20px !important;
     background-color: #111 !important;
     color: #4CAF50 !important;
     border: 1px solid #4CAF50 !important;
     border-radius: 6px !important;
-    
+
     font-weight: bold !important;
     font-size: 13px !important;
     cursor: pointer !important;
     text-transform: uppercase !important;
-    
+
     -webkit-tap-highlight-color: transparent !important;
     outline: none !important;
     transition: 0.3s ease !important;
@@ -338,22 +338,22 @@ button#btnAddFood,
 }
 
 /* ================= UTILS - DELETE BUTTONS ================= */
-.delete-btn, 
-.btn-delete, 
-button[onclick*="delete"], 
+.delete-btn,
+.btn-delete,
+button[onclick*="delete"],
 button[onclick*="remove"] {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    
-    background: #000 !important; 
-    border: 1px solid #4CAF50 !important; 
-    color: #4CAF50 !important; 
-    
+
+    background: #000 !important;
+    border: 1px solid #4CAF50 !important;
+    color: #4CAF50 !important;
+
     width: 22px !important;
     height: 22px !important;
     min-width: 22px !important;
-    
+
     border-radius: 4px !important;
     cursor: pointer !important;
     font-family: Arial, sans-serif !important;
@@ -365,26 +365,26 @@ button[onclick*="remove"] {
     transition: 0.2s ease-in-out !important;
 }
 
-.delete-btn:empty::before, 
-.btn-delete:empty::before, 
+.delete-btn:empty::before,
+.btn-delete:empty::before,
 button[onclick*="delete"]:empty::before {
-    content: "×" !important; 
+    content: "×" !important;
 }
 
-.delete-btn:hover, 
-.btn-delete:hover, 
+.delete-btn:hover,
+.btn-delete:hover,
 button[onclick*="delete"]:hover {
     background: #ff4444 !important;
     border-color: #ff4444 !important;
     color: #fff !important;
 }
 
-#partnerNameInput, 
+#partnerNameInput,
 #btnPartnerMode {
-    width: 100%;            
-    box-sizing: border-box; 
-    margin: 5px 0;          
-    max-width: 100%;        
+    width: 100%;
+    box-sizing: border-box;
+    margin: 5px 0;
+    max-width: 100%;
 }
 
 .partner-container {
@@ -395,10 +395,10 @@ button[onclick*="delete"]:hover {
 }
 
 .panel-divider {
-    grid-column: span 2;    
-    border: 0;              
-    border-top: 1px solid #333; 
-    margin: 15px 0;         
+    grid-column: span 2;
+    border: 0;
+    border-top: 1px solid #333;
+    margin: 15px 0;
     width: 100%;
 }
 
@@ -447,11 +447,11 @@ button[onclick*="delete"]:hover {
 }
 
 .planner-content {
-    background: #0a0a0a; 
+    background: #0a0a0a;
     border: 1px solid #4CAF50;
-    border-radius: 20px; 
+    border-radius: 20px;
     width: 100%;
-    max-width: 360px; 
+    max-width: 360px;
     padding: 30px 25px;
     position: relative;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
@@ -547,10 +547,10 @@ input:checked + .slider:before { transform: translateX(26px); }
     left: auto;
     right: 20px;
     top: 100px;
-    width: 660px !important; 
+    width: 660px !important;
     min-width: 320px;
-    height: auto !important; 
-    max-height: 85vh; 
+    height: auto !important;
+    max-height: 85vh;
     background: #0a0a0a;
     z-index: 10001;
     border: 2px solid #4CAF50;
@@ -568,8 +568,8 @@ input:checked + .slider:before { transform: translateX(26px); }
     gap: 10px;
     padding: 15px;
     height: auto !important;
-    max-height: none !important; 
-    overflow: visible !important; 
+    max-height: none !important;
+    overflow: visible !important;
 }
 
 .preview-item {
@@ -591,7 +591,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 .preview-item img {
     width: 100% !important;
-    height: 90px !important; 
+    height: 90px !important;
     border: 1px solid #4CAF50;
     border-radius: 6px;
     object-fit: cover;
@@ -610,9 +610,9 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 /* ================= UNIVERSAL PEGASUS GREEN OVERRIDE ================= */
-.progress-fill, 
-.progress-bar, 
-.muscle-bar-fill, 
+.progress-fill,
+.progress-bar,
+.muscle-bar-fill,
 .stat-fill,
 [style*="background-color: orange"],
 [style*="background: orange"],
@@ -622,8 +622,8 @@ input:checked + .slider:before { transform: translateX(26px); }
     box-shadow: 0 0 10px rgba(76, 175, 80, 0.4) !important;
 }
 
-.pegasus-panel, 
-.planner-modal, 
+.pegasus-panel,
+.planner-modal,
 #emsModal,
 #cardioPanel {
     border: 2px solid #4CAF50 !important;
@@ -645,14 +645,14 @@ input:checked + .slider:before { transform: translateX(26px); }
     justify-content: center !important;
     border: 1px solid #333 !important;
     padding: 12px 10px !important;
-    height: auto !important; 
+    height: auto !important;
     overflow: hidden;
 }
 
-#koukiQuickMenu strong, 
+#koukiQuickMenu strong,
 #koukiQuickMenu .food-name,
 #koukiQuickMenu div[style*="color"] {
-    color: #eee !important; 
+    color: #eee !important;
     background: none !important;
     text-shadow: none !important;
     font-size: 12px !important;
@@ -665,8 +665,8 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 #koukiQuickMenu div {
-    max-height: none !important; 
-    overflow: visible !important; 
+    max-height: none !important;
+    overflow: visible !important;
 }
 
 #koukiQuickMenu button:hover {
@@ -729,20 +729,20 @@ input:checked + .slider:before { transform: translateX(26px); }
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 99999; 
+    z-index: 99999;
 }
 
-.loader-content { 
-    text-align: center; 
+.loader-content {
+    text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    gap: 15px; 
+    gap: 15px;
 }
 
 .pegasus-logo-anim {
-    font-size: 28px; 
+    font-size: 28px;
     font-weight: 900;
     color: #4CAF50;
     text-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
@@ -752,14 +752,14 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .loader-text {
-    font-size: 14px; 
+    font-size: 14px;
     font-weight: 900;
-    color: #ffffff; 
+    color: #ffffff;
     margin: 0;
     text-transform: lowercase;
     letter-spacing: 1px;
     font-family: inherit;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2); 
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .loader-bar-container {
@@ -771,15 +771,15 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 .loader-bar-fill {
-    width: 0%; 
+    width: 0%;
     height: 100%;
     background: #4CAF50;
     box-shadow: 0 0 10px #4CAF50;
-    transition: width 0.3s ease; 
+    transition: width 0.3s ease;
 }
 
 .loader-branding {
-    font-size: 28px; 
+    font-size: 28px;
     font-weight: 900;
     color: #4CAF50;
     margin: 0;
@@ -788,8 +788,8 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 @media (max-width: 800px) {
-    .pegasus-logo-anim, 
-    .loader-text, 
+    .pegasus-logo-anim,
+    .loader-text,
     .loader-branding {
         font-size: 20px;
     }
@@ -804,11 +804,11 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 .dots {
     display: inline-block;
-    width: 25px; 
+    width: 25px;
     text-align: left;
     margin-left: 2px;
-    color: #4CAF50; 
-    text-shadow: 0 0 8px rgba(76, 175, 80, 0.6); 
+    color: #4CAF50;
+    text-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
     font-weight: bold;
 }
 
@@ -829,9 +829,9 @@ input:checked + .slider:before { transform: translateX(26px); }
 .tools-btn {
     width: 100% !important;
     display: flex !important;
-    justify-content: center !important; 
+    justify-content: center !important;
     align-items: center !important;
-    gap: 10px !important; 
+    gap: 10px !important;
     padding: 12px 15px !important;
     font-size: 12px !important;
     text-transform: uppercase !important;
@@ -847,7 +847,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 }
 
 #planModal h3 {
-    color: #4CAF50 !important; 
+    color: #4CAF50 !important;
     margin-bottom: 10px !important;
 }
 
@@ -866,18 +866,18 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 .plan-btn {
     width: 100% !important;
-    height: auto !important; 
-    flex-direction: column !important; 
+    height: auto !important;
+    flex-direction: column !important;
     align-items: center !important;
     padding: 15px !important;
     background: #111 !important;
     border: 1px solid #333 !important;
-    white-space: normal !important; 
+    white-space: normal !important;
 }
 
 .plan-btn:hover {
-    border-color: #4CAF50 !important; 
-    background: rgba(76, 175, 80, 0.1) !important; 
+    border-color: #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.1) !important;
 }
 
 .plan-title {
@@ -892,7 +892,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-size: 10px;
     color: #aaa;
     font-weight: normal;
-    text-transform: none; 
+    text-transform: none;
 }
 
 .plan-cancel-btn {
@@ -909,9 +909,9 @@ input:checked + .slider:before { transform: translateX(26px); }
 
 /* ================= PEGASUS STATS & MODALS (FIXED SIZES) ================= */
 .modal, #pinModal, .pegasus-panel {
-    background: rgba(5, 5, 5, 0.98) !important; 
-    border: 2px solid #00ff41 !important;        
-    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);  
+    background: rgba(5, 5, 5, 0.98) !important;
+    border: 2px solid #00ff41 !important;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
     border-radius: 12px;
     color: #fff;
     z-index: 10001;
@@ -925,11 +925,11 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-family: 'Inter', sans-serif;
     border-radius: 5px;
     padding: 10px;
-    font-size: 16px !important; 
+    font-size: 16px !important;
 }
 
 /* 🎯 ΣΤΗΘΟΣ, ΠΛΑΤΗ, ΠΟΔΙΑ: Μέγεθος 12 & Ομοιόμορφα Κενά */
-#previewPanel .stat-label-row, 
+#previewPanel .stat-label-row,
 #previewPanel .muscle-label-wrapper,
 .stats-container .stat-label-row {
     display: flex !important;
@@ -938,7 +938,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     margin-bottom: 5px !important;
 }
 
-#previewPanel .stat-label-row span, 
+#previewPanel .stat-label-row span,
 #previewPanel .muscle-label-wrapper span,
 .stats-container span {
     font-size: 12px !important; /* Το μέγεθος που ζήτησες */
@@ -1104,7 +1104,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     .pegasus-plan-grid { grid-template-columns: 1fr; }
 }
 
-/* ========================================================================== 
+/* ==========================================================================
    PEGASUS ADVISOR RICH UI - v2.1 DESKTOP
    ========================================================================== */
 .pegasus-advisor-overlay {

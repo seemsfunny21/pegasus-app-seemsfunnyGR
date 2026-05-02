@@ -12,7 +12,7 @@ const PegasusUI = {
     init() {
         this.initDraggablePanels();
         this.initClickOutside();
-        this.initHotkeys(); 
+        this.initHotkeys();
         console.log("✅ PEGASUS UI MANAGER: v4.6 Operational (Button Bridge Delegated to app.js)");
     },
 
@@ -28,53 +28,53 @@ const PegasusUI = {
             // Χρησιμοποιούμε ALT για να αποφύγουμε το "μπέρδεμα" του Shift με τα βελάκια του Numpad
             if (!e.altKey) return;
 
-            const code = e.code; 
+            const code = e.code;
             console.log("⌨️ PEGASUS UI: Executing Command for " + code);
 
             switch(code) {
-                case 'Digit1': case 'Numpad1': 
+                case 'Digit1': case 'Numpad1':
                     e.preventDefault();
                     const startBtn = document.getElementById('btnStart') || document.getElementById('btnStartTraining');
                     if (startBtn) startBtn.click();
                     break;
 
-                case 'Digit2': case 'Numpad2': 
+                case 'Digit2': case 'Numpad2':
                     e.preventDefault();
                     if (typeof window.nextPhase === "function") window.nextPhase();
                     else if (document.getElementById('btnNext')) document.getElementById('btnNext').click();
                     break;
 
-                case 'Digit3': case 'Numpad3': 
+                case 'Digit3': case 'Numpad3':
                     e.preventDefault();
                     this.togglePanel('calendarPanel');
                     break;
 
-                case 'Digit4': case 'Numpad4': 
+                case 'Digit4': case 'Numpad4':
                     e.preventDefault();
                     this.togglePanel('achievementsPanel');
                     break;
 
-                case 'Digit5': case 'Numpad5': 
+                case 'Digit5': case 'Numpad5':
                     e.preventDefault();
                     this.togglePanel('foodPanel');
                     break;
 
-                case 'Digit6': case 'Numpad6': 
+                case 'Digit6': case 'Numpad6':
                     e.preventDefault();
                     this.togglePanel('previewPanel');
                     break;
 
-                case 'Digit7': case 'Numpad7': 
+                case 'Digit7': case 'Numpad7':
                     e.preventDefault();
                     this.togglePanel('settingsPanel');
                     break;
 
-                case 'Digit8': case 'Numpad8': 
+                case 'Digit8': case 'Numpad8':
                     e.preventDefault();
                     this.togglePanel('toolsPanel');
                     break;
 
-                case 'Digit9': case 'Numpad9': 
+                case 'Digit9': case 'Numpad9':
                     e.preventDefault();
                     if (window.exportPegasusData) window.exportPegasusData();
                     if (window.PegasusCloud && window.PegasusCloud.push) window.PegasusCloud.push();
@@ -101,7 +101,7 @@ const PegasusUI = {
 
         const isVisible = panel.style.display === 'block';
         panel.style.display = isVisible ? 'none' : 'block';
-        
+
         if (!isVisible) {
             // Φέρνει το παράθυρο μπροστά από όλα
             document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
@@ -119,14 +119,14 @@ const PegasusUI = {
             const panel = document.getElementById(panelId);
             if (!panel) return;
             const savedPos = JSON.parse(localStorage.getItem(`pegasus_pos_${panelId}`));
-            
+
             if (savedPos) {
                 Object.assign(panel.style, { transform: "none", margin: "0", position: "fixed", top: savedPos.top, left: savedPos.left, right: "auto", bottom: "auto" });
             }
-            
+
             const header = panel.querySelector(".panel-header") || panel.querySelector("h3");
             if (!header) return;
-            
+
             header.style.cursor = "grab";
             header.onmousedown = (e) => this.startDrag(e, panel, header);
         });
@@ -136,7 +136,7 @@ const PegasusUI = {
         if (e.button !== 0) return;
         e.preventDefault();
         header.style.cursor = "grabbing";
-        
+
         // 🎯 FIXED: Αρχικοποίηση θέσης αν το πάνελ δεν έχει κουνηθεί ποτέ
         if (!panel.style.top || !panel.style.left) {
             const rect = panel.getBoundingClientRect();
@@ -150,24 +150,24 @@ const PegasusUI = {
         let pos3 = e.clientX, pos4 = e.clientY;
         document.querySelectorAll('.pegasus-panel').forEach(p => p.style.zIndex = "1000");
         panel.style.zIndex = "2001"; // Πάνω από το toggle
-        
+
         const elementDrag = (e) => {
-            const pos1 = pos3 - e.clientX; 
+            const pos1 = pos3 - e.clientX;
             const pos2 = pos4 - e.clientY;
-            pos3 = e.clientX; 
+            pos3 = e.clientX;
             pos4 = e.clientY;
             panel.style.top = (panel.offsetTop - pos2) + "px";
             panel.style.left = (panel.offsetLeft - pos1) + "px";
         };
-        
-        const closeDrag = () => { 
-            document.onmouseup = null; 
-            document.onmousemove = null; 
-            header.style.cursor = "grab"; 
-            localStorage.setItem(`pegasus_pos_${panel.id}`, JSON.stringify({ top: panel.style.top, left: panel.style.left })); 
+
+        const closeDrag = () => {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            header.style.cursor = "grab";
+            localStorage.setItem(`pegasus_pos_${panel.id}`, JSON.stringify({ top: panel.style.top, left: panel.style.left }));
         };
-        
-        document.onmouseup = closeDrag; 
+
+        document.onmouseup = closeDrag;
         document.onmousemove = elementDrag;
     },
 
@@ -190,14 +190,14 @@ function initExerciseListDrag() {
     const list = document.getElementById("exList");
     if (!list) return;
     const applyDraggable = () => { list.querySelectorAll(".exercise").forEach(el => el.setAttribute("draggable", "true")); };
-    
+
     list.addEventListener("dragstart", (e) => {
         const item = e.target.closest(".exercise");
         if (!item || window.running) return;
         item.classList.add("dragging");
         item.style.opacity = '0.5'; // Visual feedback
     });
-    
+
     list.addEventListener("dragover", (e) => {
         e.preventDefault();
         const draggingItem = list.querySelector(".dragging");
@@ -206,7 +206,7 @@ function initExerciseListDrag() {
         let nextSibling = siblings.find(sibling => e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2);
         list.insertBefore(draggingItem, nextSibling);
     });
-    
+
     list.addEventListener("dragend", (e) => {
         const item = e.target.closest(".exercise");
         if (item) {
@@ -215,7 +215,7 @@ function initExerciseListDrag() {
         }
         if (typeof window.exercises !== 'undefined') window.exercises = [...list.querySelectorAll(".exercise")];
     });
-    
+
     const observer = new MutationObserver(() => applyDraggable());
     observer.observe(list, { childList: true });
     applyDraggable();

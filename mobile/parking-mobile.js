@@ -17,7 +17,7 @@ window.PegasusParking = {
         try {
             history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
         } catch(e) { history = []; }
-        
+
         history = history.filter(item => item !== location);
         history.unshift(location);
         if (history.length > 10) history.pop();
@@ -81,7 +81,7 @@ window.PegasusParking = {
         try {
             history = JSON.parse(localStorage.getItem('pegasus_parking_history')) || [];
         } catch(e) { history = []; }
-        
+
         const container = document.getElementById('parkingHistoryList');
         if (!container) return;
 
@@ -106,7 +106,7 @@ window.addEventListener('pegasus_sync_complete', () => {
 document.addEventListener('DOMContentLoaded', () => {
     // Πρώτο update με ό,τι υπάρχει ήδη τοπικά
     window.PegasusParking.updateUI();
-    
+
     // Δεύτερο update στα 2 δευτερόλεπτα (δικλείδα ασφαλείας αν το cloud αργήσει)
     setTimeout(() => window.PegasusParking.updateUI(), 2000);
 });

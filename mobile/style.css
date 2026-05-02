@@ -2,24 +2,24 @@
    PEGASUS OS - MOBILE STYLESHEET v16.0 (DYNAMIC GRID EDITION)
    ========================================================================== */
 
-:root { 
-    --main: #00ff41; --danger: #ff4444; --bg: #050505; 
-    --card: rgba(23, 23, 23, 0.85); --border: #00ff41; 
+:root {
+    --main: #00ff41; --danger: #ff4444; --bg: #050505;
+    --card: rgba(23, 23, 23, 0.85); --border: #00ff41;
 }
 
-body, html { 
-    height: 100%; margin: 0; 
+body, html {
+    height: 100%; margin: 0;
     overflow-x: hidden; /* 🔒 ΚΛΕΙΔΩΜΑ ΟΡΙΖΟΝΤΙΑΣ ΚΙΝΗΣΗΣ */
-    overflow-y: hidden; 
-    background: var(--bg); 
-    color: #fff; font-family: 'Inter', sans-serif; text-align: center; 
-    overscroll-behavior: none; position: fixed; width: 100%; 
+    overflow-y: hidden;
+    background: var(--bg);
+    color: #fff; font-family: 'Inter', sans-serif; text-align: center;
+    overscroll-behavior: none; position: fixed; width: 100%;
 }
 
-body { 
-    padding: 20px 15px; box-sizing: border-box; 
-    background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%); 
-    display: flex; flex-direction: column; align-items: center; 
+body {
+    padding: 20px 15px; box-sizing: border-box;
+    background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%);
+    display: flex; flex-direction: column; align-items: center;
 }
 
 #sync-indicator { font-size: 10px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 10px; text-transform: uppercase; text-shadow: 0 0 10px var(--main); }
@@ -35,24 +35,24 @@ body {
 .dynamic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 5px; overflow-y: auto; scrollbar-width: none; }
 .dynamic-grid::-webkit-scrollbar { display: none; }
 
-.log-item { 
-    background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px; 
-    border: 1px solid var(--border); text-align: left; position: relative; 
-    margin-bottom: 12px; width: 100%; box-sizing: border-box; display: block; 
+.log-item {
+    background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 18px;
+    border: 1px solid var(--border); text-align: left; position: relative;
+    margin-bottom: 12px; width: 100%; box-sizing: border-box; display: block;
 }
 
-.btn-del { 
-    position: absolute; top: 12px; right: 12px; color: var(--danger); 
+.btn-del {
+    position: absolute; top: 12px; right: 12px; color: var(--danger);
     background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger);
     border-radius: 8px; padding: 5px 10px; font-size: 14px; font-weight: 900; cursor: pointer;
 }
 
-.tile { 
-    background: var(--card); border: 2px solid var(--border); border-radius: 24px; 
+.tile {
+    background: var(--card); border: 2px solid var(--border); border-radius: 24px;
     padding: 15px 10px; /* Μικρύναμε ελάχιστα το εσωτερικό γέμισμα */
-    backdrop-filter: blur(12px); transition: 0.15s; 
+    backdrop-filter: blur(12px); transition: 0.15s;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15); 
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
     min-height: 85px; /* 🔴 ΑΛΛΑΓΗ ΕΔΩ: Από 100px έγινε 85px για να κάτσουν τέλεια 6 σειρές */
     box-sizing: border-box;
 }
@@ -63,16 +63,16 @@ body {
 /* 🛡️ FULL WIDTH MODIFIER (For odd-numbered grids) */
 .full-width { grid-column: span 2; width: 100%; }
 
-.view { 
-    display: none; 
+.view {
+    display: none;
     flex: 1; /* Παίρνει αυτόματα όλο τον διαθέσιμο χώρο, εξαφανίζοντας το μαύρο κουτί */
-    height: 100%; 
-    flex-direction: column; 
-    width: 100%; 
-    align-items: center; 
+    height: 100%;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
     overflow-y: auto; /* Παραμένει auto για ασφάλεια σε πολύ μικρές οθόνες */
     padding-bottom: 10px; /* Μειώσαμε το άχρηστο κενό των 40px */
-    scrollbar-width: none; 
+    scrollbar-width: none;
 }
 .view.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 @keyframes viewIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -95,7 +95,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 .icon-parking { color: var(--main); text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); font-style: normal; font-weight: 900; }
 
 /* ==========================================================================
-   PEGASUS SEARCH FIX: Inline Expanding Dropdown (Mobile Optimized) 
+   PEGASUS SEARCH FIX: Inline Expanding Dropdown (Mobile Optimized)
    ========================================================================== */
 #searchSuggestions {
     position: relative !important;
@@ -135,8 +135,8 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     border-bottom: none !important;
 }
 
-.search-item:active { 
-    background: rgba(0, 255, 65, 0.15) !important; 
+.search-item:active {
+    background: rgba(0, 255, 65, 0.15) !important;
 }
 
 .search-item-name {
@@ -160,13 +160,13 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
 }
 
         .ghost-nav-overlay {
-            position: fixed; 
-            bottom: 6px; 
+            position: fixed;
+            bottom: 6px;
             width: 72%; /* Ρύθμισέ το ανάλογα με την οθόνη σου */
             display: flex;
-            justify-content: space-around; 
+            justify-content: space-around;
             align-items: center;
-            pointer-events: none; 
+            pointer-events: none;
             z-index: 9999;
             box-sizing: border-box;
         }
@@ -180,13 +180,13 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
             box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
             display: flex;
             justify-content: center;
-            align-items: center; 
+            align-items: center;
             font-size: 19px;
             color: var(--main);
             line-height: 0;
         }
 
-/* ========================================================================== 
+/* ==========================================================================
    PEGASUS ADVISOR RICH UI - v2.1
    ========================================================================== */
 #advisoryMobileResult, #advisorMobileResult { width: 100%; }

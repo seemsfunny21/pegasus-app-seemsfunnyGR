@@ -5,13 +5,13 @@
 
 (function() {
     const SOCIAL_DATA_KEY = 'pegasus_social_v1';
-    let currentSearchTerm = ""; 
-    let currentSortOrder = "DESC"; 
+    let currentSearchTerm = "";
+    let currentSortOrder = "DESC";
     let isUnlocked = false; // 🔒 GLOBAL SECURITY STATE
 
     // 🛡️ Data Sanitization Engine (XSS Protection)
     const sanitizeHTML = (str) => {
-        return str.replace(/[&<>'"]/g, 
+        return str.replace(/[&<>'"]/g,
             tag => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
             }[tag] || tag)
@@ -42,7 +42,7 @@
                 document.getElementById('socialSecureArea').style.display = 'block';
                 document.getElementById('socialPinInput').value = '';
                 document.getElementById('pinError').style.display = 'none';
-                
+
                 this.handleSearch(""); // Reset search and Load Data
                 this.ensureAddFormOpen();
             } else {
@@ -50,7 +50,7 @@
                 isUnlocked = false;
                 document.getElementById('pinError').style.display = 'block';
                 document.getElementById('socialPinInput').value = '';
-                
+
                 // Ghost DOM Purge
                 const container = document.getElementById('social-content');
                 if (container) container.innerHTML = '';
@@ -63,7 +63,7 @@
             document.getElementById('socialSecureArea').style.display = 'none';
             document.getElementById('socialPinInput').value = '';
             document.getElementById('pinError').style.display = 'none';
-            
+
             // 🛡️ GHOST DOM PURGE
             const container = document.getElementById('social-content');
             if (container) container.innerHTML = '';
@@ -132,7 +132,7 @@
             if(!name || name.trim() === '') return;
 
             let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
-            
+
             const newEntry = {
                 id: 'soc_' + Date.now(),
                 name: sanitizeHTML(name.trim()), // 🛡️ XSS Check
@@ -160,7 +160,7 @@
             localStorage.setItem(SOCIAL_DATA_KEY, JSON.stringify(data));
             window.renderSocialContent();
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(); 
+                window.PegasusCloud.push();
             }
         }
     };
@@ -170,28 +170,28 @@
         const viewDiv = document.createElement('div');
         viewDiv.id = 'social';
         viewDiv.className = 'view';
-        
+
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="window.PegasusSocial.lockVault(); openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-            
+
             <div id="socialLockScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
                 <div style="font-size: 50px; margin-bottom: 15px;">🔒</div>
                 <h2 style="color: #ff4444; letter-spacing: 2px; margin-bottom: 5px; font-weight: 900;">SECURE VAULT</h2>
                 <p style="color: #666; font-size: 11px; margin-bottom: 25px; max-width: 250px;">Αυστηρά προσωπικά δεδομένα. Απαιτείται επιβεβαίωση ταυτότητας.</p>
-                
-                <input type="password" id="socialPinInput" placeholder="••••" 
+
+                <input type="password" id="socialPinInput" placeholder="••••"
                        inputmode="numeric" maxlength="4"
                        onkeypress="if(event.key === 'Enter') window.PegasusSocial.verifyPin()"
                        style="text-align: center; font-size: 30px; letter-spacing: 8px; width: 150px; background: #0a0a0a; color: #00ff41; border: 2px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-                
+
                 <button class="primary-btn" onclick="window.PegasusSocial.verifyPin()" style="width: 150px; padding: 15px; font-size: 14px;">ΞΕΚΛΕΙΔΩΜΑ</button>
                 <p id="pinError" style="color: #ff4444; font-size: 12px; margin-top: 15px; display: none; font-weight: bold;">❌ Λάθος PIN. Προσπαθήστε ξανά.</p>
             </div>
 
             <div id="socialSecureArea" style="display: none;">
                 <div style="margin-bottom: 15px;">
-                    <input type="text" id="socialSearchInput" 
-                           placeholder="🔍 Αναζήτηση επαφής..." 
+                    <input type="text" id="socialSearchInput"
+                           placeholder="🔍 Αναζήτηση επαφής..."
                            onkeyup="window.PegasusSocial.handleSearch(this.value)"
                            style="width: 100%; background: #000; color: var(--main); border: 1px solid #333; padding: 12px; border-radius: 12px; font-family: inherit; box-sizing: border-box; text-align: center;">
                 </div>
@@ -218,19 +218,19 @@
 
     window.renderSocialContent = function() {
         if (!isUnlocked) return; // 🛑 Αποτροπή render αν το vault είναι κλειδωμένο
-        
+
         const container = document.getElementById('social-content');
         if (!container) return;
 
         let entities = JSON.parse(localStorage.getItem(SOCIAL_DATA_KEY)) || [];
-        
+
         if (currentSearchTerm !== "") {
             entities = entities.filter(item => item.name.toLowerCase().includes(currentSearchTerm));
         }
 
         entities.sort((a, b) => {
-            if (currentSortOrder === "DESC") return b.rating - a.rating; 
-            else return a.rating - b.rating; 
+            if (currentSortOrder === "DESC") return b.rating - a.rating;
+            else return a.rating - b.rating;
         });
 
         const sortBtn = document.getElementById('btnSortSocial');
@@ -239,11 +239,11 @@
             sortBtn.style.color = currentSortOrder === "DESC" ? "#00ff41" : "#ff4444";
             sortBtn.style.borderColor = currentSortOrder === "DESC" ? "#00ff41" : "#ff4444";
         }
-        
+
         container.innerHTML = entities.map(item => {
             let activeColor = '#555';
             let labelText = 'ΑΞΙΟΛΟΓΗΣΤΕ';
-            
+
             if (item.rating > 0) {
                 if (item.rating <= 3) { activeColor = '#ff4444'; labelText = 'ΧΑΜΗΛΗ ΕΠΙΚΟΙΝΩΝΙΑ'; }
                 else if (item.rating <= 7) { activeColor = '#ffbb33'; labelText = 'ΚΑΝΟΝΙΚΗ ΡΟΗ'; }
@@ -258,9 +258,9 @@
             if (urlMatch) {
                 let hrefUrl = urlMatch[0].startsWith('http') ? urlMatch[0] : 'https://' + urlMatch[0];
                 let lowUrl = hrefUrl.toLowerCase();
-                
+
                 let platformName = "LINK";
-                let platformBg = "#555"; 
+                let platformBg = "#555";
                 let platformTxt = "#fff";
 
                 if (lowUrl.includes("facebook.com") || lowUrl.includes("fb.com")) {
@@ -272,18 +272,18 @@
                 } else if (lowUrl.includes("tiktok.com")) {
                     platformName = "TIKTOK PROFILE";
                     platformBg = "#000000";
-                    platformTxt = "#00f2fe"; 
+                    platformTxt = "#00f2fe";
                 } else if (lowUrl.includes("linkedin.com")) {
                     platformName = "LINKEDIN";
                     platformBg = "#0A66C2";
                 }
 
-                displayName = item.name.replace(urlMatch[0], '').trim(); 
-                if (displayName === '') displayName = "Άγνωστη Επαφή"; 
-                
+                displayName = item.name.replace(urlMatch[0], '').trim();
+                if (displayName === '') displayName = "Άγνωστη Επαφή";
+
                 // 🛡️ ANTI-TABNABBING: Προστέθηκε rel="noopener noreferrer"
                 linkIconHtml = `
-                    <a href="${hrefUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" 
+                    <a href="${hrefUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()"
                        style="margin-left: 10px; background: ${platformBg}; color: ${platformTxt}; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; letter-spacing: 0.5px; text-decoration: none; display: inline-flex; align-items: center; vertical-align: middle; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
                         🔗 ${platformName}
                     </a>
@@ -297,9 +297,9 @@
                 let textCol = isActive ? '#000' : '#666';
                 let border = isActive ? 'none' : '1px solid #333';
                 scaleHtml += `
-                    <div onclick="window.PegasusSocial.setRating('${item.id}', ${i})" 
-                         style="flex: 1; height: 35px; display: flex; align-items: center; justify-content: center; 
-                                background: ${bg}; color: ${textCol}; border: ${border}; border-radius: 6px; 
+                    <div onclick="window.PegasusSocial.setRating('${item.id}', ${i})"
+                         style="flex: 1; height: 35px; display: flex; align-items: center; justify-content: center;
+                                background: ${bg}; color: ${textCol}; border: ${border}; border-radius: 6px;
                                 font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.2s;">
                         ${i}
                     </div>
@@ -318,13 +318,13 @@
                                 [ ${labelText} ]
                             </div>
                         </div>
-                        
+
                         <div style="display: flex; gap: 6px;">
-                            <button onclick="window.PegasusSocial.editEntry('${item.id}')" 
+                            <button onclick="window.PegasusSocial.editEntry('${item.id}')"
                                     style="background: rgba(255,255,255,0.05); border: 1px solid #444; color: #ccc; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">
                                 ⚙️
                             </button>
-                            <button onclick="window.PegasusSocial.deleteEntry('${item.id}')" 
+                            <button onclick="window.PegasusSocial.deleteEntry('${item.id}')"
                                     style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">
                                 🗑️
                             </button>
@@ -334,7 +334,7 @@
                 </div>
             `;
         }).join('');
-        
+
         if (entities.length === 0) {
             container.innerHTML = `<div style="color:#555; font-size:12px; text-align:center; margin-top:30px; font-weight:800;">
                 ${currentSearchTerm === "" ? "ΚΑΜΙΑ ΕΓΓΡΑΦΗ ΣΤΗ ΒΑΣΗ" : "ΔΕΝ ΒΡΕΘΗΚΑΝ ΑΠΟΤΕΛΕΣΜΑΤΑ"}

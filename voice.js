@@ -24,7 +24,7 @@ const PegasusVoice = {
         if (this.synth.onvoiceschanged !== undefined) {
             this.synth.onvoiceschanged = setVoice;
         }
-        
+
         // Initial call in case voices are already loaded (Chrome/Desktop)
         setVoice();
     },
@@ -40,12 +40,12 @@ const PegasusVoice = {
         this.synth.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
-        
+
         // Αν η φωνή δεν πρόλαβε να φορτώσει (σπάνιο σε iOS), κάνουμε force fallback στα Ελληνικά
         if (this.voice) {
             utterance.voice = this.voice;
         }
-        
+
         utterance.lang = 'el-GR';
         utterance.pitch = 1.0;
         utterance.rate = 1.1; // Ελαφρώς πιο γρήγορο για tactical αίσθηση
@@ -75,9 +75,9 @@ const PegasusVoice = {
         if (typeof window.getActiveLifter === "function") {
             const active = window.getActiveLifter();
             // Απλοποίηση κεφαλαίων για πιο φυσική εκφώνηση
-            lifter = active.charAt(0).toUpperCase() + active.slice(1).toLowerCase(); 
+            lifter = active.charAt(0).toUpperCase() + active.slice(1).toLowerCase();
         }
-        
+
         this.speak(`Η προπόνηση ολοκληρώθηκε. Εξαιρετική δουλειά ${lifter}.`);
     }
 };

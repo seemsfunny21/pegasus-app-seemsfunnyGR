@@ -59,7 +59,7 @@
 
             // ☁️ REAL-TIME CLOUD TRIGGER (Immediate Sync)
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(true); 
+                window.PegasusCloud.push(true);
             }
         }
     };
@@ -70,7 +70,7 @@
         const viewDiv = document.createElement('div');
         viewDiv.id = 'biometrics';
         viewDiv.className = 'view';
-        
+
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -95,10 +95,10 @@
         try {
             const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
             const targets = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-            
+
             let currentLoad = 0;
-            let totalCapacity = 116; 
-            
+            let totalCapacity = 116;
+
             Object.keys(targets).forEach(k => { currentLoad += (history[k] || 0); });
             let strainPct = Math.min(100, Math.round((currentLoad / totalCapacity) * 100));
 
@@ -138,7 +138,7 @@
             if(item.sleep > 0) { totalScore += item.sleep; divisor++; }
             if(item.energy > 0) { totalScore += item.energy; divisor++; }
             if(item.recovery > 0) { totalScore += item.recovery; divisor++; }
-            
+
             let avg = divisor > 0 ? (totalScore / divisor).toFixed(1) : '0.0';
             let avgColor = avg >= 7 ? '#00ff41' : (avg >= 4 ? '#ffbb33' : '#ff4444');
 
@@ -149,9 +149,9 @@
                     let bg = isActive ? colorHex : 'rgba(255,255,255,0.03)';
                     let textCol = isActive ? '#000' : '#666';
                     scaleHtml += `
-                        <div onclick="window.PegasusBio.setMetric('${item.id}', '${metricName}', ${i})" 
-                             style="flex: 1; height: 30px; display: flex; align-items: center; justify-content: center; 
-                                    background: ${bg}; color: ${textCol}; border: 1px solid #333; border-radius: 4px; 
+                        <div onclick="window.PegasusBio.setMetric('${item.id}', '${metricName}', ${i})"
+                             style="flex: 1; height: 30px; display: flex; align-items: center; justify-content: center;
+                                    background: ${bg}; color: ${textCol}; border: 1px solid #333; border-radius: 4px;
                                     font-weight: 900; font-size: 12px; cursor: pointer;">
                             ${i}
                         </div>`;
@@ -167,7 +167,7 @@
                             <div style="font-weight: 900; font-size: 18px; color: #fff;">${item.date}</div>
                             <div style="font-size: 10px; color: ${avgColor}; font-weight: 900; margin-top: 4px;">MO ΑΠΟΔΟΣΗΣ: ${avg}/10</div>
                         </div>
-                        <button onclick="window.PegasusBio.deleteEntry('${item.id}')" 
+                        <button onclick="window.PegasusBio.deleteEntry('${item.id}')"
                                 style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;">🗑️</button>
                     </div>
                     <div style="font-size: 10px; color: #00bcd4; font-weight: 900;">💤 ΠΟΙΟΤΗΤΑ ΥΠΝΟΥ</div>
@@ -179,7 +179,7 @@
                 </div>
             `;
         }).join('');
-        
+
         container.innerHTML = html || '<div style="color:#555; text-align:center; margin-top:30px;">ΚΑΜΙΑ ΚΑΤΑΓΡΑΦΗ</div>';
     };
 

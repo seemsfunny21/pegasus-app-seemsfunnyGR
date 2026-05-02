@@ -468,13 +468,7 @@
             .sort((a, b) => b.count - a.count)
             .slice(0, 5);
 
-        const auditLine = t(
-            `Διάβασα ${stats.totalItems} καταγραφές από το ημερολόγιο διατροφής των τελευταίων ${HISTORY_DAYS} ημερών.`,
-            `Read ${stats.totalItems} food-log entries from the last ${HISTORY_DAYS} days.`
-        );
-
         return {
-            auditLine,
             categories,
             missing: missing.slice(0, 5),
             repeatedCategories: repeatedCategories.slice(0, 4),
@@ -582,9 +576,6 @@
             `;
         }).join('');
 
-        // PEGASUS 152: Keep 14-day reasoning internal, but show compact category icons.
-        // The advisor still scores options using history, deficits and repetition,
-        // but the UI shows only clean Pegasus recommendation cards.
         return `
             <div class="advisor-panel pegasus-advisor-rich">
                 <div class="advisor-header-row">

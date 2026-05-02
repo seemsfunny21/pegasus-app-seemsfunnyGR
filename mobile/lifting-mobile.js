@@ -130,7 +130,7 @@
                         <div style="font-size: 16px; font-weight: 900; color: var(--main); margin-right: 15px;">
                             ${log.weight}kg <span style="color:#777; font-size:12px;">x</span> ${log.reps}
                         </div>
-                        <button onclick="window.PegasusLifting.deleteSet('${log.id}')" 
+                        <button onclick="window.PegasusLifting.deleteSet('${log.id}')"
                                 style="background: transparent; border: none; color: #ff4444; font-size: 14px; cursor: pointer;">🗑️</button>
                     </div>
                 `;

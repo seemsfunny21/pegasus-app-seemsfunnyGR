@@ -31,9 +31,9 @@ window.PegasusAI = {
         };
 
         // 2. 📝 SYSTEM PROMPT (Ορισμός Ταυτότητας)
-        const systemIdentity = `Είσαι το Pegasus OS, ένας Tactical AI Analyst. 
-            Ο χρήστης είναι ο Άγγελος (38 ετών, 1.87μ). 
-            Στόχος σου: Γράμμωση, Όγκος και απόλυτη πειθαρχία. 
+        const systemIdentity = `Είσαι το Pegasus OS, ένας Tactical AI Analyst.
+            Ο χρήστης είναι ο Άγγελος (38 ετών, 1.87μ).
+            Στόχος σου: Γράμμωση, Όγκος και απόλυτη πειθαρχία.
             Απάντησε αυστηρά, σύντομα και tactical.`;
 
         console.log("📡 PEGASUS AI: Context Ready for API Dispatch.", context);
@@ -42,9 +42,9 @@ window.PegasusAI = {
         try {
             // Εδώ θα έμπαινε η κλήση fetch προς τον δικό σου proxy server
             // const response = await fetch('YOUR_PROXY_ENDPOINT', { ... });
-            
+
             const mockResponse = "Αναλύθηκαν δεδομένα. Η ενέργειά σου είναι χαμηλή (Level 4). Συνιστάται λήψη κρεατίνης και 20 λεπτά Stretching.";
-            
+
             // 4. 🔊 VOICE OUTPUT BRIDGE
             if (window.PegasusVoice && typeof window.PegasusVoice.speak === "function") {
                 window.PegasusVoice.speak(mockResponse);

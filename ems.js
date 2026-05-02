@@ -10,18 +10,18 @@ var M = M || window.PegasusManifest;
  */
 function getTargetWednesday() {
     const now = new Date();
-    let currentDay = now.getDay(); 
-    if (currentDay === 0) currentDay = 7; 
-    
+    let currentDay = now.getDay();
+    if (currentDay === 0) currentDay = 7;
+
     // Αν σήμερα δεν είναι Τετάρτη, βρίσκει την κοντινότερη
     const diff = 3 - currentDay;
     const targetDate = new Date(now);
     targetDate.setDate(now.getDate() + diff);
-    
+
     const year = targetDate.getFullYear();
     const month = String(targetDate.getMonth() + 1).padStart(2, '0');
     const day = String(targetDate.getDate()).padStart(2, '0');
-    
+
     // 🎯 FIXED: Απαιτείται YYYY-MM-DD για τα HTML5 type="date" inputs
     return `${year}-${month}-${day}`;
 }
@@ -31,20 +31,20 @@ function getTargetWednesday() {
  */
 window.logEMSData = function() {
     console.log("⚡ PEGASUS: EMS Entry Triggered.");
-    
+
     const toolsPanel = document.getElementById('toolsPanel');
     if (toolsPanel) toolsPanel.style.display = 'none';
 
     // Χρησιμοποιούμε το Modal που ήδη υπάρχει στο HTML, αλλιώς το δημιουργούμε
     const emsModal = document.getElementById('emsModal') || createEMSModal();
-    
+
     const dateInput = document.getElementById('emsDate');
     const avgInput = document.getElementById('emsAvg');
     const kcalInput = document.getElementById('emsKcal');
 
     if (dateInput) dateInput.value = getTargetWednesday();
-    if (avgInput) avgInput.value = ""; 
-    if (kcalInput) kcalInput.value = ""; 
+    if (avgInput) avgInput.value = "";
+    if (kcalInput) kcalInput.value = "";
 
     emsModal.style.display = 'block';
     setTimeout(() => { if(avgInput) avgInput.focus(); }, 100);
@@ -77,7 +77,7 @@ window.saveEMSFinal = async function() {
     const weeklyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
     const weeklyKcalKey = M?.diet?.weeklyKcal || "pegasus_weekly_kcal";
     const workoutsDoneKey = M?.workout?.done || "pegasus_workouts_done";
-    
+
     // 1. Πίστωση Σετ (EMS Full Body: +6 σε κάθε βασική ομάδα)
     let weeklyStats = JSON.parse(localStorage.getItem(weeklyKey)) || {
         "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0
@@ -94,7 +94,7 @@ window.saveEMSFinal = async function() {
 
     // 3. Καταγραφή στο Calendar (Marking Wednesday as Green)
     let workoutsDone = JSON.parse(localStorage.getItem(workoutsDoneKey) || "{}");
-    workoutsDone[dateStr] = true; 
+    workoutsDone[dateStr] = true;
     localStorage.setItem(workoutsDoneKey, JSON.stringify(workoutsDone));
 
     // 4. Achievement & Stats Bridge
@@ -104,11 +104,11 @@ window.saveEMSFinal = async function() {
         if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
             await window.PegasusCloud.push(true);
         }
-        
+
         alert(`⚡ PEGASUS SYNC: Πιστώθηκαν 36 σετ.\nΚαύση: ${kcal} kcal.\nΗ Τετάρτη ολοκληρώθηκε!`);
-        
+
         window.closeEMSModal();
-        
+
         // UI Refresh
         if (typeof window.updateKcalUI === "function") window.updateKcalUI();
         if (typeof window.renderCalendar === "function") window.renderCalendar();
@@ -129,12 +129,12 @@ window.closeEMSModal = function() {
 function createEMSModal() {
     let div = document.getElementById('emsModal');
     if (div) return div;
-    
+
     div = document.createElement('div');
     div.id = 'emsModal';
     div.className = 'pegasus-panel';
     div.style.cssText = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#0a0a0a; border:2px solid #4CAF50; padding:25px; border-radius:15px; z-index:99999; width:320px; text-align:center; box-shadow: 0 0 30px rgba(0,0,0,1); color:white; display:none;";
-    
+
     div.innerHTML = `
         <h3 style="color:#4CAF50; margin-top:0;">⚡ ΚΑΤΑΓΡΑΦΗ EMS</h3>
         <div style="margin-top:15px;">
@@ -155,11 +155,11 @@ function createEMSModal() {
         </div>
     `;
     document.body.appendChild(div);
-    
+
     // Binding the click event since it's dynamically created
     div.querySelector('button[onclick="saveEMSFinal()"]').onclick = window.saveEMSFinal;
     div.querySelector('button[onclick="closeEMSModal()"]').onclick = window.closeEMSModal;
-    
+
     return div;
 }
 
@@ -167,7 +167,7 @@ function createEMSModal() {
 document.addEventListener('DOMContentLoaded', () => {
     const btnEMS = document.getElementById('btnSaveEMS');
     if (btnEMS) btnEMS.onclick = window.saveEMSFinal;
-    
+
     const btnClose = document.getElementById('btnCloseEMS');
     if (btnClose) btnClose.onclick = window.closeEMSModal;
 });

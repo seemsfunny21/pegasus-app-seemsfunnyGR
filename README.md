@@ -1,9 +1,9 @@
 # 🟢 PEGASUS OS: THE GENESIS & EVOLUTIONARY LOG (v10.1)
 
-> **Project Lead:** `seemsfunny`  
-> **Architectural Oversight:** Gemini AI (Analyst Mode)  
-> **Timeline:** Μάρτιος 2026  
-> **Status:** 🟢 OPERATIONAL / STABLE  
+> **Project Lead:** `seemsfunny`
+> **Architectural Oversight:** Gemini AI (Analyst Mode)
+> **Timeline:** Μάρτιος 2026
+> **Status:** 🟢 OPERATIONAL / STABLE
 > **Location:** Ioannina, Greece 📍
 
 ---
@@ -81,6 +81,6 @@
 Δεν είναι πλέον ένας κώδικας. Είναι μια ψηφιακή κληρονομιά που αποδεικνύει ότι με σωστή ανάλυση και επιμονή, κάθε "Bug" μπορεί να γίνει "Feature".
 
 ---
-**Author:** `seemsfunny`  
-**Verification:** Pegasus Audit Engine v10.1  
+**Author:** `seemsfunny`
+**Verification:** Pegasus Audit Engine v10.1
 **Date:** 28/03/2026

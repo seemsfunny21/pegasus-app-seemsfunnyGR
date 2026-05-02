@@ -25,7 +25,7 @@
             if (lastSync === todayStr) return; // Ήδη ενημερωμένο για σήμερα
 
             let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
-            
+
             let daysDiff = 1;
             if (lastSync) {
                 const lastDate = new Date(lastSync);
@@ -65,9 +65,9 @@
         setManualAmount: function(id) {
             let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
             const idx = supplies.findIndex(i => i.id === id);
-            
+
             const newVal = prompt(`Ενημέρωση αποθέματος για: ${supplies[idx].label} (${supplies[idx].unit})`, supplies[idx].amount);
-            
+
             if (newVal !== null && !isNaN(newVal) && newVal.trim() !== '') {
                 supplies[idx].amount = parseFloat(newVal);
                 this.saveAndRender(supplies);
@@ -109,7 +109,7 @@
             }
 
             let supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
-            
+
             const newItem = {
                 id: 'sup_' + Date.now(),
                 label: label,
@@ -122,7 +122,7 @@
 
             supplies.push(newItem);
             this.saveAndRender(supplies);
-            
+
             document.getElementById('newIcon').value = '';
             document.getElementById('newLabel').value = '';
             document.getElementById('newUnit').value = '';
@@ -135,7 +135,7 @@
             localStorage.setItem(SUPPLIES_DATA_KEY, JSON.stringify(data));
             if (typeof window.renderSuppliesContent === 'function') window.renderSuppliesContent();
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
-                window.PegasusCloud.push(); 
+                window.PegasusCloud.push();
             }
         }
     };
@@ -145,7 +145,7 @@
         const viewDiv = document.createElement('div');
         viewDiv.id = 'supplies';
         viewDiv.className = 'view';
-        
+
         viewDiv.innerHTML = `
             <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -165,7 +165,7 @@
                     <input type="text" id="newUnit" placeholder="Μονάδα (π.χ. ml, g, τεμ)">
                 </div>
                 <input type="number" id="newPortion" placeholder="Αφαίρεση ανά δόση (π.χ. 250)" inputmode="decimal" style="margin-bottom: 10px;">
-                
+
                 <button class="primary-btn" onclick="window.PegasusSupplies.addNewItem()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΒΑΣΗ</button>
             </div>
 
@@ -179,7 +179,7 @@
         if (!container) return;
 
         const supplies = JSON.parse(localStorage.getItem(SUPPLIES_DATA_KEY)) || defaultSupplies;
-        
+
         container.innerHTML = supplies.map(item => {
             const pct = (item.amount / item.refill) * 100;
             const statusColor = pct < 15 ? '#ff4444' : (pct < 40 ? '#ffbb33' : '#00ff41');
@@ -194,11 +194,11 @@
                             </div>
                         </div>
                         <div style="display: flex; gap: 5px;">
-                            <button onclick="window.PegasusSupplies.setManualAmount('${item.id}')" 
+                            <button onclick="window.PegasusSupplies.setManualAmount('${item.id}')"
                                     style="background: rgba(255,255,255,0.05); border: 1px solid #333; color: #777; border-radius: 8px; padding: 5px 8px; font-size: 12px; cursor: pointer;">
                                 ⚙️
                             </button>
-                            <button onclick="window.PegasusSupplies.deleteItem('${item.id}')" 
+                            <button onclick="window.PegasusSupplies.deleteItem('${item.id}')"
                                     style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 5px 8px; font-size: 12px; cursor: pointer;">
                                 🗑️
                             </button>
@@ -210,11 +210,11 @@
                     </div>
 
                     <div style="display: flex; gap: 8px;">
-                        <button class="secondary-btn" style="flex: 2; padding: 10px; font-size: 10px; border-color: #222;" 
+                        <button class="secondary-btn" style="flex: 2; padding: 10px; font-size: 10px; border-color: #222;"
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'consume')">
                             -${item.portion}${item.unit}
                         </button>
-                        <button class="primary-btn" style="flex: 1; padding: 10px; font-size: 10px;" 
+                        <button class="primary-btn" style="flex: 1; padding: 10px; font-size: 10px;"
                                 onclick="window.PegasusSupplies.updateAmount('${item.id}', 'refill')">
                             +${item.refill}
                         </button>
