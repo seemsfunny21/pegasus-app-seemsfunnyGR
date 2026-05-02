@@ -180,3 +180,26 @@ PEGASUS 160 - MOBILE GHOST RESET + PAGE TRANSITION POLISH
 - Added staged page transition animation: current tiles exit bottom-to-top, target page tiles enter top-to-bottom.
 - Animation is page-index based and supports future extra pages.
 - Service worker cache version bumped to pegasus-shield-v3.93-FINAL-160.
+
+PEGASUS 161 - MOBILE PAGE ANIMATION DIRECTION POLISH
+- Keeps ghost buttons visual-only, same as peg160.
+- Page exit remains bottom-to-top.
+- Page enter now follows navigation direction: forward pages appear top-to-bottom, back pages appear bottom-to-top.
+- No new JS files; mobile animation logic only.
+- Service worker cache bumped to pegasus-shield-v3.94-FINAL-161.
+
+PEGASUS 162 - MOBILE GHOST CLEANUP
+- Removed obsolete mobile ghost order local-only key after restoring ghost buttons to visual-only mode.
+- Removed unused PegasusGhostNav run/no-op compatibility method.
+- Removed inactive ghost button :active CSS rule because ghost keys are non-interactive.
+- No UI or behavior changes; swipe page animation remains unchanged.
+- Service worker cache version bumped to pegasus-shield-v3.95-FINAL-162.
+
+PEGASUS 163 - MOBILE STATIC HEADER + MORNING BODY CHECK-IN
+- Keeps the mobile top status/title/oracle dashboard fixed while page swipe changes only the menu button grid.
+- Moves the Oracle dashboard out of the animated grid so it remains visible on all mobile menu pages.
+- Removes the old morning weight/sleep prompt popup.
+- After 05:00, the first mobile open creates today's Body/Soma biometrics entry and opens the Σώμα panel so sleep/energy/recovery can be selected directly.
+- Keeps morning check-in flags local-only per device and out of cloud sync.
+- No new JS files added; changed mobile/mobile.html, mobile/oracle-mobile.js, mobile/biometrics-mobile.js, mobile/style.css, cloudSync.js, sw.js.
+- Service worker cache version bumped to pegasus-shield-v3.96-FINAL-163.

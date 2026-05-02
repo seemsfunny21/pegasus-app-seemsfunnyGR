@@ -6,6 +6,20 @@
 
 (function() {
     const BIO_DATA_KEY = 'pegasus_biometrics_v1';
+    const MORNING_BIO_CHECKIN_KEY = 'pegasus_morning_bio_checkin';
+
+    function getTodayBioDate() {
+        return new Date().toLocaleDateString('el-GR');
+    }
+
+    function isMorningBioWindow() {
+        return new Date().getHours() >= 5;
+    }
+
+    function shouldDelayForSecurityModal() {
+        const pinModal = document.getElementById('pinModal');
+        return !!pinModal && getComputedStyle(pinModal).display !== 'none';
+    }
 
     // 1. Μηχανή Δεδομένων
     window.PegasusBio = {
@@ -19,13 +33,19 @@
         },
 
         addNewEntry: function() {
-            let entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
-            const today = new Date().toLocaleDateString('el-GR');
-
-            // Έλεγχος αν υπάρχει ήδη εγγραφή για σήμερα
-            if (entries.some(e => e.date === today)) {
+            const created = this.ensureTodayEntry(false);
+            if (!created) {
                 alert('Υπάρχει ήδη καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
-                return;
+            }
+        },
+
+        ensureTodayEntry: function(silent = true) {
+            let entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
+            const today = getTodayBioDate();
+
+            if (entries.some(e => e.date === today)) {
+                if (!silent) window.renderBioContent?.();
+                return false;
             }
 
             const newEntry = {
@@ -38,6 +58,26 @@
 
             entries.unshift(newEntry);
             this.saveAndRender(entries);
+            return true;
+        },
+
+        runMorningCheckin: function() {
+            if (!isMorningBioWindow()) return false;
+            if (shouldDelayForSecurityModal()) return false;
+
+            const today = getTodayBioDate();
+            if (localStorage.getItem(MORNING_BIO_CHECKIN_KEY) === today) return false;
+
+            this.ensureTodayEntry(true);
+            localStorage.setItem(MORNING_BIO_CHECKIN_KEY, today);
+
+            if (typeof window.openView === 'function') {
+                window.openView('biometrics');
+            } else {
+                window.renderBioContent?.();
+            }
+
+            return true;
         },
 
         deleteEntry: function(id) {
@@ -190,5 +230,9 @@
         if (window.registerPegasusModule) {
             window.registerPegasusModule({ id: 'biometrics', label: 'Σώμα', icon: '🧬' });
         }
+
+        setTimeout(() => {
+            window.PegasusBio?.runMorningCheckin?.();
+        }, 2200);
     });
 })();
