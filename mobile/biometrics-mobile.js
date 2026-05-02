@@ -21,6 +21,26 @@
         return !!pinModal && getComputedStyle(pinModal).display !== 'none';
     }
 
+    function isBioEntryComplete(entry) {
+        return !!entry &&
+            Number(entry.sleep || 0) > 0 &&
+            Number(entry.energy || 0) > 0 &&
+            Number(entry.recovery || 0) > 0;
+    }
+
+    function returnHomeAfterBioCompletion() {
+        clearTimeout(window.__pegasusBioReturnHomeTimer);
+        window.__pegasusBioReturnHomeTimer = setTimeout(() => {
+            const bioView = document.getElementById('biometrics');
+            if (!bioView?.classList?.contains('active')) return;
+
+            if (typeof window.openView === 'function') {
+                window.openView('home');
+                console.log('✅ PEGASUS BIO: Daily check-in complete. Returning home.');
+            }
+        }, 300);
+    }
+
     // 1. Μηχανή Δεδομένων
     window.PegasusBio = {
         setMetric: function(id, metricType, value) {
@@ -28,8 +48,17 @@
             const idx = entries.findIndex(e => e.id === id);
             if (idx === -1) return;
 
+            const wasComplete = isBioEntryComplete(entries[idx]);
+            const isTodayEntry = entries[idx].date === getTodayBioDate();
+
             entries[idx][metricType] = value;
+            const isNowComplete = isBioEntryComplete(entries[idx]);
+
             this.saveAndRender(entries);
+
+            if (isTodayEntry && !wasComplete && isNowComplete) {
+                returnHomeAfterBioCompletion();
+            }
         },
 
         addNewEntry: function() {

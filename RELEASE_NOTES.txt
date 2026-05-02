@@ -203,3 +203,10 @@ PEGASUS 163 - MOBILE STATIC HEADER + MORNING BODY CHECK-IN
 - Keeps morning check-in flags local-only per device and out of cloud sync.
 - No new JS files added; changed mobile/mobile.html, mobile/oracle-mobile.js, mobile/biometrics-mobile.js, mobile/style.css, cloudSync.js, sw.js.
 - Service worker cache version bumped to pegasus-shield-v3.96-FINAL-163.
+
+PEGASUS 164 - MOBILE BODY CHECK-IN AUTO RETURN
+- Keeps peg163 mobile layout and static header behavior unchanged.
+- After the morning Body check-in has all 3 metrics selected (sleep, energy, recovery), the app returns to Home automatically.
+- Prevents unnecessary extra back tap after completing the daily body check-in.
+- No new JS files; mobile biometric logic only.
+
