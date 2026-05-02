@@ -4,7 +4,8 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.89-FINAL-156';
+const CACHE_NAME = 'pegasus-shield-v3.90-FINAL-157';
+const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v1';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -83,6 +84,115 @@ function isBypassHost(url) {
 
 function isMediaAsset(pathname) {
     return /\.(mp4|mp3|png|jpg|jpeg|svg|woff2|gif|webp)$/i.test(pathname);
+}
+
+function isPermanentVideoAsset(pathname) {
+    return pathname.includes('/videos/') && /\.(mp4|webm|mov|mp3)$/i.test(pathname);
+}
+
+function getPermanentVideoCacheKey(url) {
+    return new Request(`${url.origin}${url.pathname}`, { credentials: 'same-origin' });
+}
+
+function isRangeRequest(request) {
+    return !!request.headers.get('range');
+}
+
+async function createRangeResponse(request, cachedResponse) {
+    const rangeHeader = request.headers.get('range');
+    const match = rangeHeader && rangeHeader.match(/bytes=(\d*)-(\d*)/);
+
+    if (!match) return cachedResponse.clone();
+
+    const blob = await cachedResponse.blob();
+    const size = blob.size;
+    let start;
+    let end;
+
+    if (match[1] === '' && match[2] !== '') {
+        const suffixLength = parseInt(match[2], 10);
+        start = Math.max(size - suffixLength, 0);
+        end = size - 1;
+    } else {
+        start = match[1] ? parseInt(match[1], 10) : 0;
+        end = match[2] ? parseInt(match[2], 10) : size - 1;
+    }
+
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start || start >= size) {
+        return new Response('', {
+            status: 416,
+            statusText: 'Range Not Satisfiable',
+            headers: {
+                'Content-Range': `bytes */${size}`
+            }
+        });
+    }
+
+    end = Math.min(end, size - 1);
+    const sliced = blob.slice(start, end + 1);
+    const headers = new Headers(cachedResponse.headers);
+    headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+    headers.set('Accept-Ranges', 'bytes');
+    headers.set('Content-Length', String(sliced.size));
+    headers.set('Content-Type', cachedResponse.headers.get('Content-Type') || 'video/mp4');
+
+    return new Response(sliced, {
+        status: 206,
+        statusText: 'Partial Content',
+        headers
+    });
+}
+
+const videoCacheInFlight = new Map();
+
+async function cachePermanentVideo(url) {
+    const cache = await caches.open(VIDEO_CACHE_NAME);
+    const cacheKey = getPermanentVideoCacheKey(url);
+    const cacheId = cacheKey.url;
+
+    const existing = await cache.match(cacheKey, { ignoreSearch: true });
+    if (existing) return true;
+
+    if (videoCacheInFlight.has(cacheId)) {
+        return videoCacheInFlight.get(cacheId);
+    }
+
+    const task = (async () => {
+        try {
+            const response = await fetch(cacheKey, { cache: 'reload' });
+
+            if (isCacheableResponse(response)) {
+                await cache.put(cacheKey, response.clone());
+                console.log(`🎬 SW: Permanent video cached: ${url.pathname.split('/').pop()}`);
+                return true;
+            }
+
+            console.warn(`SW: Permanent video cache skipped (${response.status}): ${url.pathname}`);
+            return false;
+        } catch (err) {
+            console.warn(`SW: Permanent video cache failed: ${url.pathname}`, err);
+            return false;
+        } finally {
+            videoCacheInFlight.delete(cacheId);
+        }
+    })();
+
+    videoCacheInFlight.set(cacheId, task);
+    return task;
+}
+
+async function getCachedPermanentVideoResponse(request, url) {
+    const cache = await caches.open(VIDEO_CACHE_NAME);
+    const cacheKey = getPermanentVideoCacheKey(url);
+    const cachedResponse = await cache.match(cacheKey, { ignoreSearch: true });
+
+    if (!cachedResponse) return null;
+
+    if (isRangeRequest(request)) {
+        return createRangeResponse(request, cachedResponse);
+    }
+
+    return cachedResponse.clone();
 }
 
 function isCacheableResponse(response) {
@@ -202,10 +312,30 @@ self.addEventListener('fetch', (event) => {
 
     /* -------------------------
        CACHE-FIRST for media
+       Lazy permanent cache for videos
     ------------------------- */
     if (isMediaAsset(pathname)) {
         event.respondWith(
             (async () => {
+                if (isPermanentVideoAsset(pathname)) {
+                    const cachedVideo = await getCachedPermanentVideoResponse(request, url);
+                    if (cachedVideo) return cachedVideo;
+
+                    // Keep playback fast: stream the current network request normally,
+                    // while downloading the full file in the background for future offline use.
+                    event.waitUntil(cachePermanentVideo(url));
+
+                    try {
+                        return await fetch(request);
+                    } catch (err) {
+                        const lateCachedVideo = await getCachedPermanentVideoResponse(request, url);
+                        if (lateCachedVideo) return lateCachedVideo;
+
+                        console.warn(`SW: Video fetch failed and not cached: ${url.pathname}`, err);
+                        return new Response('', { status: 404 });
+                    }
+                }
+
                 const cachedRes = await caches.match(request, { ignoreSearch: true });
                 if (cachedRes) return cachedRes;
 

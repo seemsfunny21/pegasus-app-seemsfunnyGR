@@ -147,3 +147,11 @@ PEGASUS 156 - BULK SAFE MAINTENANCE CLEANUP
 - Removed duplicate trailing semicolon after the data.js split IIFE.
 - No UI/logic/file-structure changes. No new .js files.
 - Service worker cache version bumped to pegasus-shield-v3.89-FINAL-156.
+
+PEGASUS 157 - LAZY PERMANENT OFFLINE VIDEO CACHE
+- Adds lazy permanent cache for videos in the service worker.
+- Videos keep streaming normally the first time they are opened.
+- The full video is cached in the background for future offline use.
+- Cached videos survive normal app shell cache version purges.
+- Adds Range request support so cached videos can play offline instead of showing black frames.
+- No new JS files added.
