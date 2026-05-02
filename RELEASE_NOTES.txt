@@ -225,10 +225,19 @@ PEGASUS 166 - MOBILE TILE CIRCLE-BLUR MORPH POLISH
 - No new JS files; mobile animation polish only.
 - Service worker cache version bumped to pegasus-shield-v3.99-FINAL-166.
 
-PEGASUS 167 - MOBILE SCANNER SWEEP TRANSITION
-- Alternative mobile page transition version A for testing.
-- Menu tiles stay fixed while a thin Pegasus-green scanner sweep passes over them.
-- Page content swaps while the tiles are lightly dimmed, then sharpens back into place.
+PEGASUS 168 - MOBILE GLASS PULSE TRANSITION
+- Alternative mobile page transition version B for testing.
+- Menu tiles stay fixed and perform a soft glass pulse/focus effect instead of circle morphing.
+- The page content changes while cards are slightly blurred and dimmed, then returns with a calm Pegasus glow.
 - Static top mobile section and ghost keys remain unchanged.
 - No new JS files; mobile animation polish only.
-- Service worker cache version bumped to pegasus-shield-v3.100-FINAL-167.
+- Service worker cache version bumped to pegasus-shield-v3.101-FINAL-168.
+
+PEGASUS 170 - MOBILE FIXED-FRAME BLUR TRANSITION
+- Final mobile page transition test focused on absolutely stable button frames.
+- The tile borders/backgrounds no longer translate, scale, pulse, morph, or change shape during page switching.
+- Only the tile contents blur/fade out; while blurred the page content is swapped; then the new icons/labels sharpen back in.
+- Static top mobile section and ghost keys remain unchanged.
+- No new JS files added; changed mobile/style.css, mobile/mobile.html service-worker version query, sw.js, RELEASE_NOTES.txt.
+- Service worker cache version bumped to pegasus-shield-v3.102-FINAL-170.
+
