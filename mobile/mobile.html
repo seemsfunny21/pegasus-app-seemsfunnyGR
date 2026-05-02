@@ -535,7 +535,9 @@
 
                 const changed = window.PegasusMobileUI?.changePage?.(dx < 0 ? 1 : -1);
                 if (changed) {
-                    ev.preventDefault();
+                    if (ev.cancelable) {
+                        ev.preventDefault();
+                    }
                     ev.stopPropagation();
                 }
             }, { passive: false });
@@ -1170,7 +1172,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.16')
+                navigator.serviceWorker.register('../sw.js?v=3.17')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

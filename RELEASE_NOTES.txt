@@ -195,3 +195,12 @@ PEGASUS 173 - MOBILE ORACLE STATIC DASHBOARD RESTORE
 - Keeps the morning Σώμα auto check-in behavior from PEGASUS 172.
 - No new files added; changed mobile/mobile.html, mobile/style.css, mobile/oracle-mobile.js, sw.js, RELEASE_NOTES.txt.
 - Service worker cache version bumped to pegasus-shield-v3.105-FINAL-173.
+
+PEGASUS 174 - MOBILE TOUCH SWIPE WARNING CLEANUP
+- Cleaned the mobile home touch-swipe handler so preventDefault runs only when the touchend event is cancelable.
+- Removes Chrome's ignored cancelable=false touchend intervention warning during swipe navigation.
+- Arrow button navigation remains unchanged.
+- Keeps the PEGASUS 173 static Oracle/status dashboard behavior across mobile home pages.
+- Keeps the PEGASUS 172 morning Σώμα auto check-in behavior.
+- No new files added; changed mobile/mobile.html, sw.js, RELEASE_NOTES.txt.
+- Service worker cache version bumped to pegasus-shield-v3.106-FINAL-174.
