@@ -285,12 +285,14 @@ window.PegasusDiet = {
             ? `<div class="advisor-repeat-strip">${(insights.repeatedCategories || []).map(item => `<span>${esc(item.icon || '•')} ${esc(item.label)}: ${esc(item.count)}x</span>`).join('')}</div>`
             : '';
 
-        // PEGASUS 151: Keep the 14-day food-log analysis internal.
+        // PEGASUS 152: Keep reasoning internal, restore compact category icons.
         // The advisor uses it for ranking, but mobile shows only clean recommendation cards.
         let html = `
             <div class="advisor-panel pegasus-advisor-rich">
                 <div class="advisor-title">🧠 PEGASUS ADVISOR</div>
                 <div class="advisor-subtitle">Προτάσεις διατροφής</div>
+                ${historyCards ? `<div class="advisor-history-grid">${historyCards}</div>` : ''}
+                ${repeatedStrip}
                 <div class="advisor-options">
         `;
 

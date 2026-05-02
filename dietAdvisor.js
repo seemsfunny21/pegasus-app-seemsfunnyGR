@@ -652,7 +652,7 @@
             `;
         }).join('');
 
-        // PEGASUS 151: Keep the 14-day food-log analysis internal.
+        // PEGASUS 152: Keep 14-day reasoning internal, but show compact category icons.
         // The advisor still scores options using history, deficits and repetition,
         // but the UI shows only clean Pegasus recommendation cards.
         return `
@@ -664,6 +664,8 @@
                     </div>
                     ${closeButton ? `<button class="advisor-close-btn" onclick="window.closePegasusAdvisorModal?.()">×</button>` : ''}
                 </div>
+                ${cards ? `<div class="advisor-history-grid">${cards}</div>` : ''}
+                ${repeated}
                 <div class="advisor-options">${options}</div>
             </div>
         `;

@@ -111,3 +111,10 @@ PEGASUS 151 - ADVISOR CLEAN UI
 - Desktop and mobile now show clean Pegasus recommendation cards only.
 - No new JS files; changed dietAdvisor.js, mobile/diet-mobile.js, sw.js.
 - Service worker cache version bumped to pegasus-shield-v3.84-FINAL-151.
+
+
+PEGASUS 152 - ADVISOR CATEGORY ICONS RESTORED
+- Restored compact 14-day category icon cards in desktop and mobile advisor.
+- Advisor still keeps detailed reasoning/internal analysis hidden from the user-facing UI.
+- No new JS files; changed dietAdvisor.js, mobile/diet-mobile.js, sw.js.
+- Service worker cache bumped to pegasus-shield-v3.85-FINAL-152.
