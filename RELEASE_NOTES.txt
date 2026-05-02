@@ -164,3 +164,10 @@ PEGASUS 158 - MOBILE GHOST NAV + SWIPE POLISH
 - No new JS files added; changed mobile/mobile.html, mobile/style.css, cloudSync.js, sw.js.
 - Service worker cache version bumped to pegasus-shield-v3.91-FINAL-158.
 
+PEGASUS 159 - MOBILE GHOST NAV HEIGHT + BACK-ONLY FIX
+- Restores the mobile ghost button overlay to the previous bottom height instead of lifting it by safe-area inset.
+- Keeps the back-arrow ghost button active and aligned with the normal ΕΠΙΣΤΡΟΦΗ behavior.
+- Keeps the other two ghost buttons as visual ghost keys only; they no longer trigger menu/page actions.
+- No new JS files added; changed mobile/mobile.html, mobile/style.css, sw.js.
+- Service worker cache version bumped to pegasus-shield-v3.92-FINAL-159.
+

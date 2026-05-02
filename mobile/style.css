@@ -162,7 +162,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
         .ghost-nav-overlay {
             position: fixed;
             left: 50%;
-            bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+            bottom: 6px;
             transform: translateX(-50%);
             width: min(72%, 330px);
             display: flex;

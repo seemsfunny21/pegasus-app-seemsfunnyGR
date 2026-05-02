@@ -462,21 +462,19 @@
             },
 
             run: function(actionKey) {
-                if (actionKey === 'menu') {
-                    window.PegasusMobileUI?.goToPage?.(0);
-                    openView('home');
+                // Only the back arrow is an active ghost key.
+                // The other two buttons remain visual ghost keys; page switching is handled by swipe/arrows.
+                if (actionKey !== 'back') return;
+
+                const activeView = document.querySelector('.view.active');
+                const backButton = activeView?.querySelector?.('.btn-back');
+
+                if (backButton && activeView?.id !== 'home') {
+                    backButton.click();
                     return;
                 }
 
-                if (actionKey === 'page') {
-                    openView('home');
-                    window.PegasusMobileUI?.togglePage?.();
-                    return;
-                }
-
-                if (actionKey === 'back') {
-                    openView('home');
-                }
+                openView('home');
             },
 
             render: function() {
