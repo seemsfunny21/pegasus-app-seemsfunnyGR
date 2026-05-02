@@ -224,3 +224,11 @@ PEGASUS 166 - MOBILE TILE CIRCLE-BLUR MORPH POLISH
 - Keeps static top mobile section and ghost keys unchanged.
 - No new JS files; mobile animation polish only.
 - Service worker cache version bumped to pegasus-shield-v3.99-FINAL-166.
+
+PEGASUS 167 - MOBILE SCANNER SWEEP TRANSITION
+- Alternative mobile page transition version A for testing.
+- Menu tiles stay fixed while a thin Pegasus-green scanner sweep passes over them.
+- Page content swaps while the tiles are lightly dimmed, then sharpens back into place.
+- Static top mobile section and ghost keys remain unchanged.
+- No new JS files; mobile animation polish only.
+- Service worker cache version bumped to pegasus-shield-v3.100-FINAL-167.
