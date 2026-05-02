@@ -108,49 +108,70 @@ body {
 }
 
 .tile.pg-tile-exit {
-    animation: pegasusTileMorphOut 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+    animation: pegasusTileCircleBlurOut 0.24s cubic-bezier(0.45, 0, 0.55, 1) forwards;
 }
 
 .tile.pg-tile-enter {
-    opacity: 0.42;
-    transform: translateX(calc(var(--pg-tile-dx, 16px) * -1)) translateY(8px) scale(0.96);
-    filter: blur(3px);
-    animation: pegasusTileMorphIn 0.30s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 1;
+    transform: scale(0.88);
+    border-radius: 999px;
+    filter: blur(7px);
+    border-color: rgba(0, 255, 65, 0.55);
+    box-shadow: 0 0 28px rgba(0, 255, 65, 0.28), inset 0 0 20px rgba(0, 255, 65, 0.16);
+    animation: pegasusTileCircleBlurIn 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-@keyframes pegasusTileMorphOut {
+@keyframes pegasusTileCircleBlurOut {
     0% {
         opacity: 1;
-        transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+        transform: scale(1);
+        border-radius: 24px;
         filter: blur(0);
+        border-color: var(--border);
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
     }
-    45% {
-        opacity: 0.78;
-        transform: translateX(calc(var(--pg-tile-dx, 16px) * 0.38)) translateY(4px) scale(0.985) rotate(0.35deg);
-        filter: blur(1.2px);
-    }
-    100% {
-        opacity: 0.42;
-        transform: translateX(var(--pg-tile-dx, 16px)) translateY(8px) scale(0.96) rotate(-0.2deg);
-        filter: blur(3px);
-    }
-}
-
-@keyframes pegasusTileMorphIn {
-    0% {
-        opacity: 0.42;
-        transform: translateX(calc(var(--pg-tile-dx, 16px) * -1)) translateY(8px) scale(0.96) rotate(0.2deg);
-        filter: blur(3px);
-    }
-    60% {
-        opacity: 0.9;
-        transform: translateX(calc(var(--pg-tile-dx, 16px) * -0.18)) translateY(2px) scale(1.01) rotate(-0.15deg);
-        filter: blur(0.8px);
+    58% {
+        opacity: 1;
+        transform: scale(0.92);
+        border-radius: 999px;
+        filter: blur(4px);
+        border-color: rgba(0, 255, 65, 0.65);
+        box-shadow: 0 0 24px rgba(0, 255, 65, 0.25), inset 0 0 18px rgba(0, 255, 65, 0.14);
     }
     100% {
         opacity: 1;
-        transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+        transform: scale(0.88);
+        border-radius: 999px;
+        filter: blur(7px);
+        border-color: rgba(0, 255, 65, 0.55);
+        box-shadow: 0 0 28px rgba(0, 255, 65, 0.28), inset 0 0 20px rgba(0, 255, 65, 0.16);
+    }
+}
+
+@keyframes pegasusTileCircleBlurIn {
+    0% {
+        opacity: 1;
+        transform: scale(0.88);
+        border-radius: 999px;
+        filter: blur(7px);
+        border-color: rgba(0, 255, 65, 0.55);
+        box-shadow: 0 0 28px rgba(0, 255, 65, 0.28), inset 0 0 20px rgba(0, 255, 65, 0.16);
+    }
+    62% {
+        opacity: 1;
+        transform: scale(1.015);
+        border-radius: 26px;
+        filter: blur(1px);
+        border-color: var(--border);
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.22);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        border-radius: 24px;
         filter: blur(0);
+        border-color: var(--border);
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
     }
 }
 

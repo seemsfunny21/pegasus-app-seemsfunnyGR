@@ -217,3 +217,10 @@ PEGASUS 165 - MOBILE TILE MORPH ANIMATION POLISH
 - Keeps the static top mobile section and ghost keys unchanged.
 - No new JS files; mobile animation polish only.
 - Service worker cache version bumped to pegasus-shield-v3.98-FINAL-165.
+
+PEGASUS 166 - MOBILE TILE CIRCLE-BLUR MORPH POLISH
+- Refines mobile page switching so tiles stay in place instead of moving between pages.
+- Tile borders blur into rounded/circular Pegasus-green shapes, content switches while blurred, then tiles sharpen back to their original card shape.
+- Keeps static top mobile section and ghost keys unchanged.
+- No new JS files; mobile animation polish only.
+- Service worker cache version bumped to pegasus-shield-v3.99-FINAL-166.
