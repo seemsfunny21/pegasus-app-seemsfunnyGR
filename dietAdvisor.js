@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DIET ADVISOR - v2.1 (14-DAY FULL LOG ANALYST + PEGASUS UI)
-   Protocol: Daily Deficit Analysis + Last-2-Weeks Nutrition Gap Correction
+   PEGASUS DIET ADVISOR - v2.2 (14-DAY ANALYST CLEANUP)
+   Protocol: 14-Day Nutrition Gap Scoring + Compact Recommendation UI
    ========================================================================== */
 (function() {
     var M = M || window.PegasusManifest;
@@ -483,66 +483,6 @@
         };
     }
 
-    function buildMessage(consumed, targets, stats) {
-        const needKcal = Math.max(0, targets.kcal - consumed.kcal);
-        const needProtein = Math.max(0, targets.protein - consumed.protein);
-        const insights = buildHistoryInsights(stats);
-        const firstMissing = insights.missing?.[0];
-        const firstRepeated = insights.repeatedCategories?.[0];
-
-        const base = t(
-            `Συγκρίνω το σημερινό υπόλοιπο με όλες τις καταγραφές φαγητού των τελευταίων ${HISTORY_DAYS} ημερών.`,
-            `I compare today's remaining targets with all food-log entries from the last ${HISTORY_DAYS} days.`
-        );
-
-        const priorityLine = firstMissing
-            ? t(
-                `Πρώτη προτεραιότητα: ${firstMissing.label} (${firstMissing.daysSeen}/${HISTORY_DAYS} ημέρες).`,
-                `First priority: ${firstMissing.label} (${firstMissing.daysSeen}/${HISTORY_DAYS} days).`
-            )
-            : t('Δεν φαίνεται μεγάλη έλλειψη ποικιλίας στο 14ήμερο.', 'No major variety gap is visible in the 14-day window.');
-
-        const repeatLine = firstRepeated
-            ? t(
-                `Χαμηλότερα σήμερα: ${firstRepeated.label}, γιατί εμφανίστηκε ${firstRepeated.count} φορές.`,
-                `Lower today: ${firstRepeated.label}, because it appeared ${firstRepeated.count} times.`
-            )
-            : '';
-
-        if (needKcal <= 120 && needProtein <= 10) {
-            return [base, priorityLine, repeatLine, t(
-                'Είσαι κοντά στον στόχο θερμίδων/πρωτεΐνης, άρα τώρα μετράει κυρίως η ποικιλία.',
-                'You are close to your calorie/protein target, so variety matters most now.'
-            )].filter(Boolean).join(' ');
-        }
-
-        return [base, priorityLine, repeatLine, t(
-            `Σου λείπουν περίπου ${needKcal} kcal και ${needProtein}g πρωτεΐνης.`,
-            `You are missing about ${needKcal} kcal and ${needProtein}g protein.`
-        )].filter(Boolean).join(' ');
-    }
-
-    function buildSuggestions(stats) {
-        const insights = buildHistoryInsights(stats);
-        const out = [];
-
-        insights.missing.slice(0, 3).forEach(item => {
-            out.push(t(
-                `Βάλε ${item.label.toLowerCase()} πιο ψηλά: εμφανίστηκε ${item.daysSeen}/${HISTORY_DAYS} ημέρες, στόχος τουλάχιστον ${item.targetDays}.`,
-                `Rank ${item.label.toLowerCase()} higher: ${item.daysSeen}/${HISTORY_DAYS} days, target at least ${item.targetDays}.`
-            ));
-        });
-
-        insights.repeatedCategories.slice(0, 2).forEach(item => {
-            out.push(t(
-                `${item.label} έχει παιχτεί ${item.count} φορές, άρα το βάζω χαμηλότερα σήμερα.`,
-                `${item.label} appeared ${item.count} times, so it is ranked lower today.`
-            ));
-        });
-
-        return out.slice(0, 5);
-    }
-
     function analyzeAndRecommend() {
         const consumed = getTotals();
         const targets = getTargets();
@@ -587,16 +527,6 @@
             }));
 
         return {
-            msg: buildMessage(consumed, targets, stats),
-            proteinLine: t(
-                `Σήμερα: ${Math.round(consumed.protein)}g / ${targets.protein}g πρωτεΐνη`,
-                `Today: ${Math.round(consumed.protein)}g / ${targets.protein}g protein`
-            ),
-            deficitLine: t(
-                `Υπόλοιπο: ${needKcal} kcal | ${needProtein}g πρωτεΐνη`,
-                `Remaining: ${needKcal} kcal | ${needProtein}g protein`
-            ),
-            suggestions: buildSuggestions(stats),
             options,
             consumed: { kcal: Math.round(consumed.kcal), protein: Math.round(consumed.protein) },
             targets,
