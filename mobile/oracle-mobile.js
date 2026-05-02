@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🧠 PEGASUS MODULE: ORACLE (v2.2 - RADICAL MINIMALISM)
+   🧠 PEGASUS MODULE: ORACLE (v2.3 - STATIC HOME HEADER)
    Protocol: Color-Synced Text, Left Alignment, No-Header UI
    ========================================================================== */
 
@@ -73,8 +73,10 @@
         },
 
         injectDashboard: function() {
+            const staticHost = document.getElementById('mobileStaticDashboard');
             const grid = document.getElementById('dynamic-grid');
-            if (!grid || (window.PegasusMobileUI && window.PegasusMobileUI.currentPage !== 0)) return;
+            const host = staticHost || grid;
+            if (!host) return;
 
             const existing = document.getElementById('oracle-dashboard');
             if (existing) existing.remove();
@@ -84,12 +86,13 @@
             dashboard.id = 'oracle-dashboard';
 
             dashboard.style.cssText = `
+                width: 100%;
                 grid-column: 1 / -1;
                 background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
                 border: 1px solid var(--main);
                 border-radius: 16px;
                 padding: 15px;
-                margin-bottom: 8px;
+                margin: 0 0 12px 0;
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
@@ -105,7 +108,12 @@
                 </div>
             `).join('');
 
-            grid.insertBefore(dashboard, grid.firstChild);
+            if (staticHost) {
+                staticHost.innerHTML = "";
+                staticHost.appendChild(dashboard);
+            } else if (grid) {
+                grid.insertBefore(dashboard, grid.firstChild);
+            }
         }
     };
 

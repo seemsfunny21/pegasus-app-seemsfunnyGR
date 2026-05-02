@@ -204,3 +204,12 @@ PEGASUS 174 - MOBILE TOUCH SWIPE WARNING CLEANUP
 - Keeps the PEGASUS 172 morning Σώμα auto check-in behavior.
 - No new files added; changed mobile/mobile.html, sw.js, RELEASE_NOTES.txt.
 - Service worker cache version bumped to pegasus-shield-v3.106-FINAL-174.
+
+
+PEGASUS 175 - MOBILE ORACLE STATIC DASHBOARD FIX
+- Restored the top Oracle/status dashboard as a true static mobile home header.
+- The Oracle/status dashboard now renders into #mobileStaticDashboard instead of being injected into #dynamic-grid.
+- Removed the currentPage === 0 restriction from Oracle injection, so it remains visible on page 1, page 2, and future mobile home pages.
+- Kept PEGASUS 174 touch/swipe warning cleanup unchanged.
+- No new files added.
+- Service worker cache version bumped to pegasus-shield-v3.107-FINAL-175.
