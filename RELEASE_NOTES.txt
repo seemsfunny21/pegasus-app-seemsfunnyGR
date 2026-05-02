@@ -171,3 +171,12 @@ PEGASUS 159 - MOBILE GHOST NAV HEIGHT + BACK-ONLY FIX
 - No new JS files added; changed mobile/mobile.html, mobile/style.css, sw.js.
 - Service worker cache version bumped to pegasus-shield-v3.92-FINAL-159.
 
+
+
+PEGASUS 160 - MOBILE GHOST RESET + PAGE TRANSITION POLISH
+- Restored ghost buttons as visual-only ghost keys.
+- Removed Ghost Button Order settings panel.
+- Kept mobile swipe page navigation.
+- Added staged page transition animation: current tiles exit bottom-to-top, target page tiles enter top-to-bottom.
+- Animation is page-index based and supports future extra pages.
+- Service worker cache version bumped to pegasus-shield-v3.93-FINAL-160.

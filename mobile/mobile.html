@@ -221,14 +221,6 @@
             </button>
         </div>
 
-        <div class="mini-card" style="margin-top: 18px; padding: 20px; border-color: rgba(0,255,65,0.45); background: rgba(0,255,65,0.025);">
-            <span class="mini-label" style="margin-bottom: 8px; display: block;">ΣΕΙΡΑ GHOST ΚΟΥΜΠΙΩΝ</span>
-            <div style="color:#777; font-size:10px; font-weight:800; line-height:1.5; margin-bottom:14px; text-transform:uppercase; letter-spacing:0.7px;">
-                Αποθηκεύεται μόνο σε αυτό το κινητό. Το ◀ λειτουργεί σαν Επιστροφή.
-            </div>
-            <div id="ghostOrderSettings" class="ghost-order-list"></div>
-            <button class="secondary-btn" style="margin-top: 12px; border-color:#333; color:#777;" onclick="window.PegasusGhostNav?.resetOrder()">ΕΠΑΝΑΦΟΡΑ DEFAULT</button>
-        </div>
 
         <div class="section-title" style="margin-top: 30px;">ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ (CLOUD / LOCAL)</div>
 
@@ -256,6 +248,9 @@
         window.PegasusMobileUI = {
             currentPage: 0,
             modulesPerPage: 10,
+            isAnimating: false,
+            exitStepMs: 34,
+            enterStepMs: 42,
 
             coreModules: [
                 { id: 'diet', icon: '🥗', label: 'Διατροφή' },
@@ -288,24 +283,24 @@
                 return Math.max(1, 1 + extraPages);
             },
 
+            getPageLabel: function(pageIndex, maxPages) {
+                return pageIndex === 0
+                    ? "TACTICAL DATA INTERFACE"
+                    : `EXTENDED TACTICAL MODULES (ΣΕΛ. ${pageIndex + 1}/${maxPages})`;
+            },
+
             changePage: function(direction) {
                 const maxPages = this.getMaxPages();
                 const nextPage = Math.max(0, Math.min(this.currentPage + direction, maxPages - 1));
                 if (nextPage === this.currentPage) return false;
-
-                this.currentPage = nextPage;
-                this.render();
-                return true;
+                return this.transitionToPage(nextPage, direction);
             },
 
             goToPage: function(pageIndex) {
                 const maxPages = this.getMaxPages();
                 const nextPage = Math.max(0, Math.min(Number(pageIndex) || 0, maxPages - 1));
                 if (nextPage === this.currentPage) return false;
-
-                this.currentPage = nextPage;
-                this.render();
-                return true;
+                return this.transitionToPage(nextPage, nextPage > this.currentPage ? 1 : -1);
             },
 
             togglePage: function() {
@@ -314,7 +309,62 @@
                 return this.goToPage(this.currentPage === 0 ? 1 : 0);
             },
 
-            render: function() {
+            shouldReduceMotion: function() {
+                try {
+                    return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+                } catch (e) {
+                    return false;
+                }
+            },
+
+            transitionToPage: function(nextPage, direction) {
+                if (this.isAnimating) return false;
+
+                const grid = document.getElementById('dynamic-grid');
+                if (!grid || this.shouldReduceMotion()) {
+                    this.currentPage = nextPage;
+                    this.render({ animateIn: false, direction });
+                    return true;
+                }
+
+                const tiles = Array.from(grid.children);
+                if (!tiles.length) {
+                    this.currentPage = nextPage;
+                    this.render({ animateIn: true, direction });
+                    return true;
+                }
+
+                this.isAnimating = true;
+                grid.classList.add('is-page-transitioning');
+
+                tiles.forEach((tile, visualIndex) => {
+                    const reverseIndex = tiles.length - 1 - visualIndex;
+                    tile.style.animationDelay = `${reverseIndex * this.exitStepMs}ms`;
+                    tile.classList.remove('pg-tile-enter');
+                    tile.classList.add('pg-tile-exit');
+                });
+
+                const exitTotal = Math.max(240, tiles.length * this.exitStepMs + 220);
+                window.setTimeout(() => {
+                    this.currentPage = nextPage;
+                    this.render({ animateIn: true, direction });
+
+                    const enterCount = grid.children.length;
+                    const enterTotal = Math.max(260, enterCount * this.enterStepMs + 280);
+                    window.setTimeout(() => {
+                        grid.classList.remove('is-page-transitioning');
+                        Array.from(grid.children).forEach(tile => {
+                            tile.classList.remove('pg-tile-enter');
+                            tile.style.animationDelay = '';
+                        });
+                        this.isAnimating = false;
+                    }, enterTotal);
+                }, exitTotal);
+
+                return true;
+            },
+
+            render: function(options = {}) {
                 const grid = document.getElementById('dynamic-grid');
                 const pageTxt = document.getElementById('pageIndicator');
                 const btnPrev = document.getElementById('prevPage');
@@ -339,13 +389,14 @@
                     pageItems.forEach(m => this.createTile(grid, m));
                 }
 
-                if (pageTxt) {
-                    if (this.currentPage === 0) {
-                        pageTxt.textContent = "TACTICAL DATA INTERFACE";
-                    } else {
-                        pageTxt.textContent = `EXTENDED TACTICAL MODULES (ΣΕΛ. ${this.currentPage + 1}/${maxPages})`;
-                    }
+                if (options.animateIn && !this.shouldReduceMotion()) {
+                    Array.from(grid.children).forEach((tile, index) => {
+                        tile.classList.add('pg-tile-enter');
+                        tile.style.animationDelay = `${index * this.enterStepMs}ms`;
+                    });
                 }
+
+                if (pageTxt) pageTxt.textContent = this.getPageLabel(this.currentPage, maxPages);
 
                 if (btnPrev) {
                     btnPrev.style.opacity = this.currentPage === 0 ? "0.1" : "1";
@@ -418,94 +469,23 @@
         };
 
         window.PegasusGhostNav = {
-            storageKey: 'pegasus_mobile_ghost_order_v1',
-            defaultOrder: ['menu', 'page', 'back'],
-            actions: {
-                menu: { icon: '☰', label: 'ΜΕΝΟΥ' },
-                page: { icon: '⬔', label: 'ΣΕΛΙΔΑ' },
-                back: { icon: '◀', label: 'ΠΙΣΩ' }
-            },
+            items: [
+                { icon: '☰', label: 'GHOST MENU' },
+                { icon: '⬔', label: 'GHOST PAGE' },
+                { icon: '◀', label: 'GHOST BACK' }
+            ],
 
-            getOrder: function() {
-                try {
-                    const parsed = JSON.parse(localStorage.getItem(this.storageKey) || 'null');
-                    const valid = Array.isArray(parsed) &&
-                        parsed.length === this.defaultOrder.length &&
-                        this.defaultOrder.every(key => parsed.includes(key));
-                    return valid ? parsed : this.defaultOrder.slice();
-                } catch (e) {
-                    return this.defaultOrder.slice();
-                }
-            },
-
-            saveOrder: function(order) {
-                const clean = Array.isArray(order) ? order.filter(key => this.defaultOrder.includes(key)) : [];
-                const finalOrder = this.defaultOrder.every(key => clean.includes(key)) ? clean : this.defaultOrder.slice();
-                localStorage.setItem(this.storageKey, JSON.stringify(finalOrder));
-                this.render();
-                this.renderSettings();
-            },
-
-            move: function(actionKey, direction) {
-                const order = this.getOrder();
-                const idx = order.indexOf(actionKey);
-                const nextIdx = idx + direction;
-                if (idx < 0 || nextIdx < 0 || nextIdx >= order.length) return;
-                [order[idx], order[nextIdx]] = [order[nextIdx], order[idx]];
-                this.saveOrder(order);
-            },
-
-            resetOrder: function() {
-                localStorage.removeItem(this.storageKey);
-                this.render();
-                this.renderSettings();
-            },
-
-            run: function(actionKey) {
-                // Only the back arrow is an active ghost key.
-                // The other two buttons remain visual ghost keys; page switching is handled by swipe/arrows.
-                if (actionKey !== 'back') return;
-
-                const activeView = document.querySelector('.view.active');
-                const backButton = activeView?.querySelector?.('.btn-back');
-
-                if (backButton && activeView?.id !== 'home') {
-                    backButton.click();
-                    return;
-                }
-
-                openView('home');
+            run: function() {
+                // Intentional no-op: these are visual ghost keys only.
+                return false;
             },
 
             render: function() {
                 const overlay = document.getElementById('ghostNavOverlay');
                 if (!overlay) return;
 
-                overlay.innerHTML = this.getOrder().map(actionKey => {
-                    const item = this.actions[actionKey] || this.actions.back;
-                    return `<button type="button" class="nav-box" data-ghost-action="${actionKey}" aria-label="${item.label}" onclick="window.PegasusGhostNav.run('${actionKey}')">${item.icon}</button>`;
-                }).join('');
-            },
-
-            renderSettings: function() {
-                const container = document.getElementById('ghostOrderSettings');
-                if (!container) return;
-
-                const order = this.getOrder();
-                container.innerHTML = order.map((actionKey, idx) => {
-                    const item = this.actions[actionKey] || this.actions.back;
-                    return `
-                        <div class="ghost-order-row">
-                            <div class="ghost-order-preview">
-                                <span class="ghost-order-icon">${item.icon}</span>
-                                <span>${idx + 1}. ${item.label}</span>
-                            </div>
-                            <div class="ghost-order-controls">
-                                <button type="button" onclick="window.PegasusGhostNav.move('${actionKey}', -1)" ${idx === 0 ? 'disabled' : ''}>←</button>
-                                <button type="button" onclick="window.PegasusGhostNav.move('${actionKey}', 1)" ${idx === order.length - 1 ? 'disabled' : ''}>→</button>
-                            </div>
-                        </div>
-                    `;
+                overlay.innerHTML = this.items.map(item => {
+                    return `<button type="button" class="nav-box" aria-label="${item.label}" tabindex="-1" aria-hidden="true">${item.icon}</button>`;
                 }).join('');
             }
         };
@@ -567,7 +547,6 @@
         document.addEventListener("DOMContentLoaded", () => {
             window.PegasusMobileUI.render();
             window.PegasusGhostNav?.render?.();
-            window.PegasusGhostNav?.renderSettings?.();
             window.installPegasusMobileSwipe?.();
         }, { once: true });
     </script>
@@ -725,8 +704,7 @@
             }
             if (id === 'settings_panel') {
                 window.PegasusWeight?.updateUI();
-                window.PegasusGhostNav?.renderSettings?.();
-            }
+                }
             if (id === 'parking_panel') window.PegasusParking?.updateUI();
 
             const dynamicRenderName = `render${id.charAt(0).toUpperCase() + id.slice(1)}Content`;
