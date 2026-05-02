@@ -241,3 +241,10 @@ PEGASUS 170 - MOBILE FIXED-FRAME BLUR TRANSITION
 - No new JS files added; changed mobile/style.css, mobile/mobile.html service-worker version query, sw.js, RELEASE_NOTES.txt.
 - Service worker cache version bumped to pegasus-shield-v3.102-FINAL-170.
 
+PEGASUS 171 - MOBILE SEQUENTIAL CROSS-FADE TRANSITION
+- New mobile page transition test with fixed frames and staggered content replacement.
+- The 1st tile fades first, then the 2nd; when the 3rd begins fading, the 1st tile from the next page starts appearing.
+- The sequence continues slot by slot so outgoing content disappears in order while incoming content appears with a two-slot offset.
+- Tile borders/frames stay visually stable during the transition.
+- No new JS files added; changed mobile/mobile.html, mobile/style.css, mobile/mobile.html service-worker version query, sw.js, RELEASE_NOTES.txt.
+- Service worker cache version bumped to pegasus-shield-v3.103-FINAL-171.
