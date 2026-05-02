@@ -214,11 +214,13 @@ window.showHistory = function() {
 window.checkDailyRoutinePC = function() {
     const dateStr = getPegasusDisplayDateStr(new Date());
     const flagKey = "pegasus_routine_injected_" + dateStr;
+    const extraWheyMarkerKey = "pegasus_extra_whey_routine_injected_" + dateStr;
     const todayFoodLogKey = getPegasusFoodLogKey(dateStr);
     const todayLog = JSON.parse(localStorage.getItem(todayFoodLogKey) || "[]");
 
     const hasYogurtRoutine = todayLog.some(item => item?.name === "Γιαούρτι 2% + Whey (Ρουτίνα)");
     const hasEggRoutine = todayLog.some(item => item?.name === "3 Αυγά (Ρουτίνα)");
+    const hasExtraWheyRoutine = todayLog.some(item => item?.name === "Πρωτεΐνη 1 Scoop (Ρουτίνα)");
     const hasCreatineRoutine = todayLog.some(item => item?.name === "Κρεατίνη 5g (Ρουτίνα)");
 
     if (!localStorage.getItem(flagKey)) {
@@ -231,14 +233,19 @@ window.checkDailyRoutinePC = function() {
                 setTimeout(() => window.addFoodItem("3 Αυγά (Ρουτίνα)", 210, 18), 300);
             }
 
+            if (!hasExtraWheyRoutine) {
+                setTimeout(() => window.addFoodItem("Πρωτεΐνη 1 Scoop (Ρουτίνα)", 120, 24), 450);
+                localStorage.setItem(extraWheyMarkerKey, "true");
+            }
+
             if (!hasCreatineRoutine) {
-                setTimeout(() => window.addFoodItem("Κρεατίνη 5g (Ρουτίνα)", 0, 0), 500);
+                setTimeout(() => window.addFoodItem("Κρεατίνη 5g (Ρουτίνα)", 0, 0), 600);
             }
         }
 
         // 3. Ενεργοποίηση σημαίας
         localStorage.setItem(flagKey, "true");
-        console.log("🌅 PEGASUS PC: Daily Routine auto-injected. Routine includes creatine.");
+        console.log("🌅 PEGASUS PC: Daily Routine auto-injected. Routine includes extra whey + creatine.");
 
         // 4. Ενανέωση UI
         setTimeout(() => {
@@ -249,6 +256,21 @@ window.checkDailyRoutinePC = function() {
         if (window.PegasusCloud?.push) {
             setTimeout(() => window.PegasusCloud.push(true), 1000);
         }
+        return;
+    }
+
+    // PEGASUS 149: migration για χρήστες που είχαν ήδη σημερινή ρουτίνα πριν μπει το έξτρα scoop.
+    // Προσθέτει το νέο scoop μία φορά, αλλά αν το σβήσεις μετά δεν το ξαναβάζει την ίδια μέρα.
+    if (!hasExtraWheyRoutine && !localStorage.getItem(extraWheyMarkerKey) && typeof window.addFoodItem === "function") {
+        setTimeout(() => window.addFoodItem("Πρωτεΐνη 1 Scoop (Ρουτίνα)", 120, 24), 100);
+        localStorage.setItem(extraWheyMarkerKey, "true");
+        console.log("🥤 PEGASUS PC: Extra whey routine scoop injected after eggs.");
+
+        setTimeout(() => {
+            if (typeof updateInventoryUI === "function") updateInventoryUI();
+            if (typeof window.updateKoukiBalance === "function") window.updateKoukiBalance();
+            if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
+        }, 800);
     }
 };
 

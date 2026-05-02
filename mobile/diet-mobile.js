@@ -35,6 +35,7 @@ window.PegasusDiet = {
         return [
             { name: "Γιαούρτι 2% + Whey (Ρουτίνα)", kcal: 250, protein: 35, tsOffset: 1000 },
             { name: "3 Αυγά (Ρουτίνα)", kcal: 210, protein: 18, tsOffset: 2000 },
+            { name: "Πρωτεΐνη 1 Scoop (Ρουτίνα)", kcal: 120, protein: 24, tsOffset: 2500 },
             { name: "Κρεατίνη 5g (Ρουτίνα)", kcal: 0, protein: 0, tsOffset: 3000 }
         ];
     },
@@ -283,9 +284,11 @@ window.PegasusDiet = {
         `;
 
         advice.options.forEach((opt, idx) => {
-            const macros = (typeof window.getPegasusMacros === "function")
-                ? window.getPegasusMacros(opt.n, opt.t)
-                : { kcal: 550, protein: 45 };
+            const macros = (Number.isFinite(Number(opt.kcal)) || Number.isFinite(Number(opt.protein)))
+                ? { kcal: Number(opt.kcal) || 0, protein: Number(opt.protein) || 0 }
+                : ((typeof window.getPegasusMacros === "function")
+                    ? window.getPegasusMacros(opt.n, opt.t)
+                    : { kcal: 550, protein: 45 });
             const tone = ['green', 'orange', 'red'].includes(opt?.tone) ? opt.tone : 'orange';
 
             html += `
@@ -309,9 +312,11 @@ window.PegasusDiet = {
             btn.addEventListener('click', () => {
                 const opt = advice.options[Number(btn.dataset.pegasusAdvisorAdd)];
                 if (!opt) return;
-                const macros = (typeof window.getPegasusMacros === 'function')
-                    ? window.getPegasusMacros(opt.n, opt.t)
-                    : { kcal: 550, protein: 45 };
+                const macros = (Number.isFinite(Number(opt.kcal)) || Number.isFinite(Number(opt.protein)))
+                    ? { kcal: Number(opt.kcal) || 0, protein: Number(opt.protein) || 0 }
+                    : ((typeof window.getPegasusMacros === 'function')
+                        ? window.getPegasusMacros(opt.n, opt.t)
+                        : { kcal: 550, protein: 45 });
                 window.PegasusDiet.quickAdd(`${opt.n} (Κούκι)`, Number(macros.kcal) || 0, Number(macros.protein) || 0);
                 document.getElementById('advisorMobileResult').innerHTML = '';
                 document.getElementById('advisorMobileResult').dataset.expanded = "false";

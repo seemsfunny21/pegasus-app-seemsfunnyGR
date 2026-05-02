@@ -79,3 +79,18 @@ PEGASUS 147 - CYCLING CARDIO-ONLY CLEANUP
 - Cycling remains available in the cardio database/history and is logged only through km/kcal entry.
 - Desktop and mobile cardio leg credit is capped by the remaining weekly leg target.
 - Service worker cache version bumped to pegasus-shield-v3.80-FINAL-147.
+
+PEGASUS 148 - 14-DAY DIET ADVISOR ROTATION
+- Advisor now analyzes the last 14 days of food logs before ranking suggestions.
+- Missing categories such as greens, legumes/beans, fish/seafood and vegetables are promoted first.
+- Overused categories such as chicken/poultry are pushed lower and shown with a reason when repeated often.
+- Mobile advisor now uses advisor-provided kcal/protein values for generic rotation options.
+- No new JS files added; logic stays in dietAdvisor.js and mobile/diet-mobile.js.
+- Service worker cache version bumped to pegasus-shield-v3.81-FINAL-148.
+
+PEGASUS 149 - EXTRA MORNING WHEY ROUTINE
+- Adds one extra routine protein scoop after the eggs / before work.
+- Routine now logs: Γιαούρτι 2% + Whey, 3 Αυγά, Πρωτεΐνη 1 Scoop, Κρεατίνη 5g.
+- Extra scoop counts +120 kcal / +24g protein and deducts 30g whey stock through Diet only.
+- Desktop includes same-day migration so the new scoop appears even if today’s old routine was already injected, without re-adding it after deletion.
+- Service worker cache version bumped to pegasus-shield-v3.82-FINAL-149.
