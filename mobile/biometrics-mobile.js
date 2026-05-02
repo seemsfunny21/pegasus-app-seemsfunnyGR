@@ -6,40 +6,6 @@
 
 (function() {
     const BIO_DATA_KEY = 'pegasus_biometrics_v1';
-    const MORNING_BIO_CHECKIN_KEY = 'pegasus_morning_bio_checkin';
-
-    function getTodayBioDate() {
-        return new Date().toLocaleDateString('el-GR');
-    }
-
-    function isMorningBioWindow() {
-        return new Date().getHours() >= 5;
-    }
-
-    function shouldDelayForSecurityModal() {
-        const pinModal = document.getElementById('pinModal');
-        return !!pinModal && getComputedStyle(pinModal).display !== 'none';
-    }
-
-    function isBioEntryComplete(entry) {
-        return !!entry &&
-            Number(entry.sleep || 0) > 0 &&
-            Number(entry.energy || 0) > 0 &&
-            Number(entry.recovery || 0) > 0;
-    }
-
-    function returnHomeAfterBioCompletion() {
-        clearTimeout(window.__pegasusBioReturnHomeTimer);
-        window.__pegasusBioReturnHomeTimer = setTimeout(() => {
-            const bioView = document.getElementById('biometrics');
-            if (!bioView?.classList?.contains('active')) return;
-
-            if (typeof window.openView === 'function') {
-                window.openView('home');
-                console.log('✅ PEGASUS BIO: Daily check-in complete. Returning home.');
-            }
-        }, 300);
-    }
 
     // 1. Μηχανή Δεδομένων
     window.PegasusBio = {
@@ -48,33 +14,18 @@
             const idx = entries.findIndex(e => e.id === id);
             if (idx === -1) return;
 
-            const wasComplete = isBioEntryComplete(entries[idx]);
-            const isTodayEntry = entries[idx].date === getTodayBioDate();
-
             entries[idx][metricType] = value;
-            const isNowComplete = isBioEntryComplete(entries[idx]);
-
             this.saveAndRender(entries);
-
-            if (isTodayEntry && !wasComplete && isNowComplete) {
-                returnHomeAfterBioCompletion();
-            }
         },
 
         addNewEntry: function() {
-            const created = this.ensureTodayEntry(false);
-            if (!created) {
-                alert('Υπάρχει ήδη καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
-            }
-        },
-
-        ensureTodayEntry: function(silent = true) {
             let entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
-            const today = getTodayBioDate();
+            const today = new Date().toLocaleDateString('el-GR');
 
+            // Έλεγχος αν υπάρχει ήδη εγγραφή για σήμερα
             if (entries.some(e => e.date === today)) {
-                if (!silent) window.renderBioContent?.();
-                return false;
+                alert('Υπάρχει ήδη καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
+                return;
             }
 
             const newEntry = {
@@ -87,26 +38,6 @@
 
             entries.unshift(newEntry);
             this.saveAndRender(entries);
-            return true;
-        },
-
-        runMorningCheckin: function() {
-            if (!isMorningBioWindow()) return false;
-            if (shouldDelayForSecurityModal()) return false;
-
-            const today = getTodayBioDate();
-            if (localStorage.getItem(MORNING_BIO_CHECKIN_KEY) === today) return false;
-
-            this.ensureTodayEntry(true);
-            localStorage.setItem(MORNING_BIO_CHECKIN_KEY, today);
-
-            if (typeof window.openView === 'function') {
-                window.openView('biometrics');
-            } else {
-                window.renderBioContent?.();
-            }
-
-            return true;
         },
 
         deleteEntry: function(id) {
@@ -259,9 +190,5 @@
         if (window.registerPegasusModule) {
             window.registerPegasusModule({ id: 'biometrics', label: 'Σώμα', icon: '🧬' });
         }
-
-        setTimeout(() => {
-            window.PegasusBio?.runMorningCheckin?.();
-        }, 2200);
     });
 })();
