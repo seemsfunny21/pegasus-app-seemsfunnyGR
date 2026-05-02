@@ -209,7 +209,6 @@ const PegasusCloud = {
             "pegasus_missions_v1",
             "pegasus_biometrics_v1",
             "pegasus_supplies_v1",
-            "pegasus_morning_checkin",
             "pegasus_stats",
             "pegasus_goal_protein",
             "pegasus_today_protein_consumed",
@@ -265,8 +264,9 @@ const PegasusCloud = {
             "pegasus_car_dates",
             "pegasus_car_specs",
             "peg_car_dates",
-            "pegasus_master_pin",
-            "pegasus_mobile_ghost_order_v1"
+            "pegasus_morning_checkin",
+            "pegasus_morning_bio_checkin",
+            "pegasus_master_pin"
         ];
         const dynamicKeys = window.PegasusMobileDataRegistry?.getLocalOnlyExactKeys?.() || [];
         return Array.from(new Set([...baseKeys, ...dynamicKeys]));
