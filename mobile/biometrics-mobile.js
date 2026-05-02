@@ -1,54 +1,65 @@
 /* ==========================================================================
-   🧬 PEGASUS MODULE: BIO-METRICS & RECOVERY TRACKER (v1.2)
-   Protocol: Daily Tri-Metric Heatmap & Cloud Sync
+   🧬 PEGASUS MODULE: BIO-METRICS & RECOVERY TRACKER (v1.3)
+   Protocol: Daily Tri-Metric Heatmap, 05:00 Auto Check-In & Cloud Sync
    Status: MEMORY PROTECTED | SYNTAX VERIFIED
    ========================================================================== */
 
 (function() {
     const BIO_DATA_KEY = 'pegasus_biometrics_v1';
-    const MORNING_BIO_CHECKIN_KEY = 'pegasus_morning_bio_checkin';
 
-    function getTodayBioDate() {
+    // 1. Μηχανή Δεδομένων
+    function getTodayLabel() {
         return new Date().toLocaleDateString('el-GR');
     }
 
-    function isMorningBioWindow() {
-        return new Date().getHours() >= 5;
+    function loadEntries() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(BIO_DATA_KEY) || '[]');
+            return Array.isArray(raw) ? raw : [];
+        } catch (e) {
+            console.error('PEGASUS BIO: Failed to parse entries.', e);
+            return [];
+        }
     }
 
-    function shouldDelayForSecurityModal() {
-        const pinModal = document.getElementById('pinModal');
-        return !!pinModal && getComputedStyle(pinModal).display !== 'none';
+    function isComplete(entry) {
+        return !!entry && Number(entry.sleep) > 0 && Number(entry.energy) > 0 && Number(entry.recovery) > 0;
     }
 
-    // 1. Μηχανή Δεδομένων
     window.PegasusBio = {
+        autoOpenHour: 5,
+        autoOpenedDate: null,
+
         setMetric: function(id, metricType, value) {
-            let entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
+            let entries = loadEntries();
             const idx = entries.findIndex(e => e.id === id);
             if (idx === -1) return;
 
             entries[idx][metricType] = value;
+            const updatedEntry = entries[idx];
             this.saveAndRender(entries);
-        },
 
-        addNewEntry: function() {
-            const created = this.ensureTodayEntry(false);
-            if (!created) {
-                alert('Υπάρχει ήδη καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
+            if (updatedEntry.date === getTodayLabel() && isComplete(updatedEntry)) {
+                this.autoOpenedDate = updatedEntry.date;
+                setTimeout(() => {
+                    if (typeof window.openView === 'function') window.openView('home');
+                }, 280);
             }
         },
 
-        ensureTodayEntry: function(silent = true) {
-            let entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
-            const today = getTodayBioDate();
+        ensureTodayEntry: function(options = {}) {
+            let entries = loadEntries();
+            const today = getTodayLabel();
+            let entry = entries.find(e => e.date === today);
 
-            if (entries.some(e => e.date === today)) {
-                if (!silent) window.renderBioContent?.();
-                return false;
+            if (entry) {
+                if (!options.silent && isComplete(entry)) {
+                    alert('Υπάρχει ήδη πλήρης καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
+                }
+                return entry;
             }
 
-            const newEntry = {
+            entry = {
                 id: 'bio_' + Date.now(),
                 date: today,
                 sleep: 0,
@@ -56,36 +67,66 @@
                 recovery: 0
             };
 
-            entries.unshift(newEntry);
+            entries.unshift(entry);
             this.saveAndRender(entries);
-            return true;
+            return entry;
         },
 
-        runMorningCheckin: function() {
-            if (!isMorningBioWindow()) return false;
-            if (shouldDelayForSecurityModal()) return false;
+        addNewEntry: function() {
+            let entries = loadEntries();
+            const today = getTodayLabel();
+            const existing = entries.find(e => e.date === today);
 
-            const today = getTodayBioDate();
-            if (localStorage.getItem(MORNING_BIO_CHECKIN_KEY) === today) return false;
-
-            this.ensureTodayEntry(true);
-            localStorage.setItem(MORNING_BIO_CHECKIN_KEY, today);
-
-            if (typeof window.openView === 'function') {
-                window.openView('biometrics');
-            } else {
-                window.renderBioContent?.();
+            if (existing) {
+                alert('Υπάρχει ήδη καταγραφή για σήμερα. Μπορείς να την επεξεργαστείς.');
+                return;
             }
 
-            return true;
+            this.ensureTodayEntry({ silent: true });
         },
 
         deleteEntry: function(id) {
             if(confirm('Διαγραφή της βιομετρικής καταγραφής;')) {
-                let entries = JSON.parse(localStorage.getItem(BIO_DATA_KEY)) || [];
+                let entries = loadEntries();
                 entries = entries.filter(e => e.id !== id);
                 this.saveAndRender(entries);
             }
+        },
+
+        getTodayEntry: function() {
+            const today = getTodayLabel();
+            return loadEntries().find(e => e.date === today) || null;
+        },
+
+        runMorningAutoOpen: function(retryCount = 0) {
+            const now = new Date();
+            const today = getTodayLabel();
+            const pinModal = document.getElementById('pinModal');
+            const pinVisible = pinModal && pinModal.style.display !== 'none' && getComputedStyle(pinModal).display !== 'none';
+
+            if (now.getHours() < this.autoOpenHour) return;
+
+            if (pinVisible && retryCount < 20) {
+                setTimeout(() => this.runMorningAutoOpen(retryCount + 1), 500);
+                return;
+            }
+
+            if (this.autoOpenedDate === today) return;
+
+            const current = this.getTodayEntry();
+            if (isComplete(current)) return;
+
+            this.ensureTodayEntry({ silent: true });
+            this.autoOpenedDate = today;
+
+            setTimeout(() => {
+                if (typeof window.openView === 'function') {
+                    window.openView('biometrics');
+                    setTimeout(() => {
+                        document.getElementById('bio-content')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                    }, 80);
+                }
+            }, 120);
         },
 
         saveAndRender: function(data) {
@@ -231,8 +272,9 @@
             window.registerPegasusModule({ id: 'biometrics', label: 'Σώμα', icon: '🧬' });
         }
 
-        setTimeout(() => {
-            window.PegasusBio?.runMorningCheckin?.();
-        }, 2200);
+        setTimeout(() => window.PegasusBio?.runMorningAutoOpen?.(), 900);
+        window.addEventListener('pegasus_sync_complete', () => {
+            setTimeout(() => window.PegasusBio?.runMorningAutoOpen?.(), 350);
+        });
     });
 })();

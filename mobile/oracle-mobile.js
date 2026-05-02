@@ -73,23 +73,39 @@
         },
 
         injectDashboard: function() {
-            const anchor = document.getElementById('mobileStaticDashboard');
-            const home = document.getElementById('home');
-            if (!anchor || !home) return;
+            const grid = document.getElementById('dynamic-grid');
+            if (!grid || (window.PegasusMobileUI && window.PegasusMobileUI.currentPage !== 0)) return;
+
+            const existing = document.getElementById('oracle-dashboard');
+            if (existing) existing.remove();
 
             const rows = this.analyzeData();
-            anchor.innerHTML = `
-                <div id="oracle-dashboard" class="oracle-dashboard-static">
-                    ${rows.map(row => `
-                        <div class="oracle-dashboard-row">
-                            <div class="oracle-dashboard-icon">${row.icon}</div>
-                            <div class="oracle-dashboard-text" style="color: ${row.color};">
-                                ${row.txt.toUpperCase()}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+            const dashboard = document.createElement('div');
+            dashboard.id = 'oracle-dashboard';
+
+            dashboard.style.cssText = `
+                grid-column: 1 / -1;
+                background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
+                border: 1px solid var(--main);
+                border-radius: 16px;
+                padding: 15px;
+                margin-bottom: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                box-sizing: border-box;
             `;
+
+            dashboard.innerHTML = rows.map(row => `
+                <div style="display: flex; align-items: flex-start; gap: 10px; width: 100%;">
+                    <div style="font-size: 16px; margin-top: -2px; flex-shrink: 0;">${row.icon}</div>
+                    <div style="font-size: 11px; color: ${row.color}; font-weight: 700; line-height: 1.4; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">
+                        ${row.txt.toUpperCase()}
+                    </div>
+                </div>
+            `).join('');
+
+            grid.insertBefore(dashboard, grid.firstChild);
         }
     };
 
@@ -103,4 +119,14 @@
             setTimeout(() => window.PegasusOracle.injectDashboard(), 100);
         }
     });
+})();
+
+/* ==========================================================================
+   ☀️ PEGASUS MODULE: MORNING CHECK-IN PROTOCOL
+   Status: DISABLED - replaced by Body auto check-in after 05:00
+   ========================================================================== */
+
+(function() {
+    // PEGASUS 172: No morning weight notification.
+    // The morning flow now opens the Σώμα module directly via biometrics-mobile.js.
 })();

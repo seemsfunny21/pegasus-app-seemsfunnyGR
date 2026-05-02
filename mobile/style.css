@@ -31,49 +31,6 @@ body {
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 20px; overflow-y: auto; scrollbar-width: none; }
 .grid::-webkit-scrollbar { display: none; }
 
-
-.mobile-static-dashboard {
-    width: 100%;
-    flex-shrink: 0;
-    margin: 0 0 12px;
-}
-
-.oracle-dashboard-static {
-    width: 100%;
-    background: linear-gradient(145deg, rgba(15,15,15,0.95) 0%, rgba(5,5,5,0.95) 100%);
-    border: 1px solid var(--main);
-    border-radius: 16px;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    box-sizing: border-box;
-}
-
-.oracle-dashboard-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    width: 100%;
-}
-
-.oracle-dashboard-icon {
-    font-size: 16px;
-    margin-top: -2px;
-    flex-shrink: 0;
-}
-
-.oracle-dashboard-text {
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.4;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-}
-
 /* 🚀 THE NEW DYNAMIC GRID SYSTEM */
 .dynamic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; padding-bottom: 5px; overflow-y: auto; scrollbar-width: none; }
 .dynamic-grid::-webkit-scrollbar { display: none; }
@@ -269,6 +226,11 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
             -webkit-tap-highlight-color: transparent;
         }
 
+        .nav-box:active {
+            transform: scale(0.92);
+            background: rgba(0, 255, 65, 0.28);
+            box-shadow: 0 0 16px rgba(0, 255, 65, 0.35);
+        }
 
 /* ==========================================================================
    PEGASUS ADVISOR RICH UI - v2.1
