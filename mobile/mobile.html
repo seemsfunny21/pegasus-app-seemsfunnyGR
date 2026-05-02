@@ -390,9 +390,16 @@
                 }
 
                 if (options.animateIn && !this.shouldReduceMotion()) {
-                    Array.from(grid.children).forEach((tile, index) => {
+                    const enteringTiles = Array.from(grid.children);
+                    const enterDirection = Number(options.direction) || 1;
+
+                    enteringTiles.forEach((tile, index) => {
+                        const visualIndex = enterDirection < 0
+                            ? enteringTiles.length - 1 - index
+                            : index;
+
                         tile.classList.add('pg-tile-enter');
-                        tile.style.animationDelay = `${index * this.enterStepMs}ms`;
+                        tile.style.animationDelay = `${visualIndex * this.enterStepMs}ms`;
                     });
                 }
 
