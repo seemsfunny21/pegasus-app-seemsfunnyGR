@@ -188,3 +188,10 @@ PEGASUS 172 - MOBILE MORNING BODY AUTO CHECK-IN
 - After sleep, energy, and recovery are all selected, the app returns to Home automatically.
 - No new JS files added; changed mobile/biometrics-mobile.js, mobile/oracle-mobile.js, mobile/mobile.html, sw.js, RELEASE_NOTES.txt.
 - Service worker cache version bumped to pegasus-shield-v3.104-FINAL-172.
+
+PEGASUS 173 - MOBILE ORACLE STATIC DASHBOARD RESTORE
+- Restores the Oracle status strip above the mobile grid as a static home dashboard, like the 163 behavior.
+- The 🟢/🟠/🔴 recovery, warning, and critical rows now remain visible on mobile home page 1 and page 2.
+- Keeps the morning Σώμα auto check-in behavior from PEGASUS 172.
+- No new files added; changed mobile/mobile.html, mobile/style.css, mobile/oracle-mobile.js, sw.js, RELEASE_NOTES.txt.
+- Service worker cache version bumped to pegasus-shield-v3.105-FINAL-173.
