@@ -250,10 +250,8 @@
             currentPage: 0,
             modulesPerPage: 10,
             isAnimating: false,
-            transitionStepMs: 85,
-            transitionLeadSlots: 2,
-            transitionExitMs: 220,
-            transitionEnterMs: 300,
+            exitStepMs: 0,
+            enterStepMs: 0,
 
             coreModules: [
                 { id: 'diet', icon: '🥗', label: 'Διατροφή' },
@@ -292,30 +290,6 @@
                     : `EXTENDED TACTICAL MODULES (ΣΕΛ. ${pageIndex + 1}/${maxPages})`;
             },
 
-            getPageItems: function(pageIndex) {
-                if (pageIndex === 0) {
-                    return [
-                        ...this.coreModules,
-                        { type: 'parking' },
-                        { type: 'supps' },
-                        { type: 'settings' }
-                    ];
-                }
-
-                const start = (pageIndex - 1) * this.modulesPerPage;
-                const end = start + this.modulesPerPage;
-                return this.extraModules.slice(start, end);
-            },
-
-            buildPageTiles: function(pageIndex) {
-                return this.getPageItems(pageIndex).map(item => {
-                    if (item.type === 'parking') return this.injectParkingTile();
-                    if (item.type === 'supps') return this.injectSuppsTile();
-                    if (item.type === 'settings') return this.injectSettingsTile();
-                    return this.createTile(null, item);
-                });
-            },
-
             changePage: function(direction) {
                 const maxPages = this.getMaxPages();
                 const nextPage = Math.max(0, Math.min(this.currentPage + direction, maxPages - 1));
@@ -344,39 +318,6 @@
                 }
             },
 
-            createTransitionLayer: function(grid, currentTiles, nextTiles) {
-                const layer = document.createElement('div');
-                layer.className = 'pg-transition-layer';
-
-                currentTiles.forEach((currentTile, index) => {
-                    const nextTile = nextTiles[index] || null;
-                    const slot = document.createElement('div');
-                    slot.className = 'tile pg-transition-slot';
-                    if (currentTile.classList.contains('full-width')) slot.classList.add('full-width');
-                    slot.style.left = `${currentTile.offsetLeft}px`;
-                    slot.style.top = `${currentTile.offsetTop}px`;
-                    slot.style.width = `${currentTile.offsetWidth}px`;
-                    slot.style.height = `${currentTile.offsetHeight}px`;
-                    slot.dataset.hasNew = nextTile ? '1' : '0';
-
-                    const oldContent = document.createElement('div');
-                    oldContent.className = 'pg-slot-content pg-slot-old';
-                    oldContent.innerHTML = currentTile.innerHTML;
-                    slot.appendChild(oldContent);
-
-                    if (nextTile) {
-                        const newContent = document.createElement('div');
-                        newContent.className = 'pg-slot-content pg-slot-new';
-                        newContent.innerHTML = nextTile.innerHTML;
-                        slot.appendChild(newContent);
-                    }
-
-                    layer.appendChild(slot);
-                });
-
-                return layer;
-            },
-
             transitionToPage: function(nextPage, direction) {
                 if (this.isAnimating) return false;
 
@@ -387,53 +328,42 @@
                     return true;
                 }
 
-                const currentTiles = Array.from(grid.children).filter(child => child.classList?.contains('tile'));
-                if (!currentTiles.length) {
+                const tiles = Array.from(grid.children);
+                if (!tiles.length) {
                     this.currentPage = nextPage;
-                    this.render({ animateIn: false, direction });
+                    this.render({ animateIn: true, direction });
                     return true;
                 }
 
-                const nextTiles = this.buildPageTiles(nextPage);
-                const layer = this.createTransitionLayer(grid, currentTiles, nextTiles);
-
+                const dir = Number(direction) >= 0 ? 1 : -1;
                 this.isAnimating = true;
-                grid.classList.add('is-page-transitioning', 'is-overlay-active');
-                grid.appendChild(layer);
+                grid.classList.add('is-page-transitioning');
+                grid.style.setProperty('--pg-tile-dx', `${dir * 16}px`);
 
-                const slots = Array.from(layer.children);
-                slots.forEach((slot, index) => {
-                    const exitDelay = index * this.transitionStepMs;
-                    const enterDelay = (index + this.transitionLeadSlots) * this.transitionStepMs;
-
-                    window.setTimeout(() => {
-                        slot.classList.add('is-exiting');
-                    }, exitDelay);
-
-                    if (slot.dataset.hasNew === '1') {
-                        window.setTimeout(() => {
-                            slot.classList.add('is-entering');
-                        }, enterDelay);
-                    }
+                tiles.forEach((tile, visualIndex) => {
+                    const reverseIndex = tiles.length - 1 - visualIndex;
+                    tile.style.animationDelay = `${reverseIndex * this.exitStepMs}ms`;
+                    tile.classList.remove('pg-tile-enter');
+                    tile.classList.add('pg-tile-exit');
                 });
 
-                const lastExitStart = Math.max(0, (slots.length - 1) * this.transitionStepMs);
-                const sharedSlots = slots.filter(slot => slot.dataset.hasNew === '1').length;
-                const lastEnterStart = sharedSlots > 0
-                    ? (Math.min(sharedSlots, slots.length) - 1 + this.transitionLeadSlots) * this.transitionStepMs
-                    : 0;
-                const total = Math.max(
-                    lastExitStart + this.transitionExitMs,
-                    lastEnterStart + this.transitionEnterMs
-                ) + 60;
-
+                const exitTotal = Math.max(210, tiles.length * this.exitStepMs + 170);
                 window.setTimeout(() => {
                     this.currentPage = nextPage;
-                    this.render({ animateIn: false, direction });
-                    grid.classList.remove('is-page-transitioning', 'is-overlay-active');
-                    layer.remove();
-                    this.isAnimating = false;
-                }, total);
+                    this.render({ animateIn: true, direction: dir });
+
+                    const enterCount = grid.children.length;
+                    const enterTotal = Math.max(250, enterCount * this.enterStepMs + 250);
+                    window.setTimeout(() => {
+                        grid.classList.remove('is-page-transitioning');
+                        grid.style.removeProperty('--pg-tile-dx');
+                        Array.from(grid.children).forEach(tile => {
+                            tile.classList.remove('pg-tile-enter');
+                            tile.style.animationDelay = '';
+                        });
+                        this.isAnimating = false;
+                    }, enterTotal);
+                }, exitTotal);
 
                 return true;
             },
@@ -449,12 +379,33 @@
 
                 if (this.currentPage >= maxPages) this.currentPage = Math.max(0, maxPages - 1);
 
-                grid.classList.remove('is-overlay-active');
-                const existingLayer = grid.querySelector('.pg-transition-layer');
-                if (existingLayer) existingLayer.remove();
                 grid.innerHTML = "";
 
-                this.buildPageTiles(this.currentPage).forEach(tile => grid.appendChild(tile));
+                if (this.currentPage === 0) {
+                    this.coreModules.forEach(m => this.createTile(grid, m));
+                    this.injectParkingTile(grid);
+                    this.injectSuppsTile(grid);
+                    this.injectSettingsTile(grid);
+                } else {
+                    const start = (this.currentPage - 1) * this.modulesPerPage;
+                    const end = start + this.modulesPerPage;
+                    const pageItems = this.extraModules.slice(start, end);
+                    pageItems.forEach(m => this.createTile(grid, m));
+                }
+
+                if (options.animateIn && !this.shouldReduceMotion()) {
+                    const enteringTiles = Array.from(grid.children);
+                    const enterDirection = Number(options.direction) || 1;
+
+                    enteringTiles.forEach((tile, index) => {
+                        const visualIndex = enterDirection < 0
+                            ? enteringTiles.length - 1 - index
+                            : index;
+
+                        tile.classList.add('pg-tile-enter');
+                        tile.style.animationDelay = `${visualIndex * this.enterStepMs}ms`;
+                    });
+                }
 
                 if (pageTxt) pageTxt.textContent = this.getPageLabel(this.currentPage, maxPages);
 
@@ -478,8 +429,7 @@
                 tile.className = 'tile';
                 tile.onclick = () => openView(m.id);
                 tile.innerHTML = `<span class="tile-icon">${m.icon}</span><span class="tile-label">${m.label}</span>`;
-                if (container) container.appendChild(tile);
-                return tile;
+                container.appendChild(tile);
             },
 
             injectParkingTile: function(container) {
@@ -487,8 +437,7 @@
                 tile.className = 'tile';
                 tile.onclick = () => openView('parking_panel');
                 tile.innerHTML = `<span class="tile-icon icon-parking">P</span><span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>`;
-                if (container) container.appendChild(tile);
-                return tile;
+                container.appendChild(tile);
             },
 
             injectSuppsTile: function(container) {
@@ -512,8 +461,7 @@
                         </div>
                     </div>
                 `;
-                if (container) container.appendChild(tile);
-                return tile;
+                container.appendChild(tile);
             },
 
             injectSettingsTile: function(container) {
@@ -527,8 +475,7 @@
                         <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
                     </div>
                 `;
-                if (container) container.appendChild(settingsTile);
-                return settingsTile;
+                container.appendChild(settingsTile);
             }
         };
 
@@ -1231,7 +1178,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.14')
+                navigator.serviceWorker.register('../sw.js?v=3.12')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();
