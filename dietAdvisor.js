@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DIET ADVISOR - v2.0 (14-DAY HISTORY ROTATION)
+   PEGASUS DIET ADVISOR - v2.1 (14-DAY FULL LOG ANALYST + PEGASUS UI)
    Protocol: Daily Deficit Analysis + Last-2-Weeks Nutrition Gap Correction
    ========================================================================== */
 (function() {
@@ -264,13 +264,17 @@
 
     function countHistory(history) {
         const itemCounts = {};
+        const itemLabels = {};
+        const itemTypes = {};
         const familyCounts = {};
         const categoryCounts = {};
         const categoryDays = {};
+        const daySummaries = [];
         const totalItems = history.reduce((sum, day) => sum + (Array.isArray(day.log) ? day.log.length : 0), 0);
 
         history.forEach(day => {
             const seenCategoriesToday = new Set();
+            const seenFamiliesToday = new Set();
             (day.log || []).forEach(item => {
                 const name = String(item?.name || item?.n || '').trim();
                 if (!name) return;
@@ -279,7 +283,10 @@
                 const cls = classifyFood(name, type);
 
                 itemCounts[key] = (itemCounts[key] || 0) + 1;
+                if (!itemLabels[key]) itemLabels[key] = name;
+                if (!itemTypes[key]) itemTypes[key] = type;
                 familyCounts[cls.family] = (familyCounts[cls.family] || 0) + 1;
+                if (cls.family) seenFamiliesToday.add(cls.family);
                 (cls.categories || []).forEach(cat => {
                     categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
                     seenCategoriesToday.add(cat);
@@ -288,9 +295,15 @@
             seenCategoriesToday.forEach(cat => {
                 categoryDays[cat] = (categoryDays[cat] || 0) + 1;
             });
+            daySummaries.push({
+                dateStr: day.dateStr,
+                items: Array.isArray(day.log) ? day.log.length : 0,
+                categories: Array.from(seenCategoriesToday),
+                families: Array.from(seenFamiliesToday)
+            });
         });
 
-        return { itemCounts, familyCounts, categoryCounts, categoryDays, totalItems, days: history.length };
+        return { itemCounts, itemLabels, itemTypes, familyCounts, categoryCounts, categoryDays, daySummaries, totalItems, days: history.length };
     }
 
     function missingLabel(cat) {
@@ -392,43 +405,142 @@
         return { score, reason, tone, toneLabel, priorityBoost: priority.boost, repeatPenalty: repeat.penalty };
     }
 
+    function getHistoryCategoryProfiles() {
+        return [
+            { cat: 'greens', label: t('Χόρτα / πράσινα', 'Greens'), targetDays: 3, icon: '🥬' },
+            { cat: 'legumes', label: t('Όσπρια / φασόλια', 'Legumes / beans'), targetDays: 2, icon: '🫘' },
+            { cat: 'fish', label: t('Ψάρι / θαλασσινά', 'Fish / seafood'), targetDays: 2, icon: '🐟' },
+            { cat: 'veg', label: t('Λαχανικά / λαδερά', 'Vegetables'), targetDays: 4, icon: '🥗' },
+            { cat: 'fruit', label: t('Φρούτα', 'Fruit'), targetDays: 4, icon: '🍎' },
+            { cat: 'dairy', label: t('Γαλακτοκομικά', 'Dairy'), targetDays: 3, icon: '🥛' },
+            { cat: 'eggs', label: t('Αυγά', 'Eggs'), targetDays: 2, icon: '🥚' }
+        ];
+    }
+
+    function getRepeatedCategoryProfiles() {
+        return [
+            { cat: 'chicken', label: t('Κοτόπουλο / πουλερικά', 'Chicken / poultry'), maxCount: 4, icon: '🍗' },
+            { cat: 'red_meat', label: t('Κόκκινο κρέας', 'Red meat'), maxCount: 4, icon: '🥩' },
+            { cat: 'outside', label: t('Έτοιμο / έξω φαγητό', 'Outside food'), maxCount: 2, icon: '🍔' },
+            { cat: 'carb', label: t('Βαριά ζυμαρικά / φούρνου', 'Heavy pasta / oven meals'), maxCount: 4, icon: '🍝' }
+        ];
+    }
+
+    function buildHistoryInsights(stats) {
+        const categories = getHistoryCategoryProfiles().map(profile => {
+            const daysSeen = Number(stats.categoryDays[profile.cat] || 0);
+            const count = Number(stats.categoryCounts[profile.cat] || 0);
+            const gap = Math.max(0, profile.targetDays - daysSeen);
+            let tone = 'ok';
+            if (gap >= 2) tone = 'priority';
+            else if (gap === 1) tone = 'watch';
+            return {
+                ...profile,
+                daysSeen,
+                count,
+                gap,
+                tone,
+                line: `${profile.label}: ${daysSeen}/${HISTORY_DAYS}`
+            };
+        });
+
+        const missing = categories
+            .filter(item => item.gap > 0)
+            .sort((a, b) => (b.gap - a.gap) || (a.daysSeen - b.daysSeen));
+
+        const repeatedCategories = getRepeatedCategoryProfiles()
+            .map(profile => {
+                const count = Number(stats.categoryCounts[profile.cat] || 0);
+                const excess = Math.max(0, count - profile.maxCount);
+                return { ...profile, count, excess, tone: excess > 0 ? 'limit' : 'ok' };
+            })
+            .filter(item => item.count >= item.maxCount)
+            .sort((a, b) => (b.excess - a.excess) || (b.count - a.count));
+
+        const repeatedFoods = Object.entries(stats.itemCounts || {})
+            .map(([key, count]) => ({
+                key,
+                count: Number(count) || 0,
+                label: stats.itemLabels?.[key] || key,
+                type: stats.itemTypes?.[key] || ''
+            }))
+            .filter(item => item.count >= 2)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+
+        const auditLine = t(
+            `Διάβασα ${stats.totalItems} καταγραφές από το ημερολόγιο διατροφής των τελευταίων ${HISTORY_DAYS} ημερών.`,
+            `Read ${stats.totalItems} food-log entries from the last ${HISTORY_DAYS} days.`
+        );
+
+        return {
+            auditLine,
+            categories,
+            missing: missing.slice(0, 5),
+            repeatedCategories: repeatedCategories.slice(0, 4),
+            repeatedFoods,
+            daySummaries: stats.daySummaries || []
+        };
+    }
+
     function buildMessage(consumed, targets, stats) {
         const needKcal = Math.max(0, targets.kcal - consumed.kcal);
         const needProtein = Math.max(0, targets.protein - consumed.protein);
-        const greens = Number(stats.categoryDays.greens || 0);
-        const legumes = Number(stats.categoryDays.legumes || 0);
-        const chicken = Number(stats.categoryCounts.chicken || 0);
+        const insights = buildHistoryInsights(stats);
+        const firstMissing = insights.missing?.[0];
+        const firstRepeated = insights.repeatedCategories?.[0];
 
-        const historyLine = t(
-            `Κοίταξα τις τελευταίες ${HISTORY_DAYS} ημέρες: χόρτα ${greens}/${HISTORY_DAYS}, όσπρια ${legumes}/${HISTORY_DAYS}, κοτόπουλο ${chicken} φορές.`,
-            `Checked the last ${HISTORY_DAYS} days: greens ${greens}/${HISTORY_DAYS}, legumes ${legumes}/${HISTORY_DAYS}, chicken ${chicken} times.`
+        const base = t(
+            `Συγκρίνω το σημερινό υπόλοιπο με όλες τις καταγραφές φαγητού των τελευταίων ${HISTORY_DAYS} ημερών.`,
+            `I compare today's remaining targets with all food-log entries from the last ${HISTORY_DAYS} days.`
         );
 
+        const priorityLine = firstMissing
+            ? t(
+                `Πρώτη προτεραιότητα: ${firstMissing.label} (${firstMissing.daysSeen}/${HISTORY_DAYS} ημέρες).`,
+                `First priority: ${firstMissing.label} (${firstMissing.daysSeen}/${HISTORY_DAYS} days).`
+            )
+            : t('Δεν φαίνεται μεγάλη έλλειψη ποικιλίας στο 14ήμερο.', 'No major variety gap is visible in the 14-day window.');
+
+        const repeatLine = firstRepeated
+            ? t(
+                `Χαμηλότερα σήμερα: ${firstRepeated.label}, γιατί εμφανίστηκε ${firstRepeated.count} φορές.`,
+                `Lower today: ${firstRepeated.label}, because it appeared ${firstRepeated.count} times.`
+            )
+            : '';
+
         if (needKcal <= 120 && needProtein <= 10) {
-            return `${historyLine} ${t(
-                `Είσαι κοντά στον στόχο. Τώρα προτεραιότητα έχει η ποικιλία, όχι άλλο κοτόπουλο αν έχει παιχτεί συχνά.`,
-                `You are close to target. Priority now is variety, not more chicken if it has appeared often.`
-            )}`;
+            return [base, priorityLine, repeatLine, t(
+                'Είσαι κοντά στον στόχο θερμίδων/πρωτεΐνης, άρα τώρα μετράει κυρίως η ποικιλία.',
+                'You are close to your calorie/protein target, so variety matters most now.'
+            )].filter(Boolean).join(' ');
         }
 
-        return `${historyLine} ${t(
-            `Σου λείπουν περίπου ${needKcal} kcal και ${needProtein}g πρωτεΐνης. Οι επιλογές μπαίνουν με βάση έλλειψη 14ημέρου + σημερινούς στόχους.`,
-            `You are missing about ${needKcal} kcal and ${needProtein}g protein. Options are ranked by 14-day gaps + today's targets.`
-        )}`;
+        return [base, priorityLine, repeatLine, t(
+            `Σου λείπουν περίπου ${needKcal} kcal και ${needProtein}g πρωτεΐνης.`,
+            `You are missing about ${needKcal} kcal and ${needProtein}g protein.`
+        )].filter(Boolean).join(' ');
     }
 
     function buildSuggestions(stats) {
+        const insights = buildHistoryInsights(stats);
         const out = [];
-        const greens = Number(stats.categoryDays.greens || 0);
-        const legumes = Number(stats.categoryDays.legumes || 0);
-        const fish = Number(stats.categoryDays.fish || 0);
-        const chicken = Number(stats.categoryCounts.chicken || 0);
 
-        if (greens <= 1) out.push(t(`Βάλε πρώτα χόρτα/πράσινα: εμφανίστηκαν μόνο ${greens}/${HISTORY_DAYS} ημέρες.`, `Add greens first: only ${greens}/${HISTORY_DAYS} days.`));
-        if (legumes <= 1) out.push(t(`Μετά βάλε όσπρια/φασόλια: εμφανίστηκαν μόνο ${legumes}/${HISTORY_DAYS} ημέρες.`, `Then add legumes/beans: only ${legumes}/${HISTORY_DAYS} days.`));
-        if (fish <= 1) out.push(t(`Ψάρι/θαλασσινά είναι χαμηλά στο 14ήμερο: ${fish}/${HISTORY_DAYS} ημέρες.`, `Fish/seafood is low in 14 days: ${fish}/${HISTORY_DAYS} days.`));
-        if (chicken >= 5) out.push(t(`Κοτόπουλο/πουλερικά έχει παιχτεί ${chicken} φορές, άρα το ρίχνω χαμηλά σήμερα.`, `Chicken/poultry appeared ${chicken} times, so it is ranked low today.`));
-        return out.slice(0, 4);
+        insights.missing.slice(0, 3).forEach(item => {
+            out.push(t(
+                `Βάλε ${item.label.toLowerCase()} πιο ψηλά: εμφανίστηκε ${item.daysSeen}/${HISTORY_DAYS} ημέρες, στόχος τουλάχιστον ${item.targetDays}.`,
+                `Rank ${item.label.toLowerCase()} higher: ${item.daysSeen}/${HISTORY_DAYS} days, target at least ${item.targetDays}.`
+            ));
+        });
+
+        insights.repeatedCategories.slice(0, 2).forEach(item => {
+            out.push(t(
+                `${item.label} έχει παιχτεί ${item.count} φορές, άρα το βάζω χαμηλότερα σήμερα.`,
+                `${item.label} appeared ${item.count} times, so it is ranked lower today.`
+            ));
+        });
+
+        return out.slice(0, 5);
     }
 
     function analyzeAndRecommend() {
@@ -494,35 +606,102 @@
                 categoryDays: stats.categoryDays,
                 categoryCounts: stats.categoryCounts,
                 totalItems: stats.totalItems
-            }
+            },
+            historyInsights: buildHistoryInsights(stats)
         };
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[ch]));
+    }
+
+    function buildAdvisorHtml(advice, closeButton = true) {
+        const esc = escapeHtml;
+        const insights = advice.historyInsights || {};
+        const cards = (insights.categories || []).slice(0, 7).map(item => `
+            <div class="advisor-history-card ${esc(item.tone || 'ok')}">
+                <div class="advisor-history-icon">${esc(item.icon || '•')}</div>
+                <div class="advisor-history-main">
+                    <div class="advisor-history-label">${esc(item.label)}</div>
+                    <div class="advisor-history-count">${esc(item.daysSeen)}/${HISTORY_DAYS} ${t('ημέρες', 'days')}</div>
+                </div>
+            </div>
+        `).join('');
+
+        const repeated = (insights.repeatedCategories || []).length
+            ? `<div class="advisor-repeat-strip">${(insights.repeatedCategories || []).map(item => `<span>${esc(item.icon || '•')} ${esc(item.label)}: ${esc(item.count)}x</span>`).join('')}</div>`
+            : '';
+
+        const options = (advice.options || []).map((opt, index) => {
+            const tone = ['green', 'orange', 'red'].includes(opt?.tone) ? opt.tone : 'orange';
+            return `
+                <div class="advisor-option-card ${tone}">
+                    <div class="advisor-option-rank">${index + 1}</div>
+                    <div class="advisor-option-body">
+                        ${opt.toneLabel ? `<div class="advisor-option-badge ${tone}">${esc(opt.toneLabel)}</div>` : ''}
+                        <div class="advisor-option-name">${esc(opt.n)}</div>
+                        <div class="advisor-option-macros">🔥 ${Number(opt.kcal) || 0} kcal | 🍗 ${Number(opt.protein) || 0}g</div>
+                        ${opt.reason ? `<div class="advisor-option-reason">${esc(opt.reason)}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="advisor-panel pegasus-advisor-rich">
+                <div class="advisor-header-row">
+                    <div>
+                        <div class="advisor-title">🧠 PEGASUS ADVISOR</div>
+                        <div class="advisor-subtitle">${t('Ανάλυση από το ημερολόγιο διατροφής 14 ημερών', '14-day food-log analysis')}</div>
+                    </div>
+                    ${closeButton ? `<button class="advisor-close-btn" onclick="window.closePegasusAdvisorModal?.()">×</button>` : ''}
+                </div>
+                ${advice.proteinLine ? `<div class="advisor-chip">${esc(advice.proteinLine)}</div>` : ''}
+                ${advice.deficitLine ? `<div class="advisor-chip warn">${esc(advice.deficitLine)}</div>` : ''}
+                ${insights.auditLine ? `<div class="advisor-audit-line">${esc(insights.auditLine)}</div>` : ''}
+                <div class="advisor-history-grid">${cards}</div>
+                ${repeated}
+                <div class="advisor-message">${esc(advice.msg)}</div>
+                ${(advice.suggestions || []).length ? `<div class="advisor-suggestions">${advice.suggestions.map(s => `<div class="advisor-suggestion">• ${esc(s)}</div>`).join('')}</div>` : ''}
+                <div class="advisor-options">${options}</div>
+            </div>
+        `;
     }
 
     function renderAdvisorUI() {
         const advice = analyzeAndRecommend();
-        const lines = [advice.msg, ''];
-
-        (advice.suggestions || []).forEach(s => lines.push(`• ${s}`));
-        if ((advice.suggestions || []).length) lines.push('');
-
-        advice.options.forEach((opt, index) => {
-            lines.push(`${index + 1}. ${opt.n} — ${opt.kcal} kcal | ${opt.protein}g P`);
-            if (opt.reason) lines.push(`   ${opt.reason}`);
-        });
-
-        const title = t('PEGASUS ADVISOR', 'PEGASUS ADVISOR');
-        if (typeof window.pegasusAlert === 'function') {
-            return window.pegasusAlert(lines.join('\n'), title);
+        let overlay = document.getElementById('pegasusAdvisorModal');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'pegasusAdvisorModal';
+            overlay.className = 'pegasus-advisor-overlay';
+            document.body.appendChild(overlay);
         }
-        return alert(lines.join('\n'));
+        overlay.innerHTML = `<div class="pegasus-advisor-modal">${buildAdvisorHtml(advice, true)}</div>`;
+        overlay.style.display = 'flex';
+        return true;
     }
+
+    window.closePegasusAdvisorModal = function() {
+        const overlay = document.getElementById('pegasusAdvisorModal');
+        if (overlay) overlay.style.display = 'none';
+    };
+
 
     window.PegasusDietAdvisor = {
         analyzeAndRecommend,
         renderAdvisorUI,
         classifyFood,
         getRecentHistory,
-        countHistory
+        countHistory,
+        buildHistoryInsights,
+        buildAdvisorHtml
     };
     window.renderAdvisorUI = renderAdvisorUI;
 })();

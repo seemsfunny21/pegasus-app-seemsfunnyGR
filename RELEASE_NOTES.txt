@@ -94,3 +94,13 @@ PEGASUS 149 - EXTRA MORNING WHEY ROUTINE
 - Extra scoop counts +120 kcal / +24g protein and deducts 30g whey stock through Diet only.
 - Desktop includes same-day migration so the new scoop appears even if today’s old routine was already injected, without re-adding it after deletion.
 - Service worker cache version bumped to pegasus-shield-v3.82-FINAL-149.
+
+
+PEGASUS 150 - RICH DIET ADVISOR UI + FULL 14-DAY LOG ANALYST
+- Advisor output is now rendered as Pegasus-styled cards instead of plain text.
+- Mobile advisor shows 14-day food-log audit, missing categories, repeated categories and ranked options in Pegasus green/orange/red UI.
+- Desktop advisor uses a styled modal instead of plain alert text.
+- Advisor now exposes a fuller 14-day analysis from food_log_* entries: category days, repeated categories, repeated foods and total entries read.
+- Ranking still uses today's kcal/protein deficit plus 14-day variety gaps.
+- No new JS files added; logic stays in dietAdvisor.js and mobile/diet-mobile.js.
+- Service worker cache version bumped to pegasus-shield-v3.83-FINAL-150.

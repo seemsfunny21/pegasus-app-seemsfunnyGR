@@ -185,3 +185,224 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
             color: var(--main);
             line-height: 0;
         }
+
+/* ========================================================================== 
+   PEGASUS ADVISOR RICH UI - v2.1
+   ========================================================================== */
+#advisoryMobileResult, #advisorMobileResult { width: 100%; }
+.advisor-panel {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    background: linear-gradient(180deg, rgba(0,255,65,0.10), rgba(5,5,5,0.96));
+    border: 1px solid rgba(0,255,65,0.55);
+    border-radius: 22px;
+    padding: 16px;
+    margin: 8px 0 16px;
+    box-shadow: 0 0 22px rgba(0,255,65,0.12), inset 0 0 18px rgba(0,0,0,0.65);
+}
+.advisor-title {
+    color: var(--main);
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 900;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0,255,65,0.45);
+    margin-bottom: 3px;
+}
+.advisor-subtitle {
+    color: #8effa7;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+.advisor-chip {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 6px 8px 0;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: rgba(0,255,65,0.10);
+    border: 1px solid rgba(0,255,65,0.42);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+}
+.advisor-chip.warn {
+    border-color: rgba(255,179,0,0.55);
+    background: rgba(255,179,0,0.10);
+    color: #ffcc66;
+}
+.advisor-audit-line {
+    color: #a9ffc0;
+    background: rgba(0,255,65,0.055);
+    border: 1px dashed rgba(0,255,65,0.28);
+    border-radius: 12px;
+    padding: 9px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.35;
+    margin: 4px 0 12px;
+}
+.advisor-history-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.advisor-history-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 9px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.advisor-history-card.priority {
+    background: rgba(0,255,65,0.10);
+    border-color: rgba(0,255,65,0.55);
+    box-shadow: 0 0 12px rgba(0,255,65,0.13);
+}
+.advisor-history-card.watch {
+    background: rgba(255,179,0,0.08);
+    border-color: rgba(255,179,0,0.42);
+}
+.advisor-history-icon { font-size: 18px; line-height: 1; }
+.advisor-history-main { min-width: 0; }
+.advisor-history-label {
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.advisor-history-count {
+    color: var(--main);
+    font-size: 9px;
+    font-weight: 900;
+    margin-top: 3px;
+}
+.advisor-repeat-strip {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 0 0 12px;
+}
+.advisor-repeat-strip span {
+    background: rgba(255,68,68,0.10);
+    border: 1px solid rgba(255,68,68,0.40);
+    color: #ff9a9a;
+    border-radius: 999px;
+    padding: 6px 8px;
+    font-size: 9px;
+    font-weight: 900;
+}
+.advisor-message {
+    color: #e8ffe8;
+    font-size: 11px;
+    line-height: 1.45;
+    font-weight: 700;
+    background: rgba(0,0,0,0.26);
+    border-left: 3px solid var(--main);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+.advisor-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 12px;
+}
+.advisor-suggestion {
+    color: #d9ffd9;
+    font-size: 10px;
+    line-height: 1.35;
+    font-weight: 800;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(0,255,65,0.14);
+    border-radius: 12px;
+    padding: 8px 9px;
+}
+.advisor-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.advisor-option-card {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(12,12,12,0.92);
+    border: 1px solid rgba(255,179,0,0.45);
+}
+.advisor-option-card.green { border-color: rgba(0,255,65,0.65); box-shadow: 0 0 13px rgba(0,255,65,0.12); }
+.advisor-option-card.orange { border-color: rgba(255,179,0,0.45); }
+.advisor-option-card.red { border-color: rgba(255,68,68,0.55); opacity: 0.92; }
+.advisor-option-rank {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0,255,65,0.12);
+    color: var(--main);
+    border: 1px solid rgba(0,255,65,0.4);
+    font-size: 12px;
+    font-weight: 900;
+}
+.advisor-option-body { min-width: 0; }
+.advisor-option-badge {
+    display: inline-flex;
+    margin-bottom: 5px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+.advisor-option-badge.green { background: rgba(0,255,65,0.15); color: var(--main); }
+.advisor-option-badge.orange { background: rgba(255,179,0,0.14); color: #ffcc66; }
+.advisor-option-badge.red { background: rgba(255,68,68,0.14); color: #ff9a9a; }
+.advisor-option-name {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+.advisor-option-macros {
+    color: #9cffb0;
+    font-size: 10px;
+    font-weight: 900;
+    margin-top: 3px;
+}
+.advisor-option-reason {
+    color: #aaa;
+    font-size: 9px;
+    line-height: 1.35;
+    font-weight: 700;
+    margin-top: 5px;
+}
+.advisor-add-btn {
+    background: var(--main);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 8px;
+    font-size: 9px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(0,255,65,0.18);
+}

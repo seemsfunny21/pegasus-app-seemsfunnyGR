@@ -271,13 +271,29 @@ window.PegasusDiet = {
         container.dataset.expanded = "false";
         const advice = window.PegasusDietAdvisor.analyzeAndRecommend();
         const esc = window.PegasusMobileSafe?.escapeHtml || (v => String(v ?? ''));
+        const insights = advice.historyInsights || {};
+        const historyCards = (insights.categories || []).slice(0, 7).map(item => `
+            <div class="advisor-history-card ${esc(item.tone || 'ok')}">
+                <div class="advisor-history-icon">${esc(item.icon || '•')}</div>
+                <div class="advisor-history-main">
+                    <div class="advisor-history-label">${esc(item.label)}</div>
+                    <div class="advisor-history-count">${esc(item.daysSeen)}/14 ημέρες</div>
+                </div>
+            </div>
+        `).join('');
+        const repeatedStrip = (insights.repeatedCategories || []).length
+            ? `<div class="advisor-repeat-strip">${(insights.repeatedCategories || []).map(item => `<span>${esc(item.icon || '•')} ${esc(item.label)}: ${esc(item.count)}x</span>`).join('')}</div>`
+            : '';
 
         let html = `
-            <div class="advisor-panel">
-                <div class="advisor-title">🧠 PEGASUS LOGIC</div>
-                <div class="advisor-subtitle">Η λογική του Pegasus</div>
+            <div class="advisor-panel pegasus-advisor-rich">
+                <div class="advisor-title">🧠 PEGASUS ADVISOR</div>
+                <div class="advisor-subtitle">Ανάλυση 14 ημερών από το ημερολόγιο διατροφής</div>
                 ${advice.proteinLine ? `<div class="advisor-chip">${esc(advice.proteinLine)}</div>` : ''}
                 ${advice.deficitLine ? `<div class="advisor-chip warn">${esc(advice.deficitLine)}</div>` : ''}
+                ${insights.auditLine ? `<div class="advisor-audit-line">${esc(insights.auditLine)}</div>` : ''}
+                <div class="advisor-history-grid">${historyCards}</div>
+                ${repeatedStrip}
                 <div class="advisor-message">${esc(advice.msg)}</div>
                 ${(advice.suggestions || []).length ? `<div class="advisor-suggestions">${advice.suggestions.map(s => `<div class="advisor-suggestion">• ${esc(s)}</div>`).join('')}</div>` : ''}
                 <div class="advisor-options">
@@ -293,7 +309,8 @@ window.PegasusDiet = {
 
             html += `
                 <div class="advisor-option-card ${tone}">
-                    <div style="text-align:left; flex:1;">
+                    <div class="advisor-option-rank">${idx + 1}</div>
+                    <div class="advisor-option-body">
                         ${opt.toneLabel ? `<div class="advisor-option-badge ${tone}">${esc(opt.toneLabel)}</div>` : ''}
                         <div class="advisor-option-name">${esc(opt.n)}</div>
                         <div class="advisor-option-macros">🔥 ${Number(macros.kcal) || 0} kcal | 🍗 ${Number(macros.protein) || 0}g</div>
