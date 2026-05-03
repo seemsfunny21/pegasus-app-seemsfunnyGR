@@ -1,70 +1,335 @@
-/* ==========================================================================
-   🏋️‍♂️ PEGASUS MODULE: TACTICAL LIFTING LOGGER (v1.0)
-   Protocol: Progressive Overload & PR Tracking
-   ========================================================================== */
-
+/* ======================================================================
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.1)
+   Purpose: show current workout exercises + saved weights, keep manual log
+   ====================================================================== */
 (function() {
-    const LIFTING_DATA_KEY = 'pegasus_lifting_v1';
+    "use strict";
 
-    function getPegasusLiftingDateStr() {
-        if (typeof window.getPegasusTodayDateStr === "function") {
-            return window.getPegasusTodayDateStr();
+    const LIFTING_DATA_KEY = "pegasus_lifting_v1";
+    const EXERCISE_WEIGHTS_KEY = "pegasus_exercise_weights";
+    const DAILY_PROGRESS_KEY = "pegasus_daily_progress";
+    const DAY_NAMES = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+
+    function safeReadJSON(key, fallback) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            const parsed = JSON.parse(raw);
+            return parsed ?? fallback;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function safeWriteJSON(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>'"]/g, ch => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;"
+        }[ch]));
+    }
+
+    function getDateDisplay() {
+        return new Date().toLocaleDateString('el-GR');
+    }
+
+    function getDateKey() {
+        if (typeof window.getPegasusLocalDateKey === "function") {
+            return window.getPegasusLocalDateKey();
+        }
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
+
+    function normalizeExerciseName(name) {
+        return String(name || "").trim();
+    }
+
+    function isLegacyTestEntry(entry) {
+        const text = normalizeExerciseName(entry?.exercise || entry?.name).toLowerCase();
+        if (!text) return true;
+        return /(^|\s)(test|aa|αα)(\s|$)/i.test(text) || /τεστ|δοκιμ/.test(text);
+    }
+
+    function readLogs() {
+        const data = safeReadJSON(LIFTING_DATA_KEY, []);
+        return Array.isArray(data) ? data : [];
+    }
+
+    function writeLogs(logs) {
+        safeWriteJSON(LIFTING_DATA_KEY, logs);
+    }
+
+    function cleanupLegacyTestData() {
+        const logs = readLogs();
+        const cleaned = logs.filter(entry => !isLegacyTestEntry(entry));
+        if (cleaned.length !== logs.length) writeLogs(cleaned);
+        return cleaned;
+    }
+
+    function getActiveLifterName() {
+        try {
+            if (typeof window.getActiveLifter === "function") return window.getActiveLifter();
+        } catch (e) {}
+        return "ΑΓΓΕΛΟΣ";
+    }
+
+    function readSavedWeight(exerciseName, fallback) {
+        const cleanName = normalizeExerciseName(exerciseName);
+        if (!cleanName) return fallback || "";
+
+        const allWeights = safeReadJSON(EXERCISE_WEIGHTS_KEY, {});
+        const activeLifter = getActiveLifterName();
+        const candidate = allWeights?.[activeLifter]?.[cleanName]
+            ?? allWeights?.["ΑΓΓΕΛΟΣ"]?.[cleanName]
+            ?? allWeights?.["ANGELOS"]?.[cleanName]
+            ?? allWeights?.default?.[cleanName];
+
+        if (candidate !== undefined && candidate !== null && String(candidate).trim() !== "") {
+            return candidate;
         }
 
-        const d = new Date();
-        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        const legacyKeys = [
+            `weight_${activeLifter}_${cleanName}`,
+            `weight_ΑΓΓΕΛΟΣ_${cleanName}`,
+            `weight_ANGELOS_${cleanName}`,
+            `weight_${cleanName}`
+        ];
+
+        for (const key of legacyKeys) {
+            const raw = localStorage.getItem(key);
+            if (raw !== null && String(raw).trim() !== "") return raw;
+        }
+
+        return fallback || "";
+    }
+
+    function getSelectedDayName() {
+        try {
+            if (window.PegasusEngine && typeof window.PegasusEngine.getSnapshot === "function") {
+                const snap = window.PegasusEngine.getSnapshot();
+                if (snap?.workout?.selectedDay) return snap.workout.selectedDay;
+            }
+            if (window.PegasusEngine && typeof window.PegasusEngine.getSelectedDay === "function") {
+                const day = window.PegasusEngine.getSelectedDay();
+                if (day) return day;
+            }
+        } catch (e) {}
+        return DAY_NAMES[new Date().getDay()];
+    }
+
+    function getExerciseGroup(name, fallback) {
+        try {
+            if (typeof window.getPegasusExerciseGroup === "function") {
+                const group = window.getPegasusExerciseGroup(name);
+                if (group && group !== "Unknown") return group;
+            }
+        } catch (e) {}
+        return fallback || "--";
+    }
+
+    function shouldShowWorkoutExercise(exercise) {
+        const name = normalizeExerciseName(exercise?.name || exercise?.exercise);
+        if (!name || isLegacyTestEntry({ exercise: name })) return false;
+        const group = String(exercise?.muscleGroup || getExerciseGroup(name, "")).toLowerCase();
+        if (group === "none" || group === "--") return false;
+        if (/cycling|ποδήλα|cardio|stretch|διατάσ|ems/i.test(name)) return false;
+        return true;
+    }
+
+    function getTodayDoneSets(name) {
+        const daily = safeReadJSON(DAILY_PROGRESS_KEY, {});
+        const todayKey = getDateKey();
+        const todayDisplay = getDateDisplay();
+        const isToday = daily?.date === todayKey || daily?.date === todayDisplay;
+        if (!isToday || !daily?.exercises) return 0;
+        return Number(daily.exercises[name] || 0) || 0;
+    }
+
+    function getWorkoutExercises() {
+        const selectedDay = getSelectedDayName();
+        let raw = [];
+
+        try {
+            if (typeof window.getPegasusProgramSnapshot === "function") {
+                raw = window.getPegasusProgramSnapshot(selectedDay) || [];
+            } else if (window.program && Array.isArray(window.program[selectedDay])) {
+                raw = window.program[selectedDay];
+            }
+        } catch (e) {
+            raw = [];
+        }
+
+        return raw
+            .filter(shouldShowWorkoutExercise)
+            .map(exercise => {
+                const name = normalizeExerciseName(exercise.name || exercise.exercise);
+                const sets = Number(exercise.sets || exercise.targetSets || 0) || 0;
+                const weight = readSavedWeight(name, exercise.weight || "");
+                return {
+                    name,
+                    group: getExerciseGroup(name, exercise.muscleGroup),
+                    sets,
+                    done: getTodayDoneSets(name),
+                    weight
+                };
+            });
+    }
+
+    function prefillExercise(name, weight) {
+        const nameInput = document.getElementById('liftName');
+        const weightInput = document.getElementById('liftWeight');
+        if (nameInput) nameInput.value = name || "";
+        if (weightInput && weight !== undefined && weight !== null && String(weight).trim() !== "") {
+            weightInput.value = weight;
+        }
+        document.getElementById('liftReps')?.focus();
+    }
+
+    function renderWorkoutPlan() {
+        const container = document.getElementById('lift-plan');
+        if (!container) return;
+
+        const selectedDay = getSelectedDayName();
+        const rows = getWorkoutExercises();
+
+        if (!rows.length) {
+            container.innerHTML = `
+                <div style="padding: 12px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); font-size: 11px; text-align: center;">
+                    Δεν βρέθηκαν ασκήσεις με βάρη για ${escapeHtml(selectedDay)}.
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = rows.map((row, index) => {
+            const doneTxt = row.sets ? `${row.done}/${row.sets}` : `${row.done}`;
+            const weightTxt = row.weight !== "" ? `${escapeHtml(row.weight)} kg` : "-- kg";
+            return `
+                <button class="lift-plan-row" data-index="${index}" style="width:100%; margin-bottom:8px; text-align:left; border:1px solid var(--border); background:rgba(0,255,65,0.05); color:#fff; border-radius:12px; padding:10px; display:flex; justify-content:space-between; gap:8px; align-items:center;">
+                    <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+                        <b style="color:var(--main); font-size:12px; white-space:normal;">${escapeHtml(row.name)}</b>
+                        <small style="color:var(--muted); font-size:9px;">${escapeHtml(row.group)} • Σετ σήμερα ${escapeHtml(doneTxt)}</small>
+                    </span>
+                    <span style="font-size:13px; font-weight:900; color:#fff; white-space:nowrap;">${weightTxt}</span>
+                </button>`;
+        }).join('');
+
+        container.querySelectorAll('.lift-plan-row').forEach(button => {
+            button.addEventListener('click', () => {
+                const row = rows[Number(button.dataset.index)];
+                if (row) prefillExercise(row.name, row.weight);
+            });
+        });
+    }
+
+    function renderManualLogs() {
+        const todayBox = document.getElementById('lift-today');
+        const historyBox = document.getElementById('lift-history');
+        if (!todayBox || !historyBox) return;
+
+        const logs = cleanupLegacyTestData();
+        const today = getDateDisplay();
+        const todayLogs = logs.filter(l => l.date === today);
+        const pastLogs = logs.filter(l => l.date !== today);
+
+        todayBox.innerHTML = todayLogs.length ? todayLogs.map(l => `
+            <div style="display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); border-radius:12px; padding:9px; margin-bottom:7px; background:rgba(0,0,0,0.45);">
+                <span style="display:flex; flex-direction:column; gap:2px;">
+                    <b style="color:var(--main); font-size:12px;">${escapeHtml(l.exercise)}</b>
+                    <small style="color:var(--muted); font-size:9px;">${escapeHtml(l.weight)}kg × ${escapeHtml(l.reps)} reps</small>
+                </span>
+                <button onclick="window.PegasusLifting.deleteSet('${escapeHtml(l.id)}')" style="background:transparent; color:#ff4b4b; border:1px solid #ff4b4b; border-radius:8px; padding:5px 7px; font-size:10px;">ΔΙΑΓΡ.</button>
+            </div>
+        `).join('') : `<div style="color:var(--muted); font-size:11px; text-align:center; padding:10px;">Δεν έχεις χειροκίνητη καταγραφή σήμερα.</div>`;
+
+        const prMap = {};
+        pastLogs.forEach(l => {
+            const name = normalizeExerciseName(l.exercise);
+            const weight = Number(l.weight || 0) || 0;
+            if (!name || !weight) return;
+            prMap[name] = Math.max(prMap[name] || 0, weight);
+        });
+
+        const prs = Object.entries(prMap).sort((a, b) => a[0].localeCompare(b[0], 'el'));
+        historyBox.innerHTML = prs.length ? prs.map(([name, max]) => `
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(0,255,65,0.15); padding:7px 0; font-size:11px;">
+                <span>${escapeHtml(name)}</span><b style="color:var(--main);">${escapeHtml(max)}kg</b>
+            </div>
+        `).join('') : `<div style="color:var(--muted); font-size:11px; text-align:center; padding:10px;">Δεν υπάρχει ιστορικό βαρών.</div>`;
     }
 
     window.PegasusLifting = {
-        isLocked: false, // 🛡️ API SPAM GUARD
+        isLocked: false,
+
+        cleanupLegacyTestData,
+        prefillExercise,
 
         addSet: function() {
             if (this.isLocked) return;
             this.isLocked = true;
-            setTimeout(() => this.isLocked = false, 1200); // Κλείδωμα για 1.2 δευτερόλεπτα
 
-            const exercise = document.getElementById('liftName').value.trim();
-            const weight = parseFloat(document.getElementById('liftWeight').value);
-            const reps = parseInt(document.getElementById('liftReps').value);
+            try {
+                const name = normalizeExerciseName(document.getElementById('liftName')?.value).toUpperCase();
+                const weight = String(document.getElementById('liftWeight')?.value || "").trim();
+                const reps = String(document.getElementById('liftReps')?.value || "").trim();
 
-            if (!exercise || isNaN(weight) || isNaN(reps)) {
-                alert("ΣΦΑΛΜΑ: Συμπλήρωσε Άσκηση, Κιλά και Επαναλήψεις.");
-                return;
+                if (!name || !weight || !reps || isLegacyTestEntry({ exercise: name })) {
+                    alert('Συμπλήρωσε πραγματική άσκηση, κιλά και επαναλήψεις.');
+                    return;
+                }
+
+                const logs = cleanupLegacyTestData();
+                logs.unshift({
+                    id: `lift_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                    date: getDateDisplay(),
+                    date_key: getDateKey(),
+                    timestamp: new Date().toISOString(),
+                    exercise: name,
+                    weight,
+                    reps
+                });
+
+                writeLogs(logs);
+
+                const nameInput = document.getElementById('liftName');
+                const weightInput = document.getElementById('liftWeight');
+                const repsInput = document.getElementById('liftReps');
+                if (nameInput) nameInput.value = '';
+                if (weightInput) weightInput.value = '';
+                if (repsInput) repsInput.value = '';
+
+                window.renderLiftingContent();
+                if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
+                    window.PegasusCloud.push(true);
+                }
+            } finally {
+                this.isLocked = false;
             }
-
-            let logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
-
-            const newEntry = {
-                id: 'lift_' + Date.now(),
-                date: getPegasusLiftingDateStr(),
-                timestamp: Date.now(),
-                exercise: exercise.toUpperCase(), // Κεφαλαία για ομοιομορφία
-                weight: weight,
-                reps: reps
-            };
-
-            logs.unshift(newEntry);
-            logs = logs.slice(0, 200);
-            document.getElementById('liftWeight').value = '';
-            document.getElementById('liftReps').value = '';
-            // Κρατάμε το όνομα της άσκησης στο input γιατί συνήθως κάνουμε πολλαπλά σετ
-
-            this.saveAndRender(logs);
         },
 
         deleteSet: function(id) {
-            if (confirm('Διαγραφή αυτού του σετ;')) {
-                let logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
-                logs = logs.filter(l => l.id !== id);
-                this.saveAndRender(logs);
+            if (!confirm('Διαγραφή καταγραφής;')) return;
+            const logs = cleanupLegacyTestData().filter(l => l.id !== id);
+            writeLogs(logs);
+            window.renderLiftingContent();
+            if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
+                window.PegasusCloud.push(true);
             }
         },
 
         saveAndRender: function(data) {
-            localStorage.setItem(LIFTING_DATA_KEY, JSON.stringify(data));
+            const clean = Array.isArray(data) ? data.filter(entry => !isLegacyTestEntry(entry)) : [];
+            writeLogs(clean);
             window.renderLiftingContent();
-
-            // ☁️ REAL-TIME CLOUD TRIGGER
             if (window.PegasusCloud && typeof window.PegasusCloud.push === 'function') {
                 window.PegasusCloud.push(true);
             }
@@ -73,106 +338,63 @@
 
     function injectViewLayer() {
         if (document.getElementById('lifting')) return;
-        const viewDiv = document.createElement('div');
-        viewDiv.id = 'lifting';
-        viewDiv.className = 'view';
-
-        viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-            <div class="section-title">ΠΡΟΟΔΕΥΤΙΚΗ ΥΠΕΡΦΟΡΤΩΣΗ</div>
-
-            <div class="mini-card" style="background: rgba(15,15,15,0.95); padding: 20px; border: 1px solid var(--main); box-shadow: 0 0 15px rgba(0,255,65,0.1);">
-                <input type="text" id="liftName" placeholder="Άσκηση (π.χ. ΠΙΕΣΕΙΣ ΣΤΗΘΟΥΣ)" style="border: 2px solid #444; margin-bottom: 15px; text-transform: uppercase;">
-                <div class="compact-grid" style="margin-bottom: 15px;">
-                    <div>
-                        <div style="font-size: 10px; color: #777; font-weight: 800; margin-bottom: 5px;">ΚΙΛΑ (KG)</div>
-                        <input type="number" id="liftWeight" placeholder="0.0" inputmode="decimal" style="border: 2px solid #444; font-size: 20px; font-weight: 900; text-align: center;">
+        const layer = document.createElement('div');
+        layer.className = 'view-layer';
+        layer.id = 'lifting';
+        layer.innerHTML = `
+            <button class="back-btn" onclick="openView('home')">‹</button>
+            <div class="view-title">🏋️ ΒΑΡΗ</div>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+                <div style="border:1px solid var(--border); border-radius:16px; padding:12px; background:rgba(0,0,0,0.45);">
+                    <div style="font-size:11px; color:var(--main); font-weight:900; margin-bottom:8px;">+ ΧΕΙΡΟΚΙΝΗΤΗ ΚΑΤΑΓΡΑΦΗ</div>
+                    <input id="liftName" placeholder="Άσκηση" style="width:100%; margin-bottom:8px; padding:10px; border-radius:10px; border:1px solid var(--border); background:#050505; color:#fff; box-sizing:border-box;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <input id="liftWeight" type="number" inputmode="decimal" placeholder="Κιλά" style="padding:10px; border-radius:10px; border:1px solid var(--border); background:#050505; color:#fff;">
+                        <input id="liftReps" type="number" inputmode="numeric" placeholder="Επαναλ." style="padding:10px; border-radius:10px; border:1px solid var(--border); background:#050505; color:#fff;">
                     </div>
-                    <div>
-                        <div style="font-size: 10px; color: #777; font-weight: 800; margin-bottom: 5px;">ΕΠΑΝΑΛΗΨΕΙΣ</div>
-                        <input type="number" id="liftReps" placeholder="0" inputmode="numeric" style="border: 2px solid #444; font-size: 20px; font-weight: 900; text-align: center;">
-                    </div>
+                    <button onclick="window.PegasusLifting.addSet()" style="width:100%; margin-top:10px; padding:11px; border-radius:12px; border:1px solid var(--main); background:rgba(0,255,65,0.12); color:var(--main); font-weight:900;">ΠΡΟΣΘΗΚΗ ΣΕΤ</button>
                 </div>
-                <button class="primary-btn" onclick="window.PegasusLifting.addSet()" style="font-size: 14px; padding: 15px;">+ ΚΑΤΑΓΡΑΦΗ ΣΕΤ</button>
+
+                <div>
+                    <div style="font-size:11px; color:var(--main); font-weight:900; margin-bottom:8px;">ΑΣΚΗΣΕΙΣ ΠΡΟΠΟΝΗΣΗΣ</div>
+                    <div id="lift-plan"></div>
+                </div>
+
+                <div>
+                    <div style="font-size:11px; color:var(--main); font-weight:900; margin-bottom:8px;">ΣΗΜΕΡΙΝΗ ΚΑΤΑΓΡΑΦΗ</div>
+                    <div id="lift-today"></div>
+                </div>
+
+                <div>
+                    <div style="font-size:11px; color:var(--main); font-weight:900; margin-bottom:8px;">ΙΣΤΟΡΙΚΟ / PR</div>
+                    <div id="lift-history"></div>
+                </div>
             </div>
-
-            <div class="section-title" style="margin-top: 25px; color: var(--main);">🔥 ΣΗΜΕΡΙΝΗ ΠΡΟΠΟΝΗΣΗ</div>
-            <div id="lift-today" style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 25px;"></div>
-
-            <div class="section-title" style="color: #555;">📊 ΠΡΟΗΓΟΥΜΕΝΕΣ ΕΠΙΔΟΣΕΙΣ</div>
-            <div id="lift-history" style="width: 100%; display: flex; flex-direction: column; gap: 8px; padding-bottom: 80px;"></div>
         `;
-        document.body.appendChild(viewDiv);
+        document.querySelector('.mobile-wrapper')?.appendChild(layer);
     }
 
     window.renderLiftingContent = function() {
-        const todayContainer = document.getElementById('lift-today');
-        const historyContainer = document.getElementById('lift-history');
-        if (!todayContainer || !historyContainer) return;
-
-        const logs = JSON.parse(localStorage.getItem(LIFTING_DATA_KEY)) || [];
-        const todayStr = getPegasusLiftingDateStr();
-
-        let todayHtml = '';
-        let historyHtml = '';
-
-        // Dictionary για να βρούμε την καλύτερη/τελευταία επίδοση ανά άσκηση στο παρελθόν
-        let bestLifts = {};
-
-        logs.forEach(log => {
-            if (log.date === todayStr) {
-                // RENDER: TODAY'S SETS
-                todayHtml += `
-                    <div class="mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-left: 3px solid var(--main);">
-                        <div style="flex: 1;">
-                            <div style="font-size: 13px; font-weight: 900; color: #fff;">${log.exercise}</div>
-                        </div>
-                        <div style="font-size: 16px; font-weight: 900; color: var(--main); margin-right: 15px;">
-                            ${log.weight}kg <span style="color:#777; font-size:12px;">x</span> ${log.reps}
-                        </div>
-                        <button onclick="window.PegasusLifting.deleteSet('${log.id}')"
-                                style="background: transparent; border: none; color: #ff4444; font-size: 14px; cursor: pointer;">🗑️</button>
-                    </div>
-                `;
-            } else {
-                // RENDER: HISTORY (Κρατάμε το πιο βαρύ σετ ανά άσκηση)
-                if (!bestLifts[log.exercise]) {
-                    bestLifts[log.exercise] = log;
-                } else if (log.weight > bestLifts[log.exercise].weight) {
-                    bestLifts[log.exercise] = log;
-                }
-            }
-        });
-
-        // Δημιουργία HTML για το Ιστορικό
-        Object.values(bestLifts).forEach(pr => {
-            historyHtml += `
-                <div class="mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-color: #222; background: rgba(20,20,20,0.8);">
-                    <div>
-                        <div style="font-size: 12px; font-weight: 900; color: #aaa; margin-bottom: 2px;">${pr.exercise}</div>
-                        <div style="font-size: 9px; color: #555;">Τελευταίο Ρεκόρ: ${pr.date}</div>
-                    </div>
-                    <div style="font-size: 14px; font-weight: 900; color: #fff;">
-                        ${pr.weight}kg <span style="color:#777; font-size:10px;">x</span> ${pr.reps}
-                    </div>
-                </div>
-            `;
-        });
-
-        todayContainer.innerHTML = todayHtml || '<div style="color:#555; font-size:11px; text-align:center;">ΚΑΝΕΝΑ ΣΕΤ ΣΗΜΕΡΑ</div>';
-        historyContainer.innerHTML = historyHtml || '<div style="color:#333; font-size:11px; text-align:center;">ΚΑΝΕΝΑ ΙΣΤΟΡΙΚΟ ΔΕΔΟΜΕΝΟ</div>';
+        cleanupLegacyTestData();
+        renderWorkoutPlan();
+        renderManualLogs();
     };
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener('DOMContentLoaded', () => {
         injectViewLayer();
-        window.renderLiftingContent();
-
-        if (window.registerPegasusModule) {
-            window.registerPegasusModule({
-                id: 'lifting',
-                label: 'Βάρη',
-                icon: '🏋️‍♂️'
-            });
+        cleanupLegacyTestData();
+        if (window.PegasusMobileUI && typeof window.PegasusMobileUI.registerModule === 'function') {
+            window.PegasusMobileUI.registerModule({ id: 'lifting', icon: '🏋️', label: 'Βάρη' });
         }
     });
+
+    document.addEventListener('pegasus_sync_complete', () => {
+        if (document.getElementById('lifting')?.classList.contains('active')) {
+            window.renderLiftingContent();
+        } else {
+            cleanupLegacyTestData();
+        }
+    });
+
+    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.1).');
 })();

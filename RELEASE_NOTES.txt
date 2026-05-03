@@ -241,3 +241,11 @@ PEGASUS 178 - WEEKLY MUSCLE PROGRESS LEDGER HARDENING
 - Kept mobile food search fix from 177, Kouki advisor routing from 176, and static mobile Oracle/status header from 175.
 - No new files added; changed adaptiveTypography.js, progressUI.js, app.js, cloudSync.js, mobile/cardio-mobile.js, mobile/ems-mobile.js, mobile/mobile.html, sw.js, RELEASE_NOTES.txt.
 - Service worker cache version bumped to pegasus-shield-v3.110-FINAL-178.
+
+PEGASUS 179 - MOBILE PARKING PERSISTENCE + LIFTING WEIGHT MIRROR
+- Mobile parking tile now reads the saved parking location immediately when the home grid is rebuilt.
+- Returning from mobile page 2 back to page 1 no longer shows PARKING: -- while waiting for the next 30s sync pulse.
+- Mobile Βάρη now displays the current workout exercises and their saved kg from pegasus_exercise_weights / legacy weight keys.
+- Old manual test lifting entries are automatically cleaned from pegasus_lifting_v1.
+- No new files added; total file count remains stable.
+- Service worker cache bumped to pegasus-shield-v3.111-FINAL-179.

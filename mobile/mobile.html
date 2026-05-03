@@ -412,6 +412,22 @@
                 if (window.PegasusInventory && typeof window.PegasusInventory.updateUI === "function") {
                     window.PegasusInventory.updateUI();
                 }
+
+                if (this.currentPage === 0) {
+                    const refreshParkingTile = () => {
+                        if (window.PegasusParking && typeof window.PegasusParking.updateUI === "function") {
+                            window.PegasusParking.updateUI();
+                            return;
+                        }
+                        const parkingStatus = document.getElementById('parkingStatus');
+                        if (parkingStatus) parkingStatus.textContent = `ΠΑΡΚΙΝΓΚ: ${this.getParkingLabel()}`;
+                    };
+                    if (typeof window.requestAnimationFrame === "function") {
+                        window.requestAnimationFrame(refreshParkingTile);
+                    } else {
+                        window.setTimeout(refreshParkingTile, 0);
+                    }
+                }
             },
 
             createTile: function(container, m) {
@@ -422,11 +438,26 @@
                 container.appendChild(tile);
             },
 
+            getParkingLabel: function() {
+                const rawData = localStorage.getItem('pegasus_parking_loc');
+                if (!rawData || rawData === '[object Object]') return '--';
+
+                try {
+                    const parsed = JSON.parse(rawData);
+                    if (parsed && typeof parsed === 'object' && parsed.loc) return parsed.loc;
+                    if (typeof parsed === 'string' && parsed.trim()) return parsed.trim();
+                } catch (e) {
+                    if (String(rawData).trim()) return String(rawData).trim();
+                }
+
+                return '--';
+            },
+
             injectParkingTile: function(container) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
                 tile.onclick = () => openView('parking_panel');
-                tile.innerHTML = `<span class="tile-icon icon-parking">P</span><span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: --</span>`;
+                tile.innerHTML = `<span class="tile-icon icon-parking">P</span><span id="parkingStatus" class="tile-label">ΠΑΡΚΙΝΓΚ: ${this.getParkingLabel()}</span>`;
                 container.appendChild(tile);
             },
 
@@ -1172,7 +1203,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.21')
+                navigator.serviceWorker.register('../sw.js?v=3.22')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();
