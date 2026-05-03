@@ -1,6 +1,6 @@
 /* ==========================================================================
-   ▶️ PEGASUS MODULE: YOUTUBE LINKS (v1.0)
-   Protocol: Link-only thumbnail library. No video titles under thumbnails.
+   ▶️ PEGASUS MODULE: YOUTUBE LINKS (v1.1)
+   Protocol: Thumbnail library with compact title overlay.
    ========================================================================== */
 
 (function() {
@@ -54,6 +54,78 @@
         }
     }
 
+    const KNOWN_YOUTUBE_TITLES = {
+        zH8EDN9lPFM: 'Eminem, Snoop Dogg, 50 Cent, Ice Cube, Dr.Dre, 2Pac vibes - Hard To Kill | Old School Rap Mixtape17'
+    };
+
+    function getFallbackTitle(videoId) {
+        return KNOWN_YOUTUBE_TITLES[videoId] || `YouTube • ${videoId}`;
+    }
+
+    function compactTitle(value) {
+        const title = String(value || '').replace(/\s+/g, ' ').trim();
+        if (!title) return '';
+        return title.length > 86 ? `${title.slice(0, 83).trim()}…` : title;
+    }
+
+    async function fetchYouTubeTitle(entry) {
+        if (!entry?.url || !entry?.videoId) return '';
+        if (entry.title && !/^YouTube • /.test(entry.title)) return entry.title;
+
+        if (KNOWN_YOUTUBE_TITLES[entry.videoId]) return KNOWN_YOUTUBE_TITLES[entry.videoId];
+
+        const endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(entry.url)}&format=json`;
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 5500);
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-store',
+                signal: controller.signal
+            });
+            if (!response.ok) throw new Error(`YouTube title fetch failed: ${response.status}`);
+            const data = await response.json();
+            return String(data?.title || '').trim();
+        } catch (e) {
+            return '';
+        } finally {
+            window.clearTimeout(timeout);
+        }
+    }
+
+    function updateEntryTitle(videoId, title) {
+        const cleanTitle = compactTitle(title);
+        if (!videoId || !cleanTitle) return false;
+
+        const entries = loadEntries();
+        let changed = false;
+        entries.forEach(entry => {
+            if (entry.videoId === videoId && entry.title !== cleanTitle) {
+                entry.title = cleanTitle;
+                changed = true;
+            }
+        });
+
+        if (changed) saveEntries(entries);
+        return changed;
+    }
+
+    async function hydrateMissingTitles() {
+        const entries = loadEntries();
+        const missing = entries.filter(entry => entry?.videoId && (!entry.title || /^YouTube • /.test(entry.title)));
+        if (!missing.length) return;
+
+        for (const entry of missing) {
+            const resolved = await fetchYouTubeTitle(entry) || getFallbackTitle(entry.videoId);
+            const changed = updateEntryTitle(entry.videoId, resolved);
+            if (changed && typeof window.renderYoutubeContent === 'function') {
+                window.renderYoutubeContent({ skipHydration: true });
+            }
+        }
+    }
+
     function loadEntries() {
         try {
             const parsed = JSON.parse(localStorage.getItem(YOUTUBE_DATA_KEY) || '[]');
@@ -98,6 +170,7 @@
                 videoId: normalized.videoId,
                 url: normalized.url,
                 thumb: normalized.thumb,
+                title: getFallbackTitle(normalized.videoId),
                 dateAdded: new Date().toLocaleDateString('el-GR')
             };
 
@@ -115,6 +188,7 @@
             }
 
             window.renderYoutubeContent();
+            hydrateMissingTitles();
             triggerCloudPush();
         },
 
@@ -191,7 +265,7 @@
                 position: absolute;
                 top: 7px;
                 right: 7px;
-                z-index: 2;
+                z-index: 3;
                 width: 30px;
                 height: 30px;
                 border-radius: 999px;
@@ -202,6 +276,33 @@
                 font-size: 16px;
                 line-height: 1;
                 cursor: pointer;
+            }
+
+            .pegasus-youtube-title {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 2;
+                min-height: 30px;
+                padding: 7px 8px 6px;
+                display: flex;
+                align-items: flex-end;
+                background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.86) 45%, rgba(0,0,0,0.94) 100%);
+                color: #fff;
+                font-size: 8.5px;
+                font-weight: 900;
+                line-height: 1.2;
+                letter-spacing: 0.02em;
+                text-shadow: 0 1px 3px rgba(0,0,0,0.95);
+                pointer-events: none;
+            }
+
+            .pegasus-youtube-title span {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
             }
         `;
         document.head.appendChild(style);
@@ -242,7 +343,7 @@
         }
     }
 
-    window.renderYoutubeContent = function() {
+    window.renderYoutubeContent = function(options = {}) {
         const container = document.getElementById('youtube-content');
         if (!container) return;
 
@@ -253,12 +354,20 @@
             return;
         }
 
-        container.innerHTML = entries.map(entry => `
-            <div class="pegasus-youtube-card" role="button" tabindex="0" aria-label="Άνοιγμα YouTube video" onclick="window.PegasusYouTube.openVideo('${escapeHTML(entry.id)}')" onkeydown="if(event.key==='Enter'){window.PegasusYouTube.openVideo('${escapeHTML(entry.id)}')}">
-                <button class="pegasus-youtube-delete" aria-label="Διαγραφή" onclick="event.stopPropagation(); window.PegasusYouTube.deleteLink('${escapeHTML(entry.id)}')">×</button>
-                <img src="${escapeHTML(entry.thumb)}" alt="YouTube thumbnail" loading="lazy">
-            </div>
-        `).join('');
+        container.innerHTML = entries.map(entry => {
+            const title = compactTitle(entry.title || getFallbackTitle(entry.videoId));
+            return `
+                <div class="pegasus-youtube-card" role="button" tabindex="0" title="${escapeHTML(title)}" aria-label="Άνοιγμα YouTube video: ${escapeHTML(title)}" onclick="window.PegasusYouTube.openVideo('${escapeHTML(entry.id)}')" onkeydown="if(event.key==='Enter'){window.PegasusYouTube.openVideo('${escapeHTML(entry.id)}')}">
+                    <button class="pegasus-youtube-delete" aria-label="Διαγραφή" onclick="event.stopPropagation(); window.PegasusYouTube.deleteLink('${escapeHTML(entry.id)}')">×</button>
+                    <img src="${escapeHTML(entry.thumb)}" alt="${escapeHTML(title)}" loading="lazy">
+                    <div class="pegasus-youtube-title"><span>${escapeHTML(title)}</span></div>
+                </div>
+            `;
+        }).join('');
+
+        if (!options.skipHydration) {
+            hydrateMissingTitles();
+        }
     };
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -269,7 +378,8 @@
             window.registerPegasusModule({
                 id: 'youtube',
                 label: 'YouTube',
-                icon: '▶️'
+                icon: '▶️',
+                sortOrder: 9999
             });
         }
     });

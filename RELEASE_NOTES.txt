@@ -257,3 +257,13 @@ PEGASUS 180 - MOBILE YOUTUBE THUMBNAIL LIBRARY
 - Video title/name is intentionally not shown under the thumbnail.
 - YouTube links sync via pegasus_youtube_v1.
 - Service worker cache bumped to pegasus-shield-v3.112-FINAL-180 and includes youtube-mobile.js.
+
+PEGASUS 181 - YOUTUBE TITLE OVERLAY + NEW MODULE LAST-BUTTON POLICY
+- YouTube thumbnails now show a compact video-title overlay inside the thumbnail, not as a separate label underneath.
+- YouTube entries try to fetch the real video title through YouTube oEmbed and store it in pegasus_youtube_v1.
+- Existing YouTube links without titles are hydrated automatically when the YouTube view opens.
+- Added fallback title support for the provided Hard To Kill mixtape link.
+- YouTube module is now forced to the last extra/mobile button using sortOrder 9999.
+- Mobile module registration now supports sortOrder while preserving existing registration order for current modules.
+- Future new modules should use high sortOrder / last placement when they must appear as the final button.
+- Service worker cache bumped to pegasus-shield-v3.113-FINAL-181 and mobile SW query to v=3.24.
