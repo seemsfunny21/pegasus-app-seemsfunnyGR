@@ -168,11 +168,10 @@
         if (pair) return raw.replace(trimmed, translatePairText(trimmed, pair, lang));
 
         let translated = raw;
-        // Exercise names often appear inside labels such as "Lat Pulldowns (4 set)".
+        // PEGASUS 196: Exercise names stay English-only in both GR and EN modes.
+        // If an older rendered/cache label contains a Greek exercise name, normalize it back to English.
         exercisePairs.forEach((exercisePair) => {
-            const from = lang === 'en' ? exercisePair[0] : exercisePair[1];
-            const to = lang === 'en' ? exercisePair[1] : exercisePair[0];
-            translated = replacePhraseSafely(translated, from, to);
+            translated = replacePhraseSafely(translated, exercisePair[0], exercisePair[1]);
         });
         phrasePairs.forEach((phrasePair) => {
             const from = lang === 'en' ? phrasePair[0] : phrasePair[1];
@@ -183,11 +182,10 @@
     }
 
     function getExerciseDisplayName(name, forcedLang) {
-        const lang = forcedLang || getLanguage();
         const raw = String(name ?? '').trim();
         const pair = exerciseLookup.get(raw);
-        if (!pair) return raw;
-        return lang === 'en' ? pair[1] : pair[0];
+        // PEGASUS 196: exercises are product/workout identifiers, so display them in English only.
+        return pair ? pair[1] : raw;
     }
 
     function translateTextNode(node) {
