@@ -334,3 +334,14 @@ pegasus186
 - Cloud sync now includes cardio km/distance prefixes, not only cardio kcal.
 - Mobile cardio save forces immediate cloud push with retries.
 - No new file added.
+
+
+pegasus189
+- Added Settings body-goal selector with two buttons: ΓΡΑΜΜΩΣΗ and ΟΓΚΟΣ under gender.
+- New synced key pegasus_body_goal_mode controls nutrition target behavior across desktop/mobile.
+- Γράμμωση mode partially refuels exercise/cycling burns so most burned kcal remain deficit.
+- Όγκος mode fully refuels workout/cycling burns into the daily kcal target.
+- Diet target now uses: base day kcal + goal-mode refeed from workout/cycling burn.
+- Mobile Diet breakdown shows mode, total burns, and how much burn was added back to target.
+- Service worker cache bumped to pegasus-shield-v3.120-FINAL-189.
+- No new files added.

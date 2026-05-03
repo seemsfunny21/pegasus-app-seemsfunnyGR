@@ -254,6 +254,9 @@ function calculateDailyCalorieTarget(dateObj) {
 
     const baseTarget = getBaseDietTargetForDate(targetDate);
     const exerciseBurn = getExerciseBurnForDate(targetDate);
+    if (typeof window.getPegasusFinalDailyTargetFromBurn === 'function') {
+        return window.getPegasusFinalDailyTargetFromBurn(baseTarget, exerciseBurn);
+    }
     return Math.round(baseTarget + exerciseBurn);
 }
 
@@ -399,7 +402,9 @@ function updateProgressBars(kcal, protein) {
         const burn = getExerciseBurnForDate(window.currentFoodDate || new Date());
         const cardio = getCardioOffsetForDate(window.currentFoodDate || new Date());
         const workout = getWorkoutBurnForDate(window.currentFoodDate || new Date());
-        kStat.title = `Βάση + καύσεις: προπόνηση ${workout} kcal, ποδηλασία ${cardio} kcal, σύνολο ${burn} kcal`;
+        const modeLabel = window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel() : 'Γράμμωση';
+        const refeed = window.getPegasusExerciseRefeedForTarget ? window.getPegasusExerciseRefeedForTarget(burn) : burn;
+        kStat.title = `${modeLabel}: βάση + αναπλήρωση ${refeed} kcal από καύσεις ${burn} kcal (προπόνηση ${workout}, ποδηλασία ${cardio})`;
     }
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }

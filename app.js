@@ -283,12 +283,33 @@ window.recordPegasusWorkoutBurn = function(kcal, dateObj) {
     localStorage.setItem("pegasus_last_workout_kcal_entry", JSON.stringify(history[0]));
 
     if (typeof window.getPegasusBaseDailyTarget === "function" && typeof window.getPegasusTodayExerciseBurn === "function") {
-        localStorage.setItem('pegasus_effective_today_kcal', String(Math.round(window.getPegasusBaseDailyTarget() + window.getPegasusTodayExerciseBurn())));
+        localStorage.setItem('pegasus_effective_today_kcal', String(Math.round(window.getPegasusFinalDailyTargetFromBurn(window.getPegasusBaseDailyTarget(), window.getPegasusTodayExerciseBurn()))));
         localStorage.setItem('pegasus_effective_today_date', greek);
     }
 
     console.log(`🏋️ PEGASUS WORKOUT BURN: +${burned} kcal recorded for diet target (${next} kcal workout total today).`);
     return next;
+};
+
+window.getPegasusBodyGoalMode = window.getPegasusBodyGoalMode || function(settingsObj) {
+    const raw = settingsObj?.bodyGoalMode || localStorage.getItem('pegasus_body_goal_mode') || 'cut';
+    const v = String(raw || '').toLowerCase();
+    return (v === 'bulk' || v === 'ogkos' || v === 'όγκος') ? 'bulk' : 'cut';
+};
+
+window.getPegasusBodyGoalLabel = window.getPegasusBodyGoalLabel || function(mode) {
+    return window.getPegasusBodyGoalMode({ bodyGoalMode: mode }) === 'bulk' ? 'Όγκος' : 'Γράμμωση';
+};
+
+window.getPegasusExerciseRefeedForTarget = window.getPegasusExerciseRefeedForTarget || function(exerciseBurn, settingsObj) {
+    const burn = Math.max(0, Math.round(parseFloat(exerciseBurn) || 0));
+    const mode = window.getPegasusBodyGoalMode(settingsObj);
+    if (mode === 'bulk') return burn;
+    return Math.min(250, Math.round((burn * 0.15) / 50) * 50);
+};
+
+window.getPegasusFinalDailyTargetFromBurn = window.getPegasusFinalDailyTargetFromBurn || function(baseTarget, exerciseBurn, settingsObj) {
+    return Math.round((parseFloat(baseTarget) || 0) + window.getPegasusExerciseRefeedForTarget(exerciseBurn, settingsObj));
 };
 
 window.getPegasusBaseDailyTarget = function(settingsObj) {
@@ -331,7 +352,7 @@ window.getPegasusEffectiveDailyTarget = function(settingsObj) {
     const exerciseBurn = (typeof window.getPegasusTodayExerciseBurn === "function")
         ? window.getPegasusTodayExerciseBurn()
         : window.getPegasusTodayCardioOffset();
-    return Math.round(baseTarget + exerciseBurn);
+    return window.getPegasusFinalDailyTargetFromBurn(baseTarget, exerciseBurn, settingsObj);
 };
 
 /* ===== 2.5 DYNAMIC UI KCAL CONTROLLER ===== */
@@ -1704,12 +1725,14 @@ window.calculatePegasusDailyTarget = function() {
     const cardioOffset = window.getPegasusTodayCardioOffset();
     const workoutBurn = (typeof window.getPegasusTodayWorkoutKcal === "function") ? window.getPegasusTodayWorkoutKcal() : 0;
     const exerciseBurn = (typeof window.getPegasusTodayExerciseBurn === "function") ? window.getPegasusTodayExerciseBurn() : cardioOffset;
-    const effectiveTarget = Math.round(baseTarget + exerciseBurn);
+    const effectiveTarget = window.getPegasusFinalDailyTargetFromBurn(baseTarget, exerciseBurn, settings);
 
     localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', baseTarget);
     localStorage.setItem('pegasus_effective_today_kcal', String(effectiveTarget));
 
-    console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Στόχος Βάσης: ${baseTarget} kcal | Προπόνηση: +${workoutBurn} | Ποδηλασία: +${cardioOffset} | Καύσεις: +${exerciseBurn} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
+    const modeLabel = window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel(settings.bodyGoalMode) : (settings.bodyGoalMode || 'cut');
+    const refeed = window.getPegasusExerciseRefeedForTarget ? window.getPegasusExerciseRefeedForTarget(exerciseBurn, settings) : exerciseBurn;
+    console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'} / ${modeLabel}]: Στόχος Βάσης: ${baseTarget} kcal | Προπόνηση: +${workoutBurn} | Ποδηλασία: +${cardioOffset} | Καύσεις: +${exerciseBurn} | Αναπλήρωση στόχου: +${refeed} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
 
     window._isCalculatingTarget = false;
     return effectiveTarget;

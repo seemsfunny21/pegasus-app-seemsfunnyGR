@@ -194,6 +194,30 @@ const PegasusMetabolic = {
         return this.getExerciseBurnForDate(this.getTodayDateStr());
     },
 
+
+    getBodyGoalMode: function(settingsObj) {
+        const raw = settingsObj?.bodyGoalMode || localStorage.getItem('pegasus_body_goal_mode') || 'cut';
+        const v = String(raw || '').toLowerCase();
+        return (v === 'bulk' || v === 'ogkos' || v === 'όγκος') ? 'bulk' : 'cut';
+    },
+
+    getBodyGoalLabel: function(mode) {
+        return this.getBodyGoalMode({ bodyGoalMode: mode }) === 'bulk' ? 'Όγκος' : 'Γράμμωση';
+    },
+
+    getExerciseRefeedForTarget: function(exerciseBurn, settingsObj) {
+        const burn = Math.max(0, Math.round(parseFloat(exerciseBurn) || 0));
+        const mode = this.getBodyGoalMode(settingsObj);
+        if (mode === 'bulk') return burn;
+        // Γράμμωση / recomposition: keep most cardio/workout burn as deficit.
+        // Refeed only a small, rounded safety buffer so heavy cycling does not push overeating.
+        return Math.min(250, Math.round((burn * 0.15) / 50) * 50);
+    },
+
+    calculateFinalDailyTarget: function(baseTarget, exerciseBurn, settingsObj) {
+        return Math.round((parseFloat(baseTarget) || 0) + this.getExerciseRefeedForTarget(exerciseBurn, settingsObj));
+    },
+
     getBaseDailyTarget: function(settingsObj) {
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const dayName = greekDays[new Date().getDay()];
@@ -230,13 +254,19 @@ const PegasusMetabolic = {
     },
 
     getEffectiveDailyTarget: function(settingsObj) {
-        return Math.round(this.getBaseDailyTarget(settingsObj) + this.getTodayExerciseBurn());
+        const baseTarget = this.getBaseDailyTarget(settingsObj);
+        const exerciseBurn = this.getTodayExerciseBurn();
+        return this.calculateFinalDailyTarget(baseTarget, exerciseBurn, settingsObj);
     },
 
     syncStoredTargets: function(settingsObj) {
         const baseTarget = this.getBaseDailyTarget(settingsObj);
         const keys = this.getKeys();
+        const exerciseBurn = this.getTodayExerciseBurn();
+        const effectiveTarget = this.calculateFinalDailyTarget(baseTarget, exerciseBurn, settingsObj);
         localStorage.setItem(keys.todayKcal, String(baseTarget));
+        localStorage.setItem('pegasus_effective_today_kcal', String(effectiveTarget));
+        localStorage.setItem('pegasus_effective_today_date', this.getTodayDateStr());
         return baseTarget;
     },
 
@@ -420,6 +450,10 @@ window.getPegasusExerciseBurnForDate = PegasusMetabolic.getExerciseBurnForDate.b
 window.getPegasusTodayExerciseBurn = PegasusMetabolic.getTodayExerciseBurn.bind(PegasusMetabolic);
 window.getPegasusBaseDailyTarget = PegasusMetabolic.getBaseDailyTarget.bind(PegasusMetabolic);
 window.getPegasusEffectiveDailyTarget = PegasusMetabolic.getEffectiveDailyTarget.bind(PegasusMetabolic);
+window.getPegasusBodyGoalMode = PegasusMetabolic.getBodyGoalMode.bind(PegasusMetabolic);
+window.getPegasusBodyGoalLabel = PegasusMetabolic.getBodyGoalLabel.bind(PegasusMetabolic);
+window.getPegasusExerciseRefeedForTarget = PegasusMetabolic.getExerciseRefeedForTarget.bind(PegasusMetabolic);
+window.getPegasusFinalDailyTargetFromBurn = PegasusMetabolic.calculateFinalDailyTarget.bind(PegasusMetabolic);
 
 /* =========================================================
    INITIAL BOOT

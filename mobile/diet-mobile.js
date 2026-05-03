@@ -244,7 +244,11 @@ window.PegasusDiet = {
 
         const todayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
         const storedToday = parseFloat(localStorage.getItem(todayKey));
-        const calculated = Math.round(this.getBaseTarget() + this.getExerciseBurn(this.getStrictDateStr()));
+        const base = this.getBaseTarget();
+        const burn = this.getExerciseBurn(this.getStrictDateStr());
+        const calculated = (typeof window.getPegasusFinalDailyTargetFromBurn === 'function')
+            ? window.getPegasusFinalDailyTargetFromBurn(base, burn)
+            : Math.round(base + burn);
 
         if (!isNaN(storedToday) && storedToday > 0) {
             return Math.max(calculated, storedToday);
@@ -616,9 +620,11 @@ window.PegasusDiet = {
                 compact.appendChild(note);
             }
             if (note) {
+                const modeLabel = window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel() : 'Γράμμωση';
+                const refeed = window.getPegasusExerciseRefeedForTarget ? window.getPegasusExerciseRefeedForTarget(exerciseBurn) : exerciseBurn;
                 note.textContent = exerciseBurn > 0
-                    ? `Καύσεις ημέρας: -${exerciseBurn} kcal (προπόνηση ${workoutBurn} / ποδήλατο ${cardioBurn})`
-                    : 'Καύσεις ημέρας: 0 kcal';
+                    ? `${modeLabel}: καύσεις -${exerciseBurn} kcal, στόχος +${refeed} (προπόνηση ${workoutBurn} / ποδήλατο ${cardioBurn})`
+                    : `${modeLabel}: καύσεις 0 kcal`;
             }
         }
 

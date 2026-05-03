@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-19",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.6 Dynamic Weekly Planner"
+        engine_version: "v18.7 Body Goal Nutrition Mode"
     },
 
     // ---------------------------------------------------------
@@ -86,7 +86,8 @@ window.PegasusManifest = {
         inventory: "pegasus_supp_inventory",
         foodLibrary: "pegasus_food_library",
         todayKcal: "pegasus_today_kcal",
-        todayProtein: "pegasus_today_protein"
+        todayProtein: "pegasus_today_protein",
+        bodyGoalMode: "pegasus_body_goal_mode"
     },
 
     kouki: {

@@ -152,7 +152,9 @@ window.PegasusDebugHelpers = {
 
         const base = this.getBaseTarget();
         const cardio = this.getTodayCardioOffset();
-        return Math.round(base + cardio);
+        return (typeof window.getPegasusFinalDailyTargetFromBurn === 'function')
+            ? window.getPegasusFinalDailyTargetFromBurn(base, cardio)
+            : Math.round(base + cardio);
     },
 
     getEngineState: function() {

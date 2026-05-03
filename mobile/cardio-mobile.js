@@ -177,7 +177,10 @@
                     const exerciseBurn = (typeof window.getPegasusTodayExerciseBurn === 'function')
                         ? window.getPegasusTodayExerciseBurn()
                         : nextKcal;
-                    localStorage.setItem('pegasus_effective_today_kcal', String(Math.round(baseTarget + exerciseBurn)));
+                    const effectiveTarget = (typeof window.getPegasusFinalDailyTargetFromBurn === 'function')
+                        ? window.getPegasusFinalDailyTargetFromBurn(baseTarget, exerciseBurn)
+                        : Math.round(baseTarget + exerciseBurn);
+                    localStorage.setItem('pegasus_effective_today_kcal', String(effectiveTarget));
                     localStorage.setItem('pegasus_effective_today_date', date.dateStr);
                 }
 

@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
     exTime: 45,
     restTime: 60,
     activeSplit: 'IRON',
+    bodyGoalMode: 'cut',
     muscleTargets: {
         "Στήθος": 16,
         "Πλάτη": 16,
@@ -137,6 +138,38 @@ window.getPegasusManualKcalTarget = resolvePegasusManualGoalKcal;
 window.getPegasusGoalKcalKey = getPegasusGoalKcalKey;
 window.getPegasusEffectiveTodayKcalKey = getPegasusEffectiveTodayKcalKey;
 
+function normalizePegasusBodyGoalMode(value) {
+    const v = String(value || '').toLowerCase();
+    return (v === 'bulk' || v === 'ogkos' || v === 'όγκος') ? 'bulk' : 'cut';
+}
+
+window.getPegasusBodyGoalMode = function(settingsObj) {
+    return normalizePegasusBodyGoalMode(
+        settingsObj?.bodyGoalMode ||
+        localStorage.getItem('pegasus_body_goal_mode') ||
+        DEFAULT_SETTINGS.bodyGoalMode
+    );
+};
+
+window.getPegasusBodyGoalLabel = function(mode) {
+    return normalizePegasusBodyGoalMode(mode) === 'bulk' ? 'Όγκος' : 'Γράμμωση';
+};
+
+window.setPegasusBodyGoalModeUI = function(mode) {
+    const normalized = normalizePegasusBodyGoalMode(mode);
+    const hidden = document.getElementById('bodyGoalModeInput');
+    if (hidden) hidden.value = normalized;
+    document.querySelectorAll('[data-body-goal-mode]').forEach(btn => {
+        const active = btn.getAttribute('data-body-goal-mode') === normalized;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        btn.style.background = active ? 'linear-gradient(180deg, rgba(76,175,80,.45), rgba(0,0,0,.85))' : 'rgba(0,0,0,.55)';
+        btn.style.borderColor = active ? '#00ff66' : '#2f7d32';
+        btn.style.boxShadow = active ? '0 0 12px rgba(0,255,102,.35)' : 'none';
+        btn.style.color = active ? '#d8ffe0' : '#7ce184';
+    });
+};
+
 /**
  * 1. GLOBAL ACCESSOR
  */
@@ -165,6 +198,7 @@ window.getPegasusSettings = function() {
             exTime: parseInt(localStorage.getItem(w.ex_time || "pegasus_ex_time"), 10) || DEFAULT_SETTINGS.exTime,
             restTime: parseInt(localStorage.getItem(w.rest_time || "pegasus_rest_time"), 10) || DEFAULT_SETTINGS.restTime,
             activeSplit: localStorage.getItem('pegasus_active_plan') || DEFAULT_SETTINGS.activeSplit,
+            bodyGoalMode: window.getPegasusBodyGoalMode ? window.getPegasusBodyGoalMode() : (localStorage.getItem('pegasus_body_goal_mode') || DEFAULT_SETTINGS.bodyGoalMode),
             muscleTargets: storedTargets || clonePegasusSettings(DEFAULT_SETTINGS.muscleTargets)
         };
     } catch (e) {
@@ -240,13 +274,22 @@ window.initSettingsUI = function() {
         "goalProteinInput": s.goalProtein,
         "exerciseTimeInput": s.exTime,
         "restTimeInput": s.restTime,
-        "activeSplitSelector": s.activeSplit
+        "activeSplitSelector": s.activeSplit,
+        "bodyGoalModeInput": s.bodyGoalMode
     };
 
     for (let id in fields) {
         const el = document.getElementById(id);
         if (el) el.value = fields[id];
     }
+
+    if (typeof window.setPegasusBodyGoalModeUI === 'function') {
+        window.setPegasusBodyGoalModeUI(s.bodyGoalMode || DEFAULT_SETTINGS.bodyGoalMode);
+    }
+
+    document.querySelectorAll('[data-body-goal-mode]').forEach(btn => {
+        btn.onclick = () => window.setPegasusBodyGoalModeUI(btn.getAttribute('data-body-goal-mode'));
+    });
 
     ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"].forEach(m => {
         const el = document.getElementById(`target${m}Input`);
@@ -287,6 +330,7 @@ window.savePegasusSettingsGlobal = function() {
             exTime: parseInt(getValue("exerciseTimeInput", currentSettings.exTime), 10) || currentSettings.exTime || DEFAULT_SETTINGS.exTime,
             restTime: parseInt(getValue("restTimeInput", currentSettings.restTime), 10) || currentSettings.restTime || DEFAULT_SETTINGS.restTime,
             activeSplit: getValue("activeSplitSelector", currentSettings.activeSplit || DEFAULT_SETTINGS.activeSplit),
+            bodyGoalMode: normalizePegasusBodyGoalMode(getValue("bodyGoalModeInput", currentSettings.bodyGoalMode || DEFAULT_SETTINGS.bodyGoalMode)),
             muscleTargets: {}
         };
 
@@ -301,6 +345,8 @@ window.savePegasusSettingsGlobal = function() {
         localStorage.setItem(u.height || "pegasus_height", String(newSettings.height));
         localStorage.setItem(u.age || "pegasus_age", String(newSettings.age));
         localStorage.setItem(u.gender || "pegasus_gender", newSettings.gender);
+        localStorage.setItem('pegasus_body_goal_mode', newSettings.bodyGoalMode);
+        localStorage.setItem('pegasus_body_goal_mode_label', window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel(newSettings.bodyGoalMode) : newSettings.bodyGoalMode);
 
         // Nutrition & Time
         localStorage.setItem(d.goalKcal || "pegasus_goal_kcal", String(newSettings.goalKcal));

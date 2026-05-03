@@ -196,6 +196,8 @@ const PegasusCloud = {
             "pegasus_supp_inventory",
             "pegasus_food_library",
             "pegasus_goal_kcal",
+            "pegasus_body_goal_mode",
+            "pegasus_body_goal_mode_label",
             "pegasus_today_kcal",
             "pegasus_effective_today_kcal",
             "pegasus_effective_today_date",

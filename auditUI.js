@@ -176,7 +176,10 @@ window.PegasusAuditUI = {
         const baseTarget = this.getExpectedBaseTarget();
         const cardioOffset = this.getTodayCardioOffset();
         const targetKcal = this.getEffectiveTargetKcal();
-        const expectedTarget = Math.round(baseTarget + cardioOffset);
+        const exerciseBurn = (typeof window.getPegasusTodayExerciseBurn === 'function') ? window.getPegasusTodayExerciseBurn() : cardioOffset;
+        const expectedTarget = (typeof window.getPegasusFinalDailyTargetFromBurn === 'function')
+            ? window.getPegasusFinalDailyTargetFromBurn(baseTarget, exerciseBurn)
+            : Math.round(baseTarget + cardioOffset);
 
         const isRecoveryDay = ["Δευτέρα", "Πέμπτη"].includes(this.getGreekDayName());
         let isAnomalous = false;
@@ -201,7 +204,7 @@ window.PegasusAuditUI = {
 
         if (!isAnomalous) {
             console.log(
-                `%c 🟢 AUDIT: Metabolic Alignment OK (${targetKcal} kcal | base ${baseTarget} + cardio ${cardioOffset})`,
+                `%c 🟢 AUDIT: Metabolic Alignment OK (${targetKcal} kcal | base ${baseTarget} + burn ${exerciseBurn})`,
                 "color: #4CAF50"
             );
         }
