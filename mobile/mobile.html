@@ -607,6 +607,7 @@
     <script src="finance-mobile.js"></script>
     <script src="social-mobile.js"></script>
     <script src="movies-mobile.js"></script>
+    <script src="youtube-mobile.js"></script>
     <script src="missions-mobile.js"></script>
     <script src="biometrics-mobile.js"></script>
     <script src="maintenance-mobile.js"></script>
@@ -1203,7 +1204,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.22')
+                navigator.serviceWorker.register('../sw.js?v=3.23')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

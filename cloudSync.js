@@ -206,6 +206,7 @@ const PegasusCloud = {
             "pegasus_finance_v1",
             "pegasus_maintenance_v1",
             "pegasus_movies_v1",
+            "pegasus_youtube_v1",
             "pegasus_missions_v1",
             "pegasus_biometrics_v1",
             "pegasus_supplies_v1",

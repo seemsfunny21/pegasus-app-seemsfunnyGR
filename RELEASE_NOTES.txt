@@ -249,3 +249,11 @@ PEGASUS 179 - MOBILE PARKING PERSISTENCE + LIFTING WEIGHT MIRROR
 - Old manual test lifting entries are automatically cleaned from pegasus_lifting_v1.
 - No new files added; total file count remains stable.
 - Service worker cache bumped to pegasus-shield-v3.111-FINAL-179.
+
+PEGASUS 180 - MOBILE YOUTUBE THUMBNAIL LIBRARY
+- Added new mobile YouTube category/module as mobile/youtube-mobile.js.
+- User can save a YouTube link and see it as a thumbnail card.
+- Tapping/clicking the thumbnail opens the video in YouTube.
+- Video title/name is intentionally not shown under the thumbnail.
+- YouTube links sync via pegasus_youtube_v1.
+- Service worker cache bumped to pegasus-shield-v3.112-FINAL-180 and includes youtube-mobile.js.
