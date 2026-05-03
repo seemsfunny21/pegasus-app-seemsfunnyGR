@@ -1,3 +1,12 @@
+PEGASUS 188 — Exercise Burn Diet Target
+- Διατροφή: οι τελικές θερμίδες ημέρας πλέον υπολογίζουν συνολικά τις καύσεις από προπόνηση + ποδηλασία.
+- Desktop workout finish: οι kcal της προπόνησης γράφονται σε ημερήσια workout kcal keys και ιστορικό.
+- Ποδηλασία: συνεχίζει να γράφει kcal/km και ενημερώνει τον τελικό στόχο με βάση όλες τις καύσεις.
+- Desktop/mobile diet: εμφανίζει φαγητό ημέρας / τελικές θερμίδες ημέρας.
+- Mobile diet: δείχνει μικρή ανάλυση καύσεων ημέρας: προπόνηση / ποδήλατο.
+- Cloud sync: προστέθηκαν prefixes για workout kcal ώστε να περνάνε σε άλλη συσκευή.
+- Δεν προστέθηκε νέο αρχείο.
+
 
 PEGASUS 187 - MOBILE LIFTING VIEW + CARDIO PUSH FLOW
 - Fixed mobile Βάρη black-screen issue by converting lifting view to standard .view layer.

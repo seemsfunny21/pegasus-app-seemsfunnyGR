@@ -188,6 +188,109 @@ window.getPegasusTodayCardioOffset = function() {
     return Math.round(Math.max(directValue, historyValue));
 };
 
+
+window.getPegasusWorkoutKcalForDate = function(dateStr) {
+    const targetDate = dateStr || window.getPegasusTodayDateStr();
+    const aliases = (typeof window.getPegasusDateAliases === "function")
+        ? window.getPegasusDateAliases(targetDate)
+        : [targetDate];
+
+    const prefixes = ["pegasus_workout_kcal_", "pegasus_strength_kcal_", "pegasus_gym_kcal_"];
+    let directValue = 0;
+
+    aliases.forEach(alias => {
+        prefixes.forEach(prefix => {
+            const value = parseFloat(localStorage.getItem(prefix + alias));
+            if (!isNaN(value)) directValue = Math.max(directValue, value);
+        });
+    });
+
+    let historyValue = 0;
+    try {
+        const history = JSON.parse(localStorage.getItem("pegasus_workout_kcal_history") || "[]");
+        const aliasSet = new Set(aliases.map(String));
+        if (Array.isArray(history)) {
+            history.forEach(entry => {
+                const matches = [entry?.date, entry?.isoDate, entry?.dateKey, entry?.workoutKey, entry?.compactDate]
+                    .map(v => String(v || '').trim())
+                    .some(v => aliasSet.has(v));
+                if (matches) historyValue += parseFloat(entry?.kcal || entry?.calories || entry?.workoutKcal || 0) || 0;
+            });
+        }
+    } catch (e) {}
+
+    return Math.round(Math.max(directValue, historyValue));
+};
+
+window.getPegasusTodayWorkoutKcal = function() {
+    return window.getPegasusWorkoutKcalForDate(window.getPegasusTodayDateStr());
+};
+
+window.getPegasusExerciseBurnForDate = function(dateStr) {
+    const cardio = (window.PegasusMetabolic?.getCardioOffsetForDate)
+        ? window.PegasusMetabolic.getCardioOffsetForDate(dateStr || window.getPegasusTodayDateStr())
+        : window.getPegasusTodayCardioOffset();
+    const workout = (window.PegasusMetabolic?.getWorkoutBurnForDate)
+        ? window.PegasusMetabolic.getWorkoutBurnForDate(dateStr || window.getPegasusTodayDateStr())
+        : window.getPegasusWorkoutKcalForDate(dateStr || window.getPegasusTodayDateStr());
+    return Math.round((parseFloat(cardio) || 0) + (parseFloat(workout) || 0));
+};
+
+window.getPegasusTodayExerciseBurn = function() {
+    return window.getPegasusExerciseBurnForDate(window.getPegasusTodayDateStr());
+};
+
+window.recordPegasusWorkoutBurn = function(kcal, dateObj) {
+    const burned = Math.round(parseFloat(kcal) || 0);
+    if (burned <= 0) return 0;
+
+    const d = dateObj instanceof Date ? dateObj : new Date();
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const iso = `${yyyy}-${mm}-${dd}`;
+    const greek = `${dd}/${mm}/${yyyy}`;
+    const aliases = (typeof window.getPegasusDateAliases === "function")
+        ? window.getPegasusDateAliases(iso)
+        : [iso, greek, `${parseInt(dd,10)}/${parseInt(mm,10)}/${yyyy}`, `${yyyy}${mm}${dd}`];
+
+    const prefixes = ["pegasus_workout_kcal_", "pegasus_strength_kcal_", "pegasus_gym_kcal_"];
+    let current = 0;
+    aliases.forEach(alias => prefixes.forEach(prefix => {
+        const value = parseFloat(localStorage.getItem(prefix + alias));
+        if (!isNaN(value)) current = Math.max(current, value);
+    }));
+    const next = Math.round(current + burned);
+    aliases.forEach(alias => prefixes.forEach(prefix => localStorage.setItem(prefix + alias, String(next))));
+
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem("pegasus_workout_kcal_history") || "[]"); }
+    catch (e) { history = []; }
+    if (!Array.isArray(history)) history = [];
+    history.unshift({
+        date: greek,
+        isoDate: iso,
+        dateKey: iso,
+        compactDate: `${yyyy}${mm}${dd}`,
+        type: 'Προπόνηση',
+        activity: 'strength',
+        kcal: burned,
+        calories: burned,
+        recordedAt: new Date().toISOString(),
+        source: 'desktop-workout-finish-v188'
+    });
+    localStorage.setItem("pegasus_workout_kcal_history", JSON.stringify(history.slice(0, 100)));
+    localStorage.setItem("pegasus_last_workout_kcal_entry", JSON.stringify(history[0]));
+
+    if (typeof window.getPegasusBaseDailyTarget === "function" && typeof window.getPegasusTodayExerciseBurn === "function") {
+        localStorage.setItem('pegasus_effective_today_kcal', String(Math.round(window.getPegasusBaseDailyTarget() + window.getPegasusTodayExerciseBurn())));
+        localStorage.setItem('pegasus_effective_today_date', greek);
+    }
+
+    console.log(`🏋️ PEGASUS WORKOUT BURN: +${burned} kcal recorded for diet target (${next} kcal workout total today).`);
+    return next;
+};
+
 window.getPegasusBaseDailyTarget = function(settingsObj) {
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const dayName = greekDays[new Date().getDay()];
@@ -225,8 +328,10 @@ window.getPegasusBaseDailyTarget = function(settingsObj) {
 
 window.getPegasusEffectiveDailyTarget = function(settingsObj) {
     const baseTarget = window.getPegasusBaseDailyTarget(settingsObj);
-    const cardioOffset = window.getPegasusTodayCardioOffset();
-    return Math.round(baseTarget + cardioOffset);
+    const exerciseBurn = (typeof window.getPegasusTodayExerciseBurn === "function")
+        ? window.getPegasusTodayExerciseBurn()
+        : window.getPegasusTodayCardioOffset();
+    return Math.round(baseTarget + exerciseBurn);
 };
 
 /* ===== 2.5 DYNAMIC UI KCAL CONTROLLER ===== */
@@ -1597,11 +1702,14 @@ window.calculatePegasusDailyTarget = function() {
     const dynamicProtein = window.calculatePegasusBioMetrics(settings);
     const baseTarget = window.getPegasusBaseDailyTarget(settings);
     const cardioOffset = window.getPegasusTodayCardioOffset();
-    const effectiveTarget = Math.round(baseTarget + cardioOffset);
+    const workoutBurn = (typeof window.getPegasusTodayWorkoutKcal === "function") ? window.getPegasusTodayWorkoutKcal() : 0;
+    const exerciseBurn = (typeof window.getPegasusTodayExerciseBurn === "function") ? window.getPegasusTodayExerciseBurn() : cardioOffset;
+    const effectiveTarget = Math.round(baseTarget + exerciseBurn);
 
     localStorage.setItem(M?.diet?.todayKcal || 'pegasus_today_kcal', baseTarget);
+    localStorage.setItem('pegasus_effective_today_kcal', String(effectiveTarget));
 
-    console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Στόχος Βάσης: ${baseTarget} kcal | Cardio: +${cardioOffset} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
+    console.log(`🏛️ PEGASUS OS [${settings.activeSplit || 'IRON'}]: Στόχος Βάσης: ${baseTarget} kcal | Προπόνηση: +${workoutBurn} | Ποδηλασία: +${cardioOffset} | Καύσεις: +${exerciseBurn} | Τελικός Στόχος: ${effectiveTarget} kcal | Πρωτεΐνη: ${dynamicProtein}g`);
 
     window._isCalculatingTarget = false;
     return effectiveTarget;
@@ -1655,6 +1763,9 @@ function finishWorkout() {
             let sessionKcal = sessionActiveKcal;
             let currentWeekly = parseFloat(localStorage.getItem("pegasus_weekly_kcal")) || 0;
             localStorage.setItem("pegasus_weekly_kcal", (currentWeekly + sessionKcal).toFixed(1));
+            if (typeof window.recordPegasusWorkoutBurn === "function") {
+                window.recordPegasusWorkoutBurn(sessionKcal);
+            }
 
             window.PegasusReporting.prepareAndSaveReport(sessionKcal.toFixed(1));
             sessionActiveKcal = 0;

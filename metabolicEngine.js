@@ -1,8 +1,8 @@
 /* =============================================================
-   PEGASUS UNIFIED METABOLIC ENGINE - v16.8 (CARDIO OFFSET FALLBACK CORE)
+   PEGASUS UNIFIED METABOLIC ENGINE - v16.9 (EXERCISE BURN TARGET CORE)
    Merged: calories.js + metabolic.js
    Protocol: Strict Session Isolation, Midnight Guard & Shared Target Logic
-   Status: FINAL STABLE | FIXED: CARDIO KCAL TARGET FOLLOWS MOBILE PUSH
+   Status: FINAL STABLE | FIXED: DIET TARGET FOLLOWS WORKOUT + CYCLING BURN
    ============================================================= */
 
 const PegasusMetabolic = {
@@ -69,7 +69,9 @@ const PegasusMetabolic = {
             workoutDone: window.PegasusManifest?.workout?.done || "pegasus_workouts_done",
             cardioOffsetLegacy: window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets",
             calendarHistory: window.PegasusManifest?.workout?.calendarHistory || "pegasus_calendar_history",
-            cardioDailyPrefix: window.PegasusManifest?.workout?.cardio_daily_prefix || "pegasus_cardio_kcal_"
+            cardioDailyPrefix: window.PegasusManifest?.workout?.cardio_daily_prefix || "pegasus_cardio_kcal_",
+            workoutDailyPrefix: "pegasus_workout_kcal_",
+            workoutBurnHistory: "pegasus_workout_kcal_history"
         };
     },
 
@@ -150,6 +152,48 @@ const PegasusMetabolic = {
         return this.getCardioOffsetForDate(this.getTodayDateStr());
     },
 
+    getWorkoutBurnForDate: function(dateStr) {
+        const keys = this.getKeys();
+        const aliases = this.getDateAliases(dateStr || this.getTodayDateStr());
+        const prefixes = [keys.workoutDailyPrefix || "pegasus_workout_kcal_", "pegasus_strength_kcal_", "pegasus_gym_kcal_"];
+        let directValue = 0;
+
+        aliases.forEach(alias => {
+            prefixes.forEach(prefix => {
+                const value = parseFloat(localStorage.getItem(prefix + alias));
+                if (!isNaN(value)) directValue = Math.max(directValue, value);
+            });
+        });
+
+        let historyValue = 0;
+        try {
+            const history = JSON.parse(localStorage.getItem(keys.workoutBurnHistory || "pegasus_workout_kcal_history") || "[]");
+            if (Array.isArray(history)) {
+                const aliasSet = new Set(aliases.map(String));
+                history.forEach(entry => {
+                    const matches = [entry?.date, entry?.isoDate, entry?.dateKey, entry?.workoutKey, entry?.compactDate]
+                        .map(v => String(v || '').trim())
+                        .some(v => aliasSet.has(v));
+                    if (matches) historyValue += parseFloat(entry?.kcal || entry?.calories || entry?.workoutKcal || 0) || 0;
+                });
+            }
+        } catch (e) {}
+
+        return Math.round(Math.max(directValue, historyValue));
+    },
+
+    getTodayWorkoutBurn: function() {
+        return this.getWorkoutBurnForDate(this.getTodayDateStr());
+    },
+
+    getExerciseBurnForDate: function(dateStr) {
+        return Math.round(this.getCardioOffsetForDate(dateStr) + this.getWorkoutBurnForDate(dateStr));
+    },
+
+    getTodayExerciseBurn: function() {
+        return this.getExerciseBurnForDate(this.getTodayDateStr());
+    },
+
     getBaseDailyTarget: function(settingsObj) {
         const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
         const dayName = greekDays[new Date().getDay()];
@@ -186,7 +230,7 @@ const PegasusMetabolic = {
     },
 
     getEffectiveDailyTarget: function(settingsObj) {
-        return Math.round(this.getBaseDailyTarget(settingsObj) + this.getTodayCardioOffset());
+        return Math.round(this.getBaseDailyTarget(settingsObj) + this.getTodayExerciseBurn());
     },
 
     syncStoredTargets: function(settingsObj) {
@@ -370,6 +414,10 @@ window.trackSetCalories = PegasusMetabolic.updateTracking.bind(PegasusMetabolic)
 
 window.getPegasusTodayDateStr = PegasusMetabolic.getTodayDateStr.bind(PegasusMetabolic);
 window.getPegasusTodayCardioOffset = PegasusMetabolic.getTodayCardioOffset.bind(PegasusMetabolic);
+window.getPegasusWorkoutKcalForDate = PegasusMetabolic.getWorkoutBurnForDate.bind(PegasusMetabolic);
+window.getPegasusTodayWorkoutKcal = PegasusMetabolic.getTodayWorkoutBurn.bind(PegasusMetabolic);
+window.getPegasusExerciseBurnForDate = PegasusMetabolic.getExerciseBurnForDate.bind(PegasusMetabolic);
+window.getPegasusTodayExerciseBurn = PegasusMetabolic.getTodayExerciseBurn.bind(PegasusMetabolic);
 window.getPegasusBaseDailyTarget = PegasusMetabolic.getBaseDailyTarget.bind(PegasusMetabolic);
 window.getPegasusEffectiveDailyTarget = PegasusMetabolic.getEffectiveDailyTarget.bind(PegasusMetabolic);
 

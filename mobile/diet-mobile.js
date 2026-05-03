@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.3 CARDIO TARGET PATCH)
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.4 EXERCISE TARGET PATCH)
    Protocol: Shared Metabolic Helpers, Diet-Only Inventory & Delete Restore
-   Status: FINAL STABLE | FIXED: MOBILE DIET TARGET READS CARDIO OFFSET
+   Status: FINAL STABLE | FIXED: MOBILE DIET TARGET READS WORKOUT + CYCLING BURN
    ========================================================================== */
 
 window.PegasusDiet = {
@@ -162,11 +162,11 @@ window.PegasusDiet = {
 
         const todayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
         const storedToday = parseFloat(localStorage.getItem(todayKey));
-        const cardio = this.getCardioOffset(this.getStrictDateStr());
+        const exerciseBurn = this.getExerciseBurn(this.getStrictDateStr());
         const calculated = this.getCalculatedBaseTarget();
 
         if (!isNaN(storedToday) && storedToday > 0) {
-            return Math.max(calculated, Math.max(0, storedToday - cardio));
+            return Math.max(calculated, Math.max(0, storedToday - exerciseBurn));
         }
 
         return calculated;
@@ -202,6 +202,41 @@ window.PegasusDiet = {
         return Math.round(directValue);
     },
 
+
+    getWorkoutBurn: function(dateStr) {
+        const targetDate = dateStr || this.getStrictDateStr();
+
+        if (window.PegasusMetabolic?.getWorkoutBurnForDate) {
+            return window.PegasusMetabolic.getWorkoutBurnForDate(targetDate);
+        }
+
+        if (typeof window.getPegasusWorkoutKcalForDate === "function") {
+            return window.getPegasusWorkoutKcalForDate(targetDate);
+        }
+
+        const aliases = (typeof window.getPegasusDateAliases === "function")
+            ? window.getPegasusDateAliases(targetDate)
+            : [targetDate];
+        const prefixes = ["pegasus_workout_kcal_", "pegasus_strength_kcal_", "pegasus_gym_kcal_"];
+        let directValue = 0;
+        aliases.forEach(alias => prefixes.forEach(prefix => {
+            const value = parseFloat(localStorage.getItem(prefix + alias));
+            if (!isNaN(value)) directValue = Math.max(directValue, value);
+        }));
+        return Math.round(directValue);
+    },
+
+    getExerciseBurn: function(dateStr) {
+        const targetDate = dateStr || this.getStrictDateStr();
+        if (window.PegasusMetabolic?.getExerciseBurnForDate) {
+            return window.PegasusMetabolic.getExerciseBurnForDate(targetDate);
+        }
+        if (typeof window.getPegasusExerciseBurnForDate === "function") {
+            return window.getPegasusExerciseBurnForDate(targetDate);
+        }
+        return Math.round(this.getCardioOffset(targetDate) + this.getWorkoutBurn(targetDate));
+    },
+
     getEffectiveTarget: function() {
         if (typeof window.getPegasusEffectiveDailyTarget === "function") {
             return window.getPegasusEffectiveDailyTarget();
@@ -209,7 +244,7 @@ window.PegasusDiet = {
 
         const todayKey = window.PegasusManifest?.diet?.todayKcal || "pegasus_today_kcal";
         const storedToday = parseFloat(localStorage.getItem(todayKey));
-        const calculated = Math.round(this.getBaseTarget() + this.getCardioOffset(this.getStrictDateStr()));
+        const calculated = Math.round(this.getBaseTarget() + this.getExerciseBurn(this.getStrictDateStr()));
 
         if (!isNaN(storedToday) && storedToday > 0) {
             return Math.max(calculated, storedToday);
@@ -568,6 +603,23 @@ window.PegasusDiet = {
         const txtKcal = document.getElementById("txtKcal");
         if (txtKcal) {
             txtKcal.textContent = `${Math.round(tk)} / ${targetKcal}`;
+            const cardioBurn = this.getCardioOffset(dateStr);
+            const workoutBurn = this.getWorkoutBurn(dateStr);
+            const exerciseBurn = this.getExerciseBurn(dateStr);
+            txtKcal.title = `Καύσεις ημέρας: προπόνηση ${workoutBurn} kcal + ποδηλασία ${cardioBurn} kcal = ${exerciseBurn} kcal`;
+            let note = document.getElementById('txtKcalBreakdown');
+            const compact = txtKcal.closest('.compact-grid');
+            if (!note && compact) {
+                note = document.createElement('div');
+                note.id = 'txtKcalBreakdown';
+                note.style.cssText = 'grid-column:1/-1; margin-top:-6px; margin-bottom:8px; color:#9adf9a; font-size:11px; font-weight:800; text-align:center;';
+                compact.appendChild(note);
+            }
+            if (note) {
+                note.textContent = exerciseBurn > 0
+                    ? `Καύσεις ημέρας: -${exerciseBurn} kcal (προπόνηση ${workoutBurn} / ποδήλατο ${cardioBurn})`
+                    : 'Καύσεις ημέρας: 0 kcal';
+            }
         }
 
         const targetProt = localStorage.getItem(window.PegasusManifest?.diet?.goalProtein || 'pegasus_goal_protein') || localStorage.getItem(window.PegasusManifest?.diet?.todayProtein || 'pegasus_today_protein') || 160;

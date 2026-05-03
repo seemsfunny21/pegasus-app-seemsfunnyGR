@@ -171,7 +171,13 @@
                     const weeklyKcalKey = window.PegasusManifest?.diet?.weeklyKcal || 'pegasus_weekly_kcal';
                     const weeklyKcal = parseFloat(localStorage.getItem(weeklyKcalKey)) || 0;
                     localStorage.setItem(weeklyKcalKey, (weeklyKcal + burnedKcal).toFixed(1));
-                    localStorage.setItem('pegasus_effective_today_kcal', String(Math.round((parseFloat(localStorage.getItem('pegasus_goal_kcal')) || 2800) + nextKcal)));
+                    const baseTarget = (typeof window.getPegasusBaseDailyTarget === 'function')
+                        ? window.getPegasusBaseDailyTarget()
+                        : (parseFloat(localStorage.getItem('pegasus_goal_kcal')) || parseFloat(localStorage.getItem('pegasus_today_kcal')) || 2800);
+                    const exerciseBurn = (typeof window.getPegasusTodayExerciseBurn === 'function')
+                        ? window.getPegasusTodayExerciseBurn()
+                        : nextKcal;
+                    localStorage.setItem('pegasus_effective_today_kcal', String(Math.round(baseTarget + exerciseBurn)));
                     localStorage.setItem('pegasus_effective_today_date', date.dateStr);
                 }
 
@@ -195,7 +201,7 @@
                     estimatedKcal: inputKcal <= 0 && estimatedKcal > 0,
                     legSets: credit,
                     recordedAt: new Date().toISOString(),
-                    source: 'mobile-cardio-v14.7'
+                    source: 'mobile-cardio-v14.8'
                 };
                 writeHistory(entry);
                 localStorage.setItem('pegasus_last_cardio_entry', JSON.stringify(entry));

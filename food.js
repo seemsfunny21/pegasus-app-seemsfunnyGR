@@ -158,6 +158,45 @@ function getCardioOffsetForDate(dateObj) {
 
     return Math.round(Math.max(directValue, historyValue));
 }
+
+function getWorkoutBurnForDate(dateObj) {
+    const targetDate = dateObj || new Date();
+    const requestedStr = getPegasusDateStr(targetDate);
+    const requestedKey = getWorkoutDateKey(targetDate);
+
+    if (window.PegasusMetabolic?.getWorkoutBurnForDate) {
+        return window.PegasusMetabolic.getWorkoutBurnForDate(requestedStr);
+    }
+
+    if (typeof window.getPegasusWorkoutKcalForDate === "function") {
+        return window.getPegasusWorkoutKcalForDate(requestedStr);
+    }
+
+    const aliases = Array.from(new Set([requestedStr, requestedKey]));
+    const prefixes = ["pegasus_workout_kcal_", "pegasus_strength_kcal_", "pegasus_gym_kcal_"];
+    let directValue = 0;
+    aliases.forEach(alias => prefixes.forEach(prefix => {
+        const value = parseFloat(localStorage.getItem(prefix + alias));
+        if (!isNaN(value)) directValue = Math.max(directValue, value);
+    }));
+    return Math.round(directValue);
+}
+
+function getExerciseBurnForDate(dateObj) {
+    const targetDate = dateObj || new Date();
+    const requestedStr = getPegasusDateStr(targetDate);
+
+    if (window.PegasusMetabolic?.getExerciseBurnForDate) {
+        return window.PegasusMetabolic.getExerciseBurnForDate(requestedStr);
+    }
+
+    if (typeof window.getPegasusExerciseBurnForDate === "function") {
+        return window.getPegasusExerciseBurnForDate(requestedStr);
+    }
+
+    return Math.round(getCardioOffsetForDate(targetDate) + getWorkoutBurnForDate(targetDate));
+}
+
 function getBaseDietTargetForDate(dateObj) {
     const targetDate = dateObj || new Date();
 
@@ -214,8 +253,8 @@ function calculateDailyCalorieTarget(dateObj) {
     }
 
     const baseTarget = getBaseDietTargetForDate(targetDate);
-    const cardioBurn = getCardioOffsetForDate(targetDate);
-    return Math.round(baseTarget + cardioBurn);
+    const exerciseBurn = getExerciseBurnForDate(targetDate);
+    return Math.round(baseTarget + exerciseBurn);
 }
 
 window.updateFoodUI = function() {
@@ -355,7 +394,13 @@ function updateProgressBars(kcal, protein) {
     const kStat = document.getElementById('kcalStatus');
     const pStat = document.getElementById('proteinStatus');
 
-    if (kStat) kStat.textContent = `${Math.round(kcal)} / ${goalKcal} kcal`;
+    if (kStat) {
+        kStat.textContent = `${Math.round(kcal)} / ${goalKcal} kcal`;
+        const burn = getExerciseBurnForDate(window.currentFoodDate || new Date());
+        const cardio = getCardioOffsetForDate(window.currentFoodDate || new Date());
+        const workout = getWorkoutBurnForDate(window.currentFoodDate || new Date());
+        kStat.title = `Βάση + καύσεις: προπόνηση ${workout} kcal, ποδηλασία ${cardio} kcal, σύνολο ${burn} kcal`;
+    }
     if (pStat) pStat.textContent = `${Math.round(protein)} / ${goalProtein}g`;
 }
 
