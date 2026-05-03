@@ -1,3 +1,12 @@
+PEGASUS 191 - UI Label Case Polish + Vertical Body Goal Controls
+- Settings: Γράμμωση / Όγκος are now stacked vertically to avoid widening the settings panel.
+- UI label polish hardened: uppercase Greek interface labels are normalized to first-letter uppercase with the rest lowercase where possible.
+- Added accent-aware Greek word map for common PEGASUS labels such as Θερμίδες, Πρωτεΐνη, Υπόλοιπο, Γεύματα, Καταγραφή, Ποδηλασία, Ασκήσεις, Πρόοδος.
+- Removed forced text-transform: uppercase from user-facing labels/buttons while keeping protected acronyms/brands such as PEGASUS, EMS, WHEY, CREA, TDEE, kcal and km.
+- No data keys, localStorage keys, sync keys or bridges changed.
+- Service worker cache bumped to pegasus-shield-v3.122-FINAL-191.
+- No new file added.
+
 PEGASUS 188 — Exercise Burn Diet Target
 - Διατροφή: οι τελικές θερμίδες ημέρας πλέον υπολογίζουν συνολικά τις καύσεις από προπόνηση + ποδηλασία.
 - Desktop workout finish: οι kcal της προπόνησης γράφονται σε ημερήσια workout kcal keys και ιστορικό.

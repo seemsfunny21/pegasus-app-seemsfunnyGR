@@ -47,7 +47,7 @@
     </div>
 
     <div id="sync-indicator">ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ</div>
-    <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;"></div>
+    <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: none; letter-spacing: 1px;"></div>
 
     <div id="home" class="view active">
         <div class="header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 15px; position: relative; box-sizing: border-box;">
@@ -55,7 +55,7 @@
 
             <div style="text-align:center; flex: 1;">
                 <h1 style="font-size: 32px; margin: 0; line-height: 1;">PEGASUS</h1>
-                <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">TACTICAL DATA INTERFACE</p>
+                <p id="pageIndicator" style="margin: 5px 0 0 0; font-size: 10px; color: var(--main); font-weight: 800; letter-spacing: 2px; text-transform: none;">TACTICAL DATA INTERFACE</p>
             </div>
 
             <button id="nextPage" onclick="window.PegasusMobileUI.changePage(1)" style="background:none; border:none; color:var(--main); font-size:32px; cursor:pointer; padding: 10px; z-index: 10; transition: opacity 0.2s;">▶</button>
@@ -208,7 +208,7 @@
                 <input type="number" id="mobileWeightInput" placeholder="74.0" step="0.1" style="margin: 0; font-size: 24px; font-weight: 900; height: 60px; color: var(--main); background: rgba(0,255,65,0.05); border: 2px solid rgba(0,255,65,0.2); border-radius: 14px;">
                 <button class="primary-btn" onclick="window.PegasusWeight?.save(document.getElementById('mobileWeightInput').value);" style="height: 60px; margin: 0; flex-shrink: 0; width: 120px; font-size: 11px; border-radius: 14px;">ΕΝΗΜΕΡΩΣΗ</button>
             </div>
-            <div id="mobileWeightAvg" style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; font-size: 12px; color: var(--main); font-weight: 900; border: 1px dashed rgba(0,255,65,0.3); letter-spacing: 1px; text-transform: uppercase;">
+            <div id="mobileWeightAvg" style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; font-size: 12px; color: var(--main); font-weight: 900; border: 1px dashed rgba(0,255,65,0.3); letter-spacing: 1px; text-transform: none;">
                 M.O. Εβδομάδας: -- kg
             </div>
         </div>

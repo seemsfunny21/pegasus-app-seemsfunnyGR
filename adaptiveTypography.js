@@ -925,13 +925,13 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
 
 
 /* ==========================================================================
-   ✍️ PEGASUS UI LABEL POLISH - v1.0.190
+   ✍️ PEGASUS UI LABEL POLISH - v1.1.191
    Keeps user-facing labels consistent without touching data, logs or storage.
    Greek UI uses sentence/title case. Brand/acronyms remain protected.
    ========================================================================== */
 (function pegasusUILabelPolish() {
-    if (window.__pegasusUILabelPolish190) return;
-    window.__pegasusUILabelPolish190 = true;
+    if (window.__pegasusUILabelPolish191) return;
+    window.__pegasusUILabelPolish191 = true;
 
     const EXACT = new Map(Object.entries({
         'Γράμμωση': 'Γράμμωση',
@@ -1033,16 +1033,117 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
         'EMS ONLY': 'EMS only',
         'WEEKEND TRAINING MODE': 'Weekend training mode',
         'YouTube': 'YouTube',
-        '+ Προσθήκη video': '+ Προσθήκη video'
+        '+ Προσθήκη video': '+ Προσθήκη video',
+        'TACTICAL DATA INTERFACE': 'Tactical data interface',
+        'CALORIES': 'Calories',
+        'PROTEIN': 'Protein',
+        'REMAINING': 'Remaining',
+        'MEALS': 'Meals',
+        'DISTANCE': 'Distance',
+        'SUPPLEMENT STOCK': 'Supplement stock',
+        'WHEY PROTEIN': 'Whey protein',
+        'CREATINE': 'Creatine',
+        'CYCLING LOG': 'Cycling log',
+        'EMS LOG': 'EMS log',
+        'UPLOAD PHOTO (JPG/PNG)': 'Upload photo (JPG/PNG)',
+        'ΚΑΤΑΓΡΑΦΗ EMS': 'Καταγραφή EMS',
+        '⚡ ΚΑΤΑΓΡΑΦΗ EMS': '⚡ Καταγραφή EMS',
+        'ΚΑΤΑΓΡΑΦΗ ΠΟΔΗΛΑΣΙΑΣ': 'Καταγραφή ποδηλασίας',
+        '🚴 ΚΑΤΑΓΡΑΦΗ ΠΟΔΗΛΑΣΙΑΣ': '🚴 Καταγραφή ποδηλασίας',
+        'M.O. Εβδομάδας: -- kg': 'Μέσος όρος εβδομάδας: -- kg',
+        'Μ.Ο. ΕΒΔΟΜΑΔΑΣ: -- kg': 'Μέσος όρος εβδομάδας: -- kg',
+        'Επιλογη Προγραμματοσ': 'Επιλογή προγράμματος',
+        'ΕΠΙΛΟΓΗ ΠΡΟΓΡΑΜΜΑΤΟΣ': 'Επιλογή προγράμματος',
+        'ΘΕΡΜΙΔΕΣ (e-Kcal):': 'Θερμίδες (e-kcal):',
+        'ΑΔΤ': 'ΑΔΤ',
+        'ΑΦΜ': 'ΑΦΜ',
+        'ΑΜΚΑ': 'ΑΜΚΑ'
     }));
+
+    const PROTECTED = new Set(['PEGASUS', 'TDEE', 'WHEY', 'CREA', 'EMS', 'IMS', 'PR', 'PIN', 'VIN', 'IBAN', 'URL', 'API', 'AI', 'JS', 'HTML', 'CSS', 'ID', 'ISO', 'PWA', 'GPS', 'PDF', 'JPG', 'PNG', 'TOP', 'ΑΔΤ', 'ΑΦΜ', 'ΑΜΚΑ']);
+    const GREEK_WORDS = new Map(Object.entries({
+        'ΘΕΡΜΙΔΕΣ': 'θερμίδες', 'ΠΡΩΤΕΪΝΗ': 'πρωτεΐνη', 'ΥΠΟΛΟΙΠΟ': 'υπόλοιπο', 'ΓΕΥΜΑΤΑ': 'γεύματα',
+        'ΚΑΤΑΓΡΑΦΗ': 'καταγραφή', 'ΠΟΔΗΛΑΣΙΑΣ': 'ποδηλασίας', 'ΠΟΔΗΛΑΣΙΑ': 'ποδηλασία', 'ΧΙΛΙΟΜΕΤΡΑ': 'χιλιόμετρα',
+        'ΑΣΚΗΣΕΙΣ': 'ασκήσεις', 'ΗΜΕΡΑΣ': 'ημέρας', 'ΠΡΟΠΟΝΗΣΗΣ': 'προπόνησης', 'ΠΡΟΠΟΝΗΣΗ': 'προπόνηση',
+        'ΣΥΝΕΔΡΙΑ': 'συνεδρία', 'ΟΛΟΚΛΗΡΩΣΗ': 'ολοκλήρωση', 'ΣΤΟΧΕΥΣΗ': 'στόχευση', 'ΠΡΟΣΩΠΙΚΟΣ': 'προσωπικός',
+        'ΑΡΙΘΜΟΣ': 'αριθμός', 'ΕΠΕΞΕΡΓΑΣΙΑ': 'επεξεργασία', 'ΠΙΝΑΚΙΔΑ': 'πινακίδα', 'ΜΟΝΤΕΛΟ': 'μοντέλο',
+        'ΠΛΑΙΣΙΟ': 'πλαίσιο', 'ΚΥΒΙΚΑ': 'κυβικά', 'ΙΠΠΟΙ': 'ίπποι', 'ΛΕΙΤΟΥΡΓΙΑ': 'λειτουργία', 'ΦΟΡΑ': 'φορά',
+        'ΗΜΕΡΑ': 'ημέρα', 'ΜΕΤΑ': 'μετά', 'ΤΙΣ': 'τις', 'ΜΙΑ': 'μία',
+        'ΕΠΙΣΚΟΠΗΣΗ': 'επισκόπηση', 'ΠΡΟΟΔΟΣ': 'πρόοδος', 'ΠΡΟΕΠΙΣΚΟΠΗΣΗ': 'προεπισκόπηση',
+        'ΓΚΑΛΕΡΙ': 'γκαλερί', 'ΗΜΕΡΟΛΟΓΙΟ': 'ημερολόγιο', 'ΕΡΓΑΛΕΙΑ': 'εργαλεία', 'ΣΥΣΤΗΜΑ': 'σύστημα',
+        'ΣΥΝΕΡΓΑΤΗ': 'συνεργάτη', 'ΣΥΝΕΡΓΑΤΗΣ': 'συνεργάτης', 'ΑΠΕΝΕΡΓΟΣ': 'ανενεργός', 'ΕΝΕΡΓΟΣ': 'ενεργός',
+        'ΤΥΠΟΣ': 'τύπος', 'ΠΡΟΓΡΑΜΜΑΤΟΣ': 'προγράμματος', 'ΗΧΟΣ': 'ήχος', 'ΑΝΕΝΕΡΓΟ': 'ανενεργό',
+        'ΕΛΕΓΧΟΣ': 'έλεγχος', 'ΑΠΑΣΦΑΛΙΣΗ': 'απασφάλιση', 'ΣΥΣΤΗΜΑΤΟΣ': 'συστήματος', 'ΑΣΦΑΛΗΣ': 'ασφαλής',
+        'ΤΑΥΤΟΠΟΙΗΣΗ': 'ταυτοποίηση', 'ΔΕΥΤΕΡΑ': 'δευτέρα', 'ΤΡΙΤΗ': 'τρίτη', 'ΤΕΤΑΡΤΗ': 'τετάρτη',
+        'ΠΕΜΠΤΗ': 'πέμπτη', 'ΠΑΡΑΣΚΕΥΗ': 'παρασκευή', 'ΣΑΒΒΑΤΟ': 'σάββατο', 'ΚΥΡΙΑΚΗ': 'κυριακή',
+        'ΔΙΑΓΡ': 'διαγρ', 'ΣΗΜΕΡΙΝΗ': 'σημερινή', 'ΙΣΤΟΡΙΚΟ': 'ιστορικό', 'ΟΙΚΟΝΟΜΙΚΗ': 'οικονομική',
+        'ΔΙΑΧΕΙΡΙΣΗ': 'διαχείριση', 'ΤΡΕΧΟΝ': 'τρέχον', 'ΠΕΡΙΓΡΑΦΗ': 'περιγραφή', 'ΣΥΝΑΛΛΑΓΗΣ': 'συναλλαγής',
+        'ΠΟΣΟ': 'ποσό', 'ΕΥΡΩ': 'ευρώ', 'ΕΣΟΔΟ': 'έσοδο', 'ΕΞΟΔΟ': 'έξοδο', 'ΣΥΝΑΛΛΑΓΩΝ': 'συναλλαγών',
+        'ΚΑΜΙΑ': 'καμία', 'ΕΝΑΡΞΗ': 'έναρξη', 'ΠΡΩΤΟΚΟΛΛΟΥ': 'πρωτοκόλλου', 'ΚΑΤΑΣΤΑΣΗ': 'κατάσταση',
+        'ΝΕΑ': 'νέα', 'ΣΥΝΗΘΕΙΑ': 'συνήθεια', 'ΣΗΜΕΡΑ': 'σήμερα', 'ΔΕΝ': 'δεν', 'ΕΧΕΙΣ': 'έχεις',
+        'ΟΡΙΣΕΙ': 'ορίσει', 'ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ': 'δραστηριότητες', 'ΔΕΔΟΜΕΝΩΝ': 'δεδομένων', 'ΛΗΨΗ': 'λήψη',
+        'ΕΠΑΝΑΦΟΡΑ': 'επαναφορά', 'ΑΠΟΘΕΜΑ': 'απόθεμα', 'ΣΥΜΠΛΗΡΩΜΑΤΩΝ': 'συμπληρωμάτων', 'ΚΡΕΑΤΙΝΗ': 'κρεατίνη',
+        'ΜΟΝΟ': 'μόνο', 'ΔΙΑΤΡΟΦΗ': 'διατροφή', 'ΑΝΑΠΛΗΡΩΣΗ': 'αναπλήρωση', 'ΕΝΤΟΠΙΣΜΟΣ': 'εντοπισμός',
+        'ΟΧΗΜΑΤΟΣ': 'οχήματος', 'ΠΕΡΙΟΧΗ': 'περιοχή', 'ΘΕΣΗ': 'θέση', 'ΠΡΟΣΦΑΤΕΣ': 'πρόσφατες', 'ΠΕΡΙΟΧΕΣ': 'περιοχές',
+        'ΒΑΡΟΥΣ': 'βάρους', 'ΣΩΜΑΤΟΣ': 'σώματος', 'ΕΝΗΜΕΡΩΣΗ': 'ενημέρωση', 'ΠΡΟΣΩΠΙΚΑ': 'προσωπικά',
+        'ΕΓΓΡΑΦΑ': 'έγγραφα', 'ΣΗΜΕΙΩΣΕΙΣ': 'σημειώσεις', 'ΣΤΟΙΧΕΙΑ': 'στοιχεία', 'ΗΜΕΡΟΜΗΝΙΕΣ': 'ημερομηνίες',
+        'ΣΕΡΒΙΣ': 'σέρβις', 'ΕΒΔΟΜΑΔΑΣ': 'εβδομάδας', 'ΕΒΔΟΜΑΔΙΑΙΑ': 'εβδομαδιαία', 'ΕΞΑΙΡΕΤΙΚΗ': 'εξαιρετική',
+        'ΑΝΑΡΡΩΣΗ': 'ανάρρωση', 'ΕΤΟΙΜΟΣ': 'έτοιμος', 'ΓΙΑ': 'για', 'ΟΡΙΑΚΑ': 'οριακά', 'ΕΞΑΝΤΛΗΘΗΚΕ': 'εξαντλήθηκε'
+    }));
+
+    function compactLabel(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    const COMPACT_EXACT = new Map(Array.from(EXACT.entries()).map(([k, v]) => [compactLabel(k), v]));
+
+    function capitaliseFirstLetter(value) {
+        return String(value || '').replace(/([A-Za-zΑ-ΩΆΈΉΊΌΎΏΪΫα-ωάέήίόύώϊϋΐΰ])/, ch => ch.toLocaleUpperCase('el-GR'));
+    }
+
+    function normalizeGreekWord(word) {
+        return GREEK_WORDS.get(word) || word.toLocaleLowerCase('el-GR');
+    }
+
+    function normalizeEnglishWord(word) {
+        if (PROTECTED.has(word)) return word;
+        return word.charAt(0) + word.slice(1).toLocaleLowerCase('en-US');
+    }
+
+    function looksLikeUppercaseLabel(value) {
+        const text = String(value || '').trim();
+        if (!text) return false;
+        if (!/[Α-ΩΆΈΉΊΌΎΏΪΫA-Z]{2,}/.test(text)) return false;
+        const letters = text.match(/[A-Za-zΑ-ΩΆΈΉΊΌΎΏΪΫα-ωάέήίόύώϊϋΐΰ]/g) || [];
+        if (!letters.length) return false;
+        const lower = text.match(/[a-zα-ωάέήίόύώϊϋΐΰ]/g) || [];
+        return lower.length / letters.length < 0.25;
+    }
+
+    function smartCaseLabel(value) {
+        let text = String(value || '');
+        text = text.replace(/[Α-ΩΆΈΉΊΌΎΏΪΫ]{2,}/g, normalizeGreekWord);
+        text = text.replace(/[A-Z]{2,}/g, normalizeEnglishWord);
+        return capitaliseFirstLetter(text);
+    }
 
     function normalizeText(text) {
         const raw = String(text || '');
         const trimmed = raw.trim();
         if (!trimmed) return raw;
-        const replacement = EXACT.get(trimmed);
-        if (!replacement || replacement === trimmed) return raw;
-        return raw.replace(trimmed, replacement);
+        const compact = compactLabel(trimmed);
+        if (EXACT.has(trimmed)) {
+            const exact = EXACT.get(trimmed);
+            return exact === trimmed ? raw : raw.replace(trimmed, exact);
+        }
+        if (COMPACT_EXACT.has(compact)) {
+            const exact = COMPACT_EXACT.get(compact);
+            return exact === trimmed ? raw : raw.replace(trimmed, exact);
+        }
+        if (PROTECTED.has(trimmed)) return raw;
+        if (!looksLikeUppercaseLabel(trimmed)) return raw;
+        const replacement = smartCaseLabel(trimmed);
+        return replacement === trimmed ? raw : raw.replace(trimmed, replacement);
     }
 
     function shouldSkip(node) {
@@ -1085,5 +1186,5 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
         polish(document.body);
         new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
     }
-    console.log('✍️ PEGASUS UI LABEL POLISH: Active (v1.0.190).');
+    console.log('✍️ PEGASUS UI LABEL POLISH: Active (v1.1.191).');
 })();

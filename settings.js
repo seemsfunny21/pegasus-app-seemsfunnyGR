@@ -169,8 +169,9 @@ window.setPegasusBodyGoalModeUI = function(mode) {
         btn.style.color = active ? '#d8ffe0' : '#7ce184';
         btn.style.fontSize = '13px';
         btn.style.fontWeight = '700';
-        btn.style.minHeight = '28px';
-        btn.style.padding = '4px 6px';
+        btn.style.width = '100%';
+        btn.style.minHeight = '30px';
+        btn.style.padding = '5px 8px';
         btn.style.lineHeight = '1.2';
     });
 };

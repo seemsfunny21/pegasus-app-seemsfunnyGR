@@ -48,7 +48,7 @@ input[type="number"], input[type="text"], input[type="password"] {
     color: #333;
     cursor: pointer;
     transition: 0.3s;
-    text-transform: uppercase;
+    text-transform: none;
     font-weight: bold;
     white-space: nowrap;
 }
@@ -234,7 +234,7 @@ input[type="number"], input[type="text"], input[type="password"] {
 
 .progress-box { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
 .progress-bar { height: 100%; width: 0%; transition: width 0.3s; background: #4CAF50; }
-.status { font-size: 11px; text-align: right; color: #666; font-weight: bold; text-transform: uppercase; }
+.status { font-size: 11px; text-align: right; color: #666; font-weight: bold; text-transform: none; }
 
 /* ================= PANELS (GENERAL) ================= */
 .pegasus-panel {
@@ -252,7 +252,7 @@ input[type="number"], input[type="text"], input[type="password"] {
     overflow-y: auto;
 }
 
-.pegasus-panel h3 { margin-top: 0; color: #4CAF50; text-align: center; text-transform: uppercase; font-size: 17px; letter-spacing: 2px; }
+.pegasus-panel h3 { margin-top: 0; color: #4CAF50; text-align: center; text-transform: none; font-size: 17px; letter-spacing: 2px; }
 
 /* ================= FOOD PANEL LAYOUT ================= */
 #foodPanel {
@@ -324,7 +324,7 @@ button#btnAddFood,
     font-weight: bold !important;
     font-size: 13px !important;
     cursor: pointer !important;
-    text-transform: uppercase !important;
+    text-transform: none !important;
 
     -webkit-tap-highlight-color: transparent !important;
     outline: none !important;
@@ -602,7 +602,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     color: #4CAF50;
     font-size: 9px;
     margin-top: 6px;
-    text-transform: uppercase;
+    text-transform: none;
     font-weight: bold;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -699,7 +699,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-size: 11px;
     font-weight: bold;
     margin-bottom: 5px;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 1px;
 }
 
@@ -834,7 +834,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     gap: 10px !important;
     padding: 12px 15px !important;
     font-size: 12px !important;
-    text-transform: uppercase !important;
+    text-transform: none !important;
     letter-spacing: 0.5px;
     text-align: center !important;
 }
@@ -943,7 +943,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .stats-container span {
     font-size: 12px !important; /* Το μέγεθος που ζήτησες */
     font-weight: 800 !important;
-    text-transform: uppercase !important;
+    text-transform: none !important;
     letter-spacing: 0.5px !important;
     color: #eee !important;
 }
@@ -1009,7 +1009,7 @@ input:checked + .slider:before { transform: translateX(26px); }
     letter-spacing: 2px;
     margin: 0 0 25px 0;
     font-weight: 900;
-    text-transform: uppercase;
+    text-transform: none;
 }
 .pegasus-plan-grid {
     display: grid;
@@ -1152,8 +1152,8 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-weight: 900;
     cursor: pointer;
 }
-.advisor-title { color: #00ff41; font-size: 15px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; text-shadow: 0 0 12px rgba(0,255,65,0.45); }
-.advisor-subtitle { color: #8effa7; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+.advisor-title { color: #00ff41; font-size: 15px; font-weight: 900; letter-spacing: 1.5px; text-transform: none; text-shadow: 0 0 12px rgba(0,255,65,0.45); }
+.advisor-subtitle { color: #8effa7; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: none; margin-top: 4px; }
 
 .advisor-history-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
 .advisor-history-card { display: flex; align-items: center; gap: 9px; min-height: 50px; padding: 10px; border-radius: 14px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); }
@@ -1169,7 +1169,7 @@ input:checked + .slider:before { transform: translateX(26px); }
 .advisor-option-card.green { border-color: rgba(0,255,65,0.65); box-shadow: 0 0 13px rgba(0,255,65,0.12); }
 .advisor-option-card.red { border-color: rgba(255,68,68,0.55); opacity: 0.94; }
 .advisor-option-rank { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(0,255,65,0.12); color: #00ff41; border: 1px solid rgba(0,255,65,0.4); font-size: 12px; font-weight: 900; }
-.advisor-option-badge { display: inline-flex; margin-bottom: 5px; padding: 3px 7px; border-radius: 999px; font-size: 8px; font-weight: 900; letter-spacing: 0.6px; text-transform: uppercase; }
+.advisor-option-badge { display: inline-flex; margin-bottom: 5px; padding: 3px 7px; border-radius: 999px; font-size: 8px; font-weight: 900; letter-spacing: 0.6px; text-transform: none; }
 .advisor-option-badge.green { background: rgba(0,255,65,0.15); color: #00ff41; }
 .advisor-option-badge.orange { background: rgba(255,179,0,0.14); color: #ffcc66; }
 .advisor-option-badge.red { background: rgba(255,68,68,0.14); color: #ff9a9a; }
@@ -1265,4 +1265,13 @@ input:checked + .slider:before { transform: translateX(26px); }
     text-align: right !important;
     white-space: nowrap !important;
     margin-left: auto !important;
+}
+
+
+/* PEGASUS UI CASE POLISH v191 */
+:where(.pegasus-panel h3, .status, .advisor-title, .advisor-subtitle, .advisor-option-badge, .tile-label, .mini-label, .section-title, .input-label, .primary-btn, .secondary-btn, .btn-back, .tools-btn, .p-btn, .ghost-back-btn) {
+    text-transform: none !important;
+}
+:where(.mini-label, .section-title, .input-label, .tile-label) {
+    letter-spacing: 0.3px !important;
 }

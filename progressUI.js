@@ -68,7 +68,7 @@ window.MuscleProgressUI = {
                 color: #aaa;
                 margin-bottom: 3px;
                 font-weight: 800;
-                text-transform: uppercase;
+                text-transform: none;
                 font-size: var(--pg-font-status, 11px);
             }
 

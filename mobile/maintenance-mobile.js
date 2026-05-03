@@ -137,7 +137,7 @@
                 <div class="mini-card" style="border-left: 4px solid ${statusColor}; padding: 15px; position: relative;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                         <div>
-                            <div style="font-weight: 900; font-size: 14px; color: #fff; text-transform: uppercase;">${task.label}</div>
+                            <div style="font-weight: 900; font-size: 14px; color: #fff; text-transform: none;">${task.label}</div>
                             <div style="font-size: 10px; color: ${statusColor}; font-weight: 800; margin-top: 2px;">ΚΑΤΑΣΤΑΣΗ: ${statusTxt}</div>
                         </div>
                         <button onclick="window.PegasusMaintenance.deleteTask('${task.id}')" style="background:none; border:none; color:#333; font-size:12px; cursor: pointer;">🗑️</button>

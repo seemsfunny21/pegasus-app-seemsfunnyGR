@@ -554,7 +554,7 @@ window.PegasusDiet = {
 
         container.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
-                <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:uppercase;">${esc(targetDayName)} (ΚΟΥΚΙ)</span>
+                <span style="color:var(--main); font-weight:900; font-size:14px; text-transform:none;">${esc(targetDayName)} (ΚΟΥΚΙ)</span>
             </div>` + dailyMenu.map((item, idx) => {
                 const itemName = item.n || item.name;
                 const itemTag = item.t || item.type || "kreas";

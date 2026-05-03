@@ -49,7 +49,7 @@
                 font-size: 13px;
                 font-weight: 900;
                 letter-spacing: 1.5px;
-                text-transform: uppercase;
+                text-transform: none;
                 border-bottom: 1px solid rgba(76,175,80,0.15);
             }
             #${overlayId} .pegasus-dialog-body {
