@@ -925,17 +925,19 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
 
 
 /* ==========================================================================
-   ✍️ PEGASUS UI LABEL POLISH - v1.1.191
+   ✍️ PEGASUS UI LABEL POLISH - v1.2.197
    Keeps user-facing labels consistent without touching data, logs or storage.
    Greek UI uses sentence/title case. Brand/acronyms remain protected.
    ========================================================================== */
 (function pegasusUILabelPolish() {
-    if (window.__pegasusUILabelPolish191) return;
-    window.__pegasusUILabelPolish191 = true;
+    if (window.__pegasusUILabelPolish197) return;
+    window.__pegasusUILabelPolish197 = true;
 
     const EXACT = new Map(Object.entries({
         'Γράμμωση': 'Γράμμωση',
         'Όγκος': 'Όγκος',
+        'Cutting': 'Cutting',
+        'Bulk': 'Bulk',
         'Στόχος σώματος': 'Στόχος σώματος',
         'Ρυθμίσεις PEGASUS': 'Ρυθμίσεις PEGASUS',
         'Weekly set targets': 'Weekly set targets',

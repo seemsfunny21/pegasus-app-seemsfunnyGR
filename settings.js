@@ -152,7 +152,8 @@ window.getPegasusBodyGoalMode = function(settingsObj) {
 };
 
 window.getPegasusBodyGoalLabel = function(mode) {
-    return normalizePegasusBodyGoalMode(mode) === 'bulk' ? 'Όγκος' : 'Γράμμωση';
+    const isEn = (window.PegasusI18n?.getLanguage?.() || localStorage.getItem('pegasus_language') || localStorage.getItem('pegasus_lang')) === 'en';
+    return normalizePegasusBodyGoalMode(mode) === 'bulk' ? (isEn ? 'Bulk' : 'Όγκος') : (isEn ? 'Cutting' : 'Γράμμωση');
 };
 
 window.setPegasusBodyGoalModeUI = function(mode) {
@@ -160,7 +161,10 @@ window.setPegasusBodyGoalModeUI = function(mode) {
     const hidden = document.getElementById('bodyGoalModeInput');
     if (hidden) hidden.value = normalized;
     document.querySelectorAll('[data-body-goal-mode]').forEach(btn => {
-        const active = btn.getAttribute('data-body-goal-mode') === normalized;
+        const mode = btn.getAttribute('data-body-goal-mode');
+        const active = mode === normalized;
+        const isEnLabel = (window.PegasusI18n?.getLanguage?.() || localStorage.getItem('pegasus_language') || localStorage.getItem('pegasus_lang')) === 'en';
+        btn.textContent = isEnLabel ? (mode === 'bulk' ? 'Bulk' : 'Cutting') : (mode === 'bulk' ? 'Όγκος' : 'Γράμμωση');
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         btn.style.background = active ? 'linear-gradient(180deg, rgba(76,175,80,.45), rgba(0,0,0,.85))' : 'rgba(0,0,0,.55)';

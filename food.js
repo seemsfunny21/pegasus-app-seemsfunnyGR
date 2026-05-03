@@ -402,7 +402,7 @@ function updateProgressBars(kcal, protein) {
         const burn = getExerciseBurnForDate(window.currentFoodDate || new Date());
         const cardio = getCardioOffsetForDate(window.currentFoodDate || new Date());
         const workout = getWorkoutBurnForDate(window.currentFoodDate || new Date());
-        const modeLabel = window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel() : 'Γράμμωση';
+        const modeLabel = window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel() : ((window.PegasusI18n?.getLanguage?.() || localStorage.getItem('pegasus_language')) === 'en' ? 'Cutting' : 'Γράμμωση');
         const refeed = window.getPegasusExerciseRefeedForTarget ? window.getPegasusExerciseRefeedForTarget(burn) : burn;
         kStat.title = `${modeLabel}: βάση + αναπλήρωση ${refeed} kcal από καύσεις ${burn} kcal (προπόνηση ${workout}, ποδηλασία ${cardio})`;
     }

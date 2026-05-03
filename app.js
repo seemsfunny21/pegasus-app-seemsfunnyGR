@@ -298,7 +298,8 @@ window.getPegasusBodyGoalMode = window.getPegasusBodyGoalMode || function(settin
 };
 
 window.getPegasusBodyGoalLabel = window.getPegasusBodyGoalLabel || function(mode) {
-    return window.getPegasusBodyGoalMode({ bodyGoalMode: mode }) === 'bulk' ? 'Όγκος' : 'Γράμμωση';
+    const isEn = (window.PegasusI18n?.getLanguage?.() || localStorage.getItem('pegasus_language') || localStorage.getItem('pegasus_lang')) === 'en';
+    return window.getPegasusBodyGoalMode({ bodyGoalMode: mode }) === 'bulk' ? (isEn ? 'Bulk' : 'Όγκος') : (isEn ? 'Cutting' : 'Γράμμωση');
 };
 
 window.getPegasusExerciseRefeedForTarget = window.getPegasusExerciseRefeedForTarget || function(exerciseBurn, settingsObj) {

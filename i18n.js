@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS I18N - v1.1 SAFE FOUNDATION
+   PEGASUS I18N - v1.2 BODY GOAL LANGUAGE POLISH
    Protocol: GR / EN Runtime Translation Layer
    ========================================================================== */
 (function() {
@@ -21,7 +21,7 @@
         ['Ρυθμίσεις', 'Settings'], ['EMAIL', 'EMAIL'], ['⚙️ ΕΡΓΑΛΕΙΑ', '⚙️ TOOLS'], ['GR / EN', 'EN / GR'],
         ['Προπονήσεις:', 'Workouts:'], ['ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ', 'PROGRESS GALLERY'], ['ΗΜΕΡΟΛΟΓΙΟ PEGASUS', 'PEGASUS CALENDAR'],
         ['Ρυθμίσεις PEGASUS', 'PEGASUS SETTINGS'], ['Βάρος (kg)', 'Weight (kg)'], ['Ύψος (cm)', 'Height (cm)'],
-        ['Ηλικία', 'Age'], ['Φύλο', 'Gender'], ['Άνδρας', 'Male'], ['Γυναίκα', 'Female'], ['Στόχος Kcal', 'Kcal Goal'],
+        ['Ηλικία', 'Age'], ['Φύλο', 'Gender'], ['Άνδρας', 'Male'], ['Γυναίκα', 'Female'], ['Γράμμωση', 'Cutting'], ['Όγκος', 'Bulk'], ['Στόχος Kcal', 'Kcal Goal'],
         ['Πρωτεΐνη (g)', 'Protein (g)'], ['Στήθος', 'Chest'], ['Πλάτη', 'Back'], ['Πόδια', 'Legs'], ['Χέρια', 'Arms'],
         ['Ώμοι', 'Shoulders'], ['Κορμός', 'Core'], ['Αποθήκευση', 'SAVE'], ['Ημερολόγιο Διατροφής', 'Nutrition Log'],
         ['ΘΕΡΜΙΔΕΣ', 'CALORIES'], ['ΠΡΩΤΕΪΝΗ', 'PROTEIN'], ['ΥΠΟΛΟΙΠΟ', 'REMAINING'], ['ΓΕΥΜΑΤΑ', 'MEALS'],
@@ -68,6 +68,7 @@
         ['Μόνο ποδήλατο ενεργό — δεν φορτώνει βάρη.', 'Bike only active — no weights loaded.'],
         ['Δευτέρα', 'Monday'], ['Τρίτη', 'Tuesday'], ['Τετάρτη', 'Wednesday'], ['Πέμπτη', 'Thursday'], ['Παρασκευή', 'Friday'], ['Σάββατο', 'Saturday'], ['Κυριακή', 'Sunday'],
         ['Βάρος (kg)', 'Weight (kg)'], ['Ύψος (cm)', 'Height (cm)'], ['Ηλικία', 'Age'], ['Φύλο', 'Gender'], ['Άνδρας', 'Male'], ['Γυναίκα', 'Female'],
+        ['Γράμμωση', 'Cutting'], ['Όγκος', 'Bulk'],
         ['Στήθος', 'Chest'], ['Πλάτη', 'Back'], ['Πόδια', 'Legs'], ['Χέρια', 'Arms'], ['Ώμοι', 'Shoulders'], ['Κορμός', 'Core']
     ];
     extraExactPairs.forEach(pair => exactPairs.push(pair));
@@ -82,6 +83,7 @@
         ['Προεπισκόπηση', 'Preview'], ['Προπονήσεις:', 'Workouts:'], ['Συντήρηση (TDEE):', 'Maintenance (TDEE):'],
         ['Μέσος όρος εβδομάδας:', 'Weekly Avg:'], ['Βάρος (kg)', 'Weight (kg)'], ['Ύψος (cm)', 'Height (cm)'],
         ['Ηλικία', 'Age'], ['Φύλο', 'Gender'], ['Άνδρας', 'Male'], ['Γυναίκα', 'Female'],
+        ['Γράμμωση', 'Cutting'], ['Όγκος', 'Bulk'],
         ['Στόχος kcal', 'Kcal Goal'], ['Στόχος kcal', 'Kcal goal'], ['Πρωτεΐνη (g)', 'Protein (g)'],
         ['Εβδομαδιαίοι στόχοι σετ', 'Weekly set targets'], ['Επισκόπηση & πρόοδος', 'Preview & progress'],
         ['Ασκήσεις ημέρας', "Today's exercises"], ['Στήθος', 'Chest'], ['Πλάτη', 'Back'], ['Πόδια', 'Legs'],
@@ -233,20 +235,27 @@
     }
 
     function updateLangButtons() {
-        const isEn = getLanguage() === 'en';
         document.querySelectorAll('#btnLangToggle, .pegasus-lang-toggle').forEach(btn => {
-            btn.innerHTML = `
-                <span aria-hidden="true" style="font-size:22px; line-height:1; opacity:${isEn ? '0.55' : '1'};">🇬🇷</span>
-                <span style="flex:1; text-align:center; font-weight:900; letter-spacing:0.8px;">ΕΛΛΗΝΙΚΑ / ENGLISH</span>
-                <span aria-hidden="true" style="font-size:22px; line-height:1; opacity:${isEn ? '1' : '0.55'};">🇬🇧</span>
-            `;
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'space-between';
-            btn.style.gap = '12px';
-            btn.style.padding = '16px 18px';
+            btn.textContent = 'En/Gr';
+            btn.style.display = '';
+            btn.style.alignItems = '';
+            btn.style.justifyContent = '';
+            btn.style.gap = '';
+            btn.style.padding = '';
+            btn.setAttribute('aria-label', 'En/Gr');
+            btn.title = 'En/Gr';
         });
     }
+
+    function applyBodyGoalLanguage(lang) {
+        document.querySelectorAll('[data-body-goal-mode]').forEach(btn => {
+            const mode = btn.getAttribute('data-body-goal-mode');
+            btn.textContent = lang === 'en'
+                ? (mode === 'bulk' ? 'Bulk' : 'Cutting')
+                : (mode === 'bulk' ? 'Όγκος' : 'Γράμμωση');
+        });
+    }
+
 
 
     function applyTargetedDesktopTranslations(lang) {
@@ -287,11 +296,13 @@
             document.documentElement.lang = lang === 'en' ? 'en' : 'el';
             walkAndTranslate(document.body);
             applyTargetedDesktopTranslations(lang);
+            applyBodyGoalLanguage(lang);
             updateLangButtons();
             refreshViews();
             [60, 250, 800].forEach(delay => setTimeout(() => {
                 walkAndTranslate(document.body);
                 applyTargetedDesktopTranslations(lang);
+                applyBodyGoalLanguage(lang);
                 try { window.normalizePegasusUILabels?.(document.body); } catch (_) {}
             }, delay));
         } catch (e) {
@@ -318,6 +329,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         updateLangButtons();
+        applyBodyGoalLanguage(getLanguage());
         applyLanguage();
         if (document.body) observer.observe(document.body, { childList: true, subtree: true, characterData: true });
         document.querySelectorAll('#btnLangToggle, .pegasus-lang-toggle').forEach(btn => {

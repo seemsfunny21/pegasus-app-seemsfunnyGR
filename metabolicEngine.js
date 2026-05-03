@@ -202,7 +202,8 @@ const PegasusMetabolic = {
     },
 
     getBodyGoalLabel: function(mode) {
-        return this.getBodyGoalMode({ bodyGoalMode: mode }) === 'bulk' ? 'Όγκος' : 'Γράμμωση';
+        const isEn = (window.PegasusI18n?.getLanguage?.() || localStorage.getItem('pegasus_language') || localStorage.getItem('pegasus_lang')) === 'en';
+        return this.getBodyGoalMode({ bodyGoalMode: mode }) === 'bulk' ? (isEn ? 'Bulk' : 'Όγκος') : (isEn ? 'Cutting' : 'Γράμμωση');
     },
 
     getExerciseRefeedForTarget: function(exerciseBurn, settingsObj) {

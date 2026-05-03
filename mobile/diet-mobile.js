@@ -620,7 +620,7 @@ window.PegasusDiet = {
                 compact.appendChild(note);
             }
             if (note) {
-                const modeLabel = window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel() : 'Γράμμωση';
+                const modeLabel = window.getPegasusBodyGoalLabel ? window.getPegasusBodyGoalLabel() : ((window.PegasusI18n?.getLanguage?.() || localStorage.getItem('pegasus_language')) === 'en' ? 'Cutting' : 'Γράμμωση');
                 const refeed = window.getPegasusExerciseRefeedForTarget ? window.getPegasusExerciseRefeedForTarget(exerciseBurn) : exerciseBurn;
                 note.textContent = exerciseBurn > 0
                     ? `${modeLabel}: καύσεις -${exerciseBurn} kcal, στόχος +${refeed} (προπόνηση ${workoutBurn} / ποδήλατο ${cardioBurn})`

@@ -1,3 +1,11 @@
+pegasus197
+- Body goal buttons now translate with the active language: Γράμμωση/Όγκος in Greek and Cutting/Bulk in English.
+- Language toggle label simplified to En/Gr on desktop and mobile.
+- Body-goal button rendering updates after dynamic language changes without touching storage/sync keys.
+- Exercise names remain English-only in both UI modes.
+- Service worker cache bumped to pegasus-shield-v3.127-FINAL-197.
+- No new files added.
+
 pegasus196
 - Exercise names are now English-only in both Greek and English UI modes.
 - Greek muscle groups and general UI labels still translate normally.
