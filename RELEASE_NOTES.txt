@@ -1,3 +1,10 @@
+
+PEGASUS 187 - MOBILE LIFTING VIEW + CARDIO PUSH FLOW
+- Fixed mobile Βάρη black-screen issue by converting lifting view to standard .view layer.
+- Added legacy .view-layer compatibility so older injected views cannot leave a black screen.
+- Mobile cardio now waits for forced push before returning to Home after km/kcal save.
+- Service worker cache bumped to v3.118-FINAL-187.
+
 PEGASUS FINAL POLISHED
 
 Baseline:

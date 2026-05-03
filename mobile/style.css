@@ -137,6 +137,20 @@ body {
     }
 }
 
+/* 🛡️ LEGACY VIEW-LAYER COMPATIBILITY */
+.view-layer {
+    display: none;
+    flex: 1;
+    height: 100%;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    overflow-y: auto;
+    padding-bottom: 10px;
+    scrollbar-width: none;
+}
+.view-layer.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
 /* 🛡️ FULL WIDTH MODIFIER (For odd-numbered grids) */
 .full-width { grid-column: span 2; width: 100%; }
 

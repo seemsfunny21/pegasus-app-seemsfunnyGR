@@ -1,5 +1,5 @@
 /* ======================================================================
-   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.1)
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.2)
    Purpose: show current workout exercises + saved weights, keep manual log
    ====================================================================== */
 (function() {
@@ -339,10 +339,10 @@
     function injectViewLayer() {
         if (document.getElementById('lifting')) return;
         const layer = document.createElement('div');
-        layer.className = 'view-layer';
+        layer.className = 'view';
         layer.id = 'lifting';
         layer.innerHTML = `
-            <button class="back-btn" onclick="openView('home')">‹</button>
+            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
             <div class="view-title">🏋️ ΒΑΡΗ</div>
             <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
                 <div style="border:1px solid var(--border); border-radius:16px; padding:12px; background:rgba(0,0,0,0.45);">
@@ -371,7 +371,7 @@
                 </div>
             </div>
         `;
-        document.querySelector('.mobile-wrapper')?.appendChild(layer);
+        (document.querySelector('.mobile-wrapper') || document.body).appendChild(layer);
     }
 
     window.renderLiftingContent = function() {
@@ -396,5 +396,5 @@
         }
     });
 
-    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.1).');
+    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.2).');
 })();

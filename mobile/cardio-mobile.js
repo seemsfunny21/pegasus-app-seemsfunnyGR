@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.6 CANONICAL CARDIO SAVE)
+   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.7 CANONICAL CARDIO SAVE)
    Protocol: Canonical km/kcal aliases, auto-kcal estimate, history logging & forced cloud push
    Status: FINAL STABLE | FIXED: MOBILE BIKE KM/KCAL RECORD ALWAYS WRITTEN
    ========================================================================== */
@@ -195,7 +195,7 @@
                     estimatedKcal: inputKcal <= 0 && estimatedKcal > 0,
                     legSets: credit,
                     recordedAt: new Date().toISOString(),
-                    source: 'mobile-cardio-v14.6'
+                    source: 'mobile-cardio-v14.7'
                 };
                 writeHistory(entry);
                 localStorage.setItem('pegasus_last_cardio_entry', JSON.stringify(entry));
@@ -213,10 +213,11 @@
 
                 if (kmEl) kmEl.value = '';
                 if (kcalEl) kcalEl.value = '';
-                if (typeof openView === 'function') openView('home');
 
                 console.log(`🚴 CARDIO MOBILE: ${km}km | +${burnedKcal} kcal | +${credit} leg sets | aliases:`, aliases);
                 await forceCardioPush();
+
+                if (typeof openView === 'function') openView('home');
             } finally {
                 setTimeout(() => { window.__pegasusMobileCardioSaving = false; }, 500);
             }
