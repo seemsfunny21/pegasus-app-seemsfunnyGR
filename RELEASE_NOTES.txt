@@ -277,3 +277,17 @@ PEGASUS 182 - DESKTOP WEEKLY PROGRESS BOOT GUARD
 - Muscle progress panel shows a sync-pending state instead of rendering false zero values while cloud restore is pending.
 - Kept YouTube as the last extra mobile button rule from 181.
 - No new files added.
+
+PEGASUS 183 - DYNAMIC WEEKLY BRAIN PLANNER
+- Added pegasusBrain.js as the new local decision engine for dynamic weekly workout planning.
+- Weekly training is now planned around recovery days: Monday and Thursday stay recovery/restoration days.
+- Core training days are Tuesday, Wednesday and Friday, with optional weekend training on Saturday/Sunday.
+- Friday/Saturday/Sunday are protected from repeating the same muscle groups on consecutive days.
+- Sunday/Friday exercise sets are no longer static; the planner calculates remaining sets from targets, completed weekly sets and carry-over load.
+- Weekend weights are stored as carry-over for the next week, so weekday volume is reduced when weekend sets already loaded a muscle group.
+- Weekend cycling is also recorded as carry-over leg load for the next strength week, even when the current week leg target is already capped.
+- Added Weekend Training Mode selector: only cycling, cycling + light weights, or only weights.
+- The workout selector and preview now read from PegasusBrain first, then optimizer caps by real remaining weekly progress.
+- Legacy optimizer filler is disabled when PegasusBrain manages the day, preventing static spillover bugs.
+- Synced new keys: pegasus_weekend_carryover_v1 and pegasus_weekend_training_mode_*.
+- Service worker cache bumped to pegasus-shield-v3.115-FINAL-183.

@@ -1179,3 +1179,52 @@ input:checked + .slider:before { transform: translateX(26px); }
 .advisor-option-reason { color: #b8ffd0; font-size: 10px; font-weight: 700; margin-top: 4px; line-height: 1.25; opacity: 0.9; }
 
 @media (max-width: 720px) { .advisor-history-grid { grid-template-columns: 1fr 1fr; } }
+
+/* PEGASUS 183 - Weekend Dynamic Planner Mode */
+.pegasus-weekend-mode-panel {
+    border: 1px solid rgba(76, 175, 80, 0.45);
+    background: rgba(76, 175, 80, 0.08);
+    border-radius: 14px;
+    padding: 12px;
+    margin: 10px 0 14px;
+    box-shadow: 0 0 18px rgba(76, 175, 80, 0.12);
+}
+
+.pegasus-weekend-mode-title {
+    color: #4CAF50;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.pegasus-weekend-mode-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.pegasus-weekend-mode-options button {
+    border: 1px solid rgba(76, 175, 80, 0.35);
+    background: rgba(0, 0, 0, 0.42);
+    color: #d9ffd9;
+    border-radius: 10px;
+    padding: 9px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.pegasus-weekend-mode-options button.active {
+    background: rgba(76, 175, 80, 0.22);
+    border-color: #4CAF50;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.25);
+}
+
+@media (max-width: 700px) {
+    .pegasus-weekend-mode-options {
+        grid-template-columns: 1fr;
+    }
+}

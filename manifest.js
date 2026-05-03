@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.5)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.6)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-04-19",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.5 Stable"
+        engine_version: "v18.6 Dynamic Weekly Planner"
     },
 
     // ---------------------------------------------------------
@@ -68,7 +68,8 @@ window.PegasusManifest = {
         calendarHistory: "pegasus_calendar_history",
         exerciseWeights: "pegasus_exercise_weights",
         ex_time: "pegasus_ex_time",
-        rest_time: "pegasus_rest_time"
+        rest_time: "pegasus_rest_time",
+        weekendCarryover: "pegasus_weekend_carryover_v1"
     },
 
     nutrition: {
@@ -120,6 +121,7 @@ window.PegasusManifest = {
         "weightTracker.js": "Biometric Trend Analyzer (Moving Average).",
         "dietAdvisor.js": "Nutritional Intelligence Engine (Gap Analysis).",
         "optimizer.js": "AI Training Volumizer (Dynamic Set Adjustment).",
+        "pegasusBrain.js": "Dynamic Weekly Planner, carry-over and recovery guard.",
         "cloudSync.js": "Security & Persistence Layer (API & Vault PIN).",
         "cardio.js": "Cardio Engine (+18 σετ πόδια & Kcal target modifier).",
         "auditUI.js": "Real-time System Integrity Monitor & Diagnostic Tool.",
@@ -175,6 +177,7 @@ window.PegasusManifest = {
                 key.startsWith(canonicalCardioPrefix) ||
                 key.startsWith(legacyCardioPrefix) ||
                 key.startsWith("pegasus_pos_") ||
+                key.startsWith("pegasus_weekend_training_mode_") ||
                 key.startsWith("pegasus_routine_injected_") ||
                 key.startsWith("pegasus_history_") ||
                 key.startsWith("pegasus_day_status_") ||
@@ -205,4 +208,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.5 LOADED. GLOBAL UNLOCK ACTIVE.");
+console.log("🏛️ PEGASUS MANIFEST v18.6 LOADED. GLOBAL UNLOCK ACTIVE.");

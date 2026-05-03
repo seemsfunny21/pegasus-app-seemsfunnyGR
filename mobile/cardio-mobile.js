@@ -34,6 +34,11 @@ window.PegasusCardio = {
             const currentLegSets = Math.max(0, parseInt(history["Πόδια"] || 0, 10));
             const credit = Math.max(0, Math.min(maxCyclingCredit, legTarget - currentLegSets));
 
+            const carryoverCredit = Math.max(credit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2));
+            if (window.PegasusBrain?.recordWeekendCarryover) {
+                try { window.PegasusBrain.recordWeekendCarryover("Ποδηλασία", "Πόδια", carryoverCredit, workoutKey); } catch (e) { console.warn("⚠️ PEGASUS BRAIN: mobile cycling carry-over skipped.", e); }
+            }
+
             history["Πόδια"] = Math.min(legTarget, currentLegSets + credit);
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
             const weekDay = rawDate.getDay() || 7;

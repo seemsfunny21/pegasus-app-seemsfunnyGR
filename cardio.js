@@ -88,6 +88,11 @@ window.saveCardioData = async function() {
     const currentLegSets = Math.max(0, parseInt(historySets["Πόδια"] || 0, 10));
     const credit = Math.max(0, Math.min(maxCyclingCredit, legTarget - currentLegSets));
 
+    const carryoverCredit = Math.max(credit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2));
+    if (window.PegasusBrain?.recordWeekendCarryover) {
+        try { window.PegasusBrain.recordWeekendCarryover("Ποδηλασία", "Πόδια", carryoverCredit, workoutKey); } catch (e) { console.warn("⚠️ PEGASUS BRAIN: cycling carry-over skipped.", e); }
+    }
+
     historySets["Πόδια"] = Math.min(legTarget, currentLegSets + credit);
     localStorage.setItem(historyKey, JSON.stringify(historySets));
 

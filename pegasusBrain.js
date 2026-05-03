@@ -1,0 +1,444 @@
+/* ========================================================================== 
+   PEGASUS BRAIN - v1.0 (PEGASUS 183 DYNAMIC WEEKLY PLANNER)
+   Purpose: data-driven weekly training plan, weekend carry-over, recovery guard
+   ========================================================================== */
+(function installPegasusBrain() {
+    const STRICT_GROUPS = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+    const RECOVERY_DAYS = new Set(["Δευτέρα", "Πέμπτη"]);
+    const WEEKEND_DAYS = new Set(["Σάββατο", "Κυριακή"]);
+    const DAY_INDEX = { "Κυριακή": 0, "Δευτέρα": 1, "Τρίτη": 2, "Τετάρτη": 3, "Πέμπτη": 4, "Παρασκευή": 5, "Σάββατο": 6 };
+    const DAY_FROM_INDEX = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+
+    const defaultTemplates = {
+        "Στήθος": [
+            { name: "Chest Press", weight: "54" },
+            { name: "Chest Flys", weight: "42" },
+            { name: "Pushups", weight: "0" }
+        ],
+        "Πλάτη": [
+            { name: "Lat Pulldowns", weight: "36" },
+            { name: "Seated Rows", weight: "66" },
+            { name: "Low Rows Seated", weight: "36" },
+            { name: "Lat Pulldowns Close", weight: "36" }
+        ],
+        "Πόδια": [
+            { name: "Leg Extensions", weight: "0" }
+        ],
+        "Χέρια": [
+            { name: "Bicep Curls", weight: "30" },
+            { name: "Tricep Pulldowns", weight: "20" },
+            { name: "Standing Bicep Curls", weight: "30" }
+        ],
+        "Ώμοι": [
+            { name: "Upright Rows", weight: "30" }
+        ],
+        "Κορμός": [
+            { name: "Ab Crunches", weight: "30" },
+            { name: "Plank", weight: "0" },
+            { name: "Leg Raise Hip Lift", weight: "0" },
+            { name: "Lying Knee Raise", weight: "0" },
+            { name: "Reverse Crunch", weight: "0" }
+        ]
+    };
+
+    const dayPriority = {
+        "Τρίτη": ["Στήθος", "Ώμοι", "Χέρια", "Κορμός", "Πόδια", "Πλάτη"],
+        "Τετάρτη": ["Πλάτη", "Πόδια", "Κορμός", "Χέρια", "Ώμοι", "Στήθος"],
+        "Παρασκευή": ["Πλάτη", "Στήθος", "Κορμός", "Ώμοι", "Χέρια", "Πόδια"],
+        "Σάββατο": ["Ώμοι", "Χέρια", "Κορμός", "Στήθος", "Πλάτη", "Πόδια"],
+        "Κυριακή": ["Στήθος", "Πλάτη", "Κορμός", "Ώμοι", "Χέρια", "Πόδια"]
+    };
+
+    function safeJson(raw, fallback) {
+        try {
+            const parsed = JSON.parse(raw || "null");
+            return parsed && typeof parsed === "object" ? parsed : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function normalizeGreekDate(d = new Date()) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function dateFromKey(key) {
+        const d = new Date(`${key}T12:00:00`);
+        return Number.isNaN(d.getTime()) ? new Date() : d;
+    }
+
+    function addDays(dateOrKey, days) {
+        const d = typeof dateOrKey === "string" ? dateFromKey(dateOrKey) : new Date(dateOrKey);
+        d.setDate(d.getDate() + days);
+        return d;
+    }
+
+    function getWeekKey(date = new Date()) {
+        const d = typeof date === "string" ? dateFromKey(date) : new Date(date);
+        const day = d.getDay() || 7;
+        const monday = new Date(d);
+        monday.setHours(0, 0, 0, 0);
+        monday.setDate(d.getDate() - day + 1);
+        return normalizeGreekDate(monday);
+    }
+
+    function getNextWeekKey(date = new Date()) {
+        return getWeekKey(addDays(date, 7));
+    }
+
+    function getDayName(date = new Date()) {
+        const d = typeof date === "string" ? dateFromKey(date) : date;
+        return DAY_FROM_INDEX[d.getDay()];
+    }
+
+    function emptyGroups(value = 0) {
+        return STRICT_GROUPS.reduce((acc, group) => {
+            acc[group] = value;
+            return acc;
+        }, {});
+    }
+
+    function getHistory() {
+        const key = window.PegasusManifest?.workout?.weekly_history || "pegasus_weekly_history";
+        const raw = safeJson(localStorage.getItem(key), {});
+        const next = emptyGroups(0);
+        STRICT_GROUPS.forEach(group => {
+            const value = Number(raw?.[group]);
+            next[group] = Number.isFinite(value) ? Math.max(0, value) : 0;
+        });
+        return next;
+    }
+
+    function getTargets() {
+        if (window.PegasusOptimizer?.getTargets) return window.PegasusOptimizer.getTargets();
+        const key = window.PegasusManifest?.workout?.muscleTargets || "pegasus_muscle_targets";
+        const fallback = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
+        return safeJson(localStorage.getItem(key), fallback) || fallback;
+    }
+
+    function normalizedName(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\u0370-\u03ff]+/g, "");
+    }
+
+    function resolveGroup(name, fallback = "Άλλο") {
+        if (typeof window.resolvePegasusExerciseGroup === "function") return window.resolvePegasusExerciseGroup(name);
+        if (typeof window.getPegasusExerciseGroup === "function") return window.getPegasusExerciseGroup(name);
+        const exact = window.exercisesDB?.find(ex => String(ex.name || "").trim() === String(name || "").trim());
+        return exact?.muscleGroup || fallback;
+    }
+
+    function getLedger() {
+        return safeJson(localStorage.getItem("pegasus_weekly_history_counted_v2"), { weekKey: getWeekKey(), exercises: {} }) || { weekKey: getWeekKey(), exercises: {} };
+    }
+
+    function getGroupsFromLedgerDate(dateKey) {
+        const ledger = getLedger();
+        const result = new Set();
+        const exercises = ledger?.exercises && typeof ledger.exercises === "object" ? ledger.exercises : {};
+        Object.keys(exercises).forEach(key => {
+            if (!key.startsWith(`${dateKey}|`)) return;
+            const count = Number(exercises[key]) || 0;
+            if (count <= 0) return;
+            const norm = key.split("|").slice(1).join("|");
+            const match = window.exercisesDB?.find(ex => normalizedName(ex.name) === norm);
+            const group = match?.muscleGroup || resolveGroup(norm, "Άλλο");
+            if (STRICT_GROUPS.includes(group)) result.add(group);
+        });
+        return result;
+    }
+
+    function getWeekendCarryover() {
+        const store = safeJson(localStorage.getItem("pegasus_weekend_carryover_v1"), { weeks: {} }) || { weeks: {} };
+        const weekKey = getWeekKey();
+        const entry = store.weeks?.[weekKey] || null;
+        const groups = emptyGroups(0);
+        if (entry?.groups && typeof entry.groups === "object") {
+            STRICT_GROUPS.forEach(group => {
+                const value = Number(entry.groups[group]);
+                groups[group] = Number.isFinite(value) ? Math.max(0, value) : 0;
+            });
+        }
+        return { weekKey, groups, raw: entry };
+    }
+
+    function getWeekendMode(day) {
+        if (!WEEKEND_DAYS.has(day)) return "core";
+        const today = window.getPegasusLocalDateKey ? window.getPegasusLocalDateKey() : normalizeGreekDate();
+        const dateKey = (getDayName(today) === day) ? today : normalizeGreekDate();
+        const datedKey = `pegasus_weekend_training_mode_${dateKey}`;
+        return localStorage.getItem(datedKey) || localStorage.getItem(`pegasus_weekend_training_mode_${day}`) || "bike";
+    }
+
+    function setWeekendMode(day, mode) {
+        if (!WEEKEND_DAYS.has(day)) return;
+        const allowed = ["bike", "bike_weights", "weights"];
+        const next = allowed.includes(mode) ? mode : "bike";
+        const today = window.getPegasusLocalDateKey ? window.getPegasusLocalDateKey() : normalizeGreekDate();
+        const dateKey = (getDayName(today) === day) ? today : normalizeGreekDate();
+        localStorage.setItem(`pegasus_weekend_training_mode_${dateKey}`, next);
+        localStorage.setItem(`pegasus_weekend_training_mode_${day}`, next);
+        if (window.PegasusCloud?.push) {
+            try { window.PegasusCloud.push(true); } catch (e) {}
+        }
+    }
+
+    function getPlannedTemplateGroups(day) {
+        if (RECOVERY_DAYS.has(day)) return [];
+        const mode = getWeekendMode(day);
+        if (day === "Σάββατο" && mode === "bike") return [];
+        if (day === "Κυριακή" && mode === "bike") return [];
+        const priority = dayPriority[day] || [];
+        if (day === "Σάββατο") return mode === "weights" ? ["Ώμοι", "Χέρια", "Κορμός", "Στήθος"] : ["Ώμοι", "Χέρια", "Κορμός"];
+        if (day === "Κυριακή") return mode === "weights" ? ["Στήθος", "Πλάτη", "Κορμός", "Πόδια"] : ["Στήθος", "Πλάτη", "Κορμός"];
+        return priority.slice(0, 4);
+    }
+
+    function getAdjacentPlannedGroups(day, direction) {
+        const idx = DAY_INDEX[day];
+        if (typeof idx !== "number") return new Set();
+        const nextDay = DAY_FROM_INDEX[(idx + direction + 7) % 7];
+        return new Set(getPlannedTemplateGroups(nextDay));
+    }
+
+    function getPreviousDateKeyForDay(day) {
+        const today = window.getPegasusLocalDateKey ? window.getPegasusLocalDateKey() : normalizeGreekDate();
+        const todayName = getDayName(today);
+        const targetIdx = DAY_INDEX[day];
+        const todayIdx = DAY_INDEX[todayName];
+        if (typeof targetIdx !== "number" || typeof todayIdx !== "number") return normalizeGreekDate(addDays(today, -1));
+        const diff = targetIdx - todayIdx;
+        const targetDate = addDays(today, diff);
+        return normalizeGreekDate(addDays(targetDate, -1));
+    }
+
+    function getBlockedGroups(day) {
+        const blocked = new Set();
+        const prevDateKey = getPreviousDateKeyForDay(day);
+        getGroupsFromLedgerDate(prevDateKey).forEach(group => blocked.add(group));
+        getAdjacentPlannedGroups(day, -1).forEach(group => blocked.add(group));
+        if (day === "Παρασκευή") {
+            // Protect the Fri/Sat/Sun block: Friday avoids groups reserved for a chosen Saturday hybrid/weights day.
+            getAdjacentPlannedGroups(day, 1).forEach(group => blocked.add(group));
+        }
+        return blocked;
+    }
+
+    function computeRemaining({ includeCarryover = true } = {}) {
+        const targets = getTargets();
+        const history = getHistory();
+        const carry = includeCarryover ? getWeekendCarryover().groups : emptyGroups(0);
+        const remaining = emptyGroups(0);
+        STRICT_GROUPS.forEach(group => {
+            const target = Math.max(0, Number(targets[group]) || 0);
+            const done = Math.max(0, Number(history[group]) || 0);
+            const carried = Math.max(0, Number(carry[group]) || 0);
+            remaining[group] = Math.max(0, target - done - carried);
+        });
+        return { targets, history, carry, remaining };
+    }
+
+    function getSessionLimit(day, mode) {
+        if (day === "Τρίτη" || day === "Τετάρτη") return 18;
+        if (day === "Παρασκευή") return 24;
+        if (day === "Σάββατο" || day === "Κυριακή") {
+            if (mode === "bike_weights") return 10;
+            if (mode === "weights") return 16;
+            return 0;
+        }
+        return 0;
+    }
+
+    function rankGroups(day, remaining, blocked) {
+        const priority = dayPriority[day] || STRICT_GROUPS;
+        return STRICT_GROUPS
+            .filter(group => (remaining[group] || 0) > 0)
+            .filter(group => !blocked.has(group))
+            .sort((a, b) => {
+                const byNeed = (remaining[b] || 0) - (remaining[a] || 0);
+                if (byNeed !== 0) return byNeed;
+                return (priority.indexOf(a) === -1 ? 99 : priority.indexOf(a)) - (priority.indexOf(b) === -1 ? 99 : priority.indexOf(b));
+            });
+    }
+
+    function chooseExercisesForGroup(group, setsNeeded, context) {
+        const templates = defaultTemplates[group] || [];
+        if (!templates.length || setsNeeded <= 0) return [];
+
+        const maxFirst = context.day === "Παρασκευή" ? 6 : 5;
+        const maxSecond = context.day === "Παρασκευή" ? 5 : 4;
+        const result = [];
+        let remaining = Math.max(0, Math.round(setsNeeded));
+
+        if (remaining <= maxFirst || templates.length === 1) {
+            result.push({ ...templates[0], sets: remaining, muscleGroup: group });
+            return result;
+        }
+
+        const firstSets = Math.min(maxFirst, remaining);
+        result.push({ ...templates[0], sets: firstSets, muscleGroup: group });
+        remaining -= firstSets;
+
+        if (remaining > 0) {
+            const second = templates[1] || templates[0];
+            result.push({ ...second, sets: Math.min(maxSecond, remaining), muscleGroup: group });
+            remaining -= Math.min(maxSecond, remaining);
+        }
+
+        if (remaining > 0 && context.day === "Παρασκευή") {
+            const third = templates[2] || templates[0];
+            result.push({ ...third, sets: remaining, muscleGroup: group });
+        }
+
+        return result;
+    }
+
+    function getDailyWorkout(day, options = {}) {
+        if (RECOVERY_DAYS.has(day)) {
+            return [{ name: "Stretching", sets: 1, muscleGroup: "None", weight: "0", brainReason: "recovery-day", brainOrder: 0 }];
+        }
+
+        const mode = getWeekendMode(day);
+        if (WEEKEND_DAYS.has(day) && mode === "bike") return [];
+
+        const { remaining } = computeRemaining({ includeCarryover: true });
+        const blocked = getBlockedGroups(day);
+        let orderedGroups = rankGroups(day, remaining, blocked);
+
+        // Guard against zero plan due strict adjacency: on Friday only, allow a safe closing group if otherwise empty.
+        if (!orderedGroups.length && day === "Παρασκευή") {
+            orderedGroups = rankGroups(day, remaining, new Set());
+        }
+
+        // Weekend weights are optional load. If all core remaining is already covered, still offer a small non-consecutive pump session.
+        if (!orderedGroups.length && WEEKEND_DAYS.has(day) && mode !== "bike") {
+            const candidates = getPlannedTemplateGroups(day).filter(group => !blocked.has(group));
+            orderedGroups = candidates.slice(0, mode === "bike_weights" ? 2 : 3);
+            candidates.forEach(group => { if (!remaining[group]) remaining[group] = mode === "bike_weights" ? 3 : 4; });
+        }
+
+        const hardAvoidLegs = WEEKEND_DAYS.has(day) && mode !== "weights";
+        orderedGroups = orderedGroups.filter(group => !(hardAvoidLegs && group === "Πόδια"));
+
+        const limit = getSessionLimit(day, mode);
+        const exercises = [];
+        let allocated = 0;
+
+        for (const group of orderedGroups) {
+            if (allocated >= limit) break;
+            const need = Math.max(0, Math.round(remaining[group] || 0));
+            if (need <= 0) continue;
+
+            let groupCap = day === "Παρασκευή" ? need : Math.min(need, 6);
+            if (WEEKEND_DAYS.has(day)) groupCap = Math.min(groupCap, mode === "bike_weights" ? 5 : 6);
+            const toAllocate = Math.min(groupCap, Math.max(0, limit - allocated));
+            if (toAllocate <= 0) continue;
+
+            chooseExercisesForGroup(group, toAllocate, { day, mode }).forEach(ex => {
+                exercises.push({
+                    ...ex,
+                    brainManaged: true,
+                    brainReason: `${group}: λείπουν ${need} σετ, δόθηκαν ${toAllocate}`,
+                    brainOrder: exercises.length
+                });
+            });
+            allocated += toAllocate;
+        }
+
+        if (options.isRainy && WEEKEND_DAYS.has(day) && !exercises.length) {
+            return [
+                { name: "Chest Press", sets: 4, muscleGroup: "Στήθος", weight: "54", brainManaged: true, brainOrder: 0 },
+                { name: "Seated Rows", sets: 4, muscleGroup: "Πλάτη", weight: "66", brainManaged: true, brainOrder: 1 },
+                { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: "30", brainManaged: true, brainOrder: 2 }
+            ];
+        }
+
+        return exercises;
+    }
+
+    function recordWeekendCarryover(exName, muscle, setValue, dateKey = null) {
+        const todayKey = dateKey || (window.getPegasusLocalDateKey ? window.getPegasusLocalDateKey() : normalizeGreekDate());
+        const dayName = getDayName(todayKey);
+        if (!WEEKEND_DAYS.has(dayName)) return false;
+
+        const group = STRICT_GROUPS.includes(muscle) ? muscle : resolveGroup(exName, "Άλλο");
+        if (!STRICT_GROUPS.includes(group)) return false;
+
+        const value = Math.max(0, Number(setValue) || 0);
+        if (value <= 0) return false;
+
+        const nextWeekKey = getNextWeekKey(todayKey);
+        const store = safeJson(localStorage.getItem("pegasus_weekend_carryover_v1"), { weeks: {} }) || { weeks: {} };
+        if (!store.weeks || typeof store.weeks !== "object") store.weeks = {};
+        if (!store.weeks[nextWeekKey]) store.weeks[nextWeekKey] = { weekKey: nextWeekKey, groups: emptyGroups(0), dates: {}, updatedAt: Date.now() };
+        const entry = store.weeks[nextWeekKey];
+        if (!entry.groups || typeof entry.groups !== "object") entry.groups = emptyGroups(0);
+        if (!entry.dates || typeof entry.dates !== "object") entry.dates = {};
+        if (!entry.dates[todayKey]) entry.dates[todayKey] = emptyGroups(0);
+
+        entry.groups[group] = Math.max(0, Number(entry.groups[group] || 0)) + value;
+        entry.dates[todayKey][group] = Math.max(0, Number(entry.dates[todayKey][group] || 0)) + value;
+        entry.updatedAt = Date.now();
+        entry.sourceWeekKey = getWeekKey(todayKey);
+        store.updatedAt = Date.now();
+
+        // Keep only current/next-ish records.
+        Object.keys(store.weeks).forEach(key => {
+            const ageDays = (new Date() - dateFromKey(key)) / 86400000;
+            if (ageDays > 21) delete store.weeks[key];
+        });
+
+        localStorage.setItem("pegasus_weekend_carryover_v1", JSON.stringify(store));
+        return true;
+    }
+
+    function renderWeekendModePanel(day, container, onChange) {
+        if (!WEEKEND_DAYS.has(day) || !container) return;
+        const mode = getWeekendMode(day);
+        const panel = document.createElement("div");
+        panel.className = "pegasus-weekend-mode-panel";
+        panel.innerHTML = `
+            <div class="pegasus-weekend-mode-title">WEEKEND TRAINING MODE</div>
+            <div class="pegasus-weekend-mode-options">
+                <button type="button" data-mode="bike" class="${mode === "bike" ? "active" : ""}">🚴 Μόνο ποδήλατο</button>
+                <button type="button" data-mode="bike_weights" class="${mode === "bike_weights" ? "active" : ""}">⚡ Ποδήλατο + ελαφριά βάρη</button>
+                <button type="button" data-mode="weights" class="${mode === "weights" ? "active" : ""}">🏋️ Μόνο βάρη</button>
+            </div>
+        `;
+        panel.querySelectorAll("button[data-mode]").forEach(btn => {
+            btn.addEventListener("click", () => {
+                setWeekendMode(day, btn.dataset.mode);
+                if (typeof onChange === "function") onChange();
+            });
+        });
+        container.appendChild(panel);
+    }
+
+    function isManagedDay(day) {
+        return ["Τρίτη", "Τετάρτη", "Παρασκευή", "Σάββατο", "Κυριακή", "Δευτέρα", "Πέμπτη"].includes(day);
+    }
+
+    window.PegasusBrain = {
+        version: "1.0.183",
+        groups: STRICT_GROUPS.slice(),
+        getWeekKey,
+        getNextWeekKey,
+        getDayName,
+        getTargets,
+        getHistory,
+        getWeekendMode,
+        setWeekendMode,
+        getWeekendCarryover,
+        computeRemaining,
+        getDailyWorkout,
+        recordWeekendCarryover,
+        renderWeekendModePanel,
+        isManagedDay
+    };
+
+    console.log("🧠 PEGASUS BRAIN: Dynamic weekly planner active (v1.0.183).");
+})();

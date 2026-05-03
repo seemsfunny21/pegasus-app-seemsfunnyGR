@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v2.8 (PEGASUS 134 CYCLING-ONLY LEGS)
+   PEGASUS DYNAMIC OPTIMIZER - v2.9 (PEGASUS 183 BRAIN-MANAGED)
    Protocol: Monday Week Reset, 18-Set Cycling Credit & Raise Mapping
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
@@ -120,8 +120,9 @@ window.PegasusOptimizer = {
         const getActiveMins = (data) => data.reduce((sum, ex) => sum + (ex.adjustedSets > 0 ? (ex.adjustedSets * 1.9) : 0), 0);
         let currentMinutes = getActiveMins(mappedData);
 
-        // 填充逻辑 (FILLER LOGIC v2.7)
-        if ((day === "Παρασκευή" || day === "Σάββατο" || day === "Κυριακή") && currentMinutes < 40) {
+        // PEGASUS 183: legacy filler only when PegasusBrain is absent.
+        // The Brain now owns weekly distribution, Fri/Sat/Sun adjacency and exact remaining sets.
+        if (!window.PegasusBrain?.isManagedDay?.(day) && (day === "Παρασκευή" || day === "Σάββατο" || day === "Κυριακή") && currentMinutes < 40) {
             const priorities = {
                 "Παρασκευή": ["Πλάτη", "Ώμοι", "Χέρια", "Κορμός"],
                 "Σάββατο": ["Κορμός", "Στήθος"],

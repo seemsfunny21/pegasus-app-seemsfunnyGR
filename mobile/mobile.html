@@ -601,6 +601,7 @@
     <script src="../dialogs.js"></script>
     <script src="../i18n.js"></script>
     <script src="../data.js"></script>
+    <script src="../pegasusBrain.js"></script>
     <script src="../extensions.js"></script>
     <script src="../metabolicEngine.js"></script>
     <script src="../dietAdvisor.js"></script>
@@ -1216,7 +1217,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.25')
+                navigator.serviceWorker.register('../sw.js?v=3.26')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

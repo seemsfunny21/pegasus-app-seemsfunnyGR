@@ -4,7 +4,7 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.114-FINAL-182';
+const CACHE_NAME = 'pegasus-shield-v3.115-FINAL-183';
 const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v1';
 
 const ASSETS_TO_CACHE = [
@@ -19,6 +19,7 @@ const ASSETS_TO_CACHE = [
     './data.js',
     './settings.js',
     './optimizer.js',
+    './pegasusBrain.js',
     './dynamic.js',
     './progressUI.js',
     './weather.js',

@@ -481,6 +481,7 @@
 <script src="data.js"></script>
 <script src="settings.js"></script>
 <script src="optimizer.js"></script>
+<script src="pegasusBrain.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" defer></script>
 <script src="dynamic.js"></script>
 <script src="progressUI.js"></script>
@@ -557,7 +558,7 @@
 
         window.addEventListener('load', () => {
             const swPath = window.location.pathname.includes('mobile/') ? '../sw.js' : './sw.js';
-            navigator.serviceWorker.register(swPath + '?v=3.13').catch(err => console.error("🛡️ SW Error:", err));
+            navigator.serviceWorker.register(swPath + '?v=3.26').catch(err => console.error("🛡️ SW Error:", err));
         });
     }
 </script>

@@ -889,7 +889,12 @@ function selectDay(btn, day) {
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
     let rawBaseData = [];
 
-    if ((day === "Σάββατο" || day === "Κυριακή") && isRainy) {
+    if (window.PegasusBrain?.getDailyWorkout) {
+        rawBaseData = window.PegasusBrain.getDailyWorkout(day, {
+            isRainy,
+            fallback: (window.program[day]) ? [...window.program[day]] : []
+        });
+    } else if ((day === "Σάββατο" || day === "Κυριακή") && isRainy) {
         rawBaseData = [
             { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
             { name: "Low Seated Row", sets: 5, muscleGroup: "Πλάτη" },
@@ -903,11 +908,18 @@ function selectDay(btn, day) {
         ? window.PegasusOptimizer.apply(day, rawBaseData)
         : rawBaseData.map(e => ({ ...e, adjustedSets: e.sets, isCompleted: false }));
 
-    mappedData.sort((a, b) => parseFloat(b.adjustedSets || b.sets) - parseFloat(a.adjustedSets || a.sets));
+    if (mappedData.some(e => typeof e.brainOrder === "number")) {
+        mappedData.sort((a, b) => (a.brainOrder ?? 999) - (b.brainOrder ?? 999));
+    } else {
+        mappedData.sort((a, b) => parseFloat(b.adjustedSets || b.sets) - parseFloat(a.adjustedSets || a.sets));
+    }
 
     const list = document.getElementById("exList");
     if (!list) return;
     list.innerHTML = "";
+    if (window.PegasusBrain?.renderWeekendModePanel) {
+        window.PegasusBrain.renderWeekendModePanel(day, list, () => selectDay(document.getElementById(`nav-${day}`), day));
+    }
     exercises = [];
     remainingSets = [];
 
@@ -1612,15 +1624,24 @@ function openExercisePreview() {
     const currentDay = activeBtn.id.replace('nav-', '');
     const isRainy = (typeof window.isRaining === 'function') ? window.isRaining() : false;
 
-    let rawData = (typeof window.calculateDailyProgram !== 'undefined')
-        ? window.calculateDailyProgram(currentDay, isRainy)
-        : ((window.program && window.program[currentDay]) ? [...window.program[currentDay]] : []);
+    let rawData = window.PegasusBrain?.getDailyWorkout
+        ? window.PegasusBrain.getDailyWorkout(currentDay, {
+            isRainy,
+            fallback: ((window.program && window.program[currentDay]) ? [...window.program[currentDay]] : [])
+        })
+        : ((typeof window.calculateDailyProgram !== 'undefined')
+            ? window.calculateDailyProgram(currentDay, isRainy)
+            : ((window.program && window.program[currentDay]) ? [...window.program[currentDay]] : []));
 
-    // PEGASUS 135: Preview mirrors the actual optimized workout list. No Friday spillover clone.
+    // PEGASUS 183: Preview mirrors the dynamic weekly brain plan.
 
     const dayExercises = window.PegasusOptimizer
         ? window.PegasusOptimizer.apply(currentDay, rawData)
         : rawData.map(e => ({ ...e, adjustedSets: e.sets }));
+
+    if (dayExercises.some(e => typeof e.brainOrder === "number")) {
+        dayExercises.sort((a, b) => (a.brainOrder ?? 999) - (b.brainOrder ?? 999));
+    }
 
     const panel = document.getElementById('previewPanel');
     const content = document.getElementById('previewContent');
@@ -1751,6 +1772,10 @@ window.logPegasusSet = function(exName, absoluteDone = null) {
         ledger.exercises[ledgerExerciseKey] = nextCounted;
         localStorage.setItem(ledgerKey, JSON.stringify(ledger));
         return false;
+    }
+
+    if (window.PegasusBrain?.recordWeekendCarryover) {
+        try { window.PegasusBrain.recordWeekendCarryover(cleanName, muscle, addValue, todayKey); } catch (e) { console.warn("⚠️ PEGASUS BRAIN: carry-over logging skipped.", e); }
     }
 
     history[muscle] = Math.max(0, Number(history[muscle] || 0)) + addValue;
