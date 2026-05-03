@@ -80,7 +80,7 @@
         viewDiv.className = 'view';
 
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <button id="btnAddMaint" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusMaintenance.toggleAddForm()">
                     + ΝΕΟ ΚΑΘΗΚΟΝ

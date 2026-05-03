@@ -109,7 +109,7 @@
         viewDiv.className = 'view';
 
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <button id="btnAddMission" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusMissions.toggleAddForm()">
                     + ΝΕΟΣ ΣΤΟΧΟΣ
@@ -119,7 +119,7 @@
             <div id="addMissionForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
                 <div style="font-size: 11px; font-weight: 900; color: var(--main); margin-bottom: 10px; text-align: center;">ΝΕΑ ΣΥΝΗΘΕΙΑ</div>
                 <input type="text" id="newMissionTitle" placeholder="π.χ. Διάβασμα 30 Λεπτά..." style="margin-bottom: 15px; border: 2px solid #444;">
-                <button class="primary-btn" onclick="window.PegasusMissions.addNewMission()">ΠΡΟΣΘΗΚΗ</button>
+                <button class="primary-btn" onclick="window.PegasusMissions.addNewMission()">Προσθήκη</button>
             </div>
 
             <div class="mini-card" style="padding: 20px; text-align: center; border-color: #222; background: rgba(20,20,20,0.8); margin-bottom: 20px;">

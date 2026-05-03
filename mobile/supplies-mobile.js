@@ -147,7 +147,7 @@
         viewDiv.className = 'view';
 
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <button id="btnAddSupply" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusSupplies.toggleAddForm()">
                     + ΝΕΟ ΠΡΟΪΟΝ
@@ -166,7 +166,7 @@
                 </div>
                 <input type="number" id="newPortion" placeholder="Αφαίρεση ανά δόση (π.χ. 250)" inputmode="decimal" style="margin-bottom: 10px;">
 
-                <button class="primary-btn" onclick="window.PegasusSupplies.addNewItem()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΒΑΣΗ</button>
+                <button class="primary-btn" onclick="window.PegasusSupplies.addNewItem()">Αποθήκευση στη βάση</button>
             </div>
 
             <div id="supplies-content" style="width: 100%; display: flex; flex-direction: column; gap: 12px; padding-bottom: 80px;"></div>

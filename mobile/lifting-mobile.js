@@ -342,7 +342,7 @@
         layer.className = 'view';
         layer.id = 'lifting';
         layer.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
             <div class="view-title">🏋️ ΒΑΡΗ</div>
             <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
                 <div style="border:1px solid var(--border); border-radius:16px; padding:12px; background:rgba(0,0,0,0.45);">
@@ -352,7 +352,7 @@
                         <input id="liftWeight" type="number" inputmode="decimal" placeholder="Κιλά" style="padding:10px; border-radius:10px; border:1px solid var(--border); background:#050505; color:#fff;">
                         <input id="liftReps" type="number" inputmode="numeric" placeholder="Επαναλ." style="padding:10px; border-radius:10px; border:1px solid var(--border); background:#050505; color:#fff;">
                     </div>
-                    <button onclick="window.PegasusLifting.addSet()" style="width:100%; margin-top:10px; padding:11px; border-radius:12px; border:1px solid var(--main); background:rgba(0,255,65,0.12); color:var(--main); font-weight:900;">ΠΡΟΣΘΗΚΗ ΣΕΤ</button>
+                    <button onclick="window.PegasusLifting.addSet()" style="width:100%; margin-top:10px; padding:11px; border-radius:12px; border:1px solid var(--main); background:rgba(0,255,65,0.12); color:var(--main); font-weight:900;">Προσθήκη σετ</button>
                 </div>
 
                 <div>

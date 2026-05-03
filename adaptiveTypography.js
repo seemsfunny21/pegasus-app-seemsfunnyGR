@@ -922,3 +922,168 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
     window.repairPegasusWeeklyProgressDoubleCount = repairOnce;
     window.addEventListener('load', () => setTimeout(repairOnce, 1200), { once: true });
 })();
+
+
+/* ==========================================================================
+   ✍️ PEGASUS UI LABEL POLISH - v1.0.190
+   Keeps user-facing labels consistent without touching data, logs or storage.
+   Greek UI uses sentence/title case. Brand/acronyms remain protected.
+   ========================================================================== */
+(function pegasusUILabelPolish() {
+    if (window.__pegasusUILabelPolish190) return;
+    window.__pegasusUILabelPolish190 = true;
+
+    const EXACT = new Map(Object.entries({
+        'Γράμμωση': 'Γράμμωση',
+        'Όγκος': 'Όγκος',
+        'Στόχος σώματος': 'Στόχος σώματος',
+        'Ρυθμίσεις PEGASUS': 'Ρυθμίσεις PEGASUS',
+        'Weekly set targets': 'Weekly set targets',
+        'Συντήρηση (TDEE): -- kcal': 'Συντήρηση (TDEE): -- kcal',
+        'Αποθήκευση': 'Αποθήκευση',
+        'Άκυρο': 'Άκυρο',
+        'ΣΩΣΕ': 'Αποθήκευση',
+        'ΕΠΙΣΤΡΟΦΗ': 'Επιστροφή',
+        '◀ Επιστροφή': '◀ Επιστροφή',
+        'Προσθήκη': 'Προσθήκη',
+        '+ Προσθήκη': '+ Προσθήκη',
+        '+ Προσθήκη στο log': '+ Προσθήκη στο log',
+        'Προσθήκη σετ': 'Προσθήκη σετ',
+        '+ ΧΕΙΡΟΚΙΝΗΤΗ ΚΑΤΑΓΡΑΦΗ': '+ Χειροκίνητη καταγραφή',
+        'ΚΑΤΑΓΡΑΦΗ': 'Καταγραφή',
+        'Καταγραφή ποδηλασίας': 'Καταγραφή ποδηλασίας',
+        'ΧΙΛΙΟΜΕΤΡΑ': 'Χιλιόμετρα',
+        'Χιλιόμετρα (km):': 'Χιλιόμετρα (km):',
+        'ΘΕΡΜΙΔΕΣ': 'Θερμίδες',
+        'Θερμίδες (kcal):': 'Θερμίδες (kcal):',
+        'ΠΡΩΤΕΪΝΗ': 'Πρωτεΐνη',
+        'ΥΠΟΛΟΙΠΟ': 'Υπόλοιπο',
+        'ΓΕΥΜΑΤΑ': 'Γεύματα',
+        'ΜΕΝΟΥ ΚΟΥΚΙ': 'Μενού Κούκι',
+        'ΗΜΕΡΗΣΙΟ ΜΕΝΟΥ (ΚΟΥΚΙ)': 'Ημερήσιο μενού (Κούκι)',
+        'ΕΠΙΣΚΟΠΗΣΗ & ΠΡΟΟΔΟΣ': 'Επισκόπηση & πρόοδος',
+        'ΑΣΚΗΣΕΙΣ ΗΜΕΡΑΣ': 'Ασκήσεις ημέρας',
+        'ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ': 'Γκαλερί προόδου',
+        'ΗΜΕΡΟΛΟΓΙΟ PEGASUS': 'Ημερολόγιο PEGASUS',
+        'ΕΡΓΑΛΕΙΑ PEGASUS': 'Εργαλεία PEGASUS',
+        '⚙️ ΕΡΓΑΛΕΙΑ': '⚙️ Εργαλεία',
+        'ΣΥΣΤΗΜΑ ΣΥΝΕΡΓΑΤΗ': 'Σύστημα συνεργάτη',
+        'ΣΥΝΕΡΓΑΤΗΣ: ΑΠΕΝΕΡΓΟΣ': 'Συνεργάτης: ανενεργός',
+        '📅 ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ': '📅 Τύπος προγράμματος',
+        '🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ': '🔊 Ήχος: ενεργός',
+        '🚀 TURBO: ΑΝΕΝΕΡΓΟ': '🚀 Turbo: ανενεργό',
+        '💾 Αποθήκευση αρχείου': '💾 Αποθήκευση αρχείου',
+        '📂 Φόρτωση αρχείου': '📂 Φόρτωση αρχείου',
+        '🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ': '🖼️ Γκαλερί προόδου',
+        '🔍 ΕΛΕΓΧΟΣ PEGASUS': '🔍 Έλεγχος PEGASUS',
+        'ΑΠΑΣΦΑΛΙΣΗ': 'Απασφάλιση',
+        'ΑΠΑΣΦΑΛΙΣΗ ΣΥΣΤΗΜΑΤΟΣ': 'Απασφάλιση συστήματος',
+        'ΑΣΦΑΛΗΣ ΤΑΥΤΟΠΟΙΗΣΗ': 'Ασφαλής ταυτοποίηση',
+        'Επιστροφή / άκυρο': 'Επιστροφή / άκυρο',
+        'ΔΕΥΤΕΡΑ': 'Δευτέρα',
+        'ΤΡΙΤΗ': 'Τρίτη',
+        'ΤΕΤΑΡΤΗ': 'Τετάρτη',
+        'ΠΕΜΠΤΗ': 'Πέμπτη',
+        'ΠΑΡΑΣΚΕΥΗ': 'Παρασκευή',
+        'ΣΑΒΒΑΤΟ': 'Σάββατο',
+        'ΚΥΡΙΑΚΗ': 'Κυριακή',
+        'ΠΡΟΕΠΙΣΚΟΠΗΣΗ': 'Προεπισκόπηση',
+        'ΔΙΑΓΡ.': 'Διαγρ.',
+        'ΑΣΚΗΣΕΙΣ ΠΡΟΠΟΝΗΣΗΣ': 'Ασκήσεις προπόνησης',
+        'ΣΗΜΕΡΙΝΗ ΚΑΤΑΓΡΑΦΗ': 'Σημερινή καταγραφή',
+        'ΙΣΤΟΡΙΚΟ / PR': 'Ιστορικό / PR',
+        'ΟΙΚΟΝΟΜΙΚΗ ΔΙΑΧΕΙΡΙΣΗ': 'Οικονομική διαχείριση',
+        'ΤΡΕΧΟΝ ΥΠΟΛΟΙΠΟ': 'Τρέχον υπόλοιπο',
+        'ΠΕΡΙΓΡΑΦΗ ΣΥΝΑΛΛΑΓΗΣ': 'Περιγραφή συναλλαγής',
+        'ΠΟΣΟ ΣΕ ΕΥΡΩ (€)': 'Ποσό σε ευρώ (€)',
+        '+ ΕΣΟΔΟ': '+ Έσοδο',
+        '- ΕΞΟΔΟ': '- Έξοδο',
+        'ΙΣΤΟΡΙΚΟ ΣΥΝΑΛΛΑΓΩΝ': 'Ιστορικό συναλλαγών',
+        'ΚΑΜΙΑ ΚΑΤΑΓΡΑΦΗ': 'Καμία καταγραφή',
+        'ΕΝΑΡΞΗ ΠΡΩΤΟΚΟΛΛΟΥ': 'Έναρξη πρωτοκόλλου',
+        'ΚΑΤΑΣΤΑΣΗ:': 'Κατάσταση:',
+        'ΝΕΑ ΣΥΝΗΘΕΙΑ': 'Νέα συνήθεια',
+        'ΣΗΜΕΡΑ': 'Σήμερα',
+        'ΔΕΝ ΕΧΕΙΣ ΟΡΙΣΕΙ ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ': 'Δεν έχεις ορίσει δραστηριότητες',
+        'Γλώσσα διεπαφής': 'Γλώσσα διεπαφής',
+        'ΔΙΑΧΕΙΡΙΣΗ ΔΕΔΟΜΕΝΩΝ (CLOUD / LOCAL)': 'Διαχείριση δεδομένων (cloud / local)',
+        'ΛΗΨΗ BACKUP': 'Λήψη backup',
+        'ΕΠΑΝΑΦΟΡΑ DATA': 'Επαναφορά data',
+        'Ρυθμίσεις & βάρος': 'Ρυθμίσεις & βάρος',
+        'ΑΠΟΘΕΜΑ ΣΥΜΠΛΗΡΩΜΑΤΩΝ': 'Απόθεμα συμπληρωμάτων',
+        'ΠΡΩΤΕΪΝΗ WHEY': 'Πρωτεΐνη whey',
+        'ΚΡΕΑΤΙΝΗ': 'Κρεατίνη',
+        'ΜΟΝΟ ΔΙΑΤΡΟΦΗ': 'Μόνο διατροφή',
+        'ΑΝΑΠΛΗΡΩΣΗ': 'Αναπλήρωση',
+        'ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ': 'Εντοπισμός οχήματος',
+        'ΝΕΑ ΠΕΡΙΟΧΗ / ΘΕΣΗ': 'Νέα περιοχή / θέση',
+        'Αποθήκευση στο cloud': 'Αποθήκευση στο cloud',
+        'ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (TOP 10)': 'Πρόσφατες περιοχές (Top 10)',
+        'ΚΑΤΑΓΡΑΦΗ ΒΑΡΟΥΣ ΣΩΜΑΤΟΣ': 'Καταγραφή βάρους σώματος',
+        'ΕΝΗΜΕΡΩΣΗ': 'Ενημέρωση',
+        'ΠΡΟΣΩΠΙΚΑ ΕΓΓΡΑΦΑ': 'Προσωπικά έγγραφα',
+        'ΠΡΟΣΩΠΙΚΕΣ ΣΗΜΕΙΩΣΕΙΣ': 'Προσωπικές σημειώσεις',
+        'Προσθήκη σημείωσης': 'Προσθήκη σημείωσης',
+        'ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ': 'Στοιχεία οχήματος',
+        'ΗΜΕΡΟΜΗΝΙΕΣ & ΣΕΡΒΙΣ': 'Ημερομηνίες & σέρβις',
+        'ΙΣΤΟΡΙΚΟ SERVICE': 'Ιστορικό service',
+        'WHEY STOCK': 'Whey stock',
+        'CREA STOCK': 'Crea stock',
+        'BIKE ONLY': 'Bike only',
+        'EMS ONLY': 'EMS only',
+        'WEEKEND TRAINING MODE': 'Weekend training mode',
+        'YouTube': 'YouTube',
+        '+ Προσθήκη video': '+ Προσθήκη video'
+    }));
+
+    function normalizeText(text) {
+        const raw = String(text || '');
+        const trimmed = raw.trim();
+        if (!trimmed) return raw;
+        const replacement = EXACT.get(trimmed);
+        if (!replacement || replacement === trimmed) return raw;
+        return raw.replace(trimmed, replacement);
+    }
+
+    function shouldSkip(node) {
+        const el = node?.parentElement;
+        if (!el) return true;
+        const tag = el.tagName;
+        return tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT' || el.closest('[data-pegasus-raw-label="true"]');
+    }
+
+    function polish(root) {
+        const base = root && root.nodeType === 1 ? root : document.body;
+        if (!base) return;
+        const walker = document.createTreeWalker(base, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                if (shouldSkip(node)) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            const next = normalizeText(node.nodeValue);
+            if (next !== node.nodeValue) node.nodeValue = next;
+        });
+    }
+
+    let timer = null;
+    function schedule() {
+        clearTimeout(timer);
+        timer = setTimeout(() => polish(document.body), 60);
+    }
+
+    window.normalizePegasusUILabels = polish;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            polish(document.body);
+            new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+        }, { once: true });
+    } else {
+        polish(document.body);
+        new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+    }
+    console.log('✍️ PEGASUS UI LABEL POLISH: Active (v1.0.190).');
+})();

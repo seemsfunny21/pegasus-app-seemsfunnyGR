@@ -14,7 +14,7 @@
         viewDiv.id = 'finance';
         viewDiv.className = 'view';
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
             <div class="section-title">ΟΙΚΟΝΟΜΙΚΗ ΔΙΑΧΕΙΡΙΣΗ</div>
 
             <div class="mini-card" style="border-left: 4px solid var(--main); margin-bottom: 20px; background: rgba(0,255,65,0.05);">

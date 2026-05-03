@@ -67,7 +67,7 @@
     </div>
 
     <div id="diet" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="compact-grid">
             <div class="mini-card"><span class="mini-label">ΘΕΡΜΙΔΕΣ</span><div id="txtKcal" class="mini-val">0 / 2800</div></div>
             <div class="mini-card"><span class="mini-label">ΠΡΩΤΕΪΝΗ</span><div id="txtProt" class="mini-val">0 / 160g</div></div>
@@ -80,24 +80,24 @@
     </div>
 
     <div id="library" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΗΜΕΡΗΣΙΟ ΜΕΝΟΥ (ΚΟΥΚΙ)</div>
         <div id="libraryContainer" style="width:100%;"></div>
     </div>
 
     <div id="cardio" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
-        <div class="section-title">ΚΑΤΑΓΡΑΦΗ ΠΟΔΗΛΑΣΙΑΣ</div>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
+        <div class="section-title">Καταγραφή ποδηλασίας</div>
         <input type="hidden" id="cdRoute" value="ΠΟΔΗΛΑΣΙΑ">
         <div class="compact-grid">
             <div><div class="input-label">ΧΙΛΙΟΜΕΤΡΑ</div><input type="number" id="cdKm" placeholder="Km" step="0.1" inputmode="decimal"></div>
             <div><div class="input-label">KCAL</div><input type="number" id="cdKcalBurned" placeholder="Kcal" inputmode="numeric"></div>
         </div>
-        <button class="primary-btn" onclick="window.PegasusCardio?.save()">ΑΠΟΘΗΚΕΥΣΗ</button>
+        <button class="primary-btn" onclick="window.PegasusCardio?.save()">Αποθήκευση</button>
     </div>
 
     <div id="ems_panel" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΣΥΝΕΔΡΙΑ IMS / EMS</div>
         <div class="mini-card" style="padding: 25px;">
             <div id="totalProgress" style="font-size: 12px; font-weight: 900; margin-bottom: 10px;">0% ΟΛΟΚΛΗΡΩΣΗ</div>
@@ -108,13 +108,13 @@
     </div>
 
     <div id="preview" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΕΒΔΟΜΑΔΙΑΙΑ ΣΤΟΧΕΥΣΗ</div>
         <div id="muscle-container" class="compact-grid"></div>
     </div>
 
     <div id="profile" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΠΡΟΣΩΠΙΚΑ ΕΓΓΡΑΦΑ</div>
         <div class="input-label">ΠΡΟΣΩΠΙΚΟΣ ΑΡΙΘΜΟΣ</div><input type="text" id="pPA" readonly>
         <div class="input-label">ΑΔΤ</div><input type="text" id="pADT" readonly>
@@ -123,12 +123,12 @@
         <div class="input-label">IBAN</div><input type="text" id="pIban" readonly>
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('profile')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
-            <button class="primary-btn" onclick="PegasusProfile.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+            <button class="primary-btn" onclick="PegasusProfile.saveSpecs()">Αποθήκευση</button>
         </div>
     </div>
 
     <div id="car" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ</div>
         <div class="input-label">ΠΙΝΑΚΙΔΑ</div><input type="text" id="carPlate" readonly>
         <div class="input-label">ΜΟΝΤΕΛΟ</div><input type="text" id="carModel" readonly>
@@ -143,28 +143,28 @@
         <div class="input-label">ΕΠΟΜΕΝΟ SERVICE (KM)</div><input type="text" id="carSrv" placeholder="π.χ. 306.000" readonly>
         <div class="compact-grid">
             <button class="secondary-btn" onclick="unlockFields('car')">ΕΠΕΞΕΡΓΑΣΙΑ</button>
-            <button class="primary-btn" onclick="window.PegasusCar.saveSpecs()">ΑΠΟΘΗΚΕΥΣΗ</button>
+            <button class="primary-btn" onclick="window.PegasusCar.saveSpecs()">Αποθήκευση</button>
         </div>
         <div class="section-title">ΙΣΤΟΡΙΚΟ SERVICE</div>
         <div class="mini-card">
             <input type="text" id="srvTask" placeholder="Εργασία (π.χ. Λάδια)">
             <input type="number" id="srvKm" placeholder="Χιλιόμετρα">
-            <button class="primary-btn" onclick="window.PegasusCar.addService()">ΠΡΟΣΘΗΚΗ</button>
+            <button class="primary-btn" onclick="window.PegasusCar.addService()">Προσθήκη</button>
         </div>
         <div id="serviceLogList" style="width:100%; margin-top:10px;"></div>
     </div>
 
     <div id="notes" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΠΡΟΣΩΠΙΚΕΣ ΣΗΜΕΙΩΣΕΙΣ</div>
         <input type="text" id="nDate" readonly style="color:var(--main); font-weight:bold; border-color:var(--main);">
         <input type="text" id="nText" placeholder="Πληκτρολόγησε σημείωση...">
-        <button class="primary-btn" onclick="PegasusProfile.addNote()">ΠΡΟΣΘΗΚΗ ΣΗΜΕΙΩΣΗΣ</button>
+        <button class="primary-btn" onclick="PegasusProfile.addNote()">Προσθήκη σημείωσης</button>
         <div id="notesList" style="width:100%; margin-top: 15px;"></div>
     </div>
 
     <div id="supps" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΑΠΟΘΕΜΑ ΣΥΜΠΛΗΡΩΜΑΤΩΝ</div>
         <div class="mini-card" style="border-left: 4px solid #00bcd4;">
             <span class="mini-label">ΠΡΩΤΕΪΝΗ WHEY</span>
@@ -187,19 +187,19 @@
     </div>
 
     <div id="parking_panel" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
         <div class="mini-card" style="border-left: 4px solid #ff9800;">
             <span class="mini-label">ΝΕΑ ΠΕΡΙΟΧΗ / ΘΕΣΗ</span>
             <input type="text" id="parkingInput" placeholder="π.χ. Γιάννενα, Κέντρο...">
-            <button class="primary-btn" onclick="window.PegasusParking.save()">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ CLOUD</button>
+            <button class="primary-btn" onclick="window.PegasusParking.save()">Αποθήκευση στο cloud</button>
         </div>
         <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (TOP 10)</div>
         <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
     <div id="settings_panel" class="view">
-        <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+        <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
 
         <div class="mini-card" style="border: 1px solid var(--main); padding: 25px 20px; position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,65,0.05);">
             <div style="position: absolute; top: -10px; right: -10px; opacity: 0.05; font-size: 100px; pointer-events: none;">⚖️</div>
@@ -214,7 +214,7 @@
         </div>
 
         <div class="mini-card" style="margin-top: 30px; padding: 20px; border-color: var(--main); background: rgba(0,255,65,0.04);">
-            <span class="mini-label" style="margin-bottom: 12px; display: block;">ΓΛΩΣΣΑ ΔΙΕΠΑΦΗΣ</span>
+            <span class="mini-label" style="margin-bottom: 12px; display: block;">Γλώσσα διεπαφής</span>
             <button id="btnLangToggle" class="secondary-btn pegasus-lang-toggle" style="width:100%; margin:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px;">
                 <span aria-hidden="true" style="font-size:22px; line-height:1;">🇬🇷</span>
                 <span style="flex:1; text-align:center; font-weight:900; letter-spacing:0.8px;">ΕΛΛΗΝΙΚΑ / ENGLISH</span>
@@ -505,7 +505,7 @@
                 settingsTile.innerHTML = `
                     <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; width: 100%; height: 100%;">
                         <span class="tile-icon" style="font-size: 20px; margin-right: 10px; margin-bottom: 0;">⚙️</span>
-                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">ΡΥΘΜΙΣΕΙΣ & ΒΑΡΟΣ</span>
+                        <span class="tile-label" style="color: var(--main); font-weight: 900; text-align: center;">Ρυθμίσεις & βάρος</span>
                     </div>
                 `;
                 container.appendChild(settingsTile);

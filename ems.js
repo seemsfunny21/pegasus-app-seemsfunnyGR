@@ -51,7 +51,7 @@ window.logEMSData = function() {
 };
 
 /**
- * 3. ΑΠΟΘΗΚΕΥΣΗ ΚΑΙ ΣΥΓΧΡΟΝΙΣΜΟΣ (FIXED)
+ * 3. Αποθήκευση ΚΑΙ ΣΥΓΧΡΟΝΙΣΜΟΣ (FIXED)
  */
 window.saveEMSFinal = async function() {
     // 🛡️ Global Safe Declaration (Inside function for extra safety)
@@ -146,12 +146,12 @@ function createEMSModal() {
             <input type="number" id="emsAvg" step="0.1" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing:border-box; text-align:center;">
         </div>
         <div style="margin-top:15px;">
-            <label style="color:#888; font-size:11px; display:block; margin-bottom:5px;">ΘΕΡΜΙΔΕΣ (KCAL):</label>
+            <label style="color:#888; font-size:11px; display:block; margin-bottom:5px;">Θερμίδες (kcal):</label>
             <input type="number" id="emsKcal" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing:border-box; text-align:center; margin-bottom:20px;">
         </div>
         <div style="display:flex; gap:10px;">
             <button onclick="saveEMSFinal()" style="flex:1; background:#4CAF50; color:black; border:none; padding:12px; border-radius:5px; cursor:pointer; font-weight:bold;">ΣΩΣΕ</button>
-            <button onclick="closeEMSModal()" style="flex:1; background:#333; color:white; border:none; padding:12px; border-radius:5px; cursor:pointer;">ΑΚΥΡΟ</button>
+            <button onclick="closeEMSModal()" style="flex:1; background:#333; color:white; border:none; padding:12px; border-radius:5px; cursor:pointer;">Άκυρο</button>
         </div>
     `;
     document.body.appendChild(div);

@@ -410,7 +410,7 @@ window.PegasusDiet = {
                         ${opt.sourceLabel ? `<div class="advisor-option-source">📍 ${esc(opt.sourceLabel)}</div>` : ''}
                         ${opt.reason ? `<div class="advisor-option-reason">${esc(opt.reason)}</div>` : ''}
                     </div>
-                    <button data-pegasus-advisor-add="${idx}" class="advisor-add-btn">ΠΡΟΣΘΗΚΗ</button>
+                    <button data-pegasus-advisor-add="${idx}" class="advisor-add-btn">Προσθήκη</button>
                 </div>
             `;
         });
@@ -566,7 +566,7 @@ window.PegasusDiet = {
             <div class="mini-card pegasus-kouki-item" data-kouki-idx="${idx}"
                  style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:12px; padding:18px; background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:18px;">
                 <div style="text-align:left;">
-                    <span style="color:var(--main); font-size:9px; font-weight:900;">+ ΠΡΟΣΘΗΚΗ ΣΤΟ LOG</span>
+                    <span style="color:var(--main); font-size:9px; font-weight:900;">+ Προσθήκη στο log</span>
                     <div style="font-weight:900; font-size:14px; color:#fff; margin-top:2px;">${esc(itemName)}</div>
                     <div style="color:#ff9800; font-size:10px; margin-top:5px; font-weight:bold;">🍗 ${Number(macros.protein) || 0}G PROTEIN</div>
                 </div>

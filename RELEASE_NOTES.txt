@@ -266,7 +266,7 @@ PEGASUS 179 - MOBILE PARKING PERSISTENCE + LIFTING WEIGHT MIRROR
 - No new files added; total file count remains stable.
 - Service worker cache bumped to pegasus-shield-v3.111-FINAL-179.
 
-PEGASUS 180 - MOBILE YOUTUBE THUMBNAIL LIBRARY
+PEGASUS 180 - MOBILE YouTube THUMBNAIL LIBRARY
 - Added new mobile YouTube category/module as mobile/youtube-mobile.js.
 - User can save a YouTube link and see it as a thumbnail card.
 - Tapping/clicking the thumbnail opens the video in YouTube.
@@ -274,7 +274,7 @@ PEGASUS 180 - MOBILE YOUTUBE THUMBNAIL LIBRARY
 - YouTube links sync via pegasus_youtube_v1.
 - Service worker cache bumped to pegasus-shield-v3.112-FINAL-180 and includes youtube-mobile.js.
 
-PEGASUS 181 - YOUTUBE TITLE OVERLAY + NEW MODULE LAST-BUTTON POLICY
+PEGASUS 181 - YouTube TITLE OVERLAY + NEW MODULE LAST-BUTTON POLICY
 - YouTube thumbnails now show a compact video-title overlay inside the thumbnail, not as a separate label underneath.
 - YouTube entries try to fetch the real video title through YouTube oEmbed and store it in pegasus_youtube_v1.
 - Existing YouTube links without titles are hydrated automatically when the YouTube view opens.
@@ -337,7 +337,7 @@ pegasus186
 
 
 pegasus189
-- Added Settings body-goal selector with two buttons: ΓΡΑΜΜΩΣΗ and ΟΓΚΟΣ under gender.
+- Added Settings body-goal selector with two buttons: Γράμμωση and Όγκος under gender.
 - New synced key pegasus_body_goal_mode controls nutrition target behavior across desktop/mobile.
 - Γράμμωση mode partially refuels exercise/cycling burns so most burned kcal remain deficit.
 - Όγκος mode fully refuels workout/cycling burns into the daily kcal target.
@@ -345,3 +345,11 @@ pegasus189
 - Mobile Diet breakdown shows mode, total burns, and how much burn was added back to target.
 - Service worker cache bumped to pegasus-shield-v3.120-FINAL-189.
 - No new files added.
+
+
+pegasus190
+- Polished Settings body-goal controls: Γράμμωση / Όγκος now match the Settings typography size and weight.
+- Added a safe UI label polish pass for consistent Greek/English label casing across rendered desktop/mobile views.
+- Preserved protected acronyms and brand labels such as PEGASUS, TDEE, WHEY, CREA, EMS, IBAN, VIN, kcal and km.
+- No new file added.
+- Service worker cache bumped to pegasus-shield-v3.121-FINAL-190.

@@ -91,7 +91,7 @@ saveAndRender: function(data) {
         viewDiv.className = 'view';
 
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <button id="btnAddMovie" class="primary-btn" style="width: auto; margin: 0; padding: 5px 10px; font-size: 10px; border-radius: 8px;" onclick="window.PegasusMovies.toggleAddForm()">
                     + ΝΕΑ ΤΑΙΝΙΑ
@@ -101,7 +101,7 @@ saveAndRender: function(data) {
             <div id="addMovieForm" class="mini-card" style="display: none; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
                 <div style="font-size: 11px; font-weight: 900; color: var(--main); margin-bottom: 10px; text-align: center;">ΚΑΤΑΧΩΡΗΣΗ ΣΤΗ WATCHLIST</div>
                 <input type="text" id="newMovieTitle" placeholder="Τίτλος Ταινίας ή Σειράς..." style="margin-bottom: 15px; border: 2px solid #444;">
-                <button class="primary-btn" onclick="window.PegasusMovies.addNewMovie()">ΠΡΟΣΘΗΚΗ</button>
+                <button class="primary-btn" onclick="window.PegasusMovies.addNewMovie()">Προσθήκη</button>
             </div>
 
             <div class="section-title" style="margin-top: 10px; color: var(--main);">👀 ΠΡΟΣΕΧΩΣ (WATCHLIST)</div>

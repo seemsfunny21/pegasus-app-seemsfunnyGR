@@ -1766,7 +1766,7 @@ function finishWorkout() {
 
     const label = document.getElementById("phaseTimer");
     if (label) {
-        label.textContent = "ΟΛΟΚΛΗΡΩΣΗ & ΤΟΠΙΚΗ ΑΠΟΘΗΚΕΥΣΗ...";
+        label.textContent = "ΟΛΟΚΛΗΡΩΣΗ & ΤΟΠΙΚΗ Αποθήκευση...";
         label.style.color = "#4CAF50";
     }
 

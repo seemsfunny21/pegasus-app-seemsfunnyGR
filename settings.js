@@ -167,6 +167,11 @@ window.setPegasusBodyGoalModeUI = function(mode) {
         btn.style.borderColor = active ? '#00ff66' : '#2f7d32';
         btn.style.boxShadow = active ? '0 0 12px rgba(0,255,102,.35)' : 'none';
         btn.style.color = active ? '#d8ffe0' : '#7ce184';
+        btn.style.fontSize = '13px';
+        btn.style.fontWeight = '700';
+        btn.style.minHeight = '28px';
+        btn.style.padding = '4px 6px';
+        btn.style.lineHeight = '1.2';
     });
 };
 

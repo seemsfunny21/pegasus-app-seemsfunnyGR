@@ -1,10 +1,10 @@
 /* ==========================================================================
-   ▶️ PEGASUS MODULE: YOUTUBE LINKS (v1.1)
+   ▶️ PEGASUS MODULE: YouTube LINKS (v1.1)
    Protocol: Thumbnail library with compact title overlay.
    ========================================================================== */
 
 (function() {
-    const YOUTUBE_DATA_KEY = 'pegasus_youtube_v1';
+    const YouTube_DATA_KEY = 'pegasus_youtube_v1';
 
     function escapeHTML(value) {
         return String(value || '')
@@ -54,12 +54,12 @@
         }
     }
 
-    const KNOWN_YOUTUBE_TITLES = {
+    const KNOWN_YouTube_TITLES = {
         zH8EDN9lPFM: 'Eminem, Snoop Dogg, 50 Cent, Ice Cube, Dr.Dre, 2Pac vibes - Hard To Kill | Old School Rap Mixtape17'
     };
 
     function getFallbackTitle(videoId) {
-        return KNOWN_YOUTUBE_TITLES[videoId] || `YouTube • ${videoId}`;
+        return KNOWN_YouTube_TITLES[videoId] || `YouTube • ${videoId}`;
     }
 
     function compactTitle(value) {
@@ -72,7 +72,7 @@
         if (!entry?.url || !entry?.videoId) return '';
         if (entry.title && !/^YouTube • /.test(entry.title)) return entry.title;
 
-        if (KNOWN_YOUTUBE_TITLES[entry.videoId]) return KNOWN_YOUTUBE_TITLES[entry.videoId];
+        if (KNOWN_YouTube_TITLES[entry.videoId]) return KNOWN_YouTube_TITLES[entry.videoId];
 
         const endpoint = `https://www.youtube.com/oembed?url=${encodeURIComponent(entry.url)}&format=json`;
         const controller = new AbortController();
@@ -128,7 +128,7 @@
 
     function loadEntries() {
         try {
-            const parsed = JSON.parse(localStorage.getItem(YOUTUBE_DATA_KEY) || '[]');
+            const parsed = JSON.parse(localStorage.getItem(YouTube_DATA_KEY) || '[]');
             return Array.isArray(parsed) ? parsed : [];
         } catch (e) {
             return [];
@@ -136,7 +136,7 @@
     }
 
     function saveEntries(entries) {
-        localStorage.setItem(YOUTUBE_DATA_KEY, JSON.stringify(entries));
+        localStorage.setItem(YouTube_DATA_KEY, JSON.stringify(entries));
     }
 
     function triggerCloudPush() {
@@ -317,13 +317,13 @@
         viewDiv.className = 'view';
 
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
 
-            <div class="section-title">YOUTUBE</div>
+            <div class="section-title">YouTube</div>
 
             <div class="mini-card" style="border-color: var(--main); margin-bottom: 18px; padding: 15px;">
                 <input type="url" id="youtubeLinkInput" placeholder="Βάλε YouTube link..." autocomplete="off" style="margin-bottom: 12px; border: 2px solid #333;">
-                <button class="primary-btn" onclick="window.PegasusYouTube.addLink()">+ ΠΡΟΣΘΗΚΗ VIDEO</button>
+                <button class="primary-btn" onclick="window.PegasusYouTube.addLink()">+ Προσθήκη video</button>
                 <div id="youtubeError" style="display:none; margin-top:10px; color:#ff4444; font-size:11px; font-weight:900; text-align:center;"></div>
             </div>
 

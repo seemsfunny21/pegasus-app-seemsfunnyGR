@@ -32,7 +32,7 @@ window.togglePartnerMode = function() {
         window.partnerData.currentPartner = upperName;
         window.partnerData.isUser1Turn = true; // Ο Άγγελος ξεκινάει πάντα πρώτος
 
-        // ΑΠΟΘΗΚΕΥΣΗ ΣΤΗ ΛΙΣΤΑ ΟΝΟΜΑΤΩΝ
+        // Αποθήκευση ΣΤΗ ΛΙΣΤΑ ΟΝΟΜΑΤΩΝ
         window.savePartnerNameToList(upperName);
         window.updatePartnerDatalist();
 
@@ -65,7 +65,7 @@ window.togglePartnerMode = function() {
     }
 };
 
-// 2. ΑΠΟΘΗΚΕΥΣΗ ΟΝΟΜΑΤΟΣ ΣΕ ΕΙΔΙΚΗ ΛΙΣΤΑ
+// 2. Αποθήκευση ΟΝΟΜΑΤΟΣ ΣΕ ΕΙΔΙΚΗ ΛΙΣΤΑ
 window.savePartnerNameToList = function(name) {
   const listKey = M?.workout?.partnersList || "pegasus_partners_list";
 let list = JSON.parse(localStorage.getItem(listKey) || "[]");
@@ -116,7 +116,7 @@ let list = JSON.parse(localStorage.getItem(listKey) || "[]");
     });
 };
 
-// 4. ΑΠΟΘΗΚΕΥΣΗ / ΦΟΡΤΩΣΗ ΚΙΛΩΝ
+// 4. Αποθήκευση / ΦΟΡΤΩΣΗ ΚΙΛΩΝ
 window.savePartnerWeight = function(exerciseName, weight) {
     if (!exerciseName) return;
 

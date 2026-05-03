@@ -41,7 +41,7 @@
         <div style="color:#666; font-size:10px; font-weight:800; letter-spacing:1px; margin-bottom:12px;">PIN + MASTER KEY ΜΙΑ ΦΟΡΑ ΤΗΝ ΗΜΕΡΑ · ΕΠΑΝΑΦΟΡΑ ΜΕΤΑ ΤΙΣ 07:00</div>
         <div id="pinError" style="color:#ff4444; font-size:11px; font-weight:bold; margin-bottom:15px; min-height:15px;"></div>
         <button onclick="attemptVaultUnlock()" style="width: 100%; padding: 16px; background: #00ff41; border: none; border-radius: 18px; color: #000; font-weight: 900; text-transform: uppercase; font-size: 13px; margin-bottom: 12px; cursor: pointer;">ΑΠΑΣΦΑΛΙΣΗ ΣΥΣΤΗΜΑΤΟΣ</button>
-        <button onclick="skipVault()" style="width:100%; background:transparent; color:#666; padding:12px; border:1px solid #222; border-radius:14px; font-weight:bold; font-size:11px; cursor:pointer;">ΕΠΙΣΤΡΟΦΗ / ΑΚΥΡΟ</button>
+        <button onclick="skipVault()" style="width:100%; background:transparent; color:#666; padding:12px; border:1px solid #222; border-radius:14px; font-weight:bold; font-size:11px; cursor:pointer;">Επιστροφή / άκυρο</button>
     </div>
 </div>
 
@@ -93,15 +93,15 @@
     <input type="text" id="cRoute" style="display:none;">
     <input type="text" id="cTime" style="display:none;">
 
-    <label for="cKm" style="display: block; text-align: center; margin-bottom: 5px; color: #888; font-size: 10px; font-weight: bold; letter-spacing: 1px;">ΧΙΛΙΟΜΕΤΡΑ (KM):</label>
+    <label for="cKm" style="display: block; text-align: center; margin-bottom: 5px; color: #888; font-size: 10px; font-weight: bold; letter-spacing: 1px;">Χιλιόμετρα (km):</label>
     <input type="number" id="cKm" step="0.1" style="width:100%; margin-bottom:12px; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:8px; box-sizing: border-box; text-align: center; border-radius: 5px; font-weight: bold; font-size: 15px;">
 
-    <label for="cKcal" style="display: block; text-align: center; margin-bottom: 5px; color: #888; font-size: 10px; font-weight: bold; letter-spacing: 1px;">ΘΕΡΜΙΔΕΣ (KCAL):</label>
+    <label for="cKcal" style="display: block; text-align: center; margin-bottom: 5px; color: #888; font-size: 10px; font-weight: bold; letter-spacing: 1px;">Θερμίδες (kcal):</label>
     <input type="number" id="cKcal" style="width:100%; margin-bottom:20px; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:8px; box-sizing: border-box; text-align: center; border-radius: 5px; font-weight: bold; font-size: 15px;">
 
     <div style="display: flex; gap: 8px;">
-        <button onclick="saveCardioData()" style="flex: 1; background: #4CAF50; color: #000; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px;">ΑΠΟΘΗΚΕΥΣΗ</button>
-        <button onclick="window.PegasusCardio.close()" style="flex: 1; background: #333; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 12px;">ΑΚΥΡΟ</button>
+        <button onclick="saveCardioData()" style="flex: 1; background: #4CAF50; color: #000; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px;">Αποθήκευση</button>
+        <button onclick="window.PegasusCardio.close()" style="flex: 1; background: #333; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 12px;">Άκυρο</button>
     </div>
 </div>
 
@@ -118,8 +118,8 @@
     <button id="btnPlanSelector" class="p-btn tools-btn" style="border-color:#4CAF50; color:#4CAF50;">📅 ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ</button>
     <button id="btnMuteTools" class="p-btn tools-btn">🔊 ΗΧΟΣ: ΕΝΕΡΓΟΣ</button>
     <button id="btnTurboTools" class="p-btn tools-btn">🚀 TURBO: ΑΝΕΝΕΡΓΟ</button>
-    <button id="btnExportData" class="p-btn tools-btn">💾 ΑΠΟΘΗΚΕΥΣΗ ΑΡΧΕΙΟΥ</button>
-    <button id="btnImportData" class="p-btn tools-btn">📂 ΦΟΡΤΩΣΗ ΑΡΧΕΙΟΥ</button>
+    <button id="btnExportData" class="p-btn tools-btn">💾 Αποθήκευση αρχείου</button>
+    <button id="btnImportData" class="p-btn tools-btn">📂 Φόρτωση αρχείου</button>
     <input type="file" id="importFileTools" style="display:none">
     <button id="btnMasterVault" class="p-btn tools-btn" style="border-color:#00bcd4; color:#00bcd4;">🔐 ΣΥΓΧΡΟΝΙΣΜΟΣ</button>
     <button id="btnOpenGallery" class="p-btn tools-btn">🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ</button>
@@ -148,7 +148,7 @@
 </div>
 
 <div id="settingsPanel" class="pegasus-panel" style="max-width: 400px; display:none;">
-    <h3 style="text-align: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-bottom: 15px;">ΡΥΘΜΙΣΕΙΣ PEGASUS</h3>
+    <h3 style="text-align: center; border-bottom: 1px solid #4CAF50; padding-bottom: 10px; margin-bottom: 15px;">Ρυθμίσεις PEGASUS</h3>
     <div style="display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 4px;">
             <label for="userWeightInput" style="font-size: 13px; color: #ccc;">Βάρος (kg)</label>
@@ -175,17 +175,17 @@
 
         <div style="background: rgba(76,175,80,0.05); border:1px solid #244b2a; border-radius:8px; padding:8px 10px; margin-top:2px;">
             <input type="hidden" id="bodyGoalModeInput" value="cut">
-            <div style="font-size:10px; color:#4CAF50; text-align:center; font-weight:900; letter-spacing:1px; margin-bottom:6px;">ΣΤΟΧΟΣ ΣΩΜΑΤΟΣ</div>
+            <div style="font-size:13px; color:#4CAF50; text-align:center; font-weight:700; letter-spacing:.2px; margin-bottom:6px;">Στόχος σώματος</div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                <button type="button" data-body-goal-mode="cut" style="border:1px solid #2f7d32; border-radius:8px; background:rgba(0,0,0,.55); color:#7ce184; font-weight:900; padding:9px 4px; cursor:pointer;">ΓΡΑΜΜΩΣΗ</button>
-                <button type="button" data-body-goal-mode="bulk" style="border:1px solid #2f7d32; border-radius:8px; background:rgba(0,0,0,.55); color:#7ce184; font-weight:900; padding:9px 4px; cursor:pointer;">ΟΓΚΟΣ</button>
+                <button type="button" data-body-goal-mode="cut" style="min-height:28px; border:1px solid #2f7d32; border-radius:6px; background:rgba(0,0,0,.55); color:#7ce184; font-size:13px; font-weight:700; padding:4px 6px; cursor:pointer; line-height:1.2;">Γράμμωση</button>
+                <button type="button" data-body-goal-mode="bulk" style="min-height:28px; border:1px solid #2f7d32; border-radius:6px; background:rgba(0,0,0,.55); color:#7ce184; font-size:13px; font-weight:700; padding:4px 6px; cursor:pointer; line-height:1.2;">Όγκος</button>
             </div>
             <div style="font-size:9px; color:#9adf9a; text-align:center; margin-top:6px; line-height:1.35;">Γράμμωση = μερική αναπλήρωση καύσεων • Όγκος = πλήρης αναπλήρωση</div>
         </div>
 
         <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
 
-        <div id="maintenanceKcalDisplay" style="color: #00bcd4; font-size: 11px; text-align: center; margin-bottom: 8px; font-weight: bold; letter-spacing: 1px;">Maintenance (TDEE): -- kcal</div>
+        <div id="maintenanceKcalDisplay" style="color: #00bcd4; font-size: 11px; text-align: center; margin-bottom: 8px; font-weight: bold; letter-spacing: 1px;">Συντήρηση (TDEE): -- kcal</div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 10px;">
             <span style="font-size: 13px; color: #4CAF50; font-weight: bold;">Στόχος Kcal</span>
@@ -197,7 +197,7 @@
         </div>
 
         <div style="margin-top: 10px; background: rgba(76, 175, 80, 0.05); border: 1px solid #222; border-radius: 8px; padding: 10px;">
-            <p style="color: #4CAF50; font-size: 11px; font-weight: bold; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">WEEKLY SET TARGETS</p>
+            <p style="color: #4CAF50; font-size: 11px; font-weight: bold; margin-bottom: 10px; text-align: center; letter-spacing: 1px;">Weekly set targets</p>
             <div style="display: flex; flex-direction: column; gap: 5px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 12px; color: #eee;">Στήθος</span>
@@ -226,7 +226,7 @@
             </div>
         </div>
 
-        <button id="btnSaveSettings" class="p-btn" style="width: 100%; margin-top: 15px; background: #4CAF50; color: #000; font-weight: bold;">ΑΠΟΘΗΚΕΥΣΗ</button>
+        <button id="btnSaveSettings" class="p-btn" style="width: 100%; margin-top: 15px; background: #4CAF50; color: #000; font-weight: bold;">Αποθήκευση</button>
     </div>
 </div>
 
@@ -351,8 +351,8 @@
         <input type="number" id="emsKcal" style="width:100%; background:#000; color:#4CAF50; border:1px solid #4CAF50; padding:10px; border-radius:5px; box-sizing: border-box; margin-bottom: 20px; text-align: center;">
     </div>
     <div style="display: flex; gap: 10px;">
-        <button id="btnSaveEMS" style="flex: 1; background: #4CAF50; color: black; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">ΑΠΟΘΗΚΕΥΣΗ</button>
-        <button id="btnCloseEMS" style="flex: 1; background: #333; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">ΑΚΥΡΟ</button>
+        <button id="btnSaveEMS" style="flex: 1; background: #4CAF50; color: black; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">Αποθήκευση</button>
+        <button id="btnCloseEMS" style="flex: 1; background: #333; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-size: 14px;">Άκυρο</button>
     </div>
 </div>
 

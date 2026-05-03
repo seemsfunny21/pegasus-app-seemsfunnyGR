@@ -171,7 +171,7 @@
             title: title || 'PEGASUS',
             message,
             buttons: [
-                { label: 'ΑΚΥΡΟ', value: false },
+                { label: 'Άκυρο', value: false },
                 { label: 'OK', value: true, primary: true }
             ]
         }).then(v => !!v);
@@ -184,8 +184,8 @@
             message,
             defaultValue: defaultValue || '',
             buttons: [
-                { label: 'ΑΚΥΡΟ', value: null },
-                { label: 'ΑΠΟΘΗΚΕΥΣΗ', primary: true, getValue: (val) => val }
+                { label: 'Άκυρο', value: null },
+                { label: 'Αποθήκευση', primary: true, getValue: (val) => val }
             ]
         });
     };

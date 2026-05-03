@@ -172,7 +172,7 @@
         viewDiv.className = 'view';
 
         viewDiv.innerHTML = `
-            <button class="btn-back" onclick="window.PegasusSocial.lockVault(); openView('home')">◀ ΕΠΙΣΤΡΟΦΗ</button>
+            <button class="btn-back" onclick="window.PegasusSocial.lockVault(); openView('home')">◀ Επιστροφή</button>
 
             <div id="socialLockScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
                 <div style="font-size: 50px; margin-bottom: 15px;">🔒</div>
@@ -207,7 +207,7 @@
 
                 <div id="addSocialForm" class="mini-card" style="display: block; border-color: var(--main); margin-bottom: 20px; padding: 15px;">
                     <input type="text" id="newSocialName" placeholder="Όνομα & Link Προφίλ..." style="margin-bottom: 15px; border: 2px solid #444;">
-                    <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">ΑΠΟΘΗΚΕΥΣΗ</button>
+                    <button class="primary-btn" onclick="window.PegasusSocial.addNewEntry()">Αποθήκευση</button>
                 </div>
 
                 <div id="social-content" style="width: 100%; display: flex; flex-direction: column; gap: 15px; padding-bottom: 80px;"></div>
