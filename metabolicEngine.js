@@ -1,8 +1,8 @@
 /* =============================================================
-   PEGASUS UNIFIED METABOLIC ENGINE - v16.7 (SAFE SHARED TARGET CORE)
+   PEGASUS UNIFIED METABOLIC ENGINE - v16.8 (CARDIO OFFSET FALLBACK CORE)
    Merged: calories.js + metabolic.js
    Protocol: Strict Session Isolation, Midnight Guard & Shared Target Logic
-   Status: FINAL STABLE | FIXED: ACTIVE INPUT TARGETING + STORAGE SAFETY
+   Status: FINAL STABLE | FIXED: CARDIO KCAL TARGET FOLLOWS MOBILE PUSH
    ============================================================= */
 
 const PegasusMetabolic = {
@@ -86,17 +86,53 @@ const PegasusMetabolic = {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     },
 
-    getTodayCardioOffset: function() {
-        const dateStr = this.getTodayDateStr();
+    getDateAliases: function(dateStr) {
+        const aliases = new Set();
+        const raw = String(dateStr || '').trim();
+        if (raw) aliases.add(raw);
+
+        const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (iso) aliases.add(`${iso[3]}/${iso[2]}/${iso[1]}`);
+
+        const greek = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (greek) aliases.add(`${greek[3]}-${greek[2]}-${greek[1]}`);
+
+        return Array.from(aliases);
+    },
+
+    getCardioOffsetForDate: function(dateStr) {
         const keys = this.getKeys();
+        const aliases = this.getDateAliases(dateStr || this.getTodayDateStr());
+        let directValue = 0;
 
-        const canonical = parseFloat(localStorage.getItem(keys.cardioDailyPrefix + dateStr));
-        if (!isNaN(canonical)) return canonical;
+        aliases.forEach(alias => {
+            const canonical = parseFloat(localStorage.getItem(keys.cardioDailyPrefix + alias));
+            if (!isNaN(canonical)) directValue = Math.max(directValue, canonical);
 
-        const legacy = parseFloat(localStorage.getItem(keys.cardioOffsetLegacy + "_" + dateStr));
-        if (!isNaN(legacy)) return legacy;
+            const legacy = parseFloat(localStorage.getItem(keys.cardioOffsetLegacy + "_" + alias));
+            if (!isNaN(legacy)) directValue = Math.max(directValue, legacy);
+        });
 
-        return 0;
+        // Fallback: if the per-day offset key was not synced yet but cardio_history was,
+        // derive the same value from today's cardio entries.
+        let historyValue = 0;
+        try {
+            const cardioHistory = JSON.parse(localStorage.getItem("pegasus_cardio_history") || "[]");
+            if (Array.isArray(cardioHistory)) {
+                const aliasSet = new Set(aliases);
+                cardioHistory.forEach(entry => {
+                    if (aliasSet.has(String(entry?.date || '').trim())) {
+                        historyValue += parseFloat(entry?.kcal || 0) || 0;
+                    }
+                });
+            }
+        } catch (e) {}
+
+        return Math.round(Math.max(directValue, historyValue));
+    },
+
+    getTodayCardioOffset: function() {
+        return this.getCardioOffsetForDate(this.getTodayDateStr());
     },
 
     getBaseDailyTarget: function(settingsObj) {

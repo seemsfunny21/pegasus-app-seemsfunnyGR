@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.2 ROUTINE CLEANUP)
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.3 CARDIO TARGET PATCH)
    Protocol: Shared Metabolic Helpers, Diet-Only Inventory & Delete Restore
-   Status: FINAL STABLE | MAINTENANCE: ROUTINE DELETE PATCH CONSOLIDATED
+   Status: FINAL STABLE | FIXED: MOBILE DIET TARGET READS CARDIO OFFSET
    ========================================================================== */
 
 window.PegasusDiet = {
@@ -173,22 +173,33 @@ window.PegasusDiet = {
     },
 
     getCardioOffset: function(dateStr) {
+        const targetDate = dateStr || this.getStrictDateStr();
+
+        if (window.PegasusMetabolic?.getCardioOffsetForDate) {
+            return window.PegasusMetabolic.getCardioOffsetForDate(targetDate);
+        }
+
         if (typeof window.getPegasusTodayCardioOffset === "function") {
             return window.getPegasusTodayCardioOffset();
         }
 
-        const targetDate = dateStr || this.getStrictDateStr();
+        const aliases = [targetDate];
+        const m = String(targetDate).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (m) aliases.push(`${m[3]}-${m[2]}-${m[1]}`);
 
-        const unifiedOffset = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + targetDate));
-        const legacyOffset = parseFloat(
-            localStorage.getItem(
-                (window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + targetDate
-            )
-        );
+        let directValue = 0;
+        aliases.forEach(alias => {
+            const unifiedOffset = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + alias));
+            const legacyOffset = parseFloat(
+                localStorage.getItem(
+                    (window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + alias
+                )
+            );
+            if (!isNaN(unifiedOffset)) directValue = Math.max(directValue, unifiedOffset);
+            if (!isNaN(legacyOffset)) directValue = Math.max(directValue, legacyOffset);
+        });
 
-        if (!isNaN(unifiedOffset)) return unifiedOffset;
-        if (!isNaN(legacyOffset)) return legacyOffset;
-        return 0;
+        return Math.round(directValue);
     },
 
     getEffectiveTarget: function() {

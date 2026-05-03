@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.4 SYNC PATCH)
+   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.5 CARDIO PUSH PATCH)
    Protocol: Unified Cardio Offset, XP Alignment, History Logging & Cloud Sync
-   Status: FINAL STABLE | FIXED: MOBILE ↔ DESKTOP KCAL CONSISTENCY
+   Status: FINAL STABLE | FIXED: MOBILE IMMEDIATE CARDIO PUSH + NO LEG CAP
    ========================================================================== */
 
 window.PegasusCardio = {
@@ -27,19 +27,19 @@ window.PegasusCardio = {
         if (km > 0) {
             const maxCyclingCredit = 18;
 
-            // Weekly Progress Update: cycling is logged from Cardio and capped by the weekly leg target.
+            // Weekly Progress Update: cycling is logged from Cardio as real extra leg load.
+            // Do NOT cap at the weekly leg target: if legs are 24/24 and cycling happens,
+            // the UI must be allowed to show e.g. 42/24 so Pegasus knows there was extra load.
             let history = JSON.parse(localStorage.getItem('pegasus_weekly_history') || "{}");
-            const targets = JSON.parse(localStorage.getItem('pegasus_muscle_targets') || "null") || { "Πόδια": 24 };
-            const legTarget = Math.max(1, parseInt(targets["Πόδια"] || 24, 10));
             const currentLegSets = Math.max(0, parseInt(history["Πόδια"] || 0, 10));
-            const credit = Math.max(0, Math.min(maxCyclingCredit, legTarget - currentLegSets));
+            const credit = Math.max(0, Math.min(maxCyclingCredit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2)));
 
-            const carryoverCredit = Math.max(credit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2));
+            const carryoverCredit = credit;
             if (window.PegasusBrain?.recordWeekendCarryover) {
                 try { window.PegasusBrain.recordWeekendCarryover("Ποδηλασία", "Πόδια", carryoverCredit, workoutKey); } catch (e) { console.warn("⚠️ PEGASUS BRAIN: mobile cycling carry-over skipped.", e); }
             }
 
-            history["Πόδια"] = Math.min(legTarget, currentLegSets + credit);
+            history["Πόδια"] = currentLegSets + credit;
             localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
             const weekDay = rawDate.getDay() || 7;
             const weekMonday = new Date(rawDate);
@@ -72,7 +72,7 @@ window.PegasusCardio = {
 
             localStorage.setItem("pegasus_cardio_history", JSON.stringify(cardioLog.slice(0, 50)));
 
-            console.log(`🚴 CARDIO: ${km}km logged. ${credit} capped sets credited to Legs & XP.`);
+            console.log(`🚴 CARDIO: ${km}km logged. ${credit} uncapped sets credited to Legs & XP.`);
         }
 
         /* --- 2. ΜΕΤΑΒΟΛΙΚΗ ΣΥΝΔΕΣΗ (UNIFIED MOBILE + DESKTOP SYNC) --- */
@@ -101,6 +101,9 @@ window.PegasusCardio = {
             if (typeof window.renderFood === "function") {
                 window.renderFood();
             }
+            if (window.PegasusMetabolic?.renderUI) {
+                window.PegasusMetabolic.renderUI();
+            }
 
             console.log(`🔥 METABOLIC: Unified cardio sync +${burnedKcal} kcal (${unifiedOffsetKey}).`);
             console.log(`🔥 METABOLIC: Legacy cardio sync +${burnedKcal} kcal (${legacyOffsetKey}).`);
@@ -128,8 +131,29 @@ window.PegasusCardio = {
 
         if (typeof openView === "function") openView('home');
 
-        if (window.PegasusCloud?.push) {
-            await window.PegasusCloud.push(true);
-        }
+        // Immediate mobile → cloud push. If the cloud layer is busy, retry shortly so
+        // cycling calories/leg load do not wait for the 30s heartbeat.
+        const forceCardioPush = async () => {
+            let pushed = false;
+            try {
+                if (window.PegasusCloud?.push) {
+                    pushed = await window.PegasusCloud.push(true);
+                }
+            } catch (e) {
+                console.warn("⚠️ PEGASUS CARDIO: immediate push failed, retry queued.", e);
+            }
+
+            if (!pushed && window.PegasusCloud?.syncNow) {
+                try { pushed = await window.PegasusCloud.syncNow(true); } catch (e) {}
+            }
+
+            if (!pushed && window.PegasusCloud?.push) {
+                setTimeout(() => {
+                    try { window.PegasusCloud.push(true); } catch (e) {}
+                }, 1200);
+            }
+        };
+
+        await forceCardioPush();
     }
 };

@@ -300,3 +300,11 @@ PEGASUS 184 - WEEKEND MODE PANEL STABILITY FIX
 - Bike + weights / weights modes can re-render normally and keep their generated exercises.
 - No new files added; file count remains 62.
 - Service worker cache bumped to pegasus-shield-v3.116-FINAL-184.
+
+pegasus185
+- FIX: Όταν περνάει ποδηλασία από κινητό γίνεται άμεσο cloud push με retry αντί να περιμένει το 30s heartbeat.
+- FIX: Όταν ανοίγει η Προεπισκόπηση/Πρόοδος στον υπολογιστή γίνεται άμεσο cloud pull πριν το render.
+- FIX: Όταν ανοίγει η Διατροφή στον υπολογιστή γίνεται άμεσο cloud pull και οι θερμίδες παίρνουν το cardio offset.
+- FIX: Οι θερμίδες ημέρας πλέον διαβάζουν cardio offset από canonical key, legacy key ή fallback από cardio history.
+- FIX: Η ποδηλασία δεν κόβει πλέον τα πόδια στο 24/24. Αν υπάρχει έξτρα φορτίο, δείχνει π.χ. 42/24.
+- UI: Διορθώθηκε η στοίχιση “ΘΕΡΜΙΔΕΣ 580 / 2800 kcal” ώστε να μην κολλάει αριστερά.

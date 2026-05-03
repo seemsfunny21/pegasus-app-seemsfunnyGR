@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS FOOD ENGINE - v10.0 (SHARED CORE PATCH)
+   PEGASUS FOOD ENGINE - v10.1 (CARDIO TARGET PULL PATCH)
    Protocol: Shared Metabolic Helpers + Strict Date Mapping + Safe Diet Targets
    Status: FINAL STABLE | DESKTOP/MOBILE TARGET CORE UNIFIED
    ========================================================================== */
@@ -52,6 +52,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('librarySearch');
     if (searchInput) {
         searchInput.oninput = () => window.filterLibrary();
+    }
+});
+
+window.addEventListener("pegasus_sync_complete", () => {
+    const panel = document.getElementById("foodPanel");
+    if (panel && panel.style.display !== "none") {
+        window.updateFoodUI?.();
+        window.updateKcalUI?.();
+        window.PegasusMetabolic?.renderUI?.();
     }
 });
 
@@ -113,23 +122,42 @@ function getCardioOffsetForDate(dateObj) {
 
     const todayStr = getPegasusDateStr(new Date());
     const requestedStr = getPegasusDateStr(targetDate);
+    const requestedKey = getWorkoutDateKey(targetDate);
 
     if (requestedStr === todayStr && typeof window.getPegasusTodayCardioOffset === "function") {
         return window.getPegasusTodayCardioOffset();
     }
 
-    const unifiedKey = "pegasus_cardio_kcal_" + requestedStr;
-    const legacyKey = (M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + requestedStr;
+    if (window.PegasusMetabolic?.getCardioOffsetForDate) {
+        return window.PegasusMetabolic.getCardioOffsetForDate(requestedStr);
+    }
 
-    const unifiedVal = parseFloat(localStorage.getItem(unifiedKey));
-    if (!isNaN(unifiedVal)) return unifiedVal;
+    const aliases = Array.from(new Set([requestedStr, requestedKey]));
+    let directValue = 0;
 
-    const legacyVal = parseFloat(localStorage.getItem(legacyKey));
-    if (!isNaN(legacyVal)) return legacyVal;
+    aliases.forEach(alias => {
+        const unified = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + alias));
+        if (!isNaN(unified)) directValue = Math.max(directValue, unified);
 
-    return 0;
+        const legacy = parseFloat(localStorage.getItem((M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + alias));
+        if (!isNaN(legacy)) directValue = Math.max(directValue, legacy);
+    });
+
+    let historyValue = 0;
+    try {
+        const history = JSON.parse(localStorage.getItem("pegasus_cardio_history") || "[]");
+        if (Array.isArray(history)) {
+            const aliasSet = new Set(aliases);
+            history.forEach(entry => {
+                if (aliasSet.has(String(entry?.date || '').trim())) {
+                    historyValue += parseFloat(entry?.kcal || 0) || 0;
+                }
+            });
+        }
+    } catch (e) {}
+
+    return Math.round(Math.max(directValue, historyValue));
 }
-
 function getBaseDietTargetForDate(dateObj) {
     const targetDate = dateObj || new Date();
 

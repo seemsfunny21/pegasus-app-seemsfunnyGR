@@ -1243,3 +1243,26 @@ input:checked + .slider:before { transform: translateX(26px); }
     line-height: 1.35;
     text-align: center;
 }
+
+/* PEGASUS 185: Food panel stat alignment */
+#foodPanel .pegasus-stats-container .stat-label-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 14px !important;
+    width: 100% !important;
+    margin-bottom: 6px !important;
+}
+
+#foodPanel .pegasus-stats-container .stat-label-row span:first-child {
+    flex: 0 0 auto !important;
+    margin-right: 10px !important;
+    letter-spacing: .5px !important;
+}
+
+#foodPanel .pegasus-stats-container .stat-label-row span:last-child {
+    flex: 1 1 auto !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    margin-left: auto !important;
+}

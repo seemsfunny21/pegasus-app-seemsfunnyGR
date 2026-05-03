@@ -122,15 +122,38 @@ function getPhaseStartingSeconds(targetPhase, currentRemaining) {
 }
 
 window.getPegasusTodayCardioOffset = function() {
+    if (window.PegasusMetabolic?.getTodayCardioOffset) {
+        return window.PegasusMetabolic.getTodayCardioOffset();
+    }
+
     const dateStr = window.getPegasusTodayDateStr();
+    const aliases = [dateStr];
+    const m = String(dateStr).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) aliases.push(`${m[3]}-${m[2]}-${m[1]}`);
 
-    const unified = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + dateStr));
-    if (!isNaN(unified)) return unified;
+    let directValue = 0;
+    aliases.forEach(alias => {
+        const unified = parseFloat(localStorage.getItem("pegasus_cardio_kcal_" + alias));
+        if (!isNaN(unified)) directValue = Math.max(directValue, unified);
 
-    const legacy = parseFloat(localStorage.getItem((M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr));
-    if (!isNaN(legacy)) return legacy;
+        const legacy = parseFloat(localStorage.getItem((M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + alias));
+        if (!isNaN(legacy)) directValue = Math.max(directValue, legacy);
+    });
 
-    return 0;
+    let historyValue = 0;
+    try {
+        const history = JSON.parse(localStorage.getItem("pegasus_cardio_history") || "[]");
+        const aliasSet = new Set(aliases);
+        if (Array.isArray(history)) {
+            history.forEach(entry => {
+                if (aliasSet.has(String(entry?.date || '').trim())) {
+                    historyValue += parseFloat(entry?.kcal || 0) || 0;
+                }
+            });
+        }
+    } catch (e) {}
+
+    return Math.round(Math.max(directValue, historyValue));
 };
 
 window.getPegasusBaseDailyTarget = function(settingsObj) {
@@ -1908,6 +1931,26 @@ window.onload = () => {
         window.updateKcalUI();
     }
 
+    async function pullFreshPegasusCloudForPanel(source, afterPull) {
+        try {
+            if (
+                window.PegasusCloud?.isUnlocked &&
+                typeof window.PegasusCloud.pull === "function" &&
+                !window.PegasusCloud.isPulling &&
+                !window.PegasusCloud.isPushing
+            ) {
+                await window.PegasusCloud.pull(true);
+            }
+        } catch (e) {
+            console.warn(`⚠️ PEGASUS: cloud pull before ${source} skipped.`, e);
+        }
+
+        if (typeof afterPull === "function") afterPull();
+        if (typeof window.refreshAllUI === "function") window.refreshAllUI();
+        if (typeof window.updateKcalUI === "function") window.updateKcalUI();
+        if (window.PegasusMetabolic?.renderUI) window.PegasusMetabolic.renderUI();
+    }
+
     window.masterUI = {
         "btnStart": startPause,
         "btnNext": skipToNextExercise,
@@ -1975,13 +2018,19 @@ window.onload = () => {
         "btnCalendarUI": { panel: "calendarPanel", init: window.renderCalendar },
         "btnAchUI": { panel: "achievementsPanel", init: window.renderAchievements },
         "btnSettingsUI": { panel: "settingsPanel", init: window.initSettingsUI },
-        "btnFoodUI": { panel: "foodPanel", init: window.updateFoodUI },
+        "btnFoodUI": { panel: "foodPanel", init: () => pullFreshPegasusCloudForPanel("food", () => {
+            if (typeof window.updateFoodUI === "function") window.updateFoodUI();
+        }) },
         "btnProposalsUI": () => {
             if (window.PegasusDietAdvisor?.renderAdvisorUI) window.renderAdvisorUI();
             else { if (window.pegasusAlert) window.pegasusAlert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); }
         },
         "btnToolsUI": { panel: "toolsPanel", init: null },
-        "btnPreviewUI": { panel: "previewPanel", init: window.renderPreview || openExercisePreview },
+        "btnPreviewUI": { panel: "previewPanel", init: () => pullFreshPegasusCloudForPanel("progress", () => {
+            if (typeof window.renderPreview === "function") window.renderPreview();
+            else if (typeof openExercisePreview === "function") openExercisePreview();
+            if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
+        }) },
         "btnOpenGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
         "btnCardio": { panel: "cardioPanel", init: () => { if (window.PegasusCardio) window.PegasusCardio.open(); } },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },

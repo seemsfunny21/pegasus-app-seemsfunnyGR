@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - CARDIO & CYCLING AUTOMATION ENGINE (v2.3)
+   PEGASUS OS - CARDIO & CYCLING AUTOMATION ENGINE (v2.4)
    Protocol: Unified Cardio Offset, Desktop/Mobile Diet Sync & Muscle Sync
-   Status: FINAL STABLE | FIXED: CROSS-DEVICE KCAL SYNC
+   Status: FINAL STABLE | FIXED: UNCAPPED CYCLING LOAD + IMMEDIATE PUSH
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -83,17 +83,15 @@ window.saveCardioData = async function() {
     const statsKey = M?.system?.stats || 'pegasus_stats';
 
     let historySets = JSON.parse(localStorage.getItem(historyKey) || "{}");
-    const targets = JSON.parse(localStorage.getItem(targetsKey) || "null") || { "Πόδια": 24 };
-    const legTarget = Math.max(1, parseInt(targets["Πόδια"] || 24, 10));
     const currentLegSets = Math.max(0, parseInt(historySets["Πόδια"] || 0, 10));
-    const credit = Math.max(0, Math.min(maxCyclingCredit, legTarget - currentLegSets));
+    const credit = Math.max(0, Math.min(maxCyclingCredit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2)));
 
-    const carryoverCredit = Math.max(credit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2));
+    const carryoverCredit = credit;
     if (window.PegasusBrain?.recordWeekendCarryover) {
         try { window.PegasusBrain.recordWeekendCarryover("Ποδηλασία", "Πόδια", carryoverCredit, workoutKey); } catch (e) { console.warn("⚠️ PEGASUS BRAIN: cycling carry-over skipped.", e); }
     }
 
-    historySets["Πόδια"] = Math.min(legTarget, currentLegSets + credit);
+    historySets["Πόδια"] = currentLegSets + credit;
     localStorage.setItem(historyKey, JSON.stringify(historySets));
 
     let stats = JSON.parse(localStorage.getItem(statsKey) || "{}");
@@ -157,9 +155,22 @@ window.saveCardioData = async function() {
     if (typeof window.updateFoodUI === "function") window.updateFoodUI();
     if (typeof window.renderFood === "function") window.renderFood();
     if (typeof window.updateKcalUI === "function") window.updateKcalUI();
+    if (window.PegasusMetabolic?.renderUI) window.PegasusMetabolic.renderUI();
 
     /* --- 6. CLOUD PUSH --- */
-    if (window.PegasusCloud?.push) {
-        await window.PegasusCloud.push(true);
-    }
+    const forceCardioPush = async () => {
+        let pushed = false;
+        try {
+            if (window.PegasusCloud?.push) pushed = await window.PegasusCloud.push(true);
+        } catch (e) {
+            console.warn("⚠️ PEGASUS CARDIO: immediate push failed, retry queued.", e);
+        }
+        if (!pushed && window.PegasusCloud?.syncNow) {
+            try { pushed = await window.PegasusCloud.syncNow(true); } catch (e) {}
+        }
+        if (!pushed && window.PegasusCloud?.push) {
+            setTimeout(() => { try { window.PegasusCloud.push(true); } catch (e) {} }, 1200);
+        }
+    };
+    await forceCardioPush();
 };
