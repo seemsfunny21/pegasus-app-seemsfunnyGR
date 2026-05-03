@@ -308,3 +308,13 @@ pegasus185
 - FIX: Οι θερμίδες ημέρας πλέον διαβάζουν cardio offset από canonical key, legacy key ή fallback από cardio history.
 - FIX: Η ποδηλασία δεν κόβει πλέον τα πόδια στο 24/24. Αν υπάρχει έξτρα φορτίο, δείχνει π.χ. 42/24.
 - UI: Διορθώθηκε η στοίχιση “ΘΕΡΜΙΔΕΣ 580 / 2800 kcal” ώστε να μην κολλάει αριστερά.
+
+
+pegasus186
+- Mobile cardio save is now canonical: writes kcal/km under padded Greek, ISO, unpadded, and compact date aliases.
+- If only kilometers are entered, PEGASUS estimates cycling kcal from km so Diet does not stay at +0.
+- Cardio history now stores isoDate/dateKey/compactDate plus calories and km for reliable desktop pull.
+- Desktop/mobile metabolic readers now match all date aliases and richer history fields.
+- Cloud sync now includes cardio km/distance prefixes, not only cardio kcal.
+- Mobile cardio save forces immediate cloud push with retries.
+- No new file added.

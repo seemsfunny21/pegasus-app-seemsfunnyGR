@@ -16,6 +16,34 @@ function getPegasusLocalInputDate() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+
+function getPegasusCardioDateAliasesFromParts(d, m, y) {
+    const dd = String(parseInt(d, 10));
+    const mm = String(parseInt(m, 10));
+    const paddedD = String(d).padStart(2, '0');
+    const paddedM = String(m).padStart(2, '0');
+    return Array.from(new Set([
+        `${paddedD}/${paddedM}/${y}`,
+        `${y}-${paddedM}-${paddedD}`,
+        `${dd}/${mm}/${y}`,
+        `${y}${paddedM}${paddedD}`
+    ]));
+}
+
+function pegasusReadMaxNumber(prefixes, aliases) {
+    let value = 0;
+    prefixes.forEach(prefix => aliases.forEach(alias => {
+        const parsed = parseFloat(localStorage.getItem(prefix + alias));
+        if (!isNaN(parsed)) value = Math.max(value, parsed);
+    }));
+    return value;
+}
+
+function pegasusWriteAliasNumbers(prefixes, aliases, value) {
+    const normalized = Number(value || 0).toFixed(1);
+    prefixes.forEach(prefix => aliases.forEach(alias => localStorage.setItem(prefix + alias, normalized)));
+}
+
 window.PegasusCardio = {
     open: function() {
         const panel = document.getElementById('cardioPanel');
@@ -109,15 +137,19 @@ window.saveCardioData = async function() {
     let currentWeekly = parseFloat(localStorage.getItem(weeklyKcalKey)) || 0;
     localStorage.setItem(weeklyKcalKey, (currentWeekly + kcal).toFixed(1));
 
-    // Γράφουμε και το legacy και το unified key ώστε mobile + desktop να συμφωνούν
-    const legacyOffsetKey = (M?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr;
-    const unifiedOffsetKey = "pegasus_cardio_kcal_" + dateStr;
+    // Γράφουμε όλα τα date aliases ώστε mobile + desktop + cloud να συμφωνούν
+    const aliases = getPegasusCardioDateAliasesFromParts(d, m, y);
+    const cardioOffsetBase = M?.workout?.cardio_offset || "pegasus_cardio_offset_sets";
+    const kcalPrefixes = ["pegasus_cardio_kcal_", `${cardioOffsetBase}_`, "pegasus_cardio_offset_sets_"];
+    const kmPrefixes = ["pegasus_cardio_km_", "pegasus_cardio_distance_", "pegasus_cardio_kilometers_"];
 
-    localStorage.setItem(legacyOffsetKey, Number(kcal).toFixed(1));
-    localStorage.setItem(unifiedOffsetKey, Number(kcal).toFixed(1));
+    const nextKcal = pegasusReadMaxNumber(kcalPrefixes, aliases) + Number(kcal);
+    pegasusWriteAliasNumbers(kcalPrefixes, aliases, nextKcal);
 
-    console.log(`🔥 CARDIO SYNC: ${unifiedOffsetKey} = ${Number(kcal).toFixed(1)}`);
-    console.log(`🔥 CARDIO SYNC: ${legacyOffsetKey} = ${Number(kcal).toFixed(1)}`);
+    const nextKm = pegasusReadMaxNumber(kmPrefixes, aliases) + Number(km);
+    pegasusWriteAliasNumbers(kmPrefixes, aliases, nextKm);
+
+    console.log(`🔥 CARDIO SYNC: aliases = ${aliases.join(', ')} | kcal=${nextKcal.toFixed(1)} | km=${nextKm.toFixed(1)}`);
 
     /* --- 3. CALENDAR SYNC (MARK AS COMPLETED) --- */
     if (km >= 15 || kcal >= 400) {
@@ -136,9 +168,18 @@ window.saveCardioData = async function() {
 
     historyLog.unshift({
         date: dateStr,
+        isoDate: workoutKey,
+        dateKey: workoutKey,
+        compactDate: `${y}${m}${d}`,
         type: "Ποδηλασία",
+        activity: "cycling",
         km: km,
-        kcal: kcal
+        distanceKm: km,
+        kcal: kcal,
+        calories: kcal,
+        legSets: credit,
+        recordedAt: new Date().toISOString(),
+        source: "desktop-cardio-v2.5"
     });
 
     localStorage.setItem("pegasus_cardio_history", JSON.stringify(historyLog.slice(0, 50)));

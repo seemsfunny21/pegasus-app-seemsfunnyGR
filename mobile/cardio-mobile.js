@@ -1,159 +1,225 @@
 /* ==========================================================================
-   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.5 CARDIO PUSH PATCH)
-   Protocol: Unified Cardio Offset, XP Alignment, History Logging & Cloud Sync
-   Status: FINAL STABLE | FIXED: MOBILE IMMEDIATE CARDIO PUSH + NO LEG CAP
+   PEGASUS OS - CARDIO MODULE (MOBILE EDITION v14.6 CANONICAL CARDIO SAVE)
+   Protocol: Canonical km/kcal aliases, auto-kcal estimate, history logging & forced cloud push
+   Status: FINAL STABLE | FIXED: MOBILE BIKE KM/KCAL RECORD ALWAYS WRITTEN
    ========================================================================== */
 
-window.PegasusCardio = {
-    save: async function() {
-        const kmEl = document.getElementById('cdKm');
-        const kcalEl = document.getElementById('cdKcalBurned');
+(function() {
+    const CARDIO_KCAL_PER_KM = 26.8; // calibrated from previous Pegasus cycling logs (~830 kcal / 31km)
 
-        const km = parseFloat((kmEl?.value || "").replace(',', '.')) || 0;
-        const burnedKcal = parseFloat((kcalEl?.value || "").replace(',', '.')) || 0;
+    function pad(n) { return String(n).padStart(2, '0'); }
 
-        if (km === 0 && burnedKcal === 0) return;
-
-        /* --- 0. DATE PREPARATION (UNIFIED PADDING PROTOCOL) --- */
-        const rawDate = new Date();
-        const d = String(rawDate.getDate()).padStart(2, '0');
-        const m = String(rawDate.getMonth() + 1).padStart(2, '0');
-        const y = rawDate.getFullYear();
-
-        const dateStr = `${d}/${m}/${y}`;
-        const workoutKey = `${y}-${m}-${d}`;
-
-        /* --- 1. ΕΚΤΙΜΗΣΗ ΚΟΠΩΣΗΣ & LIFETIME STATS (XP) --- */
-        if (km > 0) {
-            const maxCyclingCredit = 18;
-
-            // Weekly Progress Update: cycling is logged from Cardio as real extra leg load.
-            // Do NOT cap at the weekly leg target: if legs are 24/24 and cycling happens,
-            // the UI must be allowed to show e.g. 42/24 so Pegasus knows there was extra load.
-            let history = JSON.parse(localStorage.getItem('pegasus_weekly_history') || "{}");
-            const currentLegSets = Math.max(0, parseInt(history["Πόδια"] || 0, 10));
-            const credit = Math.max(0, Math.min(maxCyclingCredit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2)));
-
-            const carryoverCredit = credit;
-            if (window.PegasusBrain?.recordWeekendCarryover) {
-                try { window.PegasusBrain.recordWeekendCarryover("Ποδηλασία", "Πόδια", carryoverCredit, workoutKey); } catch (e) { console.warn("⚠️ PEGASUS BRAIN: mobile cycling carry-over skipped.", e); }
-            }
-
-            history["Πόδια"] = currentLegSets + credit;
-            localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
-            const weekDay = rawDate.getDay() || 7;
-            const weekMonday = new Date(rawDate);
-            weekMonday.setHours(0, 0, 0, 0);
-            weekMonday.setDate(rawDate.getDate() - weekDay + 1);
-            const weekKey = `${weekMonday.getFullYear()}-${String(weekMonday.getMonth() + 1).padStart(2, '0')}-${String(weekMonday.getDate()).padStart(2, '0')}`;
-            localStorage.setItem('pegasus_weekly_history_week_key', weekKey);
-            window.dispatchEvent?.(new CustomEvent('pegasus_weekly_history_updated', { detail: { source: 'mobile-cardio', history: { ...history } } }));
-
-            // Lifetime Stats / XP
-            let stats = JSON.parse(localStorage.getItem('pegasus_stats') || "{}");
-            if (!stats || typeof stats !== "object") stats = {};
-            if (typeof stats.totalSets !== "number") stats.totalSets = 0;
-            if (!stats.exerciseHistory || typeof stats.exerciseHistory !== "object") stats.exerciseHistory = {};
-
-            stats.totalSets += credit;
-            stats.exerciseHistory["Ποδηλασία"] = (stats.exerciseHistory["Ποδηλασία"] || 0) + credit;
-            localStorage.setItem('pegasus_stats', JSON.stringify(stats));
-
-            // Detailed History Logging
-            let cardioLog = JSON.parse(localStorage.getItem("pegasus_cardio_history") || "[]");
-            if (!Array.isArray(cardioLog)) cardioLog = [];
-
-            cardioLog.unshift({
-                date: dateStr,
-                type: "Ποδηλασία",
-                km: km,
-                kcal: burnedKcal
-            });
-
-            localStorage.setItem("pegasus_cardio_history", JSON.stringify(cardioLog.slice(0, 50)));
-
-            console.log(`🚴 CARDIO: ${km}km logged. ${credit} uncapped sets credited to Legs & XP.`);
-        }
-
-        /* --- 2. ΜΕΤΑΒΟΛΙΚΗ ΣΥΝΔΕΣΗ (UNIFIED MOBILE + DESKTOP SYNC) --- */
-        if (burnedKcal > 0) {
-            // Γράφουμε και unified και legacy key ώστε να διαβάζουν το ίδιο mobile + desktop
-            const unifiedOffsetKey = "pegasus_cardio_kcal_" + dateStr;
-            const legacyOffsetKey = (window.PegasusManifest?.workout?.cardio_offset || "pegasus_cardio_offset_sets") + "_" + dateStr;
-
-            let todayUnified = parseFloat(localStorage.getItem(unifiedOffsetKey)) || 0;
-            const nextCardio = (todayUnified + burnedKcal).toFixed(1);
-
-            localStorage.setItem(unifiedOffsetKey, nextCardio);
-            localStorage.setItem(legacyOffsetKey, nextCardio);
-
-            // Weekly Dashboard Sync
-            let weeklyKcal = parseFloat(localStorage.getItem("pegasus_weekly_kcal")) || 0;
-            localStorage.setItem("pegasus_weekly_kcal", (weeklyKcal + burnedKcal).toFixed(1));
-
-            // Live UI Refresh
-            if (window.PegasusDiet && typeof window.PegasusDiet.updateUI === "function") {
-                window.PegasusDiet.updateUI();
-            }
-            if (typeof window.updateFoodUI === "function") {
-                window.updateFoodUI();
-            }
-            if (typeof window.renderFood === "function") {
-                window.renderFood();
-            }
-            if (window.PegasusMetabolic?.renderUI) {
-                window.PegasusMetabolic.renderUI();
-            }
-
-            console.log(`🔥 METABOLIC: Unified cardio sync +${burnedKcal} kcal (${unifiedOffsetKey}).`);
-            console.log(`🔥 METABOLIC: Legacy cardio sync +${burnedKcal} kcal (${legacyOffsetKey}).`);
-        }
-
-        /* --- 3. 🎯 CALENDAR SYNC: Πρασίνισμα Ημέρας --- */
-        if (km >= 15 || burnedKcal >= 400) {
-            const doneKey = "pegasus_workouts_done";
-            let calendarData = JSON.parse(localStorage.getItem(doneKey) || "{}");
-
-            calendarData[workoutKey] = true;
-            localStorage.setItem(doneKey, JSON.stringify(calendarData));
-
-            console.log(`✅ CALENDAR: Day marked as completed (${workoutKey}).`);
-        }
-
-        /* --- 4. UI REFRESH --- */
-        if (window.MuscleProgressUI?.render) {
-            window.MuscleProgressUI.render();
-        }
-
-        /* --- 5. CLEANUP & SYNC --- */
-        if (kmEl) kmEl.value = "";
-        if (kcalEl) kcalEl.value = "";
-
-        if (typeof openView === "function") openView('home');
-
-        // Immediate mobile → cloud push. If the cloud layer is busy, retry shortly so
-        // cycling calories/leg load do not wait for the 30s heartbeat.
-        const forceCardioPush = async () => {
-            let pushed = false;
-            try {
-                if (window.PegasusCloud?.push) {
-                    pushed = await window.PegasusCloud.push(true);
-                }
-            } catch (e) {
-                console.warn("⚠️ PEGASUS CARDIO: immediate push failed, retry queued.", e);
-            }
-
-            if (!pushed && window.PegasusCloud?.syncNow) {
-                try { pushed = await window.PegasusCloud.syncNow(true); } catch (e) {}
-            }
-
-            if (!pushed && window.PegasusCloud?.push) {
-                setTimeout(() => {
-                    try { window.PegasusCloud.push(true); } catch (e) {}
-                }, 1200);
-            }
+    function getDateBundle(date = new Date()) {
+        const d = pad(date.getDate());
+        const m = pad(date.getMonth() + 1);
+        const y = date.getFullYear();
+        const dd = String(date.getDate());
+        const mm = String(date.getMonth() + 1);
+        return {
+            dateStr: `${d}/${m}/${y}`,
+            iso: `${y}-${m}-${d}`,
+            unpadded: `${dd}/${mm}/${y}`,
+            compact: `${y}${m}${d}`,
+            weekKey: `${y}-${m}-${d}`,
+            aliases: Array.from(new Set([`${d}/${m}/${y}`, `${y}-${m}-${d}`, `${dd}/${mm}/${y}`, `${y}${m}${d}`]))
         };
-
-        await forceCardioPush();
     }
-};
+
+    function readNumber(key) {
+        const value = parseFloat(localStorage.getItem(key));
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    function maxExisting(prefixes, aliases) {
+        let value = 0;
+        prefixes.forEach(prefix => {
+            aliases.forEach(alias => {
+                value = Math.max(value, readNumber(prefix + alias));
+            });
+        });
+        return value;
+    }
+
+    function writeAliases(prefixes, aliases, value) {
+        const normalized = Number(value || 0).toFixed(1);
+        prefixes.forEach(prefix => {
+            aliases.forEach(alias => localStorage.setItem(prefix + alias, normalized));
+        });
+    }
+
+    function readHistory() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem('pegasus_cardio_history') || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function writeHistory(entry) {
+        const history = readHistory();
+        const signature = `${entry.isoDate}|${entry.type}|${entry.km}|${entry.kcal}`;
+        const withoutDuplicate = history.filter(item => {
+            const itemSig = `${item?.isoDate || item?.dateKey || item?.workoutKey || ''}|${item?.type || ''}|${item?.km || item?.distanceKm || ''}|${item?.kcal || item?.calories || ''}`;
+            return itemSig !== signature;
+        });
+        withoutDuplicate.unshift(entry);
+        localStorage.setItem('pegasus_cardio_history', JSON.stringify(withoutDuplicate.slice(0, 80)));
+    }
+
+    async function forceCardioPush() {
+        let pushed = false;
+        try {
+            if (window.PegasusCloud?.push) {
+                const result = await window.PegasusCloud.push(true);
+                pushed = result !== false;
+            }
+        } catch (e) {
+            console.warn('⚠️ PEGASUS CARDIO: immediate push failed, retry queued.', e);
+        }
+
+        if (!pushed && window.PegasusCloud?.syncNow) {
+            try {
+                const result = await window.PegasusCloud.syncNow(true);
+                pushed = result !== false;
+            } catch (e) {}
+        }
+
+        if (window.PegasusCloud?.push) {
+            setTimeout(() => { try { window.PegasusCloud.push(true); } catch (e) {} }, 1200);
+            setTimeout(() => { try { window.PegasusCloud.push(true); } catch (e) {} }, 4000);
+        }
+    }
+
+    function refreshCardioUI() {
+        if (window.PegasusDiet && typeof window.PegasusDiet.updateUI === 'function') window.PegasusDiet.updateUI();
+        if (typeof window.updateFoodUI === 'function') window.updateFoodUI();
+        if (typeof window.renderFood === 'function') window.renderFood();
+        if (typeof window.updateKcalUI === 'function') window.updateKcalUI();
+        if (window.PegasusMetabolic?.renderUI) window.PegasusMetabolic.renderUI();
+        if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render();
+    }
+
+    window.PegasusCardio = {
+        save: async function() {
+            if (window.__pegasusMobileCardioSaving) return;
+            window.__pegasusMobileCardioSaving = true;
+
+            try {
+                const kmEl = document.getElementById('cdKm');
+                const kcalEl = document.getElementById('cdKcalBurned');
+
+                const km = parseFloat((kmEl?.value || '').replace(',', '.')) || 0;
+                const inputKcal = parseFloat((kcalEl?.value || '').replace(',', '.')) || 0;
+                const estimatedKcal = km > 0 ? Math.round(km * CARDIO_KCAL_PER_KM) : 0;
+                const burnedKcal = inputKcal > 0 ? inputKcal : estimatedKcal;
+
+                if (km <= 0 && burnedKcal <= 0) {
+                    alert('Συμπλήρωσε χιλιόμετρα ή θερμίδες ποδηλασίας.');
+                    return;
+                }
+
+                const date = getDateBundle(new Date());
+                const aliases = date.aliases;
+                const cardioOffsetBase = window.PegasusManifest?.workout?.cardio_offset || 'pegasus_cardio_offset_sets';
+
+                /* --- 1. LEG LOAD / WEEKLY PROGRESS --- */
+                const maxCyclingCredit = 18;
+                const credit = km > 0
+                    ? Math.max(0, Math.min(maxCyclingCredit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2)))
+                    : 0;
+
+                if (credit > 0) {
+                    let history = JSON.parse(localStorage.getItem('pegasus_weekly_history') || '{}');
+                    if (!history || typeof history !== 'object') history = {};
+                    const currentLegSets = Math.max(0, parseInt(history['Πόδια'] || 0, 10));
+                    history['Πόδια'] = currentLegSets + credit;
+                    localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
+
+                    const weekDay = (new Date()).getDay() || 7;
+                    const weekMonday = new Date();
+                    weekMonday.setHours(0, 0, 0, 0);
+                    weekMonday.setDate(weekMonday.getDate() - weekDay + 1);
+                    const weekKey = `${weekMonday.getFullYear()}-${pad(weekMonday.getMonth() + 1)}-${pad(weekMonday.getDate())}`;
+                    localStorage.setItem('pegasus_weekly_history_week_key', weekKey);
+
+                    if (window.PegasusBrain?.recordWeekendCarryover) {
+                        try { window.PegasusBrain.recordWeekendCarryover('Ποδηλασία', 'Πόδια', credit, date.iso); }
+                        catch (e) { console.warn('⚠️ PEGASUS BRAIN: mobile cycling carry-over skipped.', e); }
+                    }
+
+                    let stats = JSON.parse(localStorage.getItem('pegasus_stats') || '{}');
+                    if (!stats || typeof stats !== 'object') stats = {};
+                    if (typeof stats.totalSets !== 'number') stats.totalSets = 0;
+                    if (!stats.exerciseHistory || typeof stats.exerciseHistory !== 'object') stats.exerciseHistory = {};
+                    stats.totalSets += credit;
+                    stats.exerciseHistory['Ποδηλασία'] = (stats.exerciseHistory['Ποδηλασία'] || 0) + credit;
+                    localStorage.setItem('pegasus_stats', JSON.stringify(stats));
+
+                    window.dispatchEvent?.(new CustomEvent('pegasus_weekly_history_updated', { detail: { source: 'mobile-cardio', history: { ...history } } }));
+                }
+
+                /* --- 2. CANONICAL CARDIO KCAL/KM STORAGE --- */
+                const kcalPrefixes = ['pegasus_cardio_kcal_', `${cardioOffsetBase}_`, 'pegasus_cardio_offset_sets_'];
+                const kmPrefixes = ['pegasus_cardio_km_', 'pegasus_cardio_distance_', 'pegasus_cardio_kilometers_'];
+
+                if (burnedKcal > 0) {
+                    const currentKcal = maxExisting(kcalPrefixes, aliases);
+                    const nextKcal = currentKcal + burnedKcal;
+                    writeAliases(kcalPrefixes, aliases, nextKcal);
+
+                    const weeklyKcalKey = window.PegasusManifest?.diet?.weeklyKcal || 'pegasus_weekly_kcal';
+                    const weeklyKcal = parseFloat(localStorage.getItem(weeklyKcalKey)) || 0;
+                    localStorage.setItem(weeklyKcalKey, (weeklyKcal + burnedKcal).toFixed(1));
+                    localStorage.setItem('pegasus_effective_today_kcal', String(Math.round((parseFloat(localStorage.getItem('pegasus_goal_kcal')) || 2800) + nextKcal)));
+                    localStorage.setItem('pegasus_effective_today_date', date.dateStr);
+                }
+
+                if (km > 0) {
+                    const currentKm = maxExisting(kmPrefixes, aliases);
+                    writeAliases(kmPrefixes, aliases, currentKm + km);
+                }
+
+                /* --- 3. HISTORY + LAST SNAPSHOT --- */
+                const entry = {
+                    date: date.dateStr,
+                    isoDate: date.iso,
+                    dateKey: date.iso,
+                    compactDate: date.compact,
+                    type: 'Ποδηλασία',
+                    activity: 'cycling',
+                    km,
+                    distanceKm: km,
+                    kcal: burnedKcal,
+                    calories: burnedKcal,
+                    estimatedKcal: inputKcal <= 0 && estimatedKcal > 0,
+                    legSets: credit,
+                    recordedAt: new Date().toISOString(),
+                    source: 'mobile-cardio-v14.6'
+                };
+                writeHistory(entry);
+                localStorage.setItem('pegasus_last_cardio_entry', JSON.stringify(entry));
+
+                /* --- 4. CALENDAR --- */
+                if (km >= 15 || burnedKcal >= 400) {
+                    const doneKey = 'pegasus_workouts_done';
+                    let calendarData = JSON.parse(localStorage.getItem(doneKey) || '{}');
+                    if (!calendarData || typeof calendarData !== 'object') calendarData = {};
+                    calendarData[date.iso] = true;
+                    localStorage.setItem(doneKey, JSON.stringify(calendarData));
+                }
+
+                refreshCardioUI();
+
+                if (kmEl) kmEl.value = '';
+                if (kcalEl) kcalEl.value = '';
+                if (typeof openView === 'function') openView('home');
+
+                console.log(`🚴 CARDIO MOBILE: ${km}km | +${burnedKcal} kcal | +${credit} leg sets | aliases:`, aliases);
+                await forceCardioPush();
+            } finally {
+                setTimeout(() => { window.__pegasusMobileCardioSaving = false; }, 500);
+            }
+        }
+    };
+})();

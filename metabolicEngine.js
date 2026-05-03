@@ -87,15 +87,30 @@ const PegasusMetabolic = {
     },
 
     getDateAliases: function(dateStr) {
+        if (typeof window.getPegasusDateAliases === "function") {
+            return window.getPegasusDateAliases(dateStr);
+        }
+
         const aliases = new Set();
         const raw = String(dateStr || '').trim();
         if (raw) aliases.add(raw);
 
-        const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if (iso) aliases.add(`${iso[3]}/${iso[2]}/${iso[1]}`);
+        let iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (iso) {
+            aliases.add(`${iso[3]}/${iso[2]}/${iso[1]}`);
+            aliases.add(`${parseInt(iso[3], 10)}/${parseInt(iso[2], 10)}/${iso[1]}`);
+            aliases.add(`${iso[1]}${iso[2]}${iso[3]}`);
+        }
 
-        const greek = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-        if (greek) aliases.add(`${greek[3]}-${greek[2]}-${greek[1]}`);
+        let greek = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (greek) {
+            const d = String(parseInt(greek[1], 10)).padStart(2, '0');
+            const m = String(parseInt(greek[2], 10)).padStart(2, '0');
+            aliases.add(`${d}/${m}/${greek[3]}`);
+            aliases.add(`${parseInt(greek[1], 10)}/${parseInt(greek[2], 10)}/${greek[3]}`);
+            aliases.add(`${greek[3]}-${m}-${d}`);
+            aliases.add(`${greek[3]}${m}${d}`);
+        }
 
         return Array.from(aliases);
     },
@@ -121,8 +136,8 @@ const PegasusMetabolic = {
             if (Array.isArray(cardioHistory)) {
                 const aliasSet = new Set(aliases);
                 cardioHistory.forEach(entry => {
-                    if (aliasSet.has(String(entry?.date || '').trim())) {
-                        historyValue += parseFloat(entry?.kcal || 0) || 0;
+                    if (aliasSet.has(String(entry?.date || '').trim()) || aliasSet.has(String(entry?.isoDate || entry?.dateKey || entry?.workoutKey || '').trim()) || aliasSet.has(String(entry?.compactDate || '').trim())) {
+                        historyValue += parseFloat(entry?.kcal || entry?.calories || entry?.cardioKcal || 0) || 0;
                     }
                 });
             }

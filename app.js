@@ -61,6 +61,38 @@ window.getPegasusLocalDateKey = function() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+window.getPegasusDateAliases = function(dateStr) {
+    const aliases = new Set();
+    const raw = String(dateStr || '').trim();
+    if (raw) aliases.add(raw);
+
+    let m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) {
+        aliases.add(`${m[3]}-${m[2]}-${m[1]}`);
+        aliases.add(`${parseInt(m[1], 10)}/${parseInt(m[2], 10)}/${m[3]}`);
+        aliases.add(`${m[3]}${m[2]}${m[1]}`);
+    }
+
+    m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) {
+        aliases.add(`${m[3]}/${m[2]}/${m[1]}`);
+        aliases.add(`${parseInt(m[3], 10)}/${parseInt(m[2], 10)}/${m[1]}`);
+        aliases.add(`${m[1]}${m[2]}${m[3]}`);
+    }
+
+    m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+        const d = String(parseInt(m[1], 10)).padStart(2, '0');
+        const mo = String(parseInt(m[2], 10)).padStart(2, '0');
+        aliases.add(`${d}/${mo}/${m[3]}`);
+        aliases.add(`${m[3]}-${mo}-${d}`);
+        aliases.add(`${m[3]}${mo}${d}`);
+    }
+
+    return Array.from(aliases);
+};
+
+
 /* PEGASUS 135: muscle group emoji helpers */
 window.getPegasusMuscleEmoji = function(group) {
     const key = String(group || '').trim();
@@ -127,9 +159,9 @@ window.getPegasusTodayCardioOffset = function() {
     }
 
     const dateStr = window.getPegasusTodayDateStr();
-    const aliases = [dateStr];
-    const m = String(dateStr).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (m) aliases.push(`${m[3]}-${m[2]}-${m[1]}`);
+    const aliases = (typeof window.getPegasusDateAliases === "function")
+        ? window.getPegasusDateAliases(dateStr)
+        : [dateStr];
 
     let directValue = 0;
     aliases.forEach(alias => {
@@ -146,8 +178,8 @@ window.getPegasusTodayCardioOffset = function() {
         const aliasSet = new Set(aliases);
         if (Array.isArray(history)) {
             history.forEach(entry => {
-                if (aliasSet.has(String(entry?.date || '').trim())) {
-                    historyValue += parseFloat(entry?.kcal || 0) || 0;
+                if (aliasSet.has(String(entry?.date || '').trim()) || aliasSet.has(String(entry?.isoDate || entry?.dateKey || entry?.workoutKey || '').trim()) || aliasSet.has(String(entry?.compactDate || '').trim())) {
+                    historyValue += parseFloat(entry?.kcal || entry?.calories || entry?.cardioKcal || 0) || 0;
                 }
             });
         }

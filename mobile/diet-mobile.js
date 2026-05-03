@@ -183,9 +183,9 @@ window.PegasusDiet = {
             return window.getPegasusTodayCardioOffset();
         }
 
-        const aliases = [targetDate];
-        const m = String(targetDate).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-        if (m) aliases.push(`${m[3]}-${m[2]}-${m[1]}`);
+        const aliases = (typeof window.getPegasusDateAliases === "function")
+            ? window.getPegasusDateAliases(targetDate)
+            : [targetDate];
 
         let directValue = 0;
         aliases.forEach(alias => {
