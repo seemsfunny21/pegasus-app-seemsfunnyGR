@@ -1325,3 +1325,41 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-size: 10px;
     line-height: 1.25;
 }
+
+/* PEGASUS 194: Vertical compact Weekend mode selector */
+.pegasus-weekend-mode-panel {
+    max-width: 180px !important;
+    padding: 8px 9px !important;
+    margin: 8px auto 10px !important;
+    border-radius: 12px !important;
+}
+.pegasus-weekend-mode-title {
+    font-size: 10px !important;
+    margin-bottom: 6px !important;
+    letter-spacing: .08em !important;
+}
+.pegasus-weekend-mode-options {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+}
+.pegasus-weekend-mode-options button {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+}
+.pegasus-weekend-mode-note {
+    max-width: 180px !important;
+    margin: 8px auto 10px !important;
+    padding: 7px 8px !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+}

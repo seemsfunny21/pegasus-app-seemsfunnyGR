@@ -402,7 +402,7 @@
         const panel = document.createElement("div");
         panel.className = "pegasus-weekend-mode-panel";
         panel.innerHTML = `
-            <div class="pegasus-weekend-mode-title">Weekend mode</div>
+            <div class="pegasus-weekend-mode-title">Σ/Κ</div>
             <div class="pegasus-weekend-mode-options">
                 <button type="button" data-mode="bike" class="${mode === "bike" ? "active" : ""}">🚴 Ποδήλατο</button>
                 <button type="button" data-mode="bike_weights" class="${mode === "bike_weights" ? "active" : ""}">⚡ Ποδ. + βάρη</button>

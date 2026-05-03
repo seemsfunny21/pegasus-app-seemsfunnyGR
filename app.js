@@ -1205,7 +1205,7 @@ function selectDay(btn, day) {
                 if (existingNote) existingNote.remove();
                 const note = document.createElement('div');
                 note.className = 'pegasus-weekend-mode-note';
-                note.textContent = '🚴 Μόνο ποδήλατο ενεργό — δεν φορτώνει βάρη. Διάλεξε άλλο mode για να εμφανιστεί προπόνηση.';
+                note.textContent = '🚴 Ποδήλατο ενεργό — δεν φορτώνει βάρη.';
                 list.appendChild(note);
             } else {
                 list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
