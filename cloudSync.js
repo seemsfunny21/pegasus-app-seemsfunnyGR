@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v22.0)
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v22.1)
    STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
@@ -370,6 +370,39 @@ const PegasusCloud = {
 
     getWeeklyHistoryTotalValue(history) {
         return Object.values(history || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    },
+
+    isWeeklyProgressKey(key) {
+        return [
+            "pegasus_weekly_history",
+            "pegasus_weekly_history_week_key",
+            "pegasus_weekly_history_counted_v2"
+        ].includes(String(key || ""));
+    },
+
+    shouldBlockBootWeeklyWrite(key, value, type = "set") {
+        if (!this.isWeeklyProgressKey(key)) return false;
+        if (this.hasSuccessfullyPulled) return false;
+        if (!this.canRestoreApprovedDevice?.()) return false;
+        if (!navigator.onLine) return false;
+
+        if (key === "pegasus_weekly_history") {
+            const incomingTotal = this.getWeeklyHistoryTotalValue(this.normalizeWeeklyHistoryObject(value));
+            return incomingTotal === 0;
+        }
+
+        if (key === "pegasus_weekly_history_counted_v2") {
+            if (type === "remove") return true;
+            const ledger = this.safeParseStorageObject(value, null);
+            const currentWeek = this.getPegasusCurrentWeekKey();
+            const hasSets = ledger?.weekKey === currentWeek
+                && ledger.exercises
+                && typeof ledger.exercises === "object"
+                && Object.values(ledger.exercises).some(count => Math.max(0, Number(count) || 0) > 0);
+            return !hasSets;
+        }
+
+        return false;
     },
 
     normalizeWeeklyExerciseName(value) {
@@ -839,21 +872,41 @@ const PegasusCloud = {
         if (!entries.length) return false;
 
         this.isApplyingRemote = true;
+        let changed = false;
         try {
             for (const [key, entry] of entries) {
                 if (!this.isAllowedStorageKey(key)) continue;
 
                 if (entry?.type === "remove") {
+                    if (this.isWeeklyProgressKey(key)) {
+                        const localValue = localStorage.getItem(key);
+                        if (key === "pegasus_weekly_history_counted_v2") {
+                            const localLedger = this.safeParseStorageObject(localValue, null);
+                            const hasLocalCurrentSets = localLedger?.weekKey === this.getPegasusCurrentWeekKey()
+                                && localLedger.exercises
+                                && typeof localLedger.exercises === "object"
+                                && Object.values(localLedger.exercises).some(count => Math.max(0, Number(count) || 0) > 0);
+                            if (hasLocalCurrentSets) continue;
+                        }
+                    }
                     this.safeRemoveLocal(key);
+                    changed = true;
                 } else if (typeof entry?.value === "string") {
-                    this.safeSetLocal(key, entry.value);
+                    const currentLocal = localStorage.getItem(key);
+                    const nextValue = this.isWeeklyProgressKey(key)
+                        ? this.mergeManagedStorageValue(key, currentLocal, entry.value)
+                        : entry.value;
+                    if (nextValue !== currentLocal) {
+                        this.safeSetLocal(key, nextValue);
+                        changed = true;
+                    }
                 }
             }
         } finally {
             this.isApplyingRemote = false;
         }
 
-        return true;
+        return changed;
     },
 
     getLocalManagedKeys(options = {}) {
@@ -1631,6 +1684,12 @@ const PegasusCloud = {
             return false;
         }
 
+        // PEGASUS 182: an approved device must pull once before its first push.
+        // This prevents stale desktop boot/reset zeros from overwriting the real current-week cloud state.
+        if (!this.hasSuccessfullyPulled && this.canRestoreApprovedDevice?.() && !this.isPulling) {
+            await this.pull(true);
+        }
+
         this.isPushing = true;
         this.emitSyncStatus("syncing", true);
 
@@ -1818,6 +1877,11 @@ if (!window.originalSetItem) {
         if (!cloud.isUnlocked && !cloud.canRestoreApprovedDevice?.()) return;
 
         queueMicrotask(() => {
+            if (cloud.shouldBlockBootWeeklyWrite?.(key, value, "set")) {
+                try { cloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
+                console.warn("🛡️ CLOUD: Blocked boot weekly zero write before initial pull:", key);
+                return;
+            }
             cloud.queuePendingChange(key, value, "set");
             if (!cloud.isUnlocked) return;
             cloud.push();
@@ -1841,6 +1905,11 @@ if (!window.originalRemoveItem) {
 
         if (shouldQueue) {
             queueMicrotask(() => {
+                if (window.PegasusCloud.shouldBlockBootWeeklyWrite?.(key, null, "remove")) {
+                    try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
+                    console.warn("🛡️ CLOUD: Blocked boot weekly remove before initial pull:", key);
+                    return;
+                }
                 window.PegasusCloud.queuePendingChange(key, null, "remove");
                 if (!window.PegasusCloud.isUnlocked) return;
                 window.PegasusCloud.push();

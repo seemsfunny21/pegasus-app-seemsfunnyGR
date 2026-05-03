@@ -204,6 +204,20 @@ window.MuscleProgressUI = {
         if (!container) return;
 
         const { history, targets, source } = this.calculateStats();
+        const historyTotal = Object.values(history || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+        const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
+        if (historyTotal === 0 && cloudBootPending) {
+            container.innerHTML = `
+                <div class="pegasus-weekly-progress-card">
+                    <div style="color: var(--main, #00ff41); font-weight: 900; text-align: center; letter-spacing: 0.08em;">
+                        ΣΥΓΧΡΟΝΙΣΜΟΣ ΠΡΟΟΔΟΥ...
+                    </div>
+                </div>`;
+            container.style.display = "block";
+            try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
+            return;
+        }
+
         const activeExercises = this.getActiveExercises();
 
         const currentHash =
@@ -286,8 +300,16 @@ window.MuscleProgressUI = {
             && typeof daily.exercises === "object"
             && Object.values(daily.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
 
+        const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
+
         // ✅ Κρατάμε Monday reset, αλλά δεν μηδενίζουμε ποτέ αφού έχουν ήδη γραφτεί set της τρέχουσας εβδομάδας.
+        // PEGASUS 182: σε approved desktop πρώτα pull από cloud, μετά επιτρέπεται destructive weekly reset.
         if (now.getDay() === 1 && lastResetDate !== todayStr) {
+            if (cloudBootPending) {
+                try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
+                console.log("🛡️ PEGASUS UI: Monday reset deferred until initial cloud pull completes.");
+                return;
+            }
             if (hasCurrentLedger || hasTodayDaily) {
                 localStorage.setItem(lastResetKey, todayStr);
                 localStorage.setItem("pegasus_last_reset", todayStr);

@@ -267,3 +267,13 @@ PEGASUS 181 - YOUTUBE TITLE OVERLAY + NEW MODULE LAST-BUTTON POLICY
 - Mobile module registration now supports sortOrder while preserving existing registration order for current modules.
 - Future new modules should use high sortOrder / last placement when they must appear as the final button.
 - Service worker cache bumped to pegasus-shield-v3.113-FINAL-181 and mobile SW query to v=3.24.
+
+PEGASUS 182 - DESKTOP WEEKLY PROGRESS BOOT GUARD
+- Fixed a desktop boot race where stale local weekly reset logic could show 0/targets before cloud pull.
+- Desktop now defers destructive Monday/weekly reset until the approved device has completed its first cloud pull.
+- Optimizer no longer performs stale non-Monday weekly resets just because the desktop was closed for days.
+- Cloud push now forces an initial pull before the first approved-device push.
+- Pending weekly zero/remove writes are blocked or merged safely before they can overwrite real current-week progress.
+- Muscle progress panel shows a sync-pending state instead of rendering false zero values while cloud restore is pending.
+- Kept YouTube as the last extra mobile button rule from 181.
+- No new files added.

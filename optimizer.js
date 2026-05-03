@@ -78,14 +78,26 @@ window.PegasusOptimizer = {
         if (!lastReset) {
             localStorage.setItem(lastResetKey, todayDate);
         }
-        const shouldResetThisWeek = (day === "Δευτέρα" && lastReset !== todayDate) || (!!lastReset && daysSinceReset >= 7);
-        if (shouldResetThisWeek) {
+        const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
+        const storedWeekKey = localStorage.getItem("pegasus_weekly_history_week_key") || "";
+        const currentWeekKey = this.getCurrentWeekKey ? this.getCurrentWeekKey() : todayDate;
+
+        // PEGASUS 182: no stale non-Monday reset. A desktop that was closed for days must pull cloud first,
+        // otherwise it can briefly zero the week and push that zero over the real mobile progress.
+        if (day !== "Δευτέρα" && !!lastReset && daysSinceReset >= 7) {
+            console.log("🛡️ PEGASUS OPTIMIZER: Stale reset marker ignored outside Monday; waiting for cloud/current week.");
+        }
+
+        const shouldResetThisWeek = (day === "Δευτέρα" && lastReset !== todayDate);
+        if (shouldResetThisWeek && cloudBootPending) {
+            console.log("🛡️ PEGASUS OPTIMIZER: Monday reset deferred until initial cloud pull completes.");
+        } else if (shouldResetThisWeek) {
             console.log("%c 🚀 PEGASUS: Weekly Cycle Reset Initialized.", "color: #00ff41; font-weight: bold;");
             progress = this.getEmptyProgress();
             localStorage.setItem(historyKey, JSON.stringify(progress));
-            localStorage.setItem("pegasus_weekly_history_week_key", this.getCurrentWeekKey ? this.getCurrentWeekKey() : todayDate);
+            localStorage.setItem("pegasus_weekly_history_week_key", currentWeekKey);
             localStorage.setItem("pegasus_weekly_history_counted_v2", JSON.stringify({
-                weekKey: this.getCurrentWeekKey ? this.getCurrentWeekKey() : todayDate,
+                weekKey: currentWeekKey,
                 exercises: {},
                 resetAt: Date.now()
             }));

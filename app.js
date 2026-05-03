@@ -1793,6 +1793,12 @@ window.onload = () => {
             const todayDateStr = window.getPegasusLocalDateKey();
             const currentWeekKey = todayDateStr;
             if (lastReset !== todayDateStr) {
+                const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
+                if (cloudBootPending) {
+                    try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
+                    console.log('🛡️ PEGASUS RESET: Deferred Monday reset until initial cloud pull completes.');
+                    return;
+                }
                 const safeRead = (key, fallback) => {
                     try {
                         const parsed = JSON.parse(localStorage.getItem(key) || 'null');
