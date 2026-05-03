@@ -1,5 +1,5 @@
 /* ========================================================================== 
-   PEGASUS BRAIN - v1.0 (PEGASUS 183 DYNAMIC WEEKLY PLANNER)
+   PEGASUS BRAIN - v1.0.184 (PEGASUS 184 WEEKEND MODE STABILITY)
    Purpose: data-driven weekly training plan, weekend carry-over, recovery guard
    ========================================================================== */
 (function installPegasusBrain() {
@@ -423,7 +423,7 @@
     }
 
     window.PegasusBrain = {
-        version: "1.0.183",
+        version: "1.0.184",
         groups: STRICT_GROUPS.slice(),
         getWeekKey,
         getNextWeekKey,
@@ -440,5 +440,5 @@
         isManagedDay
     };
 
-    console.log("🧠 PEGASUS BRAIN: Dynamic weekly planner active (v1.0.183).");
+    console.log("🧠 PEGASUS BRAIN: Dynamic weekly planner active (v1.0.184).");
 })();

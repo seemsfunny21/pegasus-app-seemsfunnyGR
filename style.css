@@ -1228,3 +1228,18 @@ input:checked + .slider:before { transform: translateX(26px); }
         grid-template-columns: 1fr;
     }
 }
+
+
+/* PEGASUS 184: Weekend mode note keeps weekend selector visible when bike-only has no weights. */
+.pegasus-weekend-mode-note {
+    margin: 10px 14px;
+    padding: 12px 10px;
+    border: 1px solid rgba(0, 255, 65, 0.35);
+    border-radius: 10px;
+    background: rgba(0, 255, 65, 0.06);
+    color: #4CAF50;
+    font-weight: 800;
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: center;
+}

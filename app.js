@@ -853,6 +853,10 @@ function createNavbar() {
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) return;
 
+    window.__pegasusSelectDayToken = (window.__pegasusSelectDayToken || 0) + 1;
+    const pegasusSelectDayToken = window.__pegasusSelectDayToken;
+    const isPegasusWeekendDay = (day === "Σάββατο" || day === "Κυριακή");
+
     document.querySelectorAll(".navbar button").forEach(b => {
         b.classList.remove("active");
         b.style.setProperty('background-color', 'transparent', 'important');
@@ -1003,15 +1007,28 @@ function selectDay(btn, day) {
     syncPegasusSelectedDay(day);
     dispatchPegasusWorkoutAction("WORKOUT_SELECT_DAY_RUNTIME", { workout: { selectedDay: day } });
 
-    setTimeout(() => { window.syncSessionWithHistory(); }, 50);
+    setTimeout(() => {
+        if (pegasusSelectDayToken !== window.__pegasusSelectDayToken) return;
+        window.syncSessionWithHistory();
+    }, 50);
 
     setTimeout(() => {
+        if (pegasusSelectDayToken !== window.__pegasusSelectDayToken) return;
         if (typeof showVideo === "function") showVideo(0);
         if (typeof scrollPegasusActiveExerciseIntoView === "function") {
             scrollPegasusActiveExerciseIntoView(0, { force: true, instant: true });
         }
         if (exercises.length === 0) {
-            list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
+            if (isPegasusWeekendDay && window.PegasusBrain?.renderWeekendModePanel) {
+                const existingNote = list.querySelector('.pegasus-weekend-mode-note');
+                if (existingNote) existingNote.remove();
+                const note = document.createElement('div');
+                note.className = 'pegasus-weekend-mode-note';
+                note.textContent = '🚴 Μόνο ποδήλατο ενεργό — δεν φορτώνει βάρη. Διάλεξε άλλο mode για να εμφανιστεί προπόνηση.';
+                list.appendChild(note);
+            } else {
+                list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
+            }
         }
     }, 150);
 }

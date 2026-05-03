@@ -291,3 +291,12 @@ PEGASUS 183 - DYNAMIC WEEKLY BRAIN PLANNER
 - Legacy optimizer filler is disabled when PegasusBrain manages the day, preventing static spillover bugs.
 - Synced new keys: pegasus_weekend_carryover_v1 and pegasus_weekend_training_mode_*.
 - Service worker cache bumped to pegasus-shield-v3.115-FINAL-183.
+
+PEGASUS 184 - WEEKEND MODE PANEL STABILITY FIX
+- Fixed weekend selector being replaced by recovery message after Saturday/Sunday render.
+- Weekend bike-only mode now keeps the three Weekend Training Mode buttons visible.
+- Added stale selectDay render-token guard so a previous auto-render cannot overwrite a newer Saturday/Sunday mode selection.
+- Bike-only mode shows a small note instead of "Ημέρα Αποθεραπείας".
+- Bike + weights / weights modes can re-render normally and keep their generated exercises.
+- No new files added; file count remains 62.
+- Service worker cache bumped to pegasus-shield-v3.116-FINAL-184.
