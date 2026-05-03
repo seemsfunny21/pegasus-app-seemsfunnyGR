@@ -84,3 +84,7 @@
 **Author:** `seemsfunny`
 **Verification:** Pegasus Audit Engine v10.1
 **Date:** 28/03/2026
+
+
+## pegasus200
+Mobile Weather module: adds a modular weather box on the extended mobile modules page, with current temperature, condition, wind, and bike/training hint.

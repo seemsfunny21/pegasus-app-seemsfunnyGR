@@ -39,6 +39,10 @@
         ['Ρυθμίσεις & βάρος', 'SETTINGS & WEIGHT'], ['ΛΗΨΗ BACKUP', 'DOWNLOAD BACKUP'], ['ΕΠΑΝΑΦΟΡΑ DATA', 'RESTORE DATA'], ['ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ', 'FULL SYSTEM RESET'],
         ['Συντήρηση (TDEE): -- kcal', 'Συντήρηση (TDEE): -- kcal'], ['M.O. Εβδομάδας: -- kg', 'Weekly Avg: -- kg'], ['Αναμονή δεδομένων...', 'Waiting for data...'],
         ['ONLINE', 'ONLINE'], ['OFFLINE', 'OFFLINE'], ['LOCKED', 'LOCKED'], ['Advisor Offline', 'Advisor Offline'], ['αρχικοποιηση συστηματος', 'system initialization'],
+        ['Καιρός', 'Weather'], ['Ανανέωση', 'Refresh'], ['Άνεμος', 'Wind'], ['Ενημέρωση', 'Updated'], ['Φόρτωση καιρού...', 'Loading weather...'],
+        ['Δεν υπάρχουν ακόμη δεδομένα καιρού.', 'No weather data yet.'], ['Καιρός ΟΚ για πρόγραμμα/ποδήλατο.', 'Weather OK for training/bike.'],
+        ['Προσοχή: πιθανή βροχή. Κράτα indoor επιλογή.', 'Caution: possible rain. Keep indoor option.'], ['Πολύς αέρας. Το ποδήλατο θέλει προσοχή.', 'Strong wind. Bike needs caution.'],
+        ['Μέτριος αέρας. Ρύθμισε ένταση ποδηλάτου.', 'Moderate wind. Adjust bike intensity.'],
         ['Δευτέρα','Monday'], ['Τρίτη','Tuesday'], ['Τετάρτη','Wednesday'], ['Πέμπτη','Thursday'], ['Παρασκευή','Friday'], ['Σάββατο','Saturday'], ['Κυριακή','Sunday'],
         ['ΔΕΥΤΕΡΑ','MONDAY'], ['ΤΡΙΤΗ','TUESDAY'], ['ΤΕΤΑΡΤΗ','WEDNESDAY'], ['ΠΕΜΠΤΗ','THURSDAY'], ['ΠΑΡΑΣΚΕΥΗ','FRIDAY'], ['ΣΑΒΒΑΤΟ','SATURDAY'], ['ΚΥΡΙΑΚΗ','SUNDAY']
     ];
@@ -129,6 +133,7 @@
         localStorage.setItem(LANG_KEY, safeLang);
         localStorage.setItem(LEGACY_LANG_KEY, safeLang);
         applyLanguage();
+        try { window.dispatchEvent(new CustomEvent('pegasus_language_changed', { detail: { lang: safeLang } })); } catch (_) {}
     }
 
     function translatePairText(text, pair, lang) {

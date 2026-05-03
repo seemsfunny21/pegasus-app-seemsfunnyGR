@@ -441,8 +441,13 @@
             createTile: function(container, m) {
                 const tile = document.createElement('div');
                 tile.className = 'tile';
+                tile.dataset.moduleId = m.id;
                 tile.onclick = () => openView(m.id);
-                tile.innerHTML = `<span class="tile-icon">${m.icon}</span><span class="tile-label">${m.label}</span>`;
+                if (typeof m.renderTile === 'function') {
+                    m.renderTile(tile, m);
+                } else {
+                    tile.innerHTML = `<span class="tile-icon">${m.icon}</span><span class="tile-label">${m.label}</span>`;
+                }
                 container.appendChild(tile);
             },
 
@@ -622,6 +627,7 @@
     <script src="oracle-mobile.js"></script>
     <script src="lifting-mobile.js"></script>
     <script src="youtube-mobile.js"></script>
+    <script src="weather-mobile.js"></script>
 
 <script>
     const PEGASUS = {

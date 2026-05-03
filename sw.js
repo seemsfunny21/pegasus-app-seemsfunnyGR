@@ -4,7 +4,7 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.129-FINAL-199';
+const CACHE_NAME = 'pegasus-shield-v3.130-FINAL-200';
 const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v1';
 
 const ASSETS_TO_CACHE = [
@@ -62,6 +62,7 @@ const ASSETS_TO_CACHE = [
     './mobile/social-mobile.js',
     './mobile/movies-mobile.js',
     './mobile/youtube-mobile.js',
+    './mobile/weather-mobile.js',
     './mobile/missions-mobile.js',
     './mobile/biometrics-mobile.js',
     './mobile/maintenance-mobile.js',

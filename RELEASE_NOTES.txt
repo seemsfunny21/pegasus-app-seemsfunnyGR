@@ -415,3 +415,11 @@ pegasus190
 - Preserved protected acronyms and brand labels such as PEGASUS, TDEE, WHEY, CREA, EMS, IBAN, VIN, kcal and km.
 - No new file added.
 - Service worker cache bumped to pegasus-shield-v3.121-FINAL-190.
+
+
+pegasus200
+- Προστέθηκε modular κουτί Καιρός στο mobile extended modules.
+- Το κουτί δείχνει θερμοκρασία, συνθήκη, άνεμο και σύντομη οδηγία για ποδήλατο/πρόγραμμα.
+- Τα δεδομένα έρχονται από Open-Meteo για Ιωάννινα και κρατούνται προσωρινά σε localStorage.
+- Προστέθηκε mobile/weather-mobile.js ως νέο ξεχωριστό module.
+- Service worker bump σε pegasus-shield-v3.130-FINAL-200.
