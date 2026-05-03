@@ -1363,3 +1363,47 @@ input:checked + .slider:before { transform: translateX(26px); }
     font-size: 10px !important;
     line-height: 1.25 !important;
 }
+
+/* PEGASUS 198: Weekend mode buttons match exercise-card width */
+#exList .pegasus-weekend-mode-panel,
+.pegasus-weekend-mode-panel {
+    width: calc(100% - 24px) !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 8px auto 12px !important;
+    padding: 10px 14px !important;
+    box-sizing: border-box !important;
+}
+#exList .pegasus-weekend-mode-options,
+.pegasus-weekend-mode-options {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+    width: 100% !important;
+}
+#exList .pegasus-weekend-mode-options button,
+.pegasus-weekend-mode-options button {
+    width: 100% !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 5px 10px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+}
+#exList .pegasus-weekend-mode-title,
+.pegasus-weekend-mode-title {
+    margin-bottom: 7px !important;
+}
+#exList .pegasus-weekend-mode-note,
+.pegasus-weekend-mode-note {
+    width: calc(100% - 24px) !important;
+    max-width: none !important;
+    margin: 8px auto 12px !important;
+    box-sizing: border-box !important;
+}
