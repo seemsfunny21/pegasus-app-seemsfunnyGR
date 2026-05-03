@@ -936,7 +936,6 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
     const EXACT = new Map(Object.entries({
         'Γράμμωση': 'Γράμμωση',
         'Όγκος': 'Όγκος',
-        'Στόχος σώματος': 'Στόχος σώματος',
         'Ρυθμίσεις PEGASUS': 'Ρυθμίσεις PEGASUS',
         'Weekly set targets': 'Weekly set targets',
         'Συντήρηση (TDEE): -- kcal': 'Συντήρηση (TDEE): -- kcal',
