@@ -1,3 +1,12 @@
+pegasus195
+- Hardened GR/EN translation sweep for desktop dynamic panels.
+- Settings, Tools, Preview/Progress, day tabs, control bar and weekend mode now translate consistently.
+- Added Greek/English mappings for mixed-case labels such as PEGASUS Settings, Maintenance, Weight, Height, Gender, Save, Preview & progress and weekly muscle group names.
+- Added exercise-name display translations without changing data keys.
+- Translation pass now re-runs after dynamic renders so panels opened later do not stay mixed-language.
+- Service worker cache bumped to pegasus-shield-v3.125-FINAL-195.
+- No new files added.
+
 pegasus194
 - Weekend mode selector changed from horizontal 3-column buttons to vertical stacked buttons.
 - Buttons are shorter and more compact so the left panel looks cleaner and takes less width.

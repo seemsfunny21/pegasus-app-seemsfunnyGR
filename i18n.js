@@ -43,9 +43,50 @@
         ['ΔΕΥΤΕΡΑ','MONDAY'], ['ΤΡΙΤΗ','TUESDAY'], ['ΤΕΤΑΡΤΗ','WEDNESDAY'], ['ΠΕΜΠΤΗ','THURSDAY'], ['ΠΑΡΑΣΚΕΥΗ','FRIDAY'], ['ΣΑΒΒΑΤΟ','SATURDAY'], ['ΚΥΡΙΑΚΗ','SUNDAY']
     ];
 
+    // PEGASUS 195: Unified UI translation registry for dynamically rendered desktop labels.
+    const extraExactPairs = [
+        ['Εργαλεία PEGASUS', 'PEGASUS Tools'], ['Εργαλεία Pegasus', 'PEGASUS Tools'], ['PEGASUS Tools', 'PEGASUS Tools'],
+        ['Ρυθμίσεις PEGASUS', 'PEGASUS Settings'], ['Ρυθμίσεις Pegasus', 'PEGASUS Settings'], ['PEGASUS Settings', 'PEGASUS Settings'],
+        ['Επίπεδο & επιτεύγματα', 'Level & Achievements'], ['Επίπεδο και επιτεύγματα', 'Level & Achievements'],
+        ['Προεπισκόπηση', 'Preview'], ['Επισκόπηση & πρόοδος', 'Preview & progress'], ['Ασκήσεις ημέρας', "Today's exercises"],
+        ['Σύστημα συνεργάτη', 'Partner system'], ['Όνομα συνεργάτη...', 'Partner name...'], ['Συνεργάτης: ανενεργός', 'Partner: inactive'],
+        ['Συνεργάτης: ενεργός', 'Partner: active'], ['Τύπος προγράμματος', 'Program type'], ['Ήχος: ενεργός', 'Sound: active'],
+        ['Ήχος: σίγαση', 'Sound: muted'], ['Turbo: ανενεργό', 'Turbo: inactive'], ['Turbo: ενεργό', 'Turbo: active'],
+        ['Αποθήκευση αρχείου', 'Save file'], ['Φόρτωση αρχείου', 'Load file'], ['Cloud: συνδεδεμένο', 'Cloud: connected'],
+        ['Γκαλερί προόδου', 'Progress gallery'], ['Καταγραφή EMS', 'EMS log'], ['System: Stable (100%)', 'System: Stable (100%)'],
+        ['Σύστημα: σταθερό (100%)', 'System: Stable (100%)'], ['Συντήρηση (TDEE): -- kcal', 'Maintenance (TDEE): -- kcal'],
+        ['Μέσος όρος εβδομάδας: -- kg', 'Weekly avg: -- kg'], ['Στόχος kcal', 'Kcal goal'], ['Στόχος Kcal', 'Kcal goal'],
+        ['Στόχος θερμίδων', 'Kcal goal'], ['Στόχος πρωτεΐνης', 'Protein goal'], ['Εβδομαδιαίοι στόχοι σετ', 'Weekly set targets'],
+        ['Εβδομαδιαιοι στοχοι σετ', 'Weekly set targets'], ['Σώσιμο', 'Save'], ['Αποθήκευση', 'Save'],
+        ['Προθέρμανση', 'Warmup'], ['Έναρξη', 'Start'], ['Επόμενο', 'Next'], ['Ημερολόγιο', 'Calendar'],
+        ['Επιτεύγματα', 'Achievements'], ['Διατροφή', 'Nutrition'], ['Ρυθμίσεις', 'Settings'], ['Email', 'Email'],
+        ['Εργαλεία', 'Tools'], ['Προπονήσεις:', 'Workouts:'], ['Θερμίδες', 'Calories'], ['Πρωτεΐνη', 'Protein'],
+        ['Υπόλοιπο', 'Remaining'], ['Γεύματα', 'Meals'], ['Φαγητό', 'Food'], ['Συχνές επιλογές', 'Frequent choices'],
+        ['Μενού Κούκι', 'Kouki menu'], ['Μόνο ποδήλατο', 'Bike only'], ['Ποδήλατο', 'Bike'], ['Ποδ. + βάρη', 'Bike + weights'],
+        ['Βάρη', 'Weights'], ['Μόνο βάρη', 'Weights only'], ['Σ/Κ', 'Weekend'], ['Weekend training mode', 'Weekend training mode'],
+        ['Μόνο ποδήλατο ενεργό — δεν φορτώνει βάρη. Διάλεξε άλλο mode για προπόνηση.', 'Bike only active — no weights loaded. Choose another mode for training.'],
+        ['Μόνο ποδήλατο ενεργό — δεν φορτώνει βάρη.', 'Bike only active — no weights loaded.'],
+        ['Δευτέρα', 'Monday'], ['Τρίτη', 'Tuesday'], ['Τετάρτη', 'Wednesday'], ['Πέμπτη', 'Thursday'], ['Παρασκευή', 'Friday'], ['Σάββατο', 'Saturday'], ['Κυριακή', 'Sunday'],
+        ['Βάρος (kg)', 'Weight (kg)'], ['Ύψος (cm)', 'Height (cm)'], ['Ηλικία', 'Age'], ['Φύλο', 'Gender'], ['Άνδρας', 'Male'], ['Γυναίκα', 'Female'],
+        ['Στήθος', 'Chest'], ['Πλάτη', 'Back'], ['Πόδια', 'Legs'], ['Χέρια', 'Arms'], ['Ώμοι', 'Shoulders'], ['Κορμός', 'Core']
+    ];
+    extraExactPairs.forEach(pair => exactPairs.push(pair));
+
+
 
     const phrasePairs = [
         ['ΣΥΝΕΡΓΑΤΗΣ:', 'PARTNER:'], ['ΑΠΕΝΕΡΓΟΣ', 'OFF'], ['ΕΝΕΡΓΟΣ', 'ON'],
+        ['Συνεργάτης:', 'Partner:'], ['ανενεργός', 'inactive'], ['ενεργός', 'active'],
+        ['Προθέρμανση', 'Warmup'], ['Έναρξη', 'Start'], ['Επόμενο', 'Next'], ['Ημερολόγιο', 'Calendar'],
+        ['Επιτεύγματα', 'Achievements'], ['Διατροφή', 'Nutrition'], ['Ρυθμίσεις', 'Settings'], ['Εργαλεία', 'Tools'],
+        ['Προεπισκόπηση', 'Preview'], ['Προπονήσεις:', 'Workouts:'], ['Συντήρηση (TDEE):', 'Maintenance (TDEE):'],
+        ['Μέσος όρος εβδομάδας:', 'Weekly Avg:'], ['Βάρος (kg)', 'Weight (kg)'], ['Ύψος (cm)', 'Height (cm)'],
+        ['Ηλικία', 'Age'], ['Φύλο', 'Gender'], ['Άνδρας', 'Male'], ['Γυναίκα', 'Female'],
+        ['Στόχος kcal', 'Kcal Goal'], ['Στόχος kcal', 'Kcal goal'], ['Πρωτεΐνη (g)', 'Protein (g)'],
+        ['Εβδομαδιαίοι στόχοι σετ', 'Weekly set targets'], ['Επισκόπηση & πρόοδος', 'Preview & progress'],
+        ['Ασκήσεις ημέρας', "Today's exercises"], ['Στήθος', 'Chest'], ['Πλάτη', 'Back'], ['Πόδια', 'Legs'],
+        ['Χέρια', 'Arms'], ['Ώμοι', 'Shoulders'], ['Κορμός', 'Core'], ['Μόνο ποδήλατο', 'Bike only'],
+        ['Ποδ. + βάρη', 'Bike + weights'], ['Μόνο βάρη', 'Weights only'], ['Βάρη', 'Weights'], ['Ποδήλατο', 'Bike'],
         ['Συντήρηση (TDEE):', 'Maintenance (TDEE):'], ['M.O. Εβδομάδας:', 'Weekly Avg:'],
         ['ΗΧΟΣ:', 'SOUND:'], ['ΤΥΠΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ', 'PROGRAM TYPE'], ['ΣΥΓΧΡΟΝΙΣΜΟΣ', 'SYNC'],
         ['ΚΑΤΑΓΡΑΦΗ EMS', 'EMS LOG'], ['Καταγραφή ποδηλασίας', 'CYCLING LOG'],
@@ -56,11 +97,15 @@
     ];
 
     const exercisePairs = [
-        ['Chest Press','Chest Press'], ['Chest Flys','Chest Flys'], ['Pushups','Pushups'], ['Lat Pulldowns','Lat Pulldowns'], ['Lat Pulldowns Close','Lat Pulldowns Close'],
-        ['Seated Rows','Seated Rows'], ['Low Rows Seated','Low Rows Seated'], ['Bent Over Rows','Bent Over Rows'], ['Straight Arm Pulldowns','Straight Arm Pulldowns'],
-        ['Upright Rows','Upright Rows'], ['Bicep Curls','Bicep Curls'], ['Standing Bicep Curls','Standing Bicep Curls'], ['Preacher Bicep Curls','Preacher Bicep Curls'],
-        ['Tricep Pulldowns','Tricep Pulldowns'], ['Ab Crunches','Ab Crunches'], ['Situps','Situps'], ['Plank','Plank'], ['Reverse Crunch','Reverse Crunch'],
-        ['Lying Knee Raise','Lying Knee Raise'], ['Leg Raise Hip Lift','Leg Raise Hip Lift'], ['Leg Extensions','Leg Extensions'], ['Cycling','Cycling'], ['Stretching','Stretching'], ['EMS Training','EMS Training']
+        ['Πιέσεις στήθους','Chest Press'], ['Εκτάσεις στήθους','Chest Flys'], ['Κάμψεις','Pushups'],
+        ['Τροχαλία πλάτης','Lat Pulldowns'], ['Κλειστή τροχαλία πλάτης','Lat Pulldowns Close'],
+        ['Κωπηλατική καθιστή','Seated Rows'], ['Χαμηλή κωπηλατική καθιστή','Low Rows Seated'], ['Χαμηλή κωπηλατική','Low Seated Row'],
+        ['Κωπηλατική σκυφτή','Bent Over Rows'], ['Τροχαλία με ίσια χέρια','Straight Arm Pulldowns'],
+        ['Όρθια κωπηλατική','Upright Rows'], ['Κάμψεις δικεφάλων','Bicep Curls'], ['Όρθιες κάμψεις δικεφάλων','Standing Bicep Curls'],
+        ['Κάμψεις δικεφάλων στο μαξιλάρι','Preacher Bicep Curls'], ['Πιέσεις τρικεφάλων','Tricep Pulldowns'],
+        ['Κοιλιακοί crunch','Ab Crunches'], ['Κοιλιακοί sit-up','Situps'], ['Σανίδα','Plank'], ['Αντίστροφοι κοιλιακοί','Reverse Crunch'],
+        ['Άρσεις γονάτων ξαπλωτός','Lying Knee Raise'], ['Άρσεις ποδιών με ανύψωση λεκάνης','Leg Raise Hip Lift'],
+        ['Εκτάσεις ποδιών','Leg Extensions'], ['Ποδηλασία','Cycling'], ['Διατάσεις','Stretching'], ['Προπόνηση EMS','EMS Training']
     ];
 
     const lookup = new Map();
@@ -119,10 +164,16 @@
         const trimmed = raw.trim();
         if (!trimmed) return raw;
 
-        const pair = lookup.get(trimmed);
+        const pair = lookup.get(trimmed) || lookup.get(trimmed.toLocaleUpperCase('el-GR')) || lookup.get(trimmed.toLocaleLowerCase('el-GR'));
         if (pair) return raw.replace(trimmed, translatePairText(trimmed, pair, lang));
 
         let translated = raw;
+        // Exercise names often appear inside labels such as "Lat Pulldowns (4 set)".
+        exercisePairs.forEach((exercisePair) => {
+            const from = lang === 'en' ? exercisePair[0] : exercisePair[1];
+            const to = lang === 'en' ? exercisePair[1] : exercisePair[0];
+            translated = replacePhraseSafely(translated, from, to);
+        });
         phrasePairs.forEach((phrasePair) => {
             const from = lang === 'en' ? phrasePair[0] : phrasePair[1];
             const to = lang === 'en' ? phrasePair[1] : phrasePair[0];
@@ -202,15 +253,15 @@
 
     function applyTargetedDesktopTranslations(lang) {
         const galleryBtn = document.getElementById('btnOpenGallery');
-        if (galleryBtn) galleryBtn.textContent = lang === 'en' ? '🖼️ PROGRESS GALLERY' : '🖼️ ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ';
+        if (galleryBtn) galleryBtn.textContent = lang === 'en' ? '🖼️ Progress gallery' : '🖼️ Γκαλερί προόδου';
 
         const galleryTitle = document.querySelector('#galleryPanel h3');
-        if (galleryTitle) galleryTitle.textContent = lang === 'en' ? 'PROGRESS GALLERY' : 'ΓΚΑΛΕΡΙ ΠΡΟΟΔΟΥ';
+        if (galleryTitle) galleryTitle.textContent = lang === 'en' ? 'Progress gallery' : 'Γκαλερί προόδου';
 
         const cardioTitle = document.querySelector('#cardioPanel h3');
         if (cardioTitle) cardioTitle.innerHTML = lang === 'en'
-            ? '🚴<br>CYCLING<br>LOG'
-            : '🚴<br>ΚΑΤΑΓΡΑΦΗ<br>ΠΟΔΗΛΑΣΙΑΣ';
+            ? '🚴<br>Cycling<br>log'
+            : '🚴<br>Καταγραφή<br>ποδηλασίας';
     }
 
     function refreshViews() {
@@ -240,10 +291,11 @@
             applyTargetedDesktopTranslations(lang);
             updateLangButtons();
             refreshViews();
-            setTimeout(() => {
+            [60, 250, 800].forEach(delay => setTimeout(() => {
                 walkAndTranslate(document.body);
                 applyTargetedDesktopTranslations(lang);
-            }, 60);
+                try { window.normalizePegasusUILabels?.(document.body); } catch (_) {}
+            }, delay));
         } catch (e) {
             console.warn('PEGASUS I18N apply warning', e);
         }
