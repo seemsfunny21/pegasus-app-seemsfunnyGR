@@ -167,12 +167,12 @@ window.setPegasusBodyGoalModeUI = function(mode) {
         btn.style.borderColor = active ? '#00ff66' : '#2f7d32';
         btn.style.boxShadow = active ? '0 0 12px rgba(0,255,102,.35)' : 'none';
         btn.style.color = active ? '#d8ffe0' : '#7ce184';
-        btn.style.fontSize = '13px';
+        btn.style.fontSize = '12px';
         btn.style.fontWeight = '700';
         btn.style.width = '100%';
-        btn.style.minHeight = '30px';
-        btn.style.padding = '5px 8px';
-        btn.style.lineHeight = '1.2';
+        btn.style.minHeight = '26px';
+        btn.style.padding = '3px 8px';
+        btn.style.lineHeight = '1.15';
     });
 };
 

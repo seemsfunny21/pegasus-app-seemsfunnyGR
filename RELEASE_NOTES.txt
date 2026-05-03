@@ -1,9 +1,9 @@
-PEGASUS 192 - Compact Settings Goal Mode
-- Settings panel width reduced back to a compact 330px layout.
-- Removed the extra "Στόχος σώματος" heading from the goal mode selector.
-- Removed the explanatory line under Γράμμωση / Όγκος to keep the panel compact.
-- Γράμμωση and Όγκος remain vertical, synchronized, and dynamic.
-- Service worker cache bumped to pegasus-shield-v3.123-FINAL-192.
+pegasus193
+- Fixed settings panel compact width by removing the oversized settings width behavior and forcing a 250px compact panel.
+- Removed the remaining body-goal heading/help text from the settings UI.
+- Kept Γράμμωση / Όγκος stacked vertically with smaller, consistent button sizing.
+- Compact Weekend Mode selector labels and sizing so the left panel is cleaner and narrower.
+- Service worker cache bumped to pegasus-shield-v3.123-FINAL-193.
 - No new files added.
 
 PEGASUS 191 - UI Label Case Polish + Vertical Body Goal Controls

@@ -402,11 +402,11 @@
         const panel = document.createElement("div");
         panel.className = "pegasus-weekend-mode-panel";
         panel.innerHTML = `
-            <div class="pegasus-weekend-mode-title">WEEKEND TRAINING MODE</div>
+            <div class="pegasus-weekend-mode-title">Weekend mode</div>
             <div class="pegasus-weekend-mode-options">
-                <button type="button" data-mode="bike" class="${mode === "bike" ? "active" : ""}">🚴 Μόνο ποδήλατο</button>
-                <button type="button" data-mode="bike_weights" class="${mode === "bike_weights" ? "active" : ""}">⚡ Ποδήλατο + ελαφριά βάρη</button>
-                <button type="button" data-mode="weights" class="${mode === "weights" ? "active" : ""}">🏋️ Μόνο βάρη</button>
+                <button type="button" data-mode="bike" class="${mode === "bike" ? "active" : ""}">🚴 Ποδήλατο</button>
+                <button type="button" data-mode="bike_weights" class="${mode === "bike_weights" ? "active" : ""}">⚡ Ποδ. + βάρη</button>
+                <button type="button" data-mode="weights" class="${mode === "weights" ? "active" : ""}">🏋️ Βάρη</button>
             </div>
         `;
         panel.querySelectorAll("button[data-mode]").forEach(btn => {

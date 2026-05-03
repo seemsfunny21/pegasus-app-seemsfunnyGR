@@ -1275,3 +1275,53 @@ input:checked + .slider:before { transform: translateX(26px); }
 :where(.mini-label, .section-title, .input-label, .tile-label) {
     letter-spacing: 0.3px !important;
 }
+
+/* PEGASUS 193: compact settings panel and weekend mode layout */
+#settingsPanel {
+    width: 250px !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 24px) !important;
+    box-sizing: border-box !important;
+    padding: 18px 22px !important;
+}
+#settingsPanel * {
+    box-sizing: border-box;
+}
+#settingsPanel h3 {
+    font-size: 16px !important;
+    letter-spacing: 1.8px !important;
+}
+#settingsPanel [data-body-goal-mode] {
+    min-height: 26px !important;
+    font-size: 12px !important;
+    padding: 3px 8px !important;
+    line-height: 1.15 !important;
+}
+.pegasus-weekend-mode-panel {
+    max-width: 250px;
+    padding: 8px;
+    margin: 8px auto 10px;
+    border-radius: 12px;
+}
+.pegasus-weekend-mode-title {
+    font-size: 9px;
+    margin-bottom: 6px;
+    letter-spacing: .06em;
+}
+.pegasus-weekend-mode-options {
+    gap: 5px;
+}
+.pegasus-weekend-mode-options button {
+    min-height: 56px;
+    padding: 6px 4px;
+    font-size: 10px;
+    line-height: 1.15;
+    border-radius: 8px;
+}
+.pegasus-weekend-mode-note {
+    max-width: 250px;
+    margin: 8px auto 10px;
+    padding: 9px 8px;
+    font-size: 10px;
+    line-height: 1.25;
+}
