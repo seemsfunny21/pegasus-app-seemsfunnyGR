@@ -517,6 +517,17 @@ const PegasusCloud = {
         const remoteCandidate = this.maxWeeklyHistories(remoteHistory, remoteLedgerHistory);
         const localTotal = this.getWeeklyHistoryTotalValue(localCandidate);
         const remoteTotal = this.getWeeklyHistoryTotalValue(remoteCandidate);
+        const resetWeek = String(localStorage.getItem("pegasus_monday_reset_applied_week_key") || "").trim();
+        const resetAt = Math.max(0, Number(localStorage.getItem("pegasus_monday_reset_applied_at")) || 0);
+        const remoteLedgerRaw = this.safeParseStorageObject(remoteStorage.pegasus_weekly_history_counted_v2, null);
+        const remoteUpdatedAt = Math.max(0, Number(remoteLedgerRaw?.updatedAt) || 0, Number(remoteLedgerRaw?.createdAt) || 0);
+
+        // PEGASUS 203: after a Monday zero reset, do not re-import same-week stale totals
+        // unless another device wrote a ledger after the reset timestamp.
+        if (resetWeek === currentWeek && localTotal === 0 && remoteTotal > 0 && (!remoteUpdatedAt || remoteUpdatedAt <= resetAt)) {
+            localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
+            return JSON.stringify(this.normalizeWeeklyHistoryObject({}));
+        }
 
         // If local has already moved into the current week, never re-import an older remote week,
         // even when the current local value is zero after a Monday reset.
@@ -555,6 +566,15 @@ const PegasusCloud = {
 
         const localWeek = String(local?.weekKey || localStorage.getItem("pegasus_weekly_history_week_key") || currentWeek);
         const remoteWeek = String(remote?.weekKey || this._remoteStorageMergeContext?.pegasus_weekly_history_week_key || currentWeek);
+        const resetWeek = String(localStorage.getItem("pegasus_monday_reset_applied_week_key") || "").trim();
+        const resetAt = Math.max(0, Number(localStorage.getItem("pegasus_monday_reset_applied_at")) || 0);
+        const localHasValues = !!(local?.exercises && typeof local.exercises === "object" && Object.values(local.exercises).some(count => Math.max(0, Number(count) || 0) > 0));
+        const remoteHasValues = !!(remote?.exercises && typeof remote.exercises === "object" && Object.values(remote.exercises).some(count => Math.max(0, Number(count) || 0) > 0));
+        const remoteUpdatedAt = Math.max(0, Number(remote?.updatedAt) || 0, Number(remote?.createdAt) || 0);
+
+        if (resetWeek === currentWeek && !localHasValues && remoteHasValues && (!remoteUpdatedAt || remoteUpdatedAt <= resetAt)) {
+            return JSON.stringify({ weekKey: currentWeek, exercises: {}, updatedAt: Math.max(resetAt, Date.now()) });
+        }
 
         if (localWeek === currentWeek && remoteWeek !== currentWeek) {
             return JSON.stringify({

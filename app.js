@@ -2093,10 +2093,16 @@ window.enforcePegasusMondayWeeklyReset = function(options = {}) {
     const storedWeek = String(localStorage.getItem(weekKeyName) || '').trim();
     const lastReset = localStorage.getItem('pegasus_last_reset');
 
-    const hasCurrentLedger = ledger?.weekKey === currentWeekKey
+    const mondayStartMs = monday.getTime();
+    const ledgerUpdatedAt = Math.max(0, Number(ledger?.updatedAt) || 0, Number(ledger?.createdAt) || 0);
+    const hasLedgerValues = ledger?.weekKey === currentWeekKey
         && ledger.exercises
         && typeof ledger.exercises === 'object'
         && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+
+    // PEGASUS 203: do not let a stale cloud/local ledger that was simply relabeled as the
+    // new week block the real Monday reset. Only protect sets written after Monday started.
+    const hasCurrentLedgerToday = hasLedgerValues && ledgerUpdatedAt >= mondayStartMs;
 
     const hasTodayDaily = daily?.date === todayDateStr
         && daily.exercises
@@ -2105,19 +2111,22 @@ window.enforcePegasusMondayWeeklyReset = function(options = {}) {
 
     const visibleTotal = groups.reduce((sum, group) => sum + Math.max(0, Number(history?.[group]) || 0), 0);
     const staleWeek = !!storedWeek && storedWeek !== currentWeekKey;
-    const staleMondayCarryover = visibleTotal > 0 && !hasCurrentLedger && !hasTodayDaily;
-    const needsReset = lastReset !== todayDateStr || staleWeek || staleMondayCarryover;
+    const resetAppliedWeek = String(localStorage.getItem('pegasus_monday_reset_applied_week_key') || '').trim();
+    const staleMondayCarryover = visibleTotal > 0 && !hasCurrentLedgerToday && !hasTodayDaily;
+    const needsReset = resetAppliedWeek !== currentWeekKey || lastReset !== todayDateStr || staleWeek || staleMondayCarryover;
 
     if (!needsReset) return false;
 
-    if (hasCurrentLedger || hasTodayDaily) {
+    if (hasCurrentLedgerToday || hasTodayDaily) {
         localStorage.setItem(weekKeyName, currentWeekKey);
         localStorage.setItem('pegasus_last_reset', todayDateStr);
         localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
+        localStorage.setItem('pegasus_monday_reset_applied_week_key', currentWeekKey);
+        localStorage.setItem('pegasus_monday_reset_applied_at', String(Date.now()));
         if (window.PegasusWeeklyProgress?.repairFromLedger) {
             setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: `monday-reset-guard:${source}` }), 100);
         }
-        console.log('🛡️ PEGASUS RESET: Skipped Monday zero because current-week sets already exist.', { source, currentWeekKey });
+        console.log('🛡️ PEGASUS RESET: Skipped Monday zero because real Monday sets already exist.', { source, currentWeekKey, ledgerUpdatedAt, mondayStartMs });
         return false;
     }
 
@@ -2128,6 +2137,7 @@ window.enforcePegasusMondayWeeklyReset = function(options = {}) {
     localStorage.setItem('pegasus_last_reset', todayDateStr);
     localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
     localStorage.setItem('pegasus_monday_reset_applied_week_key', currentWeekKey);
+    localStorage.setItem('pegasus_monday_reset_applied_at', String(Date.now()));
 
     window.dispatchEvent(new CustomEvent('pegasus_weekly_history_updated', {
         detail: { source: `monday-reset:${source}`, history: { ...freshHistory }, weekKey: currentWeekKey }

@@ -289,10 +289,12 @@ window.MuscleProgressUI = {
         };
 
         const ledger = safeJson("pegasus_weekly_history_counted_v2", null);
-        const hasCurrentLedger = ledger?.weekKey === currentWeekKey
+        const ledgerUpdatedAt = Math.max(0, Number(ledger?.updatedAt) || 0, Number(ledger?.createdAt) || 0);
+        const hasLedgerValues = ledger?.weekKey === currentWeekKey
             && ledger.exercises
             && typeof ledger.exercises === "object"
             && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+        const hasCurrentLedgerToday = hasLedgerValues && ledgerUpdatedAt >= monday.getTime();
 
         const daily = safeJson("pegasus_daily_progress", null);
         const hasTodayDaily = daily?.date === todayStr
@@ -300,25 +302,37 @@ window.MuscleProgressUI = {
             && typeof daily.exercises === "object"
             && Object.values(daily.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
 
+        const history = safeJson(historyKey, {});
+        const visibleTotal = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"]
+            .reduce((sum, group) => sum + Math.max(0, Number(history?.[group]) || 0), 0);
+        const resetAppliedWeek = String(localStorage.getItem("pegasus_monday_reset_applied_week_key") || "").trim();
+        const storedWeekKey = String(localStorage.getItem("pegasus_weekly_history_week_key") || "").trim();
+        const needsMondayReset = resetAppliedWeek !== currentWeekKey
+            || lastResetDate !== todayStr
+            || (!!storedWeekKey && storedWeekKey !== currentWeekKey)
+            || (visibleTotal > 0 && !hasCurrentLedgerToday && !hasTodayDaily);
+
         const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
 
-        // ✅ Κρατάμε Monday reset, αλλά δεν μηδενίζουμε ποτέ αφού έχουν ήδη γραφτεί set της τρέχουσας εβδομάδας.
-        // PEGASUS 182: σε approved desktop πρώτα pull από cloud, μετά επιτρέπεται destructive weekly reset.
-        if (now.getDay() === 1 && lastResetDate !== todayStr) {
+        // PEGASUS 203: reset Monday carry-over even if an old ledger was relabeled as this week.
+        // Only real Monday sets, written after Monday started, can block the zero reset.
+        if (now.getDay() === 1 && needsMondayReset) {
             if (cloudBootPending) {
                 try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
                 console.log("🛡️ PEGASUS UI: Monday reset deferred until initial cloud pull completes.");
                 return;
             }
-            if (hasCurrentLedger || hasTodayDaily) {
+            if (hasCurrentLedgerToday || hasTodayDaily) {
                 localStorage.setItem(lastResetKey, todayStr);
                 localStorage.setItem("pegasus_last_reset", todayStr);
                 localStorage.setItem("pegasus_weekly_history_week_key", currentWeekKey);
+                localStorage.setItem("pegasus_monday_reset_applied_week_key", currentWeekKey);
+                localStorage.setItem("pegasus_monday_reset_applied_at", String(Date.now()));
                 this.lastDataHash = null;
                 if (window.PegasusWeeklyProgress?.repairFromLedger) {
                     setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: "monday-reset-guard" }), 50);
                 }
-                console.log("🛡️ PEGASUS UI: Monday reset skipped because current-week sets already exist.");
+                console.log("🛡️ PEGASUS UI: Monday reset skipped because real Monday sets already exist.");
                 return;
             }
 
@@ -336,6 +350,8 @@ window.MuscleProgressUI = {
             localStorage.removeItem("pegasus_weekly_history_counted_v2");
             localStorage.setItem(lastResetKey, todayStr);
             localStorage.setItem("pegasus_last_reset", todayStr);
+            localStorage.setItem("pegasus_monday_reset_applied_week_key", currentWeekKey);
+            localStorage.setItem("pegasus_monday_reset_applied_at", String(Date.now()));
             this.lastDataHash = null;
 
             if (window.PegasusCloud?.push) {

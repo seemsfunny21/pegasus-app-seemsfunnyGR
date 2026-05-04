@@ -1,3 +1,10 @@
+pegasus203
+- Fixed Monday reset when old weekly totals were already marked with the new Monday week key.
+- Monday reset now ignores stale relabeled ledgers and only protects real Monday sets written after Monday started.
+- Added reset timestamp guards so cloud pull cannot re-import stale previous-week muscle totals after the Monday zero reset.
+- Service worker cache bumped to pegasus-shield-v3.133-FINAL-203.
+- No new files; real file count remains 62.
+
 pegasus199
 - Weekend mode panel now matches the exercise card width exactly.
 - Removed the calc(100% - 24px) width that made Bike / Bike + weights / Weights narrower.
