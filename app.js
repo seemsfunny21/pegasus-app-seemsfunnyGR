@@ -313,9 +313,48 @@ window.getPegasusFinalDailyTargetFromBurn = window.getPegasusFinalDailyTargetFro
     return Math.round((parseFloat(baseTarget) || 0) + window.getPegasusExerciseRefeedForTarget(exerciseBurn, settingsObj));
 };
 
-window.getPegasusBaseDailyTarget = function(settingsObj) {
+
+window.getPegasusActiveDayName = window.getPegasusActiveDayName || function(settingsObj) {
+    const validDays = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"];
+    const normalize = (value) => {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        const map = {
+            monday: "Δευτέρα", mon: "Δευτέρα", "δευτερα": "Δευτέρα", "δευτέρα": "Δευτέρα",
+            tuesday: "Τρίτη", tue: "Τρίτη", "τριτη": "Τρίτη", "τρίτη": "Τρίτη",
+            wednesday: "Τετάρτη", wed: "Τετάρτη", "τεταρτη": "Τετάρτη", "τετάρτη": "Τετάρτη",
+            thursday: "Πέμπτη", thu: "Πέμπτη", "πεμπτη": "Πέμπτη", "πέμπτη": "Πέμπτη",
+            friday: "Παρασκευή", fri: "Παρασκευή", "παρασκευη": "Παρασκευή", "παρασκευή": "Παρασκευή",
+            saturday: "Σάββατο", sat: "Σάββατο", "σαββατο": "Σάββατο", "σάββατο": "Σάββατο",
+            sunday: "Κυριακή", sun: "Κυριακή", "κυριακη": "Κυριακή", "κυριακή": "Κυριακή"
+        };
+        const key = raw.toLowerCase();
+        return validDays.includes(raw) ? raw : (map[key] || "");
+    };
+
+    const fromSettings = normalize(settingsObj?.dayName || settingsObj?.selectedDay || settingsObj?.workoutDay);
+    if (fromSettings) return fromSettings;
+
+    try {
+        const activeBtn = document.querySelector(".navbar button.active[id^='nav-']");
+        const fromButton = normalize(activeBtn?.id?.replace(/^nav-/, ""));
+        if (fromButton) return fromButton;
+    } catch (e) {}
+
+    try {
+        const summary = (typeof window.getPegasusRuntimeSummary === "function") ? window.getPegasusRuntimeSummary() : null;
+        const fromRuntime = normalize(summary?.selectedDay || summary?.workout?.selectedDay);
+        if (fromRuntime) return fromRuntime;
+    } catch (e) {}
+
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-    const dayName = greekDays[new Date().getDay()];
+    return greekDays[new Date().getDay()];
+};
+
+window.getPegasusBaseDailyTarget = function(settingsObj) {
+    const dayName = (typeof window.getPegasusActiveDayName === "function")
+        ? window.getPegasusActiveDayName(settingsObj)
+        : ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"][new Date().getDay()];
 
     const settings = settingsObj || (
         typeof window.getPegasusSettings === "function"

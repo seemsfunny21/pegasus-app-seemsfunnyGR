@@ -112,8 +112,9 @@ window.PegasusDebugHelpers = {
             return isNaN(val) ? 2800 : val;
         }
 
-        const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-        const dayName = greekDays[new Date().getDay()];
+        const dayName = (typeof window.getPegasusActiveDayName === "function")
+            ? window.getPegasusActiveDayName()
+            : ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"][new Date().getDay()];
 
         const settings = (typeof window.getPegasusSettings === "function")
             ? window.getPegasusSettings()

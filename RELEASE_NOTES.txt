@@ -423,3 +423,11 @@ pegasus200
 - Τα δεδομένα έρχονται από Open-Meteo για Ιωάννινα και κρατούνται προσωρινά σε localStorage.
 - Προστέθηκε mobile/weather-mobile.js ως νέο ξεχωριστό module.
 - Service worker bump σε pegasus-shield-v3.130-FINAL-200.
+
+
+pegasus201
+- Fix: calorie base target now follows the selected workout day/tab instead of blindly using the real system day when testing another day.
+- Fix: Sunday/Saturday selected views no longer fall back to Monday recovery calories just because the browser date is Monday.
+- Sync hardening: transient Failed to fetch during pull is logged as a warning and allowed to recover on the next successful sync instead of appearing as a fatal red error.
+- Service worker bump to pegasus-shield-v3.131-FINAL-201.
+- No new files added.

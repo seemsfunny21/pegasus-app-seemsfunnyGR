@@ -220,8 +220,9 @@ const PegasusMetabolic = {
     },
 
     getBaseDailyTarget: function(settingsObj) {
-        const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-        const dayName = greekDays[new Date().getDay()];
+        const dayName = (typeof window.getPegasusActiveDayName === "function")
+            ? window.getPegasusActiveDayName(settingsObj)
+            : ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"][new Date().getDay()];
 
         const settings = settingsObj || (
             typeof window.getPegasusSettings === "function"

@@ -1602,9 +1602,14 @@ const PegasusCloud = {
                 throw e;
             }
 
-            this.traceError("cloudSync", "pull", e);
-            console.error("❌ PULL ERROR:", e);
-            finalStatus = navigator.onLine ? "error" : "offline";
+            const isTransientFetchError = (e instanceof TypeError) || /failed to fetch|network|load failed/i.test(String(e?.message || e || ""));
+            if (isTransientFetchError) {
+                console.warn("⚠️ CLOUD: Pull προσωρινά απέτυχε — θα ξαναδοκιμάσει στο επόμενο sync.", e);
+            } else {
+                this.traceError("cloudSync", "pull", e);
+                console.error("❌ PULL ERROR:", e);
+            }
+            finalStatus = navigator.onLine ? (isTransientFetchError ? "online" : "error") : "offline";
             return false;
         } finally {
             this.isPulling = false;
