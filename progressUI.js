@@ -294,7 +294,21 @@ window.MuscleProgressUI = {
             && ledger.exercises
             && typeof ledger.exercises === "object"
             && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
-        const hasCurrentLedgerToday = hasLedgerValues && ledgerUpdatedAt >= monday.getTime();
+        const dateVariants = new Set([
+            todayStr,
+            `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`,
+            `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`,
+            `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`
+        ]);
+        const hasCurrentLedgerToday = ledger?.weekKey === currentWeekKey
+            && ledger.exercises
+            && typeof ledger.exercises === "object"
+            && Object.entries(ledger.exercises).some(([entryKey, value]) => {
+                const count = Math.max(0, Number(value) || 0);
+                if (count <= 0) return false;
+                const entryDate = String(entryKey || "").split("|")[0];
+                return dateVariants.has(entryDate);
+            });
 
         const daily = safeJson("pegasus_daily_progress", null);
         const hasTodayDaily = daily?.date === todayStr

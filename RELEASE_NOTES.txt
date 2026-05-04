@@ -447,3 +447,10 @@ pegasus202
 - Keeps the safety rule: if real current-Monday sets already exist, it does not wipe them.
 - Service worker bump to pegasus-shield-v3.132-FINAL-202.
 - No new files added.
+
+
+pegasus204
+- Monday weekly reset now checks actual dated ledger entries, not only ledger updatedAt.
+- Stale relabelled weekly ledgers from the previous week can no longer block Monday zero reset.
+- Cloud merge and ledger repair ignore counted entries outside the active week.
+- No new files.

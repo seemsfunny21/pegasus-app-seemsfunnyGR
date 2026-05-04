@@ -2100,9 +2100,32 @@ window.enforcePegasusMondayWeeklyReset = function(options = {}) {
         && typeof ledger.exercises === 'object'
         && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
 
-    // PEGASUS 203: do not let a stale cloud/local ledger that was simply relabeled as the
-    // new week block the real Monday reset. Only protect sets written after Monday started.
-    const hasCurrentLedgerToday = hasLedgerValues && ledgerUpdatedAt >= mondayStartMs;
+    const getLocalDateVariants = (dateObj = now) => {
+        const yyyy = dateObj.getFullYear();
+        const mm = pad(dateObj.getMonth() + 1);
+        const dd = pad(dateObj.getDate());
+        return new Set([
+            `${yyyy}-${mm}-${dd}`,
+            `${dd}/${mm}/${yyyy}`,
+            `${Number(dd)}/${Number(mm)}/${yyyy}`,
+            `${yyyy}${mm}${dd}`
+        ]);
+    };
+
+    const todayDateVariants = getLocalDateVariants(now);
+    const hasLedgerEntriesForToday = ledger?.weekKey === currentWeekKey
+        && ledger.exercises
+        && typeof ledger.exercises === 'object'
+        && Object.entries(ledger.exercises).some(([entryKey, value]) => {
+            const count = Math.max(0, Number(value) || 0);
+            if (count <= 0) return false;
+            const entryDate = String(entryKey || '').split('|')[0];
+            return todayDateVariants.has(entryDate);
+        });
+
+    // PEGASUS 204: a ledger updated on Monday can still be stale if it was only re-synced/relabelled.
+    // Protect the reset only when the counted ledger contains actual entries dated today.
+    const hasCurrentLedgerToday = hasLedgerEntriesForToday;
 
     const hasTodayDaily = daily?.date === todayDateStr
         && daily.exercises
@@ -2126,7 +2149,7 @@ window.enforcePegasusMondayWeeklyReset = function(options = {}) {
         if (window.PegasusWeeklyProgress?.repairFromLedger) {
             setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: `monday-reset-guard:${source}` }), 100);
         }
-        console.log('🛡️ PEGASUS RESET: Skipped Monday zero because real Monday sets already exist.', { source, currentWeekKey, ledgerUpdatedAt, mondayStartMs });
+        console.log('🛡️ PEGASUS RESET: Skipped Monday zero because real Monday sets already exist.', { source, currentWeekKey, ledgerUpdatedAt, mondayStartMs, hasLedgerEntriesForToday });
         return false;
     }
 

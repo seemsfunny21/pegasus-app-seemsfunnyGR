@@ -404,9 +404,24 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
             return totals;
         }
 
+        const parseLedgerDate = key => {
+            const raw = String(key || '').split('|')[0];
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return new Date(`${raw}T00:00:00`);
+            if (/^\d{8}$/.test(raw)) return new Date(`${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}T00:00:00`);
+            const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) return new Date(`${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}T00:00:00`);
+            return null;
+        };
+        const weekStart = new Date(`${getPegasusWeekKey()}T00:00:00`);
+        const tomorrow = new Date();
+        tomorrow.setHours(0, 0, 0, 0);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
         Object.entries(ledger.exercises).forEach(([key, rawCount]) => {
             const count = Math.max(0, Number(rawCount) || 0);
             if (count <= 0) return;
+            const entryDate = parseLedgerDate(key);
+            if (entryDate && (entryDate < weekStart || entryDate >= tomorrow)) return;
 
             const exerciseName = getLedgerExerciseNameFromKey(key);
             const muscle = resolvePegasusMuscleGroup(exerciseName);

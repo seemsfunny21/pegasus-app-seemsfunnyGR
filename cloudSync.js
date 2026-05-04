@@ -471,9 +471,24 @@ const PegasusCloud = {
         const totals = this.normalizeWeeklyHistoryObject({});
         if (!ledger || ledger.weekKey !== currentWeek || !ledger.exercises || typeof ledger.exercises !== "object") return totals;
 
+        const parseLedgerDate = key => {
+            const raw = String(key || "").split("|")[0];
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return new Date(`${raw}T00:00:00`);
+            if (/^\d{8}$/.test(raw)) return new Date(`${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}T00:00:00`);
+            const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) return new Date(`${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}T00:00:00`);
+            return null;
+        };
+        const weekStart = new Date(`${currentWeek}T00:00:00`);
+        const tomorrow = new Date();
+        tomorrow.setHours(0, 0, 0, 0);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
         Object.entries(ledger.exercises).forEach(([key, rawCount]) => {
             const count = Math.max(0, Number(rawCount) || 0);
             if (count <= 0) return;
+            const entryDate = parseLedgerDate(key);
+            if (entryDate && (entryDate < weekStart || entryDate >= tomorrow)) return;
             const parts = String(key || "").split("|");
             const exerciseName = parts.length > 1 ? parts.slice(1).join("|") : String(key || "");
             const muscle = this.resolveWeeklyLedgerMuscle(exerciseName);
@@ -522,9 +537,31 @@ const PegasusCloud = {
         const remoteLedgerRaw = this.safeParseStorageObject(remoteStorage.pegasus_weekly_history_counted_v2, null);
         const remoteUpdatedAt = Math.max(0, Number(remoteLedgerRaw?.updatedAt) || 0, Number(remoteLedgerRaw?.createdAt) || 0);
 
-        // PEGASUS 203: after a Monday zero reset, do not re-import same-week stale totals
-        // unless another device wrote a ledger after the reset timestamp.
-        if (resetWeek === currentWeek && localTotal === 0 && remoteTotal > 0 && (!remoteUpdatedAt || remoteUpdatedAt <= resetAt)) {
+        const remoteHasCurrentWeekEntries = (() => {
+            if (!remoteLedgerRaw || remoteLedgerRaw.weekKey !== currentWeek || !remoteLedgerRaw.exercises || typeof remoteLedgerRaw.exercises !== "object") return false;
+            const start = new Date(`${currentWeek}T00:00:00`);
+            const end = new Date();
+            end.setHours(0, 0, 0, 0);
+            end.setDate(end.getDate() + 1);
+            const parseDate = key => {
+                const raw = String(key || "").split("|")[0];
+                if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return new Date(`${raw}T00:00:00`);
+                if (/^\d{8}$/.test(raw)) return new Date(`${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}T00:00:00`);
+                const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (m) return new Date(`${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}T00:00:00`);
+                return null;
+            };
+            return Object.entries(remoteLedgerRaw.exercises).some(([entryKey, value]) => {
+                const count = Math.max(0, Number(value) || 0);
+                if (count <= 0) return false;
+                const entryDate = parseDate(entryKey);
+                return !!entryDate && entryDate >= start && entryDate < end;
+            });
+        })();
+
+        // PEGASUS 204: after a Monday zero reset, do not re-import same-week stale totals.
+        // A same-week ledger is trusted only when it contains entries dated inside the actual current week.
+        if (resetWeek === currentWeek && localTotal === 0 && remoteTotal > 0 && (!remoteHasCurrentWeekEntries || !remoteUpdatedAt || remoteUpdatedAt <= resetAt)) {
             localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
             return JSON.stringify(this.normalizeWeeklyHistoryObject({}));
         }
