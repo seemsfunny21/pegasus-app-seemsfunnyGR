@@ -2053,64 +2053,103 @@ window.updateTotalWorkoutCount = function() {
 };
 
 /* ===== 11. BOOT SEQUENCE ===== */
+window.enforcePegasusMondayWeeklyReset = function(options = {}) {
+    const source = options.source || 'unknown';
+    const pushAfterReset = options.push !== false;
+    const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+    const now = new Date();
+    const todayName = greekDays[now.getDay()];
+    if (todayName !== "Δευτέρα") return false;
+
+    const pad = value => String(value).padStart(2, '0');
+    const todayDateStr = (typeof window.getPegasusLocalDateKey === 'function')
+        ? window.getPegasusLocalDateKey()
+        : `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    const day = now.getDay() || 7;
+    const monday = new Date(now);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(now.getDate() - day + 1);
+    const currentWeekKey = `${monday.getFullYear()}-${pad(monday.getMonth() + 1)}-${pad(monday.getDate())}`;
+
+    const historyKey = window.PegasusManifest?.workout?.weekly_history || 'pegasus_weekly_history';
+    const ledgerKey = 'pegasus_weekly_history_counted_v2';
+    const weekKeyName = 'pegasus_weekly_history_week_key';
+    const groups = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
+    const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Πόδια": 0, "Χέρια": 0, "Ώμοι": 0, "Κορμός": 0 };
+
+    const safeRead = (key, fallback) => {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(key) || 'null');
+            return parsed && typeof parsed === 'object' ? parsed : fallback;
+        } catch (err) {
+            return fallback;
+        }
+    };
+
+    const history = safeRead(historyKey, freshHistory);
+    const ledger = safeRead(ledgerKey, null);
+    const daily = safeRead('pegasus_daily_progress', null);
+    const storedWeek = String(localStorage.getItem(weekKeyName) || '').trim();
+    const lastReset = localStorage.getItem('pegasus_last_reset');
+
+    const hasCurrentLedger = ledger?.weekKey === currentWeekKey
+        && ledger.exercises
+        && typeof ledger.exercises === 'object'
+        && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+
+    const hasTodayDaily = daily?.date === todayDateStr
+        && daily.exercises
+        && typeof daily.exercises === 'object'
+        && Object.values(daily.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
+
+    const visibleTotal = groups.reduce((sum, group) => sum + Math.max(0, Number(history?.[group]) || 0), 0);
+    const staleWeek = !!storedWeek && storedWeek !== currentWeekKey;
+    const staleMondayCarryover = visibleTotal > 0 && !hasCurrentLedger && !hasTodayDaily;
+    const needsReset = lastReset !== todayDateStr || staleWeek || staleMondayCarryover;
+
+    if (!needsReset) return false;
+
+    if (hasCurrentLedger || hasTodayDaily) {
+        localStorage.setItem(weekKeyName, currentWeekKey);
+        localStorage.setItem('pegasus_last_reset', todayDateStr);
+        localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
+        if (window.PegasusWeeklyProgress?.repairFromLedger) {
+            setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: `monday-reset-guard:${source}` }), 100);
+        }
+        console.log('🛡️ PEGASUS RESET: Skipped Monday zero because current-week sets already exist.', { source, currentWeekKey });
+        return false;
+    }
+
+    localStorage.setItem(historyKey, JSON.stringify(freshHistory));
+    localStorage.setItem(weekKeyName, currentWeekKey);
+    localStorage.removeItem(ledgerKey);
+    localStorage.setItem('pegasus_weekly_kcal', '0.0');
+    localStorage.setItem('pegasus_last_reset', todayDateStr);
+    localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
+    localStorage.setItem('pegasus_monday_reset_applied_week_key', currentWeekKey);
+
+    window.dispatchEvent(new CustomEvent('pegasus_weekly_history_updated', {
+        detail: { source: `monday-reset:${source}`, history: { ...freshHistory }, weekKey: currentWeekKey }
+    }));
+
+    if (window.MuscleProgressUI?.render) setTimeout(() => window.MuscleProgressUI.render(true), 50);
+    if (typeof window.renderPreview === 'function') setTimeout(() => window.renderPreview(), 80);
+    if (pushAfterReset && window.PegasusCloud?.push) setTimeout(() => window.PegasusCloud.push(true), 150);
+
+    console.log('🛡️ PEGASUS RESET: Monday weekly progress reset applied.', { source, currentWeekKey, previousStoredWeek: storedWeek || null, previousTotal: visibleTotal });
+    return true;
+};
+
 window.onload = () => {
     const greekDays = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
     const todayObj = new Date();
     const todayName = greekDays[todayObj.getDay()];
 
-    if (todayName === "Δευτέρα") {
-        try {
-            const lastReset = localStorage.getItem('pegasus_last_reset');
-            const todayDateStr = window.getPegasusLocalDateKey();
-            const currentWeekKey = todayDateStr;
-            if (lastReset !== todayDateStr) {
-                const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
-                if (cloudBootPending) {
-                    try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
-                    console.log('🛡️ PEGASUS RESET: Deferred Monday reset until initial cloud pull completes.');
-                    return;
-                }
-                const safeRead = (key, fallback) => {
-                    try {
-                        const parsed = JSON.parse(localStorage.getItem(key) || 'null');
-                        return parsed && typeof parsed === 'object' ? parsed : fallback;
-                    } catch (err) {
-                        return fallback;
-                    }
-                };
-                const ledger = safeRead('pegasus_weekly_history_counted_v2', null);
-                const daily = safeRead('pegasus_daily_progress', null);
-                const hasCurrentLedger = ledger?.weekKey === currentWeekKey
-                    && ledger.exercises
-                    && typeof ledger.exercises === 'object'
-                    && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
-                const hasTodayDaily = daily?.date === todayDateStr
-                    && daily.exercises
-                    && typeof daily.exercises === 'object'
-                    && Object.values(daily.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
-
-                if (hasCurrentLedger || hasTodayDaily) {
-                    localStorage.setItem('pegasus_weekly_history_week_key', currentWeekKey);
-                    localStorage.setItem('pegasus_last_reset', todayDateStr);
-                    localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
-                    if (window.PegasusWeeklyProgress?.repairFromLedger) {
-                        setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: 'desktop-monday-reset-guard' }), 100);
-                    }
-                    console.log('🛡️ PEGASUS RESET: Skipped Monday zero because current-week sets already exist.');
-                } else {
-                    const freshHistory = { "Στήθος": 0, "Πλάτη": 0, "Ώμοι": 0, "Χέρια": 0, "Κορμός": 0, "Πόδια": 0 };
-                    localStorage.setItem('pegasus_weekly_history', JSON.stringify(freshHistory));
-                    localStorage.setItem('pegasus_weekly_history_week_key', currentWeekKey);
-                    localStorage.removeItem('pegasus_weekly_history_counted_v2');
-                    localStorage.setItem('pegasus_weekly_kcal', "0.0");
-                    localStorage.setItem('pegasus_last_reset', todayDateStr);
-                    localStorage.setItem('pegasus_last_reset_timestamp', todayDateStr);
-                    if (window.PegasusCloud?.push) window.PegasusCloud.push();
-                }
-            }
-        } catch (e) {
-            console.error("🛡️ PEGASUS RESET ERROR:", e);
-        }
+    try {
+        window.enforcePegasusMondayWeeklyReset?.({ source: 'boot-pre-cloud', push: false });
+    } catch (e) {
+        console.error("🛡️ PEGASUS RESET ERROR:", e);
     }
 
     setTimeout(() => {
@@ -2146,9 +2185,11 @@ window.onload = () => {
                 !window.PegasusCloud.isPushing
             ) {
                 await window.PegasusCloud.pull(true);
+                try { window.enforcePegasusMondayWeeklyReset?.({ source: `${source}-after-cloud-pull`, push: true }); } catch (resetError) { console.warn('⚠️ PEGASUS: Monday reset after panel pull skipped.', resetError); }
             }
         } catch (e) {
             console.warn(`⚠️ PEGASUS: cloud pull before ${source} skipped.`, e);
+            try { window.enforcePegasusMondayWeeklyReset?.({ source: `${source}-pull-fallback`, push: true }); } catch (resetError) { console.warn('⚠️ PEGASUS: Monday reset pull fallback skipped.', resetError); }
         }
 
         if (typeof afterPull === "function") afterPull();

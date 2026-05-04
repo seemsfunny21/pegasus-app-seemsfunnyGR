@@ -518,9 +518,18 @@ const PegasusCloud = {
         const localTotal = this.getWeeklyHistoryTotalValue(localCandidate);
         const remoteTotal = this.getWeeklyHistoryTotalValue(remoteCandidate);
 
-        // Remote old-week zero must never wipe a current local workout week.
-        if (localWeek === currentWeek && remoteWeek && remoteWeek !== currentWeek && localTotal > 0) {
+        // If local has already moved into the current week, never re-import an older remote week,
+        // even when the current local value is zero after a Monday reset.
+        if (localWeek === currentWeek && remoteWeek && remoteWeek !== currentWeek) {
+            localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
             return JSON.stringify(localCandidate);
+        }
+
+        // If both sides are from an older week, start the new week clean instead of carrying
+        // last week's completed muscle totals into Monday.
+        if (localWeek && remoteWeek && localWeek !== currentWeek && remoteWeek !== currentWeek) {
+            localStorage.setItem("pegasus_weekly_history_week_key", currentWeek);
+            return JSON.stringify(this.normalizeWeeklyHistoryObject({}));
         }
 
         // Current-week remote can initialize a fresh local device, but it may need ledger repair.
@@ -547,8 +556,20 @@ const PegasusCloud = {
         const localWeek = String(local?.weekKey || localStorage.getItem("pegasus_weekly_history_week_key") || currentWeek);
         const remoteWeek = String(remote?.weekKey || this._remoteStorageMergeContext?.pegasus_weekly_history_week_key || currentWeek);
 
-        if (localWeek === currentWeek && remoteWeek !== currentWeek && local?.exercises) {
-            return JSON.stringify(local);
+        if (localWeek === currentWeek && remoteWeek !== currentWeek) {
+            return JSON.stringify({
+                weekKey: currentWeek,
+                exercises: local?.exercises && typeof local.exercises === "object" ? local.exercises : {},
+                updatedAt: Math.max(Number(local?.updatedAt) || 0, Date.now())
+            });
+        }
+
+        if (localWeek !== currentWeek && remoteWeek !== currentWeek) {
+            return JSON.stringify({
+                weekKey: currentWeek,
+                exercises: {},
+                updatedAt: Date.now()
+            });
         }
 
         if (remoteWeek === currentWeek && localWeek !== currentWeek) {
@@ -1585,6 +1606,14 @@ const PegasusCloud = {
             }
 
             this.hasSuccessfullyPulled = true;
+
+            try {
+                if (typeof window.enforcePegasusMondayWeeklyReset === "function") {
+                    window.enforcePegasusMondayWeeklyReset({ source: "cloud-pull-complete", push: false });
+                }
+            } catch (resetError) {
+                console.warn("⚠️ CLOUD: Monday reset check after pull skipped.", resetError);
+            }
 
             if (pendingExists) {
                 changed = this.applyPendingChangesToLocal() || changed;

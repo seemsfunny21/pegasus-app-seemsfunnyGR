@@ -431,3 +431,12 @@ pegasus201
 - Sync hardening: transient Failed to fetch during pull is logged as a warning and allowed to recover on the next successful sync instead of appearing as a fatal red error.
 - Service worker bump to pegasus-shield-v3.131-FINAL-201.
 - No new files added.
+
+
+pegasus202
+- Fix: Monday weekly muscle progress now resets safely even when last week's cloud totals are still present.
+- Added a boot/panel/cloud-pull Monday reset guard that clears stale previous-week weekly history before rendering Progress.
+- Cloud weekly merge no longer re-imports older-week weekly totals or older counted ledgers into the new Monday week after a reset.
+- Keeps the safety rule: if real current-Monday sets already exist, it does not wipe them.
+- Service worker bump to pegasus-shield-v3.132-FINAL-202.
+- No new files added.
