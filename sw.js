@@ -4,8 +4,8 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.140-FINAL-215';
-const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v1';
+const CACHE_NAME = 'pegasus-shield-v3.140-FINAL-216';
+const VIDEO_CACHE_NAME = 'pegasus-videos-disabled-v216';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -93,6 +93,10 @@ function isPermanentVideoAsset(pathname) {
     return pathname.includes('/videos/') && /\.(mp4|webm|mov|mp3)$/i.test(pathname);
 }
 
+function isVideoAsset(pathname) {
+    return /\.(mp4|webm|mov)$/i.test(pathname);
+}
+
 function getPermanentVideoCacheKey(url) {
     return new Request(`${url.origin}${url.pathname}`, { credentials: 'same-origin' });
 }
@@ -140,7 +144,7 @@ async function createRangeResponse(request, cachedResponse) {
     headers.set('Content-Type', cachedResponse.headers.get('Content-Type') || 'video/mp4');
 
     return new Response(sliced, {
-        status: 208,
+        status: 206,
         statusText: 'Partial Content',
         headers
     });
@@ -288,6 +292,15 @@ self.addEventListener('activate', (event) => {
                         console.log(`🧹 SW: Purging old cache: ${key}`);
                         return caches.delete(key);
                     }
+
+                    // PEGASUS 216: video files must not be served from the old permanent cache.
+                    // Normal F5 was receiving stale/partial cached videos and the workout panel stayed black,
+                    // while Ctrl+F5 bypassed the cache and worked. Purge those caches and stream videos fresh.
+                    if (key.startsWith('pegasus-videos-permanent') || key.startsWith('pegasus-videos-disabled')) {
+                        console.log(`🧹 SW: Purging video cache: ${key}`);
+                        return caches.delete(key);
+                    }
+
                     return Promise.resolve();
                 })
             );
@@ -320,19 +333,15 @@ self.addEventListener('fetch', (event) => {
     if (isMediaAsset(pathname)) {
         event.respondWith(
             (async () => {
-                if (isPermanentVideoAsset(pathname)) {
-                    const cachedVideo = await getCachedPermanentVideoResponse(request, url);
-                    if (cachedVideo) return cachedVideo;
-
-                    // Keep playback fast: stream the current network request normally,
-                    // while downloading the full file in the background for future offline use.
-                    event.waitUntil(cachePermanentVideo(url));
-
+                if (isVideoAsset(pathname)) {
+                    // PEGASUS 216 BUGFIX ONLY:
+                    // Videos must be streamed fresh on normal F5 as well as Ctrl+F5.
+                    // Do not return stale/partial cached mp4/webm/mov responses from the Service Worker.
                     try {
-                        return await fetch(request);
+                        return await fetch(request, { cache: 'no-store' });
                     } catch (err) {
-                        const lateCachedVideo = await getCachedPermanentVideoResponse(request, url);
-                        if (lateCachedVideo) return lateCachedVideo;
+                        const cachedVideo = await getCachedPermanentVideoResponse(request, url);
+                        if (cachedVideo) return cachedVideo;
 
                         console.warn(`SW: Video fetch failed and not cached: ${url.pathname}`, err);
                         return new Response('', { status: 404 });

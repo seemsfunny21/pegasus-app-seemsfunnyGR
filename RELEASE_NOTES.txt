@@ -7,3 +7,6 @@ PEGASUS 215
 - Συγχρονίζει το custom exercise order με key pegasus_custom_exercise_order_v1.
 - Χωρίς φάκελο images.
 - Διατηρεί 10/45/60 timer, 45λεπτο, reset Σάββατο μετά τις 06:00, cycling-aware no-legs rule, Weather/YouTube/mobile/desktop sync fixes.
+
+PEGASUS 216
+- BUGFIX ONLY: Service Worker video cache fix. Normal F5 now streams workout videos fresh instead of serving stale/partial cached video responses that could leave the panel black. Ctrl+F5 behavior remains unchanged.
