@@ -1,3 +1,10 @@
+PEGASUS 205
+- Reverted weekly reset policy to Saturday-only reset.
+- Weekly muscle progress now resets once on Saturday at/after 06:00.
+- Monday reset guards are disabled/aliased to the Saturday reset to avoid slow boot and broken set carryover.
+- Week keys now follow the Saturday 06:00 cycle across Brain, Cloud, Optimizer, Progress, mobile cardio and EMS.
+- Service worker cache bumped to pegasus-shield-v3.135-FINAL-205.
+
 pegasus203
 - Fixed Monday reset when old weekly totals were already marked with the new Monday week key.
 - Monday reset now ignores stale relabeled ledgers and only protects real Monday sets written after Monday started.

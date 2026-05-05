@@ -136,11 +136,13 @@
                     history['Πόδια'] = currentLegSets + credit;
                     localStorage.setItem('pegasus_weekly_history', JSON.stringify(history));
 
-                    const weekDay = (new Date()).getDay() || 7;
-                    const weekMonday = new Date();
-                    weekMonday.setHours(0, 0, 0, 0);
-                    weekMonday.setDate(weekMonday.getDate() - weekDay + 1);
-                    const weekKey = `${weekMonday.getFullYear()}-${pad(weekMonday.getMonth() + 1)}-${pad(weekMonday.getDate())}`;
+                    const weekDate = new Date();
+                    const weekStart = new Date(weekDate);
+                    const daysSinceSaturday = (weekDate.getDay() + 1) % 7;
+                    weekStart.setHours(6, 0, 0, 0);
+                    weekStart.setDate(weekDate.getDate() - daysSinceSaturday);
+                    if (weekDate.getDay() === 6 && weekDate.getTime() < weekStart.getTime()) weekStart.setDate(weekStart.getDate() - 7);
+                    const weekKey = `${weekStart.getFullYear()}-${pad(weekStart.getMonth() + 1)}-${pad(weekStart.getDate())}`;
                     localStorage.setItem('pegasus_weekly_history_week_key', weekKey);
 
                     if (window.PegasusBrain?.recordWeekendCarryover) {

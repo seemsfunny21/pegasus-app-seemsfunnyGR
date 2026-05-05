@@ -75,11 +75,12 @@
 
     function getWeekKey(date = new Date()) {
         const d = typeof date === "string" ? dateFromKey(date) : new Date(date);
-        const day = d.getDay() || 7;
-        const monday = new Date(d);
-        monday.setHours(0, 0, 0, 0);
-        monday.setDate(d.getDate() - day + 1);
-        return normalizeGreekDate(monday);
+        const start = new Date(d);
+        const daysSinceSaturday = (d.getDay() + 1) % 7;
+        start.setHours(6, 0, 0, 0);
+        start.setDate(d.getDate() - daysSinceSaturday);
+        if (d.getDay() === 6 && d.getTime() < start.getTime()) start.setDate(start.getDate() - 7);
+        return normalizeGreekDate(start);
     }
 
     function getNextWeekKey(date = new Date()) {

@@ -267,112 +267,11 @@ window.MuscleProgressUI = {
     },
 
     checkWeeklyReset() {
-        const lastResetKey = M?.system?.lastResetTimestamp || "pegasus_last_reset_timestamp";
-        const historyKey = M?.workout?.weekly_history || "pegasus_weekly_history";
-
-        const lastResetDate = localStorage.getItem(lastResetKey);
-        const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-        const day = now.getDay() || 7;
-        const monday = new Date(now);
-        monday.setHours(0, 0, 0, 0);
-        monday.setDate(now.getDate() - day + 1);
-        const currentWeekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
-
-        const safeJson = (key, fallback) => {
-            try {
-                const parsed = JSON.parse(localStorage.getItem(key) || "null");
-                return parsed && typeof parsed === "object" ? parsed : fallback;
-            } catch (e) {
-                return fallback;
-            }
-        };
-
-        const ledger = safeJson("pegasus_weekly_history_counted_v2", null);
-        const ledgerUpdatedAt = Math.max(0, Number(ledger?.updatedAt) || 0, Number(ledger?.createdAt) || 0);
-        const hasLedgerValues = ledger?.weekKey === currentWeekKey
-            && ledger.exercises
-            && typeof ledger.exercises === "object"
-            && Object.values(ledger.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
-        const dateVariants = new Set([
-            todayStr,
-            `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`,
-            `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`,
-            `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`
-        ]);
-        const hasCurrentLedgerToday = ledger?.weekKey === currentWeekKey
-            && ledger.exercises
-            && typeof ledger.exercises === "object"
-            && Object.entries(ledger.exercises).some(([entryKey, value]) => {
-                const count = Math.max(0, Number(value) || 0);
-                if (count <= 0) return false;
-                const entryDate = String(entryKey || "").split("|")[0];
-                return dateVariants.has(entryDate);
-            });
-
-        const daily = safeJson("pegasus_daily_progress", null);
-        const hasTodayDaily = daily?.date === todayStr
-            && daily.exercises
-            && typeof daily.exercises === "object"
-            && Object.values(daily.exercises).some(value => Math.max(0, Number(value) || 0) > 0);
-
-        const history = safeJson(historyKey, {});
-        const visibleTotal = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"]
-            .reduce((sum, group) => sum + Math.max(0, Number(history?.[group]) || 0), 0);
-        const resetAppliedWeek = String(localStorage.getItem("pegasus_monday_reset_applied_week_key") || "").trim();
-        const storedWeekKey = String(localStorage.getItem("pegasus_weekly_history_week_key") || "").trim();
-        const needsMondayReset = resetAppliedWeek !== currentWeekKey
-            || lastResetDate !== todayStr
-            || (!!storedWeekKey && storedWeekKey !== currentWeekKey)
-            || (visibleTotal > 0 && !hasCurrentLedgerToday && !hasTodayDaily);
-
-        const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
-
-        // PEGASUS 203: reset Monday carry-over even if an old ledger was relabeled as this week.
-        // Only real Monday sets, written after Monday started, can block the zero reset.
-        if (now.getDay() === 1 && needsMondayReset) {
-            if (cloudBootPending) {
-                try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
-                console.log("🛡️ PEGASUS UI: Monday reset deferred until initial cloud pull completes.");
-                return;
-            }
-            if (hasCurrentLedgerToday || hasTodayDaily) {
-                localStorage.setItem(lastResetKey, todayStr);
-                localStorage.setItem("pegasus_last_reset", todayStr);
-                localStorage.setItem("pegasus_weekly_history_week_key", currentWeekKey);
-                localStorage.setItem("pegasus_monday_reset_applied_week_key", currentWeekKey);
-                localStorage.setItem("pegasus_monday_reset_applied_at", String(Date.now()));
-                this.lastDataHash = null;
-                if (window.PegasusWeeklyProgress?.repairFromLedger) {
-                    setTimeout(() => window.PegasusWeeklyProgress.repairFromLedger({ source: "monday-reset-guard" }), 50);
-                }
-                console.log("🛡️ PEGASUS UI: Monday reset skipped because real Monday sets already exist.");
-                return;
-            }
-
-            const emptyHistory = {
-                "Στήθος": 0,
-                "Πλάτη": 0,
-                "Πόδια": 0,
-                "Χέρια": 0,
-                "Ώμοι": 0,
-                "Κορμός": 0
-            };
-
-            localStorage.setItem(historyKey, JSON.stringify(emptyHistory));
-            localStorage.setItem("pegasus_weekly_history_week_key", currentWeekKey);
-            localStorage.removeItem("pegasus_weekly_history_counted_v2");
-            localStorage.setItem(lastResetKey, todayStr);
-            localStorage.setItem("pegasus_last_reset", todayStr);
-            localStorage.setItem("pegasus_monday_reset_applied_week_key", currentWeekKey);
-            localStorage.setItem("pegasus_monday_reset_applied_at", String(Date.now()));
-            this.lastDataHash = null;
-
-            if (window.PegasusCloud?.push) {
-                window.PegasusCloud.push(true);
-            }
-
-            console.log("🛡️ PEGASUS UI: Auto-Reset Triggered for Monday.");
+        if (typeof window.enforcePegasusSaturdayWeeklyReset === "function") {
+            window.enforcePegasusSaturdayWeeklyReset({ source: "progress-ui", push: true });
+        } else if (typeof window.enforcePegasusMondayWeeklyReset === "function") {
+            // Compatibility fallback; in PEGASUS 205 this alias points to the Saturday 06:00 reset.
+            window.enforcePegasusMondayWeeklyReset({ source: "progress-ui", push: true });
         }
     }
 };

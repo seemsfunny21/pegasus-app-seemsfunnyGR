@@ -39,11 +39,12 @@ const PEGASUS_134_TARGETS = {
 
 function getPegasusWeekKeyForTargets() {
     const d = new Date();
-    const day = d.getDay() || 7;
-    const monday = new Date(d);
-    monday.setHours(0, 0, 0, 0);
-    monday.setDate(d.getDate() - day + 1);
-    return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+    const start = new Date(d);
+    const daysSinceSaturday = (d.getDay() + 1) % 7;
+    start.setHours(6, 0, 0, 0);
+    start.setDate(d.getDate() - daysSinceSaturday);
+    if (d.getDay() === 6 && d.getTime() < start.getTime()) start.setDate(start.getDate() - 7);
+    return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
 }
 
 function migratePegasus134MuscleTargets() {
