@@ -1,103 +1,105 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v1.4 (45-MIN TIME-BOXED / LEG ROUTING)
-   Protocol: Strict 60-Minute Window Enforcement & DOM Shielding
-   Strategy: Deficit Prioritization with Volume Capping
-   Status: FINAL STABLE | FIXED: REFLOW THRASHING & NULL TARGETING
+   PEGASUS DYNAMIC OPTIMIZER - v1.6 (45-MIN REST-AWARE / NO REORDER)
+   Protocol: Strict 45-Minute Window Enforcement & DOM Shielding
+   Strategy: PegasusBrain owns order; Dynamic only enforces visibility/time cap
+   Status: FINAL STABLE | PEGASUS 210
    ========================================================================== */
 
 window.PegasusDynamic = {
     maxMinutes: 45,
-    setDuration: 1.5, // 90 δευτερόλεπτα ανά σετ (άσκηση + rest)
+    setDuration: 1.9, // ~45 λεπτά για 23-24 ποιοτικά σετ
 
-optimize: function() {
+    getExerciseMuscle: function(ex) {
+        return ex?.dataset?.group
+            || ex?.dataset?.muscle
+            || ex?.getAttribute?.("data-group")
+            || ex?.getAttribute?.("data-muscle")
+            || ex?.querySelector?.(".exercise-muscle-badge")?.textContent?.trim()
+            || ex?.querySelector?.("[data-muscle]")?.getAttribute?.("data-muscle")
+            || "";
+    },
+
+    getExerciseSets: function(ex) {
+        const raw = ex?.dataset?.total || ex?.dataset?.sets || ex?.getAttribute?.("data-sets");
+        const value = parseFloat(raw);
+        return Number.isFinite(value) ? value : 4;
+    },
+
+    markHidden: function(ex) {
+        ex.style.display = "none";
+        ex.setAttribute("data-active", "false");
+        const idx = Number(ex.dataset?.index);
+        if (Number.isInteger(idx) && Array.isArray(window.remainingSets)) {
+            window.remainingSets[idx] = 0;
+        }
+    },
+
+    markVisible: function(ex) {
+        ex.style.display = "";
+        ex.style.flexDirection = "";
+        ex.setAttribute("data-active", "true");
+        ex.style.opacity = "1";
+    },
+
+    optimize: function() {
         console.log("⏱️ DYNAMIC ENGINE: Calculating Time Budget...");
 
-        const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
         const activeDay = (typeof window.getPegasusActiveDayName === "function")
             ? window.getPegasusActiveDayName()
             : (document.querySelector(".navbar button.active[id^='nav-']")?.id || "").replace(/^nav-/, "");
+
         const allowLegs = (typeof window.PegasusBrain?.canTrainLegsOnDay === "function")
             ? window.PegasusBrain.canTrainLegsOnDay(activeDay)
             : activeDay === "Τετάρτη";
 
-        // 🔄 Σύνδεση με τον Optimizer για κοινούς στόχους
-        const targets = (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === "function")
-            ? window.PegasusOptimizer.getTargets()
-            : { "Στήθος": 24, "Πλάτη": 24, "Ώμοι": 16, "Χέρια": 16, "Πόδια": 24, "Κορμός": 12 };
+        if (!window.exercises || window.exercises.length === 0) return;
 
-        // 1. Υπολογισμός Ελλείψεων
-        let deficits = {};
-        Object.keys(targets).forEach(m => {
-            let done = history[m] || 0;
-            deficits[m] = Math.max(0, targets[m] - done);
+        // PEGASUS 210: Do not sort here. PegasusBrain already builds the rest-aware order.
+        // Re-sorting at DOM level can desync timers/click handlers and destroy recovery spacing.
+        let totalSets = 0;
+        const fragment = document.createDocumentFragment();
+        const ordered = Array.from(window.exercises);
+
+        ordered.forEach(ex => {
+            const muscle = this.getExerciseMuscle(ex);
+            if (muscle === "Πόδια" && !allowLegs) {
+                this.markHidden(ex);
+                fragment.appendChild(ex);
+                return;
+            }
+
+            const sets = this.getExerciseSets(ex);
+            const nameText = ex.querySelector?.(".exercise-name")?.textContent || ex.textContent || "";
+            const isStretching = /stretching|διατάσεις/i.test(nameText);
+            const cost = isStretching ? 2 : (sets * this.setDuration);
+
+            if ((totalSets * this.setDuration) + cost <= this.maxMinutes) {
+                if (!isStretching) totalSets += sets;
+                this.markVisible(ex);
+                fragment.appendChild(ex);
+            } else {
+                this.markHidden(ex);
+                console.log("✂️ Time Cap: Removed exercise to enforce 45-min window.");
+                fragment.appendChild(ex);
+            }
         });
 
-        if (window.exercises && window.exercises.length > 0) {
-            // 2. Ταξινόμηση βάσει ελλείψεων (Προτεραιότητα στα 0)
-            // 🎯 FIXED: Ασφαλής εξαγωγή δεδομένων χωρίς εξάρτηση από το .weight-input
-            window.exercises.sort((a, b) => {
-                let mA = a.getAttribute("data-muscle") || a.querySelector("[data-muscle]")?.getAttribute("data-muscle") || "None";
-                let mB = b.getAttribute("data-muscle") || b.querySelector("[data-muscle]")?.getAttribute("data-muscle") || "None";
-                return (deficits[mB] || 0) - (deficits[mA] || 0);
-            });
+        const container = document.getElementById("exList");
+        if (container) {
+            container.innerHTML = "";
+            container.appendChild(fragment);
+        }
 
-            // 3. TIME AUDIT: Υπολογισμός και Περικοπή
-            let totalSets = 0;
-            const fragment = document.createDocumentFragment(); // 🎯 FIXED: Αποτροπή DOM Reflow Thrashing
+        const totalMins = Math.round(totalSets * this.setDuration);
+        console.log(`✅ DYNAMIC UI: Final Plan - ${totalSets} sets (~${totalMins} mins)`);
 
-            window.exercises.forEach(ex => {
-                const muscle = ex.getAttribute("data-muscle") || ex.querySelector("[data-muscle]")?.getAttribute("data-muscle") || "";
-                if (muscle === "Πόδια" && !allowLegs) {
-                    ex.style.display = "none";
-                    ex.setAttribute("data-active", "false");
-                    fragment.appendChild(ex);
-                    return;
-                }
-
-                // Υποστήριξη πολλαπλών attributes σε περίπτωση αλλαγής δομής στο app.js
-                let sets = parseInt(ex.dataset.total || ex.dataset.sets || ex.getAttribute('data-sets')) || 4;
-
-                // Εξαίρεση: Το Stretching δεν κοστίζει τον ίδιο χρόνο
-                const isStretching = ex.innerHTML.includes("Stretching");
-                const cost = isStretching ? 2 : (sets * this.setDuration);
-
-                // Αν το τρέχον σύνολο + ο νέος χρόνος <= 60 λεπτά
-                if ((totalSets * this.setDuration) + cost <= this.maxMinutes) {
-                    if (!isStretching) totalSets += sets;
-                    // PEGASUS 141 FIX: keep exercise card CSS layout on manual day switch.
-                    ex.style.display = "";
-                    ex.style.flexDirection = "";
-                    ex.setAttribute("data-active", "true"); // Safety flag
-                    ex.style.opacity = "1";
-                    fragment.appendChild(ex);
-                } else {
-                    // Περικοπή
-                    ex.style.display = "none";
-                    ex.setAttribute("data-active", "false");
-                    console.log(`✂️ Time Cap: Removed exercise to enforce 60-min window.`);
-                    fragment.appendChild(ex); // Το κρατάμε στο DOM αλλά κρυφό
-                }
-            });
-
-            // 4. Re-render στο UI με μία κίνηση (Batch Update)
-            const container = document.getElementById("exList");
-            if (container) {
-                container.innerHTML = ""; // Καθαρισμός παλιών
-                container.appendChild(fragment); // Εισαγωγή νέων ταξινομημένων
-            }
-
-            const totalMins = Math.round(totalSets * this.setDuration);
-            console.log(`✅ DYNAMIC UI: Final Plan - ${totalSets} sets (~${totalMins} mins)`);
-
-            // Οπτική ειδοποίηση στο UI αν ξεπεράσαμε το όριο
-            if (window.PegasusLogger && totalMins > 42) {
-                window.PegasusLogger.log(`Time Budget Critical: ${totalMins}/45 mins allocated.`, "INFO");
-            }
+        if (window.PegasusLogger && totalMins > 42) {
+            window.PegasusLogger.log(`Time Budget Critical: ${totalMins}/45 mins allocated.`, "INFO");
         }
     }
 };
 
-// Listener για αλλαγή ημέρας (Αυστηρός περιορισμός πολλαπλών κλήσεων - Debounce)
+// Listener για αλλαγή ημέρας (Debounce)
 let optimizeTimeout;
 document.addEventListener('click', (e) => {
     if (e.target.closest('.navbar button') || e.target.closest('.day-selector')) {

@@ -1163,6 +1163,7 @@ function selectDay(btn, day) {
 
         const d = document.createElement("div");
         d.className = "exercise";
+        d.dataset.name = cleanName;
         d.dataset.total = finalSets;
         d.dataset.done = doneSoFar;
         d.dataset.index = renderIdx;
@@ -1257,7 +1258,13 @@ function selectDay(btn, day) {
 
 function isPegasusExerciseAvailable(idx) {
     const ex = exercises[idx];
-    return !!(ex && ex.classList && !ex.classList.contains("exercise-skipped"));
+    return !!(
+        ex
+        && ex.classList
+        && !ex.classList.contains("exercise-skipped")
+        && ex.getAttribute("data-active") !== "false"
+        && ex.style.display !== "none"
+    );
 }
 
 /* ===== 5. WORKOUT ENGINE CORE (DYNAMIC TIMER PATCH) ===== */

@@ -1,3 +1,7 @@
+PEGASUS 210
+
+Rest-aware exercise ordering build.
+
 # 🟢 PEGASUS OS: THE GENESIS & EVOLUTIONARY LOG (v10.1)
 
 > **Project Lead:** `seemsfunny`

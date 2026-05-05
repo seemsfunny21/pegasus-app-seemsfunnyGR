@@ -1,11 +1,10 @@
-PEGASUS 208
+PEGASUS 210
 
-- Leg routing policy hardened.
-- If cycling exists anywhere in the current Saturday 06:00 weekly cycle, no gym leg exercises are proposed on any day.
-- If no cycling exists in the cycle, legs are allowed only on Wednesday.
-- Friday no longer receives fallback/catch-up legs.
-- Weekend optional weights never insert legs when cycling exists.
-- Dynamic optimizer also hides stale leg cards if the day is not allowed.
-- 45-minute time cap remains active.
-- Saturday-after-06:00 reset model remains active.
-- No new file added.
+- Rest-aware exercise ordering added.
+- PegasusBrain now interleaves weighted and floor/bodyweight/core exercises when possible.
+- Avoids long blocks like 3 weighted exercises followed by 2-3 floor exercises.
+- Dynamic optimizer no longer re-sorts DOM exercises, preserving Brain order and timer consistency.
+- Hidden/capped exercises are excluded from workout availability.
+- 45-minute cap remains active.
+- Saturday 06:00 weekly reset remains active.
+- No new files added.
