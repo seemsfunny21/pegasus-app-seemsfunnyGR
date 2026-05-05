@@ -1,3 +1,9 @@
+PEGASUS 218
+- VIDEO FIX ONLY: Included user-provided videos/reversegripcablerow.mp4 and videos/lowrowsseated.mp4.
+- Reverse Grip Cable Row now maps to its own valid reversegripcablerow.mp4 instead of the Low Rows alias.
+- No workout/program/set/order/UI changes.
+- No images folder.
+
 PEGASUS 215
 
 - Βάση: το pegasus211.zip που έδειχνε σωστά τις ασκήσεις/βίντεο.
@@ -10,3 +16,10 @@ PEGASUS 215
 
 PEGASUS 216
 - BUGFIX ONLY: Service Worker video cache fix. Normal F5 now streams workout videos fresh instead of serving stale/partial cached video responses that could leave the panel black. Ctrl+F5 behavior remains unchanged.
+
+PEGASUS 217
+- Video-only bugfix.
+- Reverse Grip Cable Row now uses the same-family Low Rows Seated video because the deployed reversegripcablerow.mp4 was 2 bytes/corrupt.
+- Added runtime video error fallback so a corrupt MP4 does not leave the panel black.
+- No workout/program/set/order/UI changes.
+- No images folder.

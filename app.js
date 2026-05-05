@@ -1814,6 +1814,37 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
+    // PEGASUS 217: video-only bugfix. If a deployed MP4 is corrupt/empty,
+    // do not leave a black panel; fall back to an equivalent known video,
+    // then to warmup. This does NOT change workouts, sets, order or UI.
+    if (!vid.dataset.pegasusVideoErrorGuard) {
+        vid.dataset.pegasusVideoErrorGuard = "1";
+        vid.onerror = function() {
+            const currentSrc = vid.getAttribute('src') || '';
+            const currentFile = currentSrc.split('/').pop().split('?')[0].replace(/\.mp4$/i, '');
+            const fallbackMap = {
+                reversegripcablerow: 'lowrowsseated'
+            };
+            const fallback = fallbackMap[currentFile];
+            if (fallback && currentFile !== fallback) {
+                const fallbackSrc = `videos/${fallback}.mp4`;
+                console.warn(`🎬 PEGASUS VIDEO FALLBACK: ${currentFile}.mp4 → ${fallback}.mp4`);
+                vid.pause();
+                vid.src = fallbackSrc;
+                vid.load();
+                vid.play().catch(() => {});
+                return;
+            }
+            if (currentFile !== 'warmup') {
+                console.warn(`🎬 PEGASUS VIDEO FALLBACK: ${currentFile}.mp4 → warmup.mp4`);
+                vid.pause();
+                vid.src = 'videos/warmup.mp4';
+                vid.load();
+                vid.play().catch(() => {});
+            }
+        };
+    }
+
     const activeBtn = document.querySelector(".navbar button.active");
     const currentDay = activeBtn ? activeBtn.id.replace('nav-', '') : "";
     const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");

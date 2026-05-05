@@ -4,8 +4,8 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.140-FINAL-216';
-const VIDEO_CACHE_NAME = 'pegasus-videos-disabled-v216';
+const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-218';
+const VIDEO_CACHE_NAME = 'pegasus-videos-disabled-v218';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -293,7 +293,7 @@ self.addEventListener('activate', (event) => {
                         return caches.delete(key);
                     }
 
-                    // PEGASUS 216: video files must not be served from the old permanent cache.
+                    // PEGASUS 217: video files must not be served from the old permanent cache.
                     // Normal F5 was receiving stale/partial cached videos and the workout panel stayed black,
                     // while Ctrl+F5 bypassed the cache and worked. Purge those caches and stream videos fresh.
                     if (key.startsWith('pegasus-videos-permanent') || key.startsWith('pegasus-videos-disabled')) {
@@ -334,7 +334,7 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             (async () => {
                 if (isVideoAsset(pathname)) {
-                    // PEGASUS 216 BUGFIX ONLY:
+                    // PEGASUS 217 BUGFIX ONLY:
                     // Videos must be streamed fresh on normal F5 as well as Ctrl+F5.
                     // Do not return stale/partial cached mp4/webm/mov responses from the Service Worker.
                     try {

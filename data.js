@@ -1,5 +1,5 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v17.9 (PEGASUS 215 MS-600 IRON SPLIT FIX)
+   📦 PEGASUS DATA ENGINE - v17.11 (PEGASUS 218 USER VIDEO FIX)
    Protocol: 10" Prep | 45" Work | 60" Rest
    Status: PRODUCTION READY (MS-600 Final Mapping)
    ========================================================================== */
@@ -51,7 +51,7 @@ window.videoMap = {
     "Lat Pulldowns Close": "latpulldownsclose",
     "Seated Rows": "reverseseatedrows",
     "Low Rows Seated": "lowrowsseated",
-    "Reverse Grip Cable Row": "reversegripcablerow",
+    "Reverse Grip Cable Row": "reversegripcablerow", // PEGASUS 218: user-provided valid MP4
     "Bent Over Rows": "bentoverrows",
     "Straight Arm Pulldowns": "straightarmpulldowns",
     "Upright Rows": "uprightrows",

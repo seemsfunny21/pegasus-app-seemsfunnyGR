@@ -1,3 +1,7 @@
+# PEGASUS 218
+
+Video-only fix: user-provided Reverse Grip Cable Row and Low Rows Seated videos are included under `videos/`. No workout/program/UI changes. No `images/` folder.
+
 PEGASUS 211
 
 MS-600 IRON rest/equipment-aware training build.
