@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-05-05",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.19 MS-600 Focused Split IRON"
+        engine_version: "v18.20 MS-600 Persistent Order IRON"
     },
 
     // ---------------------------------------------------------
@@ -129,7 +129,7 @@ window.PegasusManifest = {
         "debug.js": "Tracer, health checks, calorie audit and runtime diagnostics.",
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
-        "dragDrop.js": "UI Window Positioning Memory.",
+        "dragDrop.js": "UI Window Positioning Memory + Persistent Workout Exercise Order.",
         "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
         "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
         "reporting.js": "EmailJS Automated Morning Dispatcher."
