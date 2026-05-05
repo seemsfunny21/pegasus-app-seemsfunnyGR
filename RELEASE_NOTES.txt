@@ -1,8 +1,9 @@
-PEGASUS 214
+PEGASUS 215
 
-- Διορθώθηκε το persistent drag/drop order: η σειρά ασκήσεων αποθηκεύεται πιο αξιόπιστα ανά ημέρα.
-- Προστέθηκε per-day local fallback ώστε η σειρά να μη χάνεται από refresh ή cloud pull.
-- Το save γίνεται σε dragend/drop και ξαναχτίζει runtime arrays για timer/skip/progress.
-- Καθαρίστηκε η εμφάνιση των exercise cards: απλή λίστα με σετ, όνομα, κιλά, χωρίς περίεργο badge layout.
-- Δεν υπάρχει φάκελος images.
-- Διατηρούνται IRON split, 10/45/60 timer, 45λεπτο, cycling-aware πόδια, Weather, YouTube και sync fixes.
+- Βάση: το pegasus211.zip που έδειχνε σωστά τις ασκήσεις/βίντεο.
+- Πέρασε το νέο IRON πρόγραμμα ασκήσεων: Τρίτη PUSH, Τετάρτη PULL, Παρασκευή UPPER BALANCE.
+- Κράτησε την καθαρή 211 εμφάνιση της λίστας ασκήσεων.
+- Πρόσθεσε αποθήκευση σειράς ασκήσεων ανά ημέρα με drag/drop χωρίς αλλαγή στο layout.
+- Συγχρονίζει το custom exercise order με key pegasus_custom_exercise_order_v1.
+- Χωρίς φάκελο images.
+- Διατηρεί 10/45/60 timer, 45λεπτο, reset Σάββατο μετά τις 06:00, cycling-aware no-legs rule, Weather/YouTube/mobile/desktop sync fixes.

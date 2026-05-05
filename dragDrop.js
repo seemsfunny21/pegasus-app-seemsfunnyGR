@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER (dragdrop.js) - v4.8 PERSISTENT EXERCISE ORDER FIX
+   PEGASUS UI MANAGER (dragdrop.js) - v4.9 211-UI PERSISTENT ORDER
    Protocol: Strict Data Analyst - Keyboard Code Validation & Clean Logic
    Features: Shift+1-9 Shortcuts, Mutation-Aware Dragging, High Z-Index Panels
    Note: Button logic delegated entirely to app.js (masterUI) to prevent click collisions.
@@ -13,7 +13,7 @@ const PegasusUI = {
         this.initDraggablePanels();
         this.initClickOutside();
         this.initHotkeys();
-        console.log("✅ PEGASUS UI MANAGER: v4.8 Operational (Persistent exercise order fix)");
+        console.log("✅ PEGASUS UI MANAGER: v4.6 Operational (Button Bridge Delegated to app.js)");
     },
 
     /**
@@ -217,7 +217,7 @@ function initExerciseListDrag() {
         if (typeof window.calculateTotalTime === "function") window.calculateTotalTime(true);
         if (typeof window.syncPegasusProgressRuntime === "function") window.syncPegasusProgressRuntime();
 
-        console.log(`✅ PEGASUS ORDER 214: Persisted order (${reason})`, saved);
+        console.log(`✅ PEGASUS ORDER 215: Persisted order (${reason})`, saved);
         return saved;
     };
 

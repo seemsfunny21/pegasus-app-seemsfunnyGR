@@ -1056,7 +1056,8 @@ window.syncSessionWithHistory = function() {
 };
 
 
-/* ===== PEGASUS 214: PERSISTENT CUSTOM EXERCISE ORDER FIX ===== */
+
+/* ===== PEGASUS 215: PERSISTENT CUSTOM EXERCISE ORDER (211 UI SAFE) ===== */
 window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY = window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY || "pegasus_custom_exercise_order_v1";
 window.PEGASUS_SELECTED_WORKOUT_DAY_KEY = window.PEGASUS_SELECTED_WORKOUT_DAY_KEY || "pegasus_selected_workout_day_v1";
 
@@ -1082,7 +1083,7 @@ window.readPegasusCustomExerciseOrders = function() {
         const parsed = JSON.parse(raw);
         return (parsed && typeof parsed === "object") ? parsed : {};
     } catch (err) {
-        console.warn("⚠️ PEGASUS ORDER: Could not read custom order.", err);
+        console.warn("⚠️ PEGASUS ORDER: Could not read custom exercise order.", err);
         return {};
     }
 };
@@ -1098,18 +1099,10 @@ window.savePegasusCustomExerciseOrder = function(day, names) {
         return false;
     }
 
-    const payload = {
-        names: cleanNames,
-        updatedAt: Date.now(),
-        version: 214
-    };
-
+    const payload = { names: cleanNames, updatedAt: Date.now(), version: 215 };
     const orders = window.readPegasusCustomExerciseOrders();
     orders[cleanDay] = payload;
 
-    // Save both as one cloud-synced object and as a per-day local fallback.
-    // The per-day fallback prevents the order from being lost if an older cloud pull
-    // refreshes the aggregate object before the next push completes.
     localStorage.setItem(window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY, JSON.stringify(orders));
     const dayKey = window.getPegasusOrderDayKey(cleanDay);
     if (dayKey) localStorage.setItem(dayKey, JSON.stringify(payload));
@@ -1119,7 +1112,7 @@ window.savePegasusCustomExerciseOrder = function(day, names) {
         window.PegasusCloud.push(true);
     }
 
-    console.log(`✅ PEGASUS ORDER 214: Saved custom exercise order for ${cleanDay}.`, cleanNames);
+    console.log(`✅ PEGASUS ORDER 215: Saved custom exercise order for ${cleanDay}.`, cleanNames);
     return true;
 };
 
@@ -1167,13 +1160,8 @@ window.applyPegasusCustomExerciseOrder = function(day, workoutList) {
         if (queue && queue.length) ordered.push(queue.shift());
     });
 
-    // Add any new/external exercises that are not in the saved order to the end.
-    byName.forEach(queue => {
-        while (queue.length) ordered.push(queue.shift());
-    });
-
-    if (ordered.length !== original.length) return workoutList;
-    return ordered;
+    byName.forEach(queue => { while (queue.length) ordered.push(queue.shift()); });
+    return ordered.length === original.length ? ordered : workoutList;
 };
 
 window.rebuildPegasusExerciseRuntimeFromDom = function(listEl) {
@@ -1210,36 +1198,12 @@ window.clearPegasusCustomExerciseOrder = function(day) {
     const orders = window.readPegasusCustomExerciseOrders();
     delete orders[cleanDay];
     localStorage.setItem(window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY, JSON.stringify(orders));
-    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
-    console.log(`🧹 PEGASUS ORDER: Cleared custom exercise order for ${cleanDay}.`);
+    const dayKey = window.getPegasusOrderDayKey(cleanDay);
+    if (dayKey) localStorage.removeItem(dayKey);
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push(true);
+    console.log(`🧹 PEGASUS ORDER 215: Cleared custom exercise order for ${cleanDay}.`);
     return true;
 };
-
-function getPegasusInlineExercisePoster(assetBase, labelText) {
-    const safeLabel = String(labelText || assetBase || "PEGASUS").replace(/[<>&"']/g, "").slice(0, 42);
-    const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
-            <defs>
-                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#06140a"/>
-                    <stop offset="0.52" stop-color="#0b2311"/>
-                    <stop offset="1" stop-color="#111111"/>
-                </linearGradient>
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity="0.45"/>
-                </filter>
-            </defs>
-            <rect width="960" height="540" fill="url(#g)"/>
-            <rect x="42" y="42" width="876" height="456" rx="34" fill="rgba(0,0,0,0.20)" stroke="#4CAF50" stroke-width="4"/>
-            <circle cx="480" cy="190" r="72" fill="none" stroke="#4CAF50" stroke-width="12" opacity="0.9"/>
-            <path d="M440 190 L465 218 L522 158" fill="none" stroke="#a7f3b3" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)"/>
-            <text x="480" y="310" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" fill="#eaffea">PEGASUS</text>
-            <text x="480" y="365" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" fill="#4CAF50">${safeLabel}</text>
-            <text x="480" y="415" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#b6d8ba">video fallback</text>
-        </svg>`;
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-}
-window.getPegasusInlineExercisePoster = getPegasusInlineExercisePoster;
 
 /* ===== 4. NAVIGATION BINDING ===== */
 function createNavbar() {
@@ -1328,7 +1292,7 @@ function selectDay(btn, day) {
         mappedData.sort((a, b) => parseFloat(b.adjustedSets || b.sets) - parseFloat(a.adjustedSets || a.sets));
     }
 
-    // PEGASUS 213: apply user's saved drag/drop order for this specific day.
+    // PEGASUS 215: apply saved drag/drop order without changing the 211 exercise-card UI.
     if (typeof window.applyPegasusCustomExerciseOrder === "function") {
         mappedData = window.applyPegasusCustomExerciseOrder(day, mappedData);
     }
@@ -1370,6 +1334,7 @@ function selectDay(btn, day) {
                 <div class="set-counter">${doneSoFar}/${finalSets}</div>
                 <div class="exercise-main">
                     <div class="exercise-name"></div>
+                    <div class="exercise-muscle-badge"></div>
                 </div>
                 <input type="number" id="weight-${renderIdx}" class="weight-input" placeholder="kg">
             </div>
@@ -1379,10 +1344,12 @@ function selectDay(btn, day) {
         const nameNode = d.querySelector(".exercise-name");
         if (nameNode) nameNode.textContent = cleanName;
 
-        const groupName = e.muscleGroup || window.resolvePegasusExerciseGroup(cleanName);
-        d.dataset.group = groupName;
         const badgeNode = d.querySelector(".exercise-muscle-badge");
-        if (badgeNode) badgeNode.textContent = window.formatPegasusMuscleBadge(groupName);
+        if (badgeNode) {
+            const groupName = e.muscleGroup || window.resolvePegasusExerciseGroup(cleanName);
+            badgeNode.textContent = window.formatPegasusMuscleBadge(groupName);
+            d.dataset.group = groupName;
+        }
 
         const weightInputEl = d.querySelector(".weight-input");
         if (weightInputEl) {
@@ -1842,27 +1809,6 @@ window.saveWeight = function(name, val) {
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
 };
 
-function getPegasusExerciseAssetBase(name) {
-    const cleanName = String(name || "").trim();
-    let mappedVal = window.videoMap ? window.videoMap[cleanName] : null;
-    if (!mappedVal) mappedVal = cleanName.replace(/\s+/g, '').toLowerCase();
-    return mappedVal || "placeholder";
-}
-
-function setPegasusVideoPoster(vid, assetBase) {
-    if (!vid) return "";
-    const posterPath = (typeof window.getPegasusInlineExercisePoster === "function")
-        ? window.getPegasusInlineExercisePoster(assetBase || "placeholder", assetBase || "PEGASUS")
-        : "";
-    vid.poster = posterPath;
-    vid.style.backgroundImage = posterPath ? `url("${posterPath}")` : "linear-gradient(135deg, #06140a, #111)";
-    vid.style.backgroundColor = "#06140a";
-    vid.style.backgroundSize = "contain";
-    vid.style.backgroundPosition = "center";
-    vid.style.backgroundRepeat = "no-repeat";
-    return posterPath;
-}
-
 function showVideo(i) {
     const vid = document.getElementById("video");
     const label = document.getElementById("phaseTimer");
@@ -1872,23 +1818,13 @@ function showVideo(i) {
     const currentDay = activeBtn ? activeBtn.id.replace('nav-', '') : "";
     const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");
 
-    const showPosterOnly = (assetBase) => {
-        setPegasusVideoPoster(vid, assetBase);
-        vid.pause();
-        vid.removeAttribute("src");
-        try { vid.load(); } catch (e) {}
-    };
-
     if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
-        const recoveryBase = "stretching";
         const recoverySrc = "videos/stretching.mp4";
-        setPegasusVideoPoster(vid, recoveryBase);
-        vid.onerror = () => showPosterOnly(recoveryBase);
         if (vid.getAttribute('src') !== recoverySrc) {
             vid.pause();
             vid.src = recoverySrc;
             vid.load();
-            vid.play().catch(() => showPosterOnly(recoveryBase));
+            vid.play().catch(e => console.log("Waiting for user..."));
             if (label && isRecoveryDay) {
                 label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
                 label.style.color = "#00bcd4";
@@ -1900,25 +1836,25 @@ function showVideo(i) {
     const weightInput = exercises[i].querySelector(".weight-input");
     if (!weightInput) return;
 
-    const name = weightInput.getAttribute("data-name") || "";
-    const mappedVal = getPegasusExerciseAssetBase(name);
+    let name = weightInput.getAttribute("data-name") || "";
+    let mappedVal = window.videoMap ? window.videoMap[name.trim()] : null;
+    if (!mappedVal) mappedVal = name.replace(/\s+/g, '').toLowerCase();
+
     const newSrc = `videos/${mappedVal}.mp4`;
-
-    // PEGASUS 212: every exercise gets a poster image. If a local MP4 is missing
-    // or fails to decode, keep the poster instead of falling back to a black video.
-    setPegasusVideoPoster(vid, mappedVal);
-    vid.onerror = () => showPosterOnly(mappedVal);
-
     if (vid.getAttribute('src') !== newSrc) {
         vid.pause();
         vid.src = newSrc;
         vid.load();
-        vid.play().catch(() => showPosterOnly(mappedVal));
+        vid.play().catch(() => {
+            vid.src = "videos/warmup.mp4";
+            vid.load();
+            vid.play().catch(() => {});
+        });
     } else if (running && vid.paused) {
         // PEGASUS 145: Pause/Resume video recovery.
         // When resuming the same exercise, src does not change, so the old
         // showVideo branch skipped play() and the video stayed frozen.
-        vid.play().catch(() => showPosterOnly(mappedVal));
+        vid.play().catch(() => {});
     }
 }
 
@@ -2139,12 +2075,10 @@ function openExercisePreview() {
         let imgBase = window.videoMap ? window.videoMap[cleanName] : null;
         if (!imgBase) imgBase = cleanName.replace(/\s+/g, '').toLowerCase();
 
-        const imgPath = (typeof window.getPegasusInlineExercisePoster === "function")
-            ? window.getPegasusInlineExercisePoster(imgBase, cleanName)
-            : "";
+        const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
         content.innerHTML += `
             <div class="preview-item">
-                <img src="${imgPath}" alt="${cleanName}">
+                <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';" alt="${cleanName}">
                 <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
                 <div class="exercise-muscle-badge preview-muscle-badge">${window.formatPegasusMuscleBadge(ex.muscleGroup || window.resolvePegasusExerciseGroup(cleanName))}</div>
             </div>
@@ -2678,8 +2612,10 @@ window.PegasusDebug = {
     replay: (limit) => (window.PegasusEngine?.replay ? window.PegasusEngine.replay(limit) : null),
     manifest: () => P_M,
     testImage: (name) => {
-        const src = window.getPegasusInlineExercisePoster ? window.getPegasusInlineExercisePoster(name, name) : "";
-        console.log(`%c ✅ INLINE FALLBACK READY: ${name}`, "color: #4CAF50; font-weight: bold;", src.slice(0, 80) + "...");
+        const testImg = new Image();
+        testImg.onload = () => console.log(`%c ✅ ASSET FOUND: ${name}.png`, "color: #4CAF50; font-weight: bold;");
+        testImg.onerror = () => console.error(`%c ❌ ASSET 404: ${name}.png is missing from GitHub!`, "color: #ff4444;");
+        testImg.src = `images/${name}.png`;
     },
     logs: () => window.pegasusLogs
 };

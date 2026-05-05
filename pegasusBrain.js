@@ -1,5 +1,5 @@
 /* ========================================================================== 
-   PEGASUS BRAIN - v1.0.212 (MS-600 FOCUSED SPLIT / REST + EQUIPMENT AWARE)
+   PEGASUS BRAIN - v1.0.215 (MS-600 FOCUSED SPLIT / REST + EQUIPMENT AWARE)
    Purpose: Pegasus MS-600 + floor-only weekly training plan, weekend carry-over,
    recovery guard, cycling-aware leg policy, focused split days, and 45-minute circuit spacing.
    ========================================================================== */
@@ -10,10 +10,10 @@
     const DAY_INDEX = { "Κυριακή": 0, "Δευτέρα": 1, "Τρίτη": 2, "Τετάρτη": 3, "Πέμπτη": 4, "Παρασκευή": 5, "Σάββατο": 6 };
     const DAY_FROM_INDEX = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
 
-    // PEGASUS 212: Real exercise pool is restricted to what exists on the
+    // PEGASUS 215: Real exercise pool is restricted to what exists on the
     // Pegasus MS-600 plus floor/core work. Cut/Bulk share the same smart order;
     // the difference is the user's selected controllable weight/intensity.
-    const DEFAULT_TARGETS_212 = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 14, "Ώμοι": 8, "Κορμός": 12 };
+    const DEFAULT_TARGETS_215 = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 14, "Ώμοι": 8, "Κορμός": 12 };
 
     const exerciseMeta = {
         "Chest Press": { kind: "weighted", station: "seat", family: "chest_press" },
@@ -89,7 +89,7 @@
     };
 
     const sessionBlueprints = {
-        // PEGASUS 212: focused split. Δεν γεμίζουμε κάθε ημέρα με όλες τις μυϊκές ομάδες.
+        // PEGASUS 215: focused split. Δεν γεμίζουμε κάθε ημέρα με όλες τις μυϊκές ομάδες.
         // Τα sets μπαίνουν σε λίγες ασκήσεις/οικογένειες ώστε να μη βλέπεις 2 σετ από όλα.
         "Τρίτη": [
             ["Στήθος", 12], ["Χέρια", 4], ["Ώμοι", 3], ["Κορμός", 3]
@@ -209,7 +209,7 @@
     function getTargets() {
         if (window.PegasusOptimizer?.getTargets) return window.PegasusOptimizer.getTargets();
         const key = window.PegasusManifest?.workout?.muscleTargets || "pegasus_muscle_targets";
-        return safeJson(localStorage.getItem(key), DEFAULT_TARGETS_212) || DEFAULT_TARGETS_212;
+        return safeJson(localStorage.getItem(key), DEFAULT_TARGETS_215) || DEFAULT_TARGETS_215;
     }
 
     function normalizedName(value) {
@@ -442,7 +442,7 @@
         const total = Math.max(0, Math.round(setsNeeded));
         if (total <= 0 || !names.length) return [];
 
-        // PEGASUS 212: keep fewer exercises with meaningful volume.
+        // PEGASUS 215: keep fewer exercises with meaningful volume.
         // Example: 12 chest sets -> 4/4/4, 7 arm sets -> 4/3.
         // This fixes the old "2 sets from every exercise" feeling.
         const count = Math.min(names.length, Math.max(1, Math.ceil(total / 4)));
@@ -565,7 +565,7 @@
             allocated += toAllocate;
         });
 
-        // PEGASUS 212: no broad top-up across all muscles.
+        // PEGASUS 215: no broad top-up across all muscles.
         // Focused split days are intentional; if weekly targets are almost complete,
         // the day can become lighter instead of adding 2-set fillers from everything.
 
@@ -667,7 +667,7 @@
     }
 
     window.PegasusBrain = {
-        version: "1.0.212",
+        version: "1.0.215",
         groups: STRICT_GROUPS.slice(),
         getWeekKey,
         getNextWeekKey,
@@ -686,5 +686,5 @@
         isManagedDay
     };
 
-    console.log("🧠 PEGASUS BRAIN: MS-600 rest/equipment-aware planner active (v1.0.212 focused split).");
+    console.log("🧠 PEGASUS BRAIN: MS-600 rest/equipment-aware planner active (v1.0.215 focused split).");
 })();

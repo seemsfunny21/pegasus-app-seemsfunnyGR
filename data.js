@@ -1,5 +1,5 @@
 /* ==========================================================================
-   📦 PEGASUS DATA ENGINE - v17.8 (PEGASUS 212 MS-600 IRON SPLIT FIX)
+   📦 PEGASUS DATA ENGINE - v17.9 (PEGASUS 215 MS-600 IRON SPLIT FIX)
    Protocol: 10" Prep | 45" Work | 60" Rest
    Status: PRODUCTION READY (MS-600 Final Mapping)
    ========================================================================== */
@@ -14,7 +14,7 @@ window.program = {
     "Παρασκευή": [], "Σάββατο": [], "Κυριακή": []
 };
 
-// 2. MASTER EXERCISES DATABASE (PEGASUS 212 MS-600 + FLOOR ONLY)
+// 2. MASTER EXERCISES DATABASE (PEGASUS 215 MS-600 + FLOOR ONLY)
 window.exercisesDB = [
     { name: "Chest Press", muscleGroup: "Στήθος" },
     { name: "Chest Flys", muscleGroup: "Στήθος" },
@@ -205,7 +205,7 @@ window.setPegasusPlan = function(planKey) {
 (function applyPegasusSplit() {
     const activePlan = window.getPegasusActivePlan();
     const days = {
-        // PEGASUS 212: IRON is now a focused split, not full-body every day.
+        // PEGASUS 215: IRON is now a focused split, not full-body every day.
         // 45λεπτο: λίγες ασκήσεις ανά session με 3-4 σετ, όχι 2 σετ από όλες.
         // Γράμμωση/Όγκος μοιράζονται το ίδιο split· αλλάζει η ένταση/κιλά του χρήστη.
         iron_tuesday: [

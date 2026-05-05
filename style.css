@@ -290,7 +290,7 @@ input[type="number"], input[type="text"], input[type="password"] {
     position: relative;
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.1);
 }
-.main-video { width: 100%; height: 100%; object-fit: contain; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; }
+.main-video { width: 100%; height: 100%; object-fit: contain; }
 
 #phaseTimer {
     position: absolute;
@@ -1409,50 +1409,4 @@ input:checked + .slider:before { transform: translateX(26px); }
     margin: 0 0 12px 0 !important;
     box-sizing: border-box !important;
     align-self: stretch !important;
-}
-
-/* PEGASUS 214: workout list visual rollback/cleanup
-   Keep exercise cards simple and compact. The muscle group still exists in
-   data-group for logic/progress, but it is not shown inside the daily list. */
-.exercise-list .exercise {
-    min-height: 0 !important;
-    padding: 12px 14px !important;
-    margin-bottom: 10px !important;
-    border-radius: 10px !important;
-    contain: none !important;
-}
-.exercise-list .exercise-info {
-    display: grid !important;
-    grid-template-columns: 44px minmax(0, 1fr) 56px !important;
-    gap: 9px !important;
-    align-items: center !important;
-    margin-bottom: 8px !important;
-}
-.exercise-list .set-counter {
-    width: 44px !important;
-    min-width: 44px !important;
-    font-size: 15px !important;
-    line-height: 1 !important;
-}
-.exercise-list .exercise-main {
-    min-height: 0 !important;
-    display: block !important;
-}
-.exercise-list .exercise-name {
-    font-size: 13px !important;
-    line-height: 1.25 !important;
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-}
-.exercise-list .exercise-muscle-badge {
-    display: none !important;
-}
-.exercise-list .weight-input {
-    width: 54px !important;
-    height: 28px !important;
-}
-.exercise-list .progress-box {
-    height: 5px !important;
-    margin: 0 !important;
 }
