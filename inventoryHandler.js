@@ -68,7 +68,7 @@ function getSortedMuscleGroups() {
 
     // 2. ΔΥΝΑΜΙΚΗ ΑΝΑΚΤΗΣΗ ΣΤΟΧΩΝ (Targets)
     const targets = safeParseJSON(localStorage.getItem(getPegasusMuscleTargetsKey()), null) ||
-        { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        { "Στήθος": 14, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 12, "Ώμοι": 8, "Κορμός": 16 };
 
     let stats = Object.keys(targets).map(group => {
         let done = parseInt(history[group], 10) || 0;

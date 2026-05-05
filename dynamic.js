@@ -2,7 +2,7 @@
    PEGASUS DYNAMIC OPTIMIZER - v1.6 (45-MIN REST-AWARE / NO REORDER)
    Protocol: Strict 45-Minute Window Enforcement & DOM Shielding
    Strategy: PegasusBrain owns order; Dynamic only enforces visibility/time cap
-   Status: FINAL STABLE | PEGASUS 210
+   Status: FINAL STABLE | PEGASUS 211
    ========================================================================== */
 
 window.PegasusDynamic = {
@@ -54,7 +54,7 @@ window.PegasusDynamic = {
 
         if (!window.exercises || window.exercises.length === 0) return;
 
-        // PEGASUS 210: Do not sort here. PegasusBrain already builds the rest-aware order.
+        // PEGASUS 211: Do not sort here. PegasusBrain already builds the rest-aware order.
         // Re-sorting at DOM level can desync timers/click handlers and destroy recovery spacing.
         let totalSets = 0;
         const fragment = document.createDocumentFragment();

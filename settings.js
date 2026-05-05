@@ -1,5 +1,5 @@
 /* ==========================================================================
-   📦 PEGASUS SETTINGS ENGINE - v4.7 (PEGASUS 134 TARGET REBALANCE)
+   📦 PEGASUS SETTINGS ENGINE - v4.7 (PEGASUS 211 MS-600 TARGET REBALANCE)
    Protocol: Strict Data Analyst | Zero Logic Loss | Split Integration
    Status: FINAL STABLE | FIXED: SPLIT SELECTION SYNC
    ========================================================================== */
@@ -19,22 +19,22 @@ const DEFAULT_SETTINGS = {
     activeSplit: 'IRON',
     bodyGoalMode: 'cut',
     muscleTargets: {
-        "Στήθος": 16,
+        "Στήθος": 14,
         "Πλάτη": 16,
-        "Πόδια": 24,
-        "Χέρια": 14,
-        "Ώμοι": 12,
-        "Κορμός": 18
+        "Πόδια": 8,
+        "Χέρια": 12,
+        "Ώμοι": 8,
+        "Κορμός": 16
     }
 };
 
-const PEGASUS_134_TARGETS = {
-    "Στήθος": 16,
+const PEGASUS_211_TARGETS = {
+    "Στήθος": 14,
     "Πλάτη": 16,
-    "Πόδια": 24,
-    "Χέρια": 14,
-    "Ώμοι": 12,
-    "Κορμός": 18
+    "Πόδια": 8,
+    "Χέρια": 12,
+    "Ώμοι": 8,
+    "Κορμός": 16
 };
 
 function getPegasusWeekKeyForTargets() {
@@ -47,9 +47,9 @@ function getPegasusWeekKeyForTargets() {
     return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
 }
 
-function migratePegasus134MuscleTargets() {
+function migratePegasus211MuscleTargets() {
     const key = M?.workout?.muscleTargets || "pegasus_muscle_targets";
-    const marker = "pegasus_targets_rebalanced_v134";
+    const marker = "pegasus_targets_rebalanced_v211";
     if (localStorage.getItem(marker) === "done") return;
 
     let current = null;
@@ -60,9 +60,11 @@ function migratePegasus134MuscleTargets() {
     }
 
     const oldDefault = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
-    const groups = Object.keys(PEGASUS_134_TARGETS);
+    const v134Default = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
+    const groups = Object.keys(PEGASUS_211_TARGETS);
     const missing = !current || typeof current !== "object";
     const looksOldDefault = !missing && groups.every(group => Number(current[group]) === Number(oldDefault[group]));
+    const looksV134Default = !missing && groups.every(group => Number(current[group]) === Number(v134Default[group]));
     const looksGeneratedFromOldProgram = !missing &&
         Number(current["Στήθος"]) >= 20 &&
         Number(current["Πλάτη"]) >= 20 &&
@@ -70,16 +72,16 @@ function migratePegasus134MuscleTargets() {
         Number(current["Ώμοι"]) >= 16 &&
         Number(current["Κορμός"]) <= 14;
 
-    if (missing || looksOldDefault || looksGeneratedFromOldProgram) {
-        localStorage.setItem(key, JSON.stringify(PEGASUS_134_TARGETS));
+    if (missing || looksOldDefault || looksV134Default || looksGeneratedFromOldProgram) {
+        localStorage.setItem(key, JSON.stringify(PEGASUS_211_TARGETS));
         localStorage.setItem("pegasus_weekly_history_week_key", getPegasusWeekKeyForTargets());
-        console.log("✅ PEGASUS 134: Weekly muscle targets rebalanced.", PEGASUS_134_TARGETS);
+        console.log("✅ PEGASUS 211: MS-600 weekly muscle targets rebalanced.", PEGASUS_211_TARGETS);
     }
 
     localStorage.setItem(marker, "done");
 }
 
-try { migratePegasus134MuscleTargets(); } catch (e) { console.warn("PEGASUS 134 target migration skipped.", e); }
+try { migratePegasus211MuscleTargets(); } catch (e) { console.warn("PEGASUS 211 target migration skipped.", e); }
 
 function clonePegasusSettings(value) {
     try {

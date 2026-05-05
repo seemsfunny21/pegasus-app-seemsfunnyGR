@@ -1,6 +1,7 @@
 /* ========================================================================== 
-   PEGASUS BRAIN - v1.0.210 (REST-AWARE 45-MIN WEEKLY PLAN)
-   Purpose: data-driven weekly training plan, weekend carry-over, recovery guard
+   PEGASUS BRAIN - v1.0.211 (MS-600 IRON / REST + EQUIPMENT AWARE)
+   Purpose: Pegasus MS-600 + floor-only weekly training plan, weekend carry-over,
+   recovery guard, cycling-aware leg policy, and 45-minute circuit spacing.
    ========================================================================== */
 (function installPegasusBrain() {
     const STRICT_GROUPS = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
@@ -9,47 +10,138 @@
     const DAY_INDEX = { "Κυριακή": 0, "Δευτέρα": 1, "Τρίτη": 2, "Τετάρτη": 3, "Πέμπτη": 4, "Παρασκευή": 5, "Σάββατο": 6 };
     const DAY_FROM_INDEX = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
 
+    // PEGASUS 211: Real exercise pool is now restricted to what exists on the
+    // Pegasus MS-600 plus floor/core work. Cut/Bulk share the same smart order;
+    // the difference is the user's selected controllable weight/intensity.
+    const DEFAULT_TARGETS_211 = { "Στήθος": 14, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 12, "Ώμοι": 8, "Κορμός": 16 };
+
+    const exerciseMeta = {
+        "Chest Press": { kind: "weighted", station: "seat", family: "chest_press" },
+        "Chest Flys": { kind: "weighted", station: "seat", family: "chest_fly" },
+        "Pushups": { kind: "floor", station: "floor", family: "pushup" },
+        "Lat Pulldowns": { kind: "weighted", station: "seat_high", family: "lat_pulldown" },
+        "Lat Pulldowns Close": { kind: "weighted", station: "seat_high", family: "lat_pulldown_close" },
+        "Seated Rows": { kind: "weighted", station: "seat_mid", family: "seated_row" },
+        "Low Rows Seated": { kind: "weighted", station: "floor_low", family: "low_row" },
+        "Reverse Grip Cable Row": { kind: "weighted", station: "floor_low", family: "low_row" },
+        "Bent Over Rows": { kind: "weighted", station: "standing_low", family: "bent_row" },
+        "Straight Arm Pulldowns": { kind: "weighted", station: "standing_high", family: "straight_arm_pulldown" },
+        "Upright Rows": { kind: "weighted", station: "standing_low", family: "upright_row" },
+        "Bicep Curls": { kind: "weighted", station: "standing_low", family: "bicep_curl" },
+        "Preacher Bicep Curls": { kind: "weighted", station: "preacher", family: "preacher_curl" },
+        "Tricep Pulldowns": { kind: "weighted", station: "standing_high", family: "tricep_pulldown" },
+        "Ab Crunches": { kind: "weighted", station: "seat_high", family: "cable_ab_crunch" },
+        "Situps": { kind: "floor", station: "floor", family: "situp" },
+        "Plank": { kind: "floor", station: "floor", family: "plank" },
+        "Reverse Crunch": { kind: "floor", station: "floor", family: "reverse_crunch" },
+        "Lying Knee Raise": { kind: "floor", station: "floor", family: "lying_knee_raise" },
+        "Leg Raise Hip Lift": { kind: "floor", station: "floor", family: "leg_raise_hip_lift" },
+        "Leg Extensions": { kind: "weighted", station: "seat_leg", family: "leg_extension" },
+        "Stretching": { kind: "floor", station: "floor", family: "stretching" }
+    };
+
+    const templatesByDay = {
+        "Τρίτη": {
+            "Στήθος": ["Chest Press", "Chest Flys", "Pushups"],
+            "Πλάτη": ["Lat Pulldowns", "Low Rows Seated", "Straight Arm Pulldowns"],
+            "Χέρια": ["Tricep Pulldowns", "Bicep Curls"],
+            "Ώμοι": ["Upright Rows"],
+            "Κορμός": ["Plank", "Ab Crunches", "Reverse Crunch"]
+        },
+        "Τετάρτη": {
+            "Στήθος": ["Chest Press", "Pushups", "Chest Flys"],
+            "Πλάτη": ["Seated Rows", "Reverse Grip Cable Row", "Bent Over Rows"],
+            "Χέρια": ["Bicep Curls", "Preacher Bicep Curls", "Tricep Pulldowns"],
+            "Ώμοι": ["Upright Rows"],
+            "Κορμός": ["Lying Knee Raise", "Plank", "Situps", "Leg Raise Hip Lift"],
+            "Πόδια": ["Leg Extensions"]
+        },
+        "Παρασκευή": {
+            "Στήθος": ["Chest Flys", "Chest Press", "Pushups"],
+            "Πλάτη": ["Lat Pulldowns Close", "Bent Over Rows", "Straight Arm Pulldowns"],
+            "Χέρια": ["Tricep Pulldowns", "Preacher Bicep Curls", "Bicep Curls"],
+            "Ώμοι": ["Upright Rows"],
+            "Κορμός": ["Ab Crunches", "Plank", "Leg Raise Hip Lift", "Reverse Crunch"]
+        },
+        "Σάββατο": {
+            "Στήθος": ["Pushups", "Chest Press"],
+            "Πλάτη": ["Low Rows Seated", "Straight Arm Pulldowns"],
+            "Χέρια": ["Bicep Curls", "Tricep Pulldowns"],
+            "Ώμοι": ["Upright Rows"],
+            "Κορμός": ["Plank", "Reverse Crunch", "Situps"]
+        },
+        "Κυριακή": {
+            "Στήθος": ["Chest Press", "Chest Flys"],
+            "Πλάτη": ["Lat Pulldowns", "Seated Rows"],
+            "Χέρια": ["Preacher Bicep Curls", "Tricep Pulldowns"],
+            "Ώμοι": ["Upright Rows"],
+            "Κορμός": ["Ab Crunches", "Leg Raise Hip Lift", "Lying Knee Raise"]
+        }
+    };
+
     const defaultTemplates = {
-        "Στήθος": [
-            { name: "Chest Press", weight: "54" },
-            { name: "Chest Flys", weight: "42" },
-            { name: "Pushups", weight: "0" }
+        "Στήθος": templatesByDay["Τρίτη"]["Στήθος"].map(name => ({ name, weight: weightFor(name) })),
+        "Πλάτη": ["Lat Pulldowns", "Seated Rows", "Low Rows Seated", "Straight Arm Pulldowns", "Bent Over Rows", "Lat Pulldowns Close", "Reverse Grip Cable Row"].map(name => ({ name, weight: weightFor(name) })),
+        "Πόδια": [{ name: "Leg Extensions", weight: weightFor("Leg Extensions") }],
+        "Χέρια": ["Bicep Curls", "Tricep Pulldowns", "Preacher Bicep Curls"].map(name => ({ name, weight: weightFor(name) })),
+        "Ώμοι": [{ name: "Upright Rows", weight: weightFor("Upright Rows") }],
+        "Κορμός": ["Ab Crunches", "Plank", "Leg Raise Hip Lift", "Lying Knee Raise", "Reverse Crunch", "Situps"].map(name => ({ name, weight: weightFor(name) }))
+    };
+
+    const sessionBlueprints = {
+        "Τρίτη": [
+            ["Στήθος", 6], ["Πλάτη", 5], ["Ώμοι", 3], ["Χέρια", 4], ["Κορμός", 4]
         ],
-        "Πλάτη": [
-            { name: "Lat Pulldowns", weight: "36" },
-            { name: "Seated Rows", weight: "66" },
-            { name: "Low Rows Seated", weight: "36" },
-            { name: "Lat Pulldowns Close", weight: "36" }
+        "Τετάρτη_CYCLING": [
+            ["Πλάτη", 6], ["Στήθος", 4], ["Χέρια", 4], ["Ώμοι", 3], ["Κορμός", 5]
         ],
-        "Πόδια": [
-            { name: "Leg Extensions", weight: "0" }
+        "Τετάρτη_LEGS": [
+            ["Πόδια", 8], ["Πλάτη", 5], ["Στήθος", 3], ["Χέρια", 3], ["Κορμός", 3]
         ],
-        "Χέρια": [
-            { name: "Bicep Curls", weight: "30" },
-            { name: "Tricep Pulldowns", weight: "20" },
-            { name: "Standing Bicep Curls", weight: "30" }
+        "Παρασκευή": [
+            ["Πλάτη", 5], ["Στήθος", 5], ["Χέρια", 5], ["Ώμοι", 2], ["Κορμός", 5]
         ],
-        "Ώμοι": [
-            { name: "Upright Rows", weight: "30" }
+        "Σάββατο_WEIGHTS": [
+            ["Κορμός", 6], ["Χέρια", 4], ["Ώμοι", 3], ["Στήθος", 3], ["Πλάτη", 2]
         ],
-        "Κορμός": [
-            { name: "Ab Crunches", weight: "30" },
-            { name: "Plank", weight: "0" },
-            { name: "Leg Raise Hip Lift", weight: "0" },
-            { name: "Lying Knee Raise", weight: "0" },
-            { name: "Reverse Crunch", weight: "0" }
+        "Σάββατο_BIKE_WEIGHTS": [
+            ["Κορμός", 5], ["Χέρια", 3], ["Ώμοι", 2], ["Στήθος", 2]
+        ],
+        "Κυριακή_WEIGHTS": [
+            ["Πλάτη", 5], ["Στήθος", 5], ["Κορμός", 4], ["Χέρια", 2], ["Ώμοι", 2]
+        ],
+        "Κυριακή_BIKE_WEIGHTS": [
+            ["Πλάτη", 4], ["Στήθος", 3], ["Κορμός", 3], ["Χέρια", 2]
         ]
     };
 
-    const dayPriority = {
-        // PEGASUS 209: 45-minute balanced weekly split. Cycling removes legs,
-        // but upper-body volume is redistributed instead of making the week too small.
-        "Τρίτη": ["Στήθος", "Ώμοι", "Χέρια", "Κορμός", "Πλάτη"],
-        "Τετάρτη": ["Πόδια", "Πλάτη", "Χέρια", "Κορμός", "Στήθος", "Ώμοι"],
-        "Παρασκευή": ["Πλάτη", "Στήθος", "Ώμοι", "Χέρια", "Κορμός"],
-        "Σάββατο": ["Κορμός", "Στήθος", "Χέρια", "Ώμοι", "Πλάτη"],
-        "Κυριακή": ["Πλάτη", "Στήθος", "Κορμός", "Χέρια", "Ώμοι"]
-    };
+    function weightFor(name) {
+        const weights = {
+            "Chest Press": "54",
+            "Chest Flys": "42",
+            "Pushups": "0",
+            "Lat Pulldowns": "36",
+            "Lat Pulldowns Close": "36",
+            "Seated Rows": "66",
+            "Low Rows Seated": "36",
+            "Reverse Grip Cable Row": "36",
+            "Bent Over Rows": "36",
+            "Straight Arm Pulldowns": "30",
+            "Upright Rows": "30",
+            "Bicep Curls": "30",
+            "Preacher Bicep Curls": "30",
+            "Tricep Pulldowns": "20",
+            "Ab Crunches": "30",
+            "Situps": "0",
+            "Plank": "0",
+            "Reverse Crunch": "0",
+            "Lying Knee Raise": "0",
+            "Leg Raise Hip Lift": "0",
+            "Leg Extensions": "0",
+            "Stretching": "0"
+        };
+        return weights[name] ?? "0";
+    }
 
     function safeJson(raw, fallback) {
         try {
@@ -115,8 +207,7 @@
     function getTargets() {
         if (window.PegasusOptimizer?.getTargets) return window.PegasusOptimizer.getTargets();
         const key = window.PegasusManifest?.workout?.muscleTargets || "pegasus_muscle_targets";
-        const fallback = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
-        return safeJson(localStorage.getItem(key), fallback) || fallback;
+        return safeJson(localStorage.getItem(key), DEFAULT_TARGETS_211) || DEFAULT_TARGETS_211;
     }
 
     function normalizedName(value) {
@@ -176,12 +267,7 @@
         const dd = String(d.getDate()).padStart(2, "0");
         const m = String(d.getMonth() + 1);
         const day = String(d.getDate());
-        return [
-            `${yyyy}-${mm}-${dd}`,
-            `${dd}/${mm}/${yyyy}`,
-            `${day}/${m}/${yyyy}`,
-            `${yyyy}${mm}${dd}`
-        ];
+        return [`${yyyy}-${mm}-${dd}`, `${dd}/${mm}/${yyyy}`, `${day}/${m}/${yyyy}`, `${yyyy}${mm}${dd}`];
     }
 
     function readMaxNumber(prefixes, aliases) {
@@ -245,9 +331,8 @@
 
     function canTrainLegsOnDay(day) {
         const cyclingLoad = getCurrentWeekWeekendCyclingLoad();
-        // PEGASUS 208: Αν υπάρχει ποδηλασία σε οποιαδήποτε μέρα του τρέχοντος κύκλου,
-        // τα πόδια θεωρούνται καλυμμένα από το ποδήλατο και δεν προτείνονται σε καμία μέρα.
-        // Αν δεν υπάρχει ποδηλασία, τα πόδια επιτρέπονται μόνο την Τετάρτη.
+        // If any cycling exists in the current cycle, legs are covered by cycling.
+        // If there is no cycling, legs are allowed only on Wednesday.
         return !cyclingLoad.hasCycling && day === "Τετάρτη";
     }
 
@@ -275,19 +360,9 @@
     function getPlannedTemplateGroups(day) {
         if (RECOVERY_DAYS.has(day)) return [];
         const mode = getWeekendMode(day);
-        if (day === "Σάββατο" && mode === "bike") return [];
-        if (day === "Κυριακή" && mode === "bike") return [];
-        const priority = dayPriority[day] || [];
-        if (day === "Σάββατο") return mode === "weights" ? ["Ώμοι", "Χέρια", "Κορμός", "Στήθος"] : ["Ώμοι", "Χέρια", "Κορμός"];
-        if (day === "Κυριακή") return ["Στήθος", "Πλάτη", "Κορμός"];
-        return priority.slice(0, 4);
-    }
-
-    function getAdjacentPlannedGroups(day, direction) {
-        const idx = DAY_INDEX[day];
-        if (typeof idx !== "number") return new Set();
-        const nextDay = DAY_FROM_INDEX[(idx + direction + 7) % 7];
-        return new Set(getPlannedTemplateGroups(nextDay));
+        if (WEEKEND_DAYS.has(day) && mode === "bike") return [];
+        const blueprint = resolveSessionBlueprint(day, canTrainLegsOnDay(day), mode);
+        return blueprint.map(([group]) => group);
     }
 
     function getPreviousDateKeyForDay(day) {
@@ -304,9 +379,6 @@
     function getBlockedGroups(day) {
         const blocked = new Set();
         const prevDateKey = getPreviousDateKeyForDay(day);
-        // PEGASUS 209: Block only muscle groups actually trained yesterday.
-        // The previous planned-template guard was too aggressive and could leave
-        // Wednesday/Friday with a tiny plan even when the weekly targets were open.
         getGroupsFromLedgerDate(prevDateKey).forEach(group => blocked.add(group));
         return blocked;
     }
@@ -320,12 +392,7 @@
         STRICT_GROUPS.forEach(group => {
             const target = Math.max(0, Number(targets[group]) || 0);
             let done = Math.max(0, Number(history[group]) || 0);
-
-            // PEGASUS 208: Ποδηλασία σε οποιαδήποτε μέρα του κύκλου καλύπτει τα πόδια.
-            if (group === "Πόδια" && weekendCycling.hasCycling) {
-                done = Math.max(done, target);
-            }
-
+            if (group === "Πόδια" && weekendCycling.hasCycling) done = Math.max(done, target);
             const carried = Math.max(0, Number(carry[group]) || 0);
             remaining[group] = Math.max(0, target - done - carried);
         });
@@ -333,8 +400,8 @@
     }
 
     function getSessionLimit(day, mode) {
-        // 45-minute target: ~23-24 quality sets using PEGASUS 1.9 min/set budget.
-        if (day === "Τρίτη" || day === "Τετάρτη" || day === "Παρασκευή") return 24;
+        // 45-minute target: 10s prep + 45s work + 60s rest ≈ 115s/block.
+        if (day === "Τρίτη" || day === "Τετάρτη" || day === "Παρασκευή") return 22;
         if (day === "Σάββατο" || day === "Κυριακή") {
             if (mode === "bike_weights") return 12;
             if (mode === "weights") return 18;
@@ -343,36 +410,77 @@
         return 0;
     }
 
-    function rankGroups(day, remaining, blocked) {
-        const priority = dayPriority[day] || STRICT_GROUPS;
-        return STRICT_GROUPS
-            .filter(group => (remaining[group] || 0) > 0)
-            .filter(group => !blocked.has(group))
-            .sort((a, b) => {
-                const byNeed = (remaining[b] || 0) - (remaining[a] || 0);
-                if (byNeed !== 0) return byNeed;
-                return (priority.indexOf(a) === -1 ? 99 : priority.indexOf(a)) - (priority.indexOf(b) === -1 ? 99 : priority.indexOf(b));
-            });
+    function resolveSessionBlueprint(day, allowLegs, mode) {
+        if (day === "Τετάρτη") return sessionBlueprints[allowLegs ? "Τετάρτη_LEGS" : "Τετάρτη_CYCLING"];
+        if (day === "Σάββατο") return sessionBlueprints[mode === "bike_weights" ? "Σάββατο_BIKE_WEIGHTS" : "Σάββατο_WEIGHTS"];
+        if (day === "Κυριακή") return sessionBlueprints[mode === "bike_weights" ? "Κυριακή_BIKE_WEIGHTS" : "Κυριακή_WEIGHTS"];
+        return sessionBlueprints[day] || [];
     }
 
     function getExerciseKind(ex) {
+        const meta = exerciseMeta[ex?.name || ""];
+        if (meta?.kind) return meta.kind;
         const name = normalizedName(ex?.name || "");
         const weight = Number(ex?.weight);
-        const floorNames = new Set([
-            "pushups",
-            "plank",
-            "legraisehiplift",
-            "lyingkneeraise",
-            "reversecrunch",
-            "stretching"
-        ]);
+        const floorNames = new Set(["pushups", "plank", "legraisehiplift", "lyingkneeraise", "reversecrunch", "situps", "stretching"]);
         if (floorNames.has(name)) return "floor";
         if ((ex?.muscleGroup === "Κορμός" || ex?.muscleGroup === "None") && (!Number.isFinite(weight) || weight <= 0)) return "floor";
         return "weighted";
     }
 
+    function getExerciseFamily(ex) {
+        return exerciseMeta[ex?.name || ""]?.family || normalizedName(ex?.name || "");
+    }
+
+    function getExerciseStation(ex) {
+        return exerciseMeta[ex?.name || ""]?.station || getExerciseKind(ex);
+    }
+
+    function splitSets(setsNeeded, names, group) {
+        const total = Math.max(0, Math.round(setsNeeded));
+        if (total <= 0 || !names.length) return [];
+        const count = total <= 3 ? 1 : (total <= 5 ? Math.min(2, names.length) : Math.min(3, names.length));
+        const chosen = names.slice(0, count);
+        const base = Math.floor(total / count);
+        let extra = total % count;
+        return chosen.map(name => {
+            const sets = base + (extra > 0 ? 1 : 0);
+            extra -= 1;
+            return { name, sets, muscleGroup: group, weight: weightFor(name) };
+        }).filter(ex => ex.sets > 0);
+    }
+
+    function chooseExercisesForGroup(group, setsNeeded, context) {
+        const names = (templatesByDay[context.day]?.[group] || defaultTemplates[group]?.map(ex => ex.name) || []).slice();
+        if (!names.length || setsNeeded <= 0) return [];
+        return splitSets(setsNeeded, names, group);
+    }
+
+    function removeConflictingRowVariations(list) {
+        const hasLow = list.some(ex => ex.name === "Low Rows Seated");
+        if (!hasLow) return list;
+        return list.filter(ex => ex.name !== "Reverse Grip Cable Row");
+    }
+
+    function mergeDuplicateExerciseNames(list) {
+        const map = new Map();
+        (Array.isArray(list) ? list : []).forEach(ex => {
+            const key = String(ex?.name || "").trim();
+            if (!key) return;
+            if (!map.has(key)) {
+                map.set(key, { ...ex, sets: Math.max(0, Number(ex.sets) || 0) });
+            } else {
+                const existing = map.get(key);
+                existing.sets = Math.max(0, Number(existing.sets) || 0) + Math.max(0, Number(ex.sets) || 0);
+                existing.brainReason = `${existing.brainReason || ""} + ${ex.brainReason || ""}`.trim();
+            }
+        });
+        return Array.from(map.values()).filter(ex => ex.sets > 0);
+    }
+
     function balanceExerciseOrder(list) {
-        const pending = (Array.isArray(list) ? list : []).map((ex, index) => ({ ...ex, __originalOrder: index }));
+        const pending = removeConflictingRowVariations(Array.isArray(list) ? list : [])
+            .map((ex, index) => ({ ...ex, __originalOrder: index }));
         if (pending.length <= 2) return pending.map(({ __originalOrder, ...ex }) => ex);
 
         const result = [];
@@ -388,28 +496,32 @@
         while (pending.length) {
             const last = result[result.length - 1] || null;
             const beforeLast = result[result.length - 2] || null;
-
             let bestIndex = 0;
             let bestScore = Infinity;
 
             pending.forEach((ex, index) => {
                 const kind = getExerciseKind(ex);
+                const family = getExerciseFamily(ex);
+                const station = getExerciseStation(ex);
                 let score = 0;
 
                 if (last) {
                     const lastKind = getExerciseKind(last);
-                    if (kind === lastKind) score += 18;
-                    if (runLength(kind) >= 2) score += 250;
-                    if (ex.muscleGroup && ex.muscleGroup === last.muscleGroup) score += 90;
-                    if (beforeLast && ex.muscleGroup && ex.muscleGroup === beforeLast.muscleGroup) score += 20;
-                    if (kind !== lastKind) score -= 12;
+                    if (kind === lastKind) score += 12;
+                    if (runLength(kind) >= 2) score += 220;
+                    if (ex.muscleGroup && ex.muscleGroup === last.muscleGroup) score += 100;
+                    if (family && family === getExerciseFamily(last)) score += 140;
+                    if (station && station === getExerciseStation(last)) score += 10; // avoid same setup when muscles also collide
+                    if (kind !== lastKind) score -= 14;
                 }
 
-                // Keep floor/core work between weighted blocks when possible, so hands/arms rest longer.
-                if (kind === "floor" && last && getExerciseKind(last) === "weighted") score -= 8;
-                if (kind === "weighted" && last && getExerciseKind(last) === "floor") score -= 8;
+                if (beforeLast) {
+                    if (ex.muscleGroup && ex.muscleGroup === beforeLast.muscleGroup) score += 25;
+                    if (family && family === getExerciseFamily(beforeLast)) score += 45;
+                }
 
-                // Stable tie-breaker: preserve the Brain's original priority as much as possible.
+                if (kind === "floor" && last && getExerciseKind(last) === "weighted") score -= 10;
+                if (kind === "weighted" && last && getExerciseKind(last) === "floor") score -= 10;
                 score += (ex.__originalOrder || 0) * 0.01;
 
                 if (score < bestScore) {
@@ -424,36 +536,52 @@
         return result.map(({ __originalOrder, ...ex }) => ex);
     }
 
-    function chooseExercisesForGroup(group, setsNeeded, context) {
-        const templates = defaultTemplates[group] || [];
-        if (!templates.length || setsNeeded <= 0) return [];
+    function buildFromBlueprint(day, blueprint, remaining, blocked, limit, allowLegs, mode) {
+        const exercises = [];
+        let allocated = 0;
 
-        const maxFirst = context.day === "Παρασκευή" ? 6 : 5;
-        const maxSecond = context.day === "Παρασκευή" ? 5 : 4;
-        const result = [];
-        let remaining = Math.max(0, Math.round(setsNeeded));
+        blueprint.forEach(([group, desired]) => {
+            if (allocated >= limit) return;
+            if (group === "Πόδια" && !allowLegs) return;
+            if (blocked.has(group)) return;
+            const need = Math.max(0, Math.round(remaining[group] || 0));
+            if (need <= 0) return;
+            const toAllocate = Math.min(desired, need, Math.max(0, limit - allocated));
+            if (toAllocate <= 0) return;
+            chooseExercisesForGroup(group, toAllocate, { day, mode }).forEach(ex => {
+                exercises.push({
+                    ...ex,
+                    brainManaged: true,
+                    brainReason: `${group}: MS-600 στόχος ${desired}, λείπουν ${need}, δόθηκαν ${toAllocate}`,
+                    brainOrder: exercises.length
+                });
+            });
+            allocated += toAllocate;
+        });
 
-        if (remaining <= maxFirst || templates.length === 1) {
-            result.push({ ...templates[0], sets: remaining, muscleGroup: group });
-            return result;
+        // If targets/history produce a too-small day, top up with safe blueprint groups.
+        // The Optimizer still caps against weekly targets, so this does not break progress.
+        if (!WEEKEND_DAYS.has(day) && allocated < Math.min(20, limit)) {
+            blueprint.forEach(([group, desired]) => {
+                if (allocated >= limit) return;
+                if (group === "Πόδια" && !allowLegs) return;
+                if (blocked.has(group)) return;
+                const already = exercises.some(ex => ex.muscleGroup === group);
+                const room = Math.min(already ? 2 : 3, limit - allocated);
+                if (room <= 0) return;
+                chooseExercisesForGroup(group, room, { day, mode }).forEach(ex => {
+                    exercises.push({
+                        ...ex,
+                        brainManaged: true,
+                        brainReason: `${group}: συμπλήρωση 45λεπτου MS-600 πλάνου`,
+                        brainOrder: exercises.length
+                    });
+                });
+                allocated += room;
+            });
         }
 
-        const firstSets = Math.min(maxFirst, remaining);
-        result.push({ ...templates[0], sets: firstSets, muscleGroup: group });
-        remaining -= firstSets;
-
-        if (remaining > 0) {
-            const second = templates[1] || templates[0];
-            result.push({ ...second, sets: Math.min(maxSecond, remaining), muscleGroup: group });
-            remaining -= Math.min(maxSecond, remaining);
-        }
-
-        if (remaining > 0 && context.day === "Παρασκευή") {
-            const third = templates[2] || templates[0];
-            result.push({ ...third, sets: remaining, muscleGroup: group });
-        }
-
-        return result;
+        return exercises;
     }
 
     function getDailyWorkout(day, options = {}) {
@@ -466,91 +594,27 @@
 
         const { remaining } = computeRemaining({ includeCarryover: true });
         const blocked = getBlockedGroups(day);
-        let orderedGroups = rankGroups(day, remaining, blocked);
-
-        // Guard against zero plan due strict adjacency: on Friday only, allow a safe closing group if otherwise empty.
-        if (!orderedGroups.length && day === "Παρασκευή") {
-            orderedGroups = rankGroups(day, remaining, new Set());
-        }
-
-        // Weekend weights are optional load. If all core remaining is already covered, still offer a small non-consecutive pump session.
-        if (!orderedGroups.length && WEEKEND_DAYS.has(day) && mode !== "bike") {
-            const candidates = getPlannedTemplateGroups(day).filter(group => !blocked.has(group));
-            orderedGroups = candidates.slice(0, mode === "bike_weights" ? 2 : 3);
-            candidates.forEach(group => { if (!remaining[group]) remaining[group] = mode === "bike_weights" ? 3 : 4; });
-        }
-
         const allowLegs = canTrainLegsOnDay(day);
-        orderedGroups = orderedGroups.filter(group => group !== "Πόδια" || allowLegs);
-
         const limit = getSessionLimit(day, mode);
-        const exercises = [];
-        let allocated = 0;
-
-        for (const group of orderedGroups) {
-            if (allocated >= limit) break;
-            const need = Math.max(0, Math.round(remaining[group] || 0));
-            if (need <= 0) continue;
-
-            let groupCap = Math.min(need, day === "Παρασκευή" ? 8 : 7);
-            // Legs appear only on Wednesday when there is no cycling in the cycle.
-            // Keep them enough to matter but not so high that they consume the whole 45-minute session.
-            if (group === "Πόδια" && day === "Τετάρτη") groupCap = Math.min(need, 10);
-            if (WEEKEND_DAYS.has(day)) groupCap = Math.min(groupCap, mode === "bike_weights" ? 5 : 6);
-            const toAllocate = Math.min(groupCap, Math.max(0, limit - allocated));
-            if (toAllocate <= 0) continue;
-
-            chooseExercisesForGroup(group, toAllocate, { day, mode }).forEach(ex => {
-                exercises.push({
-                    ...ex,
-                    brainManaged: true,
-                    brainReason: `${group}: λείπουν ${need} σετ, δόθηκαν ${toAllocate}`,
-                    brainOrder: exercises.length
-                });
-            });
-            allocated += toAllocate;
-        }
-
-        // PEGASUS 209: Keep non-recovery core days from feeling too small.
-        // If strict remaining/actual-yesterday guards made the plan under-filled,
-        // add safe upper-body top-up sets inside the 45-minute cap. Legs remain governed
-        // only by canTrainLegsOnDay(day), so cycling still removes all leg work.
-        if (!WEEKEND_DAYS.has(day) && !RECOVERY_DAYS.has(day) && allocated < 20) {
-            const fillPriority = (dayPriority[day] || STRICT_GROUPS).filter(group => group !== "Πόδια" || allowLegs);
-            for (const group of fillPriority) {
-                if (allocated >= 22) break;
-                if (blocked.has(group)) continue;
-                const already = exercises.some(ex => ex.muscleGroup === group);
-                const desired = already ? 3 : 4;
-                const room = Math.max(0, Math.min(desired, 22 - allocated));
-                if (room <= 0) continue;
-                chooseExercisesForGroup(group, room, { day, mode }).forEach(ex => {
-                    exercises.push({
-                        ...ex,
-                        brainManaged: true,
-                        brainReason: `${group}: συμπλήρωση 45λεπτου πλάνου`,
-                        brainOrder: exercises.length
-                    });
-                });
-                allocated += room;
-            }
-        }
+        const blueprint = resolveSessionBlueprint(day, allowLegs, mode);
+        let exercises = buildFromBlueprint(day, blueprint, remaining, blocked, limit, allowLegs, mode);
 
         if (options.isRainy && WEEKEND_DAYS.has(day) && !exercises.length) {
-            return [
-                { name: "Chest Press", sets: 4, muscleGroup: "Στήθος", weight: "54", brainManaged: true, brainOrder: 0 },
-                { name: "Seated Rows", sets: 4, muscleGroup: "Πλάτη", weight: "66", brainManaged: true, brainOrder: 1 },
-                { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: "30", brainManaged: true, brainOrder: 2 }
+            exercises = [
+                { name: "Chest Press", sets: 4, muscleGroup: "Στήθος", weight: weightFor("Chest Press"), brainManaged: true, brainOrder: 0 },
+                { name: "Seated Rows", sets: 4, muscleGroup: "Πλάτη", weight: weightFor("Seated Rows"), brainManaged: true, brainOrder: 1 },
+                { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός", weight: weightFor("Ab Crunches"), brainManaged: true, brainOrder: 2 }
             ];
         }
 
-        const balancedExercises = balanceExerciseOrder(exercises).map((ex, index) => ({
+        exercises = mergeDuplicateExerciseNames(exercises);
+
+        return balanceExerciseOrder(exercises).map((ex, index) => ({
             ...ex,
             brainOrder: index,
-            brainRestAware: true
+            brainRestAware: true,
+            brainEquipmentAware: true
         }));
-
-        return balancedExercises;
     }
 
     function recordWeekendCarryover(exName, muscle, setValue, dateKey = null) {
@@ -579,7 +643,6 @@
         entry.sourceWeekKey = getWeekKey(todayKey);
         store.updatedAt = Date.now();
 
-        // Keep only current/next-ish records.
         Object.keys(store.weeks).forEach(key => {
             const ageDays = (new Date() - dateFromKey(key)) / 86400000;
             if (ageDays > 21) delete store.weeks[key];
@@ -616,7 +679,7 @@
     }
 
     window.PegasusBrain = {
-        version: "1.0.210",
+        version: "1.0.211",
         groups: STRICT_GROUPS.slice(),
         getWeekKey,
         getNextWeekKey,
@@ -635,5 +698,5 @@
         isManagedDay
     };
 
-    console.log("🧠 PEGASUS BRAIN: Dynamic weekly planner active (v1.0.209).");
+    console.log("🧠 PEGASUS BRAIN: MS-600 rest/equipment-aware planner active (v1.0.211).");
 })();

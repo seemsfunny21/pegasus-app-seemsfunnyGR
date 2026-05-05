@@ -1,10 +1,11 @@
-PEGASUS 210
+PEGASUS 211
 
-- Rest-aware exercise ordering added.
-- PegasusBrain now interleaves weighted and floor/bodyweight/core exercises when possible.
-- Avoids long blocks like 3 weighted exercises followed by 2-3 floor exercises.
-- Dynamic optimizer no longer re-sorts DOM exercises, preserving Brain order and timer consistency.
-- Hidden/capped exercises are excluded from workout availability.
-- 45-minute cap remains active.
-- Saturday 06:00 weekly reset remains active.
+- IRON rebuilt around the real Pegasus MS-600 + floor exercise pool only.
+- Added Reverse Grip Cable Row as a tracked variation, but Low Rows Seated and Reverse Grip Cable Row are treated as the same low-row family and are not placed together in the same workout.
+- Rest-aware + equipment-aware Brain order: avoids same muscle/family back-to-back and alternates weighted/floor work when possible.
+- Cut/Bulk now share the same smart exercise order; the practical difference is the user-selected controlled weight/intensity.
+- 45-minute timer remains 10s prep / 45s work / 60s rest.
+- Weekly targets rebalanced for the MS-600 plan: Chest 14, Back 16, Legs 8, Arms 12, Shoulders 8, Core 16.
+- Cycling rule preserved: if cycling exists, no gym legs; if no cycling, Leg Extensions only on Wednesday.
+- Saturday 06:00 weekly reset, mobile weather, YouTube module, and sync fixes preserved.
 - No new files added.

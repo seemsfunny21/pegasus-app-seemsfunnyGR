@@ -124,7 +124,7 @@
                 const cardioOffsetBase = window.PegasusManifest?.workout?.cardio_offset || 'pegasus_cardio_offset_sets';
 
                 /* --- 1. LEG LOAD / WEEKLY PROGRESS --- */
-                const maxCyclingCredit = 18;
+                const maxCyclingCredit = 8;
                 const credit = km > 0
                     ? Math.max(0, Math.min(maxCyclingCredit, km >= 15 ? maxCyclingCredit : Math.round(Math.max(0, km) / 2)))
                     : 0;

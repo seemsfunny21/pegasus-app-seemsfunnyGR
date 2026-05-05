@@ -1,6 +1,6 @@
-PEGASUS 210
+PEGASUS 211
 
-Rest-aware exercise ordering build.
+MS-600 IRON rest/equipment-aware training build.
 
 # 🟢 PEGASUS OS: THE GENESIS & EVOLUTIONARY LOG (v10.1)
 

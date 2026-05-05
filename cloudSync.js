@@ -499,7 +499,7 @@ const PegasusCloud = {
             totals[muscle] = Math.max(0, Number(totals[muscle] || 0)) + (count * setValue);
         });
 
-        const targets = this.safeParseStorageObject(localStorage.getItem("pegasus_muscle_targets"), { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 });
+        const targets = this.safeParseStorageObject(localStorage.getItem("pegasus_muscle_targets"), { "Στήθος": 14, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 12, "Ώμοι": 8, "Κορμός": 16 });
         Object.keys(totals).forEach(group => {
             const target = Math.max(0, Number(targets?.[group]) || 0);
             if (target > 0) totals[group] = Math.min(totals[group], target);
@@ -659,13 +659,14 @@ const PegasusCloud = {
     },
 
     mergeMuscleTargetsValue(localValue, remoteValue) {
-        const nextDefaults = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
-        const oldDefaults = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
+        const nextDefaults = { "Στήθος": 14, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 12, "Ώμοι": 8, "Κορμός": 16 };
+        const oldDefaults = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 24, "Χέρια": 14, "Ώμοι": 12, "Κορμός": 18 };
+        const legacyDefaults = { "Στήθος": 24, "Πλάτη": 24, "Πόδια": 24, "Χέρια": 16, "Ώμοι": 16, "Κορμός": 12 };
         const groups = Object.keys(nextDefaults);
         const local = this.safeParseStorageObject(localValue, null);
         const remote = this.safeParseStorageObject(remoteValue, null);
 
-        const looksOld = obj => obj && groups.every(group => Number(obj[group]) === Number(oldDefaults[group]));
+        const looksOld = obj => obj && (groups.every(group => Number(obj[group]) === Number(oldDefaults[group])) || groups.every(group => Number(obj[group]) === Number(legacyDefaults[group])));
         const clean = obj => {
             const out = { ...nextDefaults };
             if (obj && typeof obj === "object") {

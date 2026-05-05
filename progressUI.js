@@ -154,12 +154,12 @@ window.MuscleProgressUI = {
         }
 
         const fallbackTargets = {
-            "Στήθος": 16,
+            "Στήθος": 14,
             "Πλάτη": 16,
-            "Πόδια": 24,
-            "Χέρια": 14,
-            "Ώμοι": 12,
-            "Κορμός": 18
+            "Πόδια": 8,
+            "Χέρια": 12,
+            "Ώμοι": 8,
+            "Κορμός": 16
         };
         const targets = normalizeMap(rawTargets, fallbackTargets);
 

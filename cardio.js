@@ -105,7 +105,7 @@ window.saveCardioData = async function() {
     const workoutKey = `${y}-${m}-${d}`;
 
     /* --- 1. ΜΥΪΚΗ ΟΜΑΔΑ & XP (LIFETIME STATS) --- */
-    const maxCyclingCredit = 18;
+    const maxCyclingCredit = 8;
     const historyKey = M?.workout?.weekly_history || 'pegasus_weekly_history';
     const targetsKey = M?.workout?.muscleTargets || 'pegasus_muscle_targets';
     const statsKey = M?.system?.stats || 'pegasus_stats';

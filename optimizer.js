@@ -1,6 +1,6 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v2.9 (PEGASUS 183 BRAIN-MANAGED)
-   Protocol: Saturday 06:00 Week Reset, 18-Set Cycling Credit & Raise Mapping
+   PEGASUS DYNAMIC OPTIMIZER - v3.0 (PEGASUS 211 MS-600 BRAIN-MANAGED)
+   Protocol: Saturday 06:00 Week Reset, 8-Set Cycling Credit & MS-600 Mapping
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
 
@@ -10,12 +10,12 @@ var M = M || window.PegasusManifest;
 window.PegasusOptimizer = {
     getDefaultTargets: function() {
         return {
-            "Στήθος": 16,
+            "Στήθος": 14,
             "Πλάτη": 16,
-            "Πόδια": 24,
-            "Χέρια": 14,
-            "Ώμοι": 12,
-            "Κορμός": 18
+            "Πόδια": 8,
+            "Χέρια": 12,
+            "Ώμοι": 8,
+            "Κορμός": 16
         };
     },
 

@@ -1122,7 +1122,7 @@ function selectDay(btn, day) {
     } else if ((day === "Σάββατο" || day === "Κυριακή") && isRainy) {
         rawBaseData = [
             { name: "Chest Press", sets: 5, muscleGroup: "Στήθος" },
-            { name: "Low Seated Row", sets: 5, muscleGroup: "Πλάτη" },
+            { name: "Low Rows Seated", sets: 5, muscleGroup: "Πλάτη" },
             { name: "Ab Crunches", sets: 3, muscleGroup: "Κορμός" }
         ];
     } else {

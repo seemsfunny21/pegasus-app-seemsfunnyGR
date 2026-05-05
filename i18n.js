@@ -105,9 +105,9 @@
     const exercisePairs = [
         ['Πιέσεις στήθους','Chest Press'], ['Εκτάσεις στήθους','Chest Flys'], ['Κάμψεις','Pushups'],
         ['Τροχαλία πλάτης','Lat Pulldowns'], ['Κλειστή τροχαλία πλάτης','Lat Pulldowns Close'],
-        ['Κωπηλατική καθιστή','Seated Rows'], ['Χαμηλή κωπηλατική καθιστή','Low Rows Seated'], ['Χαμηλή κωπηλατική','Low Seated Row'],
+        ['Κωπηλατική καθιστή','Seated Rows'], ['Χαμηλή κωπηλατική καθιστή','Low Rows Seated'], ['Ανάποδη λαβή κωπηλατική τροχαλίας','Reverse Grip Cable Row'],
         ['Κωπηλατική σκυφτή','Bent Over Rows'], ['Τροχαλία με ίσια χέρια','Straight Arm Pulldowns'],
-        ['Όρθια κωπηλατική','Upright Rows'], ['Κάμψεις δικεφάλων','Bicep Curls'], ['Όρθιες κάμψεις δικεφάλων','Standing Bicep Curls'],
+        ['Όρθια κωπηλατική','Upright Rows'], ['Κάμψεις δικεφάλων','Bicep Curls'],
         ['Κάμψεις δικεφάλων στο μαξιλάρι','Preacher Bicep Curls'], ['Πιέσεις τρικεφάλων','Tricep Pulldowns'],
         ['Κοιλιακοί crunch','Ab Crunches'], ['Κοιλιακοί sit-up','Situps'], ['Σανίδα','Plank'], ['Αντίστροφοι κοιλιακοί','Reverse Crunch'],
         ['Άρσεις γονάτων ξαπλωτός','Lying Knee Raise'], ['Άρσεις ποδιών με ανύψωση λεκάνης','Leg Raise Hip Lift'],
