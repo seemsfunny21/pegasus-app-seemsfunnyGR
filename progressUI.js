@@ -204,19 +204,9 @@ window.MuscleProgressUI = {
         if (!container) return;
 
         const { history, targets, source } = this.calculateStats();
+        // PEGASUS 206: Preview must not show a sync-wait state or trigger cloud work.
+        // It renders the current local weekly state immediately, including clean 0/target after reset.
         const historyTotal = Object.values(history || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
-        const cloudBootPending = !!(window.PegasusCloud?.canRestoreApprovedDevice?.() && !window.PegasusCloud?.hasSuccessfullyPulled && navigator.onLine);
-        if (historyTotal === 0 && cloudBootPending) {
-            container.innerHTML = `
-                <div class="pegasus-weekly-progress-card">
-                    <div style="color: var(--main, #00ff41); font-weight: 900; text-align: center; letter-spacing: 0.08em;">
-                        ΣΥΓΧΡΟΝΙΣΜΟΣ ΠΡΟΟΔΟΥ...
-                    </div>
-                </div>`;
-            container.style.display = "block";
-            try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
-            return;
-        }
 
         const activeExercises = this.getActiveExercises();
 

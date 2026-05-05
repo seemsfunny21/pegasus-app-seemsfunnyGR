@@ -2305,11 +2305,13 @@ window.onload = () => {
             else { if (window.pegasusAlert) window.pegasusAlert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); else alert("Σφάλμα: Το dietAdvisor.js δεν έχει φορτωθεί σωστά."); }
         },
         "btnToolsUI": { panel: "toolsPanel", init: null },
-        "btnPreviewUI": { panel: "previewPanel", init: () => pullFreshPegasusCloudForPanel("progress", () => {
+        "btnPreviewUI": { panel: "previewPanel", init: () => {
+            // PEGASUS 206: Preview opens instantly from local state.
+            // No forced cloud pull/sync on Preview button press.
             if (typeof window.renderPreview === "function") window.renderPreview();
             else if (typeof openExercisePreview === "function") openExercisePreview();
             if (window.MuscleProgressUI?.render) window.MuscleProgressUI.render(true);
-        }) },
+        } },
         "btnOpenGallery": { panel: "galleryPanel", init: () => { if (window.GalleryEngine) window.GalleryEngine.render(); } },
         "btnCardio": { panel: "cardioPanel", init: () => { if (window.PegasusCardio) window.PegasusCardio.open(); } },
         "btnEMS": { panel: "emsModal", init: window.logEMSData },
