@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS UI MANAGER (dragdrop.js) - v4.6 CLEAN SHIELDED
+   PEGASUS UI MANAGER (dragdrop.js) - v4.8 PERSISTENT EXERCISE ORDER FIX
    Protocol: Strict Data Analyst - Keyboard Code Validation & Clean Logic
    Features: Shift+1-9 Shortcuts, Mutation-Aware Dragging, High Z-Index Panels
    Note: Button logic delegated entirely to app.js (masterUI) to prevent click collisions.
@@ -13,7 +13,7 @@ const PegasusUI = {
         this.initDraggablePanels();
         this.initClickOutside();
         this.initHotkeys();
-        console.log("✅ PEGASUS UI MANAGER: v4.6 Operational (Button Bridge Delegated to app.js)");
+        console.log("✅ PEGASUS UI MANAGER: v4.8 Operational (Persistent exercise order fix)");
     },
 
     /**
@@ -189,13 +189,56 @@ const PegasusUI = {
 function initExerciseListDrag() {
     const list = document.getElementById("exList");
     if (!list) return;
-    const applyDraggable = () => { list.querySelectorAll(".exercise").forEach(el => el.setAttribute("draggable", "true")); };
+
+    let orderDirty = false;
+    let saveTimer = null;
+
+    const applyDraggable = () => {
+        list.querySelectorAll(".exercise").forEach(el => {
+            el.setAttribute("draggable", "true");
+            el.setAttribute("title", "Σύρε για αλλαγή σειράς");
+        });
+    };
+
+    const persistCurrentOrder = (reason = "manual") => {
+        if (window.__pegasusRenderingExerciseList) return false;
+
+        if (typeof window.rebuildPegasusExerciseRuntimeFromDom === "function") {
+            window.rebuildPegasusExerciseRuntimeFromDom(list);
+        } else if (typeof window.exercises !== 'undefined') {
+            window.exercises = [...list.querySelectorAll(".exercise")];
+        }
+
+        let saved = false;
+        if (typeof window.savePegasusCustomExerciseOrderFromDom === "function") {
+            saved = window.savePegasusCustomExerciseOrderFromDom(null, list);
+        }
+
+        if (typeof window.calculateTotalTime === "function") window.calculateTotalTime(true);
+        if (typeof window.syncPegasusProgressRuntime === "function") window.syncPegasusProgressRuntime();
+
+        console.log(`✅ PEGASUS ORDER 214: Persisted order (${reason})`, saved);
+        return saved;
+    };
+
+    window.pegasusSaveExerciseOrderNow = () => persistCurrentOrder("console");
+
+    const schedulePersist = (reason = "mutation") => {
+        if (!orderDirty || window.__pegasusRenderingExerciseList) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+            persistCurrentOrder(reason);
+            orderDirty = false;
+        }, 120);
+    };
 
     list.addEventListener("dragstart", (e) => {
         const item = e.target.closest(".exercise");
         if (!item || window.running) return;
+        window.__pegasusExerciseDragActive = true;
+        orderDirty = true;
         item.classList.add("dragging");
-        item.style.opacity = '0.5'; // Visual feedback
+        item.style.opacity = '0.5';
     });
 
     list.addEventListener("dragover", (e) => {
@@ -204,19 +247,40 @@ function initExerciseListDrag() {
         if (!draggingItem) return;
         const siblings = [...list.querySelectorAll(".exercise:not(.dragging)")];
         let nextSibling = siblings.find(sibling => e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2);
-        list.insertBefore(draggingItem, nextSibling);
+        list.insertBefore(draggingItem, nextSibling || null);
+        orderDirty = true;
+    });
+
+    list.addEventListener("drop", (e) => {
+        e.preventDefault();
+        orderDirty = true;
+        persistCurrentOrder("drop");
     });
 
     list.addEventListener("dragend", (e) => {
-        const item = e.target.closest(".exercise");
+        const item = e.target.closest(".exercise") || list.querySelector(".dragging");
         if (item) {
             item.classList.remove("dragging");
             item.style.opacity = '1';
         }
-        if (typeof window.exercises !== 'undefined') window.exercises = [...list.querySelectorAll(".exercise")];
+
+        window.__pegasusExerciseDragActive = false;
+        orderDirty = true;
+        persistCurrentOrder("dragend");
+        orderDirty = false;
     });
 
-    const observer = new MutationObserver(() => applyDraggable());
+    window.addEventListener("beforeunload", () => {
+        if (orderDirty) persistCurrentOrder("beforeunload");
+    });
+
+    const observer = new MutationObserver(() => {
+        applyDraggable();
+        if (window.__pegasusExerciseDragActive) {
+            orderDirty = true;
+            schedulePersist("mutation-drag");
+        }
+    });
     observer.observe(list, { childList: true });
     applyDraggable();
 }

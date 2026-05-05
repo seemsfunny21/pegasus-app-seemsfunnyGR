@@ -129,7 +129,7 @@ window.PegasusManifest = {
         "debug.js": "Tracer, health checks, calorie audit and runtime diagnostics.",
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
-        "dragDrop.js": "UI Window Positioning Memory + Persistent Workout Exercise Order.",
+        "dragDrop.js": "UI Window Positioning Memory + Persistent Workout Exercise Order 214 Fix.",
         "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
         "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
         "reporting.js": "EmailJS Automated Morning Dispatcher."

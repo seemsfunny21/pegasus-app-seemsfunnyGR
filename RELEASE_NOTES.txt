@@ -1,22 +1,8 @@
-PEGASUS 212 RELEASE NOTES
+PEGASUS 214
 
-FIXES
-- Fixed black exercise video panel by adding poster fallback images. Missing MP4 no longer leaves a black screen.
-- Added /images exercise assets for MS-600 + floor exercises.
-- Changed IRON from full-body daily distribution to focused split days.
-- Removed the old broad top-up behavior that could make the app show 2 sets from almost every exercise.
-- Updated PegasusBrain splitSets so volume is grouped into fewer exercises with 3-4 sets where possible.
-- Bumped service worker cache to 212.
-
-IRON SPLIT
-- Tuesday PUSH: Chest + Triceps/Shoulders + small Core
-- Wednesday PULL: Back + Biceps + Core; legs only if no cycling and only Wednesday
-- Friday UPPER BALANCE: Chest/Back second stimulus + Arms/Core
-
-PRESERVED
-- 45 minutes, 10/45/60 timer
-- Saturday 06:00 weekly reset
-- cycling-aware no-leg rule
-- dynamic cut/bulk intensity model
-- mobile Weather + YouTube modules
-- sync fixes
+- Διορθώθηκε το persistent drag/drop order: η σειρά ασκήσεων αποθηκεύεται πιο αξιόπιστα ανά ημέρα.
+- Προστέθηκε per-day local fallback ώστε η σειρά να μη χάνεται από refresh ή cloud pull.
+- Το save γίνεται σε dragend/drop και ξαναχτίζει runtime arrays για timer/skip/progress.
+- Καθαρίστηκε η εμφάνιση των exercise cards: απλή λίστα με σετ, όνομα, κιλά, χωρίς περίεργο badge layout.
+- Δεν υπάρχει φάκελος images.
+- Διατηρούνται IRON split, 10/45/60 timer, 45λεπτο, cycling-aware πόδια, Weather, YouTube και sync fixes.

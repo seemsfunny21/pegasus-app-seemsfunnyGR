@@ -189,6 +189,7 @@ const PegasusCloud = {
             "pegasus_muscle_targets",
             "pegasus_calendar_history",
             "pegasus_exercise_weights",
+            "pegasus_custom_exercise_order_v1",
             "pegasus_ex_time",
             "pegasus_rest_time",
             "pegasus_weekly_kcal",

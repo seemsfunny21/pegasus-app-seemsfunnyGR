@@ -1055,6 +1055,192 @@ window.syncSessionWithHistory = function() {
     });
 };
 
+
+/* ===== PEGASUS 214: PERSISTENT CUSTOM EXERCISE ORDER FIX ===== */
+window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY = window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY || "pegasus_custom_exercise_order_v1";
+window.PEGASUS_SELECTED_WORKOUT_DAY_KEY = window.PEGASUS_SELECTED_WORKOUT_DAY_KEY || "pegasus_selected_workout_day_v1";
+
+window.getPegasusActiveWorkoutDay = function() {
+    const activeBtn = document.querySelector(".navbar button.active");
+    if (activeBtn && activeBtn.id) return activeBtn.id.replace("nav-", "");
+
+    const storedDay = String(localStorage.getItem(window.PEGASUS_SELECTED_WORKOUT_DAY_KEY) || "").trim();
+    if (storedDay) return storedDay;
+
+    const summaryDay = window.getPegasusRuntimeSummary?.()?.selectedDay;
+    return summaryDay || "";
+};
+
+window.getPegasusOrderDayKey = function(day) {
+    const cleanDay = String(day || window.getPegasusActiveWorkoutDay() || "").trim();
+    return cleanDay ? `${window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY}_${cleanDay}` : "";
+};
+
+window.readPegasusCustomExerciseOrders = function() {
+    try {
+        const raw = localStorage.getItem(window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY) || "{}";
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === "object") ? parsed : {};
+    } catch (err) {
+        console.warn("⚠️ PEGASUS ORDER: Could not read custom order.", err);
+        return {};
+    }
+};
+
+window.savePegasusCustomExerciseOrder = function(day, names) {
+    const cleanDay = String(day || window.getPegasusActiveWorkoutDay() || "").trim();
+    const cleanNames = (Array.isArray(names) ? names : [])
+        .map(name => String(name || "").trim())
+        .filter(Boolean);
+
+    if (!cleanDay || cleanNames.length === 0) {
+        console.warn("⚠️ PEGASUS ORDER: Save skipped; missing day or exercises.", { cleanDay, cleanNames });
+        return false;
+    }
+
+    const payload = {
+        names: cleanNames,
+        updatedAt: Date.now(),
+        version: 214
+    };
+
+    const orders = window.readPegasusCustomExerciseOrders();
+    orders[cleanDay] = payload;
+
+    // Save both as one cloud-synced object and as a per-day local fallback.
+    // The per-day fallback prevents the order from being lost if an older cloud pull
+    // refreshes the aggregate object before the next push completes.
+    localStorage.setItem(window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY, JSON.stringify(orders));
+    const dayKey = window.getPegasusOrderDayKey(cleanDay);
+    if (dayKey) localStorage.setItem(dayKey, JSON.stringify(payload));
+    localStorage.setItem(window.PEGASUS_SELECTED_WORKOUT_DAY_KEY, cleanDay);
+
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") {
+        window.PegasusCloud.push(true);
+    }
+
+    console.log(`✅ PEGASUS ORDER 214: Saved custom exercise order for ${cleanDay}.`, cleanNames);
+    return true;
+};
+
+window.savePegasusCustomExerciseOrderFromDom = function(day, listEl) {
+    const list = listEl || document.getElementById("exList");
+    if (!list) return false;
+    const names = [...list.querySelectorAll(".exercise")]
+        .map(el => el.dataset.name || el.querySelector(".exercise-name")?.textContent || "")
+        .map(name => String(name || "").trim())
+        .filter(Boolean);
+    return window.savePegasusCustomExerciseOrder(day || window.getPegasusActiveWorkoutDay(), names);
+};
+
+window.applyPegasusCustomExerciseOrder = function(day, workoutList) {
+    if (!Array.isArray(workoutList) || workoutList.length <= 1) return workoutList;
+
+    const cleanDay = String(day || window.getPegasusActiveWorkoutDay() || "").trim();
+    if (!cleanDay) return workoutList;
+
+    const aggregateSaved = window.readPegasusCustomExerciseOrders()[cleanDay];
+    let localSaved = null;
+    try {
+        const dayKey = window.getPegasusOrderDayKey(cleanDay);
+        localSaved = dayKey ? JSON.parse(localStorage.getItem(dayKey) || "null") : null;
+    } catch (_) {
+        localSaved = null;
+    }
+
+    const saved = (Number(localSaved?.updatedAt || 0) > Number(aggregateSaved?.updatedAt || 0)) ? localSaved : aggregateSaved;
+    const savedNames = Array.isArray(saved?.names) ? saved.names.map(name => String(name || "").trim()).filter(Boolean) : [];
+    if (savedNames.length === 0) return workoutList;
+
+    const original = workoutList.slice();
+    const byName = new Map();
+    original.forEach(item => {
+        const key = String(item?.name || "").trim();
+        if (!key) return;
+        if (!byName.has(key)) byName.set(key, []);
+        byName.get(key).push(item);
+    });
+
+    const ordered = [];
+    savedNames.forEach(name => {
+        const queue = byName.get(name);
+        if (queue && queue.length) ordered.push(queue.shift());
+    });
+
+    // Add any new/external exercises that are not in the saved order to the end.
+    byName.forEach(queue => {
+        while (queue.length) ordered.push(queue.shift());
+    });
+
+    if (ordered.length !== original.length) return workoutList;
+    return ordered;
+};
+
+window.rebuildPegasusExerciseRuntimeFromDom = function(listEl) {
+    const list = listEl || document.getElementById("exList");
+    if (!list) return;
+
+    const ordered = [...list.querySelectorAll(".exercise")];
+    window.exercises = ordered;
+    if (typeof exercises !== "undefined") exercises = ordered;
+
+    const nextRemaining = ordered.map(el => {
+        const total = Math.max(0, parseFloat(el.dataset.total) || 0);
+        const done = Math.max(0, parseFloat(el.dataset.done) || 0);
+        return Math.max(0, total - done);
+    });
+
+    window.remainingSets = nextRemaining;
+    if (typeof remainingSets !== "undefined") remainingSets = nextRemaining;
+
+    ordered.forEach((el, idx) => {
+        el.dataset.index = String(idx);
+        const input = el.querySelector(".weight-input");
+        if (input) input.id = `weight-${idx}`;
+        const info = el.querySelector(".exercise-info");
+        if (info && typeof window.toggleSkipExercise === "function") {
+            info.onclick = function() { window.toggleSkipExercise(idx); };
+        }
+    });
+};
+
+window.clearPegasusCustomExerciseOrder = function(day) {
+    const cleanDay = String(day || window.getPegasusActiveWorkoutDay() || "").trim();
+    if (!cleanDay) return false;
+    const orders = window.readPegasusCustomExerciseOrders();
+    delete orders[cleanDay];
+    localStorage.setItem(window.PEGASUS_CUSTOM_EXERCISE_ORDER_KEY, JSON.stringify(orders));
+    if (window.PegasusCloud && typeof window.PegasusCloud.push === "function") window.PegasusCloud.push();
+    console.log(`🧹 PEGASUS ORDER: Cleared custom exercise order for ${cleanDay}.`);
+    return true;
+};
+
+function getPegasusInlineExercisePoster(assetBase, labelText) {
+    const safeLabel = String(labelText || assetBase || "PEGASUS").replace(/[<>&"']/g, "").slice(0, 42);
+    const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+            <defs>
+                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#06140a"/>
+                    <stop offset="0.52" stop-color="#0b2311"/>
+                    <stop offset="1" stop-color="#111111"/>
+                </linearGradient>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity="0.45"/>
+                </filter>
+            </defs>
+            <rect width="960" height="540" fill="url(#g)"/>
+            <rect x="42" y="42" width="876" height="456" rx="34" fill="rgba(0,0,0,0.20)" stroke="#4CAF50" stroke-width="4"/>
+            <circle cx="480" cy="190" r="72" fill="none" stroke="#4CAF50" stroke-width="12" opacity="0.9"/>
+            <path d="M440 190 L465 218 L522 158" fill="none" stroke="#a7f3b3" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)"/>
+            <text x="480" y="310" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" fill="#eaffea">PEGASUS</text>
+            <text x="480" y="365" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" fill="#4CAF50">${safeLabel}</text>
+            <text x="480" y="415" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#b6d8ba">video fallback</text>
+        </svg>`;
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+window.getPegasusInlineExercisePoster = getPegasusInlineExercisePoster;
+
 /* ===== 4. NAVIGATION BINDING ===== */
 function createNavbar() {
     const days = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"];
@@ -1073,6 +1259,9 @@ function createNavbar() {
 
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) return;
+
+    localStorage.setItem(window.PEGASUS_SELECTED_WORKOUT_DAY_KEY || "pegasus_selected_workout_day_v1", String(day || ""));
+    window.__pegasusRenderingExerciseList = true;
 
     window.__pegasusSelectDayToken = (window.__pegasusSelectDayToken || 0) + 1;
     const pegasusSelectDayToken = window.__pegasusSelectDayToken;
@@ -1139,6 +1328,11 @@ function selectDay(btn, day) {
         mappedData.sort((a, b) => parseFloat(b.adjustedSets || b.sets) - parseFloat(a.adjustedSets || a.sets));
     }
 
+    // PEGASUS 213: apply user's saved drag/drop order for this specific day.
+    if (typeof window.applyPegasusCustomExerciseOrder === "function") {
+        mappedData = window.applyPegasusCustomExerciseOrder(day, mappedData);
+    }
+
     const list = document.getElementById("exList");
     if (!list) return;
     list.innerHTML = "";
@@ -1176,7 +1370,6 @@ function selectDay(btn, day) {
                 <div class="set-counter">${doneSoFar}/${finalSets}</div>
                 <div class="exercise-main">
                     <div class="exercise-name"></div>
-                    <div class="exercise-muscle-badge"></div>
                 </div>
                 <input type="number" id="weight-${renderIdx}" class="weight-input" placeholder="kg">
             </div>
@@ -1186,12 +1379,10 @@ function selectDay(btn, day) {
         const nameNode = d.querySelector(".exercise-name");
         if (nameNode) nameNode.textContent = cleanName;
 
+        const groupName = e.muscleGroup || window.resolvePegasusExerciseGroup(cleanName);
+        d.dataset.group = groupName;
         const badgeNode = d.querySelector(".exercise-muscle-badge");
-        if (badgeNode) {
-            const groupName = e.muscleGroup || window.resolvePegasusExerciseGroup(cleanName);
-            badgeNode.textContent = window.formatPegasusMuscleBadge(groupName);
-            d.dataset.group = groupName;
-        }
+        if (badgeNode) badgeNode.textContent = window.formatPegasusMuscleBadge(groupName);
 
         const weightInputEl = d.querySelector(".weight-input");
         if (weightInputEl) {
@@ -1253,6 +1444,12 @@ function selectDay(btn, day) {
             }
         }
     }, 150);
+
+    setTimeout(() => {
+        if (pegasusSelectDayToken === window.__pegasusSelectDayToken) {
+            window.__pegasusRenderingExerciseList = false;
+        }
+    }, 250);
 }
 
 
@@ -1653,10 +1850,13 @@ function getPegasusExerciseAssetBase(name) {
 }
 
 function setPegasusVideoPoster(vid, assetBase) {
-    if (!vid) return "images/placeholder.png";
-    const posterPath = `images/${assetBase || "placeholder"}.png`;
+    if (!vid) return "";
+    const posterPath = (typeof window.getPegasusInlineExercisePoster === "function")
+        ? window.getPegasusInlineExercisePoster(assetBase || "placeholder", assetBase || "PEGASUS")
+        : "";
     vid.poster = posterPath;
-    vid.style.backgroundImage = `url("${posterPath}"), url("images/placeholder.png")`;
+    vid.style.backgroundImage = posterPath ? `url("${posterPath}")` : "linear-gradient(135deg, #06140a, #111)";
+    vid.style.backgroundColor = "#06140a";
     vid.style.backgroundSize = "contain";
     vid.style.backgroundPosition = "center";
     vid.style.backgroundRepeat = "no-repeat";
@@ -1939,10 +2139,12 @@ function openExercisePreview() {
         let imgBase = window.videoMap ? window.videoMap[cleanName] : null;
         if (!imgBase) imgBase = cleanName.replace(/\s+/g, '').toLowerCase();
 
-        const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
+        const imgPath = (typeof window.getPegasusInlineExercisePoster === "function")
+            ? window.getPegasusInlineExercisePoster(imgBase, cleanName)
+            : "";
         content.innerHTML += `
             <div class="preview-item">
-                <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.png';" alt="${cleanName}">
+                <img src="${imgPath}" alt="${cleanName}">
                 <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
                 <div class="exercise-muscle-badge preview-muscle-badge">${window.formatPegasusMuscleBadge(ex.muscleGroup || window.resolvePegasusExerciseGroup(cleanName))}</div>
             </div>
@@ -2476,10 +2678,8 @@ window.PegasusDebug = {
     replay: (limit) => (window.PegasusEngine?.replay ? window.PegasusEngine.replay(limit) : null),
     manifest: () => P_M,
     testImage: (name) => {
-        const testImg = new Image();
-        testImg.onload = () => console.log(`%c ✅ ASSET FOUND: ${name}.png`, "color: #4CAF50; font-weight: bold;");
-        testImg.onerror = () => console.error(`%c ❌ ASSET 404: ${name}.png is missing from GitHub!`, "color: #ff4444;");
-        testImg.src = `images/${name}.png`;
+        const src = window.getPegasusInlineExercisePoster ? window.getPegasusInlineExercisePoster(name, name) : "";
+        console.log(`%c ✅ INLINE FALLBACK READY: ${name}`, "color: #4CAF50; font-weight: bold;", src.slice(0, 80) + "...");
     },
     logs: () => window.pegasusLogs
 };

@@ -195,7 +195,9 @@ window.MuscleProgressUI = {
         const mappedVal = window.videoMap ? window.videoMap[exerciseName.trim()] : null;
         const imgBase = mappedVal || cleanName;
 
-        return `images/${imgBase}.png`;
+        return (typeof window.getPegasusInlineExercisePoster === "function")
+            ? window.getPegasusInlineExercisePoster(imgBase, exerciseName)
+            : "";
     },
 
     render(force = false) {
