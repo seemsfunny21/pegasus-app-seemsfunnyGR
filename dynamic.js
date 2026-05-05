@@ -1,18 +1,24 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v1.2 (TIME-BOXED HARDENED)
+   PEGASUS DYNAMIC OPTIMIZER - v1.4 (45-MIN TIME-BOXED / LEG ROUTING)
    Protocol: Strict 60-Minute Window Enforcement & DOM Shielding
    Strategy: Deficit Prioritization with Volume Capping
    Status: FINAL STABLE | FIXED: REFLOW THRASHING & NULL TARGETING
    ========================================================================== */
 
 window.PegasusDynamic = {
-    maxMinutes: 60,
+    maxMinutes: 45,
     setDuration: 1.5, // 90 δευτερόλεπτα ανά σετ (άσκηση + rest)
 
 optimize: function() {
         console.log("⏱️ DYNAMIC ENGINE: Calculating Time Budget...");
 
         const history = JSON.parse(localStorage.getItem('pegasus_weekly_history')) || {};
+        const activeDay = (typeof window.getPegasusActiveDayName === "function")
+            ? window.getPegasusActiveDayName()
+            : (document.querySelector(".navbar button.active[id^='nav-']")?.id || "").replace(/^nav-/, "");
+        const allowLegs = (typeof window.PegasusBrain?.canTrainLegsOnDay === "function")
+            ? window.PegasusBrain.canTrainLegsOnDay(activeDay)
+            : activeDay === "Τετάρτη";
 
         // 🔄 Σύνδεση με τον Optimizer για κοινούς στόχους
         const targets = (window.PegasusOptimizer && typeof window.PegasusOptimizer.getTargets === "function")
@@ -40,6 +46,14 @@ optimize: function() {
             const fragment = document.createDocumentFragment(); // 🎯 FIXED: Αποτροπή DOM Reflow Thrashing
 
             window.exercises.forEach(ex => {
+                const muscle = ex.getAttribute("data-muscle") || ex.querySelector("[data-muscle]")?.getAttribute("data-muscle") || "";
+                if (muscle === "Πόδια" && !allowLegs) {
+                    ex.style.display = "none";
+                    ex.setAttribute("data-active", "false");
+                    fragment.appendChild(ex);
+                    return;
+                }
+
                 // Υποστήριξη πολλαπλών attributes σε περίπτωση αλλαγής δομής στο app.js
                 let sets = parseInt(ex.dataset.total || ex.dataset.sets || ex.getAttribute('data-sets')) || 4;
 
@@ -76,8 +90,8 @@ optimize: function() {
             console.log(`✅ DYNAMIC UI: Final Plan - ${totalSets} sets (~${totalMins} mins)`);
 
             // Οπτική ειδοποίηση στο UI αν ξεπεράσαμε το όριο
-            if (window.PegasusLogger && totalMins > 55) {
-                window.PegasusLogger.log(`Time Budget Critical: ${totalMins}/60 mins allocated.`, "INFO");
+            if (window.PegasusLogger && totalMins > 42) {
+                window.PegasusLogger.log(`Time Budget Critical: ${totalMins}/45 mins allocated.`, "INFO");
             }
         }
     }

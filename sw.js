@@ -4,7 +4,7 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.136-FINAL-206';
+const CACHE_NAME = 'pegasus-shield-v3.138-FINAL-208';
 const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v1';
 
 const ASSETS_TO_CACHE = [
@@ -140,7 +140,7 @@ async function createRangeResponse(request, cachedResponse) {
     headers.set('Content-Type', cachedResponse.headers.get('Content-Type') || 'video/mp4');
 
     return new Response(sliced, {
-        status: 206,
+        status: 208,
         statusText: 'Partial Content',
         headers
     });

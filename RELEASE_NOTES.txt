@@ -1,9 +1,11 @@
-PEGASUS 206
+PEGASUS 208
 
-- Removed forced cloud pull/sync when pressing Preview / Προεπισκόπηση.
-- Preview now renders immediately from local weekly state.
-- Removed the "Συγχρονισμός προόδου..." wait-state from Preview progress rendering.
-- Food/Diet still keeps its forced pull behavior.
-- Saturday 06:00 weekly reset model from 205 remains unchanged.
-- Service worker cache bumped to pegasus-shield-v3.136-FINAL-206.
-- No new files added.
+- Leg routing policy hardened.
+- If cycling exists anywhere in the current Saturday 06:00 weekly cycle, no gym leg exercises are proposed on any day.
+- If no cycling exists in the cycle, legs are allowed only on Wednesday.
+- Friday no longer receives fallback/catch-up legs.
+- Weekend optional weights never insert legs when cycling exists.
+- Dynamic optimizer also hides stale leg cards if the day is not allowed.
+- 45-minute time cap remains active.
+- Saturday-after-06:00 reset model remains active.
+- No new file added.

@@ -1,5 +1,5 @@
 /* ========================================================================== 
-   PEGASUS BRAIN - v1.0.184 (PEGASUS 184 WEEKEND MODE STABILITY)
+   PEGASUS BRAIN - v1.0.208 (PEGASUS 208 CYCLING LOCKS LEG DAY)
    Purpose: data-driven weekly training plan, weekend carry-over, recovery guard
    ========================================================================== */
 (function installPegasusBrain() {
@@ -42,11 +42,11 @@
     };
 
     const dayPriority = {
-        "Τρίτη": ["Στήθος", "Ώμοι", "Χέρια", "Κορμός", "Πόδια", "Πλάτη"],
-        "Τετάρτη": ["Πλάτη", "Πόδια", "Κορμός", "Χέρια", "Ώμοι", "Στήθος"],
-        "Παρασκευή": ["Πλάτη", "Στήθος", "Κορμός", "Ώμοι", "Χέρια", "Πόδια"],
-        "Σάββατο": ["Ώμοι", "Χέρια", "Κορμός", "Στήθος", "Πλάτη", "Πόδια"],
-        "Κυριακή": ["Στήθος", "Πλάτη", "Κορμός", "Ώμοι", "Χέρια", "Πόδια"]
+        "Τρίτη": ["Στήθος", "Ώμοι", "Χέρια", "Κορμός", "Πλάτη"],
+        "Τετάρτη": ["Πόδια", "Πλάτη", "Κορμός", "Χέρια", "Ώμοι", "Στήθος"],
+        "Παρασκευή": ["Πλάτη", "Στήθος", "Κορμός", "Ώμοι", "Χέρια"],
+        "Σάββατο": ["Ώμοι", "Χέρια", "Κορμός", "Στήθος", "Πλάτη"],
+        "Κυριακή": ["Στήθος", "Πλάτη", "Κορμός", "Ώμοι", "Χέρια"]
     };
 
     function safeJson(raw, fallback) {
@@ -167,6 +167,88 @@
         return { weekKey, groups, raw: entry };
     }
 
+    function dateAliasesFromDate(date) {
+        const d = date instanceof Date ? new Date(date) : dateFromKey(date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const m = String(d.getMonth() + 1);
+        const day = String(d.getDate());
+        return [
+            `${yyyy}-${mm}-${dd}`,
+            `${dd}/${mm}/${yyyy}`,
+            `${day}/${m}/${yyyy}`,
+            `${yyyy}${mm}${dd}`
+        ];
+    }
+
+    function readMaxNumber(prefixes, aliases) {
+        let max = 0;
+        prefixes.forEach(prefix => {
+            aliases.forEach(alias => {
+                const value = Number(localStorage.getItem(prefix + alias));
+                if (Number.isFinite(value) && value > max) max = value;
+            });
+        });
+        return max;
+    }
+
+    function getCycleDatesForWeek(weekKey = getWeekKey()) {
+        const saturday = dateFromKey(weekKey);
+        return Array.from({ length: 7 }, (_, index) => addDays(saturday, index));
+    }
+
+    function entryMatchesDate(entry, aliases) {
+        const text = JSON.stringify(entry || {});
+        return aliases.some(alias => text.includes(alias));
+    }
+
+    function getCurrentWeekWeekendCyclingLoad() {
+        const weekKey = getWeekKey();
+        const cycleDates = getCycleDatesForWeek(weekKey);
+        const kcalPrefixes = ["pegasus_cardio_kcal_", "pegasus_cardio_offset_sets_"];
+        const kmPrefixes = ["pegasus_cardio_km_", "pegasus_cardio_distance_", "pegasus_cardio_kilometers_"];
+        let totalKcal = 0;
+        let totalKm = 0;
+        let entries = 0;
+
+        cycleDates.forEach(date => {
+            const aliases = dateAliasesFromDate(date);
+            totalKcal += readMaxNumber(kcalPrefixes, aliases);
+            totalKm += readMaxNumber(kmPrefixes, aliases);
+        });
+
+        const history = safeJson(localStorage.getItem("pegasus_cardio_history"), []);
+        if (Array.isArray(history)) {
+            cycleDates.forEach(date => {
+                const aliases = dateAliasesFromDate(date);
+                history.forEach(entry => {
+                    if (!entryMatchesDate(entry, aliases)) return;
+                    const typeText = `${entry?.type || ""} ${entry?.activity || ""} ${entry?.mode || ""}`.toLowerCase();
+                    if (typeText && !/(cycling|bike|ποδηλα)/i.test(typeText)) return;
+                    const km = Number(entry?.km ?? entry?.distance ?? entry?.distanceKm ?? entry?.kilometers ?? 0) || 0;
+                    const kcal = Number(entry?.kcal ?? entry?.calories ?? entry?.cardioKcal ?? entry?.burnedKcal ?? 0) || 0;
+                    if (km > 0 || kcal > 0) {
+                        totalKm += km;
+                        totalKcal += kcal;
+                        entries += 1;
+                    }
+                });
+            });
+        }
+
+        const hasCycling = totalKm >= 10 || totalKcal >= 300 || entries > 0;
+        return { hasCycling, totalKm, totalKcal, entries, weekKey };
+    }
+
+    function canTrainLegsOnDay(day) {
+        const cyclingLoad = getCurrentWeekWeekendCyclingLoad();
+        // PEGASUS 208: Αν υπάρχει ποδηλασία σε οποιαδήποτε μέρα του τρέχοντος κύκλου,
+        // τα πόδια θεωρούνται καλυμμένα από το ποδήλατο και δεν προτείνονται σε καμία μέρα.
+        // Αν δεν υπάρχει ποδηλασία, τα πόδια επιτρέπονται μόνο την Τετάρτη.
+        return !cyclingLoad.hasCycling && day === "Τετάρτη";
+    }
+
     function getWeekendMode(day) {
         if (!WEEKEND_DAYS.has(day)) return "core";
         const today = window.getPegasusLocalDateKey ? window.getPegasusLocalDateKey() : normalizeGreekDate();
@@ -195,7 +277,7 @@
         if (day === "Κυριακή" && mode === "bike") return [];
         const priority = dayPriority[day] || [];
         if (day === "Σάββατο") return mode === "weights" ? ["Ώμοι", "Χέρια", "Κορμός", "Στήθος"] : ["Ώμοι", "Χέρια", "Κορμός"];
-        if (day === "Κυριακή") return mode === "weights" ? ["Στήθος", "Πλάτη", "Κορμός", "Πόδια"] : ["Στήθος", "Πλάτη", "Κορμός"];
+        if (day === "Κυριακή") return ["Στήθος", "Πλάτη", "Κορμός"];
         return priority.slice(0, 4);
     }
 
@@ -233,14 +315,21 @@
         const targets = getTargets();
         const history = getHistory();
         const carry = includeCarryover ? getWeekendCarryover().groups : emptyGroups(0);
+        const weekendCycling = getCurrentWeekWeekendCyclingLoad();
         const remaining = emptyGroups(0);
         STRICT_GROUPS.forEach(group => {
             const target = Math.max(0, Number(targets[group]) || 0);
-            const done = Math.max(0, Number(history[group]) || 0);
+            let done = Math.max(0, Number(history[group]) || 0);
+
+            // PEGASUS 208: Ποδηλασία σε οποιαδήποτε μέρα του κύκλου καλύπτει τα πόδια.
+            if (group === "Πόδια" && weekendCycling.hasCycling) {
+                done = Math.max(done, target);
+            }
+
             const carried = Math.max(0, Number(carry[group]) || 0);
             remaining[group] = Math.max(0, target - done - carried);
         });
-        return { targets, history, carry, remaining };
+        return { targets, history, carry, remaining, weekendCycling };
     }
 
     function getSessionLimit(day, mode) {
@@ -322,8 +411,8 @@
             candidates.forEach(group => { if (!remaining[group]) remaining[group] = mode === "bike_weights" ? 3 : 4; });
         }
 
-        const hardAvoidLegs = WEEKEND_DAYS.has(day) && mode !== "weights";
-        orderedGroups = orderedGroups.filter(group => !(hardAvoidLegs && group === "Πόδια"));
+        const allowLegs = canTrainLegsOnDay(day);
+        orderedGroups = orderedGroups.filter(group => group !== "Πόδια" || allowLegs);
 
         const limit = getSessionLimit(day, mode);
         const exercises = [];
@@ -335,6 +424,7 @@
             if (need <= 0) continue;
 
             let groupCap = day === "Παρασκευή" ? need : Math.min(need, 6);
+            if (group === "Πόδια" && day === "Τετάρτη") groupCap = Math.min(need, 10);
             if (WEEKEND_DAYS.has(day)) groupCap = Math.min(groupCap, mode === "bike_weights" ? 5 : 6);
             const toAllocate = Math.min(groupCap, Math.max(0, limit - allocated));
             if (toAllocate <= 0) continue;
@@ -424,7 +514,7 @@
     }
 
     window.PegasusBrain = {
-        version: "1.0.184",
+        version: "1.0.208",
         groups: STRICT_GROUPS.slice(),
         getWeekKey,
         getNextWeekKey,
@@ -434,6 +524,8 @@
         getWeekendMode,
         setWeekendMode,
         getWeekendCarryover,
+        getCurrentWeekWeekendCyclingLoad,
+        canTrainLegsOnDay,
         computeRemaining,
         getDailyWorkout,
         recordWeekendCarryover,
@@ -441,5 +533,5 @@
         isManagedDay
     };
 
-    console.log("🧠 PEGASUS BRAIN: Dynamic weekly planner active (v1.0.184).");
+    console.log("🧠 PEGASUS BRAIN: Dynamic weekly planner active (v1.0.208).");
 })();
