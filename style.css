@@ -290,7 +290,7 @@ input[type="number"], input[type="text"], input[type="password"] {
     position: relative;
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.1);
 }
-.main-video { width: 100%; height: 100%; object-fit: contain; }
+.main-video { width: 100%; height: 100%; object-fit: contain; background-size: contain; background-position: center; background-repeat: no-repeat; background-color: #000; }
 
 #phaseTimer {
     position: absolute;

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v3.0 (PEGASUS 211 MS-600 BRAIN-MANAGED)
+   PEGASUS DYNAMIC OPTIMIZER - v3.1 (PEGASUS 212 MS-600 FOCUSED SPLIT)
    Protocol: Saturday 06:00 Week Reset, 8-Set Cycling Credit & MS-600 Mapping
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
@@ -10,12 +10,12 @@ var M = M || window.PegasusManifest;
 window.PegasusOptimizer = {
     getDefaultTargets: function() {
         return {
-            "Στήθος": 14,
+            "Στήθος": 16,
             "Πλάτη": 16,
             "Πόδια": 8,
-            "Χέρια": 12,
+            "Χέρια": 14,
             "Ώμοι": 8,
-            "Κορμός": 16
+            "Κορμός": 12
         };
     },
 

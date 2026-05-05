@@ -1,11 +1,22 @@
-PEGASUS 211
+PEGASUS 212 RELEASE NOTES
 
-- IRON rebuilt around the real Pegasus MS-600 + floor exercise pool only.
-- Added Reverse Grip Cable Row as a tracked variation, but Low Rows Seated and Reverse Grip Cable Row are treated as the same low-row family and are not placed together in the same workout.
-- Rest-aware + equipment-aware Brain order: avoids same muscle/family back-to-back and alternates weighted/floor work when possible.
-- Cut/Bulk now share the same smart exercise order; the practical difference is the user-selected controlled weight/intensity.
-- 45-minute timer remains 10s prep / 45s work / 60s rest.
-- Weekly targets rebalanced for the MS-600 plan: Chest 14, Back 16, Legs 8, Arms 12, Shoulders 8, Core 16.
-- Cycling rule preserved: if cycling exists, no gym legs; if no cycling, Leg Extensions only on Wednesday.
-- Saturday 06:00 weekly reset, mobile weather, YouTube module, and sync fixes preserved.
-- No new files added.
+FIXES
+- Fixed black exercise video panel by adding poster fallback images. Missing MP4 no longer leaves a black screen.
+- Added /images exercise assets for MS-600 + floor exercises.
+- Changed IRON from full-body daily distribution to focused split days.
+- Removed the old broad top-up behavior that could make the app show 2 sets from almost every exercise.
+- Updated PegasusBrain splitSets so volume is grouped into fewer exercises with 3-4 sets where possible.
+- Bumped service worker cache to 212.
+
+IRON SPLIT
+- Tuesday PUSH: Chest + Triceps/Shoulders + small Core
+- Wednesday PULL: Back + Biceps + Core; legs only if no cycling and only Wednesday
+- Friday UPPER BALANCE: Chest/Back second stimulus + Arms/Core
+
+PRESERVED
+- 45 minutes, 10/45/60 timer
+- Saturday 06:00 weekly reset
+- cycling-aware no-leg rule
+- dynamic cut/bulk intensity model
+- mobile Weather + YouTube modules
+- sync fixes

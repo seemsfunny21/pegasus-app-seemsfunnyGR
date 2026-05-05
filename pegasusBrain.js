@@ -1,7 +1,7 @@
 /* ========================================================================== 
-   PEGASUS BRAIN - v1.0.211 (MS-600 IRON / REST + EQUIPMENT AWARE)
+   PEGASUS BRAIN - v1.0.212 (MS-600 FOCUSED SPLIT / REST + EQUIPMENT AWARE)
    Purpose: Pegasus MS-600 + floor-only weekly training plan, weekend carry-over,
-   recovery guard, cycling-aware leg policy, and 45-minute circuit spacing.
+   recovery guard, cycling-aware leg policy, focused split days, and 45-minute circuit spacing.
    ========================================================================== */
 (function installPegasusBrain() {
     const STRICT_GROUPS = ["Στήθος", "Πλάτη", "Πόδια", "Χέρια", "Ώμοι", "Κορμός"];
@@ -10,10 +10,10 @@
     const DAY_INDEX = { "Κυριακή": 0, "Δευτέρα": 1, "Τρίτη": 2, "Τετάρτη": 3, "Πέμπτη": 4, "Παρασκευή": 5, "Σάββατο": 6 };
     const DAY_FROM_INDEX = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
 
-    // PEGASUS 211: Real exercise pool is now restricted to what exists on the
+    // PEGASUS 212: Real exercise pool is restricted to what exists on the
     // Pegasus MS-600 plus floor/core work. Cut/Bulk share the same smart order;
     // the difference is the user's selected controllable weight/intensity.
-    const DEFAULT_TARGETS_211 = { "Στήθος": 14, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 12, "Ώμοι": 8, "Κορμός": 16 };
+    const DEFAULT_TARGETS_212 = { "Στήθος": 16, "Πλάτη": 16, "Πόδια": 8, "Χέρια": 14, "Ώμοι": 8, "Κορμός": 12 };
 
     const exerciseMeta = {
         "Chest Press": { kind: "weighted", station: "seat", family: "chest_press" },
@@ -89,17 +89,19 @@
     };
 
     const sessionBlueprints = {
+        // PEGASUS 212: focused split. Δεν γεμίζουμε κάθε ημέρα με όλες τις μυϊκές ομάδες.
+        // Τα sets μπαίνουν σε λίγες ασκήσεις/οικογένειες ώστε να μη βλέπεις 2 σετ από όλα.
         "Τρίτη": [
-            ["Στήθος", 6], ["Πλάτη", 5], ["Ώμοι", 3], ["Χέρια", 4], ["Κορμός", 4]
+            ["Στήθος", 12], ["Χέρια", 4], ["Ώμοι", 3], ["Κορμός", 3]
         ],
         "Τετάρτη_CYCLING": [
-            ["Πλάτη", 6], ["Στήθος", 4], ["Χέρια", 4], ["Ώμοι", 3], ["Κορμός", 5]
+            ["Πλάτη", 12], ["Χέρια", 7], ["Κορμός", 3]
         ],
         "Τετάρτη_LEGS": [
-            ["Πόδια", 8], ["Πλάτη", 5], ["Στήθος", 3], ["Χέρια", 3], ["Κορμός", 3]
+            ["Πόδια", 6], ["Πλάτη", 9], ["Χέρια", 4], ["Κορμός", 3]
         ],
         "Παρασκευή": [
-            ["Πλάτη", 5], ["Στήθος", 5], ["Χέρια", 5], ["Ώμοι", 2], ["Κορμός", 5]
+            ["Στήθος", 4], ["Πλάτη", 8], ["Χέρια", 6], ["Κορμός", 4]
         ],
         "Σάββατο_WEIGHTS": [
             ["Κορμός", 6], ["Χέρια", 4], ["Ώμοι", 3], ["Στήθος", 3], ["Πλάτη", 2]
@@ -207,7 +209,7 @@
     function getTargets() {
         if (window.PegasusOptimizer?.getTargets) return window.PegasusOptimizer.getTargets();
         const key = window.PegasusManifest?.workout?.muscleTargets || "pegasus_muscle_targets";
-        return safeJson(localStorage.getItem(key), DEFAULT_TARGETS_211) || DEFAULT_TARGETS_211;
+        return safeJson(localStorage.getItem(key), DEFAULT_TARGETS_212) || DEFAULT_TARGETS_212;
     }
 
     function normalizedName(value) {
@@ -439,7 +441,11 @@
     function splitSets(setsNeeded, names, group) {
         const total = Math.max(0, Math.round(setsNeeded));
         if (total <= 0 || !names.length) return [];
-        const count = total <= 3 ? 1 : (total <= 5 ? Math.min(2, names.length) : Math.min(3, names.length));
+
+        // PEGASUS 212: keep fewer exercises with meaningful volume.
+        // Example: 12 chest sets -> 4/4/4, 7 arm sets -> 4/3.
+        // This fixes the old "2 sets from every exercise" feeling.
+        const count = Math.min(names.length, Math.max(1, Math.ceil(total / 4)));
         const chosen = names.slice(0, count);
         const base = Math.floor(total / count);
         let extra = total % count;
@@ -559,27 +565,9 @@
             allocated += toAllocate;
         });
 
-        // If targets/history produce a too-small day, top up with safe blueprint groups.
-        // The Optimizer still caps against weekly targets, so this does not break progress.
-        if (!WEEKEND_DAYS.has(day) && allocated < Math.min(20, limit)) {
-            blueprint.forEach(([group, desired]) => {
-                if (allocated >= limit) return;
-                if (group === "Πόδια" && !allowLegs) return;
-                if (blocked.has(group)) return;
-                const already = exercises.some(ex => ex.muscleGroup === group);
-                const room = Math.min(already ? 2 : 3, limit - allocated);
-                if (room <= 0) return;
-                chooseExercisesForGroup(group, room, { day, mode }).forEach(ex => {
-                    exercises.push({
-                        ...ex,
-                        brainManaged: true,
-                        brainReason: `${group}: συμπλήρωση 45λεπτου MS-600 πλάνου`,
-                        brainOrder: exercises.length
-                    });
-                });
-                allocated += room;
-            });
-        }
+        // PEGASUS 212: no broad top-up across all muscles.
+        // Focused split days are intentional; if weekly targets are almost complete,
+        // the day can become lighter instead of adding 2-set fillers from everything.
 
         return exercises;
     }
@@ -679,7 +667,7 @@
     }
 
     window.PegasusBrain = {
-        version: "1.0.211",
+        version: "1.0.212",
         groups: STRICT_GROUPS.slice(),
         getWeekKey,
         getNextWeekKey,
@@ -698,5 +686,5 @@
         isManagedDay
     };
 
-    console.log("🧠 PEGASUS BRAIN: MS-600 rest/equipment-aware planner active (v1.0.211).");
+    console.log("🧠 PEGASUS BRAIN: MS-600 rest/equipment-aware planner active (v1.0.212 focused split).");
 })();

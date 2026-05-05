@@ -4,7 +4,7 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.139-FINAL-211';
+const CACHE_NAME = 'pegasus-shield-v3.139-FINAL-212';
 const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v1';
 
 const ASSETS_TO_CACHE = [
@@ -68,6 +68,30 @@ const ASSETS_TO_CACHE = [
     './mobile/maintenance-mobile.js',
     './mobile/oracle-mobile.js',
     './mobile/lifting-mobile.js',
+    './images/placeholder.png',
+    './images/chestpress.png',
+    './images/chestflys.png',
+    './images/pushups.png',
+    './images/latpulldowns.png',
+    './images/latpulldownsclose.png',
+    './images/reverseseatedrows.png',
+    './images/lowrowsseated.png',
+    './images/reversegripcablerow.png',
+    './images/bentoverrows.png',
+    './images/straightarmpulldowns.png',
+    './images/uprightrows.png',
+    './images/bicepcurls.png',
+    './images/preacherbicepcurls.png',
+    './images/triceppulldowns.png',
+    './images/abcrunches.png',
+    './images/situps.png',
+    './images/plank.png',
+    './images/reversecrunch.png',
+    './images/lyingkneeraise.png',
+    './images/legraisehiplift.png',
+    './images/legextensions.png',
+    './images/stretching.png',
+    './images/warmup.png',
 ];
 
 /* =========================

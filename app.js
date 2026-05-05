@@ -1645,6 +1645,24 @@ window.saveWeight = function(name, val) {
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
 };
 
+function getPegasusExerciseAssetBase(name) {
+    const cleanName = String(name || "").trim();
+    let mappedVal = window.videoMap ? window.videoMap[cleanName] : null;
+    if (!mappedVal) mappedVal = cleanName.replace(/\s+/g, '').toLowerCase();
+    return mappedVal || "placeholder";
+}
+
+function setPegasusVideoPoster(vid, assetBase) {
+    if (!vid) return "images/placeholder.png";
+    const posterPath = `images/${assetBase || "placeholder"}.png`;
+    vid.poster = posterPath;
+    vid.style.backgroundImage = `url("${posterPath}"), url("images/placeholder.png")`;
+    vid.style.backgroundSize = "contain";
+    vid.style.backgroundPosition = "center";
+    vid.style.backgroundRepeat = "no-repeat";
+    return posterPath;
+}
+
 function showVideo(i) {
     const vid = document.getElementById("video");
     const label = document.getElementById("phaseTimer");
@@ -1654,13 +1672,23 @@ function showVideo(i) {
     const currentDay = activeBtn ? activeBtn.id.replace('nav-', '') : "";
     const isRecoveryDay = (currentDay === "Δευτέρα" || currentDay === "Πέμπτη");
 
+    const showPosterOnly = (assetBase) => {
+        setPegasusVideoPoster(vid, assetBase);
+        vid.pause();
+        vid.removeAttribute("src");
+        try { vid.load(); } catch (e) {}
+    };
+
     if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
+        const recoveryBase = "stretching";
         const recoverySrc = "videos/stretching.mp4";
+        setPegasusVideoPoster(vid, recoveryBase);
+        vid.onerror = () => showPosterOnly(recoveryBase);
         if (vid.getAttribute('src') !== recoverySrc) {
             vid.pause();
             vid.src = recoverySrc;
             vid.load();
-            vid.play().catch(e => console.log("Waiting for user..."));
+            vid.play().catch(() => showPosterOnly(recoveryBase));
             if (label && isRecoveryDay) {
                 label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
                 label.style.color = "#00bcd4";
@@ -1672,25 +1700,25 @@ function showVideo(i) {
     const weightInput = exercises[i].querySelector(".weight-input");
     if (!weightInput) return;
 
-    let name = weightInput.getAttribute("data-name") || "";
-    let mappedVal = window.videoMap ? window.videoMap[name.trim()] : null;
-    if (!mappedVal) mappedVal = name.replace(/\s+/g, '').toLowerCase();
-
+    const name = weightInput.getAttribute("data-name") || "";
+    const mappedVal = getPegasusExerciseAssetBase(name);
     const newSrc = `videos/${mappedVal}.mp4`;
+
+    // PEGASUS 212: every exercise gets a poster image. If a local MP4 is missing
+    // or fails to decode, keep the poster instead of falling back to a black video.
+    setPegasusVideoPoster(vid, mappedVal);
+    vid.onerror = () => showPosterOnly(mappedVal);
+
     if (vid.getAttribute('src') !== newSrc) {
         vid.pause();
         vid.src = newSrc;
         vid.load();
-        vid.play().catch(() => {
-            vid.src = "videos/warmup.mp4";
-            vid.load();
-            vid.play().catch(() => {});
-        });
+        vid.play().catch(() => showPosterOnly(mappedVal));
     } else if (running && vid.paused) {
         // PEGASUS 145: Pause/Resume video recovery.
         // When resuming the same exercise, src does not change, so the old
         // showVideo branch skipped play() and the video stayed frozen.
-        vid.play().catch(() => {});
+        vid.play().catch(() => showPosterOnly(mappedVal));
     }
 }
 
@@ -1914,7 +1942,7 @@ function openExercisePreview() {
         const imgPath = (imgBase === "cycling") ? `images/${imgBase}.jpg` : `images/${imgBase}.png`;
         content.innerHTML += `
             <div class="preview-item">
-                <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.jpg';" alt="${cleanName}">
+                <img src="${imgPath}" onerror="this.onerror=null; this.src='images/placeholder.png';" alt="${cleanName}">
                 <p>${cleanName} (${ex.adjustedSets || ex.sets} set)</p>
                 <div class="exercise-muscle-badge preview-muscle-badge">${window.formatPegasusMuscleBadge(ex.muscleGroup || window.resolvePegasusExerciseGroup(cleanName))}</div>
             </div>
