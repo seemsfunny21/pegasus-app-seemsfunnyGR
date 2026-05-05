@@ -4,8 +4,8 @@
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-218';
-const VIDEO_CACHE_NAME = 'pegasus-videos-disabled-v218';
+const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-219';
+const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v219';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -166,16 +166,34 @@ async function cachePermanentVideo(url) {
 
     const task = (async () => {
         try {
+            // PEGASUS 219: fetch a full clean copy for the permanent video cache.
+            // Do not cache 404 pages, partial/range responses, or tiny corrupt MP4 files.
             const response = await fetch(cacheKey, { cache: 'reload' });
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
-            if (isCacheableResponse(response)) {
-                await cache.put(cacheKey, response.clone());
-                console.log(`🎬 SW: Permanent video cached: ${url.pathname.split('/').pop()}`);
-                return true;
+            if (!isCacheableResponse(response) || !contentType.includes('video')) {
+                console.warn(`SW: Permanent video cache skipped (${response.status} ${contentType}): ${url.pathname}`);
+                return false;
             }
 
-            console.warn(`SW: Permanent video cache skipped (${response.status}): ${url.pathname}`);
-            return false;
+            const blob = await response.clone().blob();
+            if (!blob || blob.size < 1024) {
+                console.warn(`SW: Permanent video cache skipped corrupt/tiny file (${blob ? blob.size : 0} bytes): ${url.pathname}`);
+                return false;
+            }
+
+            const headers = new Headers(response.headers);
+            headers.set('Content-Length', String(blob.size));
+            headers.set('Accept-Ranges', 'bytes');
+            if (!headers.get('Content-Type')) headers.set('Content-Type', 'video/mp4');
+
+            await cache.put(cacheKey, new Response(blob, {
+                status: 200,
+                statusText: 'OK',
+                headers
+            }));
+            console.log(`🎬 SW: Permanent video cached: ${url.pathname.split('/').pop()} (${blob.size} bytes)`);
+            return true;
         } catch (err) {
             console.warn(`SW: Permanent video cache failed: ${url.pathname}`, err);
             return false;
@@ -293,11 +311,11 @@ self.addEventListener('activate', (event) => {
                         return caches.delete(key);
                     }
 
-                    // PEGASUS 217: video files must not be served from the old permanent cache.
-                    // Normal F5 was receiving stale/partial cached videos and the workout panel stayed black,
-                    // while Ctrl+F5 bypassed the cache and worked. Purge those caches and stream videos fresh.
-                    if (key.startsWith('pegasus-videos-permanent') || key.startsWith('pegasus-videos-disabled')) {
-                        console.log(`🧹 SW: Purging video cache: ${key}`);
+                    // PEGASUS 219: keep the current permanent video cache, purge only old video caches.
+                    // This preserves fast video loads after the first successful fetch, while avoiding
+                    // stale/corrupt caches from older builds.
+                    if (key.startsWith('pegasus-videos-') && key !== VIDEO_CACHE_NAME) {
+                        console.log(`🧹 SW: Purging old video cache: ${key}`);
                         return caches.delete(key);
                     }
 
@@ -334,14 +352,19 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             (async () => {
                 if (isVideoAsset(pathname)) {
-                    // PEGASUS 217 BUGFIX ONLY:
-                    // Videos must be streamed fresh on normal F5 as well as Ctrl+F5.
-                    // Do not return stale/partial cached mp4/webm/mov responses from the Service Worker.
+                    // PEGASUS 219: cache-first for valid workout MP4 files.
+                    // First load may stream from network; then a full validated copy is kept in
+                    // pegasus-videos-permanent-v219. Tiny/corrupt files are never cached.
+                    const cachedVideo = await getCachedPermanentVideoResponse(request, url);
+                    if (cachedVideo) return cachedVideo;
+
                     try {
-                        return await fetch(request, { cache: 'no-store' });
+                        const networkResponse = await fetch(request, { cache: 'default' });
+                        event.waitUntil(cachePermanentVideo(url));
+                        return networkResponse;
                     } catch (err) {
-                        const cachedVideo = await getCachedPermanentVideoResponse(request, url);
-                        if (cachedVideo) return cachedVideo;
+                        const lateCachedVideo = await getCachedPermanentVideoResponse(request, url);
+                        if (lateCachedVideo) return lateCachedVideo;
 
                         console.warn(`SW: Video fetch failed and not cached: ${url.pathname}`, err);
                         return new Response('', { status: 404 });

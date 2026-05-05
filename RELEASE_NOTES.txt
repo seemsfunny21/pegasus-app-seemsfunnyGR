@@ -1,3 +1,8 @@
+PEGASUS 219
+- BUGFIX ONLY: Video cache/preload improvement. Service worker now keeps validated /videos/*.mp4 files in a permanent cache after first successful load, rejects tiny/corrupt MP4 responses, supports range playback from cache, and preloads the next exercise video.
+- No workout/program/set/order/UI changes.
+- No images folder and no videos folder in this package.
+
 PEGASUS 218
 - VIDEO FIX ONLY: Included user-provided videos/reversegripcablerow.mp4 and videos/lowrowsseated.mp4.
 - Reverse Grip Cable Row now maps to its own valid reversegripcablerow.mp4 instead of the Low Rows alias.

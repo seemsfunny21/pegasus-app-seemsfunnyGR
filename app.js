@@ -1809,6 +1809,42 @@ window.saveWeight = function(name, val) {
     if (window.PegasusCloud?.push) window.PegasusCloud.push();
 };
 
+
+function getPegasusExerciseVideoSrcByIndex(index) {
+    if (typeof exercises === 'undefined' || !exercises[index]) return null;
+
+    const weightInput = exercises[index].querySelector(".weight-input");
+    if (!weightInput) return null;
+
+    const name = (weightInput.getAttribute("data-name") || "").trim();
+    if (!name) return null;
+
+    let mappedVal = window.videoMap ? window.videoMap[name] : null;
+    if (!mappedVal) mappedVal = name.replace(/\s+/g, '').toLowerCase();
+
+    return `videos/${mappedVal}.mp4`;
+}
+
+window.PegasusVideoPreloader = window.PegasusVideoPreloader || {
+    loaded: new Set(),
+    preload(src) {
+        if (!src || this.loaded.has(src)) return;
+        this.loaded.add(src);
+
+        // PEGASUS 219: quietly warm the browser/SW cache for the next workout video.
+        // The response is consumed so the SW can store a full validated MP4 copy.
+        fetch(src, { cache: 'default' })
+            .then(response => response && response.ok ? response.blob() : null)
+            .catch(() => {});
+    }
+};
+
+function preloadPegasusAdjacentVideos(index) {
+    if (!window.PegasusVideoPreloader) return;
+    const nextSrc = getPegasusExerciseVideoSrcByIndex(index + 1);
+    if (nextSrc) window.PegasusVideoPreloader.preload(nextSrc);
+}
+
 function showVideo(i) {
     const vid = document.getElementById("video");
     const label = document.getElementById("phaseTimer");
@@ -1855,6 +1891,7 @@ function showVideo(i) {
             vid.pause();
             vid.src = recoverySrc;
             vid.load();
+            if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(recoverySrc);
             vid.play().catch(e => console.log("Waiting for user..."));
             if (label && isRecoveryDay) {
                 label.textContent = "ΑΠΟΘΕΡΑΠΕΙΑ: STRETCHING";
@@ -1876,12 +1913,18 @@ function showVideo(i) {
         vid.pause();
         vid.src = newSrc;
         vid.load();
+        if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(newSrc);
+        preloadPegasusAdjacentVideos(i);
         vid.play().catch(() => {
             vid.src = "videos/warmup.mp4";
             vid.load();
             vid.play().catch(() => {});
         });
-    } else if (running && vid.paused) {
+    } else {
+        preloadPegasusAdjacentVideos(i);
+    }
+
+    if (running && vid.paused) {
         // PEGASUS 145: Pause/Resume video recovery.
         // When resuming the same exercise, src does not change, so the old
         // showVideo branch skipped play() and the video stayed frozen.

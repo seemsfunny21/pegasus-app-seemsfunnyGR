@@ -209,4 +209,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.20 LOADED. GLOBAL UNLOCK ACTIVE.");
+console.log("🏛️ PEGASUS MANIFEST v18.21 LOADED. GLOBAL UNLOCK ACTIVE.");
