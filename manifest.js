@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-05-05",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.24 MS-600 Focused IRON + Cache-First Video + Weekend Panel Stable"
+        engine_version: "v18.25 MS-600 Focused IRON + Permanent Local Storage Boot"
     },
 
     // ---------------------------------------------------------
@@ -209,4 +209,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.24 LOADED. GLOBAL UNLOCK ACTIVE.");
+console.log("🏛️ PEGASUS MANIFEST v18.25 LOADED. GLOBAL UNLOCK ACTIVE.");

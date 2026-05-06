@@ -1,11 +1,10 @@
-PEGASUS 223 - Video cache-ready bridge + weekend panel hardening
+PEGASUS 224 - Permanent Local Storage Boot
 
-Code-only package. No images/ folder and no videos/ folder included.
-
-Changes:
-- Page still opens immediately; full static/media caching continues in the background.
-- Service worker video cache bumped to v223 and now serves cached MP4 Range requests first, so videos remain stored after the first clean download.
-- Added a SW -> page media-ready bridge: when a correct MP4 finishes caching, the waiting video element retries automatically without needing refresh.
-- Fixed READY/WAIT retry storms by not marking videos ready until the actual video element loads metadata/canplay.
-- Kept the no-warmup-fallback rule: if the correct exercise video is missing/slow, PEGASUS waits for the correct video.
-- Hardened Saturday/Sunday Σ/Κ controls so Ποδήλατο / Ποδ. + βάρη / Βάρη stay pinned even after Dynamic optimizer passes.
+- Replaced the previous background/video cache warmup logic with a single permanent local storage pipeline.
+- On page open, PEGASUS downloads all known system/static files plus all known workout media paths into Cache Storage.
+- The initialization loader now shows permanent local storage progress as a percentage and file count.
+- After completion, same-origin files run cache-first from local storage.
+- Old pegasus-shield and pegasus-videos caches are purged by the new service worker.
+- Removed per-video background cache queues that caused READY/WAIT storms.
+- Missing/slow videos do not fall back to warmup; PEGASUS waits for the requested local video.
+- Package remains code-only: no images/ folder and no videos/ folder.

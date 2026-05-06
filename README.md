@@ -1,4 +1,4 @@
-PEGASUS 221 - Video retry/range stability bugfix. No images/ or videos/ folders included.
+PEGASUS 224 - Permanent local storage boot. No images/ or videos/ folders included.
 
 # PEGASUS 218
 
