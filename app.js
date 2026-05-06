@@ -1832,7 +1832,7 @@ window.PegasusVideoPreloader = window.PegasusVideoPreloader || {
         if (!src || this.loaded.has(src) || this.pending.has(src)) return;
         this.pending.add(src);
 
-        // PEGASUS 220: warm the SW/browser cache without cache-busting and without
+        // PEGASUS 221: warm the SW/browser cache without cache-busting and without
         // blocking the page. The SW validates videos before permanent caching.
         const done = () => {
             this.pending.delete(src);
@@ -1941,8 +1941,33 @@ function normalizePegasusVideoSrc(src) {
 }
 
 window.PegasusVideoWaiter = window.PegasusVideoWaiter || {
-    timers: new Map()
+    timers: new Map(),
+    attempts: new Map(),
+    lastErrorAt: new Map(),
+    loadingSince: new Map()
 };
+
+function stopPegasusVideoWaiter(cleanSrc, vid, label, logReady = false) {
+    const timer = window.PegasusVideoWaiter.timers.get(cleanSrc);
+    if (timer) clearInterval(timer);
+    window.PegasusVideoWaiter.timers.delete(cleanSrc);
+    window.PegasusVideoWaiter.attempts.delete(cleanSrc);
+    window.PegasusVideoWaiter.loadingSince.delete(cleanSrc);
+    if (vid && vid.dataset.pegasusWaitingFor === cleanSrc) delete vid.dataset.pegasusWaitingFor;
+    if (vid && vid.dataset.pegasusLoadingCandidate === cleanSrc) delete vid.dataset.pegasusLoadingCandidate;
+    if (label) label.style.color = '';
+    if (logReady) console.log(`✅ PEGASUS VIDEO READY: ${cleanSrc}`);
+}
+
+function markPegasusVideoActuallyReady(src, vid, label) {
+    const cleanSrc = normalizePegasusVideoSrc(src || vid?.getAttribute?.('src') || '');
+    if (!cleanSrc) return;
+    const wasWaiting =
+        window.PegasusVideoWaiter.timers.has(cleanSrc) ||
+        vid?.dataset?.pegasusWaitingFor === cleanSrc ||
+        vid?.dataset?.pegasusLoadingCandidate === cleanSrc;
+    stopPegasusVideoWaiter(cleanSrc, vid, label, wasWaiting);
+}
 
 function waitForPegasusVideo(src, vid, label) {
     const cleanSrc = normalizePegasusVideoSrc(src);
@@ -1951,16 +1976,28 @@ function waitForPegasusVideo(src, vid, label) {
     if (window.PegasusVideoWaiter.timers.has(cleanSrc)) return;
 
     vid.dataset.pegasusWaitingFor = cleanSrc;
-    let attempts = 0;
+
     const tryLoad = async () => {
         if (vid.dataset.pegasusWaitingFor !== cleanSrc) {
-            clearInterval(window.PegasusVideoWaiter.timers.get(cleanSrc));
-            window.PegasusVideoWaiter.timers.delete(cleanSrc);
+            stopPegasusVideoWaiter(cleanSrc, vid, label, false);
             return;
         }
-        attempts += 1;
+
+        const now = Date.now();
+        const loadingSince = window.PegasusVideoWaiter.loadingSince.get(cleanSrc) || 0;
+
+        // PEGASUS 221: after a valid probe, give the browser time to decode/load
+        // the selected MP4. Do not immediately re-set the same src on every error,
+        // because that caused READY/WAIT console storms while GitHub Pages/SW warmed up.
+        if (vid.dataset.pegasusLoadingCandidate === cleanSrc && now - loadingSince < 12000) {
+            return;
+        }
+
+        const attempts = (window.PegasusVideoWaiter.attempts.get(cleanSrc) || 0) + 1;
+        window.PegasusVideoWaiter.attempts.set(cleanSrc, attempts);
+
         try {
-            const probe = await fetch(`${cleanSrc}?probe=${Date.now()}`, {
+            const probe = await fetch(`${cleanSrc}?probe=${now}`, {
                 cache: 'no-store',
                 headers: { Range: 'bytes=0-4095' }
             });
@@ -1969,16 +2006,23 @@ function waitForPegasusVideo(src, vid, label) {
             const okVideo = (probe.ok || probe.status === 206) && blob.size > 1024 && (contentType.includes('video') || cleanSrc.endsWith('.mp4'));
 
             if (okVideo) {
-                clearInterval(window.PegasusVideoWaiter.timers.get(cleanSrc));
-                window.PegasusVideoWaiter.timers.delete(cleanSrc);
-                if (vid.dataset.pegasusWaitingFor === cleanSrc) delete vid.dataset.pegasusWaitingFor;
-                if (label) label.style.color = '';
+                if (label) {
+                    label.textContent = 'ΦΟΡΤΩΝΕΙ ΤΟ ΣΩΣΤΟ ΒΙΝΤΕΟ...';
+                    label.style.color = '#ff9800';
+                }
+
+                vid.dataset.pegasusLoadingCandidate = cleanSrc;
+                window.PegasusVideoWaiter.loadingSince.set(cleanSrc, now);
+
+                const onReady = () => markPegasusVideoActuallyReady(cleanSrc, vid, label);
+                vid.addEventListener('loadedmetadata', onReady, { once: true });
+                vid.addEventListener('canplay', onReady, { once: true });
+
                 vid.pause();
                 vid.src = cleanSrc;
                 vid.load();
                 if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(cleanSrc);
                 vid.play().catch(() => {});
-                console.log(`✅ PEGASUS VIDEO READY: ${cleanSrc}`);
                 return;
             }
         } catch (e) {}
@@ -1998,19 +2042,27 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
-    // PEGASUS 220: if the correct video is missing/slow, never substitute warmup
+    // PEGASUS 221: if the correct video is missing/slow, never substitute warmup
     // or another exercise. Keep retrying the requested file until it becomes available.
     if (!vid.dataset.pegasusVideoErrorGuard) {
         vid.dataset.pegasusVideoErrorGuard = "1";
         vid.onerror = function() {
             const currentSrc = vid.getAttribute('src') || '';
-            if (!currentSrc) return;
-            console.warn(`🎬 PEGASUS VIDEO WAIT: ${currentSrc} is not ready yet. Retrying correct video.`);
+            const cleanSrc = normalizePegasusVideoSrc(currentSrc);
+            if (!cleanSrc) return;
+
+            const now = Date.now();
+            const lastErrorAt = window.PegasusVideoWaiter?.lastErrorAt?.get(cleanSrc) || 0;
+            if (now - lastErrorAt > 4500) {
+                console.warn(`🎬 PEGASUS VIDEO WAIT: ${cleanSrc} is not ready yet. Retrying correct video.`);
+                window.PegasusVideoWaiter?.lastErrorAt?.set(cleanSrc, now);
+            }
+
             if (label) {
                 label.textContent = 'ΑΝΑΜΟΝΗ ΒΙΝΤΕΟ...';
                 label.style.color = '#ff9800';
             }
-            waitForPegasusVideo(currentSrc, vid, label);
+            waitForPegasusVideo(cleanSrc, vid, label);
         };
     }
 
@@ -2050,9 +2102,11 @@ function showVideo(i) {
         vid.load();
         if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(newSrc);
         preloadPegasusAdjacentVideos(i);
+        vid.addEventListener('loadedmetadata', () => markPegasusVideoActuallyReady(newSrc, vid, label), { once: true });
+        vid.addEventListener('canplay', () => markPegasusVideoActuallyReady(newSrc, vid, label), { once: true });
         vid.play().catch(() => {
-            // PEGASUS 220: autoplay/user-gesture failures must not swap to warmup.
-            // The selected exercise video stays selected and will play when allowed/ready.
+            // PEGASUS 221: autoplay/user-gesture failures must not swap to warmup
+            // and must not start a retry loop. The selected exercise video stays selected.
         });
     } else {
         preloadPegasusAdjacentVideos(i);
@@ -2755,7 +2809,7 @@ window.onload = () => {
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
-    // PEGASUS 220: page opens first; all known media/static assets warm in background.
+    // PEGASUS 221: page opens first; all known media/static assets warm in background.
     if (window.PegasusBackgroundAssets?.start) window.PegasusBackgroundAssets.start();
 
     setTimeout(() => {

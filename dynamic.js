@@ -1,8 +1,8 @@
 /* ==========================================================================
-   PEGASUS DYNAMIC OPTIMIZER - v1.6 (45-MIN REST-AWARE / NO REORDER)
+   PEGASUS DYNAMIC OPTIMIZER - v1.7 (45-MIN REST-AWARE / WEEKEND PANEL SAFE)
    Protocol: Strict 45-Minute Window Enforcement & DOM Shielding
    Strategy: PegasusBrain owns order; Dynamic only enforces visibility/time cap
-   Status: FINAL STABLE | PEGASUS 211
+   Status: FINAL STABLE | PEGASUS 222
    ========================================================================== */
 
 window.PegasusDynamic = {
@@ -86,8 +86,21 @@ window.PegasusDynamic = {
 
         const container = document.getElementById("exList");
         if (container) {
+            // PEGASUS 222: keep weekend mode controls visible.
+            // The dynamic optimizer owns only exercise cards; it must not wipe
+            // PegasusBrain UI chrome such as the Σ/Κ Ποδήλατο / Ποδ. + βάρη / Βάρη panel.
+            const preservedBefore = [];
+            const preservedAfter = [];
+            Array.from(container.children).forEach(node => {
+                if (node.classList && node.classList.contains("exercise")) return;
+                if (node.classList && node.classList.contains("pegasus-weekend-mode-note")) preservedAfter.push(node);
+                else preservedBefore.push(node);
+            });
+
             container.innerHTML = "";
+            preservedBefore.forEach(node => container.appendChild(node));
             container.appendChild(fragment);
+            preservedAfter.forEach(node => container.appendChild(node));
         }
 
         const totalMins = Math.round(totalSets * this.setDuration);

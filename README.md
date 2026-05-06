@@ -1,4 +1,4 @@
-PEGASUS 220 - Video cache/preload bugfix. No images/ or videos/ folders included.
+PEGASUS 221 - Video retry/range stability bugfix. No images/ or videos/ folders included.
 
 # PEGASUS 218
 
@@ -100,4 +100,4 @@ MS-600 IRON rest/equipment-aware training build.
 Mobile Weather module: adds a modular weather box on the extended mobile modules page, with current temperature, condition, wind, and bike/training hint.
 
 
-PEGASUS 220 notes: code-only bugfix for instant opening/background asset caching, correct-video waiting behavior, and IRON Wednesday 22-set split restoration. No bundled images/videos.
+PEGASUS 221 notes: code-only bugfix for video READY/WAIT loop stability, throttled retry logging, and service-worker Range-request handling. Continues instant opening/background asset caching and correct-video waiting behavior. No bundled images/videos.

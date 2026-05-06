@@ -1,11 +1,11 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.7 (INSTANT OPEN / BACKGROUND MEDIA CACHE)
+   PEGASUS PWA SERVICE WORKER - v3.9 (INSTANT OPEN / WEEKEND PANEL CACHE REFRESH)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-220';
-const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v220';
+const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-222';
+const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v222';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -328,7 +328,7 @@ async function getOfflineNavigationFallback(pathname) {
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 
-    // PEGASUS 220: install fast. Do not block page opening by downloading the
+    // PEGASUS 222: install fast. Do not block page opening by downloading the
     // full project/media set during install. Full caching is triggered in the
     // background by the page after it is usable.
     event.waitUntil(
@@ -363,7 +363,7 @@ self.addEventListener('activate', (event) => {
                         return caches.delete(key);
                     }
 
-                    // PEGASUS 219: keep the current permanent video cache, purge only old video caches.
+                    // PEGASUS 222: keep the current permanent video cache, purge only old video caches.
                     // This preserves fast video loads after the first successful fetch, while avoiding
                     // stale/corrupt caches from older builds.
                     if (key.startsWith('pegasus-videos-') && key !== VIDEO_CACHE_NAME) {
@@ -423,9 +423,25 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             (async () => {
                 if (isVideoAsset(pathname)) {
-                    // PEGASUS 219: cache-first for valid workout MP4 files.
-                    // First load may stream from network; then a full validated copy is kept in
-                    // pegasus-videos-permanent-v219. Tiny/corrupt files are never cached.
+                    // PEGASUS 222: browser/video-element Range requests stay network-first.
+                    // This avoids READY/WAIT loops caused by serving freshly generated partial
+                    // responses while GitHub Pages and the permanent cache are still warming up.
+                    // The full clean MP4 is still cached in the background and used as fallback.
+                    if (isRangeRequest(request)) {
+                        try {
+                            const networkResponse = await fetch(request, { cache: 'default' });
+                            event.waitUntil(cachePermanentVideo(url));
+                            return networkResponse;
+                        } catch (err) {
+                            const cachedVideo = await getCachedPermanentVideoResponse(request, url);
+                            if (cachedVideo) return cachedVideo;
+                            console.warn(`SW: Video range fetch failed and not cached: ${url.pathname}`, err);
+                            return new Response('', { status: 404 });
+                        }
+                    }
+
+                    // Non-range fetches are used by PEGASUS preload/probe/background cache.
+                    // They can safely use the permanent cache first.
                     const cachedVideo = await getCachedPermanentVideoResponse(request, url);
                     if (cachedVideo) return cachedVideo;
 

@@ -1,8 +1,26 @@
-PEGASUS 220 - Code-only bugfix
+PEGASUS 222 - Code-only weekend mode panel persistence bugfix
 
-- Page opening remains immediate; static/media files are cached in the background after the UI is usable.
-- Background media warmup queues known videos/images through the service worker.
-- Missing/slow workout videos no longer fall back to warmup or a different exercise; PEGASUS waits/retries the correct video.
-- Fixed IRON Wednesday/PULL collapsing to only 12 back sets after Tuesday: the previous-day guard no longer removes planned main-split accessories/core.
-- No workout/program/set/order/UI design changes beyond restoring the intended 22-set focused split.
-- No images/ folder and no videos/ folder included.
+Built from pegasus221.zip.
+
+Fixes:
+- Fixes the Saturday/Sunday Σ/Κ mode panel disappearing after about one second.
+- The Dynamic optimizer now preserves PegasusBrain UI chrome: Ποδήλατο / Ποδ. + βάρη / Βάρη controls stay visible.
+- The optimizer still controls only exercise cards and time-budget visibility.
+- Service worker cache name bumped to v222 so the changed dynamic.js is refreshed cleanly.
+
+Unchanged:
+- Workout split/program
+- Exercises/sets/order
+- Timer 10/45/60
+- 45-minute target
+- Saturday reset after 06:00
+- Cycling-aware legs rule
+- Dynamic Γράμμωση/Όγκος
+- Video wait behavior: no warmup fallback
+- Mobile Weather and YouTube modules
+- Sync logic
+
+Package:
+- Code-only
+- No images/ folder
+- No videos/ folder
