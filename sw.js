@@ -1,11 +1,11 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.9 (INSTANT OPEN / WEEKEND PANEL CACHE REFRESH)
+   PEGASUS PWA SERVICE WORKER - v3.10 (INSTANT OPEN / CACHE-FIRST VIDEO READY BRIDGE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-222';
-const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v222';
+const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-223';
+const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v223';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -85,6 +85,13 @@ function isBypassHost(url) {
     );
 }
 
+async function notifyPegasusClients(message) {
+    try {
+        const allClients = await self.clients.matchAll({ includeUncontrolled: true });
+        allClients.forEach(client => client.postMessage(message));
+    } catch (_) {}
+}
+
 function isMediaAsset(pathname) {
     return /\.(mp4|mp3|png|jpg|jpeg|svg|woff2|gif|webp)$/i.test(pathname);
 }
@@ -158,7 +165,10 @@ async function cachePermanentVideo(url) {
     const cacheId = cacheKey.url;
 
     const existing = await cache.match(cacheKey, { ignoreSearch: true });
-    if (existing) return true;
+    if (existing) {
+        await notifyPegasusClients({ type: 'PEGASUS_MEDIA_CACHED', url: url.pathname, cache: VIDEO_CACHE_NAME, alreadyCached: true });
+        return true;
+    }
 
     if (videoCacheInFlight.has(cacheId)) {
         return videoCacheInFlight.get(cacheId);
@@ -193,6 +203,7 @@ async function cachePermanentVideo(url) {
                 headers
             }));
             console.log(`🎬 SW: Permanent video cached: ${url.pathname.split('/').pop()} (${blob.size} bytes)`);
+            await notifyPegasusClients({ type: 'PEGASUS_MEDIA_CACHED', url: url.pathname, cache: VIDEO_CACHE_NAME, size: blob.size });
             return true;
         } catch (err) {
             console.warn(`SW: Permanent video cache failed: ${url.pathname}`, err);
@@ -262,7 +273,15 @@ async function backgroundCacheMediaUrls(urls = []) {
     for (const urlString of unique) {
         try {
             const cached = await cacheGenericMedia(urlString);
-            if (cached) ok++;
+            if (cached) {
+                ok++;
+                const cachedUrl = new URL(urlString, self.location.href);
+                await notifyPegasusClients({
+                    type: 'PEGASUS_MEDIA_CACHED',
+                    url: cachedUrl.pathname,
+                    cache: isPermanentVideoAsset(cachedUrl.pathname.toLowerCase()) ? VIDEO_CACHE_NAME : CACHE_NAME
+                });
+            }
         } catch (e) {}
     }
 
@@ -328,7 +347,7 @@ async function getOfflineNavigationFallback(pathname) {
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 
-    // PEGASUS 222: install fast. Do not block page opening by downloading the
+    // PEGASUS 223: install fast. Do not block page opening by downloading the
     // full project/media set during install. Full caching is triggered in the
     // background by the page after it is usable.
     event.waitUntil(
@@ -363,7 +382,7 @@ self.addEventListener('activate', (event) => {
                         return caches.delete(key);
                     }
 
-                    // PEGASUS 222: keep the current permanent video cache, purge only old video caches.
+                    // PEGASUS 223: keep the current permanent video cache, purge only old video caches.
                     // This preserves fast video loads after the first successful fetch, while avoiding
                     // stale/corrupt caches from older builds.
                     if (key.startsWith('pegasus-videos-') && key !== VIDEO_CACHE_NAME) {
@@ -423,18 +442,19 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             (async () => {
                 if (isVideoAsset(pathname)) {
-                    // PEGASUS 222: browser/video-element Range requests stay network-first.
-                    // This avoids READY/WAIT loops caused by serving freshly generated partial
-                    // responses while GitHub Pages and the permanent cache are still warming up.
-                    // The full clean MP4 is still cached in the background and used as fallback.
+                    // PEGASUS 223: use the permanent video cache first, including Range
+                    // requests. This makes videos stay stored after the first clean download.
                     if (isRangeRequest(request)) {
+                        const cachedVideo = await getCachedPermanentVideoResponse(request, url);
+                        if (cachedVideo) return cachedVideo;
+
                         try {
                             const networkResponse = await fetch(request, { cache: 'default' });
                             event.waitUntil(cachePermanentVideo(url));
                             return networkResponse;
                         } catch (err) {
-                            const cachedVideo = await getCachedPermanentVideoResponse(request, url);
-                            if (cachedVideo) return cachedVideo;
+                            const lateCachedVideo = await getCachedPermanentVideoResponse(request, url);
+                            if (lateCachedVideo) return lateCachedVideo;
                             console.warn(`SW: Video range fetch failed and not cached: ${url.pathname}`, err);
                             return new Response('', { status: 404 });
                         }

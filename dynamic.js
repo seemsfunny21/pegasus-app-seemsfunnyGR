@@ -2,7 +2,7 @@
    PEGASUS DYNAMIC OPTIMIZER - v1.7 (45-MIN REST-AWARE / WEEKEND PANEL SAFE)
    Protocol: Strict 45-Minute Window Enforcement & DOM Shielding
    Strategy: PegasusBrain owns order; Dynamic only enforces visibility/time cap
-   Status: FINAL STABLE | PEGASUS 222
+   Status: FINAL STABLE | PEGASUS 223
    ========================================================================== */
 
 window.PegasusDynamic = {
@@ -52,7 +52,15 @@ window.PegasusDynamic = {
             ? window.PegasusBrain.canTrainLegsOnDay(activeDay)
             : activeDay === "Τετάρτη";
 
-        if (!window.exercises || window.exercises.length === 0) return;
+        const container = document.getElementById("exList");
+
+        if (!window.exercises || window.exercises.length === 0) {
+            if ((activeDay === "Σάββατο" || activeDay === "Κυριακή") && typeof window.ensurePegasusWeekendModeUi === "function") {
+                window.ensurePegasusWeekendModeUi(activeDay, container);
+                console.log("✅ DYNAMIC UI: Weekend mode controls preserved (0 weight sets).");
+            }
+            return;
+        }
 
         // PEGASUS 211: Do not sort here. PegasusBrain already builds the rest-aware order.
         // Re-sorting at DOM level can desync timers/click handlers and destroy recovery spacing.
@@ -84,9 +92,8 @@ window.PegasusDynamic = {
             }
         });
 
-        const container = document.getElementById("exList");
         if (container) {
-            // PEGASUS 222: keep weekend mode controls visible.
+            // PEGASUS 223: keep weekend mode controls visible.
             // The dynamic optimizer owns only exercise cards; it must not wipe
             // PegasusBrain UI chrome such as the Σ/Κ Ποδήλατο / Ποδ. + βάρη / Βάρη panel.
             const preservedBefore = [];

@@ -1,26 +1,11 @@
-PEGASUS 222 - Code-only weekend mode panel persistence bugfix
+PEGASUS 223 - Video cache-ready bridge + weekend panel hardening
 
-Built from pegasus221.zip.
+Code-only package. No images/ folder and no videos/ folder included.
 
-Fixes:
-- Fixes the Saturday/Sunday Σ/Κ mode panel disappearing after about one second.
-- The Dynamic optimizer now preserves PegasusBrain UI chrome: Ποδήλατο / Ποδ. + βάρη / Βάρη controls stay visible.
-- The optimizer still controls only exercise cards and time-budget visibility.
-- Service worker cache name bumped to v222 so the changed dynamic.js is refreshed cleanly.
-
-Unchanged:
-- Workout split/program
-- Exercises/sets/order
-- Timer 10/45/60
-- 45-minute target
-- Saturday reset after 06:00
-- Cycling-aware legs rule
-- Dynamic Γράμμωση/Όγκος
-- Video wait behavior: no warmup fallback
-- Mobile Weather and YouTube modules
-- Sync logic
-
-Package:
-- Code-only
-- No images/ folder
-- No videos/ folder
+Changes:
+- Page still opens immediately; full static/media caching continues in the background.
+- Service worker video cache bumped to v223 and now serves cached MP4 Range requests first, so videos remain stored after the first clean download.
+- Added a SW -> page media-ready bridge: when a correct MP4 finishes caching, the waiting video element retries automatically without needing refresh.
+- Fixed READY/WAIT retry storms by not marking videos ready until the actual video element loads metadata/canplay.
+- Kept the no-warmup-fallback rule: if the correct exercise video is missing/slow, PEGASUS waits for the correct video.
+- Hardened Saturday/Sunday Σ/Κ controls so Ποδήλατο / Ποδ. + βάρη / Βάρη stay pinned even after Dynamic optimizer passes.

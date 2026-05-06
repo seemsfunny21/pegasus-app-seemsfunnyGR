@@ -1221,6 +1221,34 @@ function createNavbar() {
     });
 }
 
+function ensurePegasusWeekendModeUi(day, listEl) {
+    const list = listEl || document.getElementById("exList");
+    if (!list || (day !== "Σάββατο" && day !== "Κυριακή")) return;
+
+    if (!list.querySelector('.pegasus-weekend-mode-panel') && window.PegasusBrain?.renderWeekendModePanel) {
+        window.PegasusBrain.renderWeekendModePanel(day, list, () => {
+            const navBtn = document.getElementById(`nav-${day}`);
+            if (typeof selectDay === "function") selectDay(navBtn, day);
+        });
+        const panel = list.querySelector('.pegasus-weekend-mode-panel');
+        if (panel && list.firstChild !== panel) list.insertBefore(panel, list.firstChild);
+    }
+
+    const hasExercises = !!list.querySelector('.exercise');
+    const existingNote = list.querySelector('.pegasus-weekend-mode-note');
+    if (!hasExercises) {
+        if (!existingNote) {
+            const note = document.createElement('div');
+            note.className = 'pegasus-weekend-mode-note';
+            note.textContent = '🚴 Ποδήλατο ενεργό — δεν φορτώνει βάρη.';
+            list.appendChild(note);
+        }
+    } else if (existingNote) {
+        existingNote.remove();
+    }
+}
+window.ensurePegasusWeekendModeUi = ensurePegasusWeekendModeUi;
+
 function selectDay(btn, day) {
     if (typeof window.program === 'undefined' || !window.program) return;
 
@@ -1303,6 +1331,7 @@ function selectDay(btn, day) {
     if (window.PegasusBrain?.renderWeekendModePanel) {
         window.PegasusBrain.renderWeekendModePanel(day, list, () => selectDay(document.getElementById(`nav-${day}`), day));
     }
+    ensurePegasusWeekendModeUi(day, list);
     exercises = [];
     remainingSets = [];
 
@@ -1400,15 +1429,12 @@ function selectDay(btn, day) {
         }
         if (exercises.length === 0) {
             if (isPegasusWeekendDay && window.PegasusBrain?.renderWeekendModePanel) {
-                const existingNote = list.querySelector('.pegasus-weekend-mode-note');
-                if (existingNote) existingNote.remove();
-                const note = document.createElement('div');
-                note.className = 'pegasus-weekend-mode-note';
-                note.textContent = '🚴 Ποδήλατο ενεργό — δεν φορτώνει βάρη.';
-                list.appendChild(note);
+                ensurePegasusWeekendModeUi(day, list);
             } else {
                 list.innerHTML = `<div style="padding:20px; color:#666; text-align:center;">🌿 Ημέρα Αποθεραπείας (History: ${day})</div>`;
             }
+        } else if (isPegasusWeekendDay) {
+            ensurePegasusWeekendModeUi(day, list);
         }
     }, 150);
 
@@ -1829,31 +1855,35 @@ window.PegasusVideoPreloader = window.PegasusVideoPreloader || {
     loaded: new Set(),
     pending: new Set(),
     preload(src) {
-        if (!src || this.loaded.has(src) || this.pending.has(src)) return;
+        if (!src || this.loaded.has(src) || this.pending.has(src)) return Promise.resolve(false);
         this.pending.add(src);
 
-        // PEGASUS 221: warm the SW/browser cache without cache-busting and without
-        // blocking the page. The SW validates videos before permanent caching.
-        const done = () => {
+        const cleanSrc = normalizePegasusVideoSrc(src) || src;
+        const finish = (ok) => {
             this.pending.delete(src);
-            this.loaded.add(src);
+            if (ok) {
+                this.loaded.add(src);
+                this.loaded.add(cleanSrc);
+            }
+            return ok;
         };
 
         if (navigator.serviceWorker?.controller) {
             try {
                 navigator.serviceWorker.controller.postMessage({
                     type: 'PEGASUS_BACKGROUND_CACHE_MEDIA',
-                    urls: [src]
+                    urls: [cleanSrc]
                 });
-                done();
-                return;
             } catch (e) {}
         }
 
-        fetch(src, { cache: 'default' })
+        // PEGASUS 223: do not mark a video as ready merely because the SW queue
+        // accepted it. Verify that a real video response exists, while keeping the
+        // request in the background so the page still opens immediately.
+        return fetch(cleanSrc, { cache: 'default' })
             .then(response => response && response.ok ? response.blob() : null)
-            .catch(() => {})
-            .finally(done);
+            .then(blob => finish(!!blob && blob.size > 1024))
+            .catch(() => finish(false));
     }
 };
 
@@ -1944,7 +1974,10 @@ window.PegasusVideoWaiter = window.PegasusVideoWaiter || {
     timers: new Map(),
     attempts: new Map(),
     lastErrorAt: new Map(),
-    loadingSince: new Map()
+    loadingSince: new Map(),
+    targets: new Map(),
+    lastReadyAt: new Map(),
+    ready: new Set()
 };
 
 function stopPegasusVideoWaiter(cleanSrc, vid, label, logReady = false) {
@@ -1953,6 +1986,11 @@ function stopPegasusVideoWaiter(cleanSrc, vid, label, logReady = false) {
     window.PegasusVideoWaiter.timers.delete(cleanSrc);
     window.PegasusVideoWaiter.attempts.delete(cleanSrc);
     window.PegasusVideoWaiter.loadingSince.delete(cleanSrc);
+    window.PegasusVideoWaiter.targets.delete(cleanSrc);
+    if (logReady) {
+        window.PegasusVideoWaiter.ready.add(cleanSrc);
+        window.PegasusVideoWaiter.lastReadyAt.set(cleanSrc, Date.now());
+    }
     if (vid && vid.dataset.pegasusWaitingFor === cleanSrc) delete vid.dataset.pegasusWaitingFor;
     if (vid && vid.dataset.pegasusLoadingCandidate === cleanSrc) delete vid.dataset.pegasusLoadingCandidate;
     if (label) label.style.color = '';
@@ -1961,13 +1999,70 @@ function stopPegasusVideoWaiter(cleanSrc, vid, label, logReady = false) {
 
 function markPegasusVideoActuallyReady(src, vid, label) {
     const cleanSrc = normalizePegasusVideoSrc(src || vid?.getAttribute?.('src') || '');
-    if (!cleanSrc) return;
+    if (!cleanSrc || !vid) return;
+
+    // A 200/206 fetch only means the file exists. The video becomes "ready" only
+    // when the actual <video> element has decoded metadata/canplay without error.
+    if (vid.error || vid.readyState < 1) return;
+
     const wasWaiting =
         window.PegasusVideoWaiter.timers.has(cleanSrc) ||
         vid?.dataset?.pegasusWaitingFor === cleanSrc ||
         vid?.dataset?.pegasusLoadingCandidate === cleanSrc;
     stopPegasusVideoWaiter(cleanSrc, vid, label, wasWaiting);
 }
+
+function attachPegasusVideoReadyHandlers(cleanSrc, vid, label) {
+    if (!vid || !cleanSrc) return;
+    const onReady = () => markPegasusVideoActuallyReady(cleanSrc, vid, label);
+    vid.addEventListener('loadedmetadata', onReady, { once: true });
+    vid.addEventListener('canplay', onReady, { once: true });
+}
+
+function loadPegasusVideoCandidate(cleanSrc, vid, label, reason = 'retry') {
+    if (!cleanSrc || !vid) return;
+
+    vid.dataset.pegasusLoadingCandidate = cleanSrc;
+    window.PegasusVideoWaiter.loadingSince.set(cleanSrc, Date.now());
+    window.PegasusVideoWaiter.targets.set(cleanSrc, { vid, label });
+    attachPegasusVideoReadyHandlers(cleanSrc, vid, label);
+
+    if (label) {
+        label.textContent = 'ΦΟΡΤΩΝΕΙ ΤΟ ΣΩΣΤΟ ΒΙΝΤΕΟ...';
+        label.style.color = '#ff9800';
+    }
+
+    try { vid.pause(); } catch (_) {}
+    vid.preload = 'auto';
+    if (normalizePegasusVideoSrc(vid.getAttribute('src') || '') !== cleanSrc || reason === 'cache-ready') {
+        vid.src = cleanSrc;
+    }
+    vid.load();
+    vid.play().catch(() => {});
+}
+
+(function initPegasusMediaCacheReadyBridge() {
+    if (window.__pegasusMediaCacheReadyBridge) return;
+    window.__pegasusMediaCacheReadyBridge = true;
+
+    window.addEventListener('message', (event) => {
+        const data = event.data || {};
+        if (data.type !== 'PEGASUS_MEDIA_CACHED' || !data.url) return;
+
+        const cleanSrc = normalizePegasusVideoSrc(data.url);
+        if (!cleanSrc || !/\.(mp4|webm|mov)$/i.test(cleanSrc)) return;
+
+        if (window.PegasusVideoPreloader?.loaded) {
+            window.PegasusVideoPreloader.loaded.add(cleanSrc);
+        }
+
+        const target = window.PegasusVideoWaiter?.targets?.get(cleanSrc);
+        if (target?.vid && target.vid.dataset.pegasusWaitingFor === cleanSrc) {
+            console.log(`🎬 PEGASUS VIDEO CACHE READY: ${cleanSrc}`);
+            loadPegasusVideoCandidate(cleanSrc, target.vid, target.label, 'cache-ready');
+        }
+    });
+})();
 
 function waitForPegasusVideo(src, vid, label) {
     const cleanSrc = normalizePegasusVideoSrc(src);
@@ -1976,6 +2071,7 @@ function waitForPegasusVideo(src, vid, label) {
     if (window.PegasusVideoWaiter.timers.has(cleanSrc)) return;
 
     vid.dataset.pegasusWaitingFor = cleanSrc;
+    window.PegasusVideoWaiter.targets.set(cleanSrc, { vid, label });
 
     const tryLoad = async () => {
         if (vid.dataset.pegasusWaitingFor !== cleanSrc) {
@@ -2006,23 +2102,8 @@ function waitForPegasusVideo(src, vid, label) {
             const okVideo = (probe.ok || probe.status === 206) && blob.size > 1024 && (contentType.includes('video') || cleanSrc.endsWith('.mp4'));
 
             if (okVideo) {
-                if (label) {
-                    label.textContent = 'ΦΟΡΤΩΝΕΙ ΤΟ ΣΩΣΤΟ ΒΙΝΤΕΟ...';
-                    label.style.color = '#ff9800';
-                }
-
-                vid.dataset.pegasusLoadingCandidate = cleanSrc;
-                window.PegasusVideoWaiter.loadingSince.set(cleanSrc, now);
-
-                const onReady = () => markPegasusVideoActuallyReady(cleanSrc, vid, label);
-                vid.addEventListener('loadedmetadata', onReady, { once: true });
-                vid.addEventListener('canplay', onReady, { once: true });
-
-                vid.pause();
-                vid.src = cleanSrc;
-                vid.load();
+                loadPegasusVideoCandidate(cleanSrc, vid, label, 'probe-ok');
                 if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(cleanSrc);
-                vid.play().catch(() => {});
                 return;
             }
         } catch (e) {}
@@ -2052,16 +2133,27 @@ function showVideo(i) {
             if (!cleanSrc) return;
 
             const now = Date.now();
-            const lastErrorAt = window.PegasusVideoWaiter?.lastErrorAt?.get(cleanSrc) || 0;
-            if (now - lastErrorAt > 4500) {
-                console.warn(`🎬 PEGASUS VIDEO WAIT: ${cleanSrc} is not ready yet. Retrying correct video.`);
-                window.PegasusVideoWaiter?.lastErrorAt?.set(cleanSrc, now);
+            const alreadyWaiting =
+                vid.dataset.pegasusWaitingFor === cleanSrc ||
+                window.PegasusVideoWaiter?.timers?.has(cleanSrc);
+
+            if (!alreadyWaiting) {
+                const lastErrorAt = window.PegasusVideoWaiter?.lastErrorAt?.get(cleanSrc) || 0;
+                if (now - lastErrorAt > 4500) {
+                    console.warn(`🎬 PEGASUS VIDEO WAIT: ${cleanSrc} is not ready yet. Retrying correct video.`);
+                    window.PegasusVideoWaiter?.lastErrorAt?.set(cleanSrc, now);
+                }
             }
 
             if (label) {
                 label.textContent = 'ΑΝΑΜΟΝΗ ΒΙΝΤΕΟ...';
                 label.style.color = '#ff9800';
             }
+
+            // PEGASUS 223: when a retry loop is already active, do not recursively
+            // create new loops or spam the console. The existing loop / SW cache
+            // notification will attach the correct video as soon as it is playable.
+            if (alreadyWaiting) return;
             waitForPegasusVideo(cleanSrc, vid, label);
         };
     }
@@ -2096,14 +2188,15 @@ function showVideo(i) {
 
     const newSrc = `videos/${mappedVal}.mp4`;
     if (vid.getAttribute('src') !== newSrc) {
+        const oldCleanSrc = normalizePegasusVideoSrc(vid.getAttribute('src') || '');
+        if (oldCleanSrc && oldCleanSrc !== newSrc) stopPegasusVideoWaiter(oldCleanSrc, vid, label, false);
         delete vid.dataset.pegasusWaitingFor;
         vid.pause();
         vid.src = newSrc;
         vid.load();
         if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(newSrc);
         preloadPegasusAdjacentVideos(i);
-        vid.addEventListener('loadedmetadata', () => markPegasusVideoActuallyReady(newSrc, vid, label), { once: true });
-        vid.addEventListener('canplay', () => markPegasusVideoActuallyReady(newSrc, vid, label), { once: true });
+        attachPegasusVideoReadyHandlers(newSrc, vid, label);
         vid.play().catch(() => {
             // PEGASUS 221: autoplay/user-gesture failures must not swap to warmup
             // and must not start a retry loop. The selected exercise video stays selected.
