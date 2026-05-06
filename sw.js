@@ -1,11 +1,11 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.6 (FINAL SAFE STABLE)
+   PEGASUS PWA SERVICE WORKER - v3.7 (INSTANT OPEN / BACKGROUND MEDIA CACHE)
    Protocol: Network-First for Code, Cache-First for Media, Zero-Zombie
    Status: FINAL STABLE | HARDENED: SAME-ORIGIN ONLY + GET ONLY + SAFE CACHE PUT
    ========================================================================== */
 
-const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-219';
-const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v219';
+const CACHE_NAME = 'pegasus-shield-v3.141-FINAL-220';
+const VIDEO_CACHE_NAME = 'pegasus-videos-permanent-v220';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -206,6 +206,69 @@ async function cachePermanentVideo(url) {
     return task;
 }
 
+async function cacheGenericMedia(urlString) {
+    try {
+        const url = new URL(urlString, self.location.href);
+        if (!isSameOrigin(url)) return false;
+        if (isPermanentVideoAsset(url.pathname.toLowerCase())) return cachePermanentVideo(url);
+
+        const request = new Request(url.href, { credentials: 'same-origin' });
+        const cached = await caches.match(request, { ignoreSearch: true });
+        if (cached) return true;
+
+        const response = await fetch(request, { cache: 'default' });
+        if (!isCacheableResponse(response)) return false;
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.startsWith('image/') && !contentType.includes('font') && !contentType.includes('audio')) return false;
+
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+async function backgroundCacheStaticAssets() {
+    const cache = await caches.open(CACHE_NAME);
+    let downloaded = 0;
+
+    for (const assetUrl of ASSETS_TO_CACHE) {
+        try {
+            const request = new Request(assetUrl, { credentials: 'same-origin' });
+            const existing = await cache.match(request, { ignoreSearch: true });
+            if (!existing) {
+                const response = await fetch(request, { cache: 'default' });
+                if (isCacheableResponse(response)) await cache.put(request, response.clone());
+            }
+            downloaded++;
+            const allClients = await self.clients.matchAll({ includeUncontrolled: true });
+            allClients.forEach(client => {
+                client.postMessage({
+                    type: 'CACHE_PROGRESS',
+                    percent: Math.round((downloaded / ASSETS_TO_CACHE.length) * 100)
+                });
+            });
+        } catch (err) {
+            console.warn(`SW: Background static cache skipped: ${assetUrl}`, err);
+        }
+    }
+}
+
+async function backgroundCacheMediaUrls(urls = []) {
+    const unique = Array.from(new Set((Array.isArray(urls) ? urls : []).filter(Boolean)));
+    let ok = 0;
+
+    for (const urlString of unique) {
+        try {
+            const cached = await cacheGenericMedia(urlString);
+            if (cached) ok++;
+        } catch (e) {}
+    }
+
+    if (unique.length) console.log(`🎬 SW: Background media cache complete ${ok}/${unique.length}`);
+}
+
 async function getCachedPermanentVideoResponse(request, url) {
     const cache = await caches.open(VIDEO_CACHE_NAME);
     const cacheKey = getPermanentVideoCacheKey(url);
@@ -265,33 +328,22 @@ async function getOfflineNavigationFallback(pathname) {
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 
+    // PEGASUS 220: install fast. Do not block page opening by downloading the
+    // full project/media set during install. Full caching is triggered in the
+    // background by the page after it is usable.
     event.waitUntil(
         (async () => {
             const cache = await caches.open(CACHE_NAME);
-            console.log('🛡️ SW: Shielding Pegasus Assets...');
-            let downloaded = 0;
-
-            for (const assetUrl of ASSETS_TO_CACHE) {
+            const coreShell = ['./', './index.html', './style.css', './manifest.js', './app.js', './data.js', './pegasusBrain.js', './sw.js'];
+            for (const assetUrl of coreShell) {
                 try {
-                    const response = await fetch(assetUrl, { cache: 'no-cache' });
-                    if (!response.ok) throw new Error(`Bad response status: ${response.status}`);
-
-                    await cache.put(assetUrl, response.clone());
-                    downloaded++;
-
-                    const allClients = await self.clients.matchAll({ includeUncontrolled: true });
-                    allClients.forEach(client => {
-                        client.postMessage({
-                            type: 'CACHE_PROGRESS',
-                            percent: Math.round((downloaded / ASSETS_TO_CACHE.length) * 100)
-                        });
-                    });
+                    const response = await fetch(assetUrl, { cache: 'default' });
+                    if (isCacheableResponse(response)) await cache.put(assetUrl, response.clone());
                 } catch (err) {
-                    console.warn(`SW: Failed to cache asset: ${assetUrl}`, err);
+                    console.warn(`SW: Core shell cache skipped: ${assetUrl}`, err);
                 }
             }
-
-            console.log('✅ SW: Asset shielding complete.');
+            console.log('✅ SW: Core shell ready; full assets will cache in background.');
         })()
     );
 });
@@ -327,6 +379,25 @@ self.addEventListener('activate', (event) => {
             console.log('✅ SW: Clients claimed.');
         })()
     );
+});
+
+/* =========================
+   BACKGROUND CACHE MESSAGES
+========================= */
+self.addEventListener('message', (event) => {
+    const data = event.data || {};
+
+    if (data.type === 'PEGASUS_BACKGROUND_CACHE_ALL') {
+        event.waitUntil((async () => {
+            await backgroundCacheStaticAssets();
+            await backgroundCacheMediaUrls(data.mediaUrls || []);
+        })());
+        return;
+    }
+
+    if (data.type === 'PEGASUS_BACKGROUND_CACHE_MEDIA') {
+        event.waitUntil(backgroundCacheMediaUrls(data.urls || data.mediaUrls || []));
+    }
 });
 
 /* =========================

@@ -1,30 +1,8 @@
-PEGASUS 219
-- BUGFIX ONLY: Video cache/preload improvement. Service worker now keeps validated /videos/*.mp4 files in a permanent cache after first successful load, rejects tiny/corrupt MP4 responses, supports range playback from cache, and preloads the next exercise video.
-- No workout/program/set/order/UI changes.
-- No images folder and no videos folder in this package.
+PEGASUS 220 - Code-only bugfix
 
-PEGASUS 218
-- VIDEO FIX ONLY: Included user-provided videos/reversegripcablerow.mp4 and videos/lowrowsseated.mp4.
-- Reverse Grip Cable Row now maps to its own valid reversegripcablerow.mp4 instead of the Low Rows alias.
-- No workout/program/set/order/UI changes.
-- No images folder.
-
-PEGASUS 215
-
-- Βάση: το pegasus211.zip που έδειχνε σωστά τις ασκήσεις/βίντεο.
-- Πέρασε το νέο IRON πρόγραμμα ασκήσεων: Τρίτη PUSH, Τετάρτη PULL, Παρασκευή UPPER BALANCE.
-- Κράτησε την καθαρή 211 εμφάνιση της λίστας ασκήσεων.
-- Πρόσθεσε αποθήκευση σειράς ασκήσεων ανά ημέρα με drag/drop χωρίς αλλαγή στο layout.
-- Συγχρονίζει το custom exercise order με key pegasus_custom_exercise_order_v1.
-- Χωρίς φάκελο images.
-- Διατηρεί 10/45/60 timer, 45λεπτο, reset Σάββατο μετά τις 06:00, cycling-aware no-legs rule, Weather/YouTube/mobile/desktop sync fixes.
-
-PEGASUS 216
-- BUGFIX ONLY: Service Worker video cache fix. Normal F5 now streams workout videos fresh instead of serving stale/partial cached video responses that could leave the panel black. Ctrl+F5 behavior remains unchanged.
-
-PEGASUS 217
-- Video-only bugfix.
-- Reverse Grip Cable Row now uses the same-family Low Rows Seated video because the deployed reversegripcablerow.mp4 was 2 bytes/corrupt.
-- Added runtime video error fallback so a corrupt MP4 does not leave the panel black.
-- No workout/program/set/order/UI changes.
-- No images folder.
+- Page opening remains immediate; static/media files are cached in the background after the UI is usable.
+- Background media warmup queues known videos/images through the service worker.
+- Missing/slow workout videos no longer fall back to warmup or a different exercise; PEGASUS waits/retries the correct video.
+- Fixed IRON Wednesday/PULL collapsing to only 12 back sets after Tuesday: the previous-day guard no longer removes planned main-split accessories/core.
+- No workout/program/set/order/UI design changes beyond restoring the intended 22-set focused split.
+- No images/ folder and no videos/ folder included.

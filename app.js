@@ -1827,22 +1827,170 @@ function getPegasusExerciseVideoSrcByIndex(index) {
 
 window.PegasusVideoPreloader = window.PegasusVideoPreloader || {
     loaded: new Set(),
+    pending: new Set(),
     preload(src) {
-        if (!src || this.loaded.has(src)) return;
-        this.loaded.add(src);
+        if (!src || this.loaded.has(src) || this.pending.has(src)) return;
+        this.pending.add(src);
 
-        // PEGASUS 219: quietly warm the browser/SW cache for the next workout video.
-        // The response is consumed so the SW can store a full validated MP4 copy.
+        // PEGASUS 220: warm the SW/browser cache without cache-busting and without
+        // blocking the page. The SW validates videos before permanent caching.
+        const done = () => {
+            this.pending.delete(src);
+            this.loaded.add(src);
+        };
+
+        if (navigator.serviceWorker?.controller) {
+            try {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'PEGASUS_BACKGROUND_CACHE_MEDIA',
+                    urls: [src]
+                });
+                done();
+                return;
+            } catch (e) {}
+        }
+
         fetch(src, { cache: 'default' })
             .then(response => response && response.ok ? response.blob() : null)
-            .catch(() => {});
+            .catch(() => {})
+            .finally(done);
+    }
+};
+
+function getPegasusKnownMediaUrls() {
+    const urls = new Set();
+    const mapValues = window.videoMap ? Object.values(window.videoMap) : [];
+
+    mapValues.forEach(value => {
+        const clean = String(value || '').trim();
+        if (!clean) return;
+        urls.add(`videos/${clean}.mp4`);
+        urls.add(`images/${clean}.png`);
+        urls.add(`images/${clean}.jpg`);
+    });
+
+    ['warmup', 'stretching', 'cycling'].forEach(name => {
+        urls.add(`videos/${name}.mp4`);
+        urls.add(`images/${name}.png`);
+        urls.add(`images/${name}.jpg`);
+    });
+
+    urls.add('images/favicon.png');
+    urls.add('images/placeholder.jpg');
+
+    return Array.from(urls);
+}
+
+window.PegasusBackgroundAssets = window.PegasusBackgroundAssets || {
+    started: false,
+    start() {
+        if (this.started) return;
+        this.started = true;
+
+        const run = async () => {
+            const urls = getPegasusKnownMediaUrls();
+            try {
+                const registration = navigator.serviceWorker ? await navigator.serviceWorker.ready : null;
+                const target = navigator.serviceWorker?.controller || registration?.active;
+                if (target) {
+                    target.postMessage({
+                        type: 'PEGASUS_BACKGROUND_CACHE_ALL',
+                        mediaUrls: urls
+                    });
+                    console.log(`🎬 PEGASUS BACKGROUND ASSETS: queued ${urls.length} media/static files.`);
+                    return;
+                }
+            } catch (e) {
+                console.warn('🎬 PEGASUS BACKGROUND ASSETS: SW queue unavailable, using light browser cache queue.', e);
+            }
+
+            // Fallback: very light browser cache queue, one request at a time, after page is open.
+            for (const url of urls) {
+                try { await fetch(url, { cache: 'default' }); } catch (e) {}
+                await new Promise(resolve => setTimeout(resolve, 120));
+            }
+        };
+
+        const schedule = () => {
+            if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 3500 });
+            else setTimeout(run, 1800);
+        };
+
+        if (document.readyState === 'complete') schedule();
+        else window.addEventListener('load', schedule, { once: true });
     }
 };
 
 function preloadPegasusAdjacentVideos(index) {
     if (!window.PegasusVideoPreloader) return;
+    const currentSrc = getPegasusExerciseVideoSrcByIndex(index);
     const nextSrc = getPegasusExerciseVideoSrcByIndex(index + 1);
+    if (currentSrc) window.PegasusVideoPreloader.preload(currentSrc);
     if (nextSrc) window.PegasusVideoPreloader.preload(nextSrc);
+}
+
+function normalizePegasusVideoSrc(src) {
+    const raw = String(src || '').trim();
+    if (!raw) return '';
+    try {
+        const url = new URL(raw, window.location.href);
+        return `${url.pathname.replace(/^\//, '')}`.replace(/^seemsfunny\//, '') || raw;
+    } catch (e) {
+        return raw.split('?')[0];
+    }
+}
+
+window.PegasusVideoWaiter = window.PegasusVideoWaiter || {
+    timers: new Map()
+};
+
+function waitForPegasusVideo(src, vid, label) {
+    const cleanSrc = normalizePegasusVideoSrc(src);
+    if (!cleanSrc || !vid) return;
+
+    if (window.PegasusVideoWaiter.timers.has(cleanSrc)) return;
+
+    vid.dataset.pegasusWaitingFor = cleanSrc;
+    let attempts = 0;
+    const tryLoad = async () => {
+        if (vid.dataset.pegasusWaitingFor !== cleanSrc) {
+            clearInterval(window.PegasusVideoWaiter.timers.get(cleanSrc));
+            window.PegasusVideoWaiter.timers.delete(cleanSrc);
+            return;
+        }
+        attempts += 1;
+        try {
+            const probe = await fetch(`${cleanSrc}?probe=${Date.now()}`, {
+                cache: 'no-store',
+                headers: { Range: 'bytes=0-4095' }
+            });
+            const blob = await probe.blob();
+            const contentType = (probe.headers.get('content-type') || '').toLowerCase();
+            const okVideo = (probe.ok || probe.status === 206) && blob.size > 1024 && (contentType.includes('video') || cleanSrc.endsWith('.mp4'));
+
+            if (okVideo) {
+                clearInterval(window.PegasusVideoWaiter.timers.get(cleanSrc));
+                window.PegasusVideoWaiter.timers.delete(cleanSrc);
+                if (vid.dataset.pegasusWaitingFor === cleanSrc) delete vid.dataset.pegasusWaitingFor;
+                if (label) label.style.color = '';
+                vid.pause();
+                vid.src = cleanSrc;
+                vid.load();
+                if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(cleanSrc);
+                vid.play().catch(() => {});
+                console.log(`✅ PEGASUS VIDEO READY: ${cleanSrc}`);
+                return;
+            }
+        } catch (e) {}
+
+        if (label) label.textContent = `ΑΝΑΜΟΝΗ ΒΙΝΤΕΟ... (${attempts})`;
+    };
+
+    vid.pause();
+    vid.removeAttribute('src');
+    vid.load();
+    tryLoad();
+    window.PegasusVideoWaiter.timers.set(cleanSrc, setInterval(tryLoad, 5000));
 }
 
 function showVideo(i) {
@@ -1850,34 +1998,19 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
-    // PEGASUS 217: video-only bugfix. If a deployed MP4 is corrupt/empty,
-    // do not leave a black panel; fall back to an equivalent known video,
-    // then to warmup. This does NOT change workouts, sets, order or UI.
+    // PEGASUS 220: if the correct video is missing/slow, never substitute warmup
+    // or another exercise. Keep retrying the requested file until it becomes available.
     if (!vid.dataset.pegasusVideoErrorGuard) {
         vid.dataset.pegasusVideoErrorGuard = "1";
         vid.onerror = function() {
             const currentSrc = vid.getAttribute('src') || '';
-            const currentFile = currentSrc.split('/').pop().split('?')[0].replace(/\.mp4$/i, '');
-            const fallbackMap = {
-                reversegripcablerow: 'lowrowsseated'
-            };
-            const fallback = fallbackMap[currentFile];
-            if (fallback && currentFile !== fallback) {
-                const fallbackSrc = `videos/${fallback}.mp4`;
-                console.warn(`🎬 PEGASUS VIDEO FALLBACK: ${currentFile}.mp4 → ${fallback}.mp4`);
-                vid.pause();
-                vid.src = fallbackSrc;
-                vid.load();
-                vid.play().catch(() => {});
-                return;
+            if (!currentSrc) return;
+            console.warn(`🎬 PEGASUS VIDEO WAIT: ${currentSrc} is not ready yet. Retrying correct video.`);
+            if (label) {
+                label.textContent = 'ΑΝΑΜΟΝΗ ΒΙΝΤΕΟ...';
+                label.style.color = '#ff9800';
             }
-            if (currentFile !== 'warmup') {
-                console.warn(`🎬 PEGASUS VIDEO FALLBACK: ${currentFile}.mp4 → warmup.mp4`);
-                vid.pause();
-                vid.src = 'videos/warmup.mp4';
-                vid.load();
-                vid.play().catch(() => {});
-            }
+            waitForPegasusVideo(currentSrc, vid, label);
         };
     }
 
@@ -1888,6 +2021,7 @@ function showVideo(i) {
     if (isRecoveryDay || typeof exercises === 'undefined' || !exercises[i]) {
         const recoverySrc = "videos/stretching.mp4";
         if (vid.getAttribute('src') !== recoverySrc) {
+            delete vid.dataset.pegasusWaitingFor;
             vid.pause();
             vid.src = recoverySrc;
             vid.load();
@@ -1910,15 +2044,15 @@ function showVideo(i) {
 
     const newSrc = `videos/${mappedVal}.mp4`;
     if (vid.getAttribute('src') !== newSrc) {
+        delete vid.dataset.pegasusWaitingFor;
         vid.pause();
         vid.src = newSrc;
         vid.load();
         if (window.PegasusVideoPreloader) window.PegasusVideoPreloader.preload(newSrc);
         preloadPegasusAdjacentVideos(i);
         vid.play().catch(() => {
-            vid.src = "videos/warmup.mp4";
-            vid.load();
-            vid.play().catch(() => {});
+            // PEGASUS 220: autoplay/user-gesture failures must not swap to warmup.
+            // The selected exercise video stays selected and will play when allowed/ready.
         });
     } else {
         preloadPegasusAdjacentVideos(i);
@@ -2620,6 +2754,9 @@ window.onload = () => {
     }, 400);
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
+
+    // PEGASUS 220: page opens first; all known media/static assets warm in background.
+    if (window.PegasusBackgroundAssets?.start) window.PegasusBackgroundAssets.start();
 
     setTimeout(() => {
         const loader = document.getElementById('pegasus-loader');

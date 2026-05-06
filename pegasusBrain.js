@@ -1,5 +1,5 @@
 /* ========================================================================== 
-   PEGASUS BRAIN - v1.0.215 (MS-600 FOCUSED SPLIT / REST + EQUIPMENT AWARE)
+   PEGASUS BRAIN - v1.0.220 (MS-600 FOCUSED SPLIT / REST + EQUIPMENT AWARE)
    Purpose: Pegasus MS-600 + floor-only weekly training plan, weekend carry-over,
    recovery guard, cycling-aware leg policy, focused split days, and 45-minute circuit spacing.
    ========================================================================== */
@@ -581,7 +581,13 @@
         if (WEEKEND_DAYS.has(day) && mode === "bike") return [];
 
         const { remaining } = computeRemaining({ includeCarryover: true });
-        const blocked = getBlockedGroups(day);
+        // PEGASUS 220: the old previous-day recovery guard was too aggressive for
+        // the focused IRON split. Tuesday PUSH logged "Χέρια" and "Κορμός", so
+        // Wednesday PULL could collapse to only 12 back sets. Main split days must
+        // keep their planned accessories; rest is handled by the split/order itself.
+        const blocked = (day === "Τρίτη" || day === "Τετάρτη" || day === "Παρασκευή")
+            ? new Set()
+            : getBlockedGroups(day);
         const allowLegs = canTrainLegsOnDay(day);
         const limit = getSessionLimit(day, mode);
         const blueprint = resolveSessionBlueprint(day, allowLegs, mode);
@@ -667,7 +673,7 @@
     }
 
     window.PegasusBrain = {
-        version: "1.0.215",
+        version: "1.0.220",
         groups: STRICT_GROUPS.slice(),
         getWeekKey,
         getNextWeekKey,
@@ -686,5 +692,5 @@
         isManagedDay
     };
 
-    console.log("🧠 PEGASUS BRAIN: MS-600 rest/equipment-aware planner active (v1.0.215 focused split).");
+    console.log("🧠 PEGASUS BRAIN: MS-600 rest/equipment-aware planner active (v1.0.220 focused split).");
 })();
