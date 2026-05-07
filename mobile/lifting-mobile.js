@@ -1,5 +1,5 @@
 /* ======================================================================
-   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.2)
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.3.225)
    Purpose: show current workout exercises + saved weights, keep manual log
    ====================================================================== */
 (function() {
@@ -54,6 +54,96 @@
         return String(name || "").trim();
     }
 
+    function compactExerciseName(name) {
+        return normalizeExerciseName(name)
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\p{L}\p{N}]+/gu, "")
+            .toLowerCase();
+    }
+
+    function isRealPositiveWeight(value) {
+        const text = String(value ?? "").trim();
+        if (!text) return false;
+        const n = Number(text.replace(",", "."));
+        return Number.isFinite(n) && n > 0;
+    }
+
+    function normalizeWeightValue(value) {
+        if (!isRealPositiveWeight(value)) return "";
+        const text = String(value ?? "").trim().replace(",", ".");
+        const n = Number(text);
+        return Number.isInteger(n) ? String(n) : String(n);
+    }
+
+    const WEIGHT_ALIAS_PAIRS = [
+        ["LowSeatedRow", "Low Rows Seated"],
+        ["LowRowsSeated", "Low Rows Seated"],
+        ["ReverseSeatedRows", "Reverse Grip Cable Row"],
+        ["ReverseGripCableRow", "Reverse Grip Cable Row"],
+        ["ReverseGripRows", "Reverse Grip Cable Row"],
+        ["SeatedRows", "Low Rows Seated"],
+        ["LatPulldowns", "Lat Pulldowns"],
+        ["LatPulldown", "Lat Pulldowns"],
+        ["WidePulldowns", "Wide Pulldowns"],
+        ["BehindtheNeckPulldown", "Behind the Neck Pulldown"],
+        ["BehindTheNeckPulldown", "Behind the Neck Pulldown"],
+        ["ChestPress", "Chest Press"],
+        ["ChestFlys", "Chest Flys"],
+        ["ChestFly", "Chest Flys"],
+        ["TricepPulldowns", "Tricep Pulldowns"],
+        ["TricepsPulldowns", "Tricep Pulldowns"],
+        ["BicepCurls", "Bicep Curls"],
+        ["PreacherBicepCurls", "Preacher Bicep Curls"],
+        ["UprightRows", "Upright Rows"],
+        ["BentOverRows", "Bent Over Rows"],
+        ["AbCrunches", "Ab Crunches"],
+        ["LyingKneeRaise", "Lying Knee Raise"],
+        ["LegRaiseHipLift", "Leg Raise Hip Lift"],
+        ["LegExtensions", "Leg Extensions"],
+        ["Pushups", "Pushups"],
+        ["PushUps", "Pushups"],
+        ["Situps", "Situps"],
+        ["SitUps", "Situps"],
+        ["StraightArmPulldowns", "Straight Arm Pulldowns"]
+    ];
+
+    const WEIGHT_ALIAS_BY_COMPACT = (() => {
+        const map = Object.create(null);
+        WEIGHT_ALIAS_PAIRS.forEach(([alias, canonical]) => {
+            const aliasCompact = compactExerciseName(alias);
+            const canonicalCompact = compactExerciseName(canonical);
+            map[aliasCompact] = canonicalCompact;
+            map[canonicalCompact] = canonicalCompact;
+        });
+        return map;
+    })();
+
+    function canonicalCompactName(name) {
+        const compact = compactExerciseName(name);
+        return WEIGHT_ALIAS_BY_COMPACT[compact] || compact;
+    }
+
+    function getExerciseAliasSet(name) {
+        const raw = normalizeExerciseName(name);
+        const compact = compactExerciseName(raw);
+        const canonicalCompact = canonicalCompactName(raw);
+        const out = new Set([raw, compact, canonicalCompact]);
+
+        WEIGHT_ALIAS_PAIRS.forEach(([alias, canonical]) => {
+            const aliasCompact = compactExerciseName(alias);
+            const canonicalNameCompact = compactExerciseName(canonical);
+            if (aliasCompact === compact || canonicalNameCompact === compact || aliasCompact === canonicalCompact || canonicalNameCompact === canonicalCompact) {
+                out.add(alias);
+                out.add(canonical);
+                out.add(aliasCompact);
+                out.add(canonicalNameCompact);
+            }
+        });
+
+        return out;
+    }
+
     function isLegacyTestEntry(entry) {
         const text = normalizeExerciseName(entry?.exercise || entry?.name).toLowerCase();
         if (!text) return true;
@@ -78,39 +168,164 @@
 
     function getActiveLifterName() {
         try {
-            if (typeof window.getActiveLifter === "function") return window.getActiveLifter();
+            if (typeof window.getActiveLifter === "function") {
+                const lifter = normalizeExerciseName(window.getActiveLifter());
+                if (lifter && !/^(aa|test|τεστ|δοκιμ)/i.test(lifter)) return lifter;
+            }
         } catch (e) {}
         return "ΑΓΓΕΛΟΣ";
     }
 
+    function getBestWeightProfile(allWeights) {
+        const active = getActiveLifterName();
+        const priority = [active, "ΑΓΓΕΛΟΣ", "ANGELOS", "default"];
+        const seen = new Set();
+        const profiles = [];
+
+        priority.forEach(name => {
+            if (name && !seen.has(name)) {
+                seen.add(name);
+                profiles.push(name);
+            }
+        });
+
+        Object.keys(allWeights || {}).forEach(name => {
+            if (name && !seen.has(name) && !/^(aa|test|τεστ|δοκιμ)/i.test(name)) {
+                seen.add(name);
+                profiles.push(name);
+            }
+        });
+
+        profiles.sort((a, b) => {
+            const ca = Object.values(allWeights?.[a] || {}).filter(isRealPositiveWeight).length;
+            const cb = Object.values(allWeights?.[b] || {}).filter(isRealPositiveWeight).length;
+            const pa = priority.includes(a) ? 10 : 0;
+            const pb = priority.includes(b) ? 10 : 0;
+            return (cb + pb) - (ca + pa);
+        });
+
+        return profiles;
+    }
+
+    function findWeightInObject(obj, exerciseName) {
+        if (!obj || typeof obj !== "object") return "";
+        const aliases = getExerciseAliasSet(exerciseName);
+        const wanted = new Set([...aliases].map(canonicalCompactName));
+
+        for (const key of Object.keys(obj)) {
+            if (!isRealPositiveWeight(obj[key])) continue;
+            if (key === exerciseName || aliases.has(key) || wanted.has(canonicalCompactName(key))) {
+                return normalizeWeightValue(obj[key]);
+            }
+        }
+        return "";
+    }
+
     function readSavedWeight(exerciseName, fallback) {
         const cleanName = normalizeExerciseName(exerciseName);
-        if (!cleanName) return fallback || "";
+        if (!cleanName) return isRealPositiveWeight(fallback) ? normalizeWeightValue(fallback) : "";
 
         const allWeights = safeReadJSON(EXERCISE_WEIGHTS_KEY, {});
-        const activeLifter = getActiveLifterName();
-        const candidate = allWeights?.[activeLifter]?.[cleanName]
-            ?? allWeights?.["ΑΓΓΕΛΟΣ"]?.[cleanName]
-            ?? allWeights?.["ANGELOS"]?.[cleanName]
-            ?? allWeights?.default?.[cleanName];
+        const profiles = getBestWeightProfile(allWeights);
 
-        if (candidate !== undefined && candidate !== null && String(candidate).trim() !== "") {
-            return candidate;
+        for (const profile of profiles) {
+            const value = findWeightInObject(allWeights?.[profile], cleanName);
+            if (isRealPositiveWeight(value)) return normalizeWeightValue(value);
         }
 
-        const legacyKeys = [
-            `weight_${activeLifter}_${cleanName}`,
-            `weight_ΑΓΓΕΛΟΣ_${cleanName}`,
-            `weight_ANGELOS_${cleanName}`,
-            `weight_${cleanName}`
-        ];
+        const aliases = getExerciseAliasSet(cleanName);
+        const profileNames = [getActiveLifterName(), "ΑΓΓΕΛΟΣ", "ANGELOS", "ΕΓΩ", "default"];
+        const directKeys = [];
 
-        for (const key of legacyKeys) {
+        profileNames.forEach(profile => {
+            aliases.forEach(alias => {
+                directKeys.push(`weight_${profile}_${alias}`);
+                directKeys.push(`pegasus_weight_${profile}_${alias}`);
+            });
+        });
+        aliases.forEach(alias => directKeys.push(`weight_${alias}`));
+
+        for (const key of directKeys) {
             const raw = localStorage.getItem(key);
-            if (raw !== null && String(raw).trim() !== "") return raw;
+            if (isRealPositiveWeight(raw)) return normalizeWeightValue(raw);
         }
 
-        return fallback || "";
+        const wanted = new Set([...aliases].map(canonicalCompactName));
+        const scanned = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key || !/(^weight_|^pegasus_weight_)/i.test(key)) continue;
+            if (/(^|_)aa_/i.test(key) || /test|τεστ|δοκιμ/i.test(key)) continue;
+            const raw = localStorage.getItem(key);
+            if (!isRealPositiveWeight(raw)) continue;
+            const suffix = key.replace(/^pegasus_weight_[^_]+_/i, "").replace(/^weight_[^_]+_/i, "").replace(/^weight_/i, "");
+            if (wanted.has(canonicalCompactName(suffix))) {
+                scanned.push({ key, value: normalizeWeightValue(raw), priority: key.includes("ΑΓΓΕΛΟΣ") ? 2 : key.includes("ΕΓΩ") ? 1 : 0 });
+            }
+        }
+        scanned.sort((a, b) => b.priority - a.priority);
+        if (scanned[0]) return scanned[0].value;
+
+        return isRealPositiveWeight(fallback) ? normalizeWeightValue(fallback) : "";
+    }
+
+    function writeWeightAliases(exerciseName, weight) {
+        const cleanName = normalizeExerciseName(exerciseName);
+        const value = normalizeWeightValue(weight);
+        if (!cleanName || !value) return 0;
+
+        const allWeights = safeReadJSON(EXERCISE_WEIGHTS_KEY, {});
+        const active = getActiveLifterName();
+        const profile = (allWeights?.[active] && Object.values(allWeights[active]).some(isRealPositiveWeight)) ? active : "ΑΓΓΕΛΟΣ";
+        const aliases = getExerciseAliasSet(cleanName);
+        const next = (allWeights && typeof allWeights === "object" && !Array.isArray(allWeights)) ? { ...allWeights } : {};
+        next[profile] = { ...(next[profile] || {}) };
+
+        if (!isRealPositiveWeight(next[profile][cleanName])) {
+            next[profile][cleanName] = value;
+        }
+
+        let changed = 0;
+        aliases.forEach(alias => {
+            const compact = String(alias || "").replace(/[^\p{L}\p{N}]+/gu, "");
+            const keys = [
+                `weight_${profile}_${alias}`,
+                `pegasus_weight_${profile}_${compact}`,
+                `pegasus_weight_ΕΓΩ_${compact}`
+            ];
+            keys.forEach(key => {
+                const current = localStorage.getItem(key);
+                if (!isRealPositiveWeight(current)) {
+                    localStorage.setItem(key, value);
+                    changed++;
+                }
+            });
+        });
+
+        safeWriteJSON(EXERCISE_WEIGHTS_KEY, next);
+        return changed;
+    }
+
+    function repairAllWeightAliases() {
+        const allWeights = safeReadJSON(EXERCISE_WEIGHTS_KEY, {});
+        const profiles = getBestWeightProfile(allWeights);
+        let repaired = 0;
+
+        for (const profile of profiles) {
+            const data = allWeights?.[profile];
+            if (!data || typeof data !== "object") continue;
+            Object.entries(data).forEach(([exercise, weight]) => {
+                if (isRealPositiveWeight(weight)) repaired += writeWeightAliases(exercise, weight);
+            });
+            if (Object.values(data).some(isRealPositiveWeight)) break;
+        }
+
+        const marker = `pegasus_lifting_weight_repair_v225_${getDateKey()}`;
+        if (repaired > 0 || !localStorage.getItem(marker)) {
+            localStorage.setItem(marker, JSON.stringify({ at: Date.now(), repaired }));
+        }
+        if (repaired > 0) console.log(`🏋️ PEGASUS MOBILE LIFTING: repaired ${repaired} weight alias keys.`);
+        return repaired;
     }
 
     function getSelectedDayName() {
@@ -271,6 +486,8 @@
         isLocked: false,
 
         cleanupLegacyTestData,
+        repairAllWeightAliases,
+        readSavedWeight,
         prefillExercise,
 
         addSet: function() {
@@ -278,7 +495,7 @@
             this.isLocked = true;
 
             try {
-                const name = normalizeExerciseName(document.getElementById('liftName')?.value).toUpperCase();
+                const name = normalizeExerciseName(document.getElementById('liftName')?.value);
                 const weight = String(document.getElementById('liftWeight')?.value || "").trim();
                 const reps = String(document.getElementById('liftReps')?.value || "").trim();
 
@@ -299,6 +516,7 @@
                 });
 
                 writeLogs(logs);
+                writeWeightAliases(name, weight);
 
                 const nameInput = document.getElementById('liftName');
                 const weightInput = document.getElementById('liftWeight');
@@ -376,6 +594,7 @@
 
     window.renderLiftingContent = function() {
         cleanupLegacyTestData();
+        repairAllWeightAliases();
         renderWorkoutPlan();
         renderManualLogs();
     };
@@ -383,12 +602,14 @@
     document.addEventListener('DOMContentLoaded', () => {
         injectViewLayer();
         cleanupLegacyTestData();
+        repairAllWeightAliases();
         if (window.PegasusMobileUI && typeof window.PegasusMobileUI.registerModule === 'function') {
             window.PegasusMobileUI.registerModule({ id: 'lifting', icon: '🏋️', label: 'Βάρη' });
         }
     });
 
     document.addEventListener('pegasus_sync_complete', () => {
+        repairAllWeightAliases();
         if (document.getElementById('lifting')?.classList.contains('active')) {
             window.renderLiftingContent();
         } else {
@@ -396,5 +617,5 @@
         }
     });
 
-    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.2).');
+    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.3.225 weight namespace guard).');
 })();

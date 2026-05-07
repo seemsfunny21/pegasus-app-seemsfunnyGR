@@ -1,10 +1,21 @@
-PEGASUS 224 - Permanent Local Storage Boot
+PEGASUS 225 - Mobile Lifting Weight Guard
 
-- Replaced the previous background/video cache warmup logic with a single permanent local storage pipeline.
-- On page open, PEGASUS downloads all known system/static files plus all known workout media paths into Cache Storage.
-- The initialization loader now shows permanent local storage progress as a percentage and file count.
-- After completion, same-origin files run cache-first from local storage.
-- Old pegasus-shield and pegasus-videos caches are purged by the new service worker.
-- Removed per-video background cache queues that caused READY/WAIT storms.
-- Missing/slow videos do not fall back to warmup; PEGASUS waits for the requested local video.
-- Package remains code-only: no images/ folder and no videos/ folder.
+This is a code-only bugfix package based on PEGASUS 224.
+
+Main fix:
+- Fixed mobile Βάρη showing zero/blank kg even though the real weights still existed in storage.
+
+Technical changes:
+- mobile/lifting-mobile.js upgraded to v1.3.225.
+- Reads pegasus_exercise_weights as the canonical source before legacy/mobile keys.
+- Selects the best non-empty profile, with ΑΓΓΕΛΟΣ protected as the canonical profile.
+- Ignores empty, zero, test, and aa keys when resolving weights.
+- Adds alias matching for compact mobile ids and desktop exercise names.
+- Repairs safe local alias keys on boot/sync without letting blank mobile keys overwrite real weights.
+- Manual mobile entries no longer uppercase exercise names and now save safe weight aliases.
+- Manifest and service worker registration bumped to v18.26 / cache 225.
+
+Packaging:
+- 62 actual files.
+- No bundled images folder.
+- No bundled videos folder.

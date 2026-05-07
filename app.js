@@ -1886,7 +1886,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
     });
 
     const state = {
-        version: '224',
+        version: '225',
         started: false,
         completed: false,
         percent: 0,
@@ -1923,7 +1923,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
             this.completed = true;
             this.setLoader(100, data);
             try {
-                localStorage.setItem('pegasus_permanent_assets_ready_v224', JSON.stringify({
+                localStorage.setItem('pegasus_permanent_assets_ready_v225', JSON.stringify({
                     at: Date.now(),
                     total: this.total,
                     ok: this.ok,
@@ -1957,7 +1957,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
             ];
 
             const all = Array.from(new Set([...staticUrls, ...urls]));
-            const cache = await caches.open('pegasus-permanent-local-v224-page-fallback');
+            const cache = await caches.open('pegasus-permanent-local-v225-page-fallback');
             let done = 0;
             let ok = 0;
             let skipped = 0;
@@ -2003,7 +2003,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
                     }
 
                     const swPath = window.location.pathname.includes('/mobile/') ? '../sw.js' : './sw.js';
-                    await navigator.serviceWorker.register(`${swPath}?v=3.31.224`);
+                    await navigator.serviceWorker.register(`${swPath}?v=3.31.225`);
                     const registration = await navigator.serviceWorker.ready;
                     const target = navigator.serviceWorker.controller || registration.active || registration.waiting || registration.installing;
 
@@ -2073,7 +2073,7 @@ window.PegasusVideoPreloader = window.PegasusVideoPreloader || {
             return ok;
         };
 
-        // PEGASUS 224: no per-video cache queue and no READY/WAIT storm.
+        // PEGASUS 225: no per-video cache queue and no READY/WAIT storm.
         // Videos are downloaded once by the permanent boot storage pipeline.
         if ('caches' in window) {
             return caches.match(cleanSrc, { ignoreSearch: true })
@@ -2181,7 +2181,7 @@ function loadPegasusVideoCandidate(cleanSrc, vid, label, reason = 'retry') {
     vid.play().catch(() => {});
 }
 
-// PEGASUS 224: the old per-video cache-ready bridge has been removed.
+// PEGASUS 225: the old per-video cache-ready bridge has been removed.
 // Full project/media storage is handled once at boot by PegasusPermanentStorage.
 
 function waitForPegasusVideo(src, vid, label) {
@@ -2207,7 +2207,7 @@ function waitForPegasusVideo(src, vid, label) {
             label.style.color = '#ff9800';
         }
 
-        // PEGASUS 224: do not spam network probes and do not swap to warmup.
+        // PEGASUS 225: do not spam network probes and do not swap to warmup.
         // The permanent storage pipeline owns all downloads; this loop only
         // reconnects the requested video when it appears in local Cache Storage.
         let cached = null;
@@ -2235,7 +2235,7 @@ function showVideo(i) {
     const label = document.getElementById("phaseTimer");
     if (!vid) return;
 
-    // PEGASUS 224: if the correct video is missing/slow, never substitute warmup
+    // PEGASUS 225: if the correct video is missing/slow, never substitute warmup
     // or another exercise. Wait for the requested local video only.
     if (!vid.dataset.pegasusVideoErrorGuard) {
         vid.dataset.pegasusVideoErrorGuard = "1";
@@ -2262,7 +2262,7 @@ function showVideo(i) {
                 label.style.color = '#ff9800';
             }
 
-            // PEGASUS 224: when a retry loop is already active, do not recursively
+            // PEGASUS 225: when a retry loop is already active, do not recursively
             // create new loops or spam the console. The permanent local storage
             // pipeline will make the requested video available when it is ready.
             if (alreadyWaiting) return;
@@ -2310,7 +2310,7 @@ function showVideo(i) {
         preloadPegasusAdjacentVideos(i);
         attachPegasusVideoReadyHandlers(newSrc, vid, label);
         vid.play().catch(() => {
-            // PEGASUS 224: autoplay/user-gesture failures must not swap to warmup
+            // PEGASUS 225: autoplay/user-gesture failures must not swap to warmup
             // and must not start a retry loop. The selected exercise video stays selected.
         });
     } else {
@@ -3014,7 +3014,7 @@ window.onload = () => {
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
-    // PEGASUS 224: hold the visible initialization screen until all known
+    // PEGASUS 225: hold the visible initialization screen until all known
     // same-origin system/media files are stored in the permanent local cache.
     const storageReady = window.PegasusBackgroundAssets?.start
         ? window.PegasusBackgroundAssets.start()
