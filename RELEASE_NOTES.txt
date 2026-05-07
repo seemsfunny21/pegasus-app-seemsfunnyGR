@@ -1,18 +1,22 @@
-PEGASUS 235 - Cloud Data Loss Guard
+PEGASUS 236 - Data Guard Repair Push + Fast Local Cache
 
 Problem fixed:
-- A manual/thin JSONBin overwrite could contain only a few fields and omit most PEGASUS keys.
-- The old pull logic treated missing remote keys as deletion and could wipe local modules like Ύπνος, Parking, Βάρη, Notes, Finance, YouTube, Supplies, etc.
+- If JSONBin is overwritten manually with a thin payload, PEGASUS must not treat missing cloud fields as deleted data.
+- After a safe merge from a thin cloud payload, PEGASUS now arms a full repair push so the cloud is rebuilt from the local full snapshot.
+- Refresh was slow because permanent local storage was being checked/started on every open as if files needed to download again.
 
 Changes:
-- Cloud pull is now merge-first and non-destructive: missing remote keys no longer delete local data.
-- Added Data Guard snapshots before every cloud pull: latest / previous / older local safety copies.
-- Empty remote values for critical modules no longer overwrite non-empty local values.
-- Thin/partial cloud payloads are detected and logged as merge-only.
-- Legacy/manual payload fields are mapped safely, e.g. car_service -> pegasus_car_service, kcal/protein/supp_inventory/weekly_history/food_library/contacts.
-- Push now includes data-guard metadata and aborts if a bug creates an abnormally tiny payload.
-- Added pegasus_weight_ and pegasus_lifting_v1 sync coverage for mobile lifting aliases.
-- Bumped service-worker cache to v235 so cloudSync.js refreshes cleanly.
+- Added Data Guard repair marker: thin/partial cloud payloads trigger a safe full re-push after preserving local data.
+- Missing remote keys still never delete local data unless an explicit safe delete channel is used.
+- Critical non-empty local modules are preserved against empty remote values.
+- Push clears the Data Guard repair marker only after successful full cloud write.
+- Permanent local cache bumped to v236.
+- Desktop loader now skips the download pipeline when v236 assets are already marked ready locally.
+- Service worker stores a v236 cache metadata marker and returns 100% immediately on later starts.
+- Mobile no longer forces service-worker update checks on every open.
+
+Install note:
+Upload all files. The first open after this package will rebuild the v236 local cache once. After it reaches 100%, normal refreshes should be much faster and should not re-download everything.
 
 Package:
 - Code-only.

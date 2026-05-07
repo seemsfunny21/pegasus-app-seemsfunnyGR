@@ -1,11 +1,12 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.13 (PERMANENT LOCAL STORAGE BOOT)
+   PEGASUS PWA SERVICE WORKER - v3.14 (PERMANENT LOCAL STORAGE BOOT)
    Protocol: Cache-first after full local download, persistent same-origin assets
    Status: FINAL STABLE | ZERO WARMUP FALLBACK | FULL PROGRESS BRIDGE
    ========================================================================== */
 
-const PEGASUS_STORAGE_VERSION = '235';
+const PEGASUS_STORAGE_VERSION = '236';
 const CACHE_NAME = `pegasus-permanent-local-v${PEGASUS_STORAGE_VERSION}`;
+const CACHE_META_URL = './__pegasus_permanent_cache_meta__.json';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -223,6 +224,33 @@ async function cacheOnePermanentAsset(cache, urlString) {
     return { ok: true, cached: false, size: blob.size };
 }
 
+async function getPermanentCacheMeta(cache) {
+    try {
+        const response = await cache.match(makeCacheRequest(CACHE_META_URL), { ignoreSearch: true });
+        if (!response) return null;
+        const meta = await response.clone().json();
+        if (!meta || meta.version !== PEGASUS_STORAGE_VERSION || meta.completed !== true) return null;
+        return meta;
+    } catch (_) {
+        return null;
+    }
+}
+
+async function setPermanentCacheMeta(cache, meta) {
+    try {
+        await cache.put(makeCacheRequest(CACHE_META_URL), new Response(JSON.stringify({
+            ...meta,
+            version: PEGASUS_STORAGE_VERSION,
+            completed: true,
+            completedAt: Date.now()
+        }), {
+            status: 200,
+            statusText: 'OK',
+            headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
+        }));
+    } catch (_) {}
+}
+
 async function runPermanentLocalDownload(extraUrls = []) {
     const cache = await caches.open(CACHE_NAME);
     const urls = Array.from(new Set([
@@ -231,6 +259,23 @@ async function runPermanentLocalDownload(extraUrls = []) {
     ].filter(Boolean)));
 
     const total = urls.length || 1;
+    const existingMeta = await getPermanentCacheMeta(cache);
+    if (existingMeta && Number(existingMeta.total || 0) >= total) {
+        await notifyPegasusClients({
+            type: 'PEGASUS_PERMANENT_CACHE_COMPLETE',
+            percent: 100,
+            done: existingMeta.done || existingMeta.total || total,
+            total: existingMeta.total || total,
+            ok: existingMeta.ok || existingMeta.total || total,
+            skipped: existingMeta.skipped || 0,
+            bytes: existingMeta.bytes || 0,
+            cache: CACHE_NAME,
+            status: 'already-local'
+        });
+        console.log(`✅ PEGASUS SW: permanent local storage already ready (${existingMeta.ok || existingMeta.total || total}/${existingMeta.total || total}).`);
+        return;
+    }
+
     let done = 0;
     let ok = 0;
     let skipped = 0;
@@ -274,6 +319,8 @@ async function runPermanentLocalDownload(extraUrls = []) {
             status: percent >= 100 ? 'complete' : 'downloading'
         });
     }
+
+    await setPermanentCacheMeta(cache, { done, total, ok, skipped, bytes });
 
     await notifyPegasusClients({
         type: 'PEGASUS_PERMANENT_CACHE_COMPLETE',

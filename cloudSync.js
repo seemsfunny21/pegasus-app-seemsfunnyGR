@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v22.2 DATA GUARD)
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v22.3 DATA GUARD + REPAIR PUSH)
    STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
@@ -29,7 +29,8 @@ const PegasusCloud = {
         openaiKey: "pegasus_openai_key",
         openrouterKey: "pegasus_openrouter_key",
         protectedContactsState: "pegasus_protected_contacts_state",
-        protectedContactsRepair: "pegasus_protected_contacts_repair"
+        protectedContactsRepair: "pegasus_protected_contacts_repair",
+        dataGuardRepair: "pegasus_cloud_data_guard_repair_needed_v1"
     },
 
     isUnlocked: false,
@@ -173,6 +174,25 @@ const PegasusCloud = {
 
     clearProtectedRepairPending() {
         this.safeRemoveLocal(this.storage.protectedContactsRepair);
+    },
+
+    hasDataGuardRepairPending() {
+        return String(localStorage.getItem(this.storage.dataGuardRepair) || "") === "1";
+    },
+
+    markDataGuardRepairPending(reason = "thin-remote-payload") {
+        const marker = {
+            reason: String(reason || "thin-remote-payload"),
+            at: Date.now(),
+            iso: new Date().toISOString()
+        };
+        this.safeSetLocal(this.storage.dataGuardRepair, "1");
+        this.safeSetLocal("pegasus_cloud_data_guard_repair_meta_v1", JSON.stringify(marker));
+    },
+
+    clearDataGuardRepairPending() {
+        this.safeRemoveLocal(this.storage.dataGuardRepair);
+        this.safeRemoveLocal("pegasus_cloud_data_guard_repair_meta_v1");
     },
 
     markProtectedContactsUnavailable(envelope) {
@@ -348,6 +368,8 @@ const PegasusCloud = {
             this.storage.localPinHash,
             this.storage.protectedContactsState,
             this.storage.protectedContactsRepair,
+            this.storage.dataGuardRepair,
+            "pegasus_cloud_data_guard_repair_meta_v1",
             this.storage.legacyPin,
             this.storage.legacyTime,
             this.storage.geminiKey,
@@ -1506,6 +1528,7 @@ const PegasusCloud = {
         this.safeRemoveLocal(this.storage.localPinHash);
         this.safeRemoveLocal(this.storage.protectedContactsState);
         this.safeRemoveLocal(this.storage.protectedContactsRepair);
+        this.clearDataGuardRepairPending();
         this.safeRemoveLocal(this.storage.approvedDevice);
         this.safeRemoveLocal(this.storage.desktopApproved);
         this.safeRemoveLocal(this.storage.legacyPin);
@@ -1587,7 +1610,7 @@ const PegasusCloud = {
 
                 this.startAutoSync();
 
-                if (navigator.onLine && (this.hasPendingChanges() || this.hasProtectedRepairPending())) {
+                if (navigator.onLine && (this.hasPendingChanges() || this.hasProtectedRepairPending() || this.hasDataGuardRepairPending())) {
                     await this._doPush();
                 }
 
@@ -1847,6 +1870,20 @@ const PegasusCloud = {
 
                 if (remoteIsThin) {
                     console.warn("🛡️ CLOUD DATA GUARD: Thin/partial cloud payload detected. Merge-only mode active; no local keys will be deleted.");
+
+                    const localCriticalKeys = this.getDataGuardCriticalKeys()
+                        .filter(key => this.hasMeaningfulSyncValue(localStorage.getItem(key)));
+                    const missingCriticalKeys = localCriticalKeys
+                        .filter(key => !Object.prototype.hasOwnProperty.call(remoteStorage, key) && !Object.prototype.hasOwnProperty.call(remoteProtectedStorage, key));
+
+                    if (missingCriticalKeys.length > 0 || Object.keys(remoteStorage).length < this.getLocalManagedKeys({ includeProtected: true }).length) {
+                        this.markDataGuardRepairPending("thin-remote-payload");
+                        console.warn("🛡️ CLOUD DATA GUARD: Full repair push armed after safe merge.", {
+                            missingCriticalKeys: missingCriticalKeys.slice(0, 12),
+                            remoteKeys: Object.keys(remoteStorage).length,
+                            localManagedKeys: this.getLocalManagedKeys({ includeProtected: true }).length
+                        });
+                    }
                 }
 
                 console.log("☁️ CLOUD: Syncing latest version...");
@@ -2003,7 +2040,7 @@ const PegasusCloud = {
 
         const changed = await this.pull(silent);
 
-        if (this.hasPendingChanges() || this.hasProtectedRepairPending()) {
+        if (this.hasPendingChanges() || this.hasProtectedRepairPending() || this.hasDataGuardRepairPending()) {
             const pushed = await this._doPush();
             this.traceStep("cloudSync", "syncNow", pushed ? "PUSHED" : "PULL_ONLY");
             return !!(changed || pushed);
@@ -2079,6 +2116,7 @@ const PegasusCloud = {
             const pendingQueueBeforePush = this.loadPendingChanges();
             const pendingExists = Object.keys(pendingQueueBeforePush).length > 0;
             const protectedRepairPending = this.hasProtectedRepairPending();
+            const dataGuardRepairPending = this.hasDataGuardRepairPending();
             const deletedKeys = Object.entries(pendingQueueBeforePush)
                 .filter(([key, entry]) => entry?.type === "remove" && this.isAllowedStorageKey(key) && !this.getDataGuardCriticalKeys().includes(key))
                 .map(([key]) => key)
@@ -2087,7 +2125,8 @@ const PegasusCloud = {
             if (remoteTs && remoteTs > localTs) {
                 console.warn("⚠️ CLOUD: Remote is newer than local. Pulling before push...");
                 await this.pull(true);
-                if (!pendingExists && !protectedRepairPending) return false;
+                const repairStillPending = this.hasDataGuardRepairPending();
+                if (!pendingExists && !protectedRepairPending && !repairStillPending) return false;
             }
 
             if (this.hasPendingChanges()) {
@@ -2155,6 +2194,7 @@ const PegasusCloud = {
             this.safeSetLocal(this.storage.lastPush, ts);
             this.clearPendingChanges();
             this.clearProtectedRepairPending();
+            this.clearDataGuardRepairPending();
             console.log("📤 CLOUD: Secure Sync OK");
             this.traceStep("cloudSync", "push", "SUCCESS");
             return true;

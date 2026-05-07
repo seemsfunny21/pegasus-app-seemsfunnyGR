@@ -1886,7 +1886,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
     });
 
     const state = {
-        version: '228',
+        version: '236',
         started: false,
         completed: false,
         percent: 0,
@@ -1896,6 +1896,19 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
         skipped: 0,
         bytes: 0,
         readyPromise,
+        readyKey: 'pegasus_permanent_assets_ready_v236',
+
+        getReadyMarker() {
+            try {
+                const raw = localStorage.getItem(this.readyKey);
+                if (!raw) return null;
+                const marker = JSON.parse(raw);
+                if (!marker || String(marker.version || '') !== this.version) return null;
+                return marker;
+            } catch (_) {
+                return null;
+            }
+        },
 
         setLoader(percent, data = {}) {
             this.percent = Math.max(0, Math.min(100, Number(percent) || 0));
@@ -1923,8 +1936,10 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
             this.completed = true;
             this.setLoader(100, data);
             try {
-                localStorage.setItem('pegasus_permanent_assets_ready_v228', JSON.stringify({
+                localStorage.setItem(this.readyKey, JSON.stringify({
+                    version: this.version,
                     at: Date.now(),
+                    done: this.done,
                     total: this.total,
                     ok: this.ok,
                     skipped: this.skipped,
@@ -1957,7 +1972,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
             ];
 
             const all = Array.from(new Set([...staticUrls, ...urls]));
-            const cache = await caches.open('pegasus-permanent-local-v228-page-fallback');
+            const cache = await caches.open('pegasus-permanent-local-v236-page-fallback');
             let done = 0;
             let ok = 0;
             let skipped = 0;
@@ -1985,6 +2000,19 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
         start() {
             if (this.started) return this.readyPromise;
             this.started = true;
+
+            const readyMarker = this.getReadyMarker();
+            if (readyMarker) {
+                this.complete({
+                    done: readyMarker.done || readyMarker.total || 0,
+                    total: readyMarker.total || 0,
+                    ok: readyMarker.ok || readyMarker.total || 0,
+                    skipped: readyMarker.skipped || 0,
+                    bytes: readyMarker.bytes || 0
+                });
+                return this.readyPromise;
+            }
+
             this.setLoader(0, { done: 0, total: 0, ok: 0, skipped: 0 });
 
             const mediaUrls = getPegasusKnownMediaUrls();
@@ -2003,7 +2031,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
                     }
 
                     const swPath = window.location.pathname.includes('/mobile/') ? '../sw.js' : './sw.js';
-                    await navigator.serviceWorker.register(`${swPath}?v=3.31.228`);
+                    await navigator.serviceWorker.register(`${swPath}?v=3.36.236`);
                     const registration = await navigator.serviceWorker.ready;
                     const target = navigator.serviceWorker.controller || registration.active || registration.waiting || registration.installing;
 
@@ -3014,7 +3042,7 @@ window.onload = () => {
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
-    // PEGASUS 228: hold the visible initialization screen until all known
+    // PEGASUS 236: hold the visible initialization screen until all known
     // same-origin system/media files are stored in the permanent local cache.
     const storageReady = window.PegasusBackgroundAssets?.start
         ? window.PegasusBackgroundAssets.start()

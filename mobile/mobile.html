@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v18.36</title>
+    <title>Pegasus Mobile v18.37</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -1287,10 +1287,10 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.34.233')
+                navigator.serviceWorker.register('../sw.js?v=3.36.236')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
-                        reg.update();
+                        // No forced reg.update() on every open; this keeps refresh fast after the first local download.
 
                         reg.onupdatefound = () => {
                             const installingWorker = reg.installing;
