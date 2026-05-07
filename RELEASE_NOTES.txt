@@ -1,9 +1,12 @@
-PEGASUS 232 - Mobile stable sync text size
+PEGASUS 233 - Final mobile sync indicator stabilization
 
-- Restored the mobile sync text to a larger, readable fixed size.
-- Locked sync indicator width/height/line-height in CSS, adaptiveTypography, and runtime JS.
-- Prevented non-heartbeat background sync events from visually switching the countdown into ΣΥΓΧΡΟΝΙΣΜΟΣ.
-- Bumped manifest to v18.33 and permanent local cache to v232.
+Changes:
+- Final fixed mobile sync indicator size from CSS only: 14px, fixed 285px width, fixed 24px height.
+- Removed adaptiveTypography #sync-indicator override so typography cannot resize it.
+- Removed JavaScript inline font/width/height locking from mobile.html; JS now only clears old inline locks.
+- Mobile sync indicator keeps one stable text format: ΣΥΝΔΕΔΕΜΕΝΟ · XXs.
+- Countdown still changes color: blue during sync pulse, green/orange/red while counting down.
+- Background/manual cloud sync events no longer visually reset the 30-second indicator or flash a different word.
+- Service worker/permanent local cache bumped to v233.
 
-Install note:
-Upload all files, then reload mobile once so sw.js?v=3.33.232 takes over.
+Upload all files, then reload mobile once so sw.js?v=3.34.233 takes over.

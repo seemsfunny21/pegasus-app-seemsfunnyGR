@@ -859,31 +859,22 @@
     function lockMobileSyncIndicatorSize() {
         const e = document.getElementById("sync-indicator");
         if (!e) return;
-        e.style.setProperty("font-size", "12px", "important");
-        e.style.setProperty("letter-spacing", "1.4px", "important");
-        e.style.setProperty("font-family", "Inter, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", "important");
-        e.style.setProperty("font-variant-numeric", "tabular-nums", "important");
-        e.style.setProperty("font-feature-settings", '"tnum" 1', "important");
-        e.style.setProperty("width", "260px", "important");
-        e.style.setProperty("min-width", "260px", "important");
-        e.style.setProperty("max-width", "96vw", "important");
-        e.style.setProperty("height", "22px", "important");
-        e.style.setProperty("min-height", "22px", "important");
-        e.style.setProperty("line-height", "22px", "important");
-        e.style.setProperty("display", "inline-flex", "important");
-        e.style.setProperty("align-items", "center", "important");
-        e.style.setProperty("justify-content", "center", "important");
-        e.style.setProperty("white-space", "nowrap", "important");
-        e.style.setProperty("box-sizing", "border-box", "important");
-        e.style.setProperty("transform", "none", "important");
-        e.style.setProperty("animation", "none", "important");
-        e.style.setProperty("transition", "color 0.25s ease, text-shadow 0.25s ease", "important");
+
+        // PEGASUS 233: CSS is the single source for size. This only clears older
+        // inline locks from previous versions so the label cannot grow/shrink.
+        [
+            "font-size", "letter-spacing", "font-family", "width", "min-width",
+            "max-width", "height", "min-height", "line-height", "display",
+            "align-items", "justify-content", "white-space", "box-sizing",
+            "transform", "animation", "transition"
+        ].forEach(prop => e.style.removeProperty(prop));
     }
 
     function renderMobileSyncCycleStatus() {
         const e = document.getElementById("sync-indicator");
         if (!e) return;
         lockMobileSyncIndicatorSize();
+
         if (!window.PegasusCloud?.isUnlocked) {
             e.textContent = "LOCKED";
             e.style.color = "#888";
@@ -896,24 +887,20 @@
         }
 
         const now = Date.now();
-        if (mobileLastSyncPulseTs && (now - mobileLastSyncPulseTs) < 1200) {
-            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
-            e.style.color = "#00bcd4";
-            return;
-        }
-
         if (!mobileNextSyncAt) {
             scheduleNextMobileSyncCycle(true);
         }
 
         const remainingSec = Math.max(0, Math.ceil((mobileNextSyncAt - now) / 1000));
         const remainingTxt = String(remainingSec).padStart(2, "0");
+        const isCadencePulse = !!(mobileLastSyncPulseTs && (now - mobileLastSyncPulseTs) < 1200);
 
-        // PEGASUS 232: fixed text size. Only the seconds and color change; no grow/shrink per second.
-        lockMobileSyncIndicatorSize();
+        // PEGASUS 233: stable wording + stable dimensions. Only seconds/color change.
         e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingTxt}s`;
 
-        if (remainingSec > 20) {
+        if (isCadencePulse) {
+            e.style.color = "#00bcd4";
+        } else if (remainingSec > 20) {
             e.style.color = "#00ff41";
         } else if (remainingSec > 10) {
             e.style.color = "#ff9800";
@@ -960,8 +947,7 @@
             if (cadencePulse) {
                 mobileLastSyncPulseTs = Date.now();
                 scheduleNextMobileSyncCycle(true);
-                e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
-                e.style.color = "#00bcd4";
+                renderMobileSyncCycleStatus();
             } else {
                 renderMobileSyncCycleStatus();
             }
@@ -1080,7 +1066,15 @@
 
         if (status === "online") setSyncStatus("online");
         else if (status === "offline") setSyncStatus("offline");
-        else if (status === "syncing") setSyncStatus("syncing");
+        else if (status === "syncing") {
+            if (window.__pegasusMobileCadencePermit === true) {
+                setSyncStatus("syncing");
+            } else {
+                if (!mobileNextSyncAt) scheduleNextMobileSyncCycle(true);
+                startMobileSyncCountdown();
+                renderMobileSyncCycleStatus();
+            }
+        }
         else if (status === "error") setSyncStatus("error");
         else if (status === "locked") setSyncStatus("locked");
     });
@@ -1287,7 +1281,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.33.232')
+                navigator.serviceWorker.register('../sw.js?v=3.34.233')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();
