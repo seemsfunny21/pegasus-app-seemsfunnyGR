@@ -1,7 +1,11 @@
-# PEGASUS 230
+# PEGASUS 232
 
-Code-only mobile Weather UI cleanup based on PEGASUS 229.
+Code-only mobile sync indicator stability fix based on PEGASUS 231.
 
-The Weather panel now relies on the automatic refresh that already runs whenever the Weather menu opens, so the manual refresh button has been removed. The panel keeps the current weather, hourly forecast, and 3-day forecast, and shows a small note that the weather updates automatically on open.
+Changes:
+- Mobile sync indicator text is restored to a larger stable size.
+- The indicator keeps a fixed width/height so the countdown cannot grow/shrink every second.
+- Background/manual sync flashes no longer replace the countdown unless the visible 30-second heartbeat owns the sync pulse.
+- Service worker/cache version bumped to 232 so the mobile files refresh cleanly.
 
-No saved weights, workout history, nutrition data, sync data, or weather cache data are deleted. No bundled images or videos are included.
+No images or videos are bundled. No saved data is deleted.

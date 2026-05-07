@@ -23,28 +23,28 @@ body {
 }
 
 #sync-indicator {
-    font-size: 10px !important;
+    font-size: 12px !important;
     font-weight: 900;
-    letter-spacing: 1.6px !important;
+    letter-spacing: 1.4px !important;
     color: var(--main);
     margin-bottom: 10px;
     text-transform: none;
     text-shadow: 0 0 10px currentColor;
     font-variant-numeric: tabular-nums !important;
     font-feature-settings: "tnum" 1 !important;
-    font-family: Consolas, Menlo, ui-monospace, monospace !important;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    width: 220px !important;
-    min-width: 220px !important;
+    width: 260px !important;
+    min-width: 260px !important;
     max-width: 96vw !important;
-    height: 16px !important;
-    min-height: 16px !important;
+    height: 22px !important;
+    min-height: 22px !important;
     text-align: center;
     white-space: nowrap !important;
     box-sizing: border-box;
-    line-height: 16px !important;
+    line-height: 22px !important;
     transform: none !important;
     animation: none !important;
     transition: color 0.25s ease, text-shadow 0.25s ease !important;

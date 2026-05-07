@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v18.32</title>
+    <title>Pegasus Mobile v18.33</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -859,17 +859,17 @@
     function lockMobileSyncIndicatorSize() {
         const e = document.getElementById("sync-indicator");
         if (!e) return;
-        e.style.setProperty("font-size", "10px", "important");
-        e.style.setProperty("letter-spacing", "1.6px", "important");
-        e.style.setProperty("font-family", "Consolas, Menlo, ui-monospace, monospace", "important");
+        e.style.setProperty("font-size", "12px", "important");
+        e.style.setProperty("letter-spacing", "1.4px", "important");
+        e.style.setProperty("font-family", "Inter, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", "important");
         e.style.setProperty("font-variant-numeric", "tabular-nums", "important");
         e.style.setProperty("font-feature-settings", '"tnum" 1', "important");
-        e.style.setProperty("width", "220px", "important");
-        e.style.setProperty("min-width", "220px", "important");
+        e.style.setProperty("width", "260px", "important");
+        e.style.setProperty("min-width", "260px", "important");
         e.style.setProperty("max-width", "96vw", "important");
-        e.style.setProperty("height", "16px", "important");
-        e.style.setProperty("min-height", "16px", "important");
-        e.style.setProperty("line-height", "16px", "important");
+        e.style.setProperty("height", "22px", "important");
+        e.style.setProperty("min-height", "22px", "important");
+        e.style.setProperty("line-height", "22px", "important");
         e.style.setProperty("display", "inline-flex", "important");
         e.style.setProperty("align-items", "center", "important");
         e.style.setProperty("justify-content", "center", "important");
@@ -909,7 +909,7 @@
         const remainingSec = Math.max(0, Math.ceil((mobileNextSyncAt - now) / 1000));
         const remainingTxt = String(remainingSec).padStart(2, "0");
 
-        // PEGASUS 231: fixed-size countdown. Only color changes; no grow/shrink per second.
+        // PEGASUS 232: fixed text size. Only the seconds and color change; no grow/shrink per second.
         lockMobileSyncIndicatorSize();
         e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingTxt}s`;
 
@@ -951,13 +951,20 @@
             e.textContent = "OFFLINE";
             e.style.color = "#ff4444";
         } else if (status === 'syncing') {
-            if (window.__pegasusMobileCadencePermit === true || !mobileNextSyncAt) {
+            const cadencePulse = window.__pegasusMobileCadencePermit === true || !mobileNextSyncAt;
+            startMobileSyncCountdown();
+
+            // PEGASUS 232: ignore background/manual cloud "syncing" flashes visually.
+            // The indicator must stay the same size and keep counting down unless the
+            // visible 30-second heartbeat is the owner of the sync pulse.
+            if (cadencePulse) {
                 mobileLastSyncPulseTs = Date.now();
                 scheduleNextMobileSyncCycle(true);
+                e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
+                e.style.color = "#00bcd4";
+            } else {
+                renderMobileSyncCycleStatus();
             }
-            startMobileSyncCountdown();
-            e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
-            e.style.color = "#00bcd4";
         } else if (status === 'error') {
             stopMobileSyncCountdown();
             e.textContent = "ΣΦΑΛΜΑ SYNC";
@@ -1280,7 +1287,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.32.231')
+                navigator.serviceWorker.register('../sw.js?v=3.33.232')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

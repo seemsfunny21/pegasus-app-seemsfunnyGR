@@ -67,7 +67,7 @@
             vars: {
                 '--pg-font-body': `${base}px`,
                 '--pg-font-ui': `${roundHalf(base - 0.5)}px`,
-                '--pg-font-sync': `10px`,
+                '--pg-font-sync': `12px`,
                 '--pg-font-mobile-title': `${roundHalf(clamp(base * 2.35, 33, 42))}px`,
                 '--pg-font-mobile-subtitle': `${roundHalf(clamp(base - 5.5, 10, 13))}px`,
                 '--pg-font-mobile-tile-icon': `${roundHalf(clamp(base + 10, 24, 30))}px`,
@@ -185,9 +185,12 @@ html[data-pegasus-typography='mobile'] input {
 }
 
 html[data-pegasus-typography='mobile'] #sync-indicator {
-    font-size: 10px !important;
-    line-height: 16px !important;
-    min-height: 16px !important;
+    font-size: 12px !important;
+    line-height: 22px !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    width: 260px !important;
+    min-width: 260px !important;
 }
 
 html[data-pegasus-typography='mobile'] .header h1 {

@@ -1,17 +1,9 @@
-PEGASUS 231 - Mobile sync cadence lock
+PEGASUS 232 - Mobile stable sync text size
 
-- Mobile sync now has one visible 30-second cadence owner.
-- Removed early mobile sync triggers from focus/visibility/online/global cloud autosync.
-- Local mobile changes stay queued and are pushed by the next 30-second heartbeat, instead of firing random syncs before the countdown reaches 00s.
-- The sync indicator text is hard-size locked: same font, same width, same height, only the color changes.
-- Service worker cache bumped to pegasus-permanent-local-v231.
+- Restored the mobile sync text to a larger, readable fixed size.
+- Locked sync indicator width/height/line-height in CSS, adaptiveTypography, and runtime JS.
+- Prevented non-heartbeat background sync events from visually switching the countdown into ΣΥΓΧΡΟΝΙΣΜΟΣ.
+- Bumped manifest to v18.33 and permanent local cache to v232.
 
-PEGASUS 230
-
-- Mobile Weather no longer shows a manual “Ανανέωση / Refresh” button inside the Weather panel.
-- Weather still refreshes automatically every time the Weather menu opens.
-- Added a small informational note so it is clear that Weather updates on open.
-- Weather tile fallback text now says “Άνοιγμα” instead of “Ανανέωση”.
-- Manifest bumped to v18.31.
-- Permanent local storage / service worker cache bumped to 230.
-- Code-only zip: no bundled images or videos.
+Install note:
+Upload all files, then reload mobile once so sw.js?v=3.33.232 takes over.
