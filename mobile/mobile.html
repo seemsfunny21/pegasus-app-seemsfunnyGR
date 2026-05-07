@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v18.28</title>
+    <title>Pegasus Mobile v18.30</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -879,14 +879,25 @@
         }
 
         const remainingSec = Math.max(0, Math.ceil((mobileNextSyncAt - now) / 1000));
+        const remainingTxt = String(remainingSec).padStart(2, "0");
+
+        // PEGASUS 229: fixed-size countdown. Only color changes; no visual grow/shrink per second.
+        e.style.fontVariantNumeric = "tabular-nums";
+        e.style.fontFeatureSettings = '"tnum" 1';
+        e.style.width = "220px";
+        e.style.maxWidth = "96vw";
+        e.style.textAlign = "center";
+        e.style.boxSizing = "border-box";
+        e.style.lineHeight = "16px";
+        e.style.transform = "none";
+        e.style.animation = "none";
+        e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingTxt}s`;
+
         if (remainingSec > 20) {
-            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
             e.style.color = "#00ff41";
         } else if (remainingSec > 10) {
-            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
             e.style.color = "#ff9800";
         } else {
-            e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingSec}s`;
             e.style.color = "#ff4444";
         }
     }
@@ -1229,7 +1240,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.31.228')
+                navigator.serviceWorker.register('../sw.js?v=3.31.229')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

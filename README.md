@@ -1,9 +1,7 @@
-# PEGASUS 228
+# PEGASUS 229
 
-Code-only mobile UX build based on PEGASUS 227.
+Code-only mobile UX fix based on PEGASUS 228.
 
-This build removes the standalone mobile “Βάρη” category from the second mobile page and merges the useful weight information into “Στόχοι”. The Targets view now shows weekly progress bars first, then today’s workout exercises, then the latest saved kg values for all known exercises.
+This build stabilizes the mobile sync countdown so only the seconds and status color change; the text no longer appears to grow or shrink each second. It also cleans the Στόχοι recovery-day message: no-weight/recovery days now show “Αποθεραπεία”, while normal training days still list the day’s exercises and saved kg values below.
 
-The lifting/weight data logic and storage keys are preserved, so no saved kilos are deleted. Recovery/no-weight days still show the saved weight library under Targets.
-
-No bundled images or videos are included.
+No saved weights, workout history, nutrition data, or sync data are deleted. No bundled images or videos are included.

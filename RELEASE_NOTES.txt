@@ -1,9 +1,9 @@
-PEGASUS 228
+PEGASUS 229
 
-- Mobile Στόχοι now includes three stacked sections: weekly progress bars, ασκήσεις ημέρας, and τελευταία αποθηκευμένα κιλά.
-- Removed the standalone mobile Βάρη category/tile from the extended mobile page.
-- Preserved the full lifting/weight storage logic and alias repair, so existing kg values remain safe and continue syncing.
-- Recovery/no-weight days now keep Targets useful by showing the saved kg library below the daily-exercise section.
-- Manifest bumped to v18.29.
-- Permanent local storage / service worker cache bumped to 228.
+- Mobile sync countdown is now visually stable: the seconds count down with fixed-width digits and fixed layout, so it no longer grows/shrinks every second.
+- Mobile sync status keeps the existing color cycle: blue during sync, green/orange/red as the 30s countdown runs.
+- Mobile Στόχοι daily-exercise section now shows a clean “Αποθεραπεία” message on recovery/no-weight days instead of the long explanatory text.
+- If the selected day has weight exercises, Στόχοι still shows the exercise list normally.
+- Manifest bumped to v18.30.
+- Permanent local storage / service worker cache bumped to 229.
 - Code-only zip: no bundled images or videos.

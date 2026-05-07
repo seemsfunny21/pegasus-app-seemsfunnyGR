@@ -1,5 +1,5 @@
 /* ======================================================================
-   PEGASUS MOBILE LIFTING - Workout Weight Mirror Library (v1.5.228)
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror Library (v1.6.229)
    Purpose: show current workout exercises + saved weights, keep manual log
    ====================================================================== */
 (function() {
@@ -686,7 +686,7 @@
         const rows = getWorkoutExercises();
 
         if (!rows.length) {
-            renderTargetEmpty(container, `Σήμερα (${selectedDay}) δεν έχει ασκήσεις με βάρη ή είναι αποθεραπεία. Τα τελευταία κιλά φαίνονται από κάτω.`);
+            renderTargetEmpty(container, 'Αποθεραπεία');
             return;
         }
 
@@ -875,5 +875,5 @@
         }
     });
 
-    console.log('🏋️ PEGASUS MOBILE LIFTING: Targets-integrated weight library active (v1.5.228).');
+    console.log('🏋️ PEGASUS MOBILE LIFTING: Targets-integrated weight library active (v1.6.229).');
 })();

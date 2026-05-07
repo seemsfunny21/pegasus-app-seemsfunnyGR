@@ -22,7 +22,28 @@ body {
     display: flex; flex-direction: column; align-items: center;
 }
 
-#sync-indicator { font-size: 10px; font-weight: 900; letter-spacing: 2px; color: var(--main); margin-bottom: 10px; text-transform: none; text-shadow: 0 0 10px var(--main); }
+#sync-indicator {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--main);
+    margin-bottom: 10px;
+    text-transform: none;
+    text-shadow: 0 0 10px currentColor;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    font-family: 'Inter', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    display: inline-block;
+    width: 220px;
+    max-width: 96vw;
+    min-height: 16px;
+    text-align: center;
+    box-sizing: border-box;
+    line-height: 16px;
+    transform: none !important;
+    animation: none !important;
+    transition: color 0.25s ease, text-shadow 0.25s ease;
+}
 
 .header h1 { font-size: 38px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: none; background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .header p { font-size: 10px; color: var(--main); margin: 4px 0 20px; font-weight: 800; letter-spacing: 3px; text-transform: none; }
