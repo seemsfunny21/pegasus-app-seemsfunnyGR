@@ -1,9 +1,9 @@
-PEGASUS 227
+PEGASUS 228
 
-- Mobile Βάρη recovery-day fix: if the selected day has no weight exercises, saved weights are shown from the local/cloud weight library instead of showing an empty plan.
-- Mobile Βάρη PR/history now reads saved exercise weights and legacy weight_* / pegasus_weight_* keys, not only manual lifting logs.
-- Mobile Βάρη exposes a clear note when today is αποθεραπεία/no-weights so it is obvious that the kilos were not lost.
-- Mobile Καιρός now forces a fresh weather refresh whenever the Weather view opens.
-- Manifest bumped to v18.28.
-- Permanent local storage / service worker cache bumped to 227.
+- Mobile Στόχοι now includes three stacked sections: weekly progress bars, ασκήσεις ημέρας, and τελευταία αποθηκευμένα κιλά.
+- Removed the standalone mobile Βάρη category/tile from the extended mobile page.
+- Preserved the full lifting/weight storage logic and alias repair, so existing kg values remain safe and continue syncing.
+- Recovery/no-weight days now keep Targets useful by showing the saved kg library below the daily-exercise section.
+- Manifest bumped to v18.29.
+- Permanent local storage / service worker cache bumped to 228.
 - Code-only zip: no bundled images or videos.

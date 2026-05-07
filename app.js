@@ -1886,7 +1886,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
     });
 
     const state = {
-        version: '227',
+        version: '228',
         started: false,
         completed: false,
         percent: 0,
@@ -1923,7 +1923,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
             this.completed = true;
             this.setLoader(100, data);
             try {
-                localStorage.setItem('pegasus_permanent_assets_ready_v227', JSON.stringify({
+                localStorage.setItem('pegasus_permanent_assets_ready_v228', JSON.stringify({
                     at: Date.now(),
                     total: this.total,
                     ok: this.ok,
@@ -1957,7 +1957,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
             ];
 
             const all = Array.from(new Set([...staticUrls, ...urls]));
-            const cache = await caches.open('pegasus-permanent-local-v227-page-fallback');
+            const cache = await caches.open('pegasus-permanent-local-v228-page-fallback');
             let done = 0;
             let ok = 0;
             let skipped = 0;
@@ -2003,7 +2003,7 @@ window.PegasusPermanentStorage = window.PegasusPermanentStorage || (() => {
                     }
 
                     const swPath = window.location.pathname.includes('/mobile/') ? '../sw.js' : './sw.js';
-                    await navigator.serviceWorker.register(`${swPath}?v=3.31.227`);
+                    await navigator.serviceWorker.register(`${swPath}?v=3.31.228`);
                     const registration = await navigator.serviceWorker.ready;
                     const target = navigator.serviceWorker.controller || registration.active || registration.waiting || registration.installing;
 
@@ -3014,7 +3014,7 @@ window.onload = () => {
 
     if (window.PegasusUI?.init) window.PegasusUI.init();
 
-    // PEGASUS 227: hold the visible initialization screen until all known
+    // PEGASUS 228: hold the visible initialization screen until all known
     // same-origin system/media files are stored in the permanent local cache.
     const storageReady = window.PegasusBackgroundAssets?.start
         ? window.PegasusBackgroundAssets.start()

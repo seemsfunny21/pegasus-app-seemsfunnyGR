@@ -111,6 +111,12 @@
         <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΕΒΔΟΜΑΔΙΑΙΑ ΣΤΟΧΕΥΣΗ</div>
         <div id="muscle-container" class="compact-grid"></div>
+
+        <div class="section-title" style="margin-top: 22px;">ΑΣΚΗΣΕΙΣ ΗΜΕΡΑΣ</div>
+        <div id="mobile-target-day-exercises" style="width:100%;"></div>
+
+        <div class="section-title" style="margin-top: 22px;">ΤΕΛΕΥΤΑΙΑ ΑΠΟΘΗΚΕΥΜΕΝΑ ΚΙΛΑ</div>
+        <div id="mobile-target-saved-weights" style="width:100%;"></div>
     </div>
 
     <div id="profile" class="view">
@@ -831,6 +837,10 @@
                 </div>
             `;
         }).join('');
+
+        if (window.PegasusLifting && typeof window.PegasusLifting.renderTargetsPanel === "function") {
+            window.PegasusLifting.renderTargetsPanel();
+        }
     }
 
     const MOBILE_SYNC_CYCLE_MS = () => Math.max(10000, Number(window.PegasusCloud?.config?.pullInterval || 30000));
@@ -1219,7 +1229,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.31.227')
+                navigator.serviceWorker.register('../sw.js?v=3.31.228')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

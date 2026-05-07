@@ -1,5 +1,5 @@
 /* ======================================================================
-   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.4.227)
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror Library (v1.5.228)
    Purpose: show current workout exercises + saved weights, keep manual log
    ====================================================================== */
 (function() {
@@ -669,6 +669,70 @@
         `).join('') : `<div style="color:var(--muted); font-size:11px; text-align:center; padding:10px;">Δεν υπάρχει ιστορικό βαρών.</div>`;
     }
 
+
+    function renderTargetEmpty(container, message) {
+        if (!container) return;
+        container.innerHTML = `
+            <div style="padding: 12px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); font-size: 11px; text-align: center; line-height: 1.45; background: rgba(0,0,0,0.35);">
+                ${escapeHtml(message)}
+            </div>`;
+    }
+
+    function renderTargetsDayExercises() {
+        const container = document.getElementById('mobile-target-day-exercises');
+        if (!container) return;
+
+        const selectedDay = getSelectedDayName();
+        const rows = getWorkoutExercises();
+
+        if (!rows.length) {
+            renderTargetEmpty(container, `Σήμερα (${selectedDay}) δεν έχει ασκήσεις με βάρη ή είναι αποθεραπεία. Τα τελευταία κιλά φαίνονται από κάτω.`);
+            return;
+        }
+
+        rememberStrengthRows(rows);
+        container.innerHTML = rows.map(row => {
+            const doneTxt = row.sets ? `${Number(row.done || 0)}/${Number(row.sets || 0)}` : `${Number(row.done || 0)}`;
+            const weightTxt = row.weight !== "" ? `${escapeHtml(row.weight)} kg` : "-- kg";
+            return `
+                <div class="mini-card" style="display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; margin-bottom:8px;">
+                    <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+                        <b style="color:var(--main); font-size:12px; white-space:normal;">${escapeHtml(row.name)}</b>
+                        <small style="color:var(--muted); font-size:9px;">${escapeHtml(row.group)} • Σετ ${escapeHtml(doneTxt)}</small>
+                    </span>
+                    <span style="font-size:13px; font-weight:900; color:#fff; white-space:nowrap;">${weightTxt}</span>
+                </div>`;
+        }).join('');
+    }
+
+    function renderTargetsSavedWeights() {
+        const container = document.getElementById('mobile-target-saved-weights');
+        if (!container) return;
+
+        const rows = getSavedWeightRows(150);
+        if (!rows.length) {
+            renderTargetEmpty(container, 'Δεν βρέθηκαν αποθηκευμένα κιλά. Μόλις περάσει προπόνηση/βάρος από desktop ή mobile, θα εμφανιστεί εδώ.');
+            return;
+        }
+
+        container.innerHTML = rows.map(row => `
+            <div class="mini-card" style="display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; margin-bottom:8px;">
+                <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+                    <b style="color:var(--main); font-size:12px; white-space:normal;">${escapeHtml(row.name)}</b>
+                    <small style="color:var(--muted); font-size:9px;">${escapeHtml(row.group || '--')} • Αποθηκευμένα κιλά</small>
+                </span>
+                <span style="font-size:13px; font-weight:900; color:#fff; white-space:nowrap;">${escapeHtml(row.weight)} kg</span>
+            </div>
+        `).join('');
+    }
+
+    function renderTargetsPanel() {
+        cleanupLegacyTestData();
+        repairAllWeightAliases();
+        renderTargetsDayExercises();
+        renderTargetsSavedWeights();
+    }
+
     window.PegasusLifting = {
         isLocked: false,
 
@@ -676,6 +740,10 @@
         repairAllWeightAliases,
         readSavedWeight,
         getSavedWeightRows,
+        getWorkoutExercises,
+        renderTargetsPanel,
+        renderTargetsDayExercises,
+        renderTargetsSavedWeights,
         prefillExercise,
 
         addSet: function() {
@@ -785,25 +853,27 @@
         repairAllWeightAliases();
         renderWorkoutPlan();
         renderManualLogs();
+        renderTargetsPanel();
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-        injectViewLayer();
+        // PEGASUS 228: the standalone mobile “Βάρη” category is removed.
+        // The weight library stays active and is rendered inside Στόχοι.
         cleanupLegacyTestData();
         repairAllWeightAliases();
-        if (window.PegasusMobileUI && typeof window.PegasusMobileUI.registerModule === 'function') {
-            window.PegasusMobileUI.registerModule({ id: 'lifting', icon: '🏋️', label: 'Βάρη' });
-        }
+        renderTargetsPanel();
     });
 
     document.addEventListener('pegasus_sync_complete', () => {
         repairAllWeightAliases();
+        cleanupLegacyTestData();
+        if (document.getElementById('preview')?.classList.contains('active')) {
+            renderTargetsPanel();
+        }
         if (document.getElementById('lifting')?.classList.contains('active')) {
             window.renderLiftingContent();
-        } else {
-            cleanupLegacyTestData();
         }
     });
 
-    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.4.227 recovery/library fallback).');
+    console.log('🏋️ PEGASUS MOBILE LIFTING: Targets-integrated weight library active (v1.5.228).');
 })();

@@ -1,9 +1,9 @@
-# PEGASUS 227
+# PEGASUS 228
 
-Code-only maintenance build based on PEGASUS 226.
+Code-only mobile UX build based on PEGASUS 227.
 
-This build fixes the mobile Βάρη panel on recovery/no-weight days. Saved exercise weights are no longer hidden just because the selected day is αποθεραπεία. When the active day has no weight exercises, the panel shows the saved weight library and keeps the manual PR/history visible.
+This build removes the standalone mobile “Βάρη” category from the second mobile page and merges the useful weight information into “Στόχοι”. The Targets view now shows weekly progress bars first, then today’s workout exercises, then the latest saved kg values for all known exercises.
 
-It also forces the mobile Weather panel to refresh whenever the Καιρός button/view is opened, while keeping the hourly forecast and 3-day outlook from PEGASUS 226.
+The lifting/weight data logic and storage keys are preserved, so no saved kilos are deleted. Recovery/no-weight days still show the saved weight library under Targets.
 
 No bundled images or videos are included.
