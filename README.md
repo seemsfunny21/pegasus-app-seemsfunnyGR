@@ -1,10 +1,9 @@
-PEGASUS 225 - Mobile lifting weight guard. No images/ or videos/ folders included.
+# PEGASUS 227
 
-Code-only package continuing PEGASUS 224.
+Code-only maintenance build based on PEGASUS 226.
 
-Fixes:
-- Mobile Βάρη now reads saved kg from pegasus_exercise_weights first.
-- Protects existing kg from empty/0/test keys such as ΕΓΩ/aa/pegasus_lifting_v1.
-- Adds exercise alias matching: LowSeatedRow ↔ Low Rows Seated, ReverseSeatedRows ↔ Reverse Grip Cable Row, etc.
-- Manual mobile lifting entries now preserve the real exercise name and write safe alias keys.
-- Service worker/cache version bumped to 225 so mobile receives the corrected lifting-mobile.js.
+This build fixes the mobile Βάρη panel on recovery/no-weight days. Saved exercise weights are no longer hidden just because the selected day is αποθεραπεία. When the active day has no weight exercises, the panel shows the saved weight library and keeps the manual PR/history visible.
+
+It also forces the mobile Weather panel to refresh whenever the Καιρός button/view is opened, while keeping the hourly forecast and 3-day outlook from PEGASUS 226.
+
+No bundled images or videos are included.

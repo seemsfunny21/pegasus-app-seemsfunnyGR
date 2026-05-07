@@ -1,21 +1,9 @@
-PEGASUS 225 - Mobile Lifting Weight Guard
+PEGASUS 227
 
-This is a code-only bugfix package based on PEGASUS 224.
-
-Main fix:
-- Fixed mobile Βάρη showing zero/blank kg even though the real weights still existed in storage.
-
-Technical changes:
-- mobile/lifting-mobile.js upgraded to v1.3.225.
-- Reads pegasus_exercise_weights as the canonical source before legacy/mobile keys.
-- Selects the best non-empty profile, with ΑΓΓΕΛΟΣ protected as the canonical profile.
-- Ignores empty, zero, test, and aa keys when resolving weights.
-- Adds alias matching for compact mobile ids and desktop exercise names.
-- Repairs safe local alias keys on boot/sync without letting blank mobile keys overwrite real weights.
-- Manual mobile entries no longer uppercase exercise names and now save safe weight aliases.
-- Manifest and service worker registration bumped to v18.26 / cache 225.
-
-Packaging:
-- 62 actual files.
-- No bundled images folder.
-- No bundled videos folder.
+- Mobile Βάρη recovery-day fix: if the selected day has no weight exercises, saved weights are shown from the local/cloud weight library instead of showing an empty plan.
+- Mobile Βάρη PR/history now reads saved exercise weights and legacy weight_* / pegasus_weight_* keys, not only manual lifting logs.
+- Mobile Βάρη exposes a clear note when today is αποθεραπεία/no-weights so it is obvious that the kilos were not lost.
+- Mobile Καιρός now forces a fresh weather refresh whenever the Weather view opens.
+- Manifest bumped to v18.28.
+- Permanent local storage / service worker cache bumped to 227.
+- Code-only zip: no bundled images or videos.

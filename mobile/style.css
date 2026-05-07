@@ -585,3 +585,112 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     padding: 14px !important;
     border-radius: 16px !important;
 }
+
+/* PEGASUS 226: Mobile weather hourly + 3-day forecast */
+.pegasus-weather-section-title {
+    color: var(--main);
+    font-size: 12px;
+    font-weight: 900;
+    text-align: left;
+    letter-spacing: 0.4px;
+    margin: 18px 2px 10px;
+}
+.pegasus-weather-hourly-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px 2px 8px;
+    scrollbar-width: thin;
+}
+.pegasus-weather-hour-card {
+    flex: 0 0 74px;
+    min-height: 112px;
+    box-sizing: border-box;
+    border: 1px solid rgba(0,255,65,0.24);
+    border-radius: 16px;
+    background: rgba(0,0,0,0.38);
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+.pegasus-weather-hour-card strong {
+    color: var(--main);
+    font-size: 10px;
+    font-weight: 900;
+}
+.pegasus-weather-hour-emoji {
+    font-size: 20px;
+    line-height: 1;
+}
+.pegasus-weather-hour-card b {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+}
+.pegasus-weather-hour-card small {
+    color: rgba(255,255,255,0.72);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+.pegasus-weather-daily-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+.pegasus-weather-day-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(0,255,65,0.24);
+    border-radius: 16px;
+    background: rgba(0,0,0,0.38);
+    padding: 12px 10px;
+    text-align: left;
+}
+.pegasus-weather-day-card strong,
+.pegasus-weather-day-card span,
+.pegasus-weather-day-metrics b,
+.pegasus-weather-day-metrics small {
+    display: block;
+}
+.pegasus-weather-day-card strong {
+    color: var(--main);
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 3px;
+}
+.pegasus-weather-day-card span {
+    color: rgba(255,255,255,0.82);
+    font-size: 10px;
+    font-weight: 800;
+}
+.pegasus-weather-day-metrics {
+    min-width: 82px;
+    text-align: right;
+}
+.pegasus-weather-day-metrics b {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 900;
+}
+.pegasus-weather-day-metrics small {
+    color: rgba(255,255,255,0.70);
+    font-size: 9px;
+    font-weight: 800;
+    margin-top: 3px;
+}
+.pegasus-weather-empty {
+    color: rgba(255,255,255,0.68);
+    border: 1px dashed rgba(0,255,65,0.22);
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+}

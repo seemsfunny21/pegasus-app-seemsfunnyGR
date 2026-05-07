@@ -1,5 +1,5 @@
 /* ======================================================================
-   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.3.225)
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror & Log (v1.4.227)
    Purpose: show current workout exercises + saved weights, keep manual log
    ====================================================================== */
 (function() {
@@ -8,6 +8,7 @@
     const LIFTING_DATA_KEY = "pegasus_lifting_v1";
     const EXERCISE_WEIGHTS_KEY = "pegasus_exercise_weights";
     const DAILY_PROGRESS_KEY = "pegasus_daily_progress";
+    const LAST_STRENGTH_ROWS_KEY = "pegasus_mobile_lifting_last_strength_rows_v1";
     const DAY_NAMES = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
 
     function safeReadJSON(key, fallback) {
@@ -328,6 +329,174 @@
         return repaired;
     }
 
+
+    function getCanonicalDisplayName(name) {
+        const raw = normalizeExerciseName(name);
+        if (!raw) return "";
+        const rawCompact = canonicalCompactName(raw);
+        for (const [alias, canonical] of WEIGHT_ALIAS_PAIRS) {
+            if (canonicalCompactName(alias) === rawCompact || canonicalCompactName(canonical) === rawCompact) {
+                return canonical;
+            }
+        }
+        // Convert compact legacy suffixes like ChestPress only when an exact alias was not found.
+        return raw
+            .replace(/([a-z])([A-Z])/g, "$1 $2")
+            .replace(/_/g, " ")
+            .trim();
+    }
+
+    function addSavedWeightRow(map, name, weight, options = {}) {
+        const value = normalizeWeightValue(weight);
+        const canonical = getCanonicalDisplayName(name);
+        if (!canonical || !value || isLegacyTestEntry({ exercise: canonical })) return;
+        const key = canonicalCompactName(canonical);
+        const current = map.get(key);
+        const nextPriority = Number(options.priority || 0);
+        const currentPriority = Number(current?.priority || 0);
+        const group = getExerciseGroup(canonical, options.group || current?.group || "--");
+        if (!current || nextPriority >= currentPriority || !isRealPositiveWeight(current.weight)) {
+            map.set(key, {
+                name: canonical,
+                group,
+                sets: Number(options.sets || current?.sets || 0) || 0,
+                done: Number(options.done || current?.done || 0) || 0,
+                weight: value,
+                source: options.source || current?.source || "saved",
+                priority: nextPriority
+            });
+        }
+    }
+
+    function collectProgramExercises() {
+        const rows = [];
+        try {
+            const program = window.program || {};
+            Object.keys(program).forEach(day => {
+                const list = Array.isArray(program[day]) ? program[day] : [];
+                list.forEach((exercise, index) => {
+                    if (!shouldShowWorkoutExercise(exercise)) return;
+                    const name = normalizeExerciseName(exercise.name || exercise.exercise);
+                    rows.push({
+                        day,
+                        index,
+                        name,
+                        group: getExerciseGroup(name, exercise.muscleGroup),
+                        sets: Number(exercise.sets || exercise.targetSets || 0) || 0,
+                        weight: exercise.weight || ""
+                    });
+                });
+            });
+        } catch (e) {}
+        return rows;
+    }
+
+    function getSavedWeightRows(limit = 80) {
+        const map = new Map();
+
+        collectProgramExercises().forEach((exercise, index) => {
+            const saved = readSavedWeight(exercise.name, exercise.weight || "");
+            if (isRealPositiveWeight(saved)) {
+                addSavedWeightRow(map, exercise.name, saved, {
+                    group: exercise.group,
+                    sets: exercise.sets,
+                    source: "program",
+                    priority: 80 - Math.min(index, 40)
+                });
+            }
+        });
+
+        const allWeights = safeReadJSON(EXERCISE_WEIGHTS_KEY, {});
+        getBestWeightProfile(allWeights).forEach((profile, profileIndex) => {
+            const data = allWeights?.[profile];
+            if (!data || typeof data !== "object") return;
+            Object.entries(data).forEach(([exercise, weight]) => {
+                addSavedWeightRow(map, exercise, weight, {
+                    source: profile,
+                    priority: 60 - profileIndex
+                });
+            });
+        });
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key || !/(^weight_|^pegasus_weight_)/i.test(key)) continue;
+            if (/(^|_)aa_/i.test(key) || /test|τεστ|δοκιμ/i.test(key)) continue;
+            const raw = localStorage.getItem(key);
+            if (!isRealPositiveWeight(raw)) continue;
+            const suffix = key
+                .replace(/^pegasus_weight_[^_]+_/i, "")
+                .replace(/^weight_[^_]+_/i, "")
+                .replace(/^weight_/i, "");
+            addSavedWeightRow(map, suffix, raw, {
+                source: key.includes("ΑΓΓΕΛΟΣ") ? "legacy-angelos" : "legacy",
+                priority: key.includes("ΑΓΓΕΛΟΣ") ? 55 : 45
+            });
+        }
+
+        const rows = Array.from(map.values())
+            .filter(row => isRealPositiveWeight(row.weight))
+            .sort((a, b) => {
+                const pa = Number(a.priority || 0);
+                const pb = Number(b.priority || 0);
+                if (pb !== pa) return pb - pa;
+                return a.name.localeCompare(b.name, 'el');
+            })
+            .slice(0, limit)
+            .map(({ priority, ...row }) => row);
+
+        return rows;
+    }
+
+    function rememberStrengthRows(rows) {
+        if (!Array.isArray(rows) || !rows.length) return;
+        const withWeights = rows.filter(row => isRealPositiveWeight(row.weight));
+        if (!withWeights.length) return;
+        try {
+            safeWriteJSON(LAST_STRENGTH_ROWS_KEY, {
+                at: Date.now(),
+                day: getSelectedDayName(),
+                rows: withWeights.slice(0, 24)
+            });
+        } catch (e) {}
+    }
+
+    function readLastStrengthRows() {
+        const payload = safeReadJSON(LAST_STRENGTH_ROWS_KEY, null);
+        if (!payload || !Array.isArray(payload.rows)) return [];
+        return payload.rows
+            .filter(row => row && normalizeExerciseName(row.name) && isRealPositiveWeight(row.weight))
+            .map(row => ({
+                name: getCanonicalDisplayName(row.name),
+                group: getExerciseGroup(row.name, row.group),
+                sets: Number(row.sets || 0) || 0,
+                done: Number(row.done || 0) || 0,
+                weight: normalizeWeightValue(row.weight),
+                source: "last-strength"
+            }));
+    }
+
+    function getDisplayRowsForWorkout() {
+        const selectedDay = getSelectedDayName();
+        const planRows = getWorkoutExercises();
+        if (planRows.length) {
+            rememberStrengthRows(planRows);
+            return { selectedDay, rows: planRows, mode: "plan" };
+        }
+
+        const savedRows = getSavedWeightRows(40);
+        if (savedRows.length) {
+            return { selectedDay, rows: savedRows, mode: "saved" };
+        }
+
+        const lastRows = readLastStrengthRows();
+        if (lastRows.length) {
+            return { selectedDay, rows: lastRows, mode: "last" };
+        }
+
+        return { selectedDay, rows: [], mode: "empty" };
+    }
+
     function getSelectedDayName() {
         try {
             if (window.PegasusEngine && typeof window.PegasusEngine.getSnapshot === "function") {
@@ -414,25 +583,37 @@
         const container = document.getElementById('lift-plan');
         if (!container) return;
 
-        const selectedDay = getSelectedDayName();
-        const rows = getWorkoutExercises();
+        const display = getDisplayRowsForWorkout();
+        const selectedDay = display.selectedDay;
+        const rows = display.rows;
+        const mode = display.mode;
 
         if (!rows.length) {
             container.innerHTML = `
                 <div style="padding: 12px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); font-size: 11px; text-align: center;">
-                    Δεν βρέθηκαν ασκήσεις με βάρη για ${escapeHtml(selectedDay)}.
+                    Δεν βρέθηκαν ασκήσεις ή αποθηκευμένα κιλά για ${escapeHtml(selectedDay)}.
                 </div>`;
             return;
         }
 
-        container.innerHTML = rows.map((row, index) => {
-            const doneTxt = row.sets ? `${row.done}/${row.sets}` : `${row.done}`;
+        const notice = mode === "plan" ? "" : `
+            <div style="padding:10px; margin-bottom:10px; border:1px solid rgba(0,255,65,0.25); border-radius:12px; background:rgba(0,255,65,0.07); color:var(--main); font-size:10px; font-weight:900; line-height:1.45;">
+                ${mode === "last"
+                    ? `Σήμερα (${escapeHtml(selectedDay)}) δεν έχει ασκήσεις με βάρη. Δείχνω την τελευταία διαθέσιμη προπόνηση με κιλά.`
+                    : `Σήμερα (${escapeHtml(selectedDay)}) είναι χωρίς βάρη/αποθεραπεία. Τα κιλά δεν χάθηκαν — δείχνω τη βιβλιοθήκη αποθηκευμένων βαρών.`}
+            </div>`;
+
+        container.innerHTML = notice + rows.map((row, index) => {
+            const doneTxt = row.sets ? `${row.done}/${row.sets}` : `${row.done || 0}`;
+            const subTxt = mode === "plan"
+                ? `${escapeHtml(row.group)} • Σετ σήμερα ${escapeHtml(doneTxt)}`
+                : `${escapeHtml(row.group)} • Αποθηκευμένα κιλά`;
             const weightTxt = row.weight !== "" ? `${escapeHtml(row.weight)} kg` : "-- kg";
             return `
                 <button class="lift-plan-row" data-index="${index}" style="width:100%; margin-bottom:8px; text-align:left; border:1px solid var(--border); background:rgba(0,255,65,0.05); color:#fff; border-radius:12px; padding:10px; display:flex; justify-content:space-between; gap:8px; align-items:center;">
                     <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
                         <b style="color:var(--main); font-size:12px; white-space:normal;">${escapeHtml(row.name)}</b>
-                        <small style="color:var(--muted); font-size:9px;">${escapeHtml(row.group)} • Σετ σήμερα ${escapeHtml(doneTxt)}</small>
+                        <small style="color:var(--muted); font-size:9px;">${subTxt}</small>
                     </span>
                     <span style="font-size:13px; font-weight:900; color:#fff; white-space:nowrap;">${weightTxt}</span>
                 </button>`;
@@ -468,8 +649,14 @@
 
         const prMap = {};
         pastLogs.forEach(l => {
-            const name = normalizeExerciseName(l.exercise);
-            const weight = Number(l.weight || 0) || 0;
+            const name = getCanonicalDisplayName(l.exercise);
+            const weight = Number(String(l.weight || 0).replace(',', '.')) || 0;
+            if (!name || !weight) return;
+            prMap[name] = Math.max(prMap[name] || 0, weight);
+        });
+        getSavedWeightRows(100).forEach(row => {
+            const name = getCanonicalDisplayName(row.name);
+            const weight = Number(String(row.weight || 0).replace(',', '.')) || 0;
             if (!name || !weight) return;
             prMap[name] = Math.max(prMap[name] || 0, weight);
         });
@@ -488,6 +675,7 @@
         cleanupLegacyTestData,
         repairAllWeightAliases,
         readSavedWeight,
+        getSavedWeightRows,
         prefillExercise,
 
         addSet: function() {
@@ -617,5 +805,5 @@
         }
     });
 
-    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.3.225 weight namespace guard).');
+    console.log('🏋️ PEGASUS MOBILE LIFTING: Workout weight mirror active (v1.4.227 recovery/library fallback).');
 })();
