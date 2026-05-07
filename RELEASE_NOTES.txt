@@ -1,3 +1,11 @@
+PEGASUS 231 - Mobile sync cadence lock
+
+- Mobile sync now has one visible 30-second cadence owner.
+- Removed early mobile sync triggers from focus/visibility/online/global cloud autosync.
+- Local mobile changes stay queued and are pushed by the next 30-second heartbeat, instead of firing random syncs before the countdown reaches 00s.
+- The sync indicator text is hard-size locked: same font, same width, same height, only the color changes.
+- Service worker cache bumped to pegasus-permanent-local-v231.
+
 PEGASUS 230
 
 - Mobile Weather no longer shows a manual “Ανανέωση / Refresh” button inside the Weather panel.

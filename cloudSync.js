@@ -56,6 +56,55 @@ const PegasusCloud = {
         console.log("🧠 CLOUD: Engine attached");
     },
 
+    /* =========================
+       📱 MOBILE 30s CADENCE GUARD
+       Mobile owns sync timing through mobile.html. This prevents background
+       focus/visibility/storage pushes from firing before the visible countdown.
+    ========================= */
+    isMobileRuntime() {
+        return !!(typeof window !== "undefined" && window.PEGASUS_IS_MOBILE);
+    },
+
+    getMobileCadenceMs() {
+        return Math.max(10000, Number(this.config?.pullInterval || 30000));
+    },
+
+    getMobileNextSyncAt() {
+        if (typeof window === "undefined") return 0;
+        return Number(window.__pegasusMobileNextSyncAt || 0);
+    },
+
+    setMobileNextSyncAt(ts) {
+        if (typeof window === "undefined") return;
+        window.__pegasusMobileNextSyncAt = Number(ts || 0);
+    },
+
+    markMobileSyncComplete() {
+        if (!this.isMobileRuntime()) return;
+        this.setMobileNextSyncAt(Date.now() + this.getMobileCadenceMs());
+    },
+
+    shouldDeferMobileCadence(reason) {
+        if (!this.isMobileRuntime()) return false;
+        if (typeof window === "undefined") return false;
+
+        // The mobile heartbeat sets this while the countdown has reached 00s.
+        if (window.__pegasusMobileCadencePermit === true) return false;
+
+        // Before mobile.html initializes its counter, allow the first boot/auto-unlock sync.
+        const nextAt = this.getMobileNextSyncAt();
+        if (!nextAt) return false;
+
+        const now = Date.now();
+        if (now >= nextAt) return false;
+
+        const remainingSec = Math.ceil((nextAt - now) / 1000);
+        try {
+            this.traceStep("cloudSync", "mobile-cadence", "DEFERRED", `${reason || "sync"}:${remainingSec}s`);
+        } catch (_) {}
+        return true;
+    },
+
     traceStep(moduleName, action, status, extra) {
         try { window.PegasusRuntimeMonitor?.trace?.(moduleName, action, status, extra); } catch (_) {}
     },
@@ -1704,6 +1753,9 @@ const PegasusCloud = {
             return false;
         } finally {
             this.isPulling = false;
+            if (this.isMobileRuntime?.() && finalStatus === "online") {
+                this.markMobileSyncComplete?.();
+            }
 
             if (changed) {
                 setTimeout(() => {
@@ -1720,6 +1772,7 @@ const PegasusCloud = {
     ========================= */
     async syncNow(silent = false) {
         this.traceStep("cloudSync", "syncNow", "START", silent ? "SILENT" : "VERBOSE");
+        if (this.shouldDeferMobileCadence?.("syncNow")) return false;
         if (!this.isUnlocked) {
             if (this.canRestoreApprovedDevice()) {
                 const restored = await this.tryApprovedDeviceUnlock();
@@ -1750,6 +1803,7 @@ const PegasusCloud = {
        📤 PUSH (ENCRYPTED SNAPSHOT)
     ========================= */
     push(force = false) {
+        if (this.shouldDeferMobileCadence?.(force ? "push-force" : "push")) return false;
         if (!this.isUnlocked) {
             if (this.canRestoreApprovedDevice()) {
                 return this.tryApprovedDeviceUnlock().then(ok => {
@@ -1786,6 +1840,7 @@ const PegasusCloud = {
 
     async _doPush() {
         this.traceStep("cloudSync", "push", "START");
+        if (this.shouldDeferMobileCadence?.("_doPush")) return false;
         if (!this.isUnlocked) return false;
         if (!navigator.onLine) {
             this.emitSyncStatus("offline", true);
@@ -1880,6 +1935,9 @@ const PegasusCloud = {
             return false;
         } finally {
             this.isPushing = false;
+            if (this.isMobileRuntime?.() && finalStatus === "online") {
+                this.markMobileSyncComplete?.();
+            }
             this.emitSyncStatus(finalStatus, true);
         }
     },
@@ -1952,6 +2010,12 @@ const PegasusCloud = {
     ========================= */
     startAutoSync() {
         if (this.syncInterval) clearInterval(this.syncInterval);
+
+        if (this.isMobileRuntime?.()) {
+            this.syncInterval = null;
+            this.traceStep("cloudSync", "startAutoSync", "MOBILE_CADENCE_OWNER");
+            return;
+        }
 
         this.syncInterval = setInterval(() => {
             if (!this.isUnlocked) return;
@@ -2041,18 +2105,21 @@ window.addEventListener("storage", (e) => {
    FOCUS / VISIBILITY / NETWORK SYNC
 ========================= */
 window.addEventListener("focus", () => {
+    if (window.PegasusCloud?.isMobileRuntime?.()) return;
     if (window.PegasusCloud?.isUnlocked && navigator.onLine) {
         window.PegasusCloud.syncNow(true);
     }
 });
 
 document.addEventListener("visibilitychange", () => {
+    if (window.PegasusCloud?.isMobileRuntime?.()) return;
     if (!document.hidden && window.PegasusCloud?.isUnlocked && navigator.onLine) {
         window.PegasusCloud.syncNow(true);
     }
 });
 
 window.addEventListener("online", () => {
+    if (window.PegasusCloud?.isMobileRuntime?.()) return;
     if (window.PegasusCloud?.isUnlocked) {
         window.PegasusCloud.syncNow(true);
     }

@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v18.31</title>
+    <title>Pegasus Mobile v18.32</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
     <script>
         window.PEGASUS_IS_MOBILE = true;
+        window.__pegasusMobileCadencePermit = false;
+        window.__pegasusMobileNextSyncAt = 0;
 
         (function() {
             const params = new URLSearchParams(window.location.search);
@@ -851,11 +853,37 @@
     function scheduleNextMobileSyncCycle(fromNow = true) {
         const cycleMs = MOBILE_SYNC_CYCLE_MS();
         mobileNextSyncAt = Date.now() + (fromNow ? cycleMs : 0);
+        window.__pegasusMobileNextSyncAt = mobileNextSyncAt;
+    }
+
+    function lockMobileSyncIndicatorSize() {
+        const e = document.getElementById("sync-indicator");
+        if (!e) return;
+        e.style.setProperty("font-size", "10px", "important");
+        e.style.setProperty("letter-spacing", "1.6px", "important");
+        e.style.setProperty("font-family", "Consolas, Menlo, ui-monospace, monospace", "important");
+        e.style.setProperty("font-variant-numeric", "tabular-nums", "important");
+        e.style.setProperty("font-feature-settings", '"tnum" 1', "important");
+        e.style.setProperty("width", "220px", "important");
+        e.style.setProperty("min-width", "220px", "important");
+        e.style.setProperty("max-width", "96vw", "important");
+        e.style.setProperty("height", "16px", "important");
+        e.style.setProperty("min-height", "16px", "important");
+        e.style.setProperty("line-height", "16px", "important");
+        e.style.setProperty("display", "inline-flex", "important");
+        e.style.setProperty("align-items", "center", "important");
+        e.style.setProperty("justify-content", "center", "important");
+        e.style.setProperty("white-space", "nowrap", "important");
+        e.style.setProperty("box-sizing", "border-box", "important");
+        e.style.setProperty("transform", "none", "important");
+        e.style.setProperty("animation", "none", "important");
+        e.style.setProperty("transition", "color 0.25s ease, text-shadow 0.25s ease", "important");
     }
 
     function renderMobileSyncCycleStatus() {
         const e = document.getElementById("sync-indicator");
         if (!e) return;
+        lockMobileSyncIndicatorSize();
         if (!window.PegasusCloud?.isUnlocked) {
             e.textContent = "LOCKED";
             e.style.color = "#888";
@@ -874,23 +902,15 @@
             return;
         }
 
-        if (!mobileNextSyncAt || mobileNextSyncAt <= now) {
+        if (!mobileNextSyncAt) {
             scheduleNextMobileSyncCycle(true);
         }
 
         const remainingSec = Math.max(0, Math.ceil((mobileNextSyncAt - now) / 1000));
         const remainingTxt = String(remainingSec).padStart(2, "0");
 
-        // PEGASUS 229: fixed-size countdown. Only color changes; no visual grow/shrink per second.
-        e.style.fontVariantNumeric = "tabular-nums";
-        e.style.fontFeatureSettings = '"tnum" 1';
-        e.style.width = "220px";
-        e.style.maxWidth = "96vw";
-        e.style.textAlign = "center";
-        e.style.boxSizing = "border-box";
-        e.style.lineHeight = "16px";
-        e.style.transform = "none";
-        e.style.animation = "none";
+        // PEGASUS 231: fixed-size countdown. Only color changes; no grow/shrink per second.
+        lockMobileSyncIndicatorSize();
         e.textContent = `ΣΥΝΔΕΔΕΜΕΝΟ · ${remainingTxt}s`;
 
         if (remainingSec > 20) {
@@ -921,6 +941,7 @@
     function setSyncStatus(status) {
         const e = document.getElementById("sync-indicator");
         if (!e) return;
+        lockMobileSyncIndicatorSize();
 
         if (status === 'online') {
             startMobileSyncCountdown();
@@ -930,8 +951,10 @@
             e.textContent = "OFFLINE";
             e.style.color = "#ff4444";
         } else if (status === 'syncing') {
-            mobileLastSyncPulseTs = Date.now();
-            scheduleNextMobileSyncCycle(true);
+            if (window.__pegasusMobileCadencePermit === true || !mobileNextSyncAt) {
+                mobileLastSyncPulseTs = Date.now();
+                scheduleNextMobileSyncCycle(true);
+            }
             startMobileSyncCountdown();
             e.textContent = "ΣΥΓΧΡΟΝΙΣΜΟΣ";
             e.style.color = "#00bcd4";
@@ -966,6 +989,7 @@
         }
 
         window._pegasusMobileSyncBusy = true;
+        window.__pegasusMobileCadencePermit = true;
         setSyncStatus('syncing');
 
         try {
@@ -987,7 +1011,12 @@
             setSyncStatus('error');
             return false;
         } finally {
+            window.__pegasusMobileCadencePermit = false;
             window._pegasusMobileSyncBusy = false;
+            if (window.PegasusCloud?.isUnlocked) {
+                scheduleNextMobileSyncCycle(true);
+                renderMobileSyncCycleStatus();
+            }
         }
     }
 
@@ -997,20 +1026,32 @@
         if (!window.PegasusCloud?.isUnlocked) return;
         if (document.hidden) return;
 
-        scheduleNextMobileSyncCycle(true);
+        const now = Date.now();
+        if (!mobileNextSyncAt || mobileNextSyncAt <= now) {
+            scheduleNextMobileSyncCycle(true);
+        } else {
+            window.__pegasusMobileNextSyncAt = mobileNextSyncAt;
+        }
+
         startMobileSyncCountdown();
 
         window._pegasusMobileSyncTimer = setInterval(() => {
             if (
-                !document.hidden &&
-                window.PegasusCloud?.isUnlocked &&
-                !window.PegasusCloud.isPulling &&
-                !window.PegasusCloud.isPushing &&
-                !window._pegasusMobileSyncBusy
+                document.hidden ||
+                !window.PegasusCloud?.isUnlocked ||
+                window.PegasusCloud.isPulling ||
+                window.PegasusCloud.isPushing ||
+                window._pegasusMobileSyncBusy ||
+                !navigator.onLine
             ) {
-                runMobileSyncHeartbeat();
+                return;
             }
-        }, MOBILE_SYNC_CYCLE_MS());
+
+            const dueAt = Number(window.__pegasusMobileNextSyncAt || mobileNextSyncAt || 0);
+            if (dueAt && Date.now() < dueAt) return;
+
+            runMobileSyncHeartbeat();
+        }, 1000);
     }
 
     function stopMobileSyncHeartbeat() {
@@ -1039,7 +1080,6 @@
 
     window.addEventListener("focus", () => {
         if (window.PegasusCloud?.isUnlocked) {
-            runMobileSyncHeartbeat();
             startMobileSyncHeartbeat();
         }
     });
@@ -1048,14 +1088,12 @@
         if (document.hidden) {
             stopMobileSyncHeartbeat();
         } else if (window.PegasusCloud?.isUnlocked) {
-            runMobileSyncHeartbeat();
             startMobileSyncHeartbeat();
         }
     });
 
     window.addEventListener("online", () => {
         if (window.PegasusCloud?.isUnlocked) {
-            runMobileSyncHeartbeat();
             startMobileSyncHeartbeat();
         } else {
             setSyncStatus('locked');
@@ -1069,8 +1107,10 @@
 
     window.addEventListener("pegasus_sync_complete", () => {
         refreshAllUI();
-        mobileLastSyncPulseTs = Date.now();
-        scheduleNextMobileSyncCycle(true);
+        if (window.__pegasusMobileCadencePermit === true) {
+            mobileLastSyncPulseTs = Date.now();
+            scheduleNextMobileSyncCycle(true);
+        }
         if (window.PegasusCloud?.isUnlocked && !window.PegasusCloud?.isPulling && !window.PegasusCloud?.isPushing) {
             setSyncStatus('online');
         }
@@ -1240,7 +1280,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.31.230')
+                navigator.serviceWorker.register('../sw.js?v=3.32.231')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         reg.update();

@@ -67,7 +67,7 @@
             vars: {
                 '--pg-font-body': `${base}px`,
                 '--pg-font-ui': `${roundHalf(base - 0.5)}px`,
-                '--pg-font-sync': `${roundHalf(base - 5)}px`,
+                '--pg-font-sync': `10px`,
                 '--pg-font-mobile-title': `${roundHalf(clamp(base * 2.35, 33, 42))}px`,
                 '--pg-font-mobile-subtitle': `${roundHalf(clamp(base - 5.5, 10, 13))}px`,
                 '--pg-font-mobile-tile-icon': `${roundHalf(clamp(base + 10, 24, 30))}px`,
@@ -185,7 +185,9 @@ html[data-pegasus-typography='mobile'] input {
 }
 
 html[data-pegasus-typography='mobile'] #sync-indicator {
-    font-size: var(--pg-font-sync, 10px) !important;
+    font-size: 10px !important;
+    line-height: 16px !important;
+    min-height: 16px !important;
 }
 
 html[data-pegasus-typography='mobile'] .header h1 {

@@ -4,7 +4,7 @@
    Status: FINAL STABLE | ZERO WARMUP FALLBACK | FULL PROGRESS BRIDGE
    ========================================================================== */
 
-const PEGASUS_STORAGE_VERSION = '230';
+const PEGASUS_STORAGE_VERSION = '231';
 const CACHE_NAME = `pegasus-permanent-local-v${PEGASUS_STORAGE_VERSION}`;
 
 const ASSETS_TO_CACHE = [
