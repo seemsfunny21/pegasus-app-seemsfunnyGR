@@ -986,6 +986,79 @@ const PegasusCloud = {
         return JSON.stringify(merged);
     },
 
+
+    isSupplementInventoryStorageKey(key) {
+        return key === "pegasus_supp_inventory" || key === "pegasus_prot_stock" || key === "pegasus_crea_stock";
+    },
+
+    shouldBlockDesktopBootSupplementWrite(key) {
+        // PEGASUS 239: Desktop UI modules can rewrite supplement stock on boot
+        // from stale localStorage/legacy labels before the first cloud pull.
+        // Those writes must NOT become pending cloud changes, otherwise the PC
+        // becomes the source of truth and overwrites a newer mobile refill.
+        if (!this.isSupplementInventoryStorageKey(key)) return false;
+        if (this.isMobileRuntime?.()) return false;
+        if (this.hasSuccessfullyPulled) return false;
+        if (!this.canRestoreApprovedDevice?.()) return false;
+        return true;
+    },
+
+    pruneDesktopBootSupplementPending(reason = "desktop-boot-supplement-prune") {
+        if (this.isMobileRuntime?.()) return false;
+        if (this.hasSuccessfullyPulled) return false;
+        if (!this.canRestoreApprovedDevice?.()) return false;
+
+        const queue = this.loadPendingChanges();
+        if (!queue || typeof queue !== "object") return false;
+
+        let changed = false;
+        for (const key of ["pegasus_supp_inventory", "pegasus_prot_stock", "pegasus_crea_stock"]) {
+            if (Object.prototype.hasOwnProperty.call(queue, key)) {
+                delete queue[key];
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.savePendingChanges(queue);
+            try {
+                console.warn("🛡️ CLOUD: Removed stale desktop boot supplement pending write before first pull.", reason);
+            } catch (_) {}
+        }
+
+        return changed;
+    },
+
+    async mergeRemoteSupplementInventoryIntoLocal(remoteRecord, reason = "pre-push-inventory-merge") {
+        // Last line of defence before a PUT: even if the desktop has a stale
+        // pending snapshot, merge the current cloud supplement object into local
+        // and push only the per-field newest inventory.
+        if (!remoteRecord) return false;
+        try {
+            const remotePayload = await this.extractCloudPayload(remoteRecord);
+            const remoteStorage = (remotePayload?.storage && typeof remotePayload.storage === "object") ? remotePayload.storage : {};
+            if (!Object.prototype.hasOwnProperty.call(remoteStorage, "pegasus_supp_inventory")) return false;
+
+            const currentLocal = localStorage.getItem("pegasus_supp_inventory");
+            const mergedValue = this.mergeSupplementInventoryValue(currentLocal, remoteStorage.pegasus_supp_inventory);
+            if (mergedValue && mergedValue !== currentLocal) {
+                this.isApplyingRemote = true;
+                try {
+                    this.safeSetLocal("pegasus_supp_inventory", mergedValue);
+                } finally {
+                    this.isApplyingRemote = false;
+                }
+                try {
+                    console.warn("🛡️ CLOUD: Supplement inventory merged with cloud before push.", reason);
+                } catch (_) {}
+                return true;
+            }
+        } catch (e) {
+            try { console.warn("⚠️ CLOUD: Pre-push supplement merge skipped.", e); } catch (_) {}
+        }
+        return false;
+    },
+
     mergeManagedStorageValue(key, localValue, remoteValue) {
         if (this.shouldPreserveLocalAgainstRemoteValue(key, localValue, remoteValue)) {
             try {
@@ -1235,6 +1308,11 @@ const PegasusCloud = {
 
     queuePendingChange(key, value, type = "set") {
         if (!this.isAllowedStorageKey(key)) return;
+        if (this.shouldBlockDesktopBootSupplementWrite?.(key)) {
+            this.pruneDesktopBootSupplementPending?.("queuePendingChange:block");
+            try { this.tryApprovedDeviceUnlock?.(); } catch (_) {}
+            return;
+        }
 
         const queue = this.loadPendingChanges();
         queue[key] = {
@@ -1919,6 +1997,12 @@ const PegasusCloud = {
                 const remoteEvents = Array.isArray(remotePayload?.events) ? remotePayload.events : [];
                 const hasProtectedPayload = remotePayload?.hasProtectedPayload === true;
                 const remoteDeletedKeys = Array.isArray(remotePayload?.deletedKeys) ? remotePayload.deletedKeys : [];
+
+                if (Object.prototype.hasOwnProperty.call(remoteStorage, "pegasus_supp_inventory")) {
+                    this.pruneDesktopBootSupplementPending?.("pull:remote-has-supp-inventory");
+                    pendingExists = this.hasPendingChanges();
+                }
+
                 const remoteIsThin = this.isRemotePayloadThin(remoteStorage, remoteProtectedStorage);
 
                 this.saveDataGuardSnapshot("before-cloud-pull", {
@@ -2174,6 +2258,7 @@ const PegasusCloud = {
             const remote = await this.fetchLatestRecord();
             const remoteTs = parseInt(remote?.last_update_ts || "0", 10);
             const localTs = parseInt(localStorage.getItem(this.storage.lastPush) || "0", 10);
+            this.pruneDesktopBootSupplementPending?.("push:before-pending-read");
             const pendingQueueBeforePush = this.loadPendingChanges();
             const pendingExists = Object.keys(pendingQueueBeforePush).length > 0;
             const protectedRepairPending = this.hasProtectedRepairPending();
@@ -2190,8 +2275,11 @@ const PegasusCloud = {
                 if (!pendingExists && !protectedRepairPending && !repairStillPending) return false;
             }
 
+            await this.mergeRemoteSupplementInventoryIntoLocal?.(remote, "push:before-apply-pending");
+
             if (this.hasPendingChanges()) {
                 this.applyPendingChangesToLocal();
+                await this.mergeRemoteSupplementInventoryIntoLocal?.(remote, "push:after-apply-pending");
             }
 
             const ts = Date.now().toString();
@@ -2385,6 +2473,12 @@ if (!window.originalSetItem) {
                 console.warn("🛡️ CLOUD: Blocked boot weekly zero write before initial pull:", key);
                 return;
             }
+            if (cloud.shouldBlockDesktopBootSupplementWrite?.(key)) {
+                cloud.pruneDesktopBootSupplementPending?.("interceptor:setItem");
+                try { cloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
+                console.warn("🛡️ CLOUD: Blocked desktop boot supplement write before initial pull:", key);
+                return;
+            }
             cloud.queuePendingChange(key, value, "set");
             if (!cloud.isUnlocked) return;
             cloud.push();
@@ -2411,6 +2505,12 @@ if (!window.originalRemoveItem) {
                 if (window.PegasusCloud.shouldBlockBootWeeklyWrite?.(key, null, "remove")) {
                     try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
                     console.warn("🛡️ CLOUD: Blocked boot weekly remove before initial pull:", key);
+                    return;
+                }
+                if (window.PegasusCloud.shouldBlockDesktopBootSupplementWrite?.(key)) {
+                    window.PegasusCloud.pruneDesktopBootSupplementPending?.("interceptor:removeItem");
+                    try { window.PegasusCloud.tryApprovedDeviceUnlock?.(); } catch (e) {}
+                    console.warn("🛡️ CLOUD: Blocked desktop boot supplement remove before initial pull:", key);
                     return;
                 }
                 window.PegasusCloud.queuePendingChange(key, null, "remove");

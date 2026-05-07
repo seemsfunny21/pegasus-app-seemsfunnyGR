@@ -1,3 +1,17 @@
+PEGASUS 239 - Desktop Boot Supplement Sync Guard
+
+Bugfix:
+- Fixed protein/creatine refill still syncing according to the desktop when the PC opens after a mobile refill.
+- Desktop boot writes for `pegasus_supp_inventory` are now blocked from entering the cloud pending queue before the first pull.
+- Existing stale desktop supplement pending entries are pruned before pull/push when the cloud already has supplement inventory.
+- Before any desktop push, cloudSync performs a final per-field merge with the current cloud supplement inventory so the newest mobile protein/creatine value wins.
+- Permanent local cache bumped to v239 and service worker registration bumped to 3.36.239.
+
+Expected behavior:
+- Refill protein on mobile to 2500g.
+- Open desktop after sync.
+- Desktop first pulls/merges, then shows 2500g and cannot push its stale old stock back to cloud.
+
 PEGASUS 238 - Supplement Refill Sync Timestamp Fix
 
 Bugfix:
