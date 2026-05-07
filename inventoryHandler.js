@@ -192,25 +192,62 @@ const SUPPLEMENT_CONFIG = {
     }
 };
 
+function normalizeSupplementInventory(inv, options = {}) {
+    const now = Date.now();
+    const previous = safeParseJSON(localStorage.getItem(getPegasusSuppInventoryKey()), null);
+    const oldProt = Number(previous?.prot);
+    const oldCrea = Number(previous?.crea);
+    const nextProt = Math.max(0, parseFloat(inv?.prot) || 0);
+    const nextCrea = Math.max(0, parseFloat(inv?.crea) || 0);
+    const protTouched = options.touchAll === true || options.touchKey === 'prot';
+    const creaTouched = options.touchAll === true || options.touchKey === 'crea';
+    const protChanged = protTouched || (Number.isFinite(oldProt) ? oldProt !== nextProt : false);
+    const creaChanged = creaTouched || (Number.isFinite(oldCrea) ? oldCrea !== nextCrea : false);
+    const baseUpdatedAt = Math.max(
+        0,
+        Number(inv?.updatedAt) || 0,
+        Number(previous?.updatedAt) || 0
+    );
+
+    return {
+        prot: nextProt,
+        crea: nextCrea,
+        updatedAt: protChanged || creaChanged ? now : baseUpdatedAt,
+        protUpdatedAt: protChanged
+            ? now
+            : Math.max(0, Number(inv?.protUpdatedAt) || 0, Number(previous?.protUpdatedAt) || 0, baseUpdatedAt),
+        creaUpdatedAt: creaChanged
+            ? now
+            : Math.max(0, Number(inv?.creaUpdatedAt) || 0, Number(previous?.creaUpdatedAt) || 0, baseUpdatedAt),
+        syncVersion: 2
+    };
+}
+
 function initSupplementInventory() {
     const raw = safeParseJSON(localStorage.getItem(getPegasusSuppInventoryKey()), null);
 
-    const inventory = {
-        prot: Math.max(0, parseFloat(raw?.prot) || 0),
-        crea: Math.max(0, parseFloat(raw?.crea) || 0)
-    };
+    const legacyProt = parseFloat(localStorage.getItem('pegasus_prot_stock'));
+    const legacyCrea = parseFloat(localStorage.getItem('pegasus_crea_stock'));
+    const inventory = normalizeSupplementInventory({
+        prot: raw?.prot ?? (!isNaN(legacyProt) ? legacyProt : 2500),
+        crea: raw?.crea ?? (!isNaN(legacyCrea) ? legacyCrea : 1000),
+        updatedAt: raw?.updatedAt,
+        protUpdatedAt: raw?.protUpdatedAt,
+        creaUpdatedAt: raw?.creaUpdatedAt
+    }, { touchAll: false });
 
     localStorage.setItem(getPegasusSuppInventoryKey(), JSON.stringify(inventory));
+    localStorage.setItem('pegasus_prot_stock', String(inventory.prot));
+    localStorage.setItem('pegasus_crea_stock', String(inventory.crea));
     return inventory;
 }
 
-function setSupplementInventory(inv) {
-    const safeInv = {
-        prot: Math.max(0, parseFloat(inv?.prot) || 0),
-        crea: Math.max(0, parseFloat(inv?.crea) || 0)
-    };
+function setSupplementInventory(inv, options = {}) {
+    const safeInv = normalizeSupplementInventory(inv, options);
 
     localStorage.setItem(getPegasusSuppInventoryKey(), JSON.stringify(safeInv));
+    localStorage.setItem('pegasus_prot_stock', String(safeInv.prot));
+    localStorage.setItem('pegasus_crea_stock', String(safeInv.crea));
     return safeInv;
 }
 
@@ -223,7 +260,7 @@ function consumeSupp(type, grams, shouldPush = true) {
     const amount = Math.max(0, parseFloat(grams) || 0);
     inv[actualKey] = Math.max(0, inv[actualKey] - amount);
 
-    setSupplementInventory(inv);
+    setSupplementInventory(inv, { touchKey: actualKey });
 
     if (window.PegasusEngine?.dispatch) {
         window.PegasusEngine.dispatch({
@@ -242,7 +279,7 @@ function consumeDailySupplements() {
     inv.prot = Math.max(0, inv.prot - SUPPLEMENT_CONFIG.doses.protein);
     inv.crea = Math.max(0, inv.crea - SUPPLEMENT_CONFIG.doses.creatine);
 
-    setSupplementInventory(inv);
+    setSupplementInventory(inv, { touchAll: true });
     pushInventoryRefresh();
 
     return checkSupplementAlerts(inv);
@@ -293,7 +330,7 @@ function restockSupplement(type, grams) {
 
     if (inv[actualKey] !== undefined) {
         inv[actualKey] += Math.max(0, parseFloat(grams) || 0);
-        setSupplementInventory(inv);
+        setSupplementInventory(inv, { touchKey: actualKey });
 
         if (window.PegasusEngine?.dispatch) {
             window.PegasusEngine.dispatch({
@@ -315,7 +352,7 @@ function restoreSupp(type, grams, shouldPush = true) {
 
     const amount = Math.max(0, parseFloat(grams) || 0);
     inv[actualKey] = Math.max(0, Number(inv[actualKey] || 0)) + amount;
-    setSupplementInventory(inv);
+    setSupplementInventory(inv, { touchKey: actualKey });
 
     if (window.PegasusEngine?.dispatch) {
         window.PegasusEngine.dispatch({

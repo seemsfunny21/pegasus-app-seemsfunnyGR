@@ -931,6 +931,61 @@ const PegasusCloud = {
         return JSON.stringify(clean(remote || local || nextDefaults));
     },
 
+
+    normalizeSupplementInventoryValue(value) {
+        const parsed = this.safeParseStorageObject(value, null);
+        const cleanNumber = (v, fallback = 0) => {
+            const n = Number(v);
+            return Number.isFinite(n) && n >= 0 ? n : fallback;
+        };
+        const baseUpdatedAt = Math.max(0, Number(parsed?.updatedAt) || 0, Number(parsed?.ts) || 0);
+
+        const hasProtTs = Number(parsed?.protUpdatedAt) > 0;
+        const hasCreaTs = Number(parsed?.creaUpdatedAt) > 0;
+        return {
+            prot: cleanNumber(parsed?.prot, 0),
+            crea: cleanNumber(parsed?.crea, 0),
+            updatedAt: baseUpdatedAt,
+            protUpdatedAt: hasProtTs ? Math.max(0, Number(parsed?.protUpdatedAt) || 0) : baseUpdatedAt,
+            creaUpdatedAt: hasCreaTs ? Math.max(0, Number(parsed?.creaUpdatedAt) || 0) : baseUpdatedAt,
+            syncVersion: Number(parsed?.syncVersion) || 1
+        };
+    },
+
+    mergeSupplementInventoryValue(localValue, remoteValue) {
+        const local = this.normalizeSupplementInventoryValue(localValue);
+        const remote = this.normalizeSupplementInventoryValue(remoteValue);
+        const chooseField = (field) => {
+            const tsField = `${field}UpdatedAt`;
+            const localTs = Math.max(0, Number(local?.[tsField]) || 0);
+            const remoteTs = Math.max(0, Number(remote?.[tsField]) || 0);
+
+            if (localTs > remoteTs) return { value: local[field], ts: localTs };
+            if (remoteTs > localTs) return { value: remote[field], ts: remoteTs };
+
+            // Legacy/no-metadata fallback: keep the existing Pegasus behavior and trust remote.
+            return { value: remote[field], ts: Math.max(localTs, remoteTs) };
+        };
+
+        const prot = chooseField('prot');
+        const crea = chooseField('crea');
+        const merged = {
+            prot: Math.max(0, Number(prot.value) || 0),
+            crea: Math.max(0, Number(crea.value) || 0),
+            updatedAt: Math.max(prot.ts, crea.ts, Number(local.updatedAt) || 0, Number(remote.updatedAt) || 0),
+            protUpdatedAt: prot.ts || Math.max(Number(local.protUpdatedAt) || 0, Number(remote.protUpdatedAt) || 0),
+            creaUpdatedAt: crea.ts || Math.max(Number(local.creaUpdatedAt) || 0, Number(remote.creaUpdatedAt) || 0),
+            syncVersion: 2
+        };
+
+        try {
+            this.safeSetLocal?.('pegasus_prot_stock', String(merged.prot));
+            this.safeSetLocal?.('pegasus_crea_stock', String(merged.crea));
+        } catch (_) {}
+
+        return JSON.stringify(merged);
+    },
+
     mergeManagedStorageValue(key, localValue, remoteValue) {
         if (this.shouldPreserveLocalAgainstRemoteValue(key, localValue, remoteValue)) {
             try {
@@ -953,6 +1008,9 @@ const PegasusCloud = {
         }
         if (key === "pegasus_muscle_targets") {
             return this.mergeMuscleTargetsValue(localValue, remoteValue);
+        }
+        if (key === "pegasus_supp_inventory") {
+            return this.mergeSupplementInventoryValue(localValue, remoteValue);
         }
         const registry = window.PegasusMobileDataRegistry;
         if (!registry?.getDescriptor?.(key)) return remoteValue;
@@ -1241,7 +1299,10 @@ const PegasusCloud = {
                     changed = true;
                 } else if (typeof entry?.value === "string") {
                     const currentLocal = localStorage.getItem(key);
-                    const nextValue = this.isWeeklyProgressKey(key)
+                    const shouldMergePending = this.isWeeklyProgressKey(key) ||
+                        key === "pegasus_supp_inventory" ||
+                        key === "pegasus_muscle_targets";
+                    const nextValue = shouldMergePending
                         ? this.mergeManagedStorageValue(key, currentLocal, entry.value)
                         : entry.value;
                     if (nextValue !== currentLocal) {

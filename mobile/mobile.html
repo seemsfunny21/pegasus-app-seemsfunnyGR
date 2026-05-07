@@ -690,8 +690,14 @@
                 const key = (type === 'protein') ? 'prot' : (type === 'creatine' ? 'crea' : type);
 
                 if (stock[key] !== undefined) {
+                    const now = Date.now();
                     stock[key] = (parseFloat(stock[key]) || 0) + (parseFloat(grams) || 0);
+                    stock.updatedAt = now;
+                    stock[key + 'UpdatedAt'] = now;
+                    stock.syncVersion = 2;
                     localStorage.setItem('pegasus_supp_inventory', JSON.stringify(stock));
+                    localStorage.setItem('pegasus_prot_stock', String(stock.prot || 0));
+                    localStorage.setItem('pegasus_crea_stock', String(stock.crea || 0));
                     updateSuppUI();
                     if (window.PegasusCloud?.push) window.PegasusCloud.push(true);
                 }
@@ -1287,7 +1293,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.36.237')
+                navigator.serviceWorker.register('../sw.js?v=3.36.238')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         // No forced reg.update() on every open; this keeps refresh fast after the first local download.

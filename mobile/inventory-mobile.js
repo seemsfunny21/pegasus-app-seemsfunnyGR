@@ -7,15 +7,53 @@
 window.PegasusInventory = {
     _lastSnapshot: "",
 
-    getState: function() {
+    _safeParse: function(raw, fallback) {
         try {
-            const raw = JSON.parse(localStorage.getItem('pegasus_supp_inventory'));
-            return raw && typeof raw === "object"
-                ? { prot: Number(raw.prot) || 0, crea: Number(raw.crea) || 0 }
-                : { prot: 2500, crea: 1000 };
+            const parsed = JSON.parse(raw || "null");
+            return parsed && typeof parsed === "object" ? parsed : fallback;
         } catch (e) {
-            return { prot: 2500, crea: 1000 };
+            return fallback;
         }
+    },
+
+    _normalize: function(raw, options = {}) {
+        const now = Date.now();
+        const previous = this._safeParse(localStorage.getItem('pegasus_supp_inventory'), null);
+        const oldProt = Number(previous?.prot);
+        const oldCrea = Number(previous?.crea);
+        const nextProt = Math.max(0, Number(raw?.prot) || 0);
+        const nextCrea = Math.max(0, Number(raw?.crea) || 0);
+        const protTouched = options.touchAll === true || options.touchKey === 'prot';
+        const creaTouched = options.touchAll === true || options.touchKey === 'crea';
+        const protChanged = protTouched || (Number.isFinite(oldProt) ? oldProt !== nextProt : false);
+        const creaChanged = creaTouched || (Number.isFinite(oldCrea) ? oldCrea !== nextCrea : false);
+        const baseUpdatedAt = Math.max(0, Number(raw?.updatedAt) || 0, Number(previous?.updatedAt) || 0);
+
+        return {
+            prot: nextProt,
+            crea: nextCrea,
+            updatedAt: protChanged || creaChanged ? now : baseUpdatedAt,
+            protUpdatedAt: protChanged
+                ? now
+                : Math.max(0, Number(raw?.protUpdatedAt) || 0, Number(previous?.protUpdatedAt) || 0, baseUpdatedAt),
+            creaUpdatedAt: creaChanged
+                ? now
+                : Math.max(0, Number(raw?.creaUpdatedAt) || 0, Number(previous?.creaUpdatedAt) || 0, baseUpdatedAt),
+            syncVersion: 2
+        };
+    },
+
+    _saveState: function(state, options = {}) {
+        const normalized = this._normalize(state, options);
+        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(normalized));
+        localStorage.setItem('pegasus_prot_stock', String(normalized.prot));
+        localStorage.setItem('pegasus_crea_stock', String(normalized.crea));
+        return normalized;
+    },
+
+    getState: function() {
+        const raw = this._safeParse(localStorage.getItem('pegasus_supp_inventory'), null);
+        return this._normalize(raw || { prot: 2500, crea: 1000 }, { touchAll: false });
     },
 
     updateUI: function(forceLog = false) {
@@ -63,7 +101,7 @@ window.PegasusInventory = {
         if (isNaN(amount) || amount <= 0) return;
 
         s[type] = Math.max(0, s[type] - amount);
-        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+        this._saveState(s, { touchKey: type });
 
         this.updateUI(true);
 
@@ -79,7 +117,7 @@ window.PegasusInventory = {
         if (isNaN(amount) || amount <= 0) return;
 
         s[type] = amount;
-        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+        this._saveState(s, { touchKey: type });
 
         this.updateUI(true);
 
@@ -95,7 +133,7 @@ window.PegasusInventory = {
         if (isNaN(amount) || amount <= 0) return;
 
         s[type] = Math.max(0, Number(s[type] || 0)) + Number(amount);
-        localStorage.setItem('pegasus_supp_inventory', JSON.stringify(s));
+        this._saveState(s, { touchKey: type });
 
         this.updateUI(true);
 

@@ -19,10 +19,29 @@
         }
     }
 
-    function normalizeStock(stock) {
+    function normalizeStock(stock, previous = null, options = {}) {
+        const now = Date.now();
+        const oldProt = Number(previous?.prot);
+        const oldCrea = Number(previous?.crea);
+        const nextProt = Math.max(0, parseFloat(stock?.prot) || 0);
+        const nextCrea = Math.max(0, parseFloat(stock?.crea) || 0);
+        const protTouched = options.touchAll === true || options.touchKey === 'prot';
+        const creaTouched = options.touchAll === true || options.touchKey === 'crea';
+        const protChanged = protTouched || (Number.isFinite(oldProt) ? oldProt !== nextProt : false);
+        const creaChanged = creaTouched || (Number.isFinite(oldCrea) ? oldCrea !== nextCrea : false);
+        const baseUpdatedAt = Math.max(0, Number(stock?.updatedAt) || 0, Number(previous?.updatedAt) || 0);
+
         return {
-            prot: Math.max(0, parseFloat(stock?.prot) || 0),
-            crea: Math.max(0, parseFloat(stock?.crea) || 0)
+            prot: nextProt,
+            crea: nextCrea,
+            updatedAt: protChanged || creaChanged ? now : baseUpdatedAt,
+            protUpdatedAt: protChanged
+                ? now
+                : Math.max(0, Number(stock?.protUpdatedAt) || 0, Number(previous?.protUpdatedAt) || 0, baseUpdatedAt),
+            creaUpdatedAt: creaChanged
+                ? now
+                : Math.max(0, Number(stock?.creaUpdatedAt) || 0, Number(previous?.creaUpdatedAt) || 0, baseUpdatedAt),
+            syncVersion: 2
         };
     }
 
@@ -44,7 +63,7 @@
             };
         }
 
-        stock = normalizeStock(stock);
+        stock = normalizeStock(stock, safeParse(localStorage.getItem(OBJECT_KEY), null), { touchAll: false });
         localStorage.setItem(OBJECT_KEY, JSON.stringify(stock));
         persistLegacyKeys(stock);
         return stock;
@@ -76,8 +95,9 @@
             return ensureStockObject();
         },
 
-        setStock: function(stock) {
-            const normalized = normalizeStock(stock);
+        setStock: function(stock, options = {}) {
+            const previous = safeParse(localStorage.getItem(OBJECT_KEY), null);
+            const normalized = normalizeStock(stock, previous, options);
             localStorage.setItem(OBJECT_KEY, JSON.stringify(normalized));
             persistLegacyKeys(normalized);
             return normalized;

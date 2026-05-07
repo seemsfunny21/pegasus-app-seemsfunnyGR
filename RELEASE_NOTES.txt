@@ -1,3 +1,17 @@
+PEGASUS 238 - Supplement Refill Sync Timestamp Fix
+
+Bugfix:
+- Fixed mobile supplement refill being overwritten by the desktop's older protein/creatine value.
+- `pegasus_supp_inventory` now carries per-field timestamps: `protUpdatedAt` and `creaUpdatedAt`.
+- Cloud sync now merges protein and creatine stock by newest field update instead of blindly replacing the object.
+- Mobile refill, mobile consume/restore, PC consume/restore/restock, and PC inventory guard preserve legacy keys while updating sync metadata.
+- Permanent local cache bumped to v238 and service worker registration bumped to 3.36.238.
+
+Expected behavior:
+- Refill protein on mobile to 2500g.
+- Open desktop after sync. Desktop should keep 2500g instead of reverting to its old local value.
+- Future whey/creatine consumption and restore operations should sync in the correct direction by latest edit.
+
 PEGASUS 237 - Morning Report Full Backup
 
 Problem fixed:
