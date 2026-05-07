@@ -1,8 +1,141 @@
 /* ==========================================================================
-   PEGASUS BACKUP & RESTORE - MASTER MANIFEST EDITION (V10.2)
+   PEGASUS BACKUP & RESTORE - COMPLETE USER-DATA EDITION (V10.3.237)
    Protocol: Universal JSON Unwrapping, Date Padding & IndexedDB Recovery
    Status: FINAL STABLE | ZERO-BUG VERIFIED
    ========================================================================== */
+
+
+/* ==========================================================================
+   PEGASUS 237 DAILY BACKUP COLLECTOR
+   Purpose: one complete, non-recursive user-data snapshot for morning reports
+   ========================================================================== */
+(function installPegasusBackupCollector() {
+    if (window.PegasusBackup?.version === "10.3.237") return;
+
+    const EMAIL_BACKUP_LIMIT = 220000;
+    const SKIP_KEY_RE = /(vault|pin|master|secret|hash|wrapped|api[_-]?key|gemini|openai|openrouter|token)/i;
+    const NO_RECURSIVE_BACKUP_RE = /(backup|snapshot|restore|runtime_trace|runtime_errors|error_log|system_logs|sync_debug|command_trace|permanent_assets_ready|cloud_pending|data_registry_state|self_check_history)/i;
+
+    function safeJsonParse(value) {
+        try { return JSON.parse(value); } catch (_) { return null; }
+    }
+
+    function safeByteLength(text) {
+        try { return new Blob([String(text || "")]).size; } catch (_) { return String(text || "").length; }
+    }
+
+    function isCloudAllowedKey(key) {
+        try {
+            const cloud = window.PegasusCloud;
+            if (!cloud) return false;
+            if (typeof cloud.isInternalStorageKey === "function" && cloud.isInternalStorageKey(key)) return false;
+            if (typeof cloud.isSensitiveStorageKey === "function" && cloud.isSensitiveStorageKey(key)) return false;
+            if (typeof cloud.isAllowedStorageKey === "function" && cloud.isAllowedStorageKey(key)) return true;
+            if (typeof cloud.getLocalOnlyKeys === "function" && cloud.getLocalOnlyKeys().includes(key)) return true;
+            if (typeof cloud.getSyncedPrefixes === "function" && cloud.getSyncedPrefixes().some(prefix => key.startsWith(prefix))) return true;
+        } catch (_) {}
+        return false;
+    }
+
+    function isPegasusUserDataKey(key) {
+        if (!key || typeof key !== "string") return false;
+        if (SKIP_KEY_RE.test(key)) return false;
+        if (NO_RECURSIVE_BACKUP_RE.test(key)) return false;
+
+        if (isCloudAllowedKey(key)) return true;
+
+        return key.startsWith("pegasus_") ||
+            key.startsWith("peg_") ||
+            key.startsWith("food_log_") ||
+            key.startsWith("cardio_log_") ||
+            key.startsWith("weight_") ||
+            key.startsWith("kouki_");
+    }
+
+    function collectLocalStorage(options = {}) {
+        const local = {};
+        const skipped = [];
+        const keyStats = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+
+            const val = localStorage.getItem(key);
+            if (isPegasusUserDataKey(key)) {
+                local[key] = val;
+                keyStats.push({ key, bytes: safeByteLength(val) });
+            } else if (/^(pegasus_|peg_|food_log_|cardio_log_|weight_|kouki_)/.test(key)) {
+                skipped.push(key);
+            }
+        }
+
+        keyStats.sort((a, b) => b.bytes - a.bytes);
+
+        return {
+            localStorage: local,
+            meta: {
+                keyCount: Object.keys(local).length,
+                skippedCount: skipped.length,
+                skippedKeys: options.includeSkippedKeys ? skipped.sort() : undefined,
+                largestKeys: keyStats.slice(0, 12)
+            }
+        };
+    }
+
+    function buildSnapshot(reason = "manual", extraMeta = {}) {
+        const collected = collectLocalStorage({ includeSkippedKeys: !!extraMeta.includeSkippedKeys });
+        const now = new Date();
+        const localStorageBytes = safeByteLength(JSON.stringify(collected.localStorage));
+
+        return {
+            schema: "PEGASUS_BACKUP_V237",
+            version: "10.3.237",
+            reason,
+            createdAt: now.toISOString(),
+            createdLocal: now.toLocaleString("el-GR"),
+            note: "Πλήρες backup δεδομένων χρήστη. Δεν περιλαμβάνει PIN, master keys, vault secrets, API keys, runtime logs ή παλιά backup για να μη φουσκώνει/ανακυκλώνεται το αρχείο.",
+            meta: {
+                ...extraMeta,
+                keyCount: collected.meta.keyCount,
+                skippedCount: collected.meta.skippedCount,
+                largestKeys: collected.meta.largestKeys,
+                localStorageBytes,
+                indexedDB: "manual-export-only"
+            },
+            localStorage: collected.localStorage
+        };
+    }
+
+    function stringifyForEmail(snapshot, limit = EMAIL_BACKUP_LIMIT) {
+        const full = JSON.stringify(snapshot);
+        const truncated = full.length > limit;
+        return {
+            full,
+            inline: truncated
+                ? full.slice(0, limit) + `\n...PEGASUS_BACKUP_TRUNCATED_AT_${limit}_CHARS...`
+                : full,
+            truncated,
+            chars: full.length,
+            bytes: safeByteLength(full)
+        };
+    }
+
+    window.PegasusBackup = {
+        version: "10.3.237",
+        buildSnapshot,
+        buildMorningEmailSnapshot: function(reportMeta = {}) {
+            return buildSnapshot("morning-report-email", {
+                ...reportMeta,
+                mode: "daily-email-inline-backup"
+            });
+        },
+        stringifyForEmail,
+        collectLocalStorage,
+        isPegasusUserDataKey,
+        safeJsonParse
+    };
+})();
 
 window.exportPegasusData = async function() {
     if (!window.PegasusManifest) {
@@ -11,27 +144,12 @@ window.exportPegasusData = async function() {
         return;
     }
 
-    const data = { localStorage: {}, indexedDB: [] };
-    const M = window.PegasusManifest;
+    const data = window.PegasusBackup?.buildSnapshot
+        ? window.PegasusBackup.buildSnapshot("manual-json-export", { includeSkippedKeys: true })
+        : { localStorage: {}, indexedDB: [] };
+    data.indexedDB = [];
 
-    console.log("%c[BACKUP] Starting Manifest-Based Scan...", "color: #00bcd4; font-weight: bold;");
-
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        const val = localStorage.getItem(key);
-
-        const isOfficial = Object.values(M).some(category =>
-            Object.values(category).some(manifestKey =>
-                key === manifestKey || (typeof manifestKey === 'string' && key.startsWith(manifestKey))
-            )
-        );
-
-        const isBlocked = window.PegasusCloud?.isExportBlockedKey?.(key);
-
-        if (!isBlocked && (isOfficial || key.includes("ANGELOS") || key.startsWith("weight_"))) {
-            data.localStorage[key] = val;
-        }
-    }
+    console.log("%c[BACKUP] Starting Complete User-Data Scan v10.3...", "color: #00bcd4; font-weight: bold;");
 
     const dbRequest = indexedDB.open("PegasusLevels", 1);
     dbRequest.onsuccess = (e) => {
@@ -64,15 +182,15 @@ function finalizeExport(data) {
     const timestamp = new Date().toISOString().slice(0,10);
 
     a.href = url;
-    a.download = `PEGASUS_MASTER_BACKUP_${timestamp}.json`;
+    a.download = `PEGASUS_FULL_BACKUP_${timestamp}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    console.log("%c✅ PEGASUS: Backup Created with v10.2 Integrity Protocol.", "color: #4CAF50; font-weight: bold;");
+    console.log("%c✅ PEGASUS: Backup Created with v10.3 Complete User-Data Protocol.", "color: #4CAF50; font-weight: bold;");
 }
 
 /* ==========================================================================
-   RESTORE ENGINE (V10.2 - UNIVERSAL UNWRAP & MIGRATION)
+   RESTORE ENGINE (V10.3 - UNIVERSAL UNWRAP & MIGRATION)
    ========================================================================== */
 window.importPegasusData = function(event) {
     const file = event.target.files[0];

@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V4.3 (STRICT SINGLE MORNING DISPATCH)
+   PEGASUS REPORTING SYSTEM - V4.4.237 (MORNING REPORT + FULL BACKUP)
    Protocol: Daily Send Lock, Syntax Validation & Date Padding Alignment
-   Status: FINAL STABLE | FIXED: SYNTAX STRUCTURE & LOG KEY MATCHING
+   Status: FINAL STABLE | ADDED: INLINE DAILY USER-DATA BACKUP
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -172,6 +172,94 @@ const PegasusReporting = {
         }
     },
 
+    attachMorningBackup: function(pending, context = {}) {
+        const safePending = pending && typeof pending === "object" ? pending : {};
+        safePending.templateParams = safePending.templateParams && typeof safePending.templateParams === "object"
+            ? safePending.templateParams
+            : {};
+
+        const params = safePending.templateParams;
+        const reportDate = context.reportDate || params.report_date_display || safePending.reportDateDisplay || safePending.dateSent || "unknown";
+
+        try {
+            const snapshot = window.PegasusBackup?.buildMorningEmailSnapshot
+                ? window.PegasusBackup.buildMorningEmailSnapshot({ reportDate })
+                : {
+                    schema: "PEGASUS_BACKUP_FALLBACK_V237",
+                    createdAt: new Date().toISOString(),
+                    reason: "morning-report-email-fallback",
+                    localStorage: {}
+                };
+
+            if (!window.PegasusBackup?.buildMorningEmailSnapshot) {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key) continue;
+                    if (/(vault|pin|master|secret|hash|wrapped|api[_-]?key|gemini|openai|token|backup|runtime|error_log|system_logs)/i.test(key)) continue;
+                    if (/^(pegasus_|peg_|food_log_|cardio_log_|weight_|kouki_)/.test(key)) {
+                        snapshot.localStorage[key] = localStorage.getItem(key);
+                    }
+                }
+                snapshot.meta = { keyCount: Object.keys(snapshot.localStorage).length, mode: "fallback" };
+            }
+
+            const packed = window.PegasusBackup?.stringifyForEmail
+                ? window.PegasusBackup.stringifyForEmail(snapshot)
+                : { inline: JSON.stringify(snapshot), chars: JSON.stringify(snapshot).length, bytes: JSON.stringify(snapshot).length, truncated: false };
+
+            const keyCount = snapshot?.meta?.keyCount || Object.keys(snapshot.localStorage || {}).length;
+            const backupHeader = [
+                "",
+                "================ PEGASUS DAILY BACKUP ================",
+                `Ημερομηνία report: ${reportDate}`,
+                `Schema: ${snapshot.schema || "PEGASUS_BACKUP_V237"}`,
+                `Κλειδιά δεδομένων: ${keyCount}`,
+                `Μέγεθος JSON: ${packed.bytes} bytes / ${packed.chars} chars`,
+                packed.truncated ? "ΠΡΟΣΟΧΗ: Το backup κόπηκε λόγω μεγέθους email. Κάνε και χειροκίνητο export αν χρειάζεται πλήρες αρχείο με φωτογραφίες." : "Πλήρες inline backup χρήστη μέσα στο email.",
+                "Δεν περιλαμβάνονται PIN, master keys, API keys, runtime logs ή παλιά backup.",
+                "---------------- BACKUP JSON START ----------------",
+                packed.inline,
+                "----------------- BACKUP JSON END -----------------"
+            ].join("\n");
+
+            params.backup_summary = `PEGASUS backup: ${keyCount} keys | ${packed.bytes} bytes | truncated=${packed.truncated ? "YES" : "NO"}`;
+            const compactBackupParam = packed.chars <= 50000
+                ? packed.inline
+                : `Backup is included inside nutrition_advice. Size=${packed.bytes} bytes, keys=${keyCount}, truncated=${packed.truncated ? "YES" : "NO"}.`;
+            params.backup_json = compactBackupParam;
+            params.pegasus_backup_json = compactBackupParam;
+            params.backup_schema = snapshot.schema || "PEGASUS_BACKUP_V237";
+            params.backup_key_count = keyCount;
+            params.backup_size_bytes = packed.bytes;
+            params.backup_truncated = packed.truncated ? "YES" : "NO";
+
+            // This field is already used by the existing EmailJS template, so the
+            // backup will travel even if the template has not added {{backup_json}} yet.
+            const originalAdvice = String(params.nutrition_advice || "Maintain macro balance");
+            params.nutrition_advice = originalAdvice.includes("PEGASUS DAILY BACKUP")
+                ? originalAdvice
+                : originalAdvice + backupHeader;
+
+            safePending.backupAttached = true;
+            safePending.backupMeta = {
+                schema: snapshot.schema || "PEGASUS_BACKUP_V237",
+                keyCount,
+                bytes: packed.bytes,
+                chars: packed.chars,
+                truncated: packed.truncated,
+                attachedAt: new Date().toISOString()
+            };
+
+            console.log(`💾 PEGASUS REPORT: Daily backup attached (${keyCount} keys, ${packed.bytes} bytes).`);
+        } catch (e) {
+            console.warn("⚠️ PEGASUS REPORT: Backup attachment failed, sending report without backup.", e);
+            params.backup_summary = "Backup attachment failed: " + (e?.message || e);
+            safePending.backupAttached = false;
+        }
+
+        return safePending;
+    },
+
     checkAndSendMorningReport: function(forceSend = false) {
         const rawData = localStorage.getItem(this.pendingReportKey);
 
@@ -211,8 +299,15 @@ const PegasusReporting = {
             }
         }
 
+        pending = this.attachMorningBackup(pending, { reportDate: pending.reportDateDisplay || pending.dateSent || dateParts.display, forceSend });
+        try {
+            localStorage.setItem(this.pendingReportKey, JSON.stringify(pending));
+        } catch (e) {
+            console.warn("⚠️ PEGASUS REPORT: Could not persist backup-enriched pending report.", e);
+        }
+
         if (typeof emailjs !== 'undefined') {
-            console.log("⏳ PEGASUS: Transmitting Morning Report to Cloud Server...");
+            console.log("⏳ PEGASUS: Transmitting Morning Report + Daily Backup to Cloud Server...");
 
             emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
                 .then(() => {

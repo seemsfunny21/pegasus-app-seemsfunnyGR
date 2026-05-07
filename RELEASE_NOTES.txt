@@ -1,22 +1,20 @@
-PEGASUS 236 - Data Guard Repair Push + Fast Local Cache
+PEGASUS 237 - Morning Report Full Backup
 
 Problem fixed:
-- If JSONBin is overwritten manually with a thin payload, PEGASUS must not treat missing cloud fields as deleted data.
-- After a safe merge from a thin cloud payload, PEGASUS now arms a full repair push so the cloud is rebuilt from the local full snapshot.
-- Refresh was slow because permanent local storage was being checked/started on every open as if files needed to download again.
+- The user wants the daily morning report to also send a complete backup of PEGASUS data so future data loss can be recovered from the email.
 
 Changes:
-- Added Data Guard repair marker: thin/partial cloud payloads trigger a safe full re-push after preserving local data.
-- Missing remote keys still never delete local data unless an explicit safe delete channel is used.
-- Critical non-empty local modules are preserved against empty remote values.
-- Push clears the Data Guard repair marker only after successful full cloud write.
-- Permanent local cache bumped to v236.
-- Desktop loader now skips the download pipeline when v236 assets are already marked ready locally.
-- Service worker stores a v236 cache metadata marker and returns 100% immediately on later starts.
-- Mobile no longer forces service-worker update checks on every open.
+- Added PEGASUS 237 Daily Backup Collector in backup.js.
+- Morning report now builds a fresh backup at send time, not the previous evening.
+- Backup is injected into existing EmailJS template data through nutrition_advice so it is sent even if the EmailJS template has not been edited to add a new backup field.
+- Additional params are also filled: backup_summary, backup_json, pegasus_backup_json, backup_schema, backup_key_count, backup_size_bytes, backup_truncated.
+- Backup includes PEGASUS user data keys, food logs, cardio logs, weight keys, Kouki keys, parking, biometrics, lifting, car/service data, finance, notes, supplies, movies, YouTube, missions, social/contacts where present.
+- Backup deliberately skips PIN/master/API/vault secrets, runtime logs, sync traces, old backups/snapshots and permanent-cache markers to avoid unsafe leaks and recursive oversized emails.
+- Manual export filename is now PEGASUS_FULL_BACKUP_YYYY-MM-DD.json and uses the same complete user-data collector.
+- Permanent local cache bumped to v237.
 
 Install note:
-Upload all files. The first open after this package will rebuild the v236 local cache once. After it reaches 100%, normal refreshes should be much faster and should not re-download everything.
+Upload all files. First open after this package will build/check v237 local cache once. The next morning report should log: "PEGASUS REPORT: Daily backup attached" before sending.
 
 Package:
 - Code-only.

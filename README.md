@@ -1,13 +1,14 @@
-PEGASUS 236
+PEGASUS 237
 
 Code-only package. No bundled images or videos.
 
 Main fixes:
-- Cloud Data Guard repair push after manual/thin JSONBin payloads.
-- Non-destructive cloud pulls: missing remote fields do not wipe local modules.
-- Faster refresh after first v236 local cache build.
+- The morning PEGASUS report now attaches a daily full user-data backup inside the email.
+- Manual JSON export now uses the same complete user-data collector, not only the older manifest list.
+- Backup avoids recursive old backups/logs and does not include PIN/master/API/vault secrets.
+- Permanent local cache bumped to v237.
 
 After upload:
-1. Open PEGASUS once and let the local storage loader reach 100%.
-2. Future refreshes should use the permanent local cache instead of downloading all files again.
-3. Avoid manual JSONBin overwrite scripts. If cloud is thin again, v236 should preserve local data and rebuild the cloud from the device snapshot.
+1. Open PEGASUS once and let the local storage loader reach 100% for v237.
+2. The next morning report will include the backup JSON section under the existing nutrition/advice field.
+3. Keep avoiding manual JSONBin overwrite scripts; this version protects future recovery better.
