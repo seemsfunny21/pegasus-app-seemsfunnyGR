@@ -1,6 +1,6 @@
 /* ==========================================================================
    PEGASUS MOBILE WEATHER MODULE v1.2.227
-   Mobile weather box with current, hourly and 3-day forecast.
+   Mobile weather box with current, hourly and 3-day forecast; auto-refreshes on open without manual button.
    ========================================================================== */
 (function() {
     'use strict';
@@ -226,7 +226,7 @@
                     <div class="pegasus-weather-main">🌦️ --°C</div>
                     <div class="pegasus-weather-title">${escapeHTML(place)}</div>
                     <div class="pegasus-weather-advice">${t('Δεν υπάρχουν ακόμη δεδομένα καιρού.', 'No weather data yet.')}</div>
-                    <button class="primary-btn pegasus-weather-refresh" onclick="window.PegasusMobileWeather.refresh(true)">${t('Ανανέωση', 'Refresh')}</button>
+                    <div class="pegasus-weather-auto-refresh-note">${t('Ανανεώνεται αυτόματα κάθε φορά που ανοίγεις τον καιρό.', 'Updates automatically whenever you open Weather.')}</div>
                 </div>
             `;
             return;
@@ -262,7 +262,7 @@
                 <div class="pegasus-weather-section-title">${t('Πρόγνωση 3 ημερών', '3-day forecast')}</div>
                 ${renderDaily(cached.daily)}
 
-                <button class="primary-btn pegasus-weather-refresh" onclick="window.PegasusMobileWeather.refresh(true)">${t('Ανανέωση', 'Refresh')}</button>
+                <div class="pegasus-weather-auto-refresh-note">${t('Ανανεώνεται αυτόματα με το άνοιγμα του καιρού.', 'Updates automatically when Weather opens.')}</div>
             </div>
         `;
     }
@@ -431,7 +431,7 @@
                         <span class="tile-icon">🌦️</span>
                         <span class="tile-label">${t('Καιρός', 'Weather')}</span>
                         <span class="pegasus-weather-tile-temp">${cached ? `${cached.emoji} ${Math.round(cached.temp)}°C` : '--°C'}</span>
-                        <span class="pegasus-weather-tile-sub">${cached ? `${Math.round(cached.wind || 0)} km/h${Number(cached.rain) > 0 ? ` · ${Math.round(cached.rain)}%` : ''}` : t('Ανανέωση', 'Refresh')}</span>
+                        <span class="pegasus-weather-tile-sub">${cached ? `${Math.round(cached.wind || 0)} km/h${Number(cached.rain) > 0 ? ` · ${Math.round(cached.rain)}%` : ''}` : t('Άνοιγμα', 'Open')}</span>
                     `;
                 }
             });

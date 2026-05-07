@@ -1,9 +1,9 @@
-PEGASUS 229
+PEGASUS 230
 
-- Mobile sync countdown is now visually stable: the seconds count down with fixed-width digits and fixed layout, so it no longer grows/shrinks every second.
-- Mobile sync status keeps the existing color cycle: blue during sync, green/orange/red as the 30s countdown runs.
-- Mobile Στόχοι daily-exercise section now shows a clean “Αποθεραπεία” message on recovery/no-weight days instead of the long explanatory text.
-- If the selected day has weight exercises, Στόχοι still shows the exercise list normally.
-- Manifest bumped to v18.30.
-- Permanent local storage / service worker cache bumped to 229.
+- Mobile Weather no longer shows a manual “Ανανέωση / Refresh” button inside the Weather panel.
+- Weather still refreshes automatically every time the Weather menu opens.
+- Added a small informational note so it is clear that Weather updates on open.
+- Weather tile fallback text now says “Άνοιγμα” instead of “Ανανέωση”.
+- Manifest bumped to v18.31.
+- Permanent local storage / service worker cache bumped to 230.
 - Code-only zip: no bundled images or videos.

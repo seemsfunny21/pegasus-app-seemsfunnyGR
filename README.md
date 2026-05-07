@@ -1,7 +1,7 @@
-# PEGASUS 229
+# PEGASUS 230
 
-Code-only mobile UX fix based on PEGASUS 228.
+Code-only mobile Weather UI cleanup based on PEGASUS 229.
 
-This build stabilizes the mobile sync countdown so only the seconds and status color change; the text no longer appears to grow or shrink each second. It also cleans the Στόχοι recovery-day message: no-weight/recovery days now show “Αποθεραπεία”, while normal training days still list the day’s exercises and saved kg values below.
+The Weather panel now relies on the automatic refresh that already runs whenever the Weather menu opens, so the manual refresh button has been removed. The panel keeps the current weather, hourly forecast, and 3-day forecast, and shows a small note that the weather updates automatically on open.
 
-No saved weights, workout history, nutrition data, or sync data are deleted. No bundled images or videos are included.
+No saved weights, workout history, nutrition data, sync data, or weather cache data are deleted. No bundled images or videos are included.
