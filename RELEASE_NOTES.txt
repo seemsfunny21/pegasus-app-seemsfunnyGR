@@ -1,14 +1,18 @@
-PEGASUS 234 - Mobile sync indicator raw-label lock
+PEGASUS 235 - Cloud Data Loss Guard
 
 Problem fixed:
-- The sync indicator was still appearing large/small because adaptiveTypography UI Label Polish was converting the text after countdown mutations.
-- This caused alternating `ΣΥΝΔΕΔΕΜΕΝΟ` / `Συνδεδεμένο` visual states.
+- A manual/thin JSONBin overwrite could contain only a few fields and omit most PEGASUS keys.
+- The old pull logic treated missing remote keys as deletion and could wipe local modules like Ύπνος, Parking, Βάρη, Notes, Finance, YouTube, Supplies, etc.
 
 Changes:
-- Added `data-pegasus-raw-label="true"` to `#sync-indicator`.
-- `adaptiveTypography.js` now explicitly skips `#sync-indicator`.
-- `mobile.html` re-applies the raw-label lock every countdown tick.
-- `mobile/style.css` keeps the indicator dimensions fixed and prevents inherited child resizing.
+- Cloud pull is now merge-first and non-destructive: missing remote keys no longer delete local data.
+- Added Data Guard snapshots before every cloud pull: latest / previous / older local safety copies.
+- Empty remote values for critical modules no longer overwrite non-empty local values.
+- Thin/partial cloud payloads are detected and logged as merge-only.
+- Legacy/manual payload fields are mapped safely, e.g. car_service -> pegasus_car_service, kcal/protein/supp_inventory/weekly_history/food_library/contacts.
+- Push now includes data-guard metadata and aborts if a bug creates an abnormally tiny payload.
+- Added pegasus_weight_ and pegasus_lifting_v1 sync coverage for mobile lifting aliases.
+- Bumped service-worker cache to v235 so cloudSync.js refreshes cleanly.
 
 Package:
 - Code-only.

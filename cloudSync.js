@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v22.1)
+   PEGASUS CLOUD VAULT - SINGLE USER SECURE SYNC (v22.2 DATA GUARD)
    STATUS: SINGLE-USER | LOCAL-ONLY PRIVATES | DAILY 07:00 LOCK | OFFLINE QUEUE
    ========================================================================== */
 
@@ -238,6 +238,7 @@ const PegasusCloud = {
             "pegasus_muscle_targets",
             "pegasus_calendar_history",
             "pegasus_exercise_weights",
+            "pegasus_lifting_v1",
             "pegasus_custom_exercise_order_v1",
             "pegasus_ex_time",
             "pegasus_rest_time",
@@ -301,6 +302,7 @@ const PegasusCloud = {
             "pegasus_gym_kcal_",
             "pegasus_weekend_training_mode_",
             "weight_",
+            "pegasus_weight_",
             "pegasus_routine_injected_",
             "pegasus_history_",
             "pegasus_day_status_",
@@ -397,6 +399,180 @@ const PegasusCloud = {
         if (this.isLocalOnlyStorageKey(key)) return true;
         if (this.isProtectedStorageKey(key)) return true;
         return false;
+    },
+
+
+    /* =========================
+       🛡️ DATA LOSS GUARD
+       Remote pulls are now merge-first. Missing keys are treated as "remote
+       did not know about this key", not as a delete command. This protects
+       against thin/manual JSONBin overwrites that only contain a few fields.
+    ========================= */
+    getDataGuardCriticalKeys() {
+        return [
+            "pegasus_biometrics_v1",
+            "pegasus_parking_loc",
+            "pegasus_parking_history",
+            "pegasus_car_service",
+            "peg_car_service",
+            "pegasus_exercise_weights",
+            "pegasus_lifting_v1",
+            "pegasus_notes",
+            "pegasus_finance_v1",
+            "pegasus_supplies_v1",
+            "pegasus_movies_v1",
+            "pegasus_youtube_v1",
+            "pegasus_social_v1",
+            "pegasus_contacts",
+            "pegasus_food_library",
+            "pegasus_cardio_history",
+            "pegasus_workout_kcal_history",
+            "pegasus_calendar_history",
+            "pegasus_weekly_history",
+            "pegasus_weekly_history_counted_v2",
+            "pegasus_daily_progress",
+            "pegasus_stats"
+        ];
+    },
+
+    safeParseAny(value, fallback = null) {
+        try {
+            if (value && typeof value === "object") return value;
+            return JSON.parse(String(value || "null"));
+        } catch (e) {
+            return fallback;
+        }
+    },
+
+    isEmptySyncValue(value) {
+        if (value === null || value === undefined) return true;
+        const raw = String(value).trim();
+        if (!raw || raw === "null" || raw === "undefined") return true;
+        if (raw === "[]" || raw === "{}") return true;
+
+        const parsed = this.safeParseAny(raw, undefined);
+        if (Array.isArray(parsed)) return parsed.length === 0;
+        if (parsed && typeof parsed === "object") return Object.keys(parsed).length === 0;
+        return false;
+    },
+
+    hasMeaningfulSyncValue(value) {
+        return !this.isEmptySyncValue(value);
+    },
+
+    shouldPreserveLocalAgainstRemoteValue(key, localValue, remoteValue) {
+        const k = String(key || "");
+        if (!k) return false;
+
+        const critical = this.getDataGuardCriticalKeys().includes(k)
+            || k.startsWith("weight_")
+            || k.startsWith("pegasus_weight_")
+            || k.startsWith("food_log_")
+            || k.startsWith("pegasus_cardio_kcal_")
+            || k.startsWith("pegasus_workout_kcal_")
+            || k.startsWith("pegasus_strength_kcal_")
+            || k.startsWith("pegasus_gym_kcal_");
+
+        if (!critical) return false;
+        return this.hasMeaningfulSyncValue(localValue) && this.isEmptySyncValue(remoteValue);
+    },
+
+    isRemotePayloadThin(remoteStorage = {}, remoteProtectedStorage = {}) {
+        const remoteKeys = [
+            ...Object.keys(remoteStorage || {}),
+            ...Object.keys(remoteProtectedStorage || {})
+        ];
+        const localKeys = this.getLocalManagedKeys({ includeProtected: true });
+        const localCriticalCount = this.getDataGuardCriticalKeys()
+            .filter(key => this.hasMeaningfulSyncValue(localStorage.getItem(key))).length;
+
+        if (!remoteKeys.length && localKeys.length > 0) return true;
+        if (remoteKeys.length < 8 && localCriticalCount >= 3) return true;
+        if (remoteKeys.length < Math.max(8, Math.floor(localKeys.length * 0.20)) && localKeys.length >= 20) return true;
+        return false;
+    },
+
+    saveDataGuardSnapshot(reason = "unknown", extra = {}) {
+        try {
+            const now = Date.now();
+            const snapshot = {
+                reason,
+                at: now,
+                iso: new Date(now).toISOString(),
+                extra,
+                storage: {}
+            };
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key) continue;
+                if (this.isInternalStorageKey(key)) continue;
+                if (/(vault|pin|master|secret|hash|wrapped|api[_-]?key|gemini|openai|openrouter)/i.test(key)) continue;
+                if (this.isAllowedStorageKey(key) || this.isLocalOnlyStorageKey(key)) {
+                    const value = localStorage.getItem(key);
+                    if (this.hasMeaningfulSyncValue(value)) snapshot.storage[key] = value;
+                }
+            }
+
+            const latest = localStorage.getItem("pegasus_cloud_guard_snapshot_latest_v1");
+            const prev = localStorage.getItem("pegasus_cloud_guard_snapshot_prev_v1");
+            if (prev) this.safeSetLocal("pegasus_cloud_guard_snapshot_older_v1", prev);
+            if (latest) this.safeSetLocal("pegasus_cloud_guard_snapshot_prev_v1", latest);
+            this.safeSetLocal("pegasus_cloud_guard_snapshot_latest_v1", JSON.stringify(snapshot));
+            return snapshot;
+        } catch (e) {
+            console.warn("⚠️ CLOUD DATA GUARD: snapshot skipped.", e);
+            return null;
+        }
+    },
+
+    mapLegacyCloudRecordToStorage(cloud) {
+        const generalStorage = {};
+        const protectedStorage = {};
+        if (!cloud || typeof cloud !== "object") {
+            return { generalStorage, protectedStorage };
+        }
+
+        const putGeneral = (remoteKey, localKey) => {
+            if (Object.prototype.hasOwnProperty.call(cloud, remoteKey) && this.isGeneralStorageKey(localKey)) {
+                generalStorage[localKey] = (typeof cloud[remoteKey] === "string") ? cloud[remoteKey] : JSON.stringify(cloud[remoteKey]);
+            }
+        };
+        const putProtected = (remoteKey, localKey) => {
+            if (Object.prototype.hasOwnProperty.call(cloud, remoteKey) && this.isProtectedStorageKey(localKey)) {
+                protectedStorage[localKey] = (typeof cloud[remoteKey] === "string") ? cloud[remoteKey] : JSON.stringify(cloud[remoteKey]);
+            }
+        };
+
+        putGeneral("car_service", "pegasus_car_service");
+        putGeneral("service", "pegasus_car_service");
+        putGeneral("peg_car_service", "peg_car_service");
+        putGeneral("kcal", "pegasus_today_kcal");
+        putGeneral("protein", "pegasus_today_protein");
+        putGeneral("supp_inventory", "pegasus_supp_inventory");
+        putGeneral("weekly_history", "pegasus_weekly_history");
+        putGeneral("food_library", "pegasus_food_library");
+        putGeneral("car_dates", "pegasus_car_dates");
+        putGeneral("car_specs", "pegasus_car_specs");
+        putGeneral("parking_loc", "pegasus_parking_loc");
+        putGeneral("parking_history", "pegasus_parking_history");
+        putGeneral("biometrics", "pegasus_biometrics_v1");
+        putGeneral("exercise_weights", "pegasus_exercise_weights");
+        putProtected("peg_contacts", "pegasus_contacts");
+        putProtected("contacts", "pegasus_contacts");
+        putProtected("social", "pegasus_social_v1");
+
+        return { generalStorage, protectedStorage };
+    },
+
+    shouldApplyRemoteDeletion(key, remotePayload) {
+        // Future-proof explicit deletion channel only. Missing keys alone must
+        // never delete local data again.
+        const deleted = Array.isArray(remotePayload?.deletedKeys) ? remotePayload.deletedKeys : [];
+        if (!deleted.length || deleted.length > 20) return false;
+        if (!deleted.includes(key)) return false;
+        if (this.getDataGuardCriticalKeys().includes(key)) return false;
+        return true;
     },
 
 
@@ -734,6 +910,12 @@ const PegasusCloud = {
     },
 
     mergeManagedStorageValue(key, localValue, remoteValue) {
+        if (this.shouldPreserveLocalAgainstRemoteValue(key, localValue, remoteValue)) {
+            try {
+                console.warn("🛡️ CLOUD DATA GUARD: Preserved local non-empty value over empty remote for", key);
+            } catch (_) {}
+            return localValue;
+        }
         if (key === "pegasus_weekly_history") {
             return this.mergeWeeklyHistoryValue(localValue, remoteValue);
         }
@@ -756,8 +938,10 @@ const PegasusCloud = {
     },
 
     shouldPreserveManagedKeyOnRemoteMissing(key) {
-        const registry = window.PegasusMobileDataRegistry;
-        return !!registry?.shouldPreserveOnMissing?.(key);
+        // PEGASUS 235: Missing from remote means "not included in that cloud payload".
+        // It is no longer interpreted as a delete, because a manual/thin JSONBin PUT
+        // can omit most app keys and would otherwise wipe local data.
+        return true;
     },
 
     getApprovalPinHash(record) {
@@ -1266,7 +1450,8 @@ const PegasusCloud = {
                 storage: generalStorage,
                 protectedStorage,
                 events: Array.isArray(cloud?.__events__) ? cloud.__events__ : [],
-                hasProtectedPayload
+                hasProtectedPayload,
+                deletedKeys: Array.isArray(cloud?.__deleted_keys__) ? cloud.__deleted_keys__ : []
             };
         }
 
@@ -1275,23 +1460,32 @@ const PegasusCloud = {
                 storage: cloud.storage,
                 protectedStorage: {},
                 events: Array.isArray(cloud?.__events__) ? cloud.__events__ : [],
-                hasProtectedPayload: false
+                hasProtectedPayload: false,
+                deletedKeys: Array.isArray(cloud?.__deleted_keys__) ? cloud.__deleted_keys__ : []
             };
         }
 
         if (cloud && typeof cloud === "object") {
+            const legacyMapped = this.mapLegacyCloudRecordToStorage(cloud);
+            Object.assign(generalStorage, legacyMapped.generalStorage || {});
+            Object.assign(protectedStorage, legacyMapped.protectedStorage || {});
+
             for (const key of Object.keys(cloud)) {
                 if (this.isGeneralStorageKey(key)) {
-                    generalStorage[key] = cloud[key];
+                    generalStorage[key] = (typeof cloud[key] === "string") ? cloud[key] : JSON.stringify(cloud[key]);
+                }
+                if (this.isProtectedStorageKey(key)) {
+                    protectedStorage[key] = (typeof cloud[key] === "string") ? cloud[key] : JSON.stringify(cloud[key]);
                 }
             }
         }
 
         return {
             storage: generalStorage,
-            protectedStorage: {},
+            protectedStorage,
             events: Array.isArray(cloud?.__events__) ? cloud.__events__ : [],
-            hasProtectedPayload: false
+            hasProtectedPayload: Object.keys(protectedStorage || {}).length > 0,
+            legacyThinPayload: true
         };
     },
 
@@ -1640,6 +1834,20 @@ const PegasusCloud = {
                 const remoteProtectedStorage = (remotePayload?.protectedStorage && typeof remotePayload.protectedStorage === "object") ? remotePayload.protectedStorage : {};
                 const remoteEvents = Array.isArray(remotePayload?.events) ? remotePayload.events : [];
                 const hasProtectedPayload = remotePayload?.hasProtectedPayload === true;
+                const remoteDeletedKeys = Array.isArray(remotePayload?.deletedKeys) ? remotePayload.deletedKeys : [];
+                const remoteIsThin = this.isRemotePayloadThin(remoteStorage, remoteProtectedStorage);
+
+                this.saveDataGuardSnapshot("before-cloud-pull", {
+                    remoteTs,
+                    lastLocal,
+                    remoteKeys: Object.keys(remoteStorage).length,
+                    remoteProtectedKeys: Object.keys(remoteProtectedStorage).length,
+                    remoteIsThin
+                });
+
+                if (remoteIsThin) {
+                    console.warn("🛡️ CLOUD DATA GUARD: Thin/partial cloud payload detected. Merge-only mode active; no local keys will be deleted.");
+                }
 
                 console.log("☁️ CLOUD: Syncing latest version...");
                 changed = true;
@@ -1652,8 +1860,11 @@ const PegasusCloud = {
 
                     for (const key of localGeneralKeys) {
                         if (!remoteGeneralKeys.has(key)) {
-                            if (this.shouldPreserveManagedKeyOnRemoteMissing(key)) continue;
-                            this.safeRemoveLocal(key);
+                            if (this.shouldApplyRemoteDeletion(key, { deletedKeys: remoteDeletedKeys })) {
+                                this.safeRemoveLocal(key);
+                            } else {
+                                continue;
+                            }
                         }
                     }
 
@@ -1670,8 +1881,11 @@ const PegasusCloud = {
 
                         for (const key of localProtectedKeys) {
                             if (!remoteProtectedKeys.has(key)) {
-                                if (this.shouldPreserveManagedKeyOnRemoteMissing(key)) continue;
-                                this.safeRemoveLocal(key);
+                                if (this.shouldApplyRemoteDeletion(key, { deletedKeys: remoteDeletedKeys })) {
+                                    this.safeRemoveLocal(key);
+                                } else {
+                                    continue;
+                                }
                             }
                         }
 
@@ -1862,8 +2076,13 @@ const PegasusCloud = {
             const remote = await this.fetchLatestRecord();
             const remoteTs = parseInt(remote?.last_update_ts || "0", 10);
             const localTs = parseInt(localStorage.getItem(this.storage.lastPush) || "0", 10);
-            const pendingExists = this.hasPendingChanges();
+            const pendingQueueBeforePush = this.loadPendingChanges();
+            const pendingExists = Object.keys(pendingQueueBeforePush).length > 0;
             const protectedRepairPending = this.hasProtectedRepairPending();
+            const deletedKeys = Object.entries(pendingQueueBeforePush)
+                .filter(([key, entry]) => entry?.type === "remove" && this.isAllowedStorageKey(key) && !this.getDataGuardCriticalKeys().includes(key))
+                .map(([key]) => key)
+                .slice(0, 20);
 
             if (remoteTs && remoteTs > localTs) {
                 console.warn("⚠️ CLOUD: Remote is newer than local. Pulling before push...");
@@ -1888,6 +2107,11 @@ const PegasusCloud = {
             const snapshot = this.collectStorageSnapshot({ includeProtected: true });
             const storage = snapshot.general || {};
             const protectedStorage = snapshot.protectedStorage || {};
+            const localManagedCount = this.getLocalManagedKeys({ includeProtected: true }).length;
+            if (localManagedCount >= 20 && Object.keys(storage).length < 8) {
+                this.saveDataGuardSnapshot("push-aborted-thin-local-snapshot", { localManagedCount, storageKeys: Object.keys(storage).length });
+                throw new Error("DATA_GUARD_ABORT_THIN_PUSH_PAYLOAD");
+            }
             const protectedPayload = Object.keys(protectedStorage).length
                 ? await this.encryptCloudPayload({ storage: protectedStorage })
                 : null;
@@ -1903,6 +2127,12 @@ const PegasusCloud = {
                 storage,
                 protected: {
                     contacts: protectedPayload
+                },
+                __deleted_keys__: deletedKeys,
+                __data_guard_v1: {
+                    storageKeys: Object.keys(storage).length,
+                    protectedKeys: Object.keys(protectedStorage).length,
+                    generatedAt: ts
                 },
                 __events__: this.getBoundedEvents()
             };
