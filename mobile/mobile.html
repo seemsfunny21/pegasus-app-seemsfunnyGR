@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <div id="sync-indicator">ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ</div>
+    <div id="sync-indicator" data-pegasus-raw-label="true">ΣΥΣΤΗΜΑ ΕΤΟΙΜΟ</div>
     <div id="dietAdvisorMobile" style="font-size: 11px; font-weight: 800; color: #ffb300; margin-bottom: 15px; text-transform: none; letter-spacing: 1px;"></div>
 
     <div id="home" class="view active">
@@ -860,13 +860,19 @@
         const e = document.getElementById("sync-indicator");
         if (!e) return;
 
-        // PEGASUS 233: CSS is the single source for size. This only clears older
-        // inline locks from previous versions so the label cannot grow/shrink.
+        // PEGASUS 234: keep the sync label outside the global UI label-polish
+        // MutationObserver. That observer was changing ΣΥΝΔΕΔΕΜΕΝΟ to title case
+        // after each countdown tick, which made the text look big/small.
+        e.setAttribute("data-pegasus-raw-label", "true");
+        e.classList.add("pegasus-sync-indicator-fixed");
+
+        // CSS is the single source for size. This only clears older inline locks
+        // from previous versions so the label cannot grow/shrink.
         [
             "font-size", "letter-spacing", "font-family", "width", "min-width",
             "max-width", "height", "min-height", "line-height", "display",
             "align-items", "justify-content", "white-space", "box-sizing",
-            "transform", "animation", "transition"
+            "transform", "animation", "transition", "text-transform"
         ].forEach(prop => e.style.removeProperty(prop));
     }
 

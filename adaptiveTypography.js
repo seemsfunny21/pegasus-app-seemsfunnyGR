@@ -1165,7 +1165,7 @@ html[data-pegasus-typography='mobile'] #muscleProgressContainer span {
         const el = node?.parentElement;
         if (!el) return true;
         const tag = el.tagName;
-        return tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT' || el.closest('[data-pegasus-raw-label="true"]');
+        return tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT' || el.id === 'sync-indicator' || el.closest('#sync-indicator') || el.closest('[data-pegasus-raw-label="true"]');
     }
 
     function polish(root) {

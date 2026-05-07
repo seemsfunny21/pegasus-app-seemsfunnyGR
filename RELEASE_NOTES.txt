@@ -1,12 +1,16 @@
-PEGASUS 233 - Final mobile sync indicator stabilization
+PEGASUS 234 - Mobile sync indicator raw-label lock
+
+Problem fixed:
+- The sync indicator was still appearing large/small because adaptiveTypography UI Label Polish was converting the text after countdown mutations.
+- This caused alternating `ΣΥΝΔΕΔΕΜΕΝΟ` / `Συνδεδεμένο` visual states.
 
 Changes:
-- Final fixed mobile sync indicator size from CSS only: 14px, fixed 285px width, fixed 24px height.
-- Removed adaptiveTypography #sync-indicator override so typography cannot resize it.
-- Removed JavaScript inline font/width/height locking from mobile.html; JS now only clears old inline locks.
-- Mobile sync indicator keeps one stable text format: ΣΥΝΔΕΔΕΜΕΝΟ · XXs.
-- Countdown still changes color: blue during sync pulse, green/orange/red while counting down.
-- Background/manual cloud sync events no longer visually reset the 30-second indicator or flash a different word.
-- Service worker/permanent local cache bumped to v233.
+- Added `data-pegasus-raw-label="true"` to `#sync-indicator`.
+- `adaptiveTypography.js` now explicitly skips `#sync-indicator`.
+- `mobile.html` re-applies the raw-label lock every countdown tick.
+- `mobile/style.css` keeps the indicator dimensions fixed and prevents inherited child resizing.
 
-Upload all files, then reload mobile once so sw.js?v=3.34.233 takes over.
+Package:
+- Code-only.
+- No images folder.
+- No videos folder.

@@ -22,7 +22,8 @@ body {
     display: flex; flex-direction: column; align-items: center;
 }
 
-#sync-indicator {
+#sync-indicator,
+.pegasus-sync-indicator-fixed {
     font-size: 14px !important;
     font-weight: 900;
     letter-spacing: 1.2px !important;
@@ -50,6 +51,17 @@ body {
     animation: none !important;
     transition: color 0.25s ease, text-shadow 0.25s ease !important;
     will-change: color, text-shadow;
+}
+
+#sync-indicator *,
+.pegasus-sync-indicator-fixed * {
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    letter-spacing: inherit !important;
+    line-height: inherit !important;
+    text-transform: none !important;
+    transform: none !important;
+    animation: none !important;
 }
 
 .header h1 { font-size: 38px; font-weight: 900; margin: 0; letter-spacing: -1.5px; text-transform: none; background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
