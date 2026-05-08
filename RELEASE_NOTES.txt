@@ -58,3 +58,11 @@ Package:
 - Code-only.
 - No images folder.
 - No videos folder.
+
+PEGASUS 241 - Mobile Biometric Enrollment Fix
+- Improved mobile/biometric-unlock-mobile.js v1.1.241.
+- Biometric enrollment prompt now appears after manual unlock and approved-device auto unlock.
+- Added persistent Settings card: ΒΙΟΜΕΤΡΙΚΟ ΞΕΚΛΕΙΔΩΜΑ, with enable/test/reset controls.
+- PIN modal now always shows biometric unlock when enrolled.
+- Added PegasusBiometricUnlock.status(), showPrompt(), reset() helpers for console debugging.
+- Service worker cache bumped to 241.

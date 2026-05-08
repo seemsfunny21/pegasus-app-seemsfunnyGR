@@ -1,29 +1,52 @@
 /* ============================================================================
-   🔐 PEGASUS MOBILE BIOMETRIC UNLOCK (v1.0)
+   🔐 PEGASUS MOBILE BIOMETRIC UNLOCK (v1.1)
    Protocol: WebAuthn / Platform Authenticator bridge for existing PIN vault
    Status: SEPARATE MODULE | NO FINGERPRINT DATA STORED | APPROVED-DEVICE GATE
+   Fix v1.1: enrollment prompt after auto/manual unlock + settings card + robust PIN modal button
    ============================================================================ */
 
 (function() {
     "use strict";
 
+    const MODULE_VERSION = "1.1.241";
     const STORAGE = {
         enabled: "pegasus_biometric_unlock_enabled_v1",
         credentialId: "pegasus_biometric_credential_id_v1",
         userId: "pegasus_biometric_user_id_v1",
         createdAt: "pegasus_biometric_created_at_v1",
-        dismissedPrompt: "pegasus_biometric_prompt_dismissed_v1"
+        dismissedPrompt: "pegasus_biometric_prompt_dismissed_v1",
+        promptShownAt: "pegasus_biometric_prompt_last_shown_v1"
     };
 
     const GREEN = "#00ff41";
     const ERROR = "#ff4444";
+    const MUTED = "#777";
+
+    let observer = null;
+    let pulseTimer = null;
+    let cloudHooksInstalled = false;
+    let promptScheduled = false;
 
     function log(...args) {
         console.log("🔐 PEGASUS BIOMETRIC:", ...args);
     }
 
+    function warn(...args) {
+        console.warn("🔐 PEGASUS BIOMETRIC:", ...args);
+    }
+
     function isSecureEnough() {
-        return !!(window.isSecureContext && navigator.credentials && window.PublicKeyCredential && crypto?.subtle);
+        return !!(
+            window.isSecureContext &&
+            navigator.credentials &&
+            window.PublicKeyCredential &&
+            window.crypto &&
+            crypto.getRandomValues
+        );
+    }
+
+    function isMobileRuntime() {
+        return !!(window.PEGASUS_IS_MOBILE || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ""));
     }
 
     function randomBytes(length = 32) {
@@ -52,8 +75,16 @@
         return localStorage.getItem(STORAGE.enabled) === "1" && !!localStorage.getItem(STORAGE.credentialId);
     }
 
+    function cloud() {
+        return window.PegasusCloud || null;
+    }
+
     function canRestorePegasusVault() {
-        return !!window.PegasusCloud?.canRestoreApprovedDevice?.();
+        try { return !!cloud()?.canRestoreApprovedDevice?.(); } catch (_) { return false; }
+    }
+
+    function isVaultUnlocked() {
+        try { return !!cloud()?.isUnlocked; } catch (_) { return false; }
     }
 
     function setMainError(message, color = ERROR) {
@@ -73,8 +104,24 @@
         }
     }
 
+    function clearDismissedPrompt() {
+        localStorage.removeItem(STORAGE.dismissedPrompt);
+    }
+
+    async function platformAvailable() {
+        if (!isSecureEnough()) return false;
+        try {
+            if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
+                return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            }
+        } catch (_) {}
+        return true;
+    }
+
     async function createCredential() {
         if (!isSecureEnough()) throw new Error("UNSUPPORTED_BROWSER");
+        const available = await platformAvailable();
+        if (!available) throw new Error("NO_PLATFORM_AUTHENTICATOR");
 
         const userId = randomBytes(32);
         const credential = await navigator.credentials.create({
@@ -106,8 +153,8 @@
         localStorage.setItem(STORAGE.credentialId, toBase64Url(credential.rawId));
         localStorage.setItem(STORAGE.userId, toBase64Url(userId));
         localStorage.setItem(STORAGE.createdAt, String(Date.now()));
-        localStorage.removeItem(STORAGE.dismissedPrompt);
-        log("enabled");
+        clearDismissedPrompt();
+        log("enabled", MODULE_VERSION);
         return true;
     }
 
@@ -133,6 +180,16 @@
         return true;
     }
 
+    function humanError(e) {
+        const msg = String(e?.name || e?.message || e || "");
+        if (/NotAllowed|Abort/i.test(msg)) return "ΑΚΥΡΩΘΗΚΕ ΤΟ ΔΑΧΤΥΛΙΚΟ";
+        if (/Security|UNSUPPORTED/i.test(msg)) return "ΘΕΛΕΙ HTTPS/CHROME ΚΑΙ ΚΛΕΙΔΩΜΑ ΟΘΟΝΗΣ";
+        if (/NO_PLATFORM/i.test(msg)) return "ΔΕΝ ΒΡΕΘΗΚΕ ΔΑΧΤΥΛΙΚΟ / ΚΛΕΙΔΩΜΑ ΟΘΟΝΗΣ";
+        if (/NOT_ENROLLED/i.test(msg)) return "ΠΡΩΤΑ ΚΑΝΕ ΕΝΕΡΓΟΠΟΙΗΣΗ ΔΑΧΤΥΛΙΚΟΥ";
+        if (/NO_APPROVED_DEVICE_MATERIAL/i.test(msg)) return "ΓΡΑΨΕ ΜΙΑ ΦΟΡΑ PIN + MASTER KEY ΣΕ ΑΥΤΗ ΤΗ ΣΥΣΚΕΥΗ";
+        return "ΔΕΝ ΕΓΙΝΕ ΒΙΟΜΕΤΡΙΚΟ ΞΕΚΛΕΙΔΩΜΑ · ΒΑΛΕ PIN";
+    }
+
     async function finalizeVaultUnlock(source) {
         if (window.PegasusMobileVault?.finishUnlock) {
             await window.PegasusMobileVault.finishUnlock(source || "biometric");
@@ -145,7 +202,7 @@
     }
 
     async function biometricUnlockMain() {
-        const button = document.getElementById("pegasusBiometricUnlockBtn");
+        const button = document.getElementById("pegasusBiometricUnlockBtn") || document.getElementById("pegasusBiometricSettingsUnlockBtn");
         try {
             if (button) button.disabled = true;
             setMainError("ΑΝΑΜΟΝΗ ΓΙΑ ΔΑΧΤΥΛΙΚΟ...", GREEN);
@@ -157,44 +214,47 @@
             }
 
             setMainError("ΒΙΟΜΕΤΡΙΚΟ OK · ΑΝΟΙΓΜΑ VAULT...", GREEN);
-            const success = await window.PegasusCloud.tryApprovedDeviceUnlock();
+            const success = await cloud().tryApprovedDeviceUnlock();
 
             if (!success) throw new Error("RESTORE_FAILED");
 
             await finalizeVaultUnlock("biometric");
             setTimeout(() => setMainError(""), 250);
+            renderAllBiometricButtons();
         } catch (e) {
-            console.warn("PEGASUS BIOMETRIC: main unlock failed.", e);
-            if (String(e?.name || e?.message || "").includes("NotAllowed")) {
-                setMainError("ΑΚΥΡΩΘΗΚΕ ΤΟ ΔΑΧΤΥΛΙΚΟ");
-            } else if (String(e?.message || "") === "NO_APPROVED_DEVICE_MATERIAL") {
-                setMainError("ΓΡΑΨΕ ΜΙΑ ΦΟΡΑ PIN + MASTER KEY ΓΙΑ ΝΑ ΔΕΘΕΙ Η ΣΥΣΚΕΥΗ");
-            } else {
-                setMainError("ΔΕΝ ΕΓΙΝΕ ΒΙΟΜΕΤΡΙΚΟ ΞΕΚΛΕΙΔΩΜΑ · ΒΑΛΕ PIN");
-            }
+            warn("main unlock failed", e);
+            setMainError(humanError(e));
+            alert(humanError(e));
         } finally {
             if (button) button.disabled = false;
         }
     }
 
     async function enableBiometricFromPrompt() {
-        const button = document.getElementById("pegasusBiometricEnableBtn") || document.getElementById("pegasusBiometricPromptEnable");
+        const button = document.getElementById("pegasusBiometricEnableBtn") ||
+            document.getElementById("pegasusBiometricPromptEnable") ||
+            document.getElementById("pegasusBiometricSettingsEnableBtn");
         try {
             if (button) button.disabled = true;
 
-            if (!window.PegasusCloud?.isUnlocked || !canRestorePegasusVault()) {
-                alert("Πρώτα κάνε μία φορά απασφάλιση με PIN + MASTER KEY σε αυτή τη συσκευή.");
+            if (!isSecureEnough()) {
+                alert("❌ Το δαχτυλικό θέλει HTTPS/Chrome και κλείδωμα οθόνης στο κινητό.");
+                return false;
+            }
+
+            if (!isVaultUnlocked() || !canRestorePegasusVault()) {
+                alert("Πρώτα κάνε μία φορά απασφάλιση με PIN + MASTER KEY σε αυτή τη συσκευή. Μετά ξαναπάτα ενεργοποίηση δαχτυλικού.");
                 return false;
             }
 
             await createCredential();
             renderAllBiometricButtons();
             hideEnrollmentPrompt();
-            alert("✅ Ενεργοποιήθηκε. Από την επόμενη φορά θα μπορείς να ξεκλειδώνεις με δαχτυλικό.");
+            alert("✅ Ενεργοποιήθηκε. Από την επόμενη φορά που θα ζητήσει PIN, θα μπορείς να πατάς δαχτυλικό.");
             return true;
         } catch (e) {
-            console.warn("PEGASUS BIOMETRIC: enable failed.", e);
-            alert("❌ Δεν ενεργοποιήθηκε το δαχτυλικό. Έλεγξε ότι το κινητό έχει δαχτυλικό/κλείδωμα οθόνης και ότι ανοίγεις το Pegasus από HTTPS/Chrome.");
+            warn("enable failed", e);
+            alert("❌ Δεν ενεργοποιήθηκε το δαχτυλικό. Έλεγξε ότι το κινητό έχει δαχτυλικό/κλείδωμα οθόνης και ότι ανοίγεις το Pegasus από HTTPS/Chrome.\n\n" + humanError(e));
             return false;
         } finally {
             if (button) button.disabled = false;
@@ -212,9 +272,10 @@
         btn.style.fontSize = "12px";
         btn.style.borderRadius = "14px";
         btn.style.letterSpacing = "1px";
-        btn.style.borderColor = primary ? GREEN : "#333";
+        btn.style.border = `1px solid ${primary ? GREEN : "#333"}`;
         btn.style.color = primary ? "#000" : GREEN;
         btn.style.background = primary ? GREEN : "transparent";
+        btn.style.width = "100%";
         btn.onclick = () => window.PegasusBiometricUnlock?.[onclickName]?.();
         return btn;
     }
@@ -227,30 +288,31 @@
 
         const unlockBtn = document.getElementById("pegasusBiometricUnlockBtn");
         const enableBtn = document.getElementById("pegasusBiometricEnableBtn");
-        const shouldShowUnlock = hasCredential() && canRestorePegasusVault();
-        const shouldShowEnable = !hasCredential() && window.PegasusCloud?.isUnlocked && canRestorePegasusVault();
+        const hasBio = hasCredential();
+        const canRestore = canRestorePegasusVault();
 
-        if (shouldShowUnlock) {
+        if (hasBio) {
             enableBtn?.remove();
-            if (unlockBtn) return;
-            const offlineButton = Array.from(panel.querySelectorAll("button")).find(btn => /OFFLINE/i.test(btn.textContent || ""));
-            const anchor = offlineButton || panel.lastElementChild;
-            const btn = buildButton("pegasusBiometricUnlockBtn", "🔐 ΞΕΚΛΕΙΔΩΜΑ ΜΕ ΔΑΧΤΥΛΙΚΟ", "unlockMain", true);
-            panel.insertBefore(btn, anchor || null);
-            return;
-        }
-
-        if (shouldShowEnable) {
-            unlockBtn?.remove();
-            if (enableBtn) return;
-            const offlineButton = Array.from(panel.querySelectorAll("button")).find(btn => /OFFLINE/i.test(btn.textContent || ""));
-            const anchor = offlineButton || panel.lastElementChild;
-            const btn = buildButton("pegasusBiometricEnableBtn", "➕ ΕΝΕΡΓΟΠΟΙΗΣΗ ΔΑΧΤΥΛΙΚΟΥ", "enable", false);
-            panel.insertBefore(btn, anchor || null);
+            if (!unlockBtn) {
+                const offlineButton = Array.from(panel.querySelectorAll("button")).find(btn => /OFFLINE|ΛΕΙΤΟΥΡΓΙΑ/i.test(btn.textContent || ""));
+                const btn = buildButton("pegasusBiometricUnlockBtn", "🔐 ΞΕΚΛΕΙΔΩΜΑ ΜΕ ΔΑΧΤΥΛΙΚΟ", "unlockMain", true);
+                panel.insertBefore(btn, offlineButton || null);
+            }
             return;
         }
 
         unlockBtn?.remove();
+
+        // If the device is already approved/unlocked, allow enrollment from the modal too.
+        if (canRestore && isVaultUnlocked()) {
+            if (!enableBtn) {
+                const offlineButton = Array.from(panel.querySelectorAll("button")).find(btn => /OFFLINE|ΛΕΙΤΟΥΡΓΙΑ/i.test(btn.textContent || ""));
+                const btn = buildButton("pegasusBiometricEnableBtn", "➕ ΕΝΕΡΓΟΠΟΙΗΣΗ ΔΑΧΤΥΛΙΚΟΥ", "enable", false);
+                panel.insertBefore(btn, offlineButton || null);
+            }
+            return;
+        }
+
         enableBtn?.remove();
     }
 
@@ -270,8 +332,8 @@
             input.value = "";
             setSocialError("");
         } catch (e) {
-            console.warn("PEGASUS BIOMETRIC: social unlock failed.", e);
-            setSocialError("ΔΕΝ ΕΓΙΝΕ ΒΙΟΜΕΤΡΙΚΟ ΞΕΚΛΕΙΔΩΜΑ · ΒΑΛΕ PIN");
+            warn("social unlock failed", e);
+            setSocialError(humanError(e));
         }
     }
 
@@ -292,20 +354,83 @@
         }
     }
 
+    function renderSettingsCard() {
+        const panel = document.getElementById("settings_panel");
+        if (!panel) return;
+
+        let card = document.getElementById("pegasusBiometricSettingsCard");
+        if (!card) {
+            card = document.createElement("div");
+            card.id = "pegasusBiometricSettingsCard";
+            card.className = "mini-card";
+            card.style.marginTop = "22px";
+            card.style.padding = "20px";
+            card.style.borderColor = GREEN;
+            card.style.background = "rgba(0,255,65,0.04)";
+
+            const firstTitle = Array.from(panel.querySelectorAll(".section-title")).find(x => /ΔΙΑΧΕΙΡΙΣΗ/i.test(x.textContent || ""));
+            if (firstTitle) {
+                panel.insertBefore(card, firstTitle);
+            } else {
+                panel.appendChild(card);
+            }
+        }
+
+        const supported = isSecureEnough();
+        const enrolled = hasCredential();
+        const unlocked = isVaultUnlocked();
+        const restorable = canRestorePegasusVault();
+
+        let status = "";
+        if (!supported) status = "Μη διαθέσιμο εδώ: χρειάζεται HTTPS/Chrome και κλείδωμα οθόνης.";
+        else if (enrolled) status = "Ενεργό σε αυτή τη συσκευή.";
+        else if (unlocked && restorable) status = "Έτοιμο για ενεργοποίηση σε αυτή τη συσκευή.";
+        else status = "Πρώτα κάνε PIN + MASTER KEY μία φορά στο κινητό.";
+
+        const actionHtml = enrolled
+            ? `<button id="pegasusBiometricSettingsUnlockBtn" class="primary-btn" style="width:100%; margin-top:12px; padding:14px; font-size:11px;">🔐 ΔΟΚΙΜΗ ΔΑΧΤΥΛΙΚΟΥ</button>
+               <button id="pegasusBiometricSettingsResetBtn" class="secondary-btn" style="width:100%; margin-top:10px; padding:12px; font-size:10px; color:#777; border-color:#333;">ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ ΣΕ ΑΥΤΗ ΤΗ ΣΥΣΚΕΥΗ</button>`
+            : `<button id="pegasusBiometricSettingsEnableBtn" class="primary-btn" style="width:100%; margin-top:12px; padding:14px; font-size:11px;" ${(!supported || !unlocked || !restorable) ? "disabled" : ""}>➕ ΕΝΕΡΓΟΠΟΙΗΣΗ ΔΑΧΤΥΛΙΚΟΥ</button>`;
+
+        card.innerHTML = `
+            <span class="mini-label" style="display:block; margin-bottom:10px;">🔐 ΒΙΟΜΕΤΡΙΚΟ ΞΕΚΛΕΙΔΩΜΑ</span>
+            <div style="font-size:11px; line-height:1.45; color:${enrolled ? GREEN : MUTED}; font-weight:800; text-transform:none; letter-spacing:.5px;">${status}</div>
+            ${actionHtml}
+        `;
+
+        document.getElementById("pegasusBiometricSettingsEnableBtn")?.addEventListener("click", enableBiometricFromPrompt);
+        document.getElementById("pegasusBiometricSettingsUnlockBtn")?.addEventListener("click", async () => {
+            try {
+                await verifyCredential();
+                alert("✅ Το δαχτυλικό δουλεύει για το Pegasus.");
+            } catch (e) {
+                alert("❌ Δοκιμή απέτυχε. " + humanError(e));
+            }
+        });
+        document.getElementById("pegasusBiometricSettingsResetBtn")?.addEventListener("click", () => {
+            if (!confirm("Απενεργοποίηση δαχτυλικού μόνο για αυτή τη συσκευή;")) return;
+            reset();
+            renderAllBiometricButtons();
+        });
+    }
+
     function renderAllBiometricButtons() {
         renderMainButton();
         renderSocialButton();
+        renderSettingsCard();
     }
 
     function hideEnrollmentPrompt() {
         document.getElementById("pegasusBiometricEnrollPrompt")?.remove();
     }
 
-    function showEnrollmentPrompt() {
-        if (!isSecureEnough() || hasCredential()) return;
-        if (!window.PegasusCloud?.isUnlocked || !canRestorePegasusVault()) return;
-        if (localStorage.getItem(STORAGE.dismissedPrompt) === "1") return;
+    function showEnrollmentPrompt(force = false) {
+        if (!isMobileRuntime() || !isSecureEnough() || hasCredential()) return;
+        if (!isVaultUnlocked() || !canRestorePegasusVault()) return;
+        if (!force && localStorage.getItem(STORAGE.dismissedPrompt) === "1") return;
         if (document.getElementById("pegasusBiometricEnrollPrompt")) return;
+
+        localStorage.setItem(STORAGE.promptShownAt, String(Date.now()));
 
         const box = document.createElement("div");
         box.id = "pegasusBiometricEnrollPrompt";
@@ -337,10 +462,19 @@
         });
     }
 
+    function scheduleEnrollmentPrompt(force = false) {
+        if (promptScheduled) return;
+        promptScheduled = true;
+        setTimeout(() => {
+            promptScheduled = false;
+            showEnrollmentPrompt(force);
+        }, 700);
+    }
+
     function afterSuccessfulUnlock(source = "manual") {
         renderAllBiometricButtons();
-        if (source === "manual") {
-            setTimeout(showEnrollmentPrompt, 500);
+        if (source !== "biometric") {
+            scheduleEnrollmentPrompt(false);
         }
     }
 
@@ -349,20 +483,86 @@
         localStorage.removeItem(STORAGE.credentialId);
         localStorage.removeItem(STORAGE.userId);
         localStorage.removeItem(STORAGE.createdAt);
-        localStorage.removeItem(STORAGE.dismissedPrompt);
+        clearDismissedPrompt();
         renderAllBiometricButtons();
         log("disabled locally");
     }
 
-    function init() {
+    function status() {
+        const data = {
+            version: MODULE_VERSION,
+            mobile: isMobileRuntime(),
+            secureContext: !!window.isSecureContext,
+            supported: isSecureEnough(),
+            enrolled: hasCredential(),
+            cloudUnlocked: isVaultUnlocked(),
+            canRestoreApprovedDevice: canRestorePegasusVault(),
+            hasWrappedMaster: !!localStorage.getItem(cloud()?.storage?.wrappedMaster || ""),
+            hasDeviceSecret: !!localStorage.getItem(cloud()?.storage?.deviceSecret || ""),
+            approvedDevice: localStorage.getItem(cloud()?.storage?.approvedDevice || "") || localStorage.getItem(cloud()?.storage?.desktopApproved || "") || "0",
+            dismissedPrompt: localStorage.getItem(STORAGE.dismissedPrompt) || "0"
+        };
+        console.table(data);
+        return data;
+    }
+
+    function installCloudHooks() {
+        const pc = cloud();
+        if (!pc || cloudHooksInstalled) return;
+        cloudHooksInstalled = true;
+
+        const originalUnlock = typeof pc.unlock === "function" ? pc.unlock.bind(pc) : null;
+        if (originalUnlock) {
+            pc.unlock = async function biometricPatchedUnlock(...args) {
+                const result = await originalUnlock(...args);
+                if (result) setTimeout(() => afterSuccessfulUnlock("manual"), 0);
+                return result;
+            };
+        }
+
+        const originalRestore = typeof pc.restoreApprovedDevice === "function" ? pc.restoreApprovedDevice.bind(pc) : null;
+        if (originalRestore) {
+            pc.restoreApprovedDevice = async function biometricPatchedRestore(...args) {
+                const result = await originalRestore(...args);
+                if (result) setTimeout(() => afterSuccessfulUnlock("auto"), 0);
+                return result;
+            };
+        }
+    }
+
+    function pulse() {
+        installCloudHooks();
         renderAllBiometricButtons();
-        const observer = new MutationObserver(() => renderAllBiometricButtons());
-        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"] });
-        window.addEventListener("pegasus_sync_complete", renderAllBiometricButtons);
-        document.addEventListener("visibilitychange", () => {
-            if (!document.hidden) renderAllBiometricButtons();
+        if (isVaultUnlocked() && canRestorePegasusVault() && !hasCredential()) {
+            scheduleEnrollmentPrompt(false);
+        }
+    }
+
+    function init() {
+        installCloudHooks();
+        renderAllBiometricButtons();
+
+        try {
+            if (observer) observer.disconnect();
+            observer = new MutationObserver(() => renderAllBiometricButtons());
+            observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"] });
+        } catch (e) {
+            warn("observer failed", e);
+        }
+
+        window.addEventListener("pegasus_sync_complete", () => {
+            renderAllBiometricButtons();
+            if (isVaultUnlocked() && canRestorePegasusVault() && !hasCredential()) scheduleEnrollmentPrompt(false);
         });
-        log(isSecureEnough() ? "ready" : "not supported in this context");
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) pulse();
+        });
+        window.addEventListener("focus", pulse);
+
+        if (pulseTimer) clearInterval(pulseTimer);
+        pulseTimer = setInterval(pulse, 1500);
+
+        log(isSecureEnough() ? `ready v${MODULE_VERSION}` : `not supported in this context v${MODULE_VERSION}`);
     }
 
     window.PegasusBiometricUnlock = {
@@ -370,10 +570,13 @@
         unlockMain: biometricUnlockMain,
         unlockSocial: biometricUnlockSocial,
         afterSuccessfulUnlock,
+        showPrompt: () => showEnrollmentPrompt(true),
         render: renderAllBiometricButtons,
         reset,
+        status,
         isEnabled: hasCredential,
-        isSupported: isSecureEnough
+        isSupported: isSecureEnough,
+        version: MODULE_VERSION
     };
 
     if (document.readyState === "loading") {
