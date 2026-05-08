@@ -1,5 +1,5 @@
 /* ======================================================================
-   PEGASUS MOBILE LIFTING - Workout Weight Mirror Library (v1.6.229)
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror Library (v1.6.244)
    Purpose: show current workout exercises + saved weights, keep manual log
    ====================================================================== */
 (function() {
@@ -61,6 +61,102 @@
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/[^\p{L}\p{N}]+/gu, "")
             .toLowerCase();
+    }
+
+
+    function getExerciseImageCandidates(name) {
+        const raw = normalizeExerciseName(name);
+        const bases = [];
+        const seenBases = new Set();
+
+        const addBase = (value) => {
+            const clean = String(value || "").trim();
+            if (!clean) return;
+            const key = clean.toLowerCase();
+            if (seenBases.has(key)) return;
+            seenBases.add(key);
+            bases.push(clean);
+        };
+
+        const addMapped = (value) => {
+            const clean = normalizeExerciseName(value);
+            if (!clean) return;
+            if (window.videoMap && window.videoMap[clean]) addBase(window.videoMap[clean]);
+            addBase(clean.replace(/\s+/g, "").toLowerCase());
+            addBase(clean.toLowerCase().replace(/[^a-z0-9\u0370-\u03ff]+/g, "-"));
+        };
+
+        addMapped(raw);
+        getExerciseAliasSet(raw).forEach(addMapped);
+
+        const urls = [];
+        const seenUrls = new Set();
+        const addUrl = (url) => {
+            const clean = String(url || "").trim();
+            if (!clean || seenUrls.has(clean)) return;
+            seenUrls.add(clean);
+            urls.push(clean);
+        };
+
+        bases.forEach(base => {
+            const clean = String(base || "").replace(/^\.\.\/images\//, "").replace(/^images\//, "");
+            if (!clean) return;
+            const hasExtension = /\.(png|jpe?g|webp|gif|svg)$/i.test(clean);
+            if (hasExtension) {
+                addUrl(`../images/${clean}`);
+                return;
+            }
+            addUrl(`../images/${clean}.webp`);
+            addUrl(`../images/${clean}.png`);
+            addUrl(`../images/${clean}.jpg`);
+            addUrl(`../images/${clean}.jpeg`);
+        });
+
+        addUrl("../images/placeholder.jpg");
+        addUrl("../images/favicon.png");
+        return urls;
+    }
+
+    function getExerciseThumbFallbackSvg(name) {
+        const label = String(name || "P").trim().slice(0, 1).toUpperCase() || "P";
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+                <defs>
+                    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#00ff41" stop-opacity="0.28"/>
+                        <stop offset="1" stop-color="#071107" stop-opacity="1"/>
+                    </linearGradient>
+                </defs>
+                <rect width="96" height="96" rx="22" fill="#050805"/>
+                <rect x="5" y="5" width="86" height="86" rx="19" fill="url(#g)" stroke="#00ff41" stroke-opacity="0.42"/>
+                <path d="M20 49h10m36 0h10M31 40v18m34-18v18M37 45h22v8H37z" stroke="#d9ffe2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+                <text x="48" y="79" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="900" fill="#00ff41">${escapeHtml(label)}</text>
+            </svg>`;
+        return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+    }
+
+    function renderExerciseThumb(name) {
+        const candidates = getExerciseImageCandidates(name);
+        const first = candidates[0] || getExerciseThumbFallbackSvg(name);
+        return `
+            <span class="pegasus-ex-thumb" aria-hidden="true">
+                <img src="${escapeHtml(first)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async" data-thumb-index="0" data-thumb-name="${escapeHtml(name)}" data-thumb-candidates="${escapeHtml(candidates.join('|'))}">
+            </span>`;
+    }
+
+    function handleExerciseThumbError(img) {
+        if (!img) return;
+        const candidates = String(img.dataset.thumbCandidates || "").split("|").filter(Boolean);
+        const current = Number(img.dataset.thumbIndex || 0) || 0;
+        const next = current + 1;
+        if (next < candidates.length) {
+            img.dataset.thumbIndex = String(next);
+            img.src = candidates[next];
+            return;
+        }
+        img.onerror = null;
+        img.src = getExerciseThumbFallbackSvg(img.dataset.thumbName || "Pegasus");
+        img.classList.add("is-placeholder");
     }
 
     function isRealPositiveWeight(value) {
@@ -695,14 +791,19 @@
             const doneTxt = row.sets ? `${Number(row.done || 0)}/${Number(row.sets || 0)}` : `${Number(row.done || 0)}`;
             const weightTxt = row.weight !== "" ? `${escapeHtml(row.weight)} kg` : "-- kg";
             return `
-                <div class="mini-card" style="display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; margin-bottom:8px;">
-                    <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-                        <b style="color:var(--main); font-size:12px; white-space:normal;">${escapeHtml(row.name)}</b>
-                        <small style="color:var(--muted); font-size:9px;">${escapeHtml(row.group)} • Σετ ${escapeHtml(doneTxt)}</small>
+                <div class="mini-card pegasus-target-exercise-row">
+                    <span class="pegasus-target-exercise-info">
+                        <b>${escapeHtml(row.name)}</b>
+                        <small>${escapeHtml(row.group)} • Σετ ${escapeHtml(doneTxt)}</small>
                     </span>
-                    <span style="font-size:13px; font-weight:900; color:#fff; white-space:nowrap;">${weightTxt}</span>
+                    ${renderExerciseThumb(row.name)}
+                    <span class="pegasus-target-exercise-weight">${weightTxt}</span>
                 </div>`;
         }).join('');
+
+        container.querySelectorAll('.pegasus-ex-thumb img').forEach(img => {
+            img.onerror = () => handleExerciseThumbError(img);
+        });
     }
 
     function renderTargetsSavedWeights() {
@@ -716,14 +817,19 @@
         }
 
         container.innerHTML = rows.map(row => `
-            <div class="mini-card" style="display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; margin-bottom:8px;">
-                <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-                    <b style="color:var(--main); font-size:12px; white-space:normal;">${escapeHtml(row.name)}</b>
-                    <small style="color:var(--muted); font-size:9px;">${escapeHtml(row.group || '--')} • Αποθηκευμένα κιλά</small>
+            <div class="mini-card pegasus-target-exercise-row">
+                <span class="pegasus-target-exercise-info">
+                    <b>${escapeHtml(row.name)}</b>
+                    <small>${escapeHtml(row.group || '--')} • Αποθηκευμένα κιλά</small>
                 </span>
-                <span style="font-size:13px; font-weight:900; color:#fff; white-space:nowrap;">${escapeHtml(row.weight)} kg</span>
+                ${renderExerciseThumb(row.name)}
+                <span class="pegasus-target-exercise-weight">${escapeHtml(row.weight)} kg</span>
             </div>
         `).join('');
+
+        container.querySelectorAll('.pegasus-ex-thumb img').forEach(img => {
+            img.onerror = () => handleExerciseThumbError(img);
+        });
     }
 
     function renderTargetsPanel() {
@@ -744,6 +850,8 @@
         renderTargetsPanel,
         renderTargetsDayExercises,
         renderTargetsSavedWeights,
+        renderExerciseThumb,
+        handleExerciseThumbError,
         prefillExercise,
 
         addSet: function() {

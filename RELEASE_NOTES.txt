@@ -80,3 +80,11 @@ PEGASUS 242 - Mobile Load Fix for Biometric Module
 - mobile/biometric-unlock-mobile.js updated to v1.2.242 with render guard and throttled MutationObserver.
 - Keeps separate biometric module and settings option, but prevents continuous DOM rewrites.
 - Service worker cache bumped to 242.
+
+PEGASUS 244
+- Mobile-only UI improvement: added small exercise thumbnails in the Mobile Στόχοι panel for Ασκήσεις Ημέρας and Τελευταία αποθηκευμένα κιλά.
+- Uses existing deployed /images/ assets via ../images/ on mobile. No images folder or new media assets are bundled.
+- Added Pegasus-style fallback placeholder when an exercise image is missing.
+- Desktop UI unchanged.
+- Cache bump to 244.
+
