@@ -1,3 +1,12 @@
+PEGASUS 245
+- Mobile-only update.
+- Targets exercise thumbnails now open a large zoom preview when tapped.
+- Added full-screen Pegasus styled image zoom overlay with close button and tap-outside close.
+- Applied mobile ghost-safe scroll policy: content scrolls by touch, no visible scrollbar, and the scroll area stops above the ghost navigation buttons.
+- Added sticky mobile top controls/header/back button behavior while content scrolls.
+- Desktop UI unchanged.
+- Cache bump to 245.
+
 PEGASUS 243 - Biometric HTTPS Safe Mode
 - mobile/biometric-unlock-mobile.js updated to v1.3.243.
 - Biometric unlock now stays dormant on non-HTTPS / non-secure origins instead of showing disruptive errors.

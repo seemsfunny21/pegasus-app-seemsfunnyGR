@@ -1,5 +1,5 @@
 /* ======================================================================
-   PEGASUS MOBILE LIFTING - Workout Weight Mirror Library (v1.6.244)
+   PEGASUS MOBILE LIFTING - Workout Weight Mirror Library (v1.6.245)
    Purpose: show current workout exercises + saved weights, keep manual log
    ====================================================================== */
 (function() {
@@ -139,9 +139,9 @@
         const candidates = getExerciseImageCandidates(name);
         const first = candidates[0] || getExerciseThumbFallbackSvg(name);
         return `
-            <span class="pegasus-ex-thumb" aria-hidden="true">
+            <button type="button" class="pegasus-ex-thumb" aria-label="Μεγέθυνση εικόνας ${escapeHtml(name)}" data-thumb-name="${escapeHtml(name)}">
                 <img src="${escapeHtml(first)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async" data-thumb-index="0" data-thumb-name="${escapeHtml(name)}" data-thumb-candidates="${escapeHtml(candidates.join('|'))}">
-            </span>`;
+            </button>`;
     }
 
     function handleExerciseThumbError(img) {
@@ -157,6 +157,51 @@
         img.onerror = null;
         img.src = getExerciseThumbFallbackSvg(img.dataset.thumbName || "Pegasus");
         img.classList.add("is-placeholder");
+    }
+
+    function openExerciseThumbZoom(img) {
+        if (!img) return;
+        const name = img.dataset.thumbName || img.alt || "Άσκηση";
+        const src = img.currentSrc || img.src || getExerciseThumbFallbackSvg(name);
+        const existing = document.getElementById("pegasusExerciseZoomOverlay");
+        if (existing) existing.remove();
+
+        const overlay = document.createElement("div");
+        overlay.id = "pegasusExerciseZoomOverlay";
+        overlay.className = "pegasus-ex-zoom-overlay";
+        overlay.innerHTML = `
+            <div class="pegasus-ex-zoom-card" role="dialog" aria-modal="true" aria-label="${escapeHtml(name)}">
+                <button type="button" class="pegasus-ex-zoom-close" aria-label="Κλείσιμο">×</button>
+                <img class="pegasus-ex-zoom-img" src="${escapeHtml(src)}" alt="${escapeHtml(name)}">
+                <div class="pegasus-ex-zoom-title">${escapeHtml(name)}</div>
+            </div>`;
+
+        const close = () => overlay.remove();
+        overlay.addEventListener("click", event => {
+            if (event.target === overlay || event.target.closest(".pegasus-ex-zoom-close")) close();
+        });
+        document.addEventListener("keydown", function onKey(event) {
+            if (event.key === "Escape") {
+                close();
+                document.removeEventListener("keydown", onKey);
+            }
+        });
+        document.body.appendChild(overlay);
+    }
+
+    function bindExerciseThumbs(container) {
+        if (!container) return;
+        container.querySelectorAll('.pegasus-ex-thumb img').forEach(img => {
+            img.onerror = () => handleExerciseThumbError(img);
+        });
+        container.querySelectorAll('.pegasus-ex-thumb').forEach(button => {
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                const img = button.querySelector('img');
+                openExerciseThumbZoom(img);
+            });
+        });
     }
 
     function isRealPositiveWeight(value) {
@@ -801,9 +846,7 @@
                 </div>`;
         }).join('');
 
-        container.querySelectorAll('.pegasus-ex-thumb img').forEach(img => {
-            img.onerror = () => handleExerciseThumbError(img);
-        });
+        bindExerciseThumbs(container);
     }
 
     function renderTargetsSavedWeights() {
@@ -827,9 +870,7 @@
             </div>
         `).join('');
 
-        container.querySelectorAll('.pegasus-ex-thumb img').forEach(img => {
-            img.onerror = () => handleExerciseThumbError(img);
-        });
+        bindExerciseThumbs(container);
     }
 
     function renderTargetsPanel() {
@@ -983,5 +1024,5 @@
         }
     });
 
-    console.log('🏋️ PEGASUS MOBILE LIFTING: Targets-integrated weight library active (v1.6.229).');
+    console.log('🏋️ PEGASUS MOBILE LIFTING: Targets-integrated weight library active (v1.6.245).');
 })();

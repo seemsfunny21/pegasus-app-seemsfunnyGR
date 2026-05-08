@@ -5,6 +5,8 @@
 :root {
     --main: #00ff41; --danger: #ff4444; --bg: #050505;
     --card: rgba(23, 23, 23, 0.85); --border: #00ff41;
+    --pegasus-ghost-clearance: 58px;
+    --pegasus-top-sticky-bg: linear-gradient(180deg, rgba(5,5,5,0.98), rgba(5,5,5,0.84));
 }
 
 body, html {
@@ -17,7 +19,7 @@ body, html {
 }
 
 body {
-    padding: 20px 15px; box-sizing: border-box;
+    padding: 20px 15px calc(20px + var(--pegasus-ghost-clearance) + env(safe-area-inset-bottom, 0px)); box-sizing: border-box;
     background-image: radial-gradient(circle at 50% -20%, #002200 0%, #050505 60%);
     display: flex; flex-direction: column; align-items: center;
 }
@@ -201,9 +203,14 @@ body {
     flex-direction: column;
     width: 100%;
     align-items: center;
-    overflow-y: auto; /* Παραμένει auto για ασφάλεια σε πολύ μικρές οθόνες */
-    padding-bottom: 10px; /* Μειώσαμε το άχρηστο κενό των 40px */
+    overflow-y: auto; /* Το περιεχόμενο σκρολάρει, το πάνω/κάτω mobile chrome μένει σταθερό */
+    overflow-x: hidden;
+    padding-bottom: 12px;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    min-height: 0;
 }
 .view.active { display: flex; animation: viewIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 @keyframes viewIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -738,7 +745,7 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     letter-spacing: 0.01em;
 }
 
-/* PEGASUS 244: Mobile-only thumbnails for Targets exercise rows */
+/* PEGASUS 245: Mobile thumbnails + zoom + ghost-safe scroll area */
 .pegasus-target-exercise-row {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) 48px auto;
@@ -781,6 +788,15 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     border: 1px solid rgba(0,255,65,0.28);
     box-shadow: inset 0 0 18px rgba(0,255,65,0.05), 0 0 12px rgba(0,0,0,0.45);
     flex: 0 0 48px;
+    padding: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.pegasus-ex-thumb:active {
+    transform: scale(0.94);
+    border-color: rgba(0,255,65,0.72);
 }
 
 .pegasus-ex-thumb img {
@@ -820,4 +836,127 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
         min-width: 44px;
         font-size: 12px;
     }
+}
+
+
+/* PEGASUS 245: global mobile scroll policy.
+   Το scroll τελειώνει πάνω από τα ghost buttons και οι μπάρες δεν φαίνονται. */
+.view::-webkit-scrollbar,
+.view-layer::-webkit-scrollbar,
+.dynamic-grid::-webkit-scrollbar,
+.grid::-webkit-scrollbar,
+.search-results::-webkit-scrollbar,
+#searchSuggestions::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+
+.view,
+.view-layer,
+.dynamic-grid,
+.grid,
+.search-results,
+#searchSuggestions {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+}
+
+.view.active,
+.view-layer.active {
+    max-height: 100%;
+}
+
+.view > .btn-back,
+#home .header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--pegasus-top-sticky-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+#home .header {
+    padding-top: 2px;
+    padding-bottom: 8px;
+    margin-bottom: 10px !important;
+}
+
+.view > .btn-back {
+    flex: 0 0 auto;
+    margin-top: 0;
+}
+
+.dynamic-grid,
+.grid {
+    overflow-y: visible !important;
+}
+
+.ghost-nav-overlay {
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.pegasus-ex-zoom-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    background: rgba(0,0,0,0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+    box-sizing: border-box;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.pegasus-ex-zoom-card {
+    width: min(92vw, 430px);
+    max-height: min(82vh, 560px);
+    border: 1px solid rgba(0,255,65,0.62);
+    border-radius: 24px;
+    background: radial-gradient(circle at 50% 0%, rgba(0,255,65,0.18), rgba(5,5,5,0.96) 58%);
+    box-shadow: 0 0 42px rgba(0,255,65,0.18), 0 24px 70px rgba(0,0,0,0.75);
+    padding: 14px;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.pegasus-ex-zoom-img {
+    width: 100%;
+    max-height: 64vh;
+    object-fit: contain;
+    border-radius: 18px;
+    background: #030303;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.pegasus-ex-zoom-title {
+    color: var(--main);
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.4px;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.pegasus-ex-zoom-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,255,65,0.58);
+    background: rgba(0,0,0,0.72);
+    color: var(--main);
+    font-size: 24px;
+    line-height: 28px;
+    font-weight: 900;
+    z-index: 2;
 }
