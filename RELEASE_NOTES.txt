@@ -1,3 +1,13 @@
+PEGASUS 251 - Mobile TV Athinorama parser
+------------------------------------------------------------
+- TV mobile module now tries Athinorama first.
+- Parses Athinorama full channel programme for MEGA, ANT1, ALPHA, STAR, ΣΚΑΪ, OPEN.
+- Parses Athinorama "TV - Αξίζει να δείτε" as best daily choices per channel.
+- Keeps XMLTV as fallback if Athinorama/CORS/Reader fails.
+- New modular tiles still register last.
+- Desktop unchanged.
+- Cache bumped to v251.
+
 
 PEGASUS 250 - Mobile TV EPG polish + modular order rule
 - Mobile-only update. Desktop UI unchanged.

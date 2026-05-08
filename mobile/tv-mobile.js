@@ -1,15 +1,21 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.1.250)
-   Protocol: Separate mobile module | Six-channel live EPG cards + daily picks
+   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.2.251)
+   Protocol: Separate mobile module | Athinorama-first live TV + daily picks
    Channels: MEGA / ANT1 / ALPHA / STAR / SKAI / OPEN
    ============================================================================ */
 
 (function() {
     'use strict';
 
-    const TV_CACHE_KEY = 'pegasus_tv_program_cache_v2';
+    const TV_CACHE_KEY = 'pegasus_tv_program_cache_v3';
     const TV_PREF_KEY = 'pegasus_tv_program_pref_v2';
     const CACHE_TTL_MS = 1000 * 60 * 60 * 3;
+
+    const ATHINORAMA_PROGRAM_URL = 'https://www.athinorama.gr/tv/programma/olatakanalia/';
+    const ATHINORAMA_PICKS_URL = 'https://www.athinorama.gr/tv/programma/simera';
+    const ATHINORAMA_PROGRAM_READER_URL = 'https://r.jina.ai/https://www.athinorama.gr/tv/programma/olatakanalia/';
+    const ATHINORAMA_PICKS_READER_URL = 'https://r.jina.ai/https://www.athinorama.gr/tv/programma/simera';
+
     const CHANNELS = [
         {
             id: 'mega',
@@ -69,6 +75,8 @@
     ];
 
     const FALLBACK_GUIDES = [
+        { label: 'Αθηνόραμα TV', url: ATHINORAMA_PICKS_URL },
+        { label: 'Αθηνόραμα Κανάλια', url: ATHINORAMA_PROGRAM_URL },
         { label: 'Digea EPG', url: 'https://www.digea.gr/el/tv-stations/electronic-program-guide' },
         { label: 'Programma Tileorasis', url: 'https://programmatileorasis.gr/' },
         { label: 'Zappit TV', url: 'https://www.zappit.gr/tv-program' }
@@ -313,6 +321,344 @@
         };
     }
 
+
+    function cleanGuideLine(line) {
+        return String(line || '')
+            .replace(/\u00a0/g, ' ')
+            .replace(/\【\d+†([^\】]*)\】/g, '$1')
+            .replace(/!\[[^\]]*\]\([^\)]*\)/g, '')
+            .replace(/\[([^\]]+)\]\([^\)]*\)/g, '$1')
+            .replace(/^[-*]\s+/, '')
+            .replace(/^#{1,6}\s*/, '')
+            .replace(/\s*Image\s*$/i, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function isClockLine(line) {
+        return /^\d{1,2}:\d{2}$/.test(String(line || '').trim());
+    }
+
+    function clockMinutes(value) {
+        const m = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+        if (!m) return null;
+        return Number(m[1]) * 60 + Number(m[2]);
+    }
+
+    function normalizeStation(value) {
+        const clean = normalizeText(value).replace(/[^a-z0-9\u0370-\u03ff]+/g, ' ').trim();
+        if (/mega/.test(clean)) return 'mega';
+        if (/ant1|antenna|αντ1/.test(clean)) return 'ant1';
+        if (/alpha/.test(clean)) return 'alpha';
+        if (/star/.test(clean)) return 'star';
+        if (/skai|σκαι/.test(clean)) return 'skai';
+        if (/open/.test(clean)) return 'open';
+        return '';
+    }
+
+    function getChannelFromHeading(line) {
+        const clean = cleanGuideLine(line);
+        const n = normalizeText(clean);
+        if (/^(mega|mega hd|mega tv)$/.test(n)) return 'mega';
+        if (/^(ant1|αντ1|antenna)$/.test(n)) return 'ant1';
+        if (/^alpha$/.test(n)) return 'alpha';
+        if (/^star$/.test(n)) return 'star';
+        if (/^σκαι$|^skai$/.test(n)) return 'skai';
+        if (/^open$|^open beyond$/.test(n)) return 'open';
+        return '';
+    }
+
+    function isGuideNoise(line) {
+        const clean = cleanGuideLine(line);
+        const n = normalizeText(clean);
+        if (!clean) return true;
+        if (/^\d+(?:[,.]\d+)?$/.test(clean)) return true;
+        if (/^(τηλεοραση|προγραμμα καναλιων|πληρες προγραμμα|ταινιες tv σημερα|αθλητικες μεταδοσεις|παιζουν τωρα|tv αξιζει να δειτε|το προγραμμα των καναλιων|my αθηνοραμα|more|sign in)$/.test(n)) return true;
+        if (/^(σινεμα|θεατρο|μουσικη|εστιατορια|bars|clubs|nightlife|τεχνες|παιδι|travel|winebox)$/i.test(n)) return true;
+        if (/^προγραμμα \d{1,2}\/\d{1,2}/.test(n)) return true;
+        if (/^παρασκευη|^σαββατο|^κυριακη|^δευτερα|^τριτη|^τεταρτη|^πεμπτη/.test(n) && clean.length < 35) return true;
+        return false;
+    }
+
+    function makeProgrammeDate(clock, dayOffset) {
+        const mins = clockMinutes(clock);
+        const d = nowGreekTime();
+        d.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+        if (dayOffset) d.setDate(d.getDate() + dayOffset);
+        return d;
+    }
+
+    function finishAthinoramaProgrammeItems(rawItems) {
+        const now = nowGreekTime();
+        const result = {};
+        CHANNELS.forEach(channel => {
+            result[channel.id] = {
+                ...channel,
+                found: false,
+                now: null,
+                picks: [],
+                programmes: []
+            };
+        });
+
+        CHANNELS.forEach(channel => {
+            const items = (rawItems[channel.id] || []).filter(item => item && item.title && isClockLine(item.time));
+            const unique = [];
+            const seen = new Set();
+            let lastMinutes = null;
+            let dayOffset = 0;
+
+            items.forEach(item => {
+                const mins = clockMinutes(item.time);
+                if (lastMinutes != null && mins < lastMinutes && lastMinutes >= 20 * 60 && mins <= 8 * 60) dayOffset = 1;
+                lastMinutes = mins;
+                const key = `${item.time}|${normalizeText(item.title)}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                unique.push({ ...item, start: makeProgrammeDate(item.time, dayOffset) });
+            });
+
+            unique.forEach((item, index) => {
+                const next = unique[index + 1];
+                const stop = next ? new Date(next.start) : new Date(item.start.getTime() + 75 * 60 * 1000);
+                const programme = {
+                    title: item.title,
+                    desc: '',
+                    category: '',
+                    start: item.start,
+                    stop,
+                    startTs: item.start.getTime(),
+                    stopTs: stop.getTime(),
+                    time: `${formatClock(item.start)}-${formatClock(stop)}`,
+                    kind: classifyProgramme({ title: item.title, desc: '', category: '' }),
+                    source: 'Athinorama'
+                };
+                result[channel.id].found = true;
+                result[channel.id].programmes.push(programme);
+                if (programme.start <= now && programme.stop > now) result[channel.id].now = programme;
+            });
+        });
+
+        return result;
+    }
+
+    function parseAthinoramaProgrammeText(text) {
+        const lines = String(text || '').split(/\r?\n/).map(cleanGuideLine).filter(Boolean);
+        const raw = {};
+        CHANNELS.forEach(channel => raw[channel.id] = []);
+
+        let currentChannel = '';
+        let pendingTime = '';
+
+        lines.forEach(line => {
+            const headingChannel = getChannelFromHeading(line);
+            if (headingChannel) {
+                currentChannel = headingChannel;
+                pendingTime = '';
+                return;
+            }
+
+            if (!currentChannel) return;
+
+            if (isClockLine(line)) {
+                pendingTime = line;
+                return;
+            }
+
+            if (!pendingTime) return;
+            if (isGuideNoise(line)) return;
+            if (getChannelFromHeading(line)) return;
+
+            const title = cleanGuideLine(line)
+                .replace(/\s*\d+†?\s*$/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (!title || title.length < 2 || isClockLine(title)) return;
+            raw[currentChannel].push({ time: pendingTime, title });
+            pendingTime = '';
+        });
+
+        return finishAthinoramaProgrammeItems(raw);
+    }
+
+    function parseChannelTimeLine(line) {
+        const clean = cleanGuideLine(line).replace(/\s+/g, ' ').trim();
+        const match = clean.match(/^(MEGA(?:\s+HD)?|ΑΝΤ1|ANT1|ALPHA|STAR|ΣΚΑΪ|ΣΚΑΙ|SKAI|OPEN(?:\s+BEYOND)?)\s+(\d{1,2}:\d{2})$/i);
+        if (!match) return null;
+        const channelId = normalizeStation(match[1]);
+        return channelId ? { channelId, time: match[2] } : null;
+    }
+
+    function looksLikePickTitle(line) {
+        const clean = cleanGuideLine(line);
+        const n = normalizeText(clean);
+        if (!clean || clean.length < 2) return false;
+        if (isGuideNoise(clean) || isClockLine(clean) || parseChannelTimeLine(clean)) return false;
+        if (/^(animation|κωμωδια|δραματικη|περιπετεια|κομεντι|φαντασιας|αστυνομικη|εγχρ|α\/μ|\d{4}|διαρκεια)/i.test(n)) return false;
+        if (clean.length > 90) return false;
+        return true;
+    }
+
+    function parseAthinoramaPicksText(text) {
+        const rawLines = String(text || '').split(/\r?\n/);
+        const picksByChannel = {};
+        CHANNELS.forEach(channel => picksByChannel[channel.id] = []);
+
+        let title = '';
+        let descParts = [];
+        let armed = false;
+
+        const reset = () => {
+            title = '';
+            descParts = [];
+            armed = false;
+        };
+
+        rawLines.forEach(raw => {
+            const line = cleanGuideLine(raw);
+            if (!line) return;
+
+            const channelTime = parseChannelTimeLine(line);
+            if (channelTime && title) {
+                const start = makeProgrammeDate(channelTime.time, clockMinutes(channelTime.time) < 5 * 60 ? 1 : 0);
+                const stop = new Date(start.getTime() + 120 * 60 * 1000);
+                const desc = descParts
+                    .filter(part => !isGuideNoise(part))
+                    .filter(part => !/^\d+(?:[,.]\d+)?$/.test(part))
+                    .filter(part => !parseChannelTimeLine(part))
+                    .slice(0, 4)
+                    .join(' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                const key = `${channelTime.time}|${normalizeText(title)}`;
+                const exists = picksByChannel[channelTime.channelId].some(item => item.key === key);
+                if (!exists) {
+                    picksByChannel[channelTime.channelId].push({
+                        key,
+                        title,
+                        desc,
+                        category: '',
+                        start,
+                        stop,
+                        startTs: start.getTime(),
+                        stopTs: stop.getTime(),
+                        time: `${formatClock(start)}`,
+                        kind: classifyProgramme({ title, desc, category: '' }),
+                        source: 'Athinorama επιλογή'
+                    });
+                }
+                reset();
+                return;
+            }
+
+            const rawTrim = String(raw || '').trim();
+            const isHeading = /^#{1,6}\s+/.test(rawTrim) || /^####?\s+/.test(rawTrim);
+            if (isHeading && looksLikePickTitle(line)) {
+                title = line;
+                descParts = [];
+                armed = true;
+                return;
+            }
+
+            if (!armed) return;
+            if (looksLikePickTitle(line) && descParts.length === 0 && title && normalizeText(line) !== normalizeText(title)) {
+                // Often Athinorama gives an English/original title below the Greek title. Keep the Greek title, but do not use it as description.
+                return;
+            }
+            if (!isGuideNoise(line) && !isClockLine(line)) descParts.push(line);
+        });
+
+        return picksByChannel;
+    }
+
+    function fillPicksFromProgramme(data) {
+        const now = nowGreekTime();
+        CHANNELS.forEach(channel => {
+            const bucket = data.channels[channel.id];
+            if (!bucket) return;
+            if (Array.isArray(bucket.picks) && bucket.picks.length) return;
+
+            const candidates = (bucket.programmes || [])
+                .filter(item => item.stop >= now && isToday(item.start, now))
+                .map(item => ({ ...item, score: scoreProgramme(item, now) }))
+                .sort((a, b) => b.score - a.score || a.startTs - b.startTs);
+            bucket.picks = candidates.slice(0, 3);
+        });
+    }
+
+    function mergeAthinoramaPicks(data, picksByChannel) {
+        CHANNELS.forEach(channel => {
+            const incoming = picksByChannel?.[channel.id] || [];
+            const bucket = data.channels[channel.id];
+            if (!bucket) return;
+            if (!incoming.length) return;
+
+            const now = nowGreekTime();
+            const filtered = incoming
+                .filter(item => item.stop >= now || isToday(item.start, now))
+                .slice(0, 4);
+            if (filtered.length) bucket.picks = filtered;
+        });
+        fillPicksFromProgramme(data);
+    }
+
+    function hasUsableAthinoramaData(channels) {
+        return CHANNELS.some(channel => {
+            const bucket = channels?.[channel.id];
+            return bucket && ((bucket.programmes || []).length || (bucket.picks || []).length);
+        });
+    }
+
+    async function loadAthinoramaProgramme() {
+        const attempts = [
+            {
+                label: 'Athinorama',
+                programUrl: ATHINORAMA_PROGRAM_URL,
+                picksUrl: ATHINORAMA_PICKS_URL,
+                note: 'Πρόγραμμα καναλιών + Αξίζει να δείτε'
+            },
+            {
+                label: 'Athinorama Reader',
+                programUrl: ATHINORAMA_PROGRAM_READER_URL,
+                picksUrl: ATHINORAMA_PICKS_READER_URL,
+                note: 'Reader fallback για CORS/HTML parsing'
+            }
+        ];
+
+        let lastError = null;
+        for (const attempt of attempts) {
+            try {
+                const programText = await fetchWithTimeout(attempt.programUrl, 14000);
+                const channels = parseAthinoramaProgrammeText(programText);
+                const data = {
+                    sourceLabel: attempt.label,
+                    sourceUrl: attempt.programUrl,
+                    sourceNote: attempt.note,
+                    fetchedAt: new Date().toISOString(),
+                    generatedAt: '',
+                    channels
+                };
+
+                try {
+                    const picksText = await fetchWithTimeout(attempt.picksUrl, 14000);
+                    mergeAthinoramaPicks(data, parseAthinoramaPicksText(picksText));
+                } catch (pickError) {
+                    console.warn('PEGASUS TV Athinorama picks failed:', pickError);
+                    fillPicksFromProgramme(data);
+                }
+
+                if (!hasUsableAthinoramaData(data.channels)) throw new Error('Athinorama parse returned no target channels');
+                return data;
+            } catch (error) {
+                lastError = error;
+                console.warn('PEGASUS TV Athinorama failed:', attempt.label, error);
+            }
+        }
+        throw lastError || new Error('Athinorama failed');
+    }
+
     async function fetchWithTimeout(url, timeoutMs = 11000) {
         const controller = new AbortController();
         const t = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -339,6 +685,17 @@
         }
 
         let lastError = null;
+
+        try {
+            const athinorama = await loadAthinoramaProgramme();
+            writeJSON(TV_CACHE_KEY, athinorama);
+            writePref({ lastSource: athinorama.sourceLabel, lastSourceUrl: athinorama.sourceUrl });
+            return { data: athinorama, fromCache: false };
+        } catch (error) {
+            lastError = error;
+            console.warn('PEGASUS TV Athinorama primary failed:', error);
+        }
+
         for (const source of XMLTV_SOURCES) {
             try {
                 const xml = await fetchWithTimeout(source.url);
@@ -350,7 +707,7 @@
                 return { data: parsed, fromCache: false };
             } catch (error) {
                 lastError = error;
-                console.warn('PEGASUS TV source failed:', source.label, error);
+                console.warn('PEGASUS TV XMLTV source failed:', source.label, error);
             }
         }
 
@@ -562,14 +919,14 @@
                     <div id="pegasusTvClock" class="pegasus-tv-clock">--:--</div>
                 </div>
                 <div class="pegasus-tv-sub">
-                    MEGA • ANT1 • ALPHA • STAR • ΣΚΑΪ • OPEN. Πάνω βλέπεις τι παίζει τώρα, κάτω τις καλύτερες επιλογές ημέρας ανά κανάλι.
+                    MEGA • ANT1 • ALPHA • STAR • ΣΚΑΪ • OPEN. Πρώτα από Αθηνόραμα: τι παίζει τώρα και οι καλύτερες επιλογές ημέρας ανά κανάλι.
                 </div>
                 <div id="pegasusTvStatus" class="pegasus-tv-status">Φόρτωση προγράμματος...</div>
             </div>
 
             <div class="pegasus-tv-toolbar compact-grid" style="width:100%; grid-template-columns: 1fr 1fr;">
                 <button class="primary-btn" onclick="window.PegasusTV.refresh(true)">ΑΝΑΝΕΩΣΗ LIVE</button>
-                <button class="secondary-btn" onclick="window.PegasusTV.openFallbackGuide()">ΑΝΟΙΓΜΑ ΟΔΗΓΟΥ</button>
+                <button class="secondary-btn" onclick="window.PegasusTV.openFallbackGuide()">ΑΘΗΝΟΡΑΜΑ</button>
             </div>
 
             <div id="pegasusTvContent" class="pegasus-tv-grid">
@@ -709,7 +1066,7 @@
         },
 
         openFallbackGuide: function() {
-            this.openUrl(FALLBACK_GUIDES[0].url);
+            this.openUrl(ATHINORAMA_PICKS_URL);
         }
     };
 
