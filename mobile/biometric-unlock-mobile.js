@@ -1,14 +1,14 @@
 /* ============================================================================
-   🔐 PEGASUS MOBILE BIOMETRIC UNLOCK (v1.2)
+   🔐 PEGASUS MOBILE BIOMETRIC UNLOCK (v1.3)
    Protocol: WebAuthn / Platform Authenticator bridge for existing PIN vault
    Status: SEPARATE MODULE | NO FINGERPRINT DATA STORED | APPROVED-DEVICE GATE
-   Fix v1.2: safe renderer guard, no MutationObserver loop, app-load stability
+   Fix v1.3: HTTPS-only dormant mode, no app errors on non-secure origins
    ============================================================================ */
 
 (function() {
     "use strict";
 
-    const MODULE_VERSION = "1.2.242";
+    const MODULE_VERSION = "1.3.243";
     const STORAGE = {
         enabled: "pegasus_biometric_unlock_enabled_v1",
         credentialId: "pegasus_biometric_credential_id_v1",
@@ -194,7 +194,7 @@
     function humanError(e) {
         const msg = String(e?.name || e?.message || e || "");
         if (/NotAllowed|Abort/i.test(msg)) return "ΑΚΥΡΩΘΗΚΕ ΤΟ ΔΑΧΤΥΛΙΚΟ";
-        if (/Security|UNSUPPORTED/i.test(msg)) return "ΘΕΛΕΙ HTTPS/CHROME ΚΑΙ ΚΛΕΙΔΩΜΑ ΟΘΟΝΗΣ";
+        if (/Security|UNSUPPORTED/i.test(msg)) return "ΤΟ ΔΑΧΤΥΛΙΚΟ ΔΟΥΛΕΥΕΙ ΜΟΝΟ ΑΠΟ HTTPS Ή LOCALHOST";
         if (/NO_PLATFORM/i.test(msg)) return "ΔΕΝ ΒΡΕΘΗΚΕ ΔΑΧΤΥΛΙΚΟ / ΚΛΕΙΔΩΜΑ ΟΘΟΝΗΣ";
         if (/NOT_ENROLLED/i.test(msg)) return "ΠΡΩΤΑ ΚΑΝΕ ΕΝΕΡΓΟΠΟΙΗΣΗ ΔΑΧΤΥΛΙΚΟΥ";
         if (/NO_APPROVED_DEVICE_MATERIAL/i.test(msg)) return "ΓΡΑΨΕ ΜΙΑ ΦΟΡΑ PIN + MASTER KEY ΣΕ ΑΥΤΗ ΤΗ ΣΥΣΚΕΥΗ";
@@ -562,6 +562,14 @@
     }
 
     function init() {
+        // WebAuthn / fingerprint is allowed by the browser only on HTTPS or localhost.
+        // On plain HTTP/file/IP origins we keep Pegasus fully usable and simply leave
+        // the biometric module dormant. This prevents mobile load errors and SW/HTTPS confusion.
+        if (!isSecureEnough()) {
+            log(`dormant v${MODULE_VERSION}: needs HTTPS/localhost secure context`);
+            return;
+        }
+
         installCloudHooks();
         renderAllBiometricButtons();
 
@@ -585,7 +593,7 @@
         if (pulseTimer) clearInterval(pulseTimer);
         pulseTimer = setInterval(pulse, 1500);
 
-        log(isSecureEnough() ? `ready v${MODULE_VERSION}` : `not supported in this context v${MODULE_VERSION}`);
+        log(`ready v${MODULE_VERSION}`);
     }
 
     window.PegasusBiometricUnlock = {

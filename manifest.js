@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-05-05",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.42 Biometric Safe Load Fix + Data Guard"
+        engine_version: "v18.43 Biometric HTTPS Safe Mode + Data Guard"
     },
 
     // ---------------------------------------------------------

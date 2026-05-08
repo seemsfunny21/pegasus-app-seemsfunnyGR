@@ -1,3 +1,10 @@
+PEGASUS 243 - Biometric HTTPS Safe Mode
+- mobile/biometric-unlock-mobile.js updated to v1.3.243.
+- Biometric unlock now stays dormant on non-HTTPS / non-secure origins instead of showing disruptive errors.
+- Fingerprint/WebAuthn still requires HTTPS or localhost because Android/Chrome enforces this; Pegasus cannot bypass it safely.
+- Service worker registration now runs only on secure context to avoid HTTPS-related registration errors on plain HTTP/file origins.
+- Service worker cache bumped to 243.
+
 PEGASUS 240 - Mobile Biometric Unlock Module
 
 - Added new separate file: mobile/biometric-unlock-mobile.js.

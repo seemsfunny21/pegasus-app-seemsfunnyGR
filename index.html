@@ -548,7 +548,7 @@
     }
 
     /* 🛡️ SERVICE WORKER & PERMANENT LOCAL STORAGE LOADER PROTOCOL */
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && window.isSecureContext) {
         navigator.serviceWorker.addEventListener('message', event => {
             const data = event.data || {};
             if (data.type === 'PEGASUS_PERMANENT_CACHE_PROGRESS' || data.type === 'CACHE_PROGRESS') {
@@ -571,7 +571,7 @@
 
         window.addEventListener('load', () => {
             const swPath = window.location.pathname.includes('mobile/') ? '../sw.js' : './sw.js';
-            navigator.serviceWorker.register(swPath + '?v=3.36.242').catch(err => console.error("🛡️ SW Error:", err));
+            navigator.serviceWorker.register(swPath + '?v=3.36.243').catch(err => console.error("🛡️ SW Error:", err));
         });
     }
 </script>
