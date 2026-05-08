@@ -119,3 +119,14 @@ PEGASUS 244
 - Desktop UI unchanged.
 - Cache bump to 244.
 
+
+
+PEGASUS 249 - MOBILE TV PROGRAM MODULE
+---------------------------------------
+- Added new separate mobile module: mobile/tv-mobile.js.
+- Adds a Τηλεόραση tile in the mobile modular grid.
+- Shows quick TV-guide source buttons and an in-app external EPG viewer.
+- Includes Chrome/open fallback for sources that block iframe embedding.
+- Stores only the selected TV source preference; no TV listings are stored.
+- Desktop UI unchanged.
+- Service worker cache bumped to 249 and tv-mobile.js added to offline asset list.
