@@ -1,3 +1,12 @@
+
+PEGASUS 250 - Mobile TV EPG polish + modular order rule
+- Mobile-only update. Desktop UI unchanged.
+- New modular tiles now stay at the end of the extended modular list instead of jumping forward by sortOrder.
+- Reworked mobile/tv-mobile.js into six-channel TV cards: MEGA, ANT1, ALPHA, STAR, SKAI, OPEN.
+- TV module now tries to load XMLTV EPG and show what plays now plus best daily picks per channel.
+- Added fallback guide buttons for Digea/Programma Tileorasis/Zappit if live EPG is blocked by CORS/network.
+- Cache bumped to v250.
+
 PEGASUS 248 - MOBILE FINANCE SIMPLE AMOUNT MODE
 
 Mobile-only finance patch:

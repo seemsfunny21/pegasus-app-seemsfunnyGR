@@ -278,15 +278,11 @@
                 if (this.extraModules.some(m => m.id === module.id)) return;
 
                 module._registeredAt = ++this._moduleSequence;
-                module.sortOrder = Number.isFinite(Number(module.sortOrder)) ? Number(module.sortOrder) : 100;
 
+                // PEGASUS v250: every newly registered modular tile stays LAST.
+                // Do not sort by sortOrder anymore, because new modules must not jump
+                // in front of older modules/pages.
                 this.extraModules.push(module);
-                this.extraModules.sort((a, b) => {
-                    const orderA = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : 100;
-                    const orderB = Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : 100;
-                    if (orderA !== orderB) return orderA - orderB;
-                    return (a._registeredAt || 0) - (b._registeredAt || 0);
-                });
 
                 if (document.readyState === "loading") {
                     document.addEventListener("DOMContentLoaded", () => this.render(), { once: true });
@@ -626,17 +622,17 @@
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
     <script src="supplies-mobile.js"></script>
-    <script src="finance-mobile.js?v=249"></script>
+    <script src="finance-mobile.js?v=250"></script>
     <script src="social-mobile.js"></script>
     <script src="movies-mobile.js"></script>
     <script src="missions-mobile.js"></script>
     <script src="biometrics-mobile.js"></script>
     <script src="maintenance-mobile.js"></script>
     <script src="oracle-mobile.js"></script>
-    <script src="lifting-mobile.js?v=249"></script>
+    <script src="lifting-mobile.js?v=250"></script>
     <script src="youtube-mobile.js"></script>
     <script src="weather-mobile.js"></script>
-    <script src="tv-mobile.js?v=249"></script>
+    <script src="tv-mobile.js?v=250"></script>
     <script src="biometric-unlock-mobile.js"></script>
 
 <script>
