@@ -66,3 +66,10 @@ PEGASUS 241 - Mobile Biometric Enrollment Fix
 - PIN modal now always shows biometric unlock when enrolled.
 - Added PegasusBiometricUnlock.status(), showPrompt(), reset() helpers for console debugging.
 - Service worker cache bumped to 241.
+
+
+PEGASUS 242 - Mobile Load Fix for Biometric Module
+- Fixed mobile load/freeze caused by biometric settings card re-render loop.
+- mobile/biometric-unlock-mobile.js updated to v1.2.242 with render guard and throttled MutationObserver.
+- Keeps separate biometric module and settings option, but prevents continuous DOM rewrites.
+- Service worker cache bumped to 242.

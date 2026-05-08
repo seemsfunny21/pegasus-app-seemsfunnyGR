@@ -1,14 +1,14 @@
 /* ============================================================================
-   🔐 PEGASUS MOBILE BIOMETRIC UNLOCK (v1.1)
+   🔐 PEGASUS MOBILE BIOMETRIC UNLOCK (v1.2)
    Protocol: WebAuthn / Platform Authenticator bridge for existing PIN vault
    Status: SEPARATE MODULE | NO FINGERPRINT DATA STORED | APPROVED-DEVICE GATE
-   Fix v1.1: enrollment prompt after auto/manual unlock + settings card + robust PIN modal button
+   Fix v1.2: safe renderer guard, no MutationObserver loop, app-load stability
    ============================================================================ */
 
 (function() {
     "use strict";
 
-    const MODULE_VERSION = "1.1.241";
+    const MODULE_VERSION = "1.2.242";
     const STORAGE = {
         enabled: "pegasus_biometric_unlock_enabled_v1",
         credentialId: "pegasus_biometric_credential_id_v1",
@@ -26,6 +26,17 @@
     let pulseTimer = null;
     let cloudHooksInstalled = false;
     let promptScheduled = false;
+    let renderScheduled = false;
+    let rendering = false;
+
+    function scheduleRender(delay = 120) {
+        if (renderScheduled || rendering) return;
+        renderScheduled = true;
+        setTimeout(() => {
+            renderScheduled = false;
+            renderAllBiometricButtons();
+        }, delay);
+    }
 
     function log(...args) {
         console.log("🔐 PEGASUS BIOMETRIC:", ...args);
@@ -392,6 +403,10 @@
                <button id="pegasusBiometricSettingsResetBtn" class="secondary-btn" style="width:100%; margin-top:10px; padding:12px; font-size:10px; color:#777; border-color:#333;">ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ ΣΕ ΑΥΤΗ ΤΗ ΣΥΣΚΕΥΗ</button>`
             : `<button id="pegasusBiometricSettingsEnableBtn" class="primary-btn" style="width:100%; margin-top:12px; padding:14px; font-size:11px;" ${(!supported || !unlocked || !restorable) ? "disabled" : ""}>➕ ΕΝΕΡΓΟΠΟΙΗΣΗ ΔΑΧΤΥΛΙΚΟΥ</button>`;
 
+        const signature = JSON.stringify({ supported, enrolled, unlocked, restorable, status });
+        if (card.dataset.biometricSignature === signature) return;
+        card.dataset.biometricSignature = signature;
+
         card.innerHTML = `
             <span class="mini-label" style="display:block; margin-bottom:10px;">🔐 ΒΙΟΜΕΤΡΙΚΟ ΞΕΚΛΕΙΔΩΜΑ</span>
             <div style="font-size:11px; line-height:1.45; color:${enrolled ? GREEN : MUTED}; font-weight:800; text-transform:none; letter-spacing:.5px;">${status}</div>
@@ -415,9 +430,17 @@
     }
 
     function renderAllBiometricButtons() {
-        renderMainButton();
-        renderSocialButton();
-        renderSettingsCard();
+        if (rendering) return;
+        rendering = true;
+        try {
+            renderMainButton();
+            renderSocialButton();
+            renderSettingsCard();
+        } catch (e) {
+            warn("render failed", e);
+        } finally {
+            rendering = false;
+        }
     }
 
     function hideEnrollmentPrompt() {
@@ -544,14 +567,14 @@
 
         try {
             if (observer) observer.disconnect();
-            observer = new MutationObserver(() => renderAllBiometricButtons());
-            observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"] });
+            observer = new MutationObserver(() => scheduleRender(160));
+            observer.observe(document.documentElement, { childList: true, subtree: true });
         } catch (e) {
             warn("observer failed", e);
         }
 
         window.addEventListener("pegasus_sync_complete", () => {
-            renderAllBiometricButtons();
+            scheduleRender(80);
             if (isVaultUnlocked() && canRestorePegasusVault() && !hasCredential()) scheduleEnrollmentPrompt(false);
         });
         document.addEventListener("visibilitychange", () => {
