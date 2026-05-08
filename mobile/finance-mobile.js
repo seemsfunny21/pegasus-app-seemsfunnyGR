@@ -1,7 +1,7 @@
-/* ==========================================================================
-   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.4)
-   Protocol: High-Contrast UI, Memory Protection, Double-Tap & NaN Guards
-   Status: FINAL STABLE | SYSTEM LOCKED
+/* ========================================================================== 
+   💰 PEGASUS MODULE: FINANCIAL TRACKER (v1.5.248)
+   Protocol: Mobile Simple Amount-Only Finance UI
+   Status: PATCHED | NO TRANSACTION DESCRIPTION FIELD
    ========================================================================== */
 
 (function() {
@@ -24,11 +24,6 @@
 
             <div class="mini-card" style="background: rgba(15,15,15,0.95); padding: 20px; border: 1px solid #333;">
                 <div style="margin-bottom: 15px;">
-                    <div style="font-size: 10px; color: #777; font-weight: 800; margin-bottom: 5px; letter-spacing: 1px;">ΠΕΡΙΓΡΑΦΗ ΣΥΝΑΛΛΑΓΗΣ</div>
-                    <input type="text" id="finDesc" placeholder="π.χ. Σούπερ Μάρκετ" style="opacity: 1; border: 2px solid #444; color: #fff; background: #000;">
-                </div>
-
-                <div style="margin-bottom: 15px;">
                     <div style="font-size: 10px; color: #777; font-weight: 800; margin-bottom: 5px; letter-spacing: 1px;">ΠΟΣΟ ΣΕ ΕΥΡΩ (€)</div>
                     <input type="number" id="finAmount" placeholder="0.00" inputmode="decimal" style="opacity: 1; border: 2px solid #444; color: #fff; background: #000; font-size: 20px; font-weight: 900;">
                 </div>
@@ -49,6 +44,19 @@
             <div id="transaction-history" style="width: 100%; display: flex; flex-direction: column; gap: 10px; padding-bottom: 100px;"></div>
         `;
         document.body.appendChild(viewDiv);
+    }
+
+    function readTransactions() {
+        try {
+            const data = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY) || '[]');
+            return Array.isArray(data) ? data : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function transactionLabel(transaction) {
+        return Number(transaction && transaction.amount) >= 0 ? 'ΕΣΟΔΟ' : 'ΕΞΟΔΟ';
     }
 
     window.PegasusFinance = {
@@ -78,40 +86,42 @@
             this.isLocked = true;
             setTimeout(() => this.isLocked = false, 1200); // Ξεκλειδώνει μετά από 1.2s
 
-            const descInput = document.getElementById('finDesc');
             const amountInput = document.getElementById('finAmount');
-
-            const desc = descInput.value;
+            if (!amountInput) {
+                this.isLocked = false;
+                return;
+            }
 
             // 🛡️ NaN GUARD: Μετατροπή κόμματος σε τελεία πριν την ανάλυση
             const safeAmountStr = String(amountInput.value).replace(',', '.');
             const amount = parseFloat(safeAmountStr);
 
-            if (!desc || isNaN(amount) || amount <= 0) {
-                alert("ΣΦΑΛΜΑ: Συμπληρώστε έγκυρη περιγραφή και ποσό.");
+            if (isNaN(amount) || amount <= 0) {
+                alert('ΣΦΑΛΜΑ: Συμπληρώστε έγκυρο ποσό.');
                 this.isLocked = false; // Απελευθέρωση κλειδώματος σε περίπτωση σφάλματος
                 return;
             }
 
-            const transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
+            const transactions = readTransactions();
+            const signedAmount = type === 'expense' ? -amount : amount;
             const newEntry = {
                 id: Date.now(),
                 date: new Date().toLocaleDateString('el-GR'),
-                desc: desc.trim(),
-                amount: type === 'expense' ? -amount : amount
+                type: type === 'expense' ? 'expense' : 'income',
+                desc: type === 'expense' ? 'Έξοδο' : 'Έσοδο', // legacy compatibility only; δεν εμφανίζεται ως περιγραφή στο UI
+                amount: signedAmount
             };
 
             transactions.unshift(newEntry);
-
-            descInput.value = '';
             amountInput.value = '';
+            amountInput.focus();
 
             this.saveAndRender(transactions);
         },
 
         deleteTransaction: function(id) {
             if(confirm('Οριστική διαγραφή συναλλαγής;')) {
-                let transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
+                let transactions = readTransactions();
                 transactions = transactions.filter(t => t.id !== id);
                 this.saveAndRender(transactions);
             }
@@ -122,24 +132,26 @@
             const balanceDisplay = document.getElementById('totalBalance');
             if (!historyContainer) return;
 
-            const transactions = JSON.parse(localStorage.getItem(FINANCE_DATA_KEY)) || [];
+            const transactions = readTransactions();
             let total = 0;
             let html = '';
 
             transactions.forEach(t => {
-                total += t.amount;
-                const color = t.amount > 0 ? '#00ff41' : '#ff4444';
-                const sign = t.amount > 0 ? '+' : '';
+                const amount = Number(t.amount) || 0;
+                total += amount;
+                const color = amount > 0 ? '#00ff41' : '#ff4444';
+                const sign = amount > 0 ? '+' : '';
+                const typeColor = amount > 0 ? '#00ff41' : '#ff4444';
 
                 html += `
                     <div class="mini-card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-color: #222; background: rgba(20,20,20,0.8);">
                         <div style="flex: 1; text-align: left;">
-                            <div style="font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 2px;">${t.desc}</div>
-                            <div style="font-size: 9px; color: #555; font-weight: 800; letter-spacing: 1px;">${t.date}</div>
+                            <div style="font-size: 14px; font-weight: 900; color: ${typeColor}; margin-bottom: 2px; letter-spacing: 1px;">${transactionLabel(t)}</div>
+                            <div style="font-size: 9px; color: #555; font-weight: 800; letter-spacing: 1px;">${t.date || ''}</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="font-weight: 900; color: ${color}; font-size: 16px;">${sign}${t.amount.toFixed(2)}€</div>
-                            <button onclick="window.PegasusFinance.deleteTransaction(${t.id})"
+                            <div style="font-weight: 900; color: ${color}; font-size: 16px;">${sign}${amount.toFixed(2)}€</div>
+                            <button onclick="window.PegasusFinance.deleteTransaction(${Number(t.id) || 0})"
                                     style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; padding: 8px; font-size: 14px; cursor: pointer;">
                                 🗑️
                             </button>
@@ -148,13 +160,15 @@
                 `;
             });
 
-            balanceDisplay.textContent = total.toFixed(2) + '€';
-            balanceDisplay.style.color = total >= 0 ? '#00ff41' : '#ff4444';
+            if (balanceDisplay) {
+                balanceDisplay.textContent = total.toFixed(2) + '€';
+                balanceDisplay.style.color = total >= 0 ? '#00ff41' : '#ff4444';
+            }
             historyContainer.innerHTML = html || '<div style="color:#333; font-size:11px; text-align:center; margin-top:20px;">ΚΑΜΙΑ ΚΑΤΑΓΡΑΦΗ</div>';
         }
     };
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener('DOMContentLoaded', () => {
         injectViewLayer();
         window.PegasusFinance.render();
 

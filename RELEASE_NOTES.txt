@@ -1,3 +1,13 @@
+PEGASUS 248 - MOBILE FINANCE SIMPLE AMOUNT MODE
+
+Mobile-only finance patch:
+- Removed the transaction description input from Οικονομικά.
+- Finance now asks only for amount and uses the existing + ΕΣΟΔΟ / - ΕΞΟΔΟ buttons.
+- Validation now requires only a valid positive amount.
+- History displays transaction type (ΕΣΟΔΟ/ΕΞΟΔΟ), date, amount and delete button; old saved descriptions are ignored visually.
+- Desktop UI unchanged.
+- Cache/storage version bumped to 248.
+
 PEGASUS 247 - MOBILE GHOST BUTTON POSITION FIX
 - Restores the ghost navigation buttons to their lower fixed position.
 - Keeps the mobile scroll boundary ending at the beginning of the ghost buttons.
