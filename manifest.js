@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-05-05",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.46 Mobile Ghost Scroll Boundary Tightened"
+        engine_version: "v18.47 Mobile Ghost Buttons Position Restored"
     },
 
     // ---------------------------------------------------------

@@ -1,3 +1,9 @@
+PEGASUS 247 - MOBILE GHOST BUTTON POSITION FIX
+- Restores the ghost navigation buttons to their lower fixed position.
+- Keeps the mobile scroll boundary ending at the beginning of the ghost buttons.
+- Moves the clearance from body padding to the scrollable view area so the buttons do not visually rise.
+- Cache/storage version bumped to 247.
+
 PEGASUS 246 - MOBILE GHOST SCROLL BOUNDARY FIX
 - Mobile-only adjustment. Desktop UI unchanged.
 - Tightened the scrollable content boundary so each mobile view reaches down to the start of the ghost buttons instead of stopping too high above them.

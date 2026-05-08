@@ -981,3 +981,34 @@ body {
 .grid {
     padding-bottom: 4px !important;
 }
+
+/* PEGASUS 247: restore ghost button position and keep scroll boundary exact.
+   Τα ghost buttons μένουν χαμηλά στο ίδιο σημείο· μόνο το scrollable περιεχόμενο
+   κρατά clearance ίσο με την αρχή των κουμπιών. */
+:root {
+    --pegasus-ghost-clearance: 45px; /* 6px bottom + 35px button + 4px breathing room */
+}
+
+body {
+    padding: 20px 15px 0 !important;
+    box-sizing: border-box !important;
+}
+
+html body .ghost-nav-overlay,
+body .ghost-nav-overlay,
+.ghost-nav-overlay {
+    bottom: 6px !important;
+    transform: translate3d(-50%, 0, 0) !important;
+}
+
+.view,
+.view-layer {
+    padding-bottom: var(--pegasus-ghost-clearance) !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.dynamic-grid,
+.grid {
+    padding-bottom: 0 !important;
+}
