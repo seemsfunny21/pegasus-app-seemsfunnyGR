@@ -1,3 +1,9 @@
+PEGASUS 246 - MOBILE GHOST SCROLL BOUNDARY FIX
+- Mobile-only adjustment. Desktop UI unchanged.
+- Tightened the scrollable content boundary so each mobile view reaches down to the start of the ghost buttons instead of stopping too high above them.
+- Reduced extra bottom padding on scroll containers while preserving hidden scrollbars and hand scrolling.
+- Cache/storage version bumped to 246.
+
 PEGASUS 245
 - Mobile-only update.
 - Targets exercise thumbnails now open a large zoom preview when tapped.

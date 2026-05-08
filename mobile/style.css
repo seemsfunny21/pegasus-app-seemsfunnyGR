@@ -5,7 +5,7 @@
 :root {
     --main: #00ff41; --danger: #ff4444; --bg: #050505;
     --card: rgba(23, 23, 23, 0.85); --border: #00ff41;
-    --pegasus-ghost-clearance: 58px;
+    --pegasus-ghost-clearance: 45px;
     --pegasus-top-sticky-bg: linear-gradient(180deg, rgba(5,5,5,0.98), rgba(5,5,5,0.84));
 }
 
@@ -959,4 +959,25 @@ input { width: 100%; background: #000; border: 1px solid #222; border-radius: 16
     line-height: 28px;
     font-weight: 900;
     z-index: 2;
+}
+
+
+/* PEGASUS 246: tighter ghost-button scroll boundary.
+   Το scroll φτάνει μέχρι την αρχή των ghost buttons, όχι πολύ πιο πάνω. */
+:root {
+    --pegasus-ghost-clearance: 45px; /* ghost top: bottom 6px + 35px button + ~4px gap */
+}
+
+body {
+    padding-bottom: calc(var(--pegasus-ghost-clearance) + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.view,
+.view-layer {
+    padding-bottom: 4px !important;
+}
+
+.dynamic-grid,
+.grid {
+    padding-bottom: 4px !important;
 }
