@@ -1,3 +1,12 @@
+PEGASUS 252 - Clean Mobile TV Cards
+- Reworked mobile/tv-mobile.js presentation into clearer Pegasus-style mobile cards.
+- TV module now separates: channel chips, "Τώρα παίζει", "Μετά", and "Καλύτερες επιλογές ημέρας ανά κανάλι".
+- Added progress bar for current programme and compact per-channel daily picks.
+- Technical/fallback guide links stay hidden unless loading fails or user taps Athinorama.
+- New modular order rule remains: newly registered modules stay last.
+- Mobile only. Desktop unchanged.
+- Cache bumped to v252.
+
 PEGASUS 251 - Mobile TV Athinorama parser
 ------------------------------------------------------------
 - TV mobile module now tries Athinorama first.

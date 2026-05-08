@@ -1,6 +1,6 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.2.251)
-   Protocol: Separate mobile module | Athinorama-first live TV + daily picks
+   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.3.252)
+   Protocol: Separate mobile module | Clean card UI | Athinorama-first live TV + daily picks
    Channels: MEGA / ANT1 / ALPHA / STAR / SKAI / OPEN
    ============================================================================ */
 
@@ -721,19 +721,36 @@
         const style = document.createElement('style');
         style.id = 'pegasus-tv-mobile-styles';
         style.textContent = `
+            #tv_program {
+                --tv-card-bg: rgba(10, 18, 12, 0.88);
+                --tv-soft-bg: rgba(0, 255, 65, 0.065);
+                --tv-border: rgba(0, 255, 65, 0.20);
+            }
+            #tv_program .pegasus-tv-shell {
+                width: 100%;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                gap: 11px;
+                padding-bottom: 4px;
+            }
             #tv_program .pegasus-tv-hero {
                 width: 100%;
-                border: 1px solid var(--main);
+                border: 1px solid var(--tv-border);
                 border-radius: 22px;
-                padding: 15px;
+                padding: 14px;
                 box-sizing: border-box;
-                background: linear-gradient(145deg, rgba(0,255,65,0.08), rgba(12,12,12,0.96));
+                background:
+                    radial-gradient(circle at top left, rgba(0,255,65,0.16), transparent 42%),
+                    linear-gradient(145deg, rgba(0,255,65,0.07), rgba(8,8,8,0.96));
                 box-shadow: 0 0 22px rgba(0,255,65,0.10);
-                margin-bottom: 12px;
                 text-align: left;
             }
             #tv_program .pegasus-tv-live-row,
-            #tv_program .pegasus-tv-toolbar {
+            #tv_program .pegasus-tv-toolbar,
+            #tv_program .pegasus-tv-titlebar,
+            #tv_program .pegasus-tv-channel-head,
+            #tv_program .pegasus-tv-meta-row {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -741,107 +758,158 @@
             }
             #tv_program .pegasus-tv-title {
                 font-size: 17px;
-                font-weight: 900;
+                font-weight: 1000;
                 color: #fff;
-                letter-spacing: 0.6px;
+                letter-spacing: 0.5px;
+                line-height: 1.1;
             }
             #tv_program .pegasus-tv-clock {
                 color: var(--main);
                 font-size: 12px;
-                font-weight: 900;
+                font-weight: 1000;
                 font-variant-numeric: tabular-nums;
                 white-space: nowrap;
+                border: 1px solid rgba(0,255,65,0.25);
+                border-radius: 999px;
+                padding: 5px 9px;
+                background: rgba(0,0,0,0.28);
             }
             #tv_program .pegasus-tv-sub {
-                color: #888;
+                color: #9a9a9a;
                 font-size: 10px;
                 line-height: 1.45;
-                font-weight: 800;
-                margin-top: 7px;
+                font-weight: 850;
+                margin-top: 8px;
             }
             #tv_program .pegasus-tv-status {
                 margin-top: 10px;
-                border: 1px solid rgba(0,255,65,0.22);
+                border: 1px solid rgba(0,255,65,0.18);
                 border-radius: 14px;
-                padding: 9px 10px;
+                padding: 8px 10px;
                 color: #aaa;
-                font-size: 10px;
-                line-height: 1.4;
-                font-weight: 800;
-                background: rgba(0,0,0,0.35);
+                font-size: 9.5px;
+                line-height: 1.35;
+                font-weight: 850;
+                background: rgba(0,0,0,0.32);
             }
             #tv_program .pegasus-tv-toolbar {
-                margin: 12px 0;
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
             }
             #tv_program .pegasus-tv-toolbar button {
-                padding: 12px 9px !important;
-                font-size: 10px !important;
                 margin: 0 !important;
+                min-height: 38px;
+                font-size: 9px !important;
+                border-radius: 14px !important;
             }
-            #tv_program .pegasus-tv-grid {
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
+            #tv_program .pegasus-tv-chipbar {
                 width: 100%;
-                margin-bottom: 85px;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 7px;
             }
-            #tv_program .pegasus-tv-card {
-                border: 1px solid rgba(0,255,65,0.42);
-                border-radius: 19px;
-                background: rgba(8,8,8,0.92);
-                box-shadow: 0 0 16px rgba(0,255,65,0.08);
-                padding: 13px;
-                text-align: left;
-                overflow: hidden;
+            #tv_program .pegasus-tv-chip {
+                border-radius: 999px;
+                border: 1px solid rgba(0,255,65,0.25);
+                background: rgba(0,0,0,0.35);
+                color: #e8e8e8;
+                font-size: 9px;
+                font-weight: 1000;
+                padding: 8px 6px;
+                text-align: center;
+                letter-spacing: .35px;
             }
-            #tv_program .pegasus-tv-channel-head {
+            #tv_program .pegasus-tv-panel-title {
+                width: 100%;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                gap: 10px;
-                margin-bottom: 10px;
+                gap: 8px;
+                margin-top: 2px;
+                color: #fff;
+                font-size: 12px;
+                font-weight: 1000;
+                letter-spacing: 0.55px;
+            }
+            #tv_program .pegasus-tv-panel-title span:last-child {
+                color: var(--main);
+                font-size: 9px;
+                font-weight: 950;
+            }
+            #tv_program .pegasus-tv-now-grid,
+            #tv_program .pegasus-tv-best-grid {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 9px;
+            }
+            #tv_program .pegasus-tv-card,
+            #tv_program .pegasus-tv-best-group {
+                width: 100%;
+                box-sizing: border-box;
+                border-radius: 18px;
+                padding: 12px;
+                background: var(--tv-card-bg);
+                border: 1px solid rgba(255,255,255,0.08);
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 10px 24px rgba(0,0,0,0.22);
+                text-align: left;
+            }
+            #tv_program .pegasus-tv-card {
+                scroll-margin-top: 12px;
             }
             #tv_program .pegasus-tv-channel-name {
-                font-size: 17px;
-                font-weight: 1000;
-                color: #fff;
-                letter-spacing: 0.8px;
-            }
-            #tv_program .pegasus-tv-live-badge {
-                border: 1px solid rgba(0,255,65,0.45);
-                border-radius: 999px;
-                padding: 6px 9px;
-                color: var(--main);
-                background: rgba(0,255,65,0.09);
-                font-size: 9px;
-                font-weight: 1000;
-                white-space: nowrap;
-            }
-            #tv_program .pegasus-tv-now {
-                border-radius: 15px;
-                border: 1px solid rgba(255,255,255,0.10);
-                background: rgba(255,255,255,0.045);
-                padding: 11px;
-                margin-bottom: 10px;
-            }
-            #tv_program .pegasus-tv-now-label,
-            #tv_program .pegasus-tv-picks-title {
-                color: var(--main);
-                font-size: 9px;
+                font-size: 13px;
                 font-weight: 1000;
                 letter-spacing: 0.7px;
+                line-height: 1;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+            }
+            #tv_program .pegasus-tv-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 99px;
+                display: inline-block;
+                box-shadow: 0 0 12px currentColor;
+            }
+            #tv_program .pegasus-tv-live-badge,
+            #tv_program .pegasus-tv-source-badge {
+                border: 1px solid rgba(0,255,65,0.35);
+                border-radius: 999px;
+                padding: 5px 8px;
+                color: var(--main);
+                background: rgba(0,255,65,0.07);
+                font-size: 8px;
+                font-weight: 1000;
+                white-space: nowrap;
+                letter-spacing: .35px;
+            }
+            #tv_program .pegasus-tv-now-label,
+            #tv_program .pegasus-tv-next-label,
+            #tv_program .pegasus-tv-picks-title {
+                color: var(--main);
+                font-size: 8.5px;
+                font-weight: 1000;
+                letter-spacing: 0.75px;
                 text-transform: uppercase;
-                margin-bottom: 5px;
+                margin-top: 9px;
+                margin-bottom: 4px;
             }
             #tv_program .pegasus-tv-program-title {
                 color: #fff;
                 font-size: 13px;
-                font-weight: 950;
-                line-height: 1.24;
+                font-weight: 1000;
+                line-height: 1.23;
                 margin-bottom: 4px;
             }
+            #tv_program .pegasus-tv-card .pegasus-tv-program-title {
+                font-size: 14px;
+            }
             #tv_program .pegasus-tv-program-meta {
-                color: #888;
+                color: #909090;
                 font-size: 9px;
                 font-weight: 850;
                 line-height: 1.35;
@@ -850,8 +918,28 @@
                 color: #aaa;
                 font-size: 9px;
                 line-height: 1.35;
-                font-weight: 750;
+                font-weight: 760;
                 margin-top: 5px;
+            }
+            #tv_program .pegasus-tv-progress-wrap {
+                margin-top: 8px;
+                height: 5px;
+                border-radius: 999px;
+                background: rgba(255,255,255,0.08);
+                overflow: hidden;
+            }
+            #tv_program .pegasus-tv-progress-bar {
+                height: 100%;
+                border-radius: inherit;
+                background: linear-gradient(90deg, rgba(0,255,65,0.45), rgba(0,255,65,0.95));
+                width: 0%;
+            }
+            #tv_program .pegasus-tv-next {
+                border-radius: 13px;
+                border: 1px solid rgba(255,255,255,0.07);
+                background: rgba(255,255,255,0.035);
+                padding: 9px;
+                margin-top: 9px;
             }
             #tv_program .pegasus-tv-pick-list {
                 display: flex;
@@ -860,11 +948,11 @@
             }
             #tv_program .pegasus-tv-pick {
                 display: grid;
-                grid-template-columns: 48px 1fr;
+                grid-template-columns: 54px 1fr;
                 gap: 9px;
                 border-radius: 13px;
                 padding: 9px;
-                background: rgba(0,0,0,0.42);
+                background: rgba(0,0,0,0.38);
                 border: 1px solid rgba(255,255,255,0.07);
             }
             #tv_program .pegasus-tv-pick-time {
@@ -876,16 +964,21 @@
                 text-align: center;
                 padding-top: 2px;
             }
-            #tv_program .pegasus-tv-error {
-                border: 1px solid rgba(255,68,68,0.45);
-                color: #ff8888;
-                background: rgba(255,68,68,0.08);
-                border-radius: 15px;
-                padding: 13px;
-                font-size: 10px;
-                font-weight: 800;
-                line-height: 1.45;
-                margin-bottom: 12px;
+            #tv_program .pegasus-tv-best-group-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            #tv_program .pegasus-tv-empty {
+                color: #888;
+                font-size: 9.5px;
+                font-weight: 850;
+                padding: 9px;
+                border-radius: 12px;
+                border: 1px dashed rgba(255,255,255,0.10);
+                background: rgba(0,0,0,0.22);
             }
             #tv_program .pegasus-tv-guide-links {
                 display: grid;
@@ -897,6 +990,16 @@
                 margin: 0 !important;
                 padding: 11px 8px !important;
                 font-size: 9px !important;
+            }
+            #tv_program .pegasus-tv-error {
+                border: 1px solid rgba(255,68,68,0.45);
+                color: #ff8888;
+                background: rgba(255,68,68,0.08);
+                border-radius: 15px;
+                padding: 13px;
+                font-size: 10px;
+                font-weight: 850;
+                line-height: 1.45;
             }
         `;
         document.head.appendChild(style);
@@ -913,36 +1016,94 @@
             <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
             <div class="section-title">ΠΡΟΓΡΑΜΜΑ ΤΗΛΕΟΡΑΣΗΣ</div>
 
-            <div class="pegasus-tv-hero">
-                <div class="pegasus-tv-live-row">
-                    <div class="pegasus-tv-title">📺 Τώρα στην TV</div>
-                    <div id="pegasusTvClock" class="pegasus-tv-clock">--:--</div>
+            <div class="pegasus-tv-shell">
+                <div class="pegasus-tv-hero">
+                    <div class="pegasus-tv-live-row">
+                        <div class="pegasus-tv-title">📺 Τηλεόραση σήμερα</div>
+                        <div id="pegasusTvClock" class="pegasus-tv-clock">--:--</div>
+                    </div>
+                    <div class="pegasus-tv-sub">
+                        Καθαρή προβολή για MEGA, ANT1, ALPHA, STAR, ΣΚΑΪ και OPEN: πρώτα τι παίζει τώρα, μετά οι καλύτερες επιλογές ημέρας ανά κανάλι.
+                    </div>
+                    <div id="pegasusTvStatus" class="pegasus-tv-status">Φόρτωση προγράμματος...</div>
                 </div>
-                <div class="pegasus-tv-sub">
-                    MEGA • ANT1 • ALPHA • STAR • ΣΚΑΪ • OPEN. Πρώτα από Αθηνόραμα: τι παίζει τώρα και οι καλύτερες επιλογές ημέρας ανά κανάλι.
+
+                <div class="pegasus-tv-toolbar">
+                    <button class="primary-btn" onclick="window.PegasusTV.refresh(true)">ΑΝΑΝΕΩΣΗ</button>
+                    <button class="secondary-btn" onclick="window.PegasusTV.openFallbackGuide()">ΑΘΗΝΟΡΑΜΑ</button>
                 </div>
-                <div id="pegasusTvStatus" class="pegasus-tv-status">Φόρτωση προγράμματος...</div>
-            </div>
 
-            <div class="pegasus-tv-toolbar compact-grid" style="width:100%; grid-template-columns: 1fr 1fr;">
-                <button class="primary-btn" onclick="window.PegasusTV.refresh(true)">ΑΝΑΝΕΩΣΗ LIVE</button>
-                <button class="secondary-btn" onclick="window.PegasusTV.openFallbackGuide()">ΑΘΗΝΟΡΑΜΑ</button>
-            </div>
-
-            <div id="pegasusTvContent" class="pegasus-tv-grid">
-                <div class="pegasus-tv-status">Φόρτωση...</div>
+                <div id="pegasusTvContent" class="pegasus-tv-content">
+                    <div class="pegasus-tv-status">Φόρτωση...</div>
+                </div>
             </div>
         `;
         document.body.appendChild(viewDiv);
     }
 
+    function toDate(value) {
+        if (value instanceof Date) return value;
+        if (typeof value === 'number') return new Date(value);
+        const d = new Date(value || 0);
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function getProgrammeStart(programme) {
+        return toDate(programme?.startTs || programme?.start);
+    }
+
+    function getProgrammeStop(programme) {
+        return toDate(programme?.stopTs || programme?.stop);
+    }
+
+    function getProgress(programme) {
+        const start = getProgrammeStart(programme);
+        const stop = getProgrammeStop(programme);
+        const now = nowGreekTime();
+        if (!start || !stop || stop <= start) return 0;
+        return Math.max(0, Math.min(100, Math.round(((now - start) / (stop - start)) * 100)));
+    }
+
+    function getNextProgramme(channel) {
+        const now = nowGreekTime();
+        const current = channel?.now || null;
+        const currentTitle = normalizeText(current?.title || '');
+        return (channel?.programmes || [])
+            .map(item => ({ ...item, _start: getProgrammeStart(item), _stop: getProgrammeStop(item) }))
+            .filter(item => item._start && item._start > now)
+            .filter(item => normalizeText(item.title || '') !== currentTitle)
+            .sort((a, b) => a._start - b._start)[0] || null;
+    }
+
+    function renderChannelChips(channels) {
+        return `
+            <div class="pegasus-tv-chipbar">
+                ${channels.map(channel => `
+                    <button class="pegasus-tv-chip" onclick="window.PegasusTV.jumpToChannel('${escapeHtml(channel.id)}')">${escapeHtml(channel.name)}</button>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    function renderProgrammeTime(programme) {
+        const start = getProgrammeStart(programme);
+        const stop = getProgrammeStop(programme);
+        if (programme?.time && String(programme.time).includes('-')) return programme.time;
+        if (!start) return '--:--';
+        return stop ? `${formatClock(start)}-${formatClock(stop)}` : formatClock(start);
+    }
+
     function renderPick(programme) {
         if (!programme) return '';
+        const start = getProgrammeStart(programme);
+        const stop = getProgrammeStop(programme);
         return `
             <div class="pegasus-tv-pick">
-                <div class="pegasus-tv-pick-time">${escapeHtml(formatClock(new Date(programme.startTs || programme.start)))}<br>${escapeHtml(formatClock(new Date(programme.stopTs || programme.stop)))}</div>
+                <div class="pegasus-tv-pick-time">
+                    ${escapeHtml(start ? formatClock(start) : '--:--')}${stop ? `<br>${escapeHtml(formatClock(stop))}` : ''}
+                </div>
                 <div>
-                    <div class="pegasus-tv-program-title">${escapeHtml(programme.title)}</div>
+                    <div class="pegasus-tv-program-title">${escapeHtml(programme.title || 'Χωρίς τίτλο')}</div>
                     <div class="pegasus-tv-program-meta">${escapeHtml(programme.kind || '⭐ Επιλογή')}</div>
                     ${programme.desc ? `<div class="pegasus-tv-program-desc">${escapeHtml(summarizeDesc(programme.desc))}</div>` : ''}
                 </div>
@@ -950,37 +1111,67 @@
         `;
     }
 
-    function renderChannelCard(channel) {
+    function renderChannelNowCard(channel) {
         const nowProgramme = channel.now;
+        const nextProgramme = getNextProgramme(channel);
         const color = channel.color || '#00ff41';
-        const picks = Array.isArray(channel.picks) ? channel.picks : [];
+        const progress = nowProgramme ? getProgress(nowProgramme) : 0;
         const guideUrl = channel.guideUrl || FALLBACK_GUIDES[0].url;
 
         return `
-            <div class="pegasus-tv-card" style="border-color:${escapeHtml(color)}88;">
+            <div id="pegasus-tv-channel-${escapeHtml(channel.id)}" class="pegasus-tv-card" style="border-color:${escapeHtml(color)}66;">
                 <div class="pegasus-tv-channel-head">
-                    <div class="pegasus-tv-channel-name" style="color:${escapeHtml(color)};">${escapeHtml(channel.name)}</div>
-                    <button class="secondary-btn" style="width:auto; margin:0; padding:7px 9px; border-radius:10px; font-size:9px;" onclick="window.PegasusTV.openUrl('${escapeHtml(guideUrl)}')">Οδηγός</button>
+                    <div class="pegasus-tv-channel-name" style="color:${escapeHtml(color)};">
+                        <span class="pegasus-tv-dot" style="background:${escapeHtml(color)};"></span>${escapeHtml(channel.name)}
+                    </div>
+                    <button class="secondary-btn" style="width:auto; margin:0; padding:7px 9px; border-radius:10px; font-size:8.5px;" onclick="window.PegasusTV.openUrl('${escapeHtml(guideUrl)}')">Οδηγός</button>
                 </div>
 
-                <div class="pegasus-tv-now">
-                    <div class="pegasus-tv-now-label">● ΠΑΙΖΕΙ ΤΩΡΑ</div>
-                    ${nowProgramme ? `
-                        <div class="pegasus-tv-program-title">${escapeHtml(nowProgramme.title)}</div>
-                        <div class="pegasus-tv-program-meta">${escapeHtml(nowProgramme.time)} · ${escapeHtml(nowProgramme.kind)}</div>
-                        ${nowProgramme.desc ? `<div class="pegasus-tv-program-desc">${escapeHtml(summarizeDesc(nowProgramme.desc))}</div>` : ''}
+                <div class="pegasus-tv-now-label">● ΤΩΡΑ ΠΑΙΖΕΙ</div>
+                ${nowProgramme ? `
+                    <div class="pegasus-tv-program-title">${escapeHtml(nowProgramme.title || 'Χωρίς τίτλο')}</div>
+                    <div class="pegasus-tv-meta-row">
+                        <div class="pegasus-tv-program-meta">${escapeHtml(renderProgrammeTime(nowProgramme))} · ${escapeHtml(nowProgramme.kind || 'Πρόγραμμα')}</div>
+                        <div class="pegasus-tv-live-badge">${progress}%</div>
+                    </div>
+                    <div class="pegasus-tv-progress-wrap"><div class="pegasus-tv-progress-bar" style="width:${progress}%;"></div></div>
+                    ${nowProgramme.desc ? `<div class="pegasus-tv-program-desc">${escapeHtml(summarizeDesc(nowProgramme.desc))}</div>` : ''}
+                ` : `
+                    <div class="pegasus-tv-program-title">Δεν βρέθηκε τρέχουσα εκπομπή</div>
+                    <div class="pegasus-tv-program-meta">Πάτα ανανέωση ή άνοιξε τον οδηγό.</div>
+                `}
+
+                <div class="pegasus-tv-next">
+                    <div class="pegasus-tv-next-label">ΜΕΤΑ</div>
+                    ${nextProgramme ? `
+                        <div class="pegasus-tv-program-title">${escapeHtml(nextProgramme.title || 'Χωρίς τίτλο')}</div>
+                        <div class="pegasus-tv-program-meta">${escapeHtml(renderProgrammeTime(nextProgramme))} · ${escapeHtml(nextProgramme.kind || 'Πρόγραμμα')}</div>
                     ` : `
-                        <div class="pegasus-tv-program-title">Δεν βρέθηκε τρέχουσα εκπομπή</div>
-                        <div class="pegasus-tv-program-meta">Πάτα «Οδηγός» ή «Ανανέωση live».</div>
+                        <div class="pegasus-tv-program-meta">Δεν φορτώθηκε επόμενο πρόγραμμα.</div>
                     `}
-                </div>
-
-                <div class="pegasus-tv-picks-title">Καλύτερες επιλογές ημέρας</div>
-                <div class="pegasus-tv-pick-list">
-                    ${picks.length ? picks.map(renderPick).join('') : '<div class="pegasus-tv-program-meta">Δεν φορτώθηκαν επιλογές για σήμερα.</div>'}
                 </div>
             </div>
         `;
+    }
+
+    function renderBestGroups(channels) {
+        return channels.map(channel => {
+            const color = channel.color || '#00ff41';
+            const picks = Array.isArray(channel.picks) ? channel.picks.slice(0, 3) : [];
+            return `
+                <div class="pegasus-tv-best-group" style="border-color:${escapeHtml(color)}55;">
+                    <div class="pegasus-tv-best-group-head">
+                        <div class="pegasus-tv-channel-name" style="color:${escapeHtml(color)};">
+                            <span class="pegasus-tv-dot" style="background:${escapeHtml(color)};"></span>${escapeHtml(channel.name)}
+                        </div>
+                        <span class="pegasus-tv-source-badge">${picks.length ? `${picks.length} επιλογές` : '—'}</span>
+                    </div>
+                    <div class="pegasus-tv-pick-list">
+                        ${picks.length ? picks.map(renderPick).join('') : '<div class="pegasus-tv-empty">Δεν φορτώθηκαν προτάσεις για σήμερα.</div>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     function renderData(data, meta = {}) {
@@ -993,7 +1184,27 @@
             return { ...channel, ...item };
         });
 
-        content.innerHTML = channels.map(renderChannelCard).join('');
+        content.innerHTML = `
+            <div class="pegasus-tv-shell">
+                ${renderChannelChips(channels)}
+
+                <div class="pegasus-tv-panel-title">
+                    <span>● Τώρα παίζει</span>
+                    <span>6 κανάλια</span>
+                </div>
+                <div class="pegasus-tv-now-grid">
+                    ${channels.map(renderChannelNowCard).join('')}
+                </div>
+
+                <div class="pegasus-tv-panel-title">
+                    <span>⭐ Καλύτερες επιλογές ημέρας</span>
+                    <span>ανά κανάλι</span>
+                </div>
+                <div class="pegasus-tv-best-grid">
+                    ${renderBestGroups(channels)}
+                </div>
+            </div>
+        `;
 
         if (status) {
             const fetched = data?.fetchedAt ? formatDateTime(new Date(data.fetchedAt)) : '--';
@@ -1006,18 +1217,25 @@
     function renderError(error) {
         const content = document.getElementById('pegasusTvContent');
         const status = document.getElementById('pegasusTvStatus');
-        if (status) status.textContent = 'Δεν φορτώθηκε αυτόματα το EPG. Χρησιμοποίησε τον εξωτερικό οδηγό.';
+        if (status) status.textContent = 'Δεν φορτώθηκε αυτόματα το EPG. Άνοιξε τον οδηγό από Αθηνόραμα.';
         if (!content) return;
 
+        const emptyChannels = CHANNELS.map(channel => ({ ...channel, now: null, picks: [], programmes: [] }));
         content.innerHTML = `
-            <div class="pegasus-tv-error">
-                Δεν μπόρεσε να φορτώσει live πρόγραμμα μέσα από το Pegasus. Αυτό μπορεί να συμβεί από CORS/δίκτυο ή προσωρινό θέμα της πηγής.<br><br>
-                Τεχνικό: ${escapeHtml(error?.message || error || 'unknown')}
-                <div class="pegasus-tv-guide-links">
-                    ${FALLBACK_GUIDES.map(item => `<button class="secondary-btn" onclick="window.PegasusTV.openUrl('${escapeHtml(item.url)}')">${escapeHtml(item.label)}</button>`).join('')}
+            <div class="pegasus-tv-shell">
+                <div class="pegasus-tv-error">
+                    Δεν μπόρεσε να φορτώσει live πρόγραμμα μέσα από το Pegasus. Μπορεί να φταίει CORS, δίκτυο ή προσωρινό θέμα της πηγής.<br><br>
+                    Τεχνικό: ${escapeHtml(error?.message || error || 'unknown')}
+                    <div class="pegasus-tv-guide-links">
+                        ${FALLBACK_GUIDES.map(item => `<button class="secondary-btn" onclick="window.PegasusTV.openUrl('${escapeHtml(item.url)}')">${escapeHtml(item.label)}</button>`).join('')}
+                    </div>
+                </div>
+                ${renderChannelChips(emptyChannels)}
+                <div class="pegasus-tv-panel-title"><span>● Τώρα παίζει</span><span>fallback</span></div>
+                <div class="pegasus-tv-now-grid">
+                    ${emptyChannels.map(renderChannelNowCard).join('')}
                 </div>
             </div>
-            ${CHANNELS.map(channel => renderChannelCard({ ...channel, now: null, picks: [] })).join('')}
         `;
     }
 
@@ -1058,6 +1276,11 @@
             } finally {
                 this.loading = false;
             }
+        },
+
+        jumpToChannel: function(id) {
+            const el = document.getElementById('pegasus-tv-channel-' + id);
+            if (el?.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         },
 
         openUrl: function(url) {
