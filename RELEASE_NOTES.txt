@@ -1,3 +1,13 @@
+PEGASUS 240 - Mobile Biometric Unlock Module
+
+- Added new separate file: mobile/biometric-unlock-mobile.js.
+- Mobile PIN vault can now show a fingerprint/passkey unlock button when the device is already approved.
+- After a normal PIN + MASTER KEY unlock, Pegasus offers activation of Android/Chrome biometric unlock.
+- Biometric unlock uses WebAuthn/platform authenticator; Pegasus never stores the fingerprint itself.
+- Added a small mobile vault bridge so external modules can finish the existing PIN unlock flow safely.
+- Social/Secure Vault PIN screen can also show a biometric button after biometric unlock has been enabled.
+- Permanent local cache bumped to v240 and service worker registration bumped to 3.36.240.
+
 PEGASUS 239 - Desktop Boot Supplement Sync Guard
 
 Bugfix:

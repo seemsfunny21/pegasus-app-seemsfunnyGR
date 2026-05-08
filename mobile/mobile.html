@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v18.38</title>
+    <title>Pegasus Mobile v18.40</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -636,6 +636,7 @@
     <script src="lifting-mobile.js"></script>
     <script src="youtube-mobile.js"></script>
     <script src="weather-mobile.js"></script>
+    <script src="biometric-unlock-mobile.js"></script>
 
 <script>
     const PEGASUS = {
@@ -1129,6 +1130,27 @@
         }
     });
 
+    window.PegasusMobileVault = window.PegasusMobileVault || {};
+    window.PegasusMobileVault.finishUnlock = async function(source = "manual") {
+        const modal = document.getElementById("pinModal");
+        if (modal) modal.style.display = "none";
+
+        isUnlocked = true;
+        mobileLastSyncPulseTs = Date.now();
+        scheduleNextMobileSyncCycle(true);
+        setSyncStatus(window.PegasusCloud?.isUnlocked ? (navigator.onLine ? 'online' : 'offline') : 'locked');
+
+        await reconcileMobileDailyRoutine();
+        await runMobileSyncHeartbeat();
+        startMobileSyncHeartbeat();
+
+        try {
+            window.PegasusBiometricUnlock?.afterSuccessfulUnlock?.(source);
+        } catch (e) {
+            console.warn("PEGASUS BIOMETRIC: post-unlock hook failed.", e);
+        }
+    };
+
     async function attemptVaultUnlock() {
         const pinInput = document.getElementById("pinInput");
         const masterInput = document.getElementById("masterKeyInput");
@@ -1146,15 +1168,7 @@
         const success = await window.PegasusCloud?.unlock(pin, masterKey);
 
         if (success) {
-            document.getElementById("pinModal").style.display = "none";
-            isUnlocked = true;
-            mobileLastSyncPulseTs = Date.now();
-            scheduleNextMobileSyncCycle(true);
-            setSyncStatus(window.PegasusCloud?.isUnlocked ? (navigator.onLine ? 'online' : 'offline') : 'locked');
-
-            await reconcileMobileDailyRoutine();
-            await runMobileSyncHeartbeat();
-            startMobileSyncHeartbeat();
+            await window.PegasusMobileVault.finishUnlock("manual");
         } else {
             if (errorDiv) errorDiv.textContent = "ΛΑΘΟΣ PIN / MASTER KEY";
             if (pinInput) pinInput.value = "";
@@ -1293,7 +1307,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.36.239')
+                navigator.serviceWorker.register('../sw.js?v=3.36.240')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         // No forced reg.update() on every open; this keeps refresh fast after the first local download.

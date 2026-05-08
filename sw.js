@@ -4,7 +4,7 @@
    Status: FINAL STABLE | ZERO WARMUP FALLBACK | FULL PROGRESS BRIDGE
    ========================================================================== */
 
-const PEGASUS_STORAGE_VERSION = '239';
+const PEGASUS_STORAGE_VERSION = '240';
 const CACHE_NAME = `pegasus-permanent-local-v${PEGASUS_STORAGE_VERSION}`;
 const CACHE_META_URL = './__pegasus_permanent_cache_meta__.json';
 
@@ -66,6 +66,7 @@ const ASSETS_TO_CACHE = [
     './mobile/weather-mobile.js',
     './mobile/missions-mobile.js',
     './mobile/biometrics-mobile.js',
+    './mobile/biometric-unlock-mobile.js',
     './mobile/maintenance-mobile.js',
     './mobile/oracle-mobile.js',
     './mobile/lifting-mobile.js',
