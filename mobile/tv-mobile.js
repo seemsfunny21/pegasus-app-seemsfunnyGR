@@ -1,6 +1,6 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.7.256)
-   Protocol: Separate mobile module | Minimal clean UI | Tap-title refresh | Athinorama-only
+   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.9.258)
+   Protocol: Separate mobile module | Minimal clean UI | Refresh on every TV open
    Channels: MEGA / ANT1 / ALPHA / STAR / SKAI / OPEN
    ============================================================================ */
 
@@ -328,13 +328,12 @@
                 .map(item => ({ ...item, score: scoreProgramme(item, now) }))
                 .sort((a, b) => b.score - a.score || a.startTs - b.startTs);
 
-            bucket.picks = candidates.slice(0, 3);
+            bucket.picks = candidates;
 
-            if (bucket.picks.length < 3) {
+            if (!bucket.picks.length) {
                 const existing = new Set(bucket.picks.map(item => `${item.startTs}|${item.title}`));
                 bucket.programmes
                     .filter(item => item.stop >= now && !existing.has(`${item.startTs}|${item.title}`))
-                    .slice(0, 3 - bucket.picks.length)
                     .forEach(item => bucket.picks.push(item));
             }
         });
@@ -610,7 +609,7 @@
                 .filter(item => item.stop >= now && isToday(item.start, now))
                 .map(item => ({ ...item, score: scoreProgramme(item, now) }))
                 .sort((a, b) => b.score - a.score || a.startTs - b.startTs);
-            bucket.picks = candidates.slice(0, 3);
+            bucket.picks = candidates;
         });
     }
 
@@ -623,8 +622,7 @@
 
             const now = nowGreekTime();
             const filtered = incoming
-                .filter(item => item.stop >= now || isToday(item.start, now))
-                .slice(0, 6);
+                .filter(item => item.stop >= now || isToday(item.start, now));
             if (filtered.length) bucket.picks = filtered;
         });
         fillPicksFromProgramme(data);
@@ -1171,35 +1169,49 @@
 
     function getDayHighlights(channels) {
         const seen = new Set();
-        const all = [];
+        const officialPicks = [];
+        const movieFallback = [];
+        const now = nowGreekTime();
 
         channels.forEach(channel => {
-            const items = [
-                ...(Array.isArray(channel.picks) ? channel.picks : []),
-                ...(Array.isArray(channel.programmes) ? channel.programmes : [])
-            ];
-
-            items.forEach(item => {
+            const picks = Array.isArray(channel.picks) ? channel.picks : [];
+            picks.forEach(item => {
                 const start = getProgrammeStart(item);
-                const key = `${channel.id}|${start ? start.getTime() : renderProgrammeTime(item)}|${normalizeText(item.title || '')}`;
+                const key = `${channel.id}|pick|${start ? start.getTime() : renderProgrammeTime(item)}|${normalizeText(item.title || '')}`;
                 if (!item?.title || seen.has(key)) return;
                 seen.add(key);
-                all.push({ ...item, channel, _start: start, _isMovie: isMovieLike(item) });
+                officialPicks.push({ ...item, channel, _start: start, _isMovie: isMovieLike(item) });
             });
         });
 
-        const movies = all.filter(item => item._isMovie);
-        const source = movies.length ? movies : all.filter(item => Array.isArray(item.channel?.picks) && item.channel.picks.some(pick => normalizeText(pick.title || '') === normalizeText(item.title || '')));
+        if (officialPicks.length) {
+            const filtered = officialPicks
+                .filter(item => !item._start || getProgrammeStop(item) >= now || isToday(item._start, now))
+                .sort((a, b) => (a._start?.getTime?.() || 0) - (b._start?.getTime?.() || 0));
 
-        const now = nowGreekTime();
-        const limit = movies.length ? 18 : 24;
-        const futureOrCurrent = source.filter(item => !item._start || getProgrammeStop(item) >= now || isToday(item._start, now));
+            return {
+                title: '⭐ Επιλογές ημέρας',
+                items: filtered
+            };
+        }
+
+        channels.forEach(channel => {
+            const programmes = Array.isArray(channel.programmes) ? channel.programmes : [];
+            programmes.forEach(item => {
+                const start = getProgrammeStart(item);
+                if (!item?.title || !isMovieLike(item)) return;
+                const key = `${channel.id}|movie|${start ? start.getTime() : renderProgrammeTime(item)}|${normalizeText(item.title || '')}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                movieFallback.push({ ...item, channel, _start: start, _isMovie: true });
+            });
+        });
 
         return {
-            title: movies.length ? '🎬 Ταινίες ημέρας' : '⭐ Επιλογές ημέρας',
-            items: futureOrCurrent
+            title: '🎬 Ταινίες ημέρας',
+            items: movieFallback
+                .filter(item => !item._start || getProgrammeStop(item) >= now || isToday(item._start, now))
                 .sort((a, b) => (a._start?.getTime?.() || 0) - (b._start?.getTime?.() || 0))
-                .slice(0, limit)
         };
     }
 
@@ -1222,7 +1234,7 @@
     function renderDayHighlights(highlights) {
         const items = highlights?.items || [];
         if (!items.length) {
-            return '<div class="pegasus-tv-empty">Δεν φορτώθηκαν ταινίες/επιλογές από το Αθηνόραμα.</div>';
+            return '<div class="pegasus-tv-empty">Δεν φορτώθηκαν επιλογές από το Αθηνόραμα.</div>';
         }
         return `<div class="pegasus-tv-highlight-list">${items.map(renderHighlightItem).join('')}</div>`;
     }
@@ -1272,7 +1284,7 @@
     function renderBestGroups(channels) {
         return channels.map(channel => {
             const color = channel.color || '#00ff41';
-            const picks = Array.isArray(channel.picks) ? channel.picks.slice(0, 3) : [];
+            const picks = Array.isArray(channel.picks) ? channel.picks : [];
             return `
                 <div class="pegasus-tv-best-group" style="border-color:${escapeHtml(color)}55;">
                     <div class="pegasus-tv-best-group-head">
@@ -1364,7 +1376,26 @@
                 });
             }
             this.startClock();
-            this.refresh(false);
+            this.renderCachedOrIdle();
+        },
+
+        onOpen: function() {
+            // PEGASUS v258: refresh TV every time the module view is opened.
+            // This avoids stale "Τώρα παίζει" data while keeping mobile boot fast.
+            return this.refresh(true);
+        },
+
+        renderCachedOrIdle: function() {
+            const cached = readJSON(TV_CACHE_KEY, null);
+            if (cached?.channels) {
+                renderData(cached, { fromCache: true, bootPreview: true });
+                return;
+            }
+
+            const content = document.getElementById('pegasusTvContent');
+            if (content) {
+                content.innerHTML = '<div class="pegasus-tv-status">Άνοιξε την Τηλεόραση για ενημέρωση από Αθηνόραμα.</div>';
+            }
         },
 
         startClock: function() {

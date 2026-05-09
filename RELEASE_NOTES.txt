@@ -1,3 +1,22 @@
+PEGASUS 258 - MOBILE TV REFRESH ON OPEN
+
+- Mobile TV now refreshes from Athinorama every time the Τηλεόραση module is opened.
+- Removed the startup network refresh for TV, so mobile boot stays faster.
+- Cached TV data can still be shown as a temporary preview until the open-triggered refresh completes.
+- The title “📺 Τηλεόραση σήμερα” still works as a manual refresh trigger.
+- Athinorama-only, mobile-only, no desktop changes.
+- Cache bump to 258.
+
+
+PEGASUS 257 - MOBILE TV ALL ATHINORAMA DAY PICKS
+
+- Mobile TV now shows all available Athinorama day picks instead of limiting the list.
+- Removed the 18/24 global cap from the Ταινίες/Επιλογές ημέρας section.
+- Removed per-channel Athinorama pick caps so all parsed choices can flow into the clean list.
+- If official Athinorama picks are unavailable, the module falls back to all movie-like programmes found for the day.
+- Still mobile-only, Athinorama-only, no extra source buttons, no desktop changes.
+- Cache bump to 257.
+
 
 PEGASUS 256 - MOBILE TV CLEAN HEADER / MORE PICKS
 - Mobile TV only: removed visible ΑΝΑΝΕΩΣΗ and ΑΘΗΝΟΡΑΜΑ buttons.
