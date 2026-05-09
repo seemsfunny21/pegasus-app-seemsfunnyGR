@@ -1,3 +1,12 @@
+
+PEGASUS 256 - MOBILE TV CLEAN HEADER / MORE PICKS
+- Mobile TV only: removed visible ΑΝΑΝΕΩΣΗ and ΑΘΗΝΟΡΑΜΑ buttons.
+- The “📺 Τηλεόραση σήμερα” title now performs refresh when tapped.
+- Hidden the visible source/status line (Πηγή: Athinorama Reader...).
+- Expanded day highlights so Ταινίες ημέρας / Επιλογές ημέρας shows more items when available.
+- Athinorama remains the only TV source/link; desktop unchanged.
+- Cache bump to 256.
+
 PEGASUS 255 - Minimal Mobile TV View + Movie Descriptions
 - Cleaned mobile/tv-mobile.js so the TV module no longer shows the separate MEGA/ANT1/ALPHA/STAR/SKAI/OPEN chip list.
 - Removed the explanatory “clean view” subtitle from the TV hero for a cleaner mobile screen.

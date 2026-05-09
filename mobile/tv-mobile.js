@@ -1,6 +1,6 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.6.255)
-   Protocol: Separate mobile module | Minimal clean UI | Athinorama-only guide fallback
+   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.7.256)
+   Protocol: Separate mobile module | Minimal clean UI | Tap-title refresh | Athinorama-only
    Channels: MEGA / ANT1 / ALPHA / STAR / SKAI / OPEN
    ============================================================================ */
 
@@ -624,7 +624,7 @@
             const now = nowGreekTime();
             const filtered = incoming
                 .filter(item => item.stop >= now || isToday(item.start, now))
-                .slice(0, 4);
+                .slice(0, 6);
             if (filtered.length) bucket.picks = filtered;
         });
         fillPicksFromProgramme(data);
@@ -775,6 +775,21 @@
                 color: #fff;
                 letter-spacing: 0.5px;
                 line-height: 1.1;
+                cursor: pointer;
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+                border: 1px solid rgba(0,255,65,0.22);
+                border-radius: 999px;
+                padding: 7px 10px;
+                background: rgba(0,0,0,0.18);
+            }
+            #tv_program .pegasus-tv-title:active {
+                transform: scale(0.985);
+                border-color: rgba(0,255,65,0.55);
+            }
+            #tv_program .pegasus-tv-title.is-loading {
+                color: var(--main);
+                box-shadow: 0 0 18px rgba(0,255,65,0.13);
             }
             #tv_program .pegasus-tv-clock {
                 color: var(--main);
@@ -795,27 +810,10 @@
                 margin-top: 8px;
             }
             #tv_program .pegasus-tv-status {
-                margin-top: 10px;
-                border: 1px solid rgba(0,255,65,0.18);
-                border-radius: 14px;
-                padding: 8px 10px;
-                color: #aaa;
-                font-size: 9.5px;
-                line-height: 1.35;
-                font-weight: 850;
-                background: rgba(0,0,0,0.32);
+                display: none !important;
             }
             #tv_program .pegasus-tv-toolbar {
-                width: 100%;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-            #tv_program .pegasus-tv-toolbar button {
-                margin: 0 !important;
-                min-height: 38px;
-                font-size: 9px !important;
-                border-radius: 14px !important;
+                display: none !important;
             }
             #tv_program .pegasus-tv-chipbar {
                 width: 100%;
@@ -1081,15 +1079,10 @@
             <div class="pegasus-tv-shell">
                 <div class="pegasus-tv-hero">
                     <div class="pegasus-tv-live-row">
-                        <div class="pegasus-tv-title">📺 Τηλεόραση σήμερα</div>
+                        <div id="pegasusTvRefreshTitle" class="pegasus-tv-title" role="button" tabindex="0" onclick="window.PegasusTV.refresh(true)">📺 Τηλεόραση σήμερα</div>
                         <div id="pegasusTvClock" class="pegasus-tv-clock">--:--</div>
                     </div>
-                    <div id="pegasusTvStatus" class="pegasus-tv-status">Αθηνόραμα...</div>
-                </div>
-
-                <div class="pegasus-tv-toolbar">
-                    <button class="primary-btn" onclick="window.PegasusTV.refresh(true)">ΑΝΑΝΕΩΣΗ</button>
-                    <button class="secondary-btn" onclick="window.PegasusTV.openFallbackGuide()">ΑΘΗΝΟΡΑΜΑ</button>
+                    <div id="pegasusTvStatus" class="pegasus-tv-status" aria-live="polite"></div>
                 </div>
 
                 <div id="pegasusTvContent" class="pegasus-tv-content">
@@ -1198,11 +1191,15 @@
         const movies = all.filter(item => item._isMovie);
         const source = movies.length ? movies : all.filter(item => Array.isArray(item.channel?.picks) && item.channel.picks.some(pick => normalizeText(pick.title || '') === normalizeText(item.title || '')));
 
+        const now = nowGreekTime();
+        const limit = movies.length ? 18 : 24;
+        const futureOrCurrent = source.filter(item => !item._start || getProgrammeStop(item) >= now || isToday(item._start, now));
+
         return {
             title: movies.length ? '🎬 Ταινίες ημέρας' : '⭐ Επιλογές ημέρας',
-            items: source
+            items: futureOrCurrent
                 .sort((a, b) => (a._start?.getTime?.() || 0) - (b._start?.getTime?.() || 0))
-                .slice(0, 10)
+                .slice(0, limit)
         };
     }
 
@@ -1256,7 +1253,7 @@
                     ${nowProgramme.desc ? `<div class="pegasus-tv-program-desc">${escapeHtml(summarizeDesc(nowProgramme.desc))}</div>` : ''}
                 ` : `
                     <div class="pegasus-tv-program-title">Δεν βρέθηκε τρέχουσα εκπομπή</div>
-                    <div class="pegasus-tv-program-meta">Πάτα ανανέωση ή άνοιξε τον οδηγό.</div>
+                    <div class="pegasus-tv-program-meta">Πάτα τον τίτλο για νέα ανανέωση.</div>
                 `}
 
                 <div class="pegasus-tv-next">
@@ -1297,11 +1294,8 @@
         if (!data?.guideFallback) return '';
         return `
             <div class="pegasus-tv-notice">
-                <div class="pegasus-tv-notice-title">Αθηνόραμα</div>
-                Το live πρόγραμμα δεν είναι διαθέσιμο μέσα στο Pegasus αυτή τη στιγμή. Άνοιξε το Αθηνόραμα.
-                <div class="pegasus-tv-guide-links">
-                    ${FALLBACK_GUIDES.map(item => `<button class="secondary-btn" onclick="window.PegasusTV.openUrl('${escapeHtml(item.url)}')">${escapeHtml(item.label)}</button>`).join('')}
-                </div>
+                <div class="pegasus-tv-notice-title">Πρόγραμμα τηλεόρασης</div>
+                Δεν φορτώθηκαν live στοιχεία αυτή τη στιγμή. Πάτα τον τίτλο “Τηλεόραση σήμερα” για νέα προσπάθεια.
             </div>
         `;
     }
@@ -1336,18 +1330,13 @@
             </div>
         `;
 
-        if (status) {
-            const fetched = data?.fetchedAt ? formatDateTime(new Date(data.fetchedAt)) : '--';
-            const source = data?.sourceLabel || 'Αθηνόραμα';
-            const freshness = data?.guideFallback ? ' · άνοιγμα Αθηνόραμα' : meta.stale ? ' · παλιό cache' : meta.fromCache ? ' · cache' : ' · live';
-            status.textContent = `Πηγή: ${source}${freshness} · ενημέρωση ${fetched}`;
-        }
+        if (status) status.textContent = '';
     }
 
     function renderError(error) {
         const content = document.getElementById('pegasusTvContent');
         const status = document.getElementById('pegasusTvStatus');
-        if (status) status.textContent = 'Το live πρόγραμμα από Αθηνόραμα δεν είναι διαθέσιμο εδώ. Άνοιξε Αθηνόραμα.';
+        if (status) status.textContent = '';
         if (!content) return;
 
         const fallbackData = createGuideFallbackData(error);
@@ -1364,6 +1353,16 @@
 
         init: function() {
             injectViewLayer();
+            const title = document.getElementById('pegasusTvRefreshTitle');
+            if (title && !title.dataset.pegasusBound) {
+                title.dataset.pegasusBound = '1';
+                title.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        window.PegasusTV.refresh(true);
+                    }
+                });
+            }
             this.startClock();
             this.refresh(false);
         },
@@ -1384,7 +1383,9 @@
             this.loading = true;
 
             const status = document.getElementById('pegasusTvStatus');
-            if (status) status.textContent = force ? 'Ανανέωση από Αθηνόραμα...' : 'Αθηνόραμα...';
+            const title = document.getElementById('pegasusTvRefreshTitle');
+            if (status) status.textContent = '';
+            if (title) title.classList.add('is-loading');
 
             try {
                 const result = await loadProgramme({ force: Boolean(force) });
@@ -1393,6 +1394,7 @@
                 rememberSourceFailure('TV module', error); tvDebug('PEGASUS TV load fallback:', error);
                 renderError(error);
             } finally {
+                if (title) title.classList.remove('is-loading');
                 this.loading = false;
             }
         },
