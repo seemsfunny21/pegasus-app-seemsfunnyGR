@@ -1,3 +1,15 @@
+PEGASUS 261 - MOBILE THREE-ZONE SHELL LAYOUT
+
+- Added mobile/shell-layout-mobile.js as a global mobile shell layout manager.
+- Mobile views are now split into three stable zones:
+  TOP: Back/header area stays fixed.
+  MIDDLE: module content scrolls with touch only.
+  BOTTOM: ghost buttons stay fixed and content never falls underneath them.
+- Applies to existing and dynamically registered mobile modules via MutationObserver.
+- TV module content no longer scrolls under the Επιστροφή button or ghost buttons.
+- Desktop unchanged.
+- Cache bump to 261.
+
 PEGASUS 260 - MOBILE TV PICKS BY CHANNEL + FULL DESCRIPTIONS
 - Mobile TV remains Athinorama-only and shows only “Τι αξίζει να δεις σήμερα”.
 - Day picks are now grouped per channel, so each channel shows all parsed Athinorama recommendations instead of one flat mixed list.

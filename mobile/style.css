@@ -1012,3 +1012,83 @@ body .ghost-nav-overlay,
 .grid {
     padding-bottom: 0 !important;
 }
+
+/* PEGASUS 261: Three-zone mobile shell layout.
+   TOP: Επιστροφή/header σταθερά.
+   MIDDLE: μόνο το περιεχόμενο σκρολάρει με το χέρι.
+   BOTTOM: ghost buttons σταθερά, χωρίς να τα καλύπτει περιεχόμενο. */
+:root {
+    --pegasus-mobile-bottom-zone: calc(var(--pegasus-ghost-clearance) + env(safe-area-inset-bottom, 0px));
+    --pegasus-mobile-top-gap: 8px;
+}
+
+.view.pegasus-shell-view,
+.view-layer.pegasus-shell-view,
+.view,
+.view-layer {
+    overflow: hidden !important;
+    padding-bottom: var(--pegasus-mobile-bottom-zone) !important;
+    box-sizing: border-box !important;
+    min-height: 0 !important;
+}
+
+.view.pegasus-shell-view > .btn-back,
+.view-layer.pegasus-shell-view > .btn-back,
+#home.pegasus-shell-view > .header {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: 60 !important;
+    flex: 0 0 auto !important;
+    margin-top: 0 !important;
+    margin-bottom: var(--pegasus-mobile-top-gap) !important;
+    transform: none !important;
+}
+
+#home.pegasus-shell-view > .header {
+    padding-top: 2px !important;
+    padding-bottom: 8px !important;
+}
+
+.pegasus-mobile-mid {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    touch-action: pan-y !important;
+    box-sizing: border-box !important;
+    padding: 0 0 4px !important;
+    margin: 0 !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.pegasus-mobile-mid::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+
+#home .pegasus-mobile-mid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+#home .dynamic-grid,
+#home .grid {
+    overflow: visible !important;
+    flex: 0 0 auto !important;
+}
+
+.pegasus-shell-view > .pegasus-mobile-mid > :first-child {
+    margin-top: 0 !important;
+}
+
+.pegasus-shell-view > .pegasus-mobile-mid > :last-child {
+    margin-bottom: 0 !important;
+}
