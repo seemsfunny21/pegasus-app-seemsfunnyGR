@@ -1013,13 +1013,14 @@ body .ghost-nav-overlay,
     padding-bottom: 0 !important;
 }
 
-/* PEGASUS 261: Three-zone mobile shell layout.
-   TOP: Επιστροφή/header σταθερά.
-   MIDDLE: μόνο το περιεχόμενο σκρολάρει με το χέρι.
-   BOTTOM: ghost buttons σταθερά, χωρίς να τα καλύπτει περιεχόμενο. */
+/* PEGASUS 262: Exact mobile shell layout.
+   TOP: Back/header stays outside the scroll zone.
+   MIDDLE: JS measures the exact distance from top controls to ghost-button top.
+   BOTTOM: Ghost buttons stay fixed; no large blank safety gap. */
 :root {
-    --pegasus-mobile-bottom-zone: calc(var(--pegasus-ghost-clearance) + env(safe-area-inset-bottom, 0px));
+    --pegasus-mobile-bottom-zone: 0px;
     --pegasus-mobile-top-gap: 8px;
+    --pegasus-shell-mid-height: auto;
 }
 
 .view.pegasus-shell-view,
@@ -1027,7 +1028,8 @@ body .ghost-nav-overlay,
 .view,
 .view-layer {
     overflow: hidden !important;
-    padding-bottom: var(--pegasus-mobile-bottom-zone) !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
     box-sizing: border-box !important;
     min-height: 0 !important;
 }
@@ -1053,15 +1055,17 @@ body .ghost-nav-overlay,
 
 .pegasus-mobile-mid {
     width: 100% !important;
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     min-height: 0 !important;
+    height: var(--pegasus-shell-mid-height) !important;
+    max-height: var(--pegasus-shell-mid-height) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior: contain !important;
     touch-action: pan-y !important;
     box-sizing: border-box !important;
-    padding: 0 0 4px !important;
+    padding: 0 !important;
     margin: 0 !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;

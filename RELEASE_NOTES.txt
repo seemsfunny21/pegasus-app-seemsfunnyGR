@@ -1,3 +1,13 @@
+PEGASUS 262 - EXACT MOBILE GHOST BOUNDARY
+
+- Mobile-only shell refinement after v261.
+- Keeps the corrected TOP zone behavior.
+- Removes the large blank safety gap above the fixed ghost buttons.
+- The middle scroll zone is now measured dynamically from the bottom of the Back/header area to the exact top of the ghost navigation.
+- Content no longer falls under the Back button or ghost buttons, but it reaches down to the point where the ghost buttons begin.
+- No desktop changes.
+- Cache bump to 262.
+
 PEGASUS 261 - MOBILE THREE-ZONE SHELL LAYOUT
 
 - Added mobile/shell-layout-mobile.js as a global mobile shell layout manager.
