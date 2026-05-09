@@ -1,6 +1,6 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.4.253)
-   Protocol: Separate mobile module | Clean card UI | Quiet external-guide fallback
+   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.6.255)
+   Protocol: Separate mobile module | Minimal clean UI | Athinorama-only guide fallback
    Channels: MEGA / ANT1 / ALPHA / STAR / SKAI / OPEN
    ============================================================================ */
 
@@ -62,25 +62,8 @@
         }
     ];
 
-    const XMLTV_SOURCES = [
-        {
-            label: 'Greek TV App EPG',
-            url: 'https://ext.greektv.app/epg/epg.xml',
-            note: 'Ενημερώνεται καθημερινά'
-        },
-        {
-            label: 'Greek XMLTV latest release',
-            url: 'https://github.com/chrisliatas/greek-xmltv/releases/latest/download/grxmltv_nat_el.xml',
-            note: 'Εναλλακτική XMLTV πηγή'
-        }
-    ];
-
     const FALLBACK_GUIDES = [
-        { label: 'Αθηνόραμα TV', url: ATHINORAMA_PICKS_URL },
-        { label: 'Αθηνόραμα Κανάλια', url: ATHINORAMA_PROGRAM_URL },
-        { label: 'Digea EPG', url: 'https://www.digea.gr/el/tv-stations/electronic-program-guide' },
-        { label: 'Programma Tileorasis', url: 'https://programmatileorasis.gr/' },
-        { label: 'Zappit TV', url: 'https://www.zappit.gr/tv-program' }
+        { label: 'Άνοιγμα Αθηνόραμα', url: ATHINORAMA_PICKS_URL }
     ];
 
     function escapeHtml(value) {
@@ -739,21 +722,6 @@
             rememberSourceFailure('Athinorama primary', error); tvDebug('PEGASUS TV Athinorama primary unavailable:', error);
         }
 
-        for (const source of XMLTV_SOURCES) {
-            try {
-                const xml = await fetchWithTimeout(source.url);
-                const parsed = parseXmltv(xml, source.label);
-                parsed.sourceUrl = source.url;
-                parsed.sourceNote = source.note;
-                writeJSON(TV_CACHE_KEY, parsed);
-                writePref({ lastSource: source.label, lastSourceUrl: source.url });
-                return { data: parsed, fromCache: false };
-            } catch (error) {
-                lastError = error;
-                rememberSourceFailure(source.label, error); tvDebug('PEGASUS TV XMLTV source unavailable:', source.label, error);
-            }
-        }
-
         const cached = readJSON(TV_CACHE_KEY, null);
         if (cached) return { data: cached, fromCache: true, stale: true, error: lastError };
         const fallbackData = createGuideFallbackData(lastError || new Error('Δεν φορτώθηκε EPG'));
@@ -1009,6 +977,47 @@
                 text-align: center;
                 padding-top: 2px;
             }
+            #tv_program .pegasus-tv-highlight-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            #tv_program .pegasus-tv-highlight {
+                border-radius: 16px;
+                padding: 10px;
+                background: linear-gradient(145deg, rgba(0,255,65,0.055), rgba(0,0,0,0.42));
+                border: 1px solid rgba(0,255,65,0.14);
+                text-align: left;
+            }
+            #tv_program .pegasus-tv-highlight-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 6px;
+            }
+            #tv_program .pegasus-tv-channel-pill {
+                border-radius: 999px;
+                border: 1px solid rgba(255,255,255,0.10);
+                background: rgba(0,0,0,0.34);
+                padding: 4px 8px;
+                font-size: 8.5px;
+                font-weight: 1000;
+                letter-spacing: .35px;
+                white-space: nowrap;
+            }
+            #tv_program .pegasus-tv-highlight-time {
+                color: var(--main);
+                font-size: 9px;
+                font-weight: 1000;
+                font-variant-numeric: tabular-nums;
+                white-space: nowrap;
+            }
+            #tv_program .pegasus-tv-highlight .pegasus-tv-program-desc {
+                font-size: 9.4px;
+                line-height: 1.42;
+                color: #b7b7b7;
+            }
             #tv_program .pegasus-tv-best-group-head {
                 display: flex;
                 align-items: center;
@@ -1027,7 +1036,7 @@
             }
             #tv_program .pegasus-tv-guide-links {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
                 gap: 8px;
                 margin-top: 10px;
             }
@@ -1075,10 +1084,7 @@
                         <div class="pegasus-tv-title">📺 Τηλεόραση σήμερα</div>
                         <div id="pegasusTvClock" class="pegasus-tv-clock">--:--</div>
                     </div>
-                    <div class="pegasus-tv-sub">
-                        Καθαρή προβολή για MEGA, ANT1, ALPHA, STAR, ΣΚΑΪ και OPEN: πρώτα τι παίζει τώρα, μετά οι καλύτερες επιλογές ημέρας ανά κανάλι.
-                    </div>
-                    <div id="pegasusTvStatus" class="pegasus-tv-status">Έλεγχος live πηγών...</div>
+                    <div id="pegasusTvStatus" class="pegasus-tv-status">Αθηνόραμα...</div>
                 </div>
 
                 <div class="pegasus-tv-toolbar">
@@ -1087,7 +1093,7 @@
                 </div>
 
                 <div id="pegasusTvContent" class="pegasus-tv-content">
-                    <div class="pegasus-tv-status">Έλεγχος πηγών...</div>
+                    <div class="pegasus-tv-status">Αθηνόραμα...</div>
                 </div>
             </div>
         `;
@@ -1129,13 +1135,8 @@
     }
 
     function renderChannelChips(channels) {
-        return `
-            <div class="pegasus-tv-chipbar">
-                ${channels.map(channel => `
-                    <button class="pegasus-tv-chip" onclick="window.PegasusTV.jumpToChannel('${escapeHtml(channel.id)}')">${escapeHtml(channel.name)}</button>
-                `).join('')}
-            </div>
-        `;
+        // v255: the separate MEGA/ANT1/ALPHA/STAR/SKAI/OPEN chip list was removed for a cleaner view.
+        return '';
     }
 
     function renderProgrammeTime(programme) {
@@ -1164,12 +1165,77 @@
         `;
     }
 
+    function summarizeLongDesc(desc) {
+        const clean = String(desc || '').replace(/\s+/g, ' ').trim();
+        if (!clean) return '';
+        return clean.length > 175 ? clean.slice(0, 175).trim() + '…' : clean;
+    }
+
+    function isMovieLike(programme) {
+        const text = normalizeText(`${programme?.title || ''} ${programme?.desc || ''} ${programme?.category || ''} ${programme?.kind || ''}`);
+        return /ταινια|movie|film|cinema|σινεμα|περιπετεια|δραμα|κωμωδια|θριλερ|αστυνομικη|φαντασιας/.test(text);
+    }
+
+    function getDayHighlights(channels) {
+        const seen = new Set();
+        const all = [];
+
+        channels.forEach(channel => {
+            const items = [
+                ...(Array.isArray(channel.picks) ? channel.picks : []),
+                ...(Array.isArray(channel.programmes) ? channel.programmes : [])
+            ];
+
+            items.forEach(item => {
+                const start = getProgrammeStart(item);
+                const key = `${channel.id}|${start ? start.getTime() : renderProgrammeTime(item)}|${normalizeText(item.title || '')}`;
+                if (!item?.title || seen.has(key)) return;
+                seen.add(key);
+                all.push({ ...item, channel, _start: start, _isMovie: isMovieLike(item) });
+            });
+        });
+
+        const movies = all.filter(item => item._isMovie);
+        const source = movies.length ? movies : all.filter(item => Array.isArray(item.channel?.picks) && item.channel.picks.some(pick => normalizeText(pick.title || '') === normalizeText(item.title || '')));
+
+        return {
+            title: movies.length ? '🎬 Ταινίες ημέρας' : '⭐ Επιλογές ημέρας',
+            items: source
+                .sort((a, b) => (a._start?.getTime?.() || 0) - (b._start?.getTime?.() || 0))
+                .slice(0, 10)
+        };
+    }
+
+    function renderHighlightItem(item) {
+        const channel = item.channel || {};
+        const color = channel.color || '#00ff41';
+        return `
+            <div class="pegasus-tv-highlight" style="border-color:${escapeHtml(color)}55;">
+                <div class="pegasus-tv-highlight-top">
+                    <span class="pegasus-tv-channel-pill" style="color:${escapeHtml(color)}; border-color:${escapeHtml(color)}55;">${escapeHtml(channel.name || '')}</span>
+                    <span class="pegasus-tv-highlight-time">${escapeHtml(renderProgrammeTime(item))}</span>
+                </div>
+                <div class="pegasus-tv-program-title">${escapeHtml(item.title || 'Χωρίς τίτλο')}</div>
+                <div class="pegasus-tv-program-meta">${escapeHtml(item.kind || 'Πρόγραμμα')}</div>
+                ${item.desc ? `<div class="pegasus-tv-program-desc">${escapeHtml(summarizeLongDesc(item.desc))}</div>` : ''}
+            </div>
+        `;
+    }
+
+    function renderDayHighlights(highlights) {
+        const items = highlights?.items || [];
+        if (!items.length) {
+            return '<div class="pegasus-tv-empty">Δεν φορτώθηκαν ταινίες/επιλογές από το Αθηνόραμα.</div>';
+        }
+        return `<div class="pegasus-tv-highlight-list">${items.map(renderHighlightItem).join('')}</div>`;
+    }
+
     function renderChannelNowCard(channel) {
         const nowProgramme = channel.now;
         const nextProgramme = getNextProgramme(channel);
         const color = channel.color || '#00ff41';
         const progress = nowProgramme ? getProgress(nowProgramme) : 0;
-        const guideUrl = channel.guideUrl || FALLBACK_GUIDES[0].url;
+        const guideUrl = ATHINORAMA_PROGRAM_URL;
 
         return `
             <div id="pegasus-tv-channel-${escapeHtml(channel.id)}" class="pegasus-tv-card" style="border-color:${escapeHtml(color)}66;">
@@ -1177,7 +1243,6 @@
                     <div class="pegasus-tv-channel-name" style="color:${escapeHtml(color)};">
                         <span class="pegasus-tv-dot" style="background:${escapeHtml(color)};"></span>${escapeHtml(channel.name)}
                     </div>
-                    <button class="secondary-btn" style="width:auto; margin:0; padding:7px 9px; border-radius:10px; font-size:8.5px;" onclick="window.PegasusTV.openUrl('${escapeHtml(guideUrl)}')">Οδηγός</button>
                 </div>
 
                 <div class="pegasus-tv-now-label">● ΤΩΡΑ ΠΑΙΖΕΙ</div>
@@ -1232,8 +1297,8 @@
         if (!data?.guideFallback) return '';
         return `
             <div class="pegasus-tv-notice">
-                <div class="pegasus-tv-notice-title">Live πρόγραμμα: χρειάζεται εξωτερική πηγή</div>
-                Οι οδηγοί TV δεν επιτρέπουν πάντα απευθείας ανάγνωση μέσα από browser/PWA. Για αυτό κρατάμε τις καθαρές κάρτες καναλιών και ανοίγουμε τον οδηγό με ένα πάτημα. Όταν μπει proxy/worker, το ίδιο module θα δείχνει ξανά “τώρα παίζει” μέσα στο Pegasus.
+                <div class="pegasus-tv-notice-title">Αθηνόραμα</div>
+                Το live πρόγραμμα δεν είναι διαθέσιμο μέσα στο Pegasus αυτή τη στιγμή. Άνοιξε το Αθηνόραμα.
                 <div class="pegasus-tv-guide-links">
                     ${FALLBACK_GUIDES.map(item => `<button class="secondary-btn" onclick="window.PegasusTV.openUrl('${escapeHtml(item.url)}')">${escapeHtml(item.label)}</button>`).join('')}
                 </div>
@@ -1251,33 +1316,30 @@
             return { ...channel, ...item };
         });
 
+        const highlights = getDayHighlights(channels);
+
         content.innerHTML = `
             <div class="pegasus-tv-shell">
                 ${renderGuideFallbackNotice(data)}
-                ${renderChannelChips(channels)}
 
                 <div class="pegasus-tv-panel-title">
                     <span>● Τώρα παίζει</span>
-                    <span>6 κανάλια</span>
                 </div>
                 <div class="pegasus-tv-now-grid">
                     ${channels.map(renderChannelNowCard).join('')}
                 </div>
 
                 <div class="pegasus-tv-panel-title">
-                    <span>⭐ Καλύτερες επιλογές ημέρας</span>
-                    <span>ανά κανάλι</span>
+                    <span>${escapeHtml(highlights.title)}</span>
                 </div>
-                <div class="pegasus-tv-best-grid">
-                    ${renderBestGroups(channels)}
-                </div>
+                ${renderDayHighlights(highlights)}
             </div>
         `;
 
         if (status) {
             const fetched = data?.fetchedAt ? formatDateTime(new Date(data.fetchedAt)) : '--';
-            const source = data?.sourceLabel || 'EPG';
-            const freshness = data?.guideFallback ? ' · άνοιγμα οδηγού' : meta.stale ? ' · παλιό cache' : meta.fromCache ? ' · cache' : ' · live';
+            const source = data?.sourceLabel || 'Αθηνόραμα';
+            const freshness = data?.guideFallback ? ' · άνοιγμα Αθηνόραμα' : meta.stale ? ' · παλιό cache' : meta.fromCache ? ' · cache' : ' · live';
             status.textContent = `Πηγή: ${source}${freshness} · ενημέρωση ${fetched}`;
         }
     }
@@ -1285,19 +1347,13 @@
     function renderError(error) {
         const content = document.getElementById('pegasusTvContent');
         const status = document.getElementById('pegasusTvStatus');
-        if (status) status.textContent = 'Το live EPG δεν είναι διαθέσιμο εδώ. Άνοιξε εξωτερικό οδηγό.';
+        if (status) status.textContent = 'Το live πρόγραμμα από Αθηνόραμα δεν είναι διαθέσιμο εδώ. Άνοιξε Αθηνόραμα.';
         if (!content) return;
 
         const fallbackData = createGuideFallbackData(error);
-        const emptyChannels = CHANNELS.map(channel => ({ ...channel, now: null, picks: [], programmes: [] }));
         content.innerHTML = `
             <div class="pegasus-tv-shell">
                 ${renderGuideFallbackNotice(fallbackData)}
-                ${renderChannelChips(emptyChannels)}
-                <div class="pegasus-tv-panel-title"><span>● Τώρα παίζει</span><span>οδηγοί</span></div>
-                <div class="pegasus-tv-now-grid">
-                    ${emptyChannels.map(renderChannelNowCard).join('')}
-                </div>
             </div>
         `;
     }
@@ -1328,7 +1384,7 @@
             this.loading = true;
 
             const status = document.getElementById('pegasusTvStatus');
-            if (status) status.textContent = force ? 'Ανανέωση live προγράμματος...' : 'Έλεγχος live πηγών...';
+            if (status) status.textContent = force ? 'Ανανέωση από Αθηνόραμα...' : 'Αθηνόραμα...';
 
             try {
                 const result = await loadProgramme({ force: Boolean(force) });

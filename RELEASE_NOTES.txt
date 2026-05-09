@@ -1,3 +1,20 @@
+PEGASUS 255 - Minimal Mobile TV View + Movie Descriptions
+- Cleaned mobile/tv-mobile.js so the TV module no longer shows the separate MEGA/ANT1/ALPHA/STAR/SKAI/OPEN chip list.
+- Removed the explanatory “clean view” subtitle from the TV hero for a cleaner mobile screen.
+- Kept Athinorama as the only visible TV source.
+- Replaced the per-channel “best choices” block with a cleaner “Ταινίες ημέρας / Επιλογές ημέρας” highlight list.
+- Day movies/highlights now show longer descriptions when Athinorama provides them.
+- Removed per-card guide buttons; the single Athinorama button remains at the top/fallback.
+- Mobile only. Desktop unchanged.
+
+PEGASUS 254 - Athinorama-only Mobile TV Guide
+- Updated mobile/tv-mobile.js so the TV module uses only Athinorama as the visible guide source.
+- Removed Digea, Programma Tileorasis, Zappit, and XMLTV fallback attempts/buttons from the mobile TV module.
+- Channel guide buttons now open Athinorama programme instead of individual channel/external sources.
+- Kept the clean Pegasus TV cards and last-module ordering.
+- Desktop unchanged.
+- Cache bumped to v254.
+
 PEGASUS 253 - Quiet Mobile TV Guide Fallback
 - Updated mobile/tv-mobile.js to stop noisy Console warnings when Athinorama/XMLTV sources are blocked by CORS/HTTP 451.
 - If live EPG cannot be fetched, the TV module now stays clean: Pegasus channel cards remain visible and a clear green notice explains that live data needs an external guide/proxy.
