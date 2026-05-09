@@ -1,3 +1,11 @@
+PEGASUS 259 - MOBILE TV PICKS ONLY
+- Mobile TV module now shows only Athinorama “Τι αξίζει να δεις σήμερα”.
+- Removed the “Τώρα παίζει” channel programme cards and next-program schedule from the visible TV view.
+- Keeps refresh-on-open behavior: every time the TV module is opened, it refreshes Athinorama picks.
+- Parses all Athinorama day picks it can read, including channel/time and descriptions when available.
+- Maintains clean mobile-only UI and no desktop changes.
+- Cache bump to 259.
+
 PEGASUS 258 - MOBILE TV REFRESH ON OPEN
 
 - Mobile TV now refreshes from Athinorama every time the Τηλεόραση module is opened.
