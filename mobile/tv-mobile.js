@@ -1,13 +1,13 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PICKS (v2.0.259)
-   Protocol: Separate mobile module | Athinorama picks only | Refresh on every TV open
+   📺 PEGASUS MODULE: MOBILE TV PICKS (v2.1.260)
+   Protocol: Separate mobile module | Athinorama picks grouped by channel | Full descriptions | Refresh on every TV open
    Source: Athinorama “Αξίζει να δείτε”
    ============================================================================ */
 
 (function() {
     'use strict';
 
-    const TV_CACHE_KEY = 'pegasus_tv_picks_cache_v4';
+    const TV_CACHE_KEY = 'pegasus_tv_picks_cache_v5';
     const TV_PREF_KEY = 'pegasus_tv_program_pref_v2';
     const TV_FAILURE_KEY = 'pegasus_tv_program_last_failure_v1';
     const CACHE_TTL_MS = 1000 * 60 * 60 * 3;
@@ -259,7 +259,7 @@
     function summarizeDesc(desc) {
         const clean = String(desc || '').replace(/\s+/g, ' ').trim();
         if (!clean) return '';
-        return clean.length > 92 ? clean.slice(0, 92).trim() + '…' : clean;
+        return clean;
     }
 
     function parseXmltv(xmlText, sourceLabel) {
@@ -574,7 +574,6 @@
                 .filter(part => !isGuideNoise(part))
                 .filter(part => !/^\d+(?:[,.]\d+)?$/.test(part))
                 .filter(part => !parseChannelTimeLine(part))
-                .slice(0, 5)
                 .join(' ')
                 .replace(/\s+/g, ' ')
                 .trim();
@@ -1199,7 +1198,7 @@
     function summarizeLongDesc(desc) {
         const clean = String(desc || '').replace(/\s+/g, ' ').trim();
         if (!clean) return '';
-        return clean.length > 175 ? clean.slice(0, 175).trim() + '…' : clean;
+        return clean;
     }
 
     function isMovieLike(programme) {
@@ -1264,6 +1263,66 @@
             return '<div class="pegasus-tv-empty">Δεν φορτώθηκαν επιλογές από το Αθηνόραμα.</div>';
         }
         return `<div class="pegasus-tv-highlight-list">${items.map(renderHighlightItem).join('')}</div>`;
+    }
+
+    function getPicksGroupedByChannel(channels, allPicks) {
+        const groups = [];
+        const global = Array.isArray(allPicks) ? allPicks : [];
+
+        channels.forEach(channel => {
+            const seen = new Set();
+            const picks = [];
+
+            const add = (item) => {
+                if (!item?.title) return;
+                const meta = item.channel || getChannelMeta(item.channelId, item.channelName) || channel;
+                const metaId = meta?.id || item.channelId || channel.id;
+                if (metaId !== channel.id) return;
+
+                const start = getProgrammeStart(item);
+                const stop = getProgrammeStop(item);
+                const key = `${channel.id}|${start ? start.getTime() : renderProgrammeTime(item)}|${normalizeText(item.title || '')}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                picks.push({ ...item, channel, _start: start, _stop: stop });
+            };
+
+            global.forEach(add);
+            (Array.isArray(channel.picks) ? channel.picks : []).forEach(add);
+
+            picks.sort((a, b) => (a._start?.getTime?.() || 0) - (b._start?.getTime?.() || 0));
+
+            if (picks.length) {
+                groups.push({ channel, picks });
+            }
+        });
+
+        return groups;
+    }
+
+    function renderGroupedDayHighlights(channels, allPicks) {
+        const groups = getPicksGroupedByChannel(channels, allPicks);
+
+        if (!groups.length) {
+            return '<div class="pegasus-tv-empty">Δεν φορτώθηκαν επιλογές από το Αθηνόραμα.</div>';
+        }
+
+        return `<div class="pegasus-tv-best-grid">${groups.map(group => {
+            const color = group.channel.color || '#00ff41';
+            return `
+                <div class="pegasus-tv-best-group" style="border-color:${escapeHtml(color)}55;">
+                    <div class="pegasus-tv-best-group-head">
+                        <div class="pegasus-tv-channel-name" style="color:${escapeHtml(color)};">
+                            <span class="pegasus-tv-dot" style="background:${escapeHtml(color)};"></span>${escapeHtml(group.channel.name)}
+                        </div>
+                        <span class="pegasus-tv-source-badge">${group.picks.length} επιλογές</span>
+                    </div>
+                    <div class="pegasus-tv-pick-list">
+                        ${group.picks.map(renderPick).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('')}</div>`;
     }
 
     function renderChannelNowCard(channel) {
@@ -1349,16 +1408,14 @@
             return { ...channel, ...item };
         });
 
-        const highlights = getDayHighlights(channels, data?.allPicks || []);
-
         content.innerHTML = `
             <div class="pegasus-tv-shell">
                 ${renderGuideFallbackNotice(data)}
 
                 <div class="pegasus-tv-panel-title pegasus-tv-panel-title-main">
-                    <span>${escapeHtml(highlights.title)}</span>
+                    <span>⭐ Τι αξίζει να δεις σήμερα</span>
                 </div>
-                ${renderDayHighlights(highlights)}
+                ${renderGroupedDayHighlights(channels, data?.allPicks || [])}
             </div>
         `;
 
@@ -1400,8 +1457,8 @@
         },
 
         onOpen: function() {
-            // PEGASUS v259: refresh Athinorama picks every time the module view is opened.
-            // Keeps the module focused only on “Τι αξίζει να δεις σήμερα”.
+            // PEGASUS v260: refresh Athinorama picks every time the module view is opened.
+            // Keeps the module focused on grouped “Τι αξίζει να δεις σήμερα” with full descriptions.
             return this.refresh(true);
         },
 

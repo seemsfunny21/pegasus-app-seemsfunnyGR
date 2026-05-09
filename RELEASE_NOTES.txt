@@ -1,3 +1,10 @@
+PEGASUS 260 - MOBILE TV PICKS BY CHANNEL + FULL DESCRIPTIONS
+- Mobile TV remains Athinorama-only and shows only “Τι αξίζει να δεις σήμερα”.
+- Day picks are now grouped per channel, so each channel shows all parsed Athinorama recommendations instead of one flat mixed list.
+- Removed description truncation: each film/recommendation shows the full description available from Athinorama.
+- Cache key bumped so old shortened TV cache does not remain visible.
+- Desktop unchanged.
+
 PEGASUS 259 - MOBILE TV PICKS ONLY
 - Mobile TV module now shows only Athinorama “Τι αξίζει να δεις σήμερα”.
 - Removed the “Τώρα παίζει” channel programme cards and next-program schedule from the visible TV view.
