@@ -1,3 +1,11 @@
+PEGASUS 253 - Quiet Mobile TV Guide Fallback
+- Updated mobile/tv-mobile.js to stop noisy Console warnings when Athinorama/XMLTV sources are blocked by CORS/HTTP 451.
+- If live EPG cannot be fetched, the TV module now stays clean: Pegasus channel cards remain visible and a clear green notice explains that live data needs an external guide/proxy.
+- Added direct guide buttons for Athinorama, Digea, Programma Tileorasis and Zappit without exposing technical error text in the UI.
+- The module is ready for a future worker/proxy while staying usable now as a clean TV guide launcher.
+- Mobile only. Desktop unchanged.
+- Cache bumped to v253.
+
 PEGASUS 252 - Clean Mobile TV Cards
 - Reworked mobile/tv-mobile.js presentation into clearer Pegasus-style mobile cards.
 - TV module now separates: channel chips, "Τώρα παίζει", "Μετά", and "Καλύτερες επιλογές ημέρας ανά κανάλι".

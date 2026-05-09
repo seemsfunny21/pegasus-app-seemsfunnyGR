@@ -1,6 +1,6 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.3.252)
-   Protocol: Separate mobile module | Clean card UI | Athinorama-first live TV + daily picks
+   📺 PEGASUS MODULE: MOBILE TV PROGRAM (v1.4.253)
+   Protocol: Separate mobile module | Clean card UI | Quiet external-guide fallback
    Channels: MEGA / ANT1 / ALPHA / STAR / SKAI / OPEN
    ============================================================================ */
 
@@ -9,6 +9,7 @@
 
     const TV_CACHE_KEY = 'pegasus_tv_program_cache_v3';
     const TV_PREF_KEY = 'pegasus_tv_program_pref_v2';
+    const TV_FAILURE_KEY = 'pegasus_tv_program_last_failure_v1';
     const CACHE_TTL_MS = 1000 * 60 * 60 * 3;
 
     const ATHINORAMA_PROGRAM_URL = 'https://www.athinorama.gr/tv/programma/olatakanalia/';
@@ -126,6 +127,48 @@
             ...(next || {}),
             updatedAt: new Date().toISOString()
         });
+    }
+
+
+    function tvDebugEnabled() {
+        return localStorage.getItem('pegasus_tv_debug') === '1';
+    }
+
+    function tvDebug(...args) {
+        if (tvDebugEnabled()) console.info(...args);
+    }
+
+    function rememberSourceFailure(source, error) {
+        writeJSON(TV_FAILURE_KEY, {
+            source: String(source || 'EPG'),
+            message: String(error?.message || error || 'unknown'),
+            at: new Date().toISOString()
+        });
+    }
+
+    function createGuideFallbackData(error) {
+        const channels = {};
+        CHANNELS.forEach(channel => {
+            channels[channel.id] = {
+                ...channel,
+                found: false,
+                now: null,
+                next: null,
+                programmes: [],
+                picks: []
+            };
+        });
+
+        return {
+            sourceLabel: 'Εξωτερικοί οδηγοί TV',
+            sourceUrl: ATHINORAMA_PICKS_URL,
+            sourceNote: 'Το live EPG χρειάζεται proxy/worker όταν οι πηγές μπλοκάρουν fetch/CORS.',
+            fetchedAt: new Date().toISOString(),
+            generatedAt: '',
+            guideFallback: true,
+            reason: String(error?.message || error || 'blocked'),
+            channels
+        };
     }
 
     function nowGreekTime() {
@@ -645,7 +688,7 @@
                     const picksText = await fetchWithTimeout(attempt.picksUrl, 14000);
                     mergeAthinoramaPicks(data, parseAthinoramaPicksText(picksText));
                 } catch (pickError) {
-                    console.warn('PEGASUS TV Athinorama picks failed:', pickError);
+                    rememberSourceFailure('Athinorama picks', pickError); tvDebug('PEGASUS TV Athinorama picks skipped:', pickError);
                     fillPicksFromProgramme(data);
                 }
 
@@ -653,7 +696,7 @@
                 return data;
             } catch (error) {
                 lastError = error;
-                console.warn('PEGASUS TV Athinorama failed:', attempt.label, error);
+                rememberSourceFailure(attempt.label, error); tvDebug('PEGASUS TV Athinorama source unavailable:', attempt.label, error);
             }
         }
         throw lastError || new Error('Athinorama failed');
@@ -693,7 +736,7 @@
             return { data: athinorama, fromCache: false };
         } catch (error) {
             lastError = error;
-            console.warn('PEGASUS TV Athinorama primary failed:', error);
+            rememberSourceFailure('Athinorama primary', error); tvDebug('PEGASUS TV Athinorama primary unavailable:', error);
         }
 
         for (const source of XMLTV_SOURCES) {
@@ -707,13 +750,15 @@
                 return { data: parsed, fromCache: false };
             } catch (error) {
                 lastError = error;
-                console.warn('PEGASUS TV XMLTV source failed:', source.label, error);
+                rememberSourceFailure(source.label, error); tvDebug('PEGASUS TV XMLTV source unavailable:', source.label, error);
             }
         }
 
         const cached = readJSON(TV_CACHE_KEY, null);
         if (cached) return { data: cached, fromCache: true, stale: true, error: lastError };
-        throw lastError || new Error('Δεν φορτώθηκε EPG');
+        const fallbackData = createGuideFallbackData(lastError || new Error('Δεν φορτώθηκε EPG'));
+        writePref({ lastSource: fallbackData.sourceLabel, lastSourceUrl: fallbackData.sourceUrl, guideFallback: true });
+        return { data: fallbackData, fromCache: false, guideFallback: true, error: lastError };
     }
 
     function injectStyles() {
@@ -991,15 +1036,23 @@
                 padding: 11px 8px !important;
                 font-size: 9px !important;
             }
+            #tv_program .pegasus-tv-notice,
             #tv_program .pegasus-tv-error {
-                border: 1px solid rgba(255,68,68,0.45);
-                color: #ff8888;
-                background: rgba(255,68,68,0.08);
+                border: 1px solid rgba(0,255,65,0.24);
+                color: #dfffe8;
+                background: linear-gradient(145deg, rgba(0,255,65,0.08), rgba(0,0,0,0.34));
                 border-radius: 15px;
                 padding: 13px;
                 font-size: 10px;
                 font-weight: 850;
                 line-height: 1.45;
+            }
+            #tv_program .pegasus-tv-notice-title {
+                color: var(--main);
+                font-size: 11px;
+                font-weight: 1000;
+                margin-bottom: 5px;
+                letter-spacing: .45px;
             }
         `;
         document.head.appendChild(style);
@@ -1025,7 +1078,7 @@
                     <div class="pegasus-tv-sub">
                         Καθαρή προβολή για MEGA, ANT1, ALPHA, STAR, ΣΚΑΪ και OPEN: πρώτα τι παίζει τώρα, μετά οι καλύτερες επιλογές ημέρας ανά κανάλι.
                     </div>
-                    <div id="pegasusTvStatus" class="pegasus-tv-status">Φόρτωση προγράμματος...</div>
+                    <div id="pegasusTvStatus" class="pegasus-tv-status">Έλεγχος live πηγών...</div>
                 </div>
 
                 <div class="pegasus-tv-toolbar">
@@ -1034,7 +1087,7 @@
                 </div>
 
                 <div id="pegasusTvContent" class="pegasus-tv-content">
-                    <div class="pegasus-tv-status">Φόρτωση...</div>
+                    <div class="pegasus-tv-status">Έλεγχος πηγών...</div>
                 </div>
             </div>
         `;
@@ -1174,6 +1227,20 @@
         }).join('');
     }
 
+
+    function renderGuideFallbackNotice(data) {
+        if (!data?.guideFallback) return '';
+        return `
+            <div class="pegasus-tv-notice">
+                <div class="pegasus-tv-notice-title">Live πρόγραμμα: χρειάζεται εξωτερική πηγή</div>
+                Οι οδηγοί TV δεν επιτρέπουν πάντα απευθείας ανάγνωση μέσα από browser/PWA. Για αυτό κρατάμε τις καθαρές κάρτες καναλιών και ανοίγουμε τον οδηγό με ένα πάτημα. Όταν μπει proxy/worker, το ίδιο module θα δείχνει ξανά “τώρα παίζει” μέσα στο Pegasus.
+                <div class="pegasus-tv-guide-links">
+                    ${FALLBACK_GUIDES.map(item => `<button class="secondary-btn" onclick="window.PegasusTV.openUrl('${escapeHtml(item.url)}')">${escapeHtml(item.label)}</button>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     function renderData(data, meta = {}) {
         const content = document.getElementById('pegasusTvContent');
         const status = document.getElementById('pegasusTvStatus');
@@ -1186,6 +1253,7 @@
 
         content.innerHTML = `
             <div class="pegasus-tv-shell">
+                ${renderGuideFallbackNotice(data)}
                 ${renderChannelChips(channels)}
 
                 <div class="pegasus-tv-panel-title">
@@ -1209,7 +1277,7 @@
         if (status) {
             const fetched = data?.fetchedAt ? formatDateTime(new Date(data.fetchedAt)) : '--';
             const source = data?.sourceLabel || 'EPG';
-            const freshness = meta.stale ? ' · παλιό cache' : meta.fromCache ? ' · cache' : ' · live';
+            const freshness = data?.guideFallback ? ' · άνοιγμα οδηγού' : meta.stale ? ' · παλιό cache' : meta.fromCache ? ' · cache' : ' · live';
             status.textContent = `Πηγή: ${source}${freshness} · ενημέρωση ${fetched}`;
         }
     }
@@ -1217,21 +1285,16 @@
     function renderError(error) {
         const content = document.getElementById('pegasusTvContent');
         const status = document.getElementById('pegasusTvStatus');
-        if (status) status.textContent = 'Δεν φορτώθηκε αυτόματα το EPG. Άνοιξε τον οδηγό από Αθηνόραμα.';
+        if (status) status.textContent = 'Το live EPG δεν είναι διαθέσιμο εδώ. Άνοιξε εξωτερικό οδηγό.';
         if (!content) return;
 
+        const fallbackData = createGuideFallbackData(error);
         const emptyChannels = CHANNELS.map(channel => ({ ...channel, now: null, picks: [], programmes: [] }));
         content.innerHTML = `
             <div class="pegasus-tv-shell">
-                <div class="pegasus-tv-error">
-                    Δεν μπόρεσε να φορτώσει live πρόγραμμα μέσα από το Pegasus. Μπορεί να φταίει CORS, δίκτυο ή προσωρινό θέμα της πηγής.<br><br>
-                    Τεχνικό: ${escapeHtml(error?.message || error || 'unknown')}
-                    <div class="pegasus-tv-guide-links">
-                        ${FALLBACK_GUIDES.map(item => `<button class="secondary-btn" onclick="window.PegasusTV.openUrl('${escapeHtml(item.url)}')">${escapeHtml(item.label)}</button>`).join('')}
-                    </div>
-                </div>
+                ${renderGuideFallbackNotice(fallbackData)}
                 ${renderChannelChips(emptyChannels)}
-                <div class="pegasus-tv-panel-title"><span>● Τώρα παίζει</span><span>fallback</span></div>
+                <div class="pegasus-tv-panel-title"><span>● Τώρα παίζει</span><span>οδηγοί</span></div>
                 <div class="pegasus-tv-now-grid">
                     ${emptyChannels.map(renderChannelNowCard).join('')}
                 </div>
@@ -1265,13 +1328,13 @@
             this.loading = true;
 
             const status = document.getElementById('pegasusTvStatus');
-            if (status) status.textContent = force ? 'Ανανέωση live προγράμματος...' : 'Φόρτωση προγράμματος...';
+            if (status) status.textContent = force ? 'Ανανέωση live προγράμματος...' : 'Έλεγχος live πηγών...';
 
             try {
                 const result = await loadProgramme({ force: Boolean(force) });
                 renderData(result.data, result);
             } catch (error) {
-                console.warn('PEGASUS TV load failed:', error);
+                rememberSourceFailure('TV module', error); tvDebug('PEGASUS TV load fallback:', error);
                 renderError(error);
             } finally {
                 this.loading = false;
