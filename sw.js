@@ -1,10 +1,10 @@
 /* ==========================================================================
-   PEGASUS PWA SERVICE WORKER - v3.14 (PERMANENT LOCAL STORAGE BOOT)
+   PEGASUS PWA SERVICE WORKER - v3.15 (PERMANENT LOCAL STORAGE BOOT)
    Protocol: Cache-first after full local download, persistent same-origin assets
    Status: FINAL STABLE | ZERO WARMUP FALLBACK | FULL PROGRESS BRIDGE
    ========================================================================== */
 
-const PEGASUS_STORAGE_VERSION = '263';
+const PEGASUS_STORAGE_VERSION = '264';
 const CACHE_NAME = `pegasus-permanent-local-v${PEGASUS_STORAGE_VERSION}`;
 const CACHE_META_URL = './__pegasus_permanent_cache_meta__.json';
 

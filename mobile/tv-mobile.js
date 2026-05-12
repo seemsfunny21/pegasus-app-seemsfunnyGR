@@ -1,16 +1,16 @@
 /* ============================================================================
-   📺 PEGASUS MODULE: MOBILE TV PICKS (v2.1.260)
-   Protocol: Separate mobile module | Athinorama picks grouped by channel | Full descriptions | Refresh on every TV open
+   📺 PEGASUS MODULE: MOBILE TV PICKS (v2.2.264)
+   Protocol: Separate mobile module | Athinorama daily picks only | Full descriptions | Live refresh on every TV open | No stale cache
    Source: Athinorama “Αξίζει να δείτε”
    ============================================================================ */
 
 (function() {
     'use strict';
 
-    const TV_CACHE_KEY = 'pegasus_tv_picks_cache_v5';
+    const TV_CACHE_KEY = 'pegasus_tv_picks_live_v264';
     const TV_PREF_KEY = 'pegasus_tv_program_pref_v2';
     const TV_FAILURE_KEY = 'pegasus_tv_program_last_failure_v1';
-    const CACHE_TTL_MS = 1000 * 60 * 60 * 3;
+    const CACHE_TTL_MS = 0; // v264: TV content is live-only; do not reuse cached day picks
 
     const ATHINORAMA_PROGRAM_URL = 'https://www.athinorama.gr/tv/programma/olatakanalia/';
     const ATHINORAMA_PICKS_URL = 'https://www.athinorama.gr/tv/programma/simera';
@@ -110,6 +110,15 @@
             ...(next || {}),
             updatedAt: new Date().toISOString()
         });
+    }
+
+    function clearTvCache() {
+        try {
+            Object.keys(localStorage)
+                .filter(key => key && key.startsWith('pegasus_tv_picks_cache'))
+                .forEach(key => localStorage.removeItem(key));
+            localStorage.removeItem(TV_CACHE_KEY);
+        } catch (_) {}
     }
 
 
@@ -740,30 +749,32 @@
     }
 
     async function loadProgramme(options = {}) {
-        if (!options.force) {
-            const cached = readJSON(TV_CACHE_KEY, null);
-            if (cached?.fetchedAt && Date.now() - new Date(cached.fetchedAt).getTime() < CACHE_TTL_MS) {
-                return { data: cached, fromCache: true };
-            }
-        }
-
-        let lastError = null;
+        // v264: Always fetch fresh Athinorama day picks when TV opens.
+        // No stale cached programme is rendered, so the module never shows yesterday/old picks.
+        clearTvCache();
 
         try {
             const athinorama = await loadAthinoramaProgramme();
-            writeJSON(TV_CACHE_KEY, athinorama);
-            writePref({ lastSource: athinorama.sourceLabel, lastSourceUrl: athinorama.sourceUrl });
-            return { data: athinorama, fromCache: false };
+            writePref({
+                lastSource: athinorama.sourceLabel,
+                lastSourceUrl: athinorama.sourceUrl,
+                lastFreshFetchAt: athinorama.fetchedAt,
+                liveOnly: true
+            });
+            return { data: athinorama, fromCache: false, liveOnly: true };
         } catch (error) {
-            lastError = error;
-            rememberSourceFailure('Athinorama primary', error); tvDebug('PEGASUS TV Athinorama primary unavailable:', error);
+            rememberSourceFailure('Athinorama live', error);
+            tvDebug('PEGASUS TV Athinorama live unavailable:', error);
+            const fallbackData = createGuideFallbackData(error || new Error('Δεν φορτώθηκαν σημερινές επιλογές'));
+            writePref({
+                lastSource: fallbackData.sourceLabel,
+                lastSourceUrl: fallbackData.sourceUrl,
+                guideFallback: true,
+                liveOnly: true,
+                lastLiveErrorAt: new Date().toISOString()
+            });
+            return { data: fallbackData, fromCache: false, guideFallback: true, liveOnly: true, error };
         }
-
-        const cached = readJSON(TV_CACHE_KEY, null);
-        if (cached) return { data: cached, fromCache: true, stale: true, error: lastError };
-        const fallbackData = createGuideFallbackData(lastError || new Error('Δεν φορτώθηκε EPG'));
-        writePref({ lastSource: fallbackData.sourceLabel, lastSourceUrl: fallbackData.sourceUrl, guideFallback: true });
-        return { data: fallbackData, fromCache: false, guideFallback: true, error: lastError };
     }
 
     function injectStyles() {
@@ -1393,7 +1404,7 @@
         return `
             <div class="pegasus-tv-notice">
                 <div class="pegasus-tv-notice-title">Τι αξίζει να δεις σήμερα</div>
-                Δεν φορτώθηκαν επιλογές από το Αθηνόραμα αυτή τη στιγμή. Πάτα τον τίτλο για νέα προσπάθεια.
+                Δεν φορτώθηκαν σημερινές επιλογές από το Αθηνόραμα αυτή τη στιγμή. Πάτα τον τίτλο για νέα προσπάθεια.
             </div>
         `;
     }
@@ -1457,21 +1468,17 @@
         },
 
         onOpen: function() {
-            // PEGASUS v260: refresh Athinorama picks every time the module view is opened.
-            // Keeps the module focused on grouped “Τι αξίζει να δεις σήμερα” with full descriptions.
+            // PEGASUS v264: refresh live Athinorama picks every time the module view is opened.
+            // No cached/stale data is shown.
             return this.refresh(true);
         },
 
         renderCachedOrIdle: function() {
-            const cached = readJSON(TV_CACHE_KEY, null);
-            if (cached?.channels) {
-                renderData(cached, { fromCache: true, bootPreview: true });
-                return;
-            }
-
+            // v264: Do not render cached TV data on boot. The TV module refreshes when opened.
+            clearTvCache();
             const content = document.getElementById('pegasusTvContent');
             if (content) {
-                content.innerHTML = '<div class="pegasus-tv-status">Άνοιξε το module για τις επιλογές ημέρας από Αθηνόραμα.</div>';
+                content.innerHTML = '<div class="pegasus-tv-status">Άνοιξε το Τηλεόραση για σημερινές επιλογές από Αθηνόραμα.</div>';
             }
         },
 
@@ -1494,9 +1501,15 @@
             const title = document.getElementById('pegasusTvRefreshTitle');
             if (status) status.textContent = '';
             if (title) title.classList.add('is-loading');
+            clearTvCache();
+
+            const content = document.getElementById('pegasusTvContent');
+            if (content) {
+                content.innerHTML = '<div class="pegasus-tv-status">Ανανέωση σημερινών επιλογών από Αθηνόραμα...</div>';
+            }
 
             try {
-                const result = await loadProgramme({ force: Boolean(force) });
+                const result = await loadProgramme({ force: true, liveOnly: true });
                 renderData(result.data, result);
             } catch (error) {
                 rememberSourceFailure('TV module', error); tvDebug('PEGASUS TV load fallback:', error);

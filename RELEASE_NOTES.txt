@@ -256,3 +256,13 @@ PEGASUS 249 - MOBILE TV PROGRAM MODULE
 - Stores only the selected TV source preference; no TV listings are stored.
 - Desktop UI unchanged.
 - Service worker cache bumped to 249 and tv-mobile.js added to offline asset list.
+
+
+PEGASUS 264 - Mobile TV Live Refresh No Cache
+- Mobile-only TV patch. Desktop unchanged.
+- The Τηλεόραση module now fetches fresh Athinorama daily picks every time it opens.
+- Cached/stale TV data is no longer rendered on boot or used as fallback.
+- Opening Τηλεόραση shows a live refresh message, then today’s Athinorama picks grouped by channel.
+- If Athinorama is unavailable, the module shows a clean notice instead of old cached picks.
+- tv-mobile.js bumped to v2.2.264 and mobile script query updated to ?v=264.
+- Service worker cache bumped to 264.
