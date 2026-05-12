@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.4 EXERCISE TARGET PATCH)
+   PEGASUS OS - DIET MODULE (MOBILE EDITION v15.5 ROUTINE DEDUPE PATCH)
    Protocol: Shared Metabolic Helpers, Diet-Only Inventory & Delete Restore
-   Status: FINAL STABLE | FIXED: MOBILE DIET TARGET READS WORKOUT + CYCLING BURN
+   Status: FINAL STABLE | FIXED: DAILY ROUTINE IDENTITY GUARD / NO DOUBLE INJECTION
    ========================================================================== */
 
 window.PegasusDiet = {
@@ -53,9 +53,45 @@ window.PegasusDiet = {
         localStorage.setItem(this.getRoutineSuppressionKey(dateStr), JSON.stringify(uniqueNames));
     },
 
+    normalizeRoutineName: function(name) {
+        return String(name || "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, " ");
+    },
+
     isRoutineName: function(name) {
-        const cleanName = String(name || "");
-        return this.getBaseRoutineTemplates().some(item => item?.name === cleanName);
+        const cleanName = this.normalizeRoutineName(name);
+        return this.getBaseRoutineTemplates().some(item => this.normalizeRoutineName(item?.name) === cleanName);
+    },
+
+    dedupeRoutineLog: function(dateStr, log, restoreStock = true) {
+        const input = Array.isArray(log) ? log : [];
+        const routineNames = new Set(this.getBaseRoutineTemplates().map(item => this.normalizeRoutineName(item?.name)));
+        const seen = new Set();
+        const cleaned = [];
+        const removed = [];
+
+        input.forEach(item => {
+            const normalized = this.normalizeRoutineName(item?.name);
+            if (routineNames.has(normalized)) {
+                if (seen.has(normalized)) {
+                    removed.push(item);
+                    return;
+                }
+                seen.add(normalized);
+            }
+            cleaned.push(item);
+        });
+
+        if (removed.length && restoreStock) {
+            removed.forEach(item => this.restoreInventoryImpact(item?.name));
+            console.warn(`🧹 PEGASUS DIET: Removed ${removed.length} duplicate routine entries for ${dateStr}.`);
+        }
+
+        return { log: cleaned, removed };
     },
 
     suppressRoutineName: function(dateStr, name) {
@@ -261,47 +297,64 @@ window.PegasusDiet = {
         const dateStr = this.getStrictDateStr();
         const flagKey = "pegasus_routine_injected_" + dateStr;
 
-        let log = this.getLog(dateStr);
-        let changed = false;
+        this._routineGuardLocks = this._routineGuardLocks || {};
+        if (this._routineGuardLocks[dateStr]) return false;
+        this._routineGuardLocks[dateStr] = true;
 
-        const templates = this.getRoutineTemplates();
+        try {
+            let log = this.getLog(dateStr);
+            let changed = false;
 
-        templates.forEach((item) => {
-            const exists = log.some(entry => entry?.name === item.name);
+            const initialDedupe = this.dedupeRoutineLog(dateStr, log, true);
+            log = initialDedupe.log;
+            if (initialDedupe.removed.length) changed = true;
 
-            if (!exists) {
-                log.push({
-                    name: item.name,
-                    kcal: item.kcal,
-                    protein: item.protein,
-                    ts: Date.now() - item.tsOffset
-                });
+            const templates = this.getRoutineTemplates();
 
-                this.applyInventoryImpact(item.name);
-                changed = true;
+            templates.forEach((item) => {
+                const exists = log.some(entry => this.normalizeRoutineName(entry?.name) === this.normalizeRoutineName(item.name));
+
+                if (!exists) {
+                    log.push({
+                        name: item.name,
+                        kcal: item.kcal,
+                        protein: item.protein,
+                        ts: Date.now() - item.tsOffset,
+                        source: "mobile-daily-routine-v15.5"
+                    });
+
+                    this.applyInventoryImpact(item.name);
+                    changed = true;
+                }
+            });
+
+            const finalDedupe = this.dedupeRoutineLog(dateStr, log, true);
+            log = finalDedupe.log;
+            if (finalDedupe.removed.length) changed = true;
+
+            const hasAllRoutineEntries = templates.every(item =>
+                log.some(entry => this.normalizeRoutineName(entry?.name) === this.normalizeRoutineName(item.name))
+            );
+
+            if (hasAllRoutineEntries) {
+                localStorage.setItem(flagKey, "true");
             }
-        });
 
-        const hasAllRoutineEntries = templates.every(item =>
-            log.some(entry => entry?.name === item.name)
-        );
+            if (changed) {
+                console.log("🚀 DIET: Daily routine reconciled safely (no duplicates).");
+                localStorage.setItem(this.getFoodLogKey(dateStr), JSON.stringify(log));
 
-        if (hasAllRoutineEntries) {
-            localStorage.setItem(flagKey, "true");
-        }
+                if (window.PegasusInventory?.updateUI) {
+                    window.PegasusInventory.updateUI();
+                }
 
-        if (changed) {
-            console.log("🚀 DIET: Injecting / reconciling daily baseline...");
-            localStorage.setItem(this.getFoodLogKey(dateStr), JSON.stringify(log));
-
-            if (window.PegasusInventory?.updateUI) {
-                window.PegasusInventory.updateUI();
+                return true;
             }
 
-            return true;
+            return false;
+        } finally {
+            delete this._routineGuardLocks[dateStr];
         }
-
-        return false;
     },
 
     add: async function(n, k, p) {
@@ -315,8 +368,25 @@ window.PegasusDiet = {
         const dateStr = this.getStrictDateStr();
         const suppressedRoutineNames = new Set(this.getSuppressedRoutineNames(dateStr));
 
+        let log = this.getLog(dateStr);
+        const dedupeBeforeAdd = this.dedupeRoutineLog(dateStr, log, true);
+        log = dedupeBeforeAdd.log;
+
+        if (dedupeBeforeAdd.removed.length) {
+            localStorage.setItem(this.getFoodLogKey(dateStr), JSON.stringify(log));
+        }
+
         if (this.isRoutineName(cleanName)) {
             if (suppressedRoutineNames.has(cleanName)) return false;
+
+            const alreadyExists = log.some(entry => this.normalizeRoutineName(entry?.name) === this.normalizeRoutineName(cleanName));
+            if (alreadyExists) {
+                localStorage.setItem("pegasus_routine_injected_" + dateStr, "true");
+                this.unsuppressRoutineName(dateStr, cleanName);
+                this.updateUI();
+                return false;
+            }
+
             this.unsuppressRoutineName(dateStr, cleanName);
         }
 
@@ -330,8 +400,6 @@ window.PegasusDiet = {
             });
             localStorage.setItem('kouki_agreement_log', JSON.stringify(agreementLog));
         }
-
-        let log = this.getLog(dateStr);
 
         log.unshift({
             name: cleanName,

@@ -30,7 +30,7 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=262">
+    <link rel="stylesheet" href="style.css?v=263">
 </head>
 <body>
 
@@ -614,7 +614,7 @@
     <script src="../weightTracker.js"></script>
 <script src="../adaptiveTypography.js"></script>
 
-    <script src="diet-mobile.js"></script>
+    <script src="diet-mobile.js?v=263"></script>
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
@@ -707,31 +707,20 @@
     }
 
     async function reconcileMobileDailyRoutine() {
-        const dateStr = getMobileDateStr();
-        const logKey = getMobileFoodLogKey(dateStr);
-        const log = window.PegasusDiet?.getLog
-            ? (window.PegasusDiet.getLog(dateStr) || [])
-            : JSON.parse(localStorage.getItem(logKey) || "[]");
-
-        const hasYogurt = log.some(item => item?.name === "Γιαούρτι 2% + Whey (Ρουτίνα)");
-        const hasEggs = log.some(item => item?.name === "3 Αυγά (Ρουτίνα)");
-        const hasCreatine = log.some(item => item?.name === "Κρεατίνη 5g (Ρουτίνα)");
-
-        if (!window.PegasusDiet?.add) return;
-
-        if (!hasYogurt) {
-            await window.PegasusDiet.add("Γιαούρτι 2% + Whey (Ρουτίνα)", 250, 35);
+        // PEGASUS 263: one single idempotent routine path.
+        // Older code added routine items here manually while diet-mobile also reconciled them,
+        // which could duplicate entries during auto-unlock + cloud pull races.
+        try {
+            if (window.PegasusDiet?.checkDailyRoutine) {
+                const changed = window.PegasusDiet.checkDailyRoutine();
+                if (changed && window.PegasusCloud?.push) {
+                    setTimeout(() => window.PegasusCloud.push(true), 250);
+                }
+            }
+            window.PegasusInventory?.updateUI?.();
+        } catch (e) {
+            console.warn("PEGASUS MOBILE: Safe routine reconciliation skipped.", e);
         }
-
-        if (!hasEggs) {
-            await window.PegasusDiet.add("3 Αυγά (Ρουτίνα)", 210, 18);
-        }
-
-        if (!hasCreatine) {
-            await window.PegasusDiet.add("Κρεατίνη 5g (Ρουτίνα)", 0, 0);
-        }
-
-        window.PegasusInventory?.updateUI?.();
     }
 
     function openView(id) {
@@ -1309,7 +1298,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.36.262')
+                navigator.serviceWorker.register('../sw.js?v=3.36.263')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         // No forced reg.update() on every open; this keeps refresh fast after the first local download.

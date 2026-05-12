@@ -1,3 +1,11 @@
+
+PEGASUS 263 - Daily Routine Dedupe Guard
+- Fixed mobile daily routine double-injection during auto-unlock/cloud-pull races.
+- Removed the separate mobile.html manual routine injector; mobile now uses the idempotent diet-mobile reconciliation path only.
+- Added routine duplicate cleanup before mobile Diet render/add, with inventory restoration for extra duplicate routine entries.
+- Added desktop addFoodItem routine guard so PC scheduled routine timeouts cannot duplicate the same routine item.
+- Cache bumped to 263.
+
 PEGASUS 262 - EXACT MOBILE GHOST BOUNDARY
 
 - Mobile-only shell refinement after v261.

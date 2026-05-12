@@ -322,11 +322,71 @@ window.updateFoodUI = function() {
     if (typeof window.renderKoukiMenu === "function") window.renderKoukiMenu();
 };
 
+window.PegasusRoutineNames = window.PegasusRoutineNames || [
+    "Γιαούρτι 2% + Whey (Ρουτίνα)",
+    "3 Αυγά (Ρουτίνα)",
+    "Πρωτεΐνη 1 Scoop (Ρουτίνα)",
+    "Κρεατίνη 5g (Ρουτίνα)"
+];
+
+window.normalizePegasusRoutineName = window.normalizePegasusRoutineName || function(value) {
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ");
+};
+
+window.isPegasusRoutineName = window.isPegasusRoutineName || function(value) {
+    const clean = window.normalizePegasusRoutineName(value);
+    return window.PegasusRoutineNames.some(name => window.normalizePegasusRoutineName(name) === clean);
+};
+
+window.dedupePegasusRoutineLog = window.dedupePegasusRoutineLog || function(foodLog) {
+    const routineSet = new Set(window.PegasusRoutineNames.map(window.normalizePegasusRoutineName));
+    const seen = new Set();
+    const cleaned = [];
+    const removed = [];
+
+    (Array.isArray(foodLog) ? foodLog : []).forEach(item => {
+        const clean = window.normalizePegasusRoutineName(item?.name);
+        if (routineSet.has(clean)) {
+            if (seen.has(clean)) {
+                removed.push(item);
+                return;
+            }
+            seen.add(clean);
+        }
+        cleaned.push(item);
+    });
+
+    return { cleaned, removed };
+};
+
 window.addFoodItem = function(name, kcal, protein) {
     const dateStr = window.getStrictDateStr();
     const logPrefix = M?.nutrition?.log_prefix || "food_log_";
     const logKey = logPrefix + dateStr;
     let foodLog = JSON.parse(localStorage.getItem(logKey) || "[]");
+
+    const routineDedupe = window.dedupePegasusRoutineLog(foodLog);
+    foodLog = routineDedupe.cleaned;
+
+    if (routineDedupe.removed.length) {
+        localStorage.setItem(logKey, JSON.stringify(foodLog));
+        console.warn(`🧹 PEGASUS PC: Removed ${routineDedupe.removed.length} duplicate routine entries before add.`);
+    }
+
+    if (window.isPegasusRoutineName(name)) {
+        const cleanName = window.normalizePegasusRoutineName(name);
+        const alreadyExists = foodLog.some(item => window.normalizePegasusRoutineName(item?.name) === cleanName);
+        if (alreadyExists) {
+            localStorage.setItem("pegasus_routine_injected_" + dateStr, "true");
+            window.updateFoodUI();
+            return false;
+        }
+    }
 
     foodLog.unshift({
         name: name,
@@ -339,7 +399,7 @@ window.addFoodItem = function(name, kcal, protein) {
     if (window.PegasusInventoryPC) {
         window.PegasusInventoryPC.processEntry(name);
     } else {
-        if (name.toLowerCase().includes("πρωτεΐνη") && window.consumeSupp) {
+        if (String(name || "").toLowerCase().includes("πρωτεΐνη") && window.consumeSupp) {
             window.consumeSupp('prot', 30, false);
         }
     }
@@ -351,6 +411,7 @@ window.addFoodItem = function(name, kcal, protein) {
 
     window.updateFoodUI();
     if (window.PegasusCloud) window.PegasusCloud.push(true);
+    return true;
 };
 
 window.deleteFoodItem = function(index) {
