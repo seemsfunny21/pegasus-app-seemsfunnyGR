@@ -1,7 +1,7 @@
 /* ==========================================================================
-   PEGASUS REPORTING SYSTEM - V4.4.237 (MORNING REPORT + FULL BACKUP)
+   PEGASUS REPORTING SYSTEM - V4.5.265 (EMAIL SAFE DISPATCH + MOBILE SUPPORT)
    Protocol: Daily Send Lock, Syntax Validation & Date Padding Alignment
-   Status: FINAL STABLE | ADDED: INLINE DAILY USER-DATA BACKUP
+   Status: FINAL STABLE | FIXED: EMAILJS READY WAIT + SAFE BACKUP SIZE
    ========================================================================== */
 
 // 🛡️ Global Safe Declaration
@@ -12,6 +12,80 @@ const PegasusReporting = {
     pendingReportKey: M?.system?.pendingReport || "pegasus_pending_report",
     historyKey: M?.workout?.weekly_history || "pegasus_weekly_history",
     lastSentKey: M?.system?.lastEmailSentDate || "pegasus_last_email_sent_date",
+    emailServiceId: "service_4znxhn4",
+    emailTemplateId: "template_e1cqkme",
+    emailPublicKey: "qsfyDrneUHP7zEFui",
+    emailStatusKey: "pegasus_last_email_status_v1",
+    sendingLockKey: "pegasus_email_sending_lock_v1",
+    maxInlineBackupChars: 8000,
+    maxAdviceChars: 12000,
+    _emailInitDone: false,
+
+    setEmailStatus: function(status, detail = {}) {
+        try {
+            localStorage.setItem(this.emailStatusKey, JSON.stringify({
+                status,
+                detail,
+                at: new Date().toISOString()
+            }));
+        } catch (_) {}
+    },
+
+    markEmailButton: function(state) {
+        const btn = document.getElementById('btnManualEmail');
+        if (!btn) return;
+        if (state === 'sending') {
+            btn.style.background = '#ffb300';
+            btn.style.color = '#000';
+            btn.textContent = 'ΣΤΕΛΝΕΤΑΙ';
+        } else if (state === 'success') {
+            btn.style.background = '#4CAF50';
+            btn.style.color = '#000';
+            btn.textContent = 'ΕΠΙΤΥΧΙΑ';
+            setTimeout(() => {
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.textContent = 'EMAIL';
+            }, 3000);
+        } else if (state === 'error') {
+            btn.style.background = '#ff4444';
+            btn.style.color = '#fff';
+            btn.textContent = 'ΣΦΑΛΜΑ';
+            setTimeout(() => {
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.textContent = 'EMAIL';
+            }, 3500);
+        }
+    },
+
+    ensureEmailReady: function(timeoutMs = 8000) {
+        return new Promise((resolve) => {
+            const start = Date.now();
+            const tryInit = () => {
+                if (typeof window.emailjs !== 'undefined' || typeof emailjs !== 'undefined') {
+                    try {
+                        const api = window.emailjs || emailjs;
+                        if (!this._emailInitDone && api?.init) {
+                            api.init(this.emailPublicKey);
+                            this._emailInitDone = true;
+                        }
+                        resolve(true);
+                    } catch (e) {
+                        console.warn('⚠️ PEGASUS EMAIL: EmailJS init warning.', e);
+                        resolve(true);
+                    }
+                    return;
+                }
+                if (Date.now() - start >= timeoutMs) {
+                    resolve(false);
+                    return;
+                }
+                setTimeout(tryInit, 250);
+            };
+            tryInit();
+        });
+    },
 
     getTodayDateParts: function(dateObj = new Date()) {
         const d = String(dateObj.getDate()).padStart(2, '0');
@@ -204,28 +278,27 @@ const PegasusReporting = {
             }
 
             const packed = window.PegasusBackup?.stringifyForEmail
-                ? window.PegasusBackup.stringifyForEmail(snapshot)
-                : { inline: JSON.stringify(snapshot), chars: JSON.stringify(snapshot).length, bytes: JSON.stringify(snapshot).length, truncated: false };
+                ? window.PegasusBackup.stringifyForEmail(snapshot, this.maxInlineBackupChars)
+                : { inline: JSON.stringify(snapshot).slice(0, this.maxInlineBackupChars), chars: JSON.stringify(snapshot).length, bytes: JSON.stringify(snapshot).length, truncated: JSON.stringify(snapshot).length > this.maxInlineBackupChars };
 
             const keyCount = snapshot?.meta?.keyCount || Object.keys(snapshot.localStorage || {}).length;
+            const largestKeys = Array.isArray(snapshot?.meta?.largestKeys)
+                ? snapshot.meta.largestKeys.slice(0, 8).map(k => `${k.key || '?'}:${k.bytes || 0}b`).join(', ')
+                : '';
             const backupHeader = [
                 "",
-                "================ PEGASUS DAILY BACKUP ================",
+                "==== PEGASUS DAILY BACKUP SUMMARY ====" ,
                 `Ημερομηνία report: ${reportDate}`,
                 `Schema: ${snapshot.schema || "PEGASUS_BACKUP_V237"}`,
                 `Κλειδιά δεδομένων: ${keyCount}`,
                 `Μέγεθος JSON: ${packed.bytes} bytes / ${packed.chars} chars`,
-                packed.truncated ? "ΠΡΟΣΟΧΗ: Το backup κόπηκε λόγω μεγέθους email. Κάνε και χειροκίνητο export αν χρειάζεται πλήρες αρχείο με φωτογραφίες." : "Πλήρες inline backup χρήστη μέσα στο email.",
-                "Δεν περιλαμβάνονται PIN, master keys, API keys, runtime logs ή παλιά backup.",
-                "---------------- BACKUP JSON START ----------------",
-                packed.inline,
-                "----------------- BACKUP JSON END -----------------"
-            ].join("\n");
+                "Email-safe mode: το email κρατά μικρό summary για να μην μπλοκάρεται η αποστολή.",
+                largestKeys ? `Μεγαλύτερα keys: ${largestKeys}` : "",
+                "Δεν περιλαμβάνονται PIN, master keys, API keys, runtime logs ή παλιά backup."
+            ].filter(Boolean).join("\n");
 
-            params.backup_summary = `PEGASUS backup: ${keyCount} keys | ${packed.bytes} bytes | truncated=${packed.truncated ? "YES" : "NO"}`;
-            const compactBackupParam = packed.chars <= 50000
-                ? packed.inline
-                : `Backup is included inside nutrition_advice. Size=${packed.bytes} bytes, keys=${keyCount}, truncated=${packed.truncated ? "YES" : "NO"}.`;
+            params.backup_summary = `PEGASUS backup summary: ${keyCount} keys | ${packed.bytes} bytes | email_safe=YES`;
+            const compactBackupParam = String(packed.inline || '').slice(0, this.maxInlineBackupChars);
             params.backup_json = compactBackupParam;
             params.pegasus_backup_json = compactBackupParam;
             params.backup_schema = snapshot.schema || "PEGASUS_BACKUP_V237";
@@ -233,12 +306,13 @@ const PegasusReporting = {
             params.backup_size_bytes = packed.bytes;
             params.backup_truncated = packed.truncated ? "YES" : "NO";
 
-            // This field is already used by the existing EmailJS template, so the
-            // backup will travel even if the template has not added {{backup_json}} yet.
+            // PEGASUS 265: do not inject huge JSON into the visible advice field.
+            // Large EmailJS params were the most likely reason reports stopped arriving.
             const originalAdvice = String(params.nutrition_advice || "Maintain macro balance");
-            params.nutrition_advice = originalAdvice.includes("PEGASUS DAILY BACKUP")
+            const mergedAdvice = originalAdvice.includes("PEGASUS DAILY BACKUP")
                 ? originalAdvice
-                : originalAdvice + backupHeader;
+                : originalAdvice + "\n" + backupHeader;
+            params.nutrition_advice = mergedAdvice.slice(0, this.maxAdviceChars);
 
             safePending.backupAttached = true;
             safePending.backupMeta = {
@@ -258,6 +332,53 @@ const PegasusReporting = {
         }
 
         return safePending;
+    },
+
+    sendPreparedReport: async function(pending, dateParts, options = {}) {
+        const now = Date.now();
+        const lockRaw = localStorage.getItem(this.sendingLockKey);
+        const lockTs = parseInt(lockRaw || '0', 10) || 0;
+        if (!options.forceSend && lockTs && (now - lockTs < 120000)) {
+            console.log('🛡️ PEGASUS EMAIL: send already in progress, skipping duplicate.');
+            return false;
+        }
+
+        localStorage.setItem(this.sendingLockKey, String(now));
+        this.markEmailButton('sending');
+        this.setEmailStatus('sending', { reportDate: pending?.reportDateDisplay || pending?.dateSent || dateParts?.display });
+
+        try {
+            const ready = await this.ensureEmailReady(9000);
+            if (!ready) {
+                console.warn('❌ PEGASUS EMAIL: EmailJS did not load. Pending report kept for retry.');
+                this.setEmailStatus('emailjs_not_loaded', { reportDate: pending?.reportDateDisplay || pending?.dateSent || dateParts?.display });
+                this.markEmailButton('error');
+                return false;
+            }
+
+            const api = window.emailjs || emailjs;
+            console.log('⏳ PEGASUS: Transmitting Morning Report via EmailJS...');
+            await api.send(this.emailServiceId, this.emailTemplateId, pending.templateParams);
+
+            console.log('✅ PEGASUS: Morning Report Sent Successfully.');
+            localStorage.setItem(this.lastSentKey, dateParts.subjectSafe);
+            localStorage.removeItem(this.pendingReportKey);
+            localStorage.removeItem(this.sendingLockKey);
+            this.setEmailStatus('sent', { reportDate: pending?.reportDateDisplay || pending?.dateSent || dateParts?.display });
+            this.markEmailButton('success');
+
+            if (window.PegasusCloud?.push) {
+                try { window.PegasusCloud.push(true); } catch (_) {}
+            }
+            return true;
+        } catch (err) {
+            localStorage.removeItem(this.sendingLockKey);
+            const message = err?.text || err?.message || String(err || 'unknown');
+            console.error('❌ PEGASUS: Email Error', err);
+            this.setEmailStatus('error', { message, reportDate: pending?.reportDateDisplay || pending?.dateSent || dateParts?.display });
+            this.markEmailButton('error');
+            return false;
+        }
     },
 
     checkAndSendMorningReport: function(forceSend = false) {
@@ -306,35 +427,7 @@ const PegasusReporting = {
             console.warn("⚠️ PEGASUS REPORT: Could not persist backup-enriched pending report.", e);
         }
 
-        if (typeof emailjs !== 'undefined') {
-            console.log("⏳ PEGASUS: Transmitting Morning Report + Daily Backup to Cloud Server...");
-
-            emailjs.send('service_4znxhn4', 'template_e1cqkme', pending.templateParams)
-                .then(() => {
-                    console.log("✅ PEGASUS: Morning Report Sent Successfully.");
-
-                    // 🔒 Κλειδώνουμε το σύστημα για τη σημερινή μέρα
-                    localStorage.setItem(this.lastSentKey, dateParts.subjectSafe);
-                    localStorage.removeItem(this.pendingReportKey);
-
-                    const btn = document.getElementById('btnManualEmail');
-                    if (btn) {
-                        btn.style.background = '#4CAF50';
-                        btn.style.color = '#000';
-                        btn.textContent = 'ΕΠΙΤΥΧΙΑ';
-                        setTimeout(() => {
-                            btn.style.background = '';
-                            btn.style.color = '';
-                            btn.textContent = 'EMAIL';
-                        }, 3000);
-                    }
-                })
-                .catch(err => {
-                    console.error("❌ PEGASUS: Email Error", err);
-                });
-        } else {
-            console.warn("PEGASUS: EmailJS not loaded. Sending failed.");
-        }
+        this.sendPreparedReport(pending, dateParts, { forceSend });
     }
 };
 

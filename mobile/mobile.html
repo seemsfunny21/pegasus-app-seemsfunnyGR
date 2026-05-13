@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v18.61</title>
+    <title>Pegasus Mobile v18.65</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -30,7 +30,7 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=263">
+    <link rel="stylesheet" href="style.css?v=266">
 </head>
 <body>
 
@@ -40,7 +40,9 @@
             <div style="color:#00ff41; font-weight:900; margin-bottom:5px; letter-spacing:1px; font-size: 20px;">PEGASUS OS</div>
             <div style="color:#555; font-size: 10px; font-weight: 800; margin-bottom: 25px; letter-spacing: 2px;">ΑΣΦΑΛΗΣ ΤΑΥΤΟΠΟΙΗΣΗ</div>
             <input type="password" id="pinInput" style="font-size:32px; letter-spacing:12px; border-color: #333; margin-bottom: 12px;" inputmode="numeric" maxlength="4" placeholder="••••">
-            <input type="password" id="masterKeyInput" style="font-size:14px; letter-spacing:2px; border-color:#333; margin-bottom: 12px; text-align:center;" autocomplete="off" placeholder="MASTER KEY">
+            <input type="password" id="masterKeyInput" name="pegasus-master-key" data-pegasus-master-key="true" style="font-size:14px; letter-spacing:2px; border-color:#333; margin-bottom: 8px; text-align:center;" autocomplete="current-password" placeholder="MASTER KEY">
+            <div id="masterKeySaveHint" style="color:#666; font-size:9px; font-weight:800; min-height:12px; margin-bottom:6px; letter-spacing:.5px; line-height:1.35;"></div>
+            <button id="forgetMasterKeyBtn" type="button" onclick="window.PegasusMobileSavedMasterKey?.forgetSavedMasterKey?.()" style="display:none; margin-bottom:10px; background:transparent; color:#ffb300; border:1px solid rgba(255,179,0,.45); border-radius:10px; padding:7px 9px; font-size:9px; font-weight:900;">ΔΙΑΓΡΑΦΗ ΑΠΟΘΗΚΕΥΜΕΝΟΥ MASTER KEY</button>
             <div style="color:#555; font-size:10px; font-weight:800; margin-bottom:12px; letter-spacing:1px;">PIN + MASTER KEY ΜΙΑ ΦΟΡΑ ΤΗΝ ΗΜΕΡΑ · ΕΠΑΝΑΦΟΡΑ ΜΕΤΑ ΤΙΣ 07:00</div>
             <div id="pinError" style="color:#ff4444; font-size:11px; font-weight:800; min-height:14px; margin-bottom:12px;"></div>
             <button class="primary-btn" onclick="attemptVaultUnlock()" style="font-size: 14px; padding: 20px;">ΑΠΑΣΦΑΛΙΣΗ</button>
@@ -613,6 +615,9 @@
     <script src="../cloudSync.js"></script>
     <script src="../weightTracker.js"></script>
 <script src="../adaptiveTypography.js"></script>
+    <script src="../backup.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" defer></script>
+    <script src="../reporting.js?v=266"></script>
 
     <script src="diet-mobile.js?v=263"></script>
     <script src="cardio-mobile.js"></script>
@@ -647,6 +652,207 @@
     window._pegasusMobileSyncTimer = null;
     window._pegasusMobileSyncBusy = false;
     window._pegasusLastUiRefreshTs = 0;
+
+    // Integrated saved MASTER KEY helper (merged from former masterkey-save-mobile.js in v266).
+    /* ============================================================================
+       PEGASUS MOBILE SAVED MASTER KEY - v1.0.266
+       Purpose: local-only optional master key save for mobile PIN modal
+       Notes: stores ONLY the master key on this device; never syncs to cloud.
+       ============================================================================ */
+    (function installPegasusMobileSavedMasterKey() {
+        if (window.PegasusMobileSavedMasterKey?.version === '1.0.266') return;
+
+        const STORAGE_KEY = 'pegasus_mobile_saved_master_key_v1';
+        const SECRET_KEY = 'pegasus_mobile_saved_master_key_secret_v1';
+        const DISMISSED_KEY = 'pegasus_mobile_saved_master_key_dismissed_session_v1';
+
+        const textEncoder = new TextEncoder();
+        const textDecoder = new TextDecoder();
+
+        function hasCrypto() {
+            return !!(window.crypto?.subtle && window.crypto?.getRandomValues);
+        }
+
+        function bytesToBase64(bytes) {
+            let binary = '';
+            new Uint8Array(bytes).forEach(b => binary += String.fromCharCode(b));
+            return btoa(binary);
+        }
+
+        function base64ToBytes(text) {
+            const binary = atob(String(text || ''));
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes;
+        }
+
+        function getOrCreateSecret() {
+            let secret = localStorage.getItem(SECRET_KEY);
+            if (!secret) {
+                const bytes = new Uint8Array(32);
+                crypto.getRandomValues(bytes);
+                secret = bytesToBase64(bytes);
+                localStorage.setItem(SECRET_KEY, secret);
+            }
+            return secret;
+        }
+
+        async function getCryptoKey() {
+            const secret = getOrCreateSecret();
+            const hash = await crypto.subtle.digest('SHA-256', textEncoder.encode(secret));
+            return crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+        }
+
+        async function encryptMasterKey(masterKey) {
+            if (!hasCrypto()) throw new Error('crypto_unavailable');
+            const iv = new Uint8Array(12);
+            crypto.getRandomValues(iv);
+            const key = await getCryptoKey();
+            const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, textEncoder.encode(masterKey));
+            return {
+                v: 1,
+                alg: 'AES-GCM-local-device',
+                iv: bytesToBase64(iv),
+                data: bytesToBase64(encrypted),
+                createdAt: new Date().toISOString(),
+                localOnly: true
+            };
+        }
+
+        async function decryptMasterKey(payload) {
+            if (!payload || !payload.iv || !payload.data || !hasCrypto()) return '';
+            const key = await getCryptoKey();
+            const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: base64ToBytes(payload.iv) }, key, base64ToBytes(payload.data));
+            return textDecoder.decode(plain);
+        }
+
+        function readPayload() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (_) { return null; }
+        }
+
+        function getEls() {
+            return {
+                master: document.getElementById('masterKeyInput'),
+                hint: document.getElementById('masterKeySaveHint'),
+                forget: document.getElementById('forgetMasterKeyBtn')
+            };
+        }
+
+        function setHint(text, tone = 'muted') {
+            const { hint, forget } = getEls();
+            if (!hint) return;
+            const color = tone === 'ok' ? '#00ff41' : (tone === 'warn' ? '#ffb300' : '#666');
+            hint.textContent = text || '';
+            hint.style.color = color;
+            if (forget) forget.style.display = readPayload() ? 'inline-block' : 'none';
+        }
+
+        async function getSavedMasterKey() {
+            const payload = readPayload();
+            if (!payload) return '';
+            try { return await decryptMasterKey(payload); } catch (e) {
+                console.warn('PEGASUS MASTER KEY SAVE: saved key could not be decrypted; removing it.', e);
+                forgetSavedMasterKey(false);
+                return '';
+            }
+        }
+
+        async function prefillIfAvailable() {
+            const { master } = getEls();
+            if (!master) return false;
+            const saved = await getSavedMasterKey();
+            if (!saved) {
+                setHint('Μπορείς να αποθηκεύσεις μόνο το MASTER KEY σε αυτή τη συσκευή μετά από επιτυχές unlock.', 'muted');
+                return false;
+            }
+            if (!String(master.value || '').trim()) master.value = saved;
+            master.setAttribute('autocomplete', 'current-password');
+            master.setAttribute('name', 'pegasus-master-key');
+            setHint('MASTER KEY αποθηκευμένο μόνο σε αυτή τη συσκευή. Γράφεις μόνο PIN.', 'ok');
+            return true;
+        }
+
+        async function saveMasterKey(masterKey) {
+            const clean = String(masterKey || '').trim();
+            if (!clean || clean.length < 4) return false;
+            const payload = await encryptMasterKey(clean);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            localStorage.removeItem(DISMISSED_KEY);
+            await prefillIfAvailable();
+            return true;
+        }
+
+        function forgetSavedMasterKey(showAlert = true) {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(SECRET_KEY);
+            localStorage.removeItem(DISMISSED_KEY);
+            const { master } = getEls();
+            if (master) master.value = '';
+            setHint('Το αποθηκευμένο MASTER KEY διαγράφηκε από αυτή τη συσκευή.', 'warn');
+            if (showAlert) alert('✅ Διαγράφηκε το αποθηκευμένο MASTER KEY από αυτή τη συσκευή.');
+        }
+
+        async function afterSuccessfulUnlock(masterKey) {
+            const clean = String(masterKey || '').trim();
+            if (!clean || clean.length < 4 || !hasCrypto()) return false;
+            const existing = await getSavedMasterKey();
+            if (existing && existing === clean) {
+                await prefillIfAvailable();
+                return true;
+            }
+            if (sessionStorage.getItem(DISMISSED_KEY) === '1') return false;
+            const ok = confirm(
+                'Θέλεις να αποθηκευτεί ΜΟΝΟ το MASTER KEY σε αυτό το κινητό;\n\n' +
+                'Δεν αποθηκεύεται το PIN.\n' +
+                'Δεν ανεβαίνει στο cloud.\n' +
+                'Την επόμενη φορά θα γράφεις μόνο PIN.'
+            );
+            if (!ok) {
+                sessionStorage.setItem(DISMISSED_KEY, '1');
+                return false;
+            }
+            try {
+                await saveMasterKey(clean);
+                alert('✅ Αποθηκεύτηκε το MASTER KEY μόνο σε αυτή τη συσκευή.');
+                return true;
+            } catch (e) {
+                console.warn('PEGASUS MASTER KEY SAVE: save failed.', e);
+                alert('Δεν μπόρεσε να αποθηκευτεί με ασφάλεια το MASTER KEY σε αυτή τη συσκευή.');
+                return false;
+            }
+        }
+
+        function installPasswordManagerHints() {
+            const { master } = getEls();
+            if (!master) return;
+            master.setAttribute('autocomplete', 'current-password');
+            master.setAttribute('name', 'pegasus-master-key');
+            master.setAttribute('data-pegasus-master-key', 'true');
+        }
+
+        function init() {
+            installPasswordManagerHints();
+            prefillIfAvailable();
+            setInterval(() => {
+                const modal = document.getElementById('pinModal');
+                if (modal && modal.style.display !== 'none') prefillIfAvailable();
+            }, 1200);
+        }
+
+        window.PegasusMobileSavedMasterKey = {
+            version: '1.0.266',
+            afterSuccessfulUnlock,
+            prefillIfAvailable,
+            saveMasterKey,
+            forgetSavedMasterKey,
+            hasSaved: () => !!readPayload()
+        };
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+        else init();
+
+        console.log('🔑 PEGASUS MOBILE SAVED MASTER KEY: ready v1.0.266');
+    })();
 
     function getMobileDateStr() {
         if (typeof window.getPegasusTodayDateStr === "function") {
@@ -1160,6 +1366,11 @@
 
         if (success) {
             await window.PegasusMobileVault.finishUnlock("manual");
+            try {
+                await window.PegasusMobileSavedMasterKey?.afterSuccessfulUnlock?.(masterKey);
+            } catch (e) {
+                console.warn("PEGASUS MASTER KEY SAVE: post-unlock hook failed.", e);
+            }
         } else {
             if (errorDiv) errorDiv.textContent = "ΛΑΘΟΣ PIN / MASTER KEY";
             if (pinInput) pinInput.value = "";

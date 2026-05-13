@@ -1,3 +1,20 @@
+PEGASUS 266 - MERGED MOBILE MASTER KEY SAVE
+- Mobile saved MASTER KEY support is now integrated into mobile/mobile.html unlock flow.
+- Removed separate mobile/masterkey-save-mobile.js so the package does not grow with an extra module file.
+- Behavior unchanged: after successful PIN + MASTER KEY unlock, mobile can ask to save only the MASTER KEY locally on that device; PIN is not saved and nothing is synced to cloud.
+- Email report fixes from 265 are preserved.
+- Desktop unchanged.
+- Service worker cache bumped to 266.
+
+
+
+PEGASUS 265 - EMAIL REPORT FIX + MOBILE SAVED MASTER KEY
+- Fixed email report dispatch to wait for EmailJS before sending instead of failing if the CDN loads late.
+- Added EmailJS/reporting support to mobile so pending reports can be sent from the mobile app too.
+- Switched daily backup injection to email-safe summary mode so oversized backup JSON does not block report delivery.
+- Added local-only mobile saved MASTER KEY module. After a successful PIN + MASTER KEY unlock, Pegasus asks whether to save only the MASTER KEY on that device. PIN is never saved.
+- Added forget button for the saved mobile MASTER KEY.
+- Cache bump to 265.
 
 PEGASUS 263 - Daily Routine Dedupe Guard
 - Fixed mobile daily routine double-injection during auto-unlock/cloud-pull races.
