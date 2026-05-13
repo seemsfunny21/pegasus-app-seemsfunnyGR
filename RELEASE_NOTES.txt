@@ -410,3 +410,13 @@ PEGASUS 279 - Parking v269 direct map open restore
 - Kept the current safe Parking behavior: no auto-save on open, manual save only, 5-location history, address label when available.
 - Kept the stable “Χάρτης” button text and fixed font so adaptive typography does not change it every second.
 - Desktop unchanged.
+
+PEGASUS 281 - Parking Strict Street Labels
+- Parking keeps the v269/v279 map-opening flow that worked best on the user's APK/device.
+- Reverse geocoding is now strict: it shows a label only when a real street/road is found.
+- Broad locality-only labels like “Ιωάννινα” are no longer accepted as the car position.
+- If no street is available, Parking safely falls back to coordinates instead of showing a misleading city name.
+- Older saved broad labels are rechecked and either upgraded to street/number or hidden back to coordinates.
+- The “Χάρτης” label remains fixed/small in the 5-location history.
+- Mobile only. Desktop unchanged. No new files.
+- Cache bump to 281.

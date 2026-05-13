@@ -1,4 +1,4 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v4.0.280 (street name retry + v269 direct map open) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v4.1.281 (strict street-only labels + v269 direct map open) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
@@ -58,21 +58,31 @@
 
     function addressFromNominatim(data) {
         const a = data?.address || {};
-        const road = cleanAddressPart(a.road || a.pedestrian || a.footway || a.path || a.cycleway || a.neighbourhood || a.suburb || a.quarter);
+
+        // Strict street-only mode: do not accept city/locality/neighbourhood as a
+        // parking label, because it can misleadingly show only "Ιωάννινα" while
+        // the saved car position is on a specific street.
+        const road = cleanAddressPart(
+            a.road ||
+            a.pedestrian ||
+            a.footway ||
+            a.path ||
+            a.cycleway ||
+            a.residential ||
+            a.service ||
+            ''
+        );
         const number = cleanAddressPart(a.house_number);
-        const city = cleanAddressPart(a.city || a.town || a.village || a.municipality || a.county);
+        const city = cleanAddressPart(a.city || a.town || a.village || a.municipality || '');
 
         if (road && number && city) return `${road} ${number}, ${city}`;
         if (road && number) return `${road} ${number}`;
         if (road && city) return `${road}, ${city}`;
         if (road) return road;
 
-        const fallback = cleanAddressPart(data?.name || data?.display_name || '');
-        if (!fallback) return '';
-
-        // Keep only the first useful pieces so the Parking card stays compact.
-        const pieces = fallback.split(',').map(cleanAddressPart).filter(Boolean);
-        return pieces.slice(0, 3).join(', ');
+        // No road found: return empty and keep coordinates instead of showing a
+        // broad city/area label.
+        return '';
     }
 
 
@@ -80,13 +90,14 @@
         if (!data || typeof data !== 'object') return '';
         const road = cleanAddressPart(data.road || data.roadName || data.street || data.streetName || '');
         const number = cleanAddressPart(data.houseNumber || data.house_number || '');
-        const locality = cleanAddressPart(data.locality || data.city || data.principalSubdivision || data.countryName || '');
+        const locality = cleanAddressPart(data.locality || data.city || data.principalSubdivision || '');
 
         if (road && number && locality) return `${road} ${number}, ${locality}`;
         if (road && number) return `${road} ${number}`;
         if (road && locality) return `${road}, ${locality}`;
         if (road) return road;
-        if (locality) return locality;
+
+        // Never use locality-only labels like "Ιωάννινα" as the car position.
         return '';
     }
 
@@ -127,12 +138,21 @@
         }
     }
 
+    function hasVerifiedStreetLabel(item) {
+        const label = cleanAddressPart(item?.addressLabel || item?.streetLabel || '');
+        return !!label && !isCoordinateText(label) && item?.addressQuality === 'street';
+    }
+
     function needsAddressLookup(item) {
         if (!item || !hasCoords(item)) return false;
-        const street = cleanAddressPart(item.addressLabel || item.streetLabel || '');
-        if (street && !isCoordinateText(street)) return false;
+
+        // Re-check old saved broad labels that did not have a street-quality flag.
+        // This lets a previous "Ιωάννινα" label be replaced by a real road, or
+        // hidden back to coordinates if no road is available.
+        if (hasVerifiedStreetLabel(item)) return false;
+
         const label = displayLabel(item);
-        return !!item.addressPending || !label || isCoordinateText(label);
+        return !!item.addressPending || !label || isCoordinateText(label) || !item.addressQuality;
     }
 
     async function fetchJsonWithTimeout(url, parser, label) {
@@ -156,9 +176,14 @@
 
     function displayLabel(item) {
         if (!item) return '--';
-        const preferred = cleanAddressPart(item.addressLabel || item.streetLabel || item.label || item.loc);
-        if (preferred && !isCoordinateText(preferred)) return preferred;
+        const street = cleanAddressPart(item.addressLabel || item.streetLabel || '');
+        if (street && !isCoordinateText(street) && item.addressQuality === 'street') return street;
+
+        // If the saved label came from an older broad reverse-geocode result, do
+        // not show it as the car position. Coordinates are safer than a wrong city.
         if (hasCoords(item)) return formatCoords(item);
+
+        const preferred = cleanAddressPart(item.label || item.loc);
         return preferred || '--';
     }
 
@@ -254,6 +279,7 @@
                 streetLabel: cleanAddressPart(item.streetLabel || ''),
                 addressLabel: cleanAddressPart(item.addressLabel || ''),
                 addressSource: item.addressSource || '',
+                addressQuality: item.addressQuality || '',
                 addressPending: !!item.addressPending,
                 lat: gps ? lat : null,
                 lon: gps ? lon : null,
@@ -349,6 +375,7 @@
                 addressLabel: cleanLabel,
                 streetLabel: cleanLabel,
                 addressSource: source,
+                addressQuality: 'street',
                 addressPending: false
             };
             localStorage.setItem(LOC_KEY, JSON.stringify(updatedCurrent));
@@ -362,6 +389,7 @@
             addressLabel: cleanLabel,
             streetLabel: cleanLabel,
             addressSource: source,
+            addressQuality: 'street',
             addressPending: false
         } : old).slice(0, MAX_HISTORY);
         localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
@@ -383,6 +411,7 @@
             label: coords,
             addressLabel: '',
             streetLabel: '',
+            addressQuality: '',
             addressPending: true,
             lat, lon,
             accuracy: Number.isFinite(Number(c.accuracy)) ? Number(c.accuracy) : null,
@@ -400,13 +429,18 @@
 
         const attempts = [
             {
+                label: 'nominatim-el-street',
+                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=19&addressdetails=1&accept-language=el,en`,
+                parser: addressFromNominatim
+            },
+            {
                 label: 'nominatim-el',
                 url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=el,en`,
                 parser: addressFromNominatim
             },
             {
                 label: 'nominatim-en',
-                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=17&addressdetails=1&accept-language=en,el`,
+                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=en,el`,
                 parser: addressFromNominatim
             },
             {
@@ -445,10 +479,22 @@
                 markAddressFail(item);
                 const current = readCurrent();
                 if (current && Number(current.ts) === Number(item.ts)) {
-                    const updated = { ...current, addressPending: false };
+                    const updated = {
+                        ...current,
+                        addressPending: false,
+                        addressLabel: '',
+                        streetLabel: '',
+                        addressQuality: ''
+                    };
                     localStorage.setItem(LOC_KEY, JSON.stringify(updated));
                 }
-                const history = readHistory().map(old => Number(old.ts) === Number(item.ts) ? { ...old, addressPending: false } : old);
+                const history = readHistory().map(old => Number(old.ts) === Number(item.ts) ? {
+                    ...old,
+                    addressPending: false,
+                    addressLabel: '',
+                    streetLabel: '',
+                    addressQuality: ''
+                } : old);
                 localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
             }
             return readCurrent() || item;
@@ -640,5 +686,5 @@
         } catch (_) {}
     });
 
-    console.log('📍 PEGASUS PARKING: Street name retry + v269 direct map open active v4.0.280');
+    console.log('📍 PEGASUS PARKING: Strict street-only labels + v269 direct map open active v4.1.281');
 })();
