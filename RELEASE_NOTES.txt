@@ -1,3 +1,9 @@
+PEGASUS 275 - Parking direct map open fix
+- Mobile Parking keeps manual-save coordinates behavior from 274.
+- Fixed ΧΑΡΤΗΣ opening: Android now tries a Google Maps intent first so it can open the Maps app directly.
+- Added safe web fallback only if the app is not opened.
+- No auto location overwrite, no address lookup, no map image, no desktop change.
+
 PEGASUS 273 - Mobile Parking GPS Coordinates + Fixed Width
 - Parking mobile reverted from street/manual labels back to GPS coordinates.
 - Removed the manual area input/save UI from Parking.
@@ -349,3 +355,24 @@ PEGASUS 272 - Mobile Parking Clean Text + Manual Area
 - History now shows numbered clean cards with street/area, time/accuracy, and a direct map button.
 - Mobile only. Desktop unchanged. No new files.
 - Cache bump to 272.
+
+PEGASUS 274 - Mobile Parking Manual Save Only
+- Parking no longer captures GPS automatically when the Parking category opens.
+- This prevents accidental overwriting of the real car location when the user only opens Parking to check the saved place.
+- Parking remains coordinate-based, with no street lookup, no map preview, and no manual area field.
+- The user saves a new position only by pressing ΑΠΟΘΗΚΕΥΣΗ ΘΕΣΗΣ.
+- The last 5 local-only parking positions remain available in history.
+- The ΧΑΡΤΗΣ button still opens Google Maps web directly.
+- Mobile only. Desktop unchanged. No new files.
+- Cache bump to 274.
+
+
+PEGASUS 276 - Mobile Parking Street/Number Labels
+- Parking remains manual-save only: opening Parking does not overwrite the saved car position.
+- Saved GPS coordinates are converted to a readable street/address label when possible.
+- The Parking current card and 5-place history prefer street + number / street name instead of raw coordinates.
+- If reverse geocoding is unavailable, Parking safely falls back to coordinates.
+- Coordinates are still kept internally for the ΧΑΡΤΗΣ button and map navigation.
+- ΧΑΡΤΗΣ keeps the direct Google Maps app intent behavior from 275.
+- Mobile only. Desktop unchanged. No new files.
+- Cache bump to 276.

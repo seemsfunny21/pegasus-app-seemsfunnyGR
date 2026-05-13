@@ -200,12 +200,12 @@
         <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
         <div class="mini-card parking-main-card">
-            <span class="mini-label">ΑΥΤΟΜΑΤΗ ΘΕΣΗ PARKING</span>
-            <div id="parkingAutoStatus" class="parking-auto-status">Άνοιξε το Parking για αυτόματη αποθήκευση GPS.</div>
+            <span class="mini-label">ΘΕΣΗ PARKING</span>
+            <div id="parkingAutoStatus" class="parking-auto-status">Πάτα ΑΠΟΘΗΚΕΥΣΗ ΘΕΣΗΣ όταν παρκάρεις. Το άνοιγμα του Parking δεν αλλάζει τη θέση.</div>
             <div id="parkingLocationSummary" class="parking-location-summary"></div>
             <div class="compact-grid parking-actions">
                 <button class="secondary-btn parking-action-btn" onclick="window.PegasusParking.openCurrentMap()">ΧΑΡΤΗΣ</button>
-                <button class="primary-btn parking-action-btn" onclick="window.PegasusParking.captureCurrentLocation('manual')">ΕΝΗΜΕΡΩΣΗ</button>
+                <button class="primary-btn parking-action-btn" onclick="window.PegasusParking.captureCurrentLocation('manual')">ΑΠΟΘΗΚΕΥΣΗ ΘΕΣΗΣ</button>
             </div>
         </div>
         <div class="section-title">ΤΕΛΕΥΤΑΙΕΣ 5 ΘΕΣΕΙΣ</div>
@@ -643,7 +643,7 @@
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
-    <script src="parking-mobile.js?v=273"></script>
+    <script src="parking-mobile.js?v=276"></script>
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
     <script src="supplies-mobile.js"></script>
