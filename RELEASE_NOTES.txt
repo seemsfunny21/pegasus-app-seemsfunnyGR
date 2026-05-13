@@ -328,3 +328,14 @@ PEGASUS 271 - Mobile Parking Map 500 Fix
 - Fixes HTTP 500/server error shown when opening Parking map previews.
 - Parking still shows a visual map preview with centered pin and 5-place history thumbnails.
 - No new files. Mobile only. Desktop unchanged.
+
+
+PEGASUS 272 - Mobile Parking Clean Text + Manual Area
+- Reverted Parking mobile to a clean text-based view without map images/thumbnails.
+- Removed the OpenStreetMap tile preview after map image/server issues.
+- Parking still captures GPS automatically and keeps the latest 5 local-only positions.
+- Reverse geocoding still tries to show a street/area name instead of coordinates.
+- Added manual area/street entry: if the street name is not found, the user can write the location manually while keeping the saved GPS coordinates internally.
+- History now shows numbered clean cards with street/area, time/accuracy, and a direct map button.
+- Mobile only. Desktop unchanged. No new files.
+- Cache bump to 272.

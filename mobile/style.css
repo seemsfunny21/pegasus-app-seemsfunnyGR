@@ -1097,147 +1097,91 @@ body .ghost-nav-overlay,
     margin-bottom: 0 !important;
 }
 
-/* ===== PEGASUS PARKING OSM TILE MAP PREVIEW v271 ===== */
-.parking-map-preview {
+
+/* ===== PEGASUS PARKING CLEAN TEXT UI v272 ===== */
+.parking-location-summary {
     width: 100%;
     margin: 10px 0 12px;
 }
 
-.parking-map-shot {
-    position: relative;
-    display: block;
+.parking-current-card {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
     width: 100%;
-    min-height: 156px;
-    border: 1px solid rgba(255, 152, 0, 0.45);
+    padding: 12px;
+    border: 1px solid rgba(255, 152, 0, 0.42);
     border-radius: 18px;
-    overflow: hidden;
-    background: rgba(255, 152, 0, 0.08);
-    padding: 0;
-    cursor: pointer;
-    box-shadow: 0 0 18px rgba(255, 152, 0, 0.12);
+    background: rgba(255, 152, 0, 0.055);
 }
 
-.parking-osm-viewport {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    background: radial-gradient(circle at center, rgba(255, 179, 0, 0.12), rgba(0, 0, 0, 0.25));
+.parking-current-card.empty {
+    opacity: 0.85;
+    border-style: dashed;
 }
 
-.parking-osm-tiles {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 768px;
-    height: 768px;
-    will-change: transform;
-}
-
-.parking-osm-tile {
-    position: absolute;
-    width: 256px;
-    height: 256px;
-    display: block;
-    opacity: 0.96;
-    user-select: none;
-    pointer-events: none;
-}
-
-.parking-map-shot.small {
-    min-height: 74px;
+.parking-current-icon {
+    width: 42px;
+    height: 42px;
     border-radius: 14px;
-    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 152, 0, 0.12);
+    border: 1px solid rgba(255, 152, 0, 0.35);
+    font-size: 20px;
 }
 
-.parking-map-shot.map-failed .parking-osm-viewport {
-    display: none;
+.parking-current-body { min-width: 0; }
+
+.parking-current-title {
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 900;
+    overflow-wrap: anywhere;
 }
 
-.parking-map-shot.map-failed::after {
-    content: "Χάρτης μη διαθέσιμος";
-    position: absolute;
-    inset: 0;
+.parking-current-meta {
+    color: #ffb300;
+    font-size: 10px;
+    font-weight: 900;
+    margin-top: 4px;
+}
+
+.parking-current-hint {
+    color: #aaa;
+    font-size: 10px;
+    line-height: 1.35;
+    font-weight: 800;
+    margin-top: 5px;
+}
+
+.parking-history-card {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 9px;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255, 152, 0, 0.42);
+    border-radius: 18px;
+    background: rgba(255, 152, 0, 0.055);
+}
+
+.parking-history-index {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffb300;
-    font-size: 11px;
-    font-weight: 900;
-    background: rgba(255, 152, 0, 0.08);
-}
-
-.parking-map-pin {
-    position: absolute;
-    left: 50%;
-    top: 45%;
-    transform: translate(-50%, -50%);
-    font-size: 28px;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
-    pointer-events: none;
-}
-
-.parking-map-shot.small .parking-map-pin {
-    font-size: 18px;
-}
-
-.parking-map-caption {
-    position: absolute;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    padding: 7px 9px;
-    border-radius: 12px;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.68);
-    font-size: 11px;
-    font-weight: 900;
-    line-height: 1.25;
-    text-align: left;
-    backdrop-filter: blur(6px);
-}
-
-.parking-map-shot.small .parking-map-caption {
-    display: none;
-}
-
-.parking-map-fallback {
-    width: 100%;
-    min-height: 134px;
-    border: 1px dashed rgba(255, 152, 0, 0.45);
-    border-radius: 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    padding: 16px;
-    text-align: center;
-    color: #fff;
-    background: rgba(255, 152, 0, 0.06);
-}
-
-.parking-map-fallback span { font-size: 28px; }
-.parking-map-fallback strong { font-size: 12px; font-weight: 900; }
-.parking-map-fallback em { font-size: 10px; font-style: normal; color: #ffb300; font-weight: 800; }
-.parking-map-fallback.small { min-height: 74px; border-radius: 14px; padding: 8px; }
-.parking-map-fallback.small span { font-size: 18px; }
-.parking-map-fallback.small em { display: none; }
-
-.parking-history-card {
-    display: grid;
-    grid-template-columns: 96px minmax(0, 1fr);
-    gap: 10px;
-    align-items: stretch;
-    width: 100%;
-    padding: 8px;
-    border: 1px solid rgba(255, 152, 0, 0.42);
-    border-radius: 18px;
-    background: rgba(255, 152, 0, 0.055);
-    cursor: pointer;
-}
-
-.parking-history-map {
-    min-width: 0;
+    background: rgba(255, 152, 0, 0.10);
+    border: 1px solid rgba(255, 152, 0, 0.32);
+    font-size: 12px;
+    font-weight: 950;
 }
 
 .parking-history-info {
@@ -1259,5 +1203,19 @@ body .ghost-nav-overlay,
     color: #ffb300;
     font-size: 10px;
     font-weight: 900;
-    margin-top: 5px;
+    margin-top: 4px;
+}
+
+.parking-history-map-btn {
+    border: 1px solid rgba(255, 152, 0, 0.55);
+    border-radius: 12px;
+    padding: 8px 9px;
+    background: rgba(255, 152, 0, 0.10);
+    color: #ffb300;
+    font-size: 10px;
+    font-weight: 950;
+}
+
+.parking-history-map-btn:disabled {
+    opacity: 0.35;
 }

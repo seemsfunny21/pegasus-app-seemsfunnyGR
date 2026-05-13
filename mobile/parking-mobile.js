@@ -1,4 +1,4 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v3.1.271 (OSM tile preview, no staticmap 500) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v3.2.272 (street labels + manual area, no map preview) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
@@ -28,16 +28,7 @@
             return new Date(Number(ts)).toLocaleString('el-GR', {
                 day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
             });
-        } catch (_) {
-            return '--';
-        }
-    }
-
-    function coordsLabel(lat, lon) {
-        const a = Number(lat);
-        const b = Number(lon);
-        if (!Number.isFinite(a) || !Number.isFinite(b)) return '';
-        return `${a.toFixed(5)}, ${b.toFixed(5)}`;
+        } catch (_) { return '--'; }
     }
 
     function isCoordinateLike(value) {
@@ -51,10 +42,10 @@
         if (address) return address;
 
         const raw = String(item.label || item.loc || '').trim();
-        if (raw && !isCoordinateLike(raw)) return raw;
+        if (raw && !isCoordinateLike(raw) && raw !== 'Εύρεση οδού...') return raw;
 
         if (item.addressStatus === 'pending') return 'Εύρεση οδού...';
-        if (Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lon))) return 'GPS θέση · οδός μη διαθέσιμη';
+        if (Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lon))) return 'GPS θέση · γράψε περιοχή αν δεν βρεθεί οδός';
         return raw || '--';
     }
 
@@ -82,99 +73,6 @@
         return Number.isFinite(lat) && Number.isFinite(lon);
     }
 
-    function tileX(lon, zoom) {
-        return (Number(lon) + 180) / 360 * Math.pow(2, zoom);
-    }
-
-    function tileY(lat, zoom) {
-        const rad = Number(lat) * Math.PI / 180;
-        return (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, zoom);
-    }
-
-    function clampTileY(y, zoom) {
-        const max = Math.pow(2, zoom) - 1;
-        return Math.max(0, Math.min(max, y));
-    }
-
-    function normalizeTileX(x, zoom) {
-        const n = Math.pow(2, zoom);
-        return ((x % n) + n) % n;
-    }
-
-    function osmTileUrl(x, y, zoom) {
-        const safeX = normalizeTileX(Number(x), zoom);
-        const safeY = clampTileY(Number(y), zoom);
-        return `https://tile.openstreetmap.org/${zoom}/${safeX}/${safeY}.png`;
-    }
-
-    function staticMapUrl(item, width = 640, height = 300, zoom = 17) {
-        // Kept only for backward compatibility with older console helpers.
-        // v271 no longer uses staticmap.openstreetmap.de because that service can return HTTP 500.
-        if (!hasCoords(item)) return '';
-        const lat = Number(item.lat).toFixed(6);
-        const lon = Number(item.lon).toFixed(6);
-        return googleMapsWebUrl({ lat: Number(lat), lon: Number(lon) });
-    }
-
-    function renderOsmTileMap(item, options = {}) {
-        const normalized = normalizeHistoryItem(item);
-        if (!hasCoords(normalized)) return '';
-
-        const lat = Number(normalized.lat);
-        const lon = Number(normalized.lon);
-        const zoom = options.small ? 16 : 17;
-        const floatX = tileX(lon, zoom);
-        const floatY = tileY(lat, zoom);
-        const centerX = Math.floor(floatX);
-        const centerY = Math.floor(floatY);
-        const centerPixelX = 256 + ((floatX - centerX) * 256);
-        const centerPixelY = 256 + ((floatY - centerY) * 256);
-
-        const tiles = [];
-        for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-                const x = centerX + dx;
-                const y = centerY + dy;
-                tiles.push(`
-                    <img class="parking-osm-tile" src="${osmTileUrl(x, y, zoom)}" alt="" loading="lazy" decoding="async"
-                         style="left:${(dx + 1) * 256}px; top:${(dy + 1) * 256}px;"
-                         onerror="this.closest('.parking-map-shot')?.classList.add('map-failed')">
-                `);
-            }
-        }
-
-        return `
-            <div class="parking-osm-viewport" aria-hidden="true">
-                <div class="parking-osm-tiles" style="transform: translate(calc(50% - ${centerPixelX.toFixed(2)}px), calc(50% - ${centerPixelY.toFixed(2)}px));">
-                    ${tiles.join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    function renderMapImage(item, options = {}) {
-        const normalized = normalizeHistoryItem(item);
-        const title = escapeHtml(displayLabel(normalized));
-        const mapHtml = renderOsmTileMap(normalized, options);
-        if (!mapHtml) {
-            return `
-                <div class="parking-map-fallback ${options.small ? 'small' : ''}">
-                    <span>📍</span>
-                    <strong>${title || 'Χειροκίνητη θέση'}</strong>
-                    <em>Δεν υπάρχει GPS εικόνα χάρτη</em>
-                </div>
-            `;
-        }
-
-        return `
-            <button class="parking-map-shot ${options.small ? 'small' : ''}" type="button" onclick="window.PegasusParking.openMapFromItemTs(${Number(normalized?.ts || 0)})" aria-label="Άνοιγμα χάρτη για ${title}">
-                ${mapHtml}
-                <span class="parking-map-pin">📍</span>
-                <span class="parking-map-caption">${title || 'Θέση parking'}</span>
-            </button>
-        `;
-    }
-
     function openMapDirect(item) {
         const url = googleMapsWebUrl(item);
         if (!url) return;
@@ -187,19 +85,11 @@
             const onVisibility = () => { if (document.hidden) pageHidden = true; };
             document.addEventListener('visibilitychange', onVisibility, { once: true });
 
-            try {
-                window.location.href = nativeUrl;
-            } catch (_) {
-                window.location.href = url;
-                return;
-            }
+            try { window.location.href = nativeUrl; } catch (_) { window.location.href = url; return; }
 
-            // If the APK/WebView does not handle geo:, fall back to Google Maps web.
             window.setTimeout(() => {
                 document.removeEventListener('visibilitychange', onVisibility);
-                if (!pageHidden && !document.hidden) {
-                    window.location.href = url;
-                }
+                if (!pageHidden && !document.hidden) window.location.href = url;
             }, 900);
             return;
         }
@@ -211,46 +101,39 @@
         if (!item) return null;
 
         if (typeof item === 'string') {
-            return {
-                loc: item,
-                label: item,
-                ts: Date.now(),
-                source: 'manual-legacy'
-            };
+            return { loc: item, label: item, address: item, street: item, ts: Date.now(), source: 'manual-legacy', addressStatus: 'manual', localOnly: true };
         }
 
         if (typeof item === 'object') {
             const lat = Number(item.lat);
             const lon = Number(item.lon);
-            const hasCoords = Number.isFinite(lat) && Number.isFinite(lon);
+            const hasGps = Number.isFinite(lat) && Number.isFinite(lon);
             const address = String(item.address || item.street || '').trim();
             const rawLabel = String(item.label || item.loc || '').trim();
-            const label = address || rawLabel || (hasCoords ? 'GPS θέση' : '');
-            if (!label && !hasCoords) return null;
+            const label = address || rawLabel || (hasGps ? 'GPS θέση' : '');
+            if (!label && !hasGps) return null;
 
             return {
                 loc: label,
                 label,
                 address: address || '',
                 street: String(item.street || address || '').trim(),
-                lat: hasCoords ? lat : null,
-                lon: hasCoords ? lon : null,
+                lat: hasGps ? lat : null,
+                lon: hasGps ? lon : null,
                 accuracy: Number.isFinite(Number(item.accuracy)) ? Number(item.accuracy) : null,
                 ts: Number(item.ts || item.capturedAt || Date.now()),
                 iso: item.iso || new Date(Number(item.ts || item.capturedAt || Date.now())).toISOString(),
                 source: item.source || 'parking',
-                addressStatus: item.addressStatus || (address ? 'ok' : (hasCoords ? 'pending' : 'manual')),
+                addressStatus: item.addressStatus || (address ? 'ok' : (hasGps ? 'pending' : 'manual')),
                 localOnly: true
             };
         }
-
         return null;
     }
 
     function readCurrent() {
         const raw = localStorage.getItem(LOC_KEY);
         if (!raw || raw === '[object Object]') return null;
-
         const parsed = safeParse(raw, raw);
         return normalizeHistoryItem(parsed);
     }
@@ -315,9 +198,7 @@
         const key = addressCacheKey(lat, lon);
         const cache = readAddressCache();
         const cached = cache[key];
-        if (cached?.address && Date.now() - Number(cached.ts || 0) < 14 * 24 * 60 * 60 * 1000) {
-            return cached.address;
-        }
+        if (cached?.address && Date.now() - Number(cached.ts || 0) < 14 * 24 * 60 * 60 * 1000) return cached.address;
 
         const controller = new AbortController();
         const timer = window.setTimeout(() => controller.abort(), 8000);
@@ -332,74 +213,28 @@
                 writeAddressCache(cache);
             }
             return address;
-        } finally {
-            window.clearTimeout(timer);
-        }
+        } finally { window.clearTimeout(timer); }
     }
 
-    function updateStoredAddress(baseItem, address) {
-        const normalized = normalizeHistoryItem(baseItem);
-        if (!normalized || !address) return;
-
-        const enriched = {
-            ...normalized,
-            loc: address,
-            label: address,
-            address,
-            street: address,
-            addressStatus: 'ok'
-        };
-
-        const current = readCurrent();
-        if (current && (current.ts === normalized.ts || samePlace(current, normalized))) {
-            localStorage.setItem(LOC_KEY, JSON.stringify(enriched));
-        }
-
-        const history = readHistory().map(old => {
-            if (old.ts === normalized.ts || samePlace(old, normalized)) return { ...old, ...enriched };
-            return old;
-        }).slice(0, MAX_HISTORY);
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-
-        try {
-            const lastPhone = safeParse(localStorage.getItem('pegasus_mobile_last_location_v1'), null);
-            if (lastPhone && Number(lastPhone.lat) === Number(normalized.lat) && Number(lastPhone.lon) === Number(normalized.lon)) {
-                lastPhone.address = address;
-                lastPhone.street = address;
-                localStorage.setItem('pegasus_mobile_last_location_v1', JSON.stringify(lastPhone));
-            }
-        } catch (_) {}
-
-        window.PegasusParking?.updateUI?.();
-    }
-
-    async function hydrateAddress(item) {
+    function writePhoneLastLocation(item) {
         const normalized = normalizeHistoryItem(item);
-        if (!normalized || addressInFlight) return normalized;
-        const lat = Number(normalized.lat);
-        const lon = Number(normalized.lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon) || normalized.address) return normalized;
-
-        addressInFlight = true;
+        if (!normalized || !hasCoords(normalized)) return;
         try {
-            const address = await reverseGeocode(lat, lon);
-            if (address) updateStoredAddress(normalized, address);
-            else {
-                const current = readCurrent();
-                if (current && (current.ts === normalized.ts || samePlace(current, normalized))) {
-                    current.addressStatus = 'failed';
-                    current.loc = displayLabel(current);
-                    current.label = current.loc;
-                    localStorage.setItem(LOC_KEY, JSON.stringify(current));
-                }
-            }
-        } catch (e) {
-            console.warn('PEGASUS PARKING: reverse geocode unavailable:', e?.message || e);
-        } finally {
-            addressInFlight = false;
-            window.PegasusParking?.updateUI?.();
-        }
-        return readCurrent() || normalized;
+            localStorage.setItem('pegasus_mobile_last_location_v1', JSON.stringify({
+                lat: normalized.lat,
+                lon: normalized.lon,
+                accuracy: normalized.accuracy || 0,
+                capturedAt: normalized.ts,
+                iso: normalized.iso || new Date(normalized.ts).toISOString(),
+                address: normalized.address || '',
+                street: normalized.street || '',
+                source: 'parking-auto',
+                localOnly: true,
+                sync: 'never'
+            }));
+            localStorage.setItem('pegasus_mobile_last_location_enabled_v1', 'true');
+            localStorage.setItem('pegasus_mobile_last_location_prompted_v1', 'true');
+        } catch (_) {}
     }
 
     function saveCurrent(item) {
@@ -414,28 +249,103 @@
         history = history.slice(0, MAX_HISTORY);
         localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
 
-        // Also update the local-only last phone location helper storage when GPS exists.
-        if (Number.isFinite(Number(normalized.lat)) && Number.isFinite(Number(normalized.lon))) {
-            try {
-                localStorage.setItem('pegasus_mobile_last_location_v1', JSON.stringify({
-                    lat: normalized.lat,
-                    lon: normalized.lon,
-                    accuracy: normalized.accuracy || 0,
-                    capturedAt: normalized.ts,
-                    iso: normalized.iso || new Date(normalized.ts).toISOString(),
-                    address: normalized.address || '',
-                    street: normalized.street || '',
-                    source: 'parking-auto',
-                    localOnly: true,
-                    sync: 'never'
-                }));
-                localStorage.setItem('pegasus_mobile_last_location_enabled_v1', 'true');
-                localStorage.setItem('pegasus_mobile_last_location_prompted_v1', 'true');
-            } catch (_) {}
-        }
-
+        writePhoneLastLocation(normalized);
         this.updateUI?.();
         return normalized;
+    }
+
+    function updateManualAddress(baseItem, manualText) {
+        const normalized = normalizeHistoryItem(baseItem);
+        const address = String(manualText || '').trim();
+        if (!address) return null;
+
+        const enriched = normalized ? {
+            ...normalized,
+            loc: address,
+            label: address,
+            address,
+            street: address,
+            addressStatus: 'manual'
+        } : {
+            loc: address,
+            label: address,
+            address,
+            street: address,
+            addressStatus: 'manual',
+            ts: Date.now(),
+            iso: new Date().toISOString(),
+            source: 'parking-manual-area',
+            localOnly: true
+        };
+
+        localStorage.setItem(LOC_KEY, JSON.stringify(enriched));
+
+        let matched = false;
+        let history = readHistory().map(old => {
+            if (normalized && (old.ts === normalized.ts || samePlace(old, normalized))) {
+                matched = true;
+                return { ...old, ...enriched };
+            }
+            return old;
+        });
+        if (!matched) history.unshift(enriched);
+        history = history.filter(Boolean).slice(0, MAX_HISTORY);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+
+        if (hasCoords(enriched)) writePhoneLastLocation(enriched);
+        window.PegasusParking?.updateUI?.();
+        return enriched;
+    }
+
+    function updateStoredAddress(baseItem, address) {
+        const normalized = normalizeHistoryItem(baseItem);
+        if (!normalized || !address) return;
+
+        // Do not overwrite a manual label with reverse-geocode text.
+        if (normalized.addressStatus === 'manual' && normalized.address) return;
+
+        const enriched = { ...normalized, loc: address, label: address, address, street: address, addressStatus: 'ok' };
+
+        const current = readCurrent();
+        if (current && (current.ts === normalized.ts || samePlace(current, normalized)) && current.addressStatus !== 'manual') {
+            localStorage.setItem(LOC_KEY, JSON.stringify(enriched));
+        }
+
+        const history = readHistory().map(old => {
+            if ((old.ts === normalized.ts || samePlace(old, normalized)) && old.addressStatus !== 'manual') return { ...old, ...enriched };
+            return old;
+        }).slice(0, MAX_HISTORY);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        writePhoneLastLocation(enriched);
+        window.PegasusParking?.updateUI?.();
+    }
+
+    async function hydrateAddress(item) {
+        const normalized = normalizeHistoryItem(item);
+        if (!normalized || addressInFlight) return normalized;
+        if (normalized.addressStatus === 'manual') return normalized;
+        const lat = Number(normalized.lat);
+        const lon = Number(normalized.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon) || normalized.address) return normalized;
+
+        addressInFlight = true;
+        try {
+            const address = await reverseGeocode(lat, lon);
+            if (address) updateStoredAddress(normalized, address);
+            else {
+                const current = readCurrent();
+                if (current && (current.ts === normalized.ts || samePlace(current, normalized))) {
+                    current.addressStatus = 'failed';
+                    localStorage.setItem(LOC_KEY, JSON.stringify(current));
+                }
+            }
+        } catch (e) {
+            console.warn('PEGASUS PARKING: reverse geocode unavailable:', e?.message || e);
+        } finally {
+            addressInFlight = false;
+            window.PegasusParking?.updateUI?.();
+        }
+        return readCurrent() || normalized;
     }
 
     function buildGpsItem(position, source = 'auto') {
@@ -445,13 +355,8 @@
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error('invalid_coordinates');
         const now = Date.now();
         return {
-            loc: 'Εύρεση οδού...',
-            label: 'Εύρεση οδού...',
-            address: '',
-            street: '',
-            addressStatus: 'pending',
-            lat,
-            lon,
+            loc: 'Εύρεση οδού...', label: 'Εύρεση οδού...', address: '', street: '', addressStatus: 'pending',
+            lat, lon,
             accuracy: Number.isFinite(Number(c.accuracy)) ? Number(c.accuracy) : null,
             ts: now,
             iso: new Date(now).toISOString(),
@@ -460,23 +365,36 @@
         };
     }
 
-    function renderCurrentMapPreview(item = readCurrent()) {
-        const el = document.getElementById('parkingMapPreview');
+    function renderCurrentSummary(item = readCurrent()) {
+        const el = document.getElementById('parkingLocationSummary');
         if (!el) return;
-
         const normalized = normalizeHistoryItem(item);
         if (!normalized) {
             el.innerHTML = `
-                <div class="parking-map-fallback">
-                    <span>🅿️</span>
-                    <strong>Δεν έχει αποθηκευτεί θέση parking</strong>
-                    <em>Μπες στο Parking για αυτόματο GPS.</em>
-                </div>
-            `;
+                <div class="parking-current-card empty">
+                    <div class="parking-current-icon">🅿️</div>
+                    <div>
+                        <div class="parking-current-title">Δεν έχει αποθηκευτεί θέση parking</div>
+                        <div class="parking-current-meta">Μπες στο Parking για αυτόματη GPS αποθήκευση.</div>
+                    </div>
+                </div>`;
             return;
         }
 
-        el.innerHTML = renderMapImage(normalized, { small: false });
+        const acc = Number.isFinite(Number(normalized.accuracy)) ? ` · ±${Math.round(Number(normalized.accuracy))}m` : '';
+        const hint = normalized.addressStatus === 'pending'
+            ? 'Γίνεται αναζήτηση οδού. Μπορείς να γράψεις χειροκίνητα περιοχή από κάτω.'
+            : (normalized.addressStatus === 'failed' ? 'Δεν βρέθηκε οδός. Γράψε χειροκίνητα περιοχή από κάτω.' : 'Αποθηκευμένο τοπικά στο κινητό.');
+
+        el.innerHTML = `
+            <div class="parking-current-card">
+                <div class="parking-current-icon">📍</div>
+                <div class="parking-current-body">
+                    <div class="parking-current-title">${escapeHtml(displayLabel(normalized))}</div>
+                    <div class="parking-current-meta">${escapeHtml(formatTime(normalized.ts))}${escapeHtml(acc)}</div>
+                    <div class="parking-current-hint">${escapeHtml(hint)}</div>
+                </div>
+            </div>`;
     }
 
     window.PegasusParking = {
@@ -484,34 +402,18 @@
             const inputEl = document.getElementById('parkingInput');
             const location = inputEl ? inputEl.value.trim() : '';
             if (!location) return;
-
-            const item = {
-                loc: location,
-                label: location,
-                address: location,
-                street: location,
-                addressStatus: 'manual',
-                ts: Date.now(),
-                iso: new Date().toISOString(),
-                source: 'parking-manual-note',
-                localOnly: true
-            };
-
-            saveCurrent.call(this, item);
+            const saved = updateManualAddress(readCurrent(), location);
             if (inputEl) inputEl.value = '';
-            setStatus('Η σημείωση parking κρατήθηκε τοπικά.', 'ok');
+            if (saved) setStatus(`Περιοχή parking:<br>📍 ${escapeHtml(displayLabel(saved))}`, 'ok');
         },
 
         captureCurrentLocation: function(source = 'auto') {
             if (inFlight) return Promise.resolve(readCurrent());
-
             if (!isGeoAvailable()) {
                 setStatus('Η αυτόματη τοποθεσία θέλει HTTPS/Chrome ή APK με GPS permission.', 'warn');
                 this.updateUI();
                 return Promise.resolve(null);
             }
-
-            // Avoid double captures caused by openView + UI refresh firing together.
             if (source === 'auto' && Date.now() - lastCaptureAt < 12000) {
                 this.updateUI();
                 return Promise.resolve(readCurrent());
@@ -545,9 +447,7 @@
                     },
                     error => {
                         inFlight = false;
-                        const msg = error?.code === 1
-                            ? 'Η άδεια τοποθεσίας δεν δόθηκε στο app/browser.'
-                            : 'Δεν μπόρεσε να βρεθεί GPS τώρα.';
+                        const msg = error?.code === 1 ? 'Η άδεια τοποθεσίας δεν δόθηκε στο app/browser.' : 'Δεν μπόρεσε να βρεθεί GPS τώρα.';
                         setStatus(msg, 'warn');
                         this.updateUI();
                         resolve(null);
@@ -568,23 +468,17 @@
             const statusEl = document.getElementById('parkingStatus');
             if (statusEl) statusEl.textContent = `ΠΑΡΚΙΝΓΚ: ${locToDisplay}`;
 
-            renderCurrentMapPreview(current);
+            renderCurrentSummary(current);
 
             if (current) {
                 const acc = Number.isFinite(Number(current.accuracy)) ? ` · ±${Math.round(Number(current.accuracy))}m` : '';
-                setStatus(
-                    `Τελευταία θέση parking:<br>` +
-                    `📍 ${escapeHtml(displayLabel(current))}<br>` +
-                    `🕒 ${escapeHtml(formatTime(current.ts))}${acc}`,
-                    'ok'
-                );
+                setStatus(`Τελευταία θέση parking:<br>📍 ${escapeHtml(displayLabel(current))}<br>🕒 ${escapeHtml(formatTime(current.ts))}${acc}`, 'ok');
                 if (current.addressStatus === 'pending') hydrateAddress(current);
             } else if (isGeoAvailable()) {
-                setStatus('Μπαίνοντας στο Parking θα αποθηκεύεται αυτόματα η τρέχουσα GPS θέση.', 'muted');
+                setStatus('Μπαίνοντας στο Parking αποθηκεύεται αυτόματα η GPS θέση.', 'muted');
             } else {
                 setStatus('Μη διαθέσιμο εδώ. Χρειάζεται HTTPS/Chrome ή APK με GPS permission.', 'warn');
             }
-
             this.renderHistory();
         },
 
@@ -592,64 +486,47 @@
             const history = readHistory();
             const container = document.getElementById('parkingHistoryList');
             if (!container) return;
-
             if (!history.length) {
                 container.innerHTML = `<div class="log-item" style="opacity:.75;">Δεν υπάρχει ακόμα ιστορικό parking.</div>`;
                 return;
             }
-
             container.innerHTML = history.map((item, index) => {
                 const acc = Number.isFinite(Number(item.accuracy)) ? ` · ±${Math.round(Number(item.accuracy))}m` : '';
                 const label = displayLabel(item);
-                const mapShot = renderMapImage(item, { small: true });
+                const canMap = googleMapsWebUrl(item);
                 return `
-                    <div class="parking-history-card" onclick="window.PegasusParking.openMapFromHistory(${index})">
-                        <div class="parking-history-map">${mapShot}</div>
+                    <div class="parking-history-card">
+                        <div class="parking-history-index">${index + 1}</div>
                         <div class="parking-history-info">
-                            <div class="parking-history-title">📍 ${escapeHtml(label)}</div>
-                            <div class="parking-history-meta">#${index + 1} · ${escapeHtml(formatTime(item.ts))}${acc}</div>
+                            <div class="parking-history-title">${escapeHtml(label)}</div>
+                            <div class="parking-history-meta">${escapeHtml(formatTime(item.ts))}${escapeHtml(acc)}</div>
                         </div>
-                    </div>
-                `;
+                        <button class="parking-history-map-btn" type="button" ${canMap ? `onclick="window.PegasusParking.openMapFromHistory(${index})"` : 'disabled'}>ΧΑΡΤΗΣ</button>
+                    </div>`;
             }).join('');
         },
 
-        openCurrentMap: function() {
-            const current = readCurrent();
-            openMapDirect(current);
-        },
-
-        openMapFromHistory: function(index) {
-            const item = readHistory()[Number(index) || 0];
-            openMapDirect(item);
-        },
-
+        openCurrentMap: function() { openMapDirect(readCurrent()); },
+        openMapFromHistory: function(index) { openMapDirect(readHistory()[Number(index) || 0]); },
         openMapFromItemTs: function(ts) {
             const stamp = Number(ts || 0);
             const current = readCurrent();
-            if (current && Number(current.ts) === stamp) {
-                openMapDirect(current);
-                return;
-            }
-            const item = readHistory().find(x => Number(x.ts) === stamp) || current;
-            openMapDirect(item);
+            if (current && Number(current.ts) === stamp) return openMapDirect(current);
+            openMapDirect(readHistory().find(x => Number(x.ts) === stamp) || current);
         },
 
-        staticMapUrl,
-        renderCurrentMapPreview,
+        staticMapUrl: googleMapsWebUrl,
+        renderCurrentSummary,
         readCurrent,
         readHistory,
         displayLabel
     };
 
-    window.addEventListener('pegasus_sync_complete', () => {
-        window.PegasusParking.updateUI();
-    });
-
+    window.addEventListener('pegasus_sync_complete', () => window.PegasusParking.updateUI());
     document.addEventListener('DOMContentLoaded', () => {
         window.PegasusParking.updateUI();
         setTimeout(() => window.PegasusParking.updateUI(), 2000);
     });
 
-    console.log('📍 PEGASUS PARKING: OSM tile map preview + history active v3.1.271');
+    console.log('📍 PEGASUS PARKING: Street/manual label parking active v3.2.272');
 })();

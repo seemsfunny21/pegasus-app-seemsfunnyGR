@@ -202,13 +202,13 @@
         <div class="mini-card" style="border-left: 4px solid #ff9800;">
             <span class="mini-label">ΑΥΤΟΜΑΤΗ ΘΕΣΗ PARKING</span>
             <div id="parkingAutoStatus" style="font-size:12px; font-weight:800; color:#aaa; line-height:1.45; margin:8px 0 12px;">Άνοιξε το Parking για αυτόματη αποθήκευση GPS.</div>
-            <div id="parkingMapPreview" class="parking-map-preview"></div>
+            <div id="parkingLocationSummary" class="parking-location-summary"></div>
             <div class="compact-grid">
                 <button class="secondary-btn" onclick="window.PegasusParking.openCurrentMap()">ΧΑΡΤΗΣ</button>
                 <button class="primary-btn" onclick="window.PegasusParking.captureCurrentLocation('manual')">ΕΝΗΜΕΡΩΣΗ</button>
             </div>
-            <input type="text" id="parkingInput" placeholder="Προαιρετική χειροκίνητη σημείωση..." style="margin-top:12px;">
-            <button class="secondary-btn" onclick="window.PegasusParking.save()" style="margin-top:8px;">ΑΠΟΘΗΚΕΥΣΗ ΣΗΜΕΙΩΣΗΣ</button>
+            <input type="text" id="parkingInput" placeholder="Γράψε χειροκίνητα οδό / περιοχή..." style="margin-top:12px;">
+            <button class="secondary-btn" onclick="window.PegasusParking.save()" style="margin-top:8px;">ΑΠΟΘΗΚΕΥΣΗ ΠΕΡΙΟΧΗΣ</button>
         </div>
         <div class="section-title">ΤΕΛΕΥΤΑΙΕΣ 5 ΘΕΣΕΙΣ</div>
         <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
@@ -645,7 +645,7 @@
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
-    <script src="parking-mobile.js?v=271"></script>
+    <script src="parking-mobile.js?v=272"></script>
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
     <script src="supplies-mobile.js"></script>
