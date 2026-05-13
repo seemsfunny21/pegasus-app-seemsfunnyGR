@@ -1,3 +1,10 @@
+
+PEGASUS 267 - MOBILE LOCAL LAST LOCATION
+- Added local-only mobile last-location save.
+- Mobile can ask once for permission and then update last coordinates when the mobile page opens/returns visible.
+- Added Settings card to enable/update, open in map, or delete the locally saved location.
+- Location keys are explicitly local-only in cloudSync and are not uploaded to cloud/exported.
+- No desktop UI changes.
 PEGASUS 266 - MERGED MOBILE MASTER KEY SAVE
 - Mobile saved MASTER KEY support is now integrated into mobile/mobile.html unlock flow.
 - Removed separate mobile/masterkey-save-mobile.js so the package does not grow with an extra module file.

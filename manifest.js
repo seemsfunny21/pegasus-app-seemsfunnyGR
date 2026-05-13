@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.65)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.67)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-05-09",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.65 Email Reports + Saved Master Key"
+        engine_version: "v18.67 Mobile Local Last Location"
     },
 
     // ---------------------------------------------------------
@@ -111,6 +111,13 @@ window.PegasusManifest = {
         history: "pegasus_parking_history"
     },
 
+    mobileLocal: {
+        lastLocation: "pegasus_mobile_last_location_v1",
+        lastLocationEnabled: "pegasus_mobile_last_location_enabled_v1",
+        lastLocationPrompted: "pegasus_mobile_last_location_prompted_v1",
+        lastLocationLastAttempt: "pegasus_mobile_last_location_last_attempt_v1"
+    },
+
     // ---------------------------------------------------------
     // 3. SYSTEM ARCHITECTURE
     // ---------------------------------------------------------
@@ -129,6 +136,7 @@ window.PegasusManifest = {
         "debug.js": "Tracer, health checks, calorie audit and runtime diagnostics.",
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
+        "mobile/mobile.html": "Mobile shell, unlock flow, local-only mobile last-location helper.",
         "dragDrop.js": "UI Window Positioning Memory.",
         "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
         "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
@@ -209,4 +217,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.66 LOADED. MOBILE MASTER KEY SAVE MERGED.");
+console.log("🏛️ PEGASUS MANIFEST v18.67 LOADED. MOBILE LOCAL LAST LOCATION READY.");
