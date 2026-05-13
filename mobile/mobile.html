@@ -30,7 +30,7 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=268">
+    <link rel="stylesheet" href="style.css?v=277">
 </head>
 <body>
 
@@ -204,7 +204,7 @@
             <div id="parkingAutoStatus" class="parking-auto-status">Πάτα ΑΠΟΘΗΚΕΥΣΗ ΘΕΣΗΣ όταν παρκάρεις. Το άνοιγμα του Parking δεν αλλάζει τη θέση.</div>
             <div id="parkingLocationSummary" class="parking-location-summary"></div>
             <div class="compact-grid parking-actions">
-                <button class="secondary-btn parking-action-btn" onclick="window.PegasusParking.openCurrentMap()">ΧΑΡΤΗΣ</button>
+                <button class="secondary-btn parking-action-btn" onclick="window.PegasusParking.openCurrentMap()" data-pegasus-fixed-text="true" aria-label="Άνοιγμα χάρτη">Χάρτης</button>
                 <button class="primary-btn parking-action-btn" onclick="window.PegasusParking.captureCurrentLocation('manual')">ΑΠΟΘΗΚΕΥΣΗ ΘΕΣΗΣ</button>
             </div>
         </div>
@@ -643,7 +643,7 @@
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
-    <script src="parking-mobile.js?v=276"></script>
+    <script src="parking-mobile.js?v=277"></script>
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
     <script src="supplies-mobile.js"></script>

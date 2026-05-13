@@ -376,3 +376,13 @@ PEGASUS 276 - Mobile Parking Street/Number Labels
 - ΧΑΡΤΗΣ keeps the direct Google Maps app intent behavior from 275.
 - Mobile only. Desktop unchanged. No new files.
 - Cache bump to 276.
+
+PEGASUS 277 - Mobile Parking Geo Map Restore + Stable Map Labels
+- Restored Android geo: map opening for Parking so the Χάρτης button opens the installed map handler directly instead of routing through Google Play/Google Maps web pages.
+- Removed the automatic timed web fallback that could steal focus back from Google Maps or show the Play Store page.
+- Parking remains manual-save only: opening Parking does not overwrite the saved car position.
+- Street/address labels from v276 remain, with coordinate fallback if reverse geocoding is unavailable.
+- The last 5 parking history buttons now show the fixed text “Χάρτης” instead of all-caps “ΧΑΡΤΗΣ”.
+- Added stronger mobile CSS so Parking map button text stays small/stable and is not changed by adaptive typography refreshes.
+- Mobile only. Desktop unchanged. No new files.
+- Cache bump to 277.

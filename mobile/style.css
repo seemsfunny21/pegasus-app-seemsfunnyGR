@@ -1098,7 +1098,7 @@ body .ghost-nav-overlay,
 }
 
 
-/* ===== PEGASUS PARKING GPS COORDINATES UI v273 ===== */
+/* ===== PEGASUS PARKING UI v277: fixed width + stable map labels ===== */
 #parking_panel,
 #parking_panel * {
     box-sizing: border-box !important;
@@ -1291,3 +1291,17 @@ body .ghost-nav-overlay,
     opacity: 0.35;
 }
 
+
+
+/* v277: keep Parking map buttons visually stable. Adaptive typography must not resize/uppercase them. */
+html[data-pegasus-typography='mobile'] #parking_panel .parking-history-map-btn,
+html[data-pegasus-typography='mobile'] #parking_panel .parking-action-btn,
+#parking_panel .parking-history-map-btn[data-pegasus-fixed-text='true'],
+#parking_panel .parking-action-btn[data-pegasus-fixed-text='true'] {
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+    text-transform: none !important;
+    letter-spacing: 0.2px !important;
+    -webkit-text-size-adjust: none !important;
+    text-size-adjust: none !important;
+}

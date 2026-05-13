@@ -1,4 +1,4 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v3.6.276 (manual-save parking + street labels) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v3.7.277 (stable geo map open + fixed map button text) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
@@ -91,40 +91,31 @@
         return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : '';
     }
 
-    function googleMapsIntentUrl(item) {
-        const query = mapQuery(item);
-        if (!query) return '';
-        const web = googleMapsWebUrl(item);
-        const fallback = encodeURIComponent(web);
-        // Android intent opens Google Maps directly when available and falls back to web instead of Play Store.
-        return `intent://maps.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${fallback};end`;
+    function nativeGeoUrl(item) {
+        if (!hasCoords(item)) return '';
+        const lat = Number(item.lat).toFixed(6);
+        const lon = Number(item.lon).toFixed(6);
+        const label = encodeURIComponent(displayLabel(item) || 'Parking');
+        return `geo:0,0?q=${lat},${lon}(${label})`;
     }
 
     function openMapDirect(item) {
-        const webUrl = googleMapsWebUrl(item);
+        const normalized = normalizeHistoryItem(item);
+        const webUrl = googleMapsWebUrl(normalized);
         if (!webUrl) return;
 
         const isAndroid = /Android/i.test(navigator.userAgent || '');
-        const intentUrl = isAndroid ? googleMapsIntentUrl(item) : '';
+        const geoUrl = isAndroid ? nativeGeoUrl(normalized) : '';
 
-        if (intentUrl) {
-            let leftPage = false;
-            const markLeft = () => { leftPage = true; };
-            document.addEventListener('visibilitychange', () => { if (document.hidden) markLeft(); }, { once: true });
-            window.addEventListener('pagehide', markLeft, { once: true });
-            window.addEventListener('blur', markLeft, { once: true });
-
+        // In WebView/APK, Google Maps web and package intents can route through Google Play.
+        // The Android geo: URI opens the installed Maps handler directly and avoids the Play Store page.
+        if (geoUrl) {
             try {
-                window.location.href = intentUrl;
-            } catch (_) {
-                window.location.href = webUrl;
+                window.location.href = geoUrl;
                 return;
+            } catch (_) {
+                // Last resort only. Do not auto-fallback with a timer because that can steal focus back from Maps.
             }
-
-            window.setTimeout(() => {
-                if (!leftPage && !document.hidden) window.location.href = webUrl;
-            }, 1300);
-            return;
         }
 
         window.location.href = webUrl;
@@ -439,7 +430,7 @@
                             <div class="parking-history-title">${escapeHtml(label)}</div>
                             <div class="parking-history-meta">${escapeHtml(formatTime(item.ts))}${escapeHtml(acc)}</div>
                         </div>
-                        <button class="parking-history-map-btn" type="button" ${canMap ? `onclick="window.PegasusParking.openMapFromHistory(${index})"` : 'disabled'}>ΧΑΡΤΗΣ</button>
+                        <button class="parking-history-map-btn" type="button" ${canMap ? `onclick="window.PegasusParking.openMapFromHistory(${index})"` : 'disabled'} data-pegasus-fixed-text="true" aria-label="Άνοιγμα χάρτη">Χάρτης</button>
                     </div>`;
             }).join('');
         },
@@ -466,5 +457,5 @@
         setTimeout(() => window.PegasusParking.updateUI(), 2000);
     });
 
-    console.log('📍 PEGASUS PARKING: manual-save street labels parking active v3.6.276');
+    console.log('📍 PEGASUS PARKING: stable geo map + fixed label active v3.7.277');
 })();
