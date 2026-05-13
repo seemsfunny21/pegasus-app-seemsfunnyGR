@@ -1098,7 +1098,7 @@ body .ghost-nav-overlay,
 }
 
 
-/* ===== PEGASUS PARKING UI v277: fixed width + stable map labels ===== */
+/* ===== PEGASUS PARKING UI v278: fixed width + hard stable map labels ===== */
 #parking_panel,
 #parking_panel * {
     box-sizing: border-box !important;
@@ -1302,6 +1302,20 @@ html[data-pegasus-typography='mobile'] #parking_panel .parking-action-btn,
     line-height: 1.15 !important;
     text-transform: none !important;
     letter-spacing: 0.2px !important;
+    -webkit-text-size-adjust: none !important;
+    text-size-adjust: none !important;
+}
+
+
+/* v278: hard-lock Parking map label size/case. */
+#parking_panel .parking-history-map-btn,
+#parking_panel .parking-action-btn[aria-label="Άνοιγμα χάρτη"] {
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+    text-transform: none !important;
+    letter-spacing: 0.2px !important;
+    font-variant-caps: normal !important;
+    font-variant: normal !important;
     -webkit-text-size-adjust: none !important;
     text-size-adjust: none !important;
 }

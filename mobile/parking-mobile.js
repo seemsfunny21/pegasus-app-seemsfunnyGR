@@ -1,4 +1,4 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v3.7.277 (stable geo map open + fixed map button text) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v3.8.278 (OSM no-Play map + hard fixed map labels) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
@@ -86,39 +86,49 @@
         return String(item?.loc || item?.label || item || '').trim();
     }
 
-    function googleMapsWebUrl(item) {
+    function openStreetMapWebUrl(item) {
+        if (hasCoords(item)) {
+            const lat = Number(item.lat).toFixed(6);
+            const lon = Number(item.lon).toFixed(6);
+            return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=18/${lat}/${lon}`;
+        }
         const query = mapQuery(item);
-        return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : '';
+        return query ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}` : '';
     }
 
-    function nativeGeoUrl(item) {
-        if (!hasCoords(item)) return '';
-        const lat = Number(item.lat).toFixed(6);
-        const lon = Number(item.lon).toFixed(6);
-        const label = encodeURIComponent(displayLabel(item) || 'Parking');
-        return `geo:0,0?q=${lat},${lon}(${label})`;
+    // Backward-compatible name used by older UI code. It now returns OpenStreetMap,
+    // because Google Maps/geo intents in APK WebView can redirect to Google Play.
+    function googleMapsWebUrl(item) {
+        return openStreetMapWebUrl(item);
+    }
+
+    function forceMapButtonLabels() {
+        try {
+            document.querySelectorAll('#parking_panel .parking-history-map-btn, #parking_panel .parking-action-btn[aria-label="Άνοιγμα χάρτη"]').forEach(btn => {
+                if (!btn) return;
+                if (btn.textContent !== 'Χάρτης') btn.textContent = 'Χάρτης';
+                btn.setAttribute('data-pegasus-fixed-text', 'true');
+                btn.style.textTransform = 'none';
+                btn.style.fontSize = '9.5px';
+                btn.style.lineHeight = '1.15';
+                btn.style.letterSpacing = '0.2px';
+            });
+        } catch (_) {}
     }
 
     function openMapDirect(item) {
         const normalized = normalizeHistoryItem(item);
-        const webUrl = googleMapsWebUrl(normalized);
+        const webUrl = openStreetMapWebUrl(normalized);
         if (!webUrl) return;
 
-        const isAndroid = /Android/i.test(navigator.userAgent || '');
-        const geoUrl = isAndroid ? nativeGeoUrl(normalized) : '';
+        // Use OpenStreetMap web only. This avoids Android/WebView resolving Google Maps
+        // URLs or geo: intents through Google Play. No automatic fallback to Google Maps.
+        try {
+            const win = window.open(webUrl, '_blank', 'noopener,noreferrer');
+            if (win) return;
+        } catch (_) {}
 
-        // In WebView/APK, Google Maps web and package intents can route through Google Play.
-        // The Android geo: URI opens the installed Maps handler directly and avoids the Play Store page.
-        if (geoUrl) {
-            try {
-                window.location.href = geoUrl;
-                return;
-            } catch (_) {
-                // Last resort only. Do not auto-fallback with a timer because that can steal focus back from Maps.
-            }
-        }
-
-        window.location.href = webUrl;
+        try { window.location.href = webUrl; } catch (_) {}
     }
 
     function normalizeHistoryItem(item) {
@@ -433,6 +443,7 @@
                         <button class="parking-history-map-btn" type="button" ${canMap ? `onclick="window.PegasusParking.openMapFromHistory(${index})"` : 'disabled'} data-pegasus-fixed-text="true" aria-label="Άνοιγμα χάρτη">Χάρτης</button>
                     </div>`;
             }).join('');
+            forceMapButtonLabels();
         },
 
         openCurrentMap: function() { openMapDirect(readCurrent()); },
@@ -454,8 +465,16 @@
     window.addEventListener('pegasus_sync_complete', () => window.PegasusParking.updateUI());
     document.addEventListener('DOMContentLoaded', () => {
         window.PegasusParking.updateUI();
-        setTimeout(() => window.PegasusParking.updateUI(), 2000);
+        forceMapButtonLabels();
+        setTimeout(() => { window.PegasusParking.updateUI(); forceMapButtonLabels(); }, 2000);
+        try {
+            const panel = document.getElementById('parking_panel');
+            if (panel) {
+                const obs = new MutationObserver(() => forceMapButtonLabels());
+                obs.observe(panel, { childList: true, subtree: true, characterData: true });
+            }
+        } catch (_) {}
     });
 
-    console.log('📍 PEGASUS PARKING: stable geo map + fixed label active v3.7.277');
+    console.log('📍 PEGASUS PARKING: OpenStreetMap no-Play map + hard fixed label active v3.8.278');
 })();

@@ -386,3 +386,11 @@ PEGASUS 277 - Mobile Parking Geo Map Restore + Stable Map Labels
 - Added stronger mobile CSS so Parking map button text stays small/stable and is not changed by adaptive typography refreshes.
 - Mobile only. Desktop unchanged. No new files.
 - Cache bump to 277.
+
+PEGASUS 278 - Parking OpenStreetMap no-Play map + fixed label
+- Parking Χάρτης no longer uses Google Maps/geo intent fallback that can route APK/WebView to Google Play.
+- Parking Χάρτης now opens an OpenStreetMap web map directly for the saved coordinates.
+- Current and history map buttons are hard-locked to the label “Χάρτης”.
+- Added a MutationObserver guard so adaptive typography/label polish cannot flip the text to uppercase every second.
+- Parking still does not auto-save location on open; save remains manual.
+- Desktop unchanged.
