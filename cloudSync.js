@@ -355,7 +355,8 @@ const PegasusCloud = {
             "pegasus_mobile_last_location_v1",
             "pegasus_mobile_last_location_last_attempt_v1",
             "pegasus_parking_loc",
-            "pegasus_parking_history"
+            "pegasus_parking_history",
+            "pegasus_parking_address_cache_v1"
         ];
         const dynamicKeys = window.PegasusMobileDataRegistry?.getLocalOnlyExactKeys?.() || [];
         return Array.from(new Set([...baseKeys, ...dynamicKeys]));
