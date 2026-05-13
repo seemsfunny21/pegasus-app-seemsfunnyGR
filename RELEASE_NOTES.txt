@@ -290,3 +290,15 @@ PEGASUS 264 - Mobile TV Live Refresh No Cache
 - If Athinorama is unavailable, the module shows a clean notice instead of old cached picks.
 - tv-mobile.js bumped to v2.2.264 and mobile script query updated to ?v=264.
 - Service worker cache bumped to 264.
+
+
+=== PEGASUS 268 - Silent Mobile Credentials + Auto Parking GPS ===
+- Removed custom popup prompts for saving the mobile MASTER KEY.
+- After a successful mobile unlock, the MASTER KEY is saved silently and locally on that device; PIN is never saved and nothing is uploaded to cloud.
+- Removed the custom Pegasus popup for local phone location; Android/Chrome permission prompt is enough.
+- Parking mobile now captures GPS automatically every time the Parking category opens.
+- Parking keeps the last 5 positions so accidental opens do not lose the previous parking spot.
+- Parking entries include map buttons and accuracy/time when available.
+- Parking location/history are treated as local-only and are not exported to cloud.
+- No new JS files were added; changes are integrated in existing mobile/mobile.html, parking-mobile.js and cloudSync.js.
+- Cache bump to 268.

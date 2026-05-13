@@ -30,7 +30,7 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=267">
+    <link rel="stylesheet" href="style.css?v=268">
 </head>
 <body>
 
@@ -200,11 +200,16 @@
         <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
         <div class="mini-card" style="border-left: 4px solid #ff9800;">
-            <span class="mini-label">ΝΕΑ ΠΕΡΙΟΧΗ / ΘΕΣΗ</span>
-            <input type="text" id="parkingInput" placeholder="π.χ. Γιάννενα, Κέντρο...">
-            <button class="primary-btn" onclick="window.PegasusParking.save()">Αποθήκευση στο cloud</button>
+            <span class="mini-label">ΑΥΤΟΜΑΤΗ ΘΕΣΗ PARKING</span>
+            <div id="parkingAutoStatus" style="font-size:12px; font-weight:800; color:#aaa; line-height:1.45; margin:8px 0 12px;">Άνοιξε το Parking για αυτόματη αποθήκευση GPS.</div>
+            <div class="compact-grid">
+                <button class="secondary-btn" onclick="window.PegasusParking.openCurrentMap()">ΧΑΡΤΗΣ</button>
+                <button class="primary-btn" onclick="window.PegasusParking.captureCurrentLocation('manual')">ΕΝΗΜΕΡΩΣΗ</button>
+            </div>
+            <input type="text" id="parkingInput" placeholder="Προαιρετική χειροκίνητη σημείωση..." style="margin-top:12px;">
+            <button class="secondary-btn" onclick="window.PegasusParking.save()" style="margin-top:8px;">ΑΠΟΘΗΚΕΥΣΗ ΣΗΜΕΙΩΣΗΣ</button>
         </div>
-        <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (TOP 10)</div>
+        <div class="section-title">ΤΕΛΕΥΤΑΙΕΣ 5 ΘΕΣΕΙΣ</div>
         <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
@@ -633,7 +638,7 @@
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
-    <script src="parking-mobile.js"></script>
+    <script src="parking-mobile.js?v=268"></script>
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
     <script src="supplies-mobile.js"></script>
@@ -665,12 +670,12 @@
 
     // Integrated saved MASTER KEY helper (merged from former masterkey-save-mobile.js in v266).
     /* ============================================================================
-       PEGASUS MOBILE SAVED MASTER KEY - v1.0.266
+       PEGASUS MOBILE SAVED MASTER KEY - v1.1.268
        Purpose: local-only optional master key save for mobile PIN modal
        Notes: stores ONLY the master key on this device; never syncs to cloud.
        ============================================================================ */
     (function installPegasusMobileSavedMasterKey() {
-        if (window.PegasusMobileSavedMasterKey?.version === '1.0.266') return;
+        if (window.PegasusMobileSavedMasterKey?.version === '1.1.268') return;
 
         const STORAGE_KEY = 'pegasus_mobile_saved_master_key_v1';
         const SECRET_KEY = 'pegasus_mobile_saved_master_key_secret_v1';
@@ -792,7 +797,7 @@
             return true;
         }
 
-        function forgetSavedMasterKey(showAlert = true) {
+        function forgetSavedMasterKey(showAlert = false) {
             localStorage.removeItem(STORAGE_KEY);
             localStorage.removeItem(SECRET_KEY);
             localStorage.removeItem(DISMISSED_KEY);
@@ -805,29 +810,22 @@
         async function afterSuccessfulUnlock(masterKey) {
             const clean = String(masterKey || '').trim();
             if (!clean || clean.length < 4 || !hasCrypto()) return false;
+
             const existing = await getSavedMasterKey();
             if (existing && existing === clean) {
                 await prefillIfAvailable();
                 return true;
             }
-            if (sessionStorage.getItem(DISMISSED_KEY) === '1') return false;
-            const ok = confirm(
-                'Θέλεις να αποθηκευτεί ΜΟΝΟ το MASTER KEY σε αυτό το κινητό;\n\n' +
-                'Δεν αποθηκεύεται το PIN.\n' +
-                'Δεν ανεβαίνει στο cloud.\n' +
-                'Την επόμενη φορά θα γράφεις μόνο PIN.'
-            );
-            if (!ok) {
-                sessionStorage.setItem(DISMISSED_KEY, '1');
-                return false;
-            }
+
+            // v268: no custom popup. The user already typed the master key on this
+            // device, so we save it silently and locally. PIN is never saved.
             try {
                 await saveMasterKey(clean);
-                alert('✅ Αποθηκεύτηκε το MASTER KEY μόνο σε αυτή τη συσκευή.');
+                setHint('MASTER KEY αποθηκευμένο τοπικά. Την επόμενη φορά γράφεις μόνο PIN.', 'ok');
                 return true;
             } catch (e) {
-                console.warn('PEGASUS MASTER KEY SAVE: save failed.', e);
-                alert('Δεν μπόρεσε να αποθηκευτεί με ασφάλεια το MASTER KEY σε αυτή τη συσκευή.');
+                console.warn('PEGASUS MASTER KEY SAVE: silent save failed.', e);
+                setHint('Δεν αποθηκεύτηκε το MASTER KEY σε αυτή τη συσκευή.', 'warn');
                 return false;
             }
         }
@@ -850,7 +848,7 @@
         }
 
         window.PegasusMobileSavedMasterKey = {
-            version: '1.0.266',
+            version: '1.1.268',
             afterSuccessfulUnlock,
             prefillIfAvailable,
             saveMasterKey,
@@ -861,17 +859,17 @@
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
         else init();
 
-        console.log('🔑 PEGASUS MOBILE SAVED MASTER KEY: ready v1.0.266');
+        console.log('🔑 PEGASUS MOBILE SAVED MASTER KEY: ready v1.1.268 silent local save');
     })();
 
 
     /* ============================================================================
-       PEGASUS MOBILE LAST LOCATION - v1.0.267
+       PEGASUS MOBILE LAST LOCATION - v1.1.268
        Purpose: local-only last phone location when opening Pegasus mobile.
        Notes: coordinates stay only on this device; never synced to cloud.
        ============================================================================ */
     (function installPegasusMobileLastLocation() {
-        if (window.PegasusMobileLastLocation?.version === '1.0.267') return;
+        if (window.PegasusMobileLastLocation?.version === '1.1.268') return;
 
         const STORAGE = {
             enabled: 'pegasus_mobile_last_location_enabled_v1',
@@ -1036,7 +1034,7 @@
             localStorage.setItem(STORAGE.prompted, 'true');
             render();
             const saved = await requestPosition('manual');
-            if (saved) alert('✅ Αποθηκεύτηκε τοπικά η τελευταία τοποθεσία του κινητού.');
+            if (saved) setStatus('Αποθηκεύτηκε τοπικά η τελευταία τοποθεσία του κινητού.', 'ok');
             return saved;
         }
 
@@ -1047,7 +1045,7 @@
             localStorage.removeItem(STORAGE.lastAttempt);
             lastUiMessage = '';
             render();
-            alert('✅ Διαγράφηκε η τοπική τοποθεσία από αυτό το κινητό.');
+            setStatus('Διαγράφηκε η τοπική τοποθεσία από αυτό το κινητό.', 'warn');
         }
 
         function openMap() {
@@ -1070,23 +1068,10 @@
         }
 
         function maybeAskFirstTime() {
-            if (!isAvailable()) return;
-            if (isEnabled()) return;
-            if (localStorage.getItem(STORAGE.prompted) === 'true') return;
-            if (readLocation()) return;
-
-            setTimeout(() => {
-                if (localStorage.getItem(STORAGE.prompted) === 'true' || isEnabled()) return;
-                const ok = confirm(
-                    'Θέλεις το Pegasus να αποθηκεύει ΤΟΠΙΚΑ την τελευταία τοποθεσία αυτού του κινητού όταν ανοίγεις τη σελίδα;\n\n' +
-                    'Δεν ανεβαίνει στο cloud.\n' +
-                    'Μένει μόνο σε αυτή τη συσκευή.\n' +
-                    'Μπορείς να τη διαγράψεις από τις Ρυθμίσεις.'
-                );
-                localStorage.setItem(STORAGE.prompted, 'true');
-                if (ok) enable();
-                else render();
-            }, 2200);
+            // v268: no custom Pegasus popup. The browser/Android location permission
+            // prompt is enough. Users can still enable/update manually from Settings,
+            // and Parking can request GPS on entry.
+            render();
         }
 
         function init() {
@@ -1102,9 +1087,11 @@
         window.addEventListener('pegasus_sync_complete', render);
 
         window.PegasusMobileLastLocation = {
-            version: '1.0.267',
+            version: '1.1.268',
             enable,
             updateNow: () => requestPosition('manual'),
+            requestPosition,
+            storePosition,
             forget,
             openMap,
             render,
@@ -1115,7 +1102,7 @@
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
         else init();
 
-        console.log('📍 PEGASUS MOBILE LAST LOCATION: ready v1.0.267 local-only');
+        console.log('📍 PEGASUS MOBILE LAST LOCATION: ready v1.1.268 local-only silent');
     })();
 
     function getMobileDateStr() {
@@ -1202,6 +1189,10 @@
 
             if (id === 'tv_program') {
                 window.PegasusTV?.onOpen?.();
+            }
+
+            if (id === 'parking_panel') {
+                window.PegasusParking?.onOpen?.();
             }
 
             if (id === 'diet' && window.PegasusCloud?.isUnlocked && navigator.onLine) {

@@ -297,8 +297,6 @@ const PegasusCloud = {
             "pegasus_command_trace",
             "pegasus_car_service",
             "peg_car_service",
-            "pegasus_parking_loc",
-            "pegasus_parking_history",
             "kouki_agreement_log",
             "kouki_meals_total",
             "kouki_meals_remaining",
@@ -355,7 +353,9 @@ const PegasusCloud = {
             "pegasus_mobile_last_location_enabled_v1",
             "pegasus_mobile_last_location_prompted_v1",
             "pegasus_mobile_last_location_v1",
-            "pegasus_mobile_last_location_last_attempt_v1"
+            "pegasus_mobile_last_location_last_attempt_v1",
+            "pegasus_parking_loc",
+            "pegasus_parking_history"
         ];
         const dynamicKeys = window.PegasusMobileDataRegistry?.getLocalOnlyExactKeys?.() || [];
         return Array.from(new Set([...baseKeys, ...dynamicKeys]));
@@ -437,8 +437,6 @@ const PegasusCloud = {
     getDataGuardCriticalKeys() {
         return [
             "pegasus_biometrics_v1",
-            "pegasus_parking_loc",
-            "pegasus_parking_history",
             "pegasus_car_service",
             "peg_car_service",
             "pegasus_exercise_weights",

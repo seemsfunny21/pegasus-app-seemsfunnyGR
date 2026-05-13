@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.67)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.68)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-05-09",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.67 Mobile Local Last Location"
+        engine_version: "v18.68 Mobile Local Last Location"
     },
 
     // ---------------------------------------------------------
@@ -136,7 +136,7 @@ window.PegasusManifest = {
         "debug.js": "Tracer, health checks, calorie audit and runtime diagnostics.",
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
-        "mobile/mobile.html": "Mobile shell, unlock flow, local-only mobile last-location helper.",
+        "mobile/mobile.html": "Mobile shell, unlock flow, silent local master-key and last-location helper.",
         "dragDrop.js": "UI Window Positioning Memory.",
         "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
         "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
@@ -217,4 +217,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.67 LOADED. MOBILE LOCAL LAST LOCATION READY.");
+console.log("🏛️ PEGASUS MANIFEST v18.68 LOADED. MOBILE LOCAL LAST LOCATION READY.");
