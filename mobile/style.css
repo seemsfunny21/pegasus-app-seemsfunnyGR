@@ -1098,22 +1098,53 @@ body .ghost-nav-overlay,
 }
 
 
-/* ===== PEGASUS PARKING CLEAN TEXT UI v272 ===== */
+/* ===== PEGASUS PARKING GPS COORDINATES UI v273 ===== */
+#parking_panel,
+#parking_panel * {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+}
+
+#parking_panel,
+#parking_panel .pegasus-mobile-mid {
+    overflow-x: hidden !important;
+    touch-action: pan-y !important;
+}
+
+#parking_panel .mini-card.parking-main-card {
+    border-left: 1px solid rgba(0, 255, 65, 0.42) !important;
+    border-color: rgba(0, 255, 65, 0.42) !important;
+    background: rgba(0, 255, 65, 0.035) !important;
+    overflow: hidden !important;
+}
+
+.parking-auto-status {
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    color: #aaa;
+    line-height: 1.35 !important;
+    margin: 7px 0 10px !important;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
 .parking-location-summary {
     width: 100%;
-    margin: 10px 0 12px;
+    margin: 8px 0 10px;
+    overflow-x: hidden;
 }
 
 .parking-current-card {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 9px;
     align-items: center;
     width: 100%;
-    padding: 12px;
-    border: 1px solid rgba(255, 152, 0, 0.42);
-    border-radius: 18px;
-    background: rgba(255, 152, 0, 0.055);
+    padding: 10px;
+    border: 1px solid rgba(0, 255, 65, 0.38);
+    border-radius: 16px;
+    background: rgba(0, 255, 65, 0.045);
+    overflow: hidden;
 }
 
 .parking-current-card.empty {
@@ -1122,70 +1153,105 @@ body .ghost-nav-overlay,
 }
 
 .parking-current-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 152, 0, 0.12);
-    border: 1px solid rgba(255, 152, 0, 0.35);
-    font-size: 20px;
+    background: rgba(0, 255, 65, 0.10);
+    border: 1px solid rgba(0, 255, 65, 0.32);
+    font-size: 18px !important;
+    line-height: 1 !important;
+    flex: 0 0 auto;
 }
 
-.parking-current-body { min-width: 0; }
+.parking-current-body { min-width: 0; overflow: hidden; }
 
 .parking-current-title {
     color: #fff;
-    font-size: 13px;
-    line-height: 1.35;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
     font-weight: 900;
     overflow-wrap: anywhere;
+    word-break: break-word;
+    font-variant-numeric: tabular-nums;
 }
 
 .parking-current-meta {
-    color: #ffb300;
-    font-size: 10px;
+    color: var(--main);
+    font-size: 9.5px !important;
     font-weight: 900;
-    margin-top: 4px;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
 }
 
 .parking-current-hint {
     color: #aaa;
-    font-size: 10px;
-    line-height: 1.35;
+    font-size: 9.5px !important;
+    line-height: 1.3 !important;
     font-weight: 800;
-    margin-top: 5px;
+    margin-top: 4px;
+}
+
+.parking-actions {
+    width: 100%;
+    overflow: hidden;
+}
+
+#parking_panel .parking-action-btn,
+.parking-history-map-btn {
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.2px !important;
+    min-height: 38px !important;
+    padding: 9px 8px !important;
+    transform: none !important;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease !important;
+    text-size-adjust: 100% !important;
+    -webkit-text-size-adjust: 100% !important;
+}
+
+.parking-history-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: hidden;
 }
 
 .parking-history-card {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) auto;
-    gap: 9px;
+    grid-template-columns: 30px minmax(0, 1fr) 62px;
+    gap: 8px;
     align-items: center;
     width: 100%;
-    padding: 10px;
-    border: 1px solid rgba(255, 152, 0, 0.42);
-    border-radius: 18px;
-    background: rgba(255, 152, 0, 0.055);
+    padding: 9px;
+    border: 1px solid rgba(0, 255, 65, 0.34);
+    border-radius: 16px;
+    background: rgba(0, 255, 65, 0.035);
+    overflow: hidden;
 }
 
 .parking-history-index {
-    width: 34px;
-    height: 34px;
-    border-radius: 12px;
+    width: 30px;
+    height: 30px;
+    border-radius: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffb300;
-    background: rgba(255, 152, 0, 0.10);
-    border: 1px solid rgba(255, 152, 0, 0.32);
-    font-size: 12px;
+    color: var(--main);
+    background: rgba(0, 255, 65, 0.09);
+    border: 1px solid rgba(0, 255, 65, 0.30);
+    font-size: 11px !important;
+    line-height: 1 !important;
     font-weight: 950;
+    flex: 0 0 auto;
 }
 
 .parking-history-info {
     min-width: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1193,29 +1259,35 @@ body .ghost-nav-overlay,
 
 .parking-history-title {
     color: #fff;
-    font-size: 12px;
-    line-height: 1.35;
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
     font-weight: 900;
     overflow-wrap: anywhere;
+    word-break: break-word;
+    font-variant-numeric: tabular-nums;
 }
 
 .parking-history-meta {
-    color: #ffb300;
-    font-size: 10px;
+    color: var(--main);
+    font-size: 9px !important;
+    line-height: 1.2 !important;
     font-weight: 900;
-    margin-top: 4px;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
 }
 
 .parking-history-map-btn {
-    border: 1px solid rgba(255, 152, 0, 0.55);
-    border-radius: 12px;
-    padding: 8px 9px;
-    background: rgba(255, 152, 0, 0.10);
-    color: #ffb300;
-    font-size: 10px;
+    width: 62px !important;
+    border: 1px solid rgba(0, 255, 65, 0.52);
+    border-radius: 11px;
+    background: rgba(0, 255, 65, 0.075);
+    color: var(--main);
     font-weight: 950;
+    text-align: center;
+    white-space: nowrap;
 }
 
 .parking-history-map-btn:disabled {
     opacity: 0.35;
 }
+

@@ -1,3 +1,13 @@
+PEGASUS 273 - Mobile Parking GPS Coordinates + Fixed Width
+- Parking mobile reverted from street/manual labels back to GPS coordinates.
+- Removed the manual area input/save UI from Parking.
+- Removed the orange left bar/theme that could create horizontal movement on mobile.
+- Parking panel now locks horizontal overflow and uses compact fixed text sizes.
+- MAP/ΧΑΡΤΗΣ buttons use stable small font sizes so text does not start large then shrink.
+- Map opens with Google Maps web URL directly to avoid geo:// fallbacks that can send APK WebView to Play Store.
+- Mobile only; desktop unchanged.
+- Cache bump to 273.
+
 
 PEGASUS 267 - MOBILE LOCAL LAST LOCATION
 - Added local-only mobile last-location save.
