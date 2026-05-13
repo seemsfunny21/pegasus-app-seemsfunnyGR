@@ -1,4 +1,4 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v2.9.269 (Street labels + direct map open) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v3.0.270 (Static map preview + 5-place history) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
@@ -74,6 +74,44 @@
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return '';
         const label = encodeURIComponent(displayLabel(item) || 'Parking');
         return `geo:0,0?q=${lat.toFixed(6)},${lon.toFixed(6)}(${label})`;
+    }
+
+    function hasCoords(item) {
+        const lat = Number(item?.lat);
+        const lon = Number(item?.lon);
+        return Number.isFinite(lat) && Number.isFinite(lon);
+    }
+
+    function staticMapUrl(item, width = 640, height = 300, zoom = 17) {
+        if (!hasCoords(item)) return '';
+        const lat = Number(item.lat).toFixed(6);
+        const lon = Number(item.lon).toFixed(6);
+        // No API key. Shows an immediate map image with a pin. If the service fails, the UI falls back gracefully.
+        return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=${zoom}&size=${Number(width)}x${Number(height)}&markers=${lat},${lon},red-pushpin`;
+    }
+
+    function renderMapImage(item, options = {}) {
+        const normalized = normalizeHistoryItem(item);
+        const title = escapeHtml(displayLabel(normalized));
+        const size = options.small ? { w: 220, h: 110, z: 17 } : { w: 640, h: 300, z: 17 };
+        const url = staticMapUrl(normalized, size.w, size.h, size.z);
+        if (!url) {
+            return `
+                <div class="parking-map-fallback ${options.small ? 'small' : ''}">
+                    <span>📍</span>
+                    <strong>${title || 'Χειροκίνητη θέση'}</strong>
+                    <em>Δεν υπάρχει GPS εικόνα χάρτη</em>
+                </div>
+            `;
+        }
+
+        return `
+            <button class="parking-map-shot ${options.small ? 'small' : ''}" type="button" onclick="window.PegasusParking.openMapFromItemTs(${Number(normalized?.ts || 0)})" aria-label="Άνοιγμα χάρτη για ${title}">
+                <img src="${url}" alt="Χάρτης parking: ${title}" loading="lazy" decoding="async" onerror="this.closest('.parking-map-shot')?.classList.add('map-failed')">
+                <span class="parking-map-pin">📍</span>
+                <span class="parking-map-caption">${title || 'Θέση parking'}</span>
+            </button>
+        `;
     }
 
     function openMapDirect(item) {
@@ -361,6 +399,25 @@
         };
     }
 
+    function renderCurrentMapPreview(item = readCurrent()) {
+        const el = document.getElementById('parkingMapPreview');
+        if (!el) return;
+
+        const normalized = normalizeHistoryItem(item);
+        if (!normalized) {
+            el.innerHTML = `
+                <div class="parking-map-fallback">
+                    <span>🅿️</span>
+                    <strong>Δεν έχει αποθηκευτεί θέση parking</strong>
+                    <em>Μπες στο Parking για αυτόματο GPS.</em>
+                </div>
+            `;
+            return;
+        }
+
+        el.innerHTML = renderMapImage(normalized, { small: false });
+    }
+
     window.PegasusParking = {
         save: async function() {
             const inputEl = document.getElementById('parkingInput');
@@ -450,6 +507,8 @@
             const statusEl = document.getElementById('parkingStatus');
             if (statusEl) statusEl.textContent = `ΠΑΡΚΙΝΓΚ: ${locToDisplay}`;
 
+            renderCurrentMapPreview(current);
+
             if (current) {
                 const acc = Number.isFinite(Number(current.accuracy)) ? ` · ±${Math.round(Number(current.accuracy))}m` : '';
                 setStatus(
@@ -481,14 +540,13 @@
             container.innerHTML = history.map((item, index) => {
                 const acc = Number.isFinite(Number(item.accuracy)) ? ` · ±${Math.round(Number(item.accuracy))}m` : '';
                 const label = displayLabel(item);
+                const mapShot = renderMapImage(item, { small: true });
                 return `
-                    <div class="log-item" style="cursor:pointer; border-color:rgba(255, 152, 0, 0.42); margin-bottom:8px;" onclick="window.PegasusParking.openMapFromHistory(${index})">
-                        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
-                            <div style="min-width:0;">
-                                <div style="font-size:13px; font-weight:900; color:#fff; line-height:1.35;">📍 ${escapeHtml(label)}</div>
-                                <div style="font-size:10px; font-weight:800; color:#ffb300; margin-top:4px;">#${index + 1} · ${escapeHtml(formatTime(item.ts))}${acc}</div>
-                            </div>
-                            <button class="secondary-btn" onclick="event.stopPropagation(); window.PegasusParking.openMapFromHistory(${index});" style="width:auto; padding:7px 9px; font-size:9px;">ΧΑΡΤΗΣ</button>
+                    <div class="parking-history-card" onclick="window.PegasusParking.openMapFromHistory(${index})">
+                        <div class="parking-history-map">${mapShot}</div>
+                        <div class="parking-history-info">
+                            <div class="parking-history-title">📍 ${escapeHtml(label)}</div>
+                            <div class="parking-history-meta">#${index + 1} · ${escapeHtml(formatTime(item.ts))}${acc}</div>
                         </div>
                     </div>
                 `;
@@ -505,6 +563,19 @@
             openMapDirect(item);
         },
 
+        openMapFromItemTs: function(ts) {
+            const stamp = Number(ts || 0);
+            const current = readCurrent();
+            if (current && Number(current.ts) === stamp) {
+                openMapDirect(current);
+                return;
+            }
+            const item = readHistory().find(x => Number(x.ts) === stamp) || current;
+            openMapDirect(item);
+        },
+
+        staticMapUrl,
+        renderCurrentMapPreview,
         readCurrent,
         readHistory,
         displayLabel
@@ -519,5 +590,5 @@
         setTimeout(() => window.PegasusParking.updateUI(), 2000);
     });
 
-    console.log('📍 PEGASUS PARKING: street labels + direct map open active v2.9.269');
+    console.log('📍 PEGASUS PARKING: static map preview + history active v3.0.270');
 })();

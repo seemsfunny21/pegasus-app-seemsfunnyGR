@@ -312,3 +312,12 @@ PEGASUS 264 - Mobile TV Live Refresh No Cache
 - Parking address cache remains local-only and is excluded from cloud sync.
 - No new JS files were added; changes are integrated in existing parking/mobile/sync files.
 - Cache bump to 269.
+
+
+PEGASUS 270 - Mobile Parking Static Map Preview
+- Added direct static map preview inside Parking mobile using the saved GPS position.
+- Parking now shows a map image with a pin for the current saved position instead of relying only on opening an external map.
+- The last 5 parking history entries now show compact map thumbnails when GPS coordinates are available.
+- Street/address labels remain local-only and continue to use the previous reverse-geocoding logic.
+- External map opening remains available by tapping the map image/history card.
+- No desktop changes.
