@@ -394,3 +394,10 @@ PEGASUS 278 - Parking OpenStreetMap no-Play map + fixed label
 - Added a MutationObserver guard so adaptive typography/label polish cannot flip the text to uppercase every second.
 - Parking still does not auto-save location on open; save remains manual.
 - Desktop unchanged.
+
+
+PEGASUS 279 - Parking v269 direct map open restore
+- Restored the v269 map-opening flow for Parking: Android geo: first, Google Maps web fallback only if the page did not leave/hide.
+- Kept the current safe Parking behavior: no auto-save on open, manual save only, 5-location history, address label when available.
+- Kept the stable “Χάρτης” button text and fixed font so adaptive typography does not change it every second.
+- Desktop unchanged.

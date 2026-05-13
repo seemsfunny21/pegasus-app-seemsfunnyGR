@@ -1,4 +1,4 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v3.8.278 (OSM no-Play map + hard fixed map labels) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v3.9.279 (restore v269 direct map open + stable labels) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
@@ -81,25 +81,24 @@
         return preferred || '--';
     }
 
-    function mapQuery(item) {
-        if (hasCoords(item)) return formatCoords(item).replace(/\s+/g, '');
-        return String(item?.loc || item?.label || item || '').trim();
-    }
-
-    function openStreetMapWebUrl(item) {
-        if (hasCoords(item)) {
-            const lat = Number(item.lat).toFixed(6);
-            const lon = Number(item.lon).toFixed(6);
-            return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=18/${lat}/${lon}`;
-        }
-        const query = mapQuery(item);
-        return query ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}` : '';
-    }
-
-    // Backward-compatible name used by older UI code. It now returns OpenStreetMap,
-    // because Google Maps/geo intents in APK WebView can redirect to Google Play.
     function googleMapsWebUrl(item) {
-        return openStreetMapWebUrl(item);
+        const normalized = normalizeHistoryItem(item) || item;
+        const lat = Number(normalized?.lat);
+        const lon = Number(normalized?.lon);
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat.toFixed(6) + ',' + lon.toFixed(6))}`;
+        }
+        const loc = String(normalized?.addressLabel || normalized?.streetLabel || normalized?.label || normalized?.loc || normalized || '').trim();
+        return loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '';
+    }
+
+    function nativeMapUrl(item) {
+        const normalized = normalizeHistoryItem(item) || item;
+        const lat = Number(normalized?.lat);
+        const lon = Number(normalized?.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return '';
+        const label = encodeURIComponent(displayLabel(normalized) || 'Parking');
+        return `geo:0,0?q=${lat.toFixed(6)},${lon.toFixed(6)}(${label})`;
     }
 
     function forceMapButtonLabels() {
@@ -118,17 +117,37 @@
 
     function openMapDirect(item) {
         const normalized = normalizeHistoryItem(item);
-        const webUrl = openStreetMapWebUrl(normalized);
-        if (!webUrl) return;
+        const url = googleMapsWebUrl(normalized);
+        if (!url) return;
 
-        // Use OpenStreetMap web only. This avoids Android/WebView resolving Google Maps
-        // URLs or geo: intents through Google Play. No automatic fallback to Google Maps.
-        try {
-            const win = window.open(webUrl, '_blank', 'noopener,noreferrer');
-            if (win) return;
-        } catch (_) {}
+        const nativeUrl = nativeMapUrl(normalized);
+        const isAndroid = /Android/i.test(navigator.userAgent || '');
 
-        try { window.location.href = webUrl; } catch (_) {}
+        // Restored from v269: try Android geo: first, then fallback to Google Maps web
+        // only if the page did not leave/hide. This was the version that opened directly
+        // on the user's APK/device.
+        if (isAndroid && nativeUrl) {
+            let pageHidden = false;
+            const onVisibility = () => { if (document.hidden) pageHidden = true; };
+            document.addEventListener('visibilitychange', onVisibility, { once: true });
+
+            try {
+                window.location.href = nativeUrl;
+            } catch (_) {
+                window.location.href = url;
+                return;
+            }
+
+            window.setTimeout(() => {
+                document.removeEventListener('visibilitychange', onVisibility);
+                if (!pageHidden && !document.hidden) {
+                    window.location.href = url;
+                }
+            }, 900);
+            return;
+        }
+
+        window.location.href = url;
     }
 
     function normalizeHistoryItem(item) {
