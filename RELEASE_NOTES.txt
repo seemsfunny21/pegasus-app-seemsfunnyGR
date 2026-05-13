@@ -1,3 +1,12 @@
+PEGASUS 280 - Parking Street Name Retry + v269 Map Open
+- Mobile Parking keeps the v269 direct map-opening behavior from 279.
+- Parking now retries reverse geocoding on open when saved items still show coordinates.
+- Added stronger street/address lookup flow: Nominatim Greek, Nominatim fallback, and BigDataCloud locality fallback.
+- Saved current parking and the last 5 history items can be upgraded from coordinates to street/address labels when a lookup succeeds.
+- If street lookup is unavailable, coordinates remain as a safe fallback.
+- Desktop unchanged.
+- Cache bump to 280.
+
 PEGASUS 275 - Parking direct map open fix
 - Mobile Parking keeps manual-save coordinates behavior from 274.
 - Fixed ΧΑΡΤΗΣ opening: Android now tries a Google Maps intent first so it can open the Maps app directly.

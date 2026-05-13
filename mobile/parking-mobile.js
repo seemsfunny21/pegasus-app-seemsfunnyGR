@@ -1,9 +1,11 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v3.9.279 (restore v269 direct map open + stable labels) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v4.0.280 (street name retry + v269 direct map open) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
     const MAX_HISTORY = 5;
     const GEOCODE_TIMEOUT_MS = 8500;
+    const ADDRESS_FAIL_KEY = 'pegasus_parking_address_retry_fail_v1';
+    const ADDRESS_FAIL_TTL_MS = 60 * 60 * 1000;
 
     let inFlight = false;
     let addressInFlight = false;
@@ -71,6 +73,85 @@
         // Keep only the first useful pieces so the Parking card stays compact.
         const pieces = fallback.split(',').map(cleanAddressPart).filter(Boolean);
         return pieces.slice(0, 3).join(', ');
+    }
+
+
+    function addressFromBigDataCloud(data) {
+        if (!data || typeof data !== 'object') return '';
+        const road = cleanAddressPart(data.road || data.roadName || data.street || data.streetName || '');
+        const number = cleanAddressPart(data.houseNumber || data.house_number || '');
+        const locality = cleanAddressPart(data.locality || data.city || data.principalSubdivision || data.countryName || '');
+
+        if (road && number && locality) return `${road} ${number}, ${locality}`;
+        if (road && number) return `${road} ${number}`;
+        if (road && locality) return `${road}, ${locality}`;
+        if (road) return road;
+        if (locality) return locality;
+        return '';
+    }
+
+    function addressRetryId(item) {
+        const lat = Number(item?.lat);
+        const lon = Number(item?.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return '';
+        return `${lat.toFixed(5)},${lon.toFixed(5)}`;
+    }
+
+    function readAddressFails() {
+        return safeParse(localStorage.getItem(ADDRESS_FAIL_KEY), {});
+    }
+
+    function canRetryAddress(item) {
+        const id = addressRetryId(item);
+        if (!id) return false;
+        const fails = readAddressFails();
+        const lastFail = Number(fails[id] || 0);
+        return !lastFail || (Date.now() - lastFail > ADDRESS_FAIL_TTL_MS);
+    }
+
+    function markAddressFail(item) {
+        const id = addressRetryId(item);
+        if (!id) return;
+        const fails = readAddressFails();
+        fails[id] = Date.now();
+        try { localStorage.setItem(ADDRESS_FAIL_KEY, JSON.stringify(fails)); } catch (_) {}
+    }
+
+    function clearAddressFail(item) {
+        const id = addressRetryId(item);
+        if (!id) return;
+        const fails = readAddressFails();
+        if (fails[id]) {
+            delete fails[id];
+            try { localStorage.setItem(ADDRESS_FAIL_KEY, JSON.stringify(fails)); } catch (_) {}
+        }
+    }
+
+    function needsAddressLookup(item) {
+        if (!item || !hasCoords(item)) return false;
+        const street = cleanAddressPart(item.addressLabel || item.streetLabel || '');
+        if (street && !isCoordinateText(street)) return false;
+        const label = displayLabel(item);
+        return !!item.addressPending || !label || isCoordinateText(label);
+    }
+
+    async function fetchJsonWithTimeout(url, parser, label) {
+        const controller = window.AbortController ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), GEOCODE_TIMEOUT_MS) : null;
+        try {
+            const res = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-store',
+                signal: controller?.signal,
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!res.ok) throw new Error(`${label}_${res.status}`);
+            const data = await res.json();
+            return cleanAddressPart(parser(data));
+        } finally {
+            if (timer) clearTimeout(timer);
+        }
     }
 
     function displayLabel(item) {
@@ -254,18 +335,40 @@
     }
 
     function updateSavedAddress(ts, label, source = 'nominatim') {
+        const stamp = Number(ts);
+        const cleanLabel = cleanAddressPart(label);
+        if (!stamp || !cleanLabel || isCoordinateText(cleanLabel)) return null;
+
+        let updatedCurrent = null;
         const current = readCurrent();
-        if (!current || Number(current.ts) !== Number(ts) || !label) return null;
-        const updated = {
-            ...current,
-            loc: label,
-            label,
-            addressLabel: label,
-            streetLabel: label,
+        if (current && Number(current.ts) === stamp) {
+            updatedCurrent = {
+                ...current,
+                loc: cleanLabel,
+                label: cleanLabel,
+                addressLabel: cleanLabel,
+                streetLabel: cleanLabel,
+                addressSource: source,
+                addressPending: false
+            };
+            localStorage.setItem(LOC_KEY, JSON.stringify(updatedCurrent));
+            writePhoneLastLocation(updatedCurrent);
+        }
+
+        const history = readHistory().map(old => Number(old.ts) === stamp ? {
+            ...old,
+            loc: cleanLabel,
+            label: cleanLabel,
+            addressLabel: cleanLabel,
+            streetLabel: cleanLabel,
             addressSource: source,
             addressPending: false
-        };
-        return saveCurrent(updated);
+        } : old).slice(0, MAX_HISTORY);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+
+        clearAddressFail({ lat: updatedCurrent?.lat || history.find(x => Number(x.ts) === stamp)?.lat, lon: updatedCurrent?.lon || history.find(x => Number(x.ts) === stamp)?.lon });
+        window.PegasusParking?.updateUI?.();
+        return updatedCurrent || history.find(x => Number(x.ts) === stamp) || null;
     }
 
     function buildGpsItem(position, source = 'auto') {
@@ -292,50 +395,91 @@
 
     async function reverseGeocode(item) {
         if (!hasCoords(item) || !window.fetch) return '';
-        const controller = window.AbortController ? new AbortController() : null;
-        const timer = controller ? setTimeout(() => controller.abort(), GEOCODE_TIMEOUT_MS) : null;
-        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(item.lat)}&lon=${encodeURIComponent(item.lon)}&zoom=18&addressdetails=1&accept-language=el`;
-        try {
-            const res = await fetch(url, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-store',
-                signal: controller?.signal,
-                headers: { 'Accept': 'application/json' }
-            });
-            if (!res.ok) throw new Error(`reverse_geocode_${res.status}`);
-            const data = await res.json();
-            return addressFromNominatim(data);
-        } catch (e) {
-            console.info('PEGASUS PARKING: street lookup unavailable, keeping coordinates.', e?.message || e);
-            return '';
-        } finally {
-            if (timer) clearTimeout(timer);
+        const lat = Number(item.lat);
+        const lon = Number(item.lon);
+
+        const attempts = [
+            {
+                label: 'nominatim-el',
+                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1&accept-language=el,en`,
+                parser: addressFromNominatim
+            },
+            {
+                label: 'nominatim-en',
+                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&zoom=17&addressdetails=1&accept-language=en,el`,
+                parser: addressFromNominatim
+            },
+            {
+                label: 'bigdatacloud',
+                url: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&localityLanguage=el`,
+                parser: addressFromBigDataCloud
+            }
+        ];
+
+        for (const attempt of attempts) {
+            try {
+                const label = await fetchJsonWithTimeout(attempt.url, attempt.parser, attempt.label);
+                if (label && !isCoordinateText(label)) return label;
+            } catch (e) {
+                console.info('PEGASUS PARKING: street lookup attempt failed.', attempt.label, e?.message || e);
+            }
         }
+
+        console.info('PEGASUS PARKING: street lookup unavailable, keeping coordinates.');
+        return '';
     }
 
     async function enrichAddressForSavedItem(item) {
         if (!item || !hasCoords(item) || addressInFlight) return item;
+        if (!needsAddressLookup(item) || !canRetryAddress(item)) return item;
         addressInFlight = true;
         try {
             const label = await reverseGeocode(item);
             if (label) {
-                const updated = updateSavedAddress(item.ts, label, 'nominatim');
+                const updated = updateSavedAddress(item.ts, label, 'reverse-geocode');
                 if (updated) {
                     setStatus(`Τελευταία θέση parking:<br>📍 ${escapeHtml(displayLabel(updated))}<br>🕒 ${escapeHtml(formatTime(updated.ts))}`, 'ok');
                     return updated;
                 }
             } else {
+                markAddressFail(item);
                 const current = readCurrent();
                 if (current && Number(current.ts) === Number(item.ts)) {
-                    current.addressPending = false;
-                    saveCurrent(current);
+                    const updated = { ...current, addressPending: false };
+                    localStorage.setItem(LOC_KEY, JSON.stringify(updated));
                 }
+                const history = readHistory().map(old => Number(old.ts) === Number(item.ts) ? { ...old, addressPending: false } : old);
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
             }
             return readCurrent() || item;
         } finally {
             addressInFlight = false;
         }
+    }
+
+
+    let addressLookupTimer = null;
+    function scheduleAddressLookup() {
+        if (addressInFlight) return;
+        clearTimeout(addressLookupTimer);
+        addressLookupTimer = setTimeout(async () => {
+            if (addressInFlight) return;
+            const seen = new Set();
+            const candidates = [readCurrent(), ...readHistory()]
+                .filter(Boolean)
+                .filter(needsAddressLookup)
+                .filter(canRetryAddress)
+                .filter(item => {
+                    const key = `${Number(item.ts) || 0}|${addressRetryId(item)}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+            if (!candidates.length) return;
+            const current = candidates.find(x => Number(x.ts) === Number(readCurrent()?.ts));
+            const first = current || candidates[0];
+            if (first) await enrichAddressForSavedItem(first);
+        }, 350);
     }
 
     function renderCurrentSummary(item = readCurrent()) {
@@ -438,6 +582,7 @@
                 setStatus('Μη διαθέσιμο εδώ. Χρειάζεται HTTPS/Chrome ή APK με GPS permission.', 'warn');
             }
             this.renderHistory();
+            scheduleAddressLookup();
         },
 
         renderHistory: function() {
@@ -495,5 +640,5 @@
         } catch (_) {}
     });
 
-    console.log('📍 PEGASUS PARKING: OpenStreetMap no-Play map + hard fixed label active v3.8.278');
+    console.log('📍 PEGASUS PARKING: Street name retry + v269 direct map open active v4.0.280');
 })();
