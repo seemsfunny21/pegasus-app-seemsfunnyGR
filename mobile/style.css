@@ -1097,7 +1097,7 @@ body .ghost-nav-overlay,
     margin-bottom: 0 !important;
 }
 
-/* ===== PEGASUS PARKING STATIC MAP PREVIEW v270 ===== */
+/* ===== PEGASUS PARKING OSM TILE MAP PREVIEW v271 ===== */
 .parking-map-preview {
     width: 100%;
     margin: 10px 0 12px;
@@ -1117,12 +1117,30 @@ body .ghost-nav-overlay,
     box-shadow: 0 0 18px rgba(255, 152, 0, 0.12);
 }
 
-.parking-map-shot img {
-    width: 100%;
-    height: 156px;
+.parking-osm-viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: radial-gradient(circle at center, rgba(255, 179, 0, 0.12), rgba(0, 0, 0, 0.25));
+}
+
+.parking-osm-tiles {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 768px;
+    height: 768px;
+    will-change: transform;
+}
+
+.parking-osm-tile {
+    position: absolute;
+    width: 256px;
+    height: 256px;
     display: block;
-    object-fit: cover;
-    opacity: 0.95;
+    opacity: 0.96;
+    user-select: none;
+    pointer-events: none;
 }
 
 .parking-map-shot.small {
@@ -1131,11 +1149,7 @@ body .ghost-nav-overlay,
     box-shadow: none;
 }
 
-.parking-map-shot.small img {
-    height: 74px;
-}
-
-.parking-map-shot.map-failed img {
+.parking-map-shot.map-failed .parking-osm-viewport {
     display: none;
 }
 

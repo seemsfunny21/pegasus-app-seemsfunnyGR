@@ -1,4 +1,4 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v3.0.270 (Static map preview + 5-place history) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v3.1.271 (OSM tile preview, no staticmap 500) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
@@ -82,20 +82,81 @@
         return Number.isFinite(lat) && Number.isFinite(lon);
     }
 
+    function tileX(lon, zoom) {
+        return (Number(lon) + 180) / 360 * Math.pow(2, zoom);
+    }
+
+    function tileY(lat, zoom) {
+        const rad = Number(lat) * Math.PI / 180;
+        return (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, zoom);
+    }
+
+    function clampTileY(y, zoom) {
+        const max = Math.pow(2, zoom) - 1;
+        return Math.max(0, Math.min(max, y));
+    }
+
+    function normalizeTileX(x, zoom) {
+        const n = Math.pow(2, zoom);
+        return ((x % n) + n) % n;
+    }
+
+    function osmTileUrl(x, y, zoom) {
+        const safeX = normalizeTileX(Number(x), zoom);
+        const safeY = clampTileY(Number(y), zoom);
+        return `https://tile.openstreetmap.org/${zoom}/${safeX}/${safeY}.png`;
+    }
+
     function staticMapUrl(item, width = 640, height = 300, zoom = 17) {
+        // Kept only for backward compatibility with older console helpers.
+        // v271 no longer uses staticmap.openstreetmap.de because that service can return HTTP 500.
         if (!hasCoords(item)) return '';
         const lat = Number(item.lat).toFixed(6);
         const lon = Number(item.lon).toFixed(6);
-        // No API key. Shows an immediate map image with a pin. If the service fails, the UI falls back gracefully.
-        return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=${zoom}&size=${Number(width)}x${Number(height)}&markers=${lat},${lon},red-pushpin`;
+        return googleMapsWebUrl({ lat: Number(lat), lon: Number(lon) });
+    }
+
+    function renderOsmTileMap(item, options = {}) {
+        const normalized = normalizeHistoryItem(item);
+        if (!hasCoords(normalized)) return '';
+
+        const lat = Number(normalized.lat);
+        const lon = Number(normalized.lon);
+        const zoom = options.small ? 16 : 17;
+        const floatX = tileX(lon, zoom);
+        const floatY = tileY(lat, zoom);
+        const centerX = Math.floor(floatX);
+        const centerY = Math.floor(floatY);
+        const centerPixelX = 256 + ((floatX - centerX) * 256);
+        const centerPixelY = 256 + ((floatY - centerY) * 256);
+
+        const tiles = [];
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const x = centerX + dx;
+                const y = centerY + dy;
+                tiles.push(`
+                    <img class="parking-osm-tile" src="${osmTileUrl(x, y, zoom)}" alt="" loading="lazy" decoding="async"
+                         style="left:${(dx + 1) * 256}px; top:${(dy + 1) * 256}px;"
+                         onerror="this.closest('.parking-map-shot')?.classList.add('map-failed')">
+                `);
+            }
+        }
+
+        return `
+            <div class="parking-osm-viewport" aria-hidden="true">
+                <div class="parking-osm-tiles" style="transform: translate(calc(50% - ${centerPixelX.toFixed(2)}px), calc(50% - ${centerPixelY.toFixed(2)}px));">
+                    ${tiles.join('')}
+                </div>
+            </div>
+        `;
     }
 
     function renderMapImage(item, options = {}) {
         const normalized = normalizeHistoryItem(item);
         const title = escapeHtml(displayLabel(normalized));
-        const size = options.small ? { w: 220, h: 110, z: 17 } : { w: 640, h: 300, z: 17 };
-        const url = staticMapUrl(normalized, size.w, size.h, size.z);
-        if (!url) {
+        const mapHtml = renderOsmTileMap(normalized, options);
+        if (!mapHtml) {
             return `
                 <div class="parking-map-fallback ${options.small ? 'small' : ''}">
                     <span>📍</span>
@@ -107,7 +168,7 @@
 
         return `
             <button class="parking-map-shot ${options.small ? 'small' : ''}" type="button" onclick="window.PegasusParking.openMapFromItemTs(${Number(normalized?.ts || 0)})" aria-label="Άνοιγμα χάρτη για ${title}">
-                <img src="${url}" alt="Χάρτης parking: ${title}" loading="lazy" decoding="async" onerror="this.closest('.parking-map-shot')?.classList.add('map-failed')">
+                ${mapHtml}
                 <span class="parking-map-pin">📍</span>
                 <span class="parking-map-caption">${title || 'Θέση parking'}</span>
             </button>
@@ -590,5 +651,5 @@
         setTimeout(() => window.PegasusParking.updateUI(), 2000);
     });
 
-    console.log('📍 PEGASUS PARKING: static map preview + history active v3.0.270');
+    console.log('📍 PEGASUS PARKING: OSM tile map preview + history active v3.1.271');
 })();

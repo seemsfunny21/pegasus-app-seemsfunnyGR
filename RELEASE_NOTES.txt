@@ -321,3 +321,10 @@ PEGASUS 270 - Mobile Parking Static Map Preview
 - Street/address labels remain local-only and continue to use the previous reverse-geocoding logic.
 - External map opening remains available by tapping the map image/history card.
 - No desktop changes.
+
+
+PEGASUS 271 - Mobile Parking Map 500 Fix
+- Replaced staticmap.openstreetmap.de static map images with direct OpenStreetMap tile preview.
+- Fixes HTTP 500/server error shown when opening Parking map previews.
+- Parking still shows a visual map preview with centered pin and 5-place history thumbnails.
+- No new files. Mobile only. Desktop unchanged.
