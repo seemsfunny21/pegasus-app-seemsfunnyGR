@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - PROFILE & NOTES MODULE (MOBILE EDITION v14.1 CLEAN)
+   PEGASUS OS - PROFILE & NOTES MODULE (MOBILE EDITION v14.2 GR POLISH + TAXISNET)
    Protocol: Document Recovery & Tactical Notes Integration
    Features: Specs Loading, Auto-Sync, Note Management
    Status: FINAL STABLE | FIXED: NOISY LOGS + SAFE STORAGE + CLEAN UI LOAD
@@ -33,7 +33,8 @@ window.PegasusProfile = {
             pADT: specs.adt,
             pAFM: specs.afm,
             pAMKA: specs.amka,
-            pIban: specs.iban
+            pIban: specs.iban,
+            pTaxisnet: specs.taxisnet
         };
 
         Object.keys(fields).forEach(id => {
@@ -51,7 +52,8 @@ window.PegasusProfile = {
             adt: document.getElementById('pADT')?.value?.trim() || "",
             afm: document.getElementById('pAFM')?.value?.trim() || "",
             amka: document.getElementById('pAMKA')?.value?.trim() || "",
-            iban: document.getElementById('pIban')?.value?.trim() || ""
+            iban: document.getElementById('pIban')?.value?.trim() || "",
+            taxisnet: document.getElementById('pTaxisnet')?.value?.trim() || ""
         };
 
         localStorage.setItem('pegasus_user_specs', JSON.stringify(specs));
@@ -112,8 +114,8 @@ window.PegasusProfile = {
         };
 
         this.downloadJSON(this.makeBackupFilename(), payload);
-        this.setBackupStatus("✅ Backup εγγράφων έτοιμο.", "ok");
-        console.log("💾 PEGASUS PROFILE BACKUP:", payload);
+        this.setBackupStatus("✅ Αντίγραφο εγγράφων έτοιμο.", "ok");
+        console.log("💾 PEGASUS PROFILE LOCAL COPY:", payload);
     },
 
     restoreSpecs: function() {
@@ -142,7 +144,8 @@ window.PegasusProfile = {
                     adt: String(specs.adt || ""),
                     afm: String(specs.afm || ""),
                     amka: String(specs.amka || ""),
-                    iban: String(specs.iban || "")
+                    iban: String(specs.iban || ""),
+                    taxisnet: String(specs.taxisnet || specs.taxis || "")
                 };
 
                 localStorage.setItem("pegasus_user_specs", JSON.stringify(clean));
@@ -152,11 +155,11 @@ window.PegasusProfile = {
                     el.setAttribute('readonly', true);
                     el.style.border = "";
                 });
-                this.setBackupStatus("✅ Restore εγγράφων ολοκληρώθηκε τοπικά.", "ok");
+                this.setBackupStatus("✅ Επαναφορά εγγράφων ολοκληρώθηκε τοπικά.", "ok");
                 console.log("♻️ PEGASUS PROFILE RESTORE OK:", clean);
             } catch (e) {
                 console.warn("❌ PEGASUS PROFILE RESTORE FAILED:", e);
-                this.setBackupStatus("❌ Λάθος αρχείο backup εγγράφων.", "error");
+                this.setBackupStatus("❌ Λάθος αρχείο αντιγράφου εγγράφων.", "error");
             }
         });
 

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - VEHICLE MODULE (v15.2 - UNIFIED CLOUD ALIGNED)
+   PEGASUS OS - VEHICLE MODULE (v15.3 - GR POLISH LOCAL BACKUP RESTORE)
    Protocol: Strict Manifest Governance, Legacy Bridging & Date Safe Format
    ========================================================================== */
 
@@ -92,8 +92,8 @@ window.PegasusCar = {
         };
 
         this.downloadJSON(this.makeBackupFilename(), payload);
-        this.setBackupStatus("✅ Backup οχήματος έτοιμο.", "ok");
-        console.log("💾 PEGASUS CAR BACKUP:", payload);
+        this.setBackupStatus("✅ Αντίγραφο οχήματος έτοιμο.", "ok");
+        console.log("💾 PEGASUS CAR LOCAL COPY:", payload);
     },
 
     restoreLocal: function() {
@@ -152,11 +152,11 @@ window.PegasusCar = {
                     el.setAttribute('readonly', true);
                     el.style.border = "";
                 });
-                this.setBackupStatus("✅ Restore οχήματος ολοκληρώθηκε τοπικά.", "ok");
+                this.setBackupStatus("✅ Επαναφορά οχήματος ολοκληρώθηκε τοπικά.", "ok");
                 console.log("♻️ PEGASUS CAR RESTORE OK:", { identity: cleanIdentity, dates: cleanDates, service: cleanService });
             } catch (e) {
                 console.warn("❌ PEGASUS CAR RESTORE FAILED:", e);
-                this.setBackupStatus("❌ Λάθος αρχείο backup οχήματος.", "error");
+                this.setBackupStatus("❌ Λάθος αρχείο αντιγράφου οχήματος.", "error");
             }
         });
 

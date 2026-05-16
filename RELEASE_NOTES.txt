@@ -1,3 +1,12 @@
+PEGASUS 285 - Greek Documents/Vehicle UI Polish + Taxisnet
+- Mobile Documents and Vehicle local transfer buttons are now Greek: “Αντίγραφο” and “Επαναφορά”, fixing the bad Back/Πλάτη translation issue.
+- Documents and Vehicle labels now use Greek title-style casing instead of all-caps/English labels.
+- Added a Taxisnet field under Iban in Personal documents.
+- Local backup/restore for documents now includes Taxisnet.
+- Updated Greek status messages for local copy/restore results.
+- Desktop unchanged. No new files.
+- Cache bump to 285.
+
 
 PEGASUS 284 - MOBILE DOCUMENTS/VEHICLE LOCAL BACKUP + RESTORE
 - Added BACKUP / RESTORE buttons to mobile Έγγραφα.
