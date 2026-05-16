@@ -64,12 +64,104 @@ window.PegasusProfile = {
 
         console.log("✅ PROFILE: Specs secured locally.");
 
-        if (window.PegasusCloud) {
-            await window.PegasusCloud.push(true);
-            console.log("📡 PROFILE: Cloud Sync Complete.");
-        }
+        console.log("🔒 PROFILE: Local-only documents saved. No cloud sync.");
 
-        alert("Τα στοιχεία αποθηκεύτηκαν επιτυχώς.");
+        alert("Τα στοιχεία αποθηκεύτηκαν τοπικά.");
+    },
+
+
+
+    setBackupStatus: function(message, tone = "info") {
+        const el = document.getElementById("profileBackupStatus");
+        if (!el) return;
+        const color = tone === "ok" ? "var(--main)" : (tone === "error" ? "#ff4444" : "#777");
+        el.style.color = color;
+        el.textContent = message || "";
+        if (message) setTimeout(() => {
+            if (el.textContent === message) el.textContent = "";
+        }, 4500);
+    },
+
+    makeBackupFilename: function() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        return `pegasus-documents-backup-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+    },
+
+    downloadJSON: function(filename, payload) {
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+    },
+
+    backupSpecs: function() {
+        const specs = this.safeParse("pegasus_user_specs", {}) || {};
+        const payload = {
+            type: "pegasus-documents-local-backup-v1",
+            module: "profile",
+            createdAt: new Date().toISOString(),
+            storage: {
+                pegasus_user_specs: specs
+            }
+        };
+
+        this.downloadJSON(this.makeBackupFilename(), payload);
+        this.setBackupStatus("✅ Backup εγγράφων έτοιμο.", "ok");
+        console.log("💾 PEGASUS PROFILE BACKUP:", payload);
+    },
+
+    restoreSpecs: function() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json,.json";
+        input.style.display = "none";
+
+        input.addEventListener("change", async () => {
+            const file = input.files && input.files[0];
+            input.remove();
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const payload = JSON.parse(text);
+                const storage = payload?.storage || payload || {};
+                const specs = storage.pegasus_user_specs || payload.pegasus_user_specs || null;
+
+                if (!specs || typeof specs !== "object" || Array.isArray(specs)) {
+                    throw new Error("Το αρχείο δεν έχει έγκυρα προσωπικά έγγραφα Pegasus.");
+                }
+
+                const clean = {
+                    pa: String(specs.pa || ""),
+                    adt: String(specs.adt || ""),
+                    afm: String(specs.afm || ""),
+                    amka: String(specs.amka || ""),
+                    iban: String(specs.iban || "")
+                };
+
+                localStorage.setItem("pegasus_user_specs", JSON.stringify(clean));
+                this._lastSpecsSnapshot = JSON.stringify(clean);
+                this.load(true);
+                document.querySelectorAll('#profile input').forEach(el => {
+                    el.setAttribute('readonly', true);
+                    el.style.border = "";
+                });
+                this.setBackupStatus("✅ Restore εγγράφων ολοκληρώθηκε τοπικά.", "ok");
+                console.log("♻️ PEGASUS PROFILE RESTORE OK:", clean);
+            } catch (e) {
+                console.warn("❌ PEGASUS PROFILE RESTORE FAILED:", e);
+                this.setBackupStatus("❌ Λάθος αρχείο backup εγγράφων.", "error");
+            }
+        });
+
+        document.body.appendChild(input);
+        input.click();
     },
 
     // 3. Προσθήκη Νέας Σημείωσης

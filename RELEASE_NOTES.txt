@@ -1,3 +1,14 @@
+
+PEGASUS 284 - MOBILE DOCUMENTS/VEHICLE LOCAL BACKUP + RESTORE
+- Added BACKUP / RESTORE buttons to mobile Έγγραφα.
+- Added BACKUP / RESTORE buttons to mobile Όχημα.
+- Documents backup exports/imports pegasus_user_specs locally.
+- Vehicle backup exports/imports vehicle identity, dates, and service history.
+- Documents and vehicle data save locally only; vehicle service logs are now also local-only.
+- Restore is local-device only and does not push private document/vehicle identity to cloud.
+- No new JS file added; changes are integrated into existing profile-mobile.js and car-mobile.js.
+- Cache bump to 284.
+
 PEGASUS 283 - Parking Original Manual Mode Restored
 
 - Restored Parking mobile to the original manual text/location form from before GPS/map experiments.

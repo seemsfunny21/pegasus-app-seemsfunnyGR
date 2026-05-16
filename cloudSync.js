@@ -350,6 +350,8 @@ const PegasusCloud = {
             "pegasus_car_dates",
             "pegasus_car_specs",
             "peg_car_dates",
+            "pegasus_car_service",
+            "peg_car_service",
             "pegasus_master_pin",
             "pegasus_mobile_ghost_order_v1",
             "pegasus_mobile_last_location_enabled_v1",

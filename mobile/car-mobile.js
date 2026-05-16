@@ -29,15 +29,139 @@ window.PegasusCar = {
 
         document.querySelectorAll('#car input').forEach(el => el.setAttribute('readonly', true));
 
-        if (window.PegasusCloud) {
-            if (typeof setSyncStatus === "function") setSyncStatus('ΑΠΟΣΤΟΛΗ...');
-            await window.PegasusCloud.push(true);
-            if (typeof setSyncStatus === "function") setSyncStatus('online');
-            console.log("📡 CAR: Cloud Sync Successful.");
-        }
+        console.log("🔒 CAR: Vehicle data saved locally only. No cloud sync.");
 
         this.load();
-        alert("Τα στοιχεία του οχήματος αποθηκεύτηκαν και συγχρονίστηκαν.");
+        alert("Τα στοιχεία του οχήματος αποθηκεύτηκαν τοπικά.");
+    },
+
+
+
+    safeParseKey: function(key, fallback) {
+        try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : fallback;
+        } catch (e) {
+            console.warn("⚠️ CAR: Corrupted storage", key, e);
+            return fallback;
+        }
+    },
+
+    setBackupStatus: function(message, tone = "info") {
+        const el = document.getElementById("carBackupStatus");
+        if (!el) return;
+        el.style.color = tone === "ok" ? "var(--main)" : (tone === "error" ? "#ff4444" : "#777");
+        el.textContent = message || "";
+        if (message) setTimeout(() => {
+            if (el.textContent === message) el.textContent = "";
+        }, 4500);
+    },
+
+    makeBackupFilename: function() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        return `pegasus-vehicle-backup-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.json`;
+    },
+
+    downloadJSON: function(filename, payload) {
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+    },
+
+    backupLocal: function() {
+        const identity = this.safeParseKey(CAR_M.car.identity, {}) || this.safeParseKey(CAR_M.car.legacySpecs, {}) || {};
+        const dates = this.safeParseKey(CAR_M.car.dates, {}) || this.safeParseKey(CAR_M.car.legacyDates, {}) || {};
+        const service = this.safeParseKey(CAR_M.car.service, []) || this.safeParseKey(CAR_M.car.legacyService, []) || [];
+
+        const payload = {
+            type: "pegasus-vehicle-local-backup-v1",
+            module: "car",
+            createdAt: new Date().toISOString(),
+            storage: {
+                [CAR_M.car.identity]: identity,
+                [CAR_M.car.dates]: dates,
+                [CAR_M.car.service]: Array.isArray(service) ? service : []
+            }
+        };
+
+        this.downloadJSON(this.makeBackupFilename(), payload);
+        this.setBackupStatus("✅ Backup οχήματος έτοιμο.", "ok");
+        console.log("💾 PEGASUS CAR BACKUP:", payload);
+    },
+
+    restoreLocal: function() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json,.json";
+        input.style.display = "none";
+
+        input.addEventListener("change", async () => {
+            const file = input.files && input.files[0];
+            input.remove();
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const payload = JSON.parse(text);
+                const storage = payload?.storage || payload || {};
+
+                const identity = storage[CAR_M.car.identity] || storage.pegasus_car_identity || storage.pegasus_car_specs || payload.identity || null;
+                const dates = storage[CAR_M.car.dates] || storage.pegasus_car_dates || storage.peg_car_dates || payload.dates || null;
+                const service = storage[CAR_M.car.service] || storage.pegasus_car_service || storage.peg_car_service || payload.service || [];
+
+                if ((!identity || typeof identity !== "object") && (!dates || typeof dates !== "object") && !Array.isArray(service)) {
+                    throw new Error("Το αρχείο δεν έχει έγκυρα στοιχεία οχήματος Pegasus.");
+                }
+
+                const cleanIdentity = {
+                    plate: String(identity?.plate || ""),
+                    model: String(identity?.model || ""),
+                    vin: String(identity?.vin || ""),
+                    eng: String(identity?.eng || ""),
+                    pwr: String(identity?.pwr || "")
+                };
+
+                const cleanDates = {
+                    ins: String(dates?.ins || ""),
+                    kteo: String(dates?.kteo || ""),
+                    srv: String(dates?.srv || "")
+                };
+
+                const cleanService = Array.isArray(service) ? service.map(item => ({
+                    t: String(item?.t || item?.task || ""),
+                    k: String(item?.k || item?.km || ""),
+                    d: String(item?.d || item?.date || "")
+                })).filter(item => item.t || item.k || item.d) : [];
+
+                localStorage.setItem(CAR_M.car.identity, JSON.stringify(cleanIdentity));
+                localStorage.setItem(CAR_M.car.dates, JSON.stringify(cleanDates));
+                localStorage.setItem(CAR_M.car.legacySpecs, JSON.stringify(cleanIdentity));
+                localStorage.setItem(CAR_M.car.legacyDates, JSON.stringify(cleanDates));
+                localStorage.setItem(CAR_M.car.service, JSON.stringify(cleanService));
+                localStorage.setItem(CAR_M.car.legacyService, JSON.stringify(cleanService));
+
+                this.load();
+                document.querySelectorAll('#car input').forEach(el => {
+                    el.setAttribute('readonly', true);
+                    el.style.border = "";
+                });
+                this.setBackupStatus("✅ Restore οχήματος ολοκληρώθηκε τοπικά.", "ok");
+                console.log("♻️ PEGASUS CAR RESTORE OK:", { identity: cleanIdentity, dates: cleanDates, service: cleanService });
+            } catch (e) {
+                console.warn("❌ PEGASUS CAR RESTORE FAILED:", e);
+                this.setBackupStatus("❌ Λάθος αρχείο backup οχήματος.", "error");
+            }
+        });
+
+        document.body.appendChild(input);
+        input.click();
     },
 
     load: function() {
@@ -80,7 +204,7 @@ window.PegasusCar = {
         if(document.getElementById('srvKm')) document.getElementById('srvKm').value = "";
 
         this.renderServiceLog();
-        if (window.PegasusCloud) await window.PegasusCloud.push(true);
+        console.log("🔒 CAR: Service log saved locally only. No cloud sync.");
     },
 
     renderServiceLog: function() {
@@ -119,7 +243,7 @@ window.PegasusCar = {
         localStorage.setItem(CAR_M.car.service, JSON.stringify(logs));
 
         this.renderServiceLog();
-        if (window.PegasusCloud) await window.PegasusCloud.push(true);
+        console.log("🔒 CAR: Service log deleted locally only. No cloud sync.");
     }
 };
 
