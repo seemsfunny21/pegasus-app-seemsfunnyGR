@@ -1,3 +1,10 @@
+
+PEGASUS 282 - Parking 10 History + Silent Weight Save
+- Mobile Parking now keeps the latest 10 saved locations instead of 5.
+- Tapping/selecting any saved Parking history card promotes it to the first/current position.
+- Parking keeps the v269/v279 map-opening behavior.
+- Weight save no longer shows a success popup after entering weight.
+- Cache bump to 282.
 PEGASUS 280 - Parking Street Name Retry + v269 Map Open
 - Mobile Parking keeps the v269 direct map-opening behavior from 279.
 - Parking now retries reverse geocoding on open when saved items still show coordinates.

@@ -1,8 +1,8 @@
-/* ===== PEGASUS PARKING TRACKER MODULE v4.1.281 (strict street-only labels + v269 direct map open) ===== */
+/* ===== PEGASUS PARKING TRACKER MODULE v4.2.282 (10-slot history + select-to-top) ===== */
 (function installPegasusParking() {
     const LOC_KEY = 'pegasus_parking_loc';
     const HISTORY_KEY = 'pegasus_parking_history';
-    const MAX_HISTORY = 5;
+    const MAX_HISTORY = 10;
     const GEOCODE_TIMEOUT_MS = 8500;
     const ADDRESS_FAIL_KEY = 'pegasus_parking_address_retry_fail_v1';
     const ADDRESS_FAIL_TTL_MS = 60 * 60 * 1000;
@@ -360,6 +360,34 @@
         return normalized;
     }
 
+    function selectHistoryItem(index) {
+        const idx = Number(index);
+        if (!Number.isInteger(idx) || idx < 0) return null;
+
+        const history = readHistory();
+        const selected = normalizeHistoryItem(history[idx]);
+        if (!selected) return null;
+
+        const promoted = {
+            ...selected,
+            ts: selected.ts || Date.now(),
+            iso: selected.iso || new Date(selected.ts || Date.now()).toISOString(),
+            source: selected.source || 'parking-history-selected',
+            localOnly: true
+        };
+
+        const nextHistory = [
+            promoted,
+            ...history.filter((item, i) => i !== idx && !samePlace(item, promoted))
+        ].slice(0, MAX_HISTORY);
+
+        localStorage.setItem(LOC_KEY, JSON.stringify(promoted));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
+        writePhoneLastLocation(promoted);
+        window.PegasusParking?.updateUI?.();
+        return promoted;
+    }
+
     function updateSavedAddress(ts, label, source = 'nominatim') {
         const stamp = Number(ts);
         const cleanLabel = cleanAddressPart(label);
@@ -553,7 +581,7 @@
                 <div class="parking-current-body">
                     <div class="parking-current-title">${escapeHtml(displayLabel(normalized))}</div>
                     <div class="parking-current-meta">${escapeHtml(formatTime(normalized.ts))}${escapeHtml(acc)}${escapeHtml(pending)}</div>
-                    <div class="parking-current-hint">Αποθηκευμένο τοπικά στο κινητό · ιστορικό 5 θέσεων.${escapeHtml(coords)}</div>
+                    <div class="parking-current-hint">Αποθηκευμένο τοπικά στο κινητό · ιστορικό 10 θέσεων.${escapeHtml(coords)}</div>
                 </div>
             </div>`;
     }
@@ -643,14 +671,15 @@
                 const acc = Number.isFinite(Number(item.accuracy)) ? ` · ±${Math.round(Number(item.accuracy))}m` : '';
                 const label = displayLabel(item);
                 const canMap = googleMapsWebUrl(item);
+                const selectedHint = index === 0 ? 'Τρέχουσα θέση' : 'Πάτημα στην κάρτα = επιλογή';
                 return `
-                    <div class="parking-history-card">
+                    <div class="parking-history-card" role="button" tabindex="0" onclick="window.PegasusParking.selectFromHistory(${index})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.PegasusParking.selectFromHistory(${index});}">
                         <div class="parking-history-index">${index + 1}</div>
                         <div class="parking-history-info">
                             <div class="parking-history-title">${escapeHtml(label)}</div>
-                            <div class="parking-history-meta">${escapeHtml(formatTime(item.ts))}${escapeHtml(acc)}</div>
+                            <div class="parking-history-meta">${escapeHtml(formatTime(item.ts))}${escapeHtml(acc)} · ${escapeHtml(selectedHint)}</div>
                         </div>
-                        <button class="parking-history-map-btn" type="button" ${canMap ? `onclick="window.PegasusParking.openMapFromHistory(${index})"` : 'disabled'} data-pegasus-fixed-text="true" aria-label="Άνοιγμα χάρτη">Χάρτης</button>
+                        <button class="parking-history-map-btn" type="button" ${canMap ? `onclick="event.stopPropagation(); window.PegasusParking.openMapFromHistory(${index})"` : 'disabled'} data-pegasus-fixed-text="true" aria-label="Άνοιγμα χάρτη">Χάρτης</button>
                     </div>`;
             }).join('');
             forceMapButtonLabels();
@@ -658,6 +687,13 @@
 
         openCurrentMap: function() { openMapDirect(readCurrent()); },
         openMapFromHistory: function(index) { openMapDirect(readHistory()[Number(index) || 0]); },
+        selectFromHistory: function(index) {
+            const selected = selectHistoryItem(index);
+            if (selected) {
+                setStatus(`Τρέχουσα θέση parking:<br>📍 ${escapeHtml(displayLabel(selected))}<br>🕒 ${escapeHtml(formatTime(selected.ts))}`, 'ok');
+            }
+            return selected;
+        },
         openMapFromItemTs: function(ts) {
             const stamp = Number(ts || 0);
             const current = readCurrent();
@@ -686,5 +722,5 @@
         } catch (_) {}
     });
 
-    console.log('📍 PEGASUS PARKING: Strict street-only labels + v269 direct map open active v4.1.281');
+    console.log('📍 PEGASUS PARKING: 10-slot history + select-to-top active v4.2.282');
 })();

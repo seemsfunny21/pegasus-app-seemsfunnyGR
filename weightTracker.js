@@ -56,7 +56,8 @@ window.PegasusWeight = {
         }
 
         this.updateUI();
-        alert(`✅ Βάρος καταγράφηκε: ${weight} kg`);
+        // Silent success on mobile/desktop: no popup after saving weight.
+        console.log(`✅ PEGASUS WEIGHT: Saved silently: ${weight} kg`);
     },
 
     // 2. Υπολογισμός μέσου όρου με Χρονολογική Ταξινόμηση
