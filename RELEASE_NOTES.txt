@@ -470,3 +470,13 @@ PEGASUS 286
   * Cloud data backup/restore
   * Full local + cloud backup/restore
 - Kept desktop unchanged.
+
+
+PEGASUS 287 - Safe Merge Restore
+- Data Management restore now uses Safe Restore / Merge instead of blind overwrite.
+- Local restore creates an emergency backup first, then merges missing fields, arrays and history items while preserving existing newer/current values.
+- Cloud restore reads the current cloud first, merges it with the backup, clears delete markers and writes the merged record.
+- Full restore applies safe merge for both local and cloud data.
+- Restore buttons now say “Ασφαλής επαναφορά”.
+- Desktop unchanged. No new files.
+- Cache bump to 287.

@@ -236,11 +236,11 @@
             <div class="compact-grid pegasus-data-actions">
                 <button class="secondary-btn" onclick="PegasusMobileDataManager.backupLocal()">Αντίγραφο</button>
                 <label class="secondary-btn pegasus-file-restore">
-                    Επαναφορά
+                    Ασφαλής επαναφορά
                     <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreLocal(event)">
                 </label>
             </div>
-            <div class="pegasus-data-hint">Για έγγραφα, όχημα, parking και ό,τι μένει μόνο στη συσκευή.</div>
+            <div class="pegasus-data-hint">Για έγγραφα, όχημα, parking και ό,τι μένει μόνο στη συσκευή. Η επαναφορά γίνεται με ασφαλές merge.</div>
         </div>
 
         <div class="mini-card pegasus-data-card">
@@ -248,11 +248,11 @@
             <div class="compact-grid pegasus-data-actions">
                 <button class="secondary-btn" onclick="PegasusMobileDataManager.backupCloud()">Αντίγραφο</button>
                 <label class="secondary-btn pegasus-file-restore">
-                    Επαναφορά
+                    Ασφαλής επαναφορά
                     <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreCloud(event)">
                 </label>
             </div>
-            <div class="pegasus-data-hint">Για τα συγχρονισμένα δεδομένα του Pegasus cloud.</div>
+            <div class="pegasus-data-hint">Για τα συγχρονισμένα δεδομένα του Pegasus cloud. Η επαναφορά ενώνει πρώτα με το τωρινό cloud.</div>
         </div>
 
         <div class="mini-card pegasus-data-card pegasus-data-card-all">
@@ -260,11 +260,11 @@
             <div class="compact-grid pegasus-data-actions">
                 <button class="primary-btn" onclick="PegasusMobileDataManager.backupAll()">Αντίγραφο</button>
                 <label class="primary-btn pegasus-file-restore">
-                    Επαναφορά
+                    Ασφαλής επαναφορά
                     <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreAll(event)">
                 </label>
             </div>
-            <div class="pegasus-data-hint">Παίρνει μαζί τοπικά δεδομένα και cloud snapshot.</div>
+            <div class="pegasus-data-hint">Παίρνει μαζί τοπικά δεδομένα και cloud snapshot. Η επαναφορά κάνει merge, όχι τυφλή αντικατάσταση.</div>
         </div>
 
         <button class="primary-btn" style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; box-shadow: none; font-size: 11px; padding: 18px; margin-top: 16px;" onclick="hardResetSystem()">
@@ -1406,7 +1406,7 @@
 
 
     window.PegasusMobileDataManager = (function() {
-        const SCHEMA = 'PEGASUS_MOBILE_DATA_MANAGER_V286';
+        const SCHEMA = 'PEGASUS_MOBILE_DATA_MANAGER_V287_SAFE_MERGE';
         const SECURITY_RE = /(vault|pin|master|secret|hash|wrapped|api[_-]?key|gemini|openai|openrouter|token|saved_master)/i;
         const LOCATION_RE = /mobile_last_location/i;
 
@@ -1497,22 +1497,266 @@
         }
         function extractLocalPayload(payload) {
             if (!payload || typeof payload !== 'object') return null;
-            return payload.localData || payload.localStorage || payload.local || payload?.data?.localData || null;
+            if (payload.localData || payload.localStorage || payload.local || payload?.data?.localData) {
+                return payload.localData || payload.localStorage || payload.local || payload?.data?.localData;
+            }
+            if (payload.mode === 'local' && payload.data && typeof payload.data === 'object') return payload.data;
+            return null;
         }
         function extractCloudPayload(payload) {
             if (!payload || typeof payload !== 'object') return null;
             return payload.cloudRecord || payload.cloudData || payload.cloud || payload?.data?.cloudRecord || null;
         }
-        function applyLocal(localData) {
-            if (!localData || typeof localData !== 'object') throw new Error('Δεν βρέθηκαν τοπικά δεδομένα στο αρχείο.');
-            Object.entries(localData).forEach(([key, value]) => {
-                if (!key || isBlockedKey(key)) return;
-                localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+        function decodeStorageValue(value) {
+            if (value === undefined || value === null) return value;
+            if (typeof value !== 'string') return value;
+            const s = value.trim();
+            if (!s) return value;
+            if (!(s.startsWith('{') || s.startsWith('['))) return value;
+            try { return JSON.parse(s); } catch (_) { return value; }
+        }
+        function encodeStorageValue(value, preferredRaw) {
+            if (typeof value === 'string') return value;
+            if (value === undefined) return preferredRaw ?? '';
+            return JSON.stringify(value);
+        }
+        function isEmptyValue(value) {
+            if (value === undefined || value === null) return true;
+            if (typeof value === 'string') {
+                const s = value.trim();
+                return !s || s === '{}' || s === '[]' || s === 'null' || s === 'undefined';
+            }
+            if (Array.isArray(value)) return value.length === 0;
+            if (typeof value === 'object') return Object.keys(value).length === 0;
+            return false;
+        }
+        function normalizeForId(value) {
+            return String(value ?? '')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/\s+/g, ' ');
+        }
+        function getItemId(item, index = 0) {
+            if (item && typeof item === 'object') {
+                const id = item.id || item.key || item.reportId || item.ledgerKey || item.uid;
+                if (id) return String(id);
+                const parts = [
+                    item.date || item.dateKey || item.isoDate || item.greekDate || item.day || '',
+                    item.name || item.title || item.food || item.exercise || item.label || item.amount || '',
+                    item.ts || item.time || item.createdAt || item.updatedAt || item.recordedAt || ''
+                ].map(normalizeForId).filter(Boolean);
+                if (parts.length) return parts.join('|');
+            }
+            return `idx:${index}:${normalizeForId(JSON.stringify(item))}`;
+        }
+        function getTimeScore(value) {
+            if (!value || typeof value !== 'object') return 0;
+            const candidates = [value.updatedAt, value.importedAt, value.recordedAt, value.createdAt, value.ts, value.time, value.date, value.isoDate, value.dateKey];
+            for (const c of candidates) {
+                if (!c) continue;
+                if (typeof c === 'number') return c;
+                const n = Number(c);
+                if (Number.isFinite(n) && n > 100000) return n;
+                const parsed = Date.parse(String(c));
+                if (Number.isFinite(parsed)) return parsed;
+            }
+            return 0;
+        }
+        function mergeObjects(current = {}, incoming = {}, stats) {
+            const out = { ...(incoming && typeof incoming === 'object' && !Array.isArray(incoming) ? incoming : {}), ...(current && typeof current === 'object' && !Array.isArray(current) ? current : {}) };
+            const keys = new Set([...Object.keys(incoming || {}), ...Object.keys(current || {})]);
+            const currentNewer = getTimeScore(current) >= getTimeScore(incoming);
+            keys.forEach(key => {
+                const c = current?.[key];
+                const i = incoming?.[key];
+                if (isEmptyValue(c) && !isEmptyValue(i)) {
+                    out[key] = i;
+                    stats.added++;
+                    return;
+                }
+                if (isEmptyValue(i)) {
+                    out[key] = c;
+                    return;
+                }
+                if (Array.isArray(c) && Array.isArray(i)) {
+                    out[key] = mergeArrays(key, c, i, stats);
+                    return;
+                }
+                if (c && i && typeof c === 'object' && typeof i === 'object' && !Array.isArray(c) && !Array.isArray(i)) {
+                    out[key] = mergeObjects(c, i, stats);
+                    return;
+                }
+                if (JSON.stringify(c) === JSON.stringify(i)) {
+                    out[key] = c;
+                    return;
+                }
+                out[key] = currentNewer ? c : i;
+                stats.conflicts++;
             });
+            return out;
+        }
+        function mergeArrays(key, current = [], incoming = [], stats) {
+            const out = [];
+            const indexById = new Map();
+            const addItem = item => {
+                const id = getItemId(item, out.length);
+                if (indexById.has(id)) {
+                    const idx = indexById.get(id);
+                    const existing = out[idx];
+                    if (existing && item && typeof existing === 'object' && typeof item === 'object' && !Array.isArray(existing) && !Array.isArray(item)) {
+                        out[idx] = mergeObjects(existing, item, stats);
+                    }
+                    return;
+                }
+                indexById.set(id, out.length);
+                out.push(item);
+            };
+            current.forEach(addItem);
+            incoming.forEach(item => {
+                const before = out.length;
+                addItem(item);
+                if (out.length > before) stats.added++;
+            });
+            if (/parking_history/i.test(key)) {
+                out.sort((a, b) => getTimeScore(b) - getTimeScore(a));
+                return out.slice(0, 10);
+            }
+            return out;
+        }
+        function mergeSupplementInventory(current, incoming, stats) {
+            const c = current && typeof current === 'object' ? current : {};
+            const i = incoming && typeof incoming === 'object' ? incoming : {};
+            const out = { ...i, ...c };
+            ['prot', 'crea'].forEach(field => {
+                const tsField = field === 'prot' ? 'protUpdatedAt' : 'creaUpdatedAt';
+                const cTs = Number(c[tsField] || c.updatedAt || 0);
+                const iTs = Number(i[tsField] || i.updatedAt || 0);
+                if ((!c[field] && i[field]) || iTs > cTs) {
+                    out[field] = i[field];
+                    out[tsField] = i[tsField] || i.updatedAt || Date.now();
+                    stats.added++;
+                }
+            });
+            out.syncVersion = Math.max(Number(c.syncVersion || 0), Number(i.syncVersion || 0), 2);
+            return out;
+        }
+        function mergeStorageValue(key, currentRaw, incomingRaw, stats) {
+            if (isEmptyValue(currentRaw)) {
+                stats.added++;
+                return typeof incomingRaw === 'string' ? incomingRaw : JSON.stringify(incomingRaw);
+            }
+            if (isEmptyValue(incomingRaw)) return currentRaw;
+            const current = decodeStorageValue(currentRaw);
+            const incoming = decodeStorageValue(incomingRaw);
+            if (key === 'pegasus_supp_inventory') {
+                return encodeStorageValue(mergeSupplementInventory(current, incoming, stats), currentRaw);
+            }
+            if (Array.isArray(current) && Array.isArray(incoming)) {
+                return encodeStorageValue(mergeArrays(key, current, incoming, stats), currentRaw);
+            }
+            if (current && incoming && typeof current === 'object' && typeof incoming === 'object' && !Array.isArray(current) && !Array.isArray(incoming)) {
+                return encodeStorageValue(mergeObjects(current, incoming, stats), currentRaw);
+            }
+            if (String(currentRaw) === String(incomingRaw)) return currentRaw;
+            stats.conflicts++;
+            return currentRaw;
+        }
+        function mergeStorageMap(currentMap = {}, incomingMap = {}) {
+            const stats = { added: 0, conflicts: 0, skipped: 0, written: 0 };
+            const merged = { ...(currentMap || {}) };
+            Object.entries(incomingMap || {}).forEach(([key, incomingValue]) => {
+                if (!key || isBlockedKey(key)) { stats.skipped++; return; }
+                const currentValue = Object.prototype.hasOwnProperty.call(merged, key) ? merged[key] : localStorage.getItem(key);
+                const nextValue = mergeStorageValue(key, currentValue, incomingValue, stats);
+                if (nextValue !== currentValue) stats.written++;
+                merged[key] = nextValue;
+            });
+            return { merged, stats };
+        }
+        async function createEmergencyBackup(scope = 'local') {
+            const localData = collectLocal('all');
+            let cloudRecord = null;
+            if (scope === 'cloud' || scope === 'all') {
+                try { cloudRecord = await fetchCloudRecord(); } catch (e) { console.warn('Emergency cloud backup skipped:', e); }
+            }
+            const emergency = {
+                schema: `${SCHEMA}_EMERGENCY_BEFORE_RESTORE`,
+                mode: 'emergency',
+                scope,
+                createdAt: new Date().toISOString(),
+                localData,
+                cloudRecord
+            };
+            const filename = `pegasus_emergency_before_restore_${scope}_${stamp()}.json`;
+            try { downloadJSON(filename, emergency); } catch (_) {}
+            try { localStorage.setItem(`pegasus_emergency_restore_backup_${Date.now()}`, JSON.stringify(emergency)); } catch (_) {}
+            return filename;
+        }
+        function refreshAfterRestore() {
             try { window.PegasusProfile?.load?.(true); } catch (_) {}
             try { window.PegasusCar?.load?.(); } catch (_) {}
             try { window.PegasusParking?.updateUI?.(); } catch (_) {}
+            try { window.PegasusInventory?.updateUI?.(true); } catch (_) {}
+            try { window.PegasusDiet?.updateUI?.(); } catch (_) {}
             try { refreshAllUI?.(); } catch (_) {}
+        }
+        function applyLocalMerge(localData) {
+            if (!localData || typeof localData !== 'object') throw new Error('Δεν βρέθηκαν τοπικά δεδομένα στο αρχείο.');
+            const current = {};
+            Object.keys(localData).forEach(key => current[key] = localStorage.getItem(key));
+            const { merged, stats } = mergeStorageMap(current, localData);
+            Object.entries(merged).forEach(([key, value]) => {
+                if (!key || isBlockedKey(key)) return;
+                localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+            });
+            refreshAfterRestore();
+            return stats;
+        }
+        function mergeProtectedPayload(currentProtected = {}, incomingProtected = {}) {
+            const out = { ...(incomingProtected || {}), ...(currentProtected || {}) };
+            Object.entries(incomingProtected || {}).forEach(([key, value]) => {
+                if (isEmptyValue(out[key]) && !isEmptyValue(value)) out[key] = value;
+            });
+            return out;
+        }
+        function mergeCloudRecords(currentRecord = {}, incomingRecord = {}) {
+            if (!incomingRecord || typeof incomingRecord !== 'object') throw new Error('Δεν βρέθηκαν δεδομένα cloud στο αρχείο.');
+            const currentStorage = currentRecord.storage || {};
+            const incomingStorage = incomingRecord.storage || {};
+            const { merged: storage, stats } = mergeStorageMap(currentStorage, incomingStorage);
+            const currentProtected = currentRecord.protected || {};
+            const incomingProtected = incomingRecord.protected || {};
+            const nowTs = String(Date.now());
+            const events = mergeArrays('__events__', currentRecord.__events__ || [], incomingRecord.__events__ || [], stats).slice(-250);
+            return {
+                ...incomingRecord,
+                ...currentRecord,
+                last_update_ts: nowTs,
+                last_update_date: window.PegasusCloud?.getTodayKey?.() || new Date().toISOString().slice(0, 10),
+                __pegasus_plain_v3: true,
+                approval: currentRecord.approval || incomingRecord.approval || {},
+                storage,
+                protected: mergeProtectedPayload(currentProtected, incomingProtected),
+                __deleted_keys__: [],
+                __events__: events,
+                __data_guard_v1: {
+                    ...(incomingRecord.__data_guard_v1 || {}),
+                    ...(currentRecord.__data_guard_v1 || {}),
+                    safeMergeRestore: true,
+                    safeMergeRestoreAt: nowTs,
+                    generatedBy: SCHEMA,
+                    restoredStorageKeys: Object.keys(incomingStorage).length,
+                    finalStorageKeys: Object.keys(storage).length
+                },
+                __restore_meta_v1: {
+                    mode: 'safe_merge',
+                    restoredAt: new Date().toISOString(),
+                    sourceSchema: incomingRecord.schema || incomingRecord.__schema || 'unknown',
+                    stats
+                }
+            };
         }
         async function writeCloudRecord(record) {
             if (!record || typeof record !== 'object') throw new Error('Δεν βρέθηκαν δεδομένα cloud στο αρχείο.');
@@ -1534,6 +1778,16 @@
             cloud.hasSuccessfullyPulled = false;
             try { await cloud.pull(true); } catch (_) {}
         }
+        async function writeCloudRecordMerged(incomingRecord) {
+            const currentRecord = await fetchCloudRecord();
+            const mergedRecord = mergeCloudRecords(currentRecord || {}, incomingRecord || {});
+            await writeCloudRecord(mergedRecord);
+            return mergedRecord.__restore_meta_v1?.stats || { added: 0, conflicts: 0, skipped: 0, written: 0 };
+        }
+        function statsText(stats) {
+            if (!stats) return '';
+            return `Προστέθηκαν/ενώθηκαν: ${stats.added || 0}\nΣυγκρούσεις που κρατήθηκαν με ασφάλεια: ${stats.conflicts || 0}\nΚλειδιά που γράφτηκαν: ${stats.written || 0}`;
+        }
         function status(msg) { console.log('🧩 PEGASUS DATA MANAGER:', msg); }
         return {
             async backupLocal() {
@@ -1546,10 +1800,11 @@
                     const payload = await readFile(event);
                     if (!payload) return;
                     const localData = extractLocalPayload(payload) || payload;
-                    if (!confirm('Επαναφορά τοπικών δεδομένων σε αυτή τη συσκευή;')) return;
-                    applyLocal(localData);
-                    alert('✅ Η επαναφορά τοπικών δεδομένων ολοκληρώθηκε.');
-                } catch (e) { alert('❌ Σφάλμα επαναφοράς τοπικών δεδομένων: ' + e.message); }
+                    if (!confirm('Ασφαλής επαναφορά / Merge τοπικών δεδομένων;\n\nΘα κρατηθούν τα νεότερα/υπάρχοντα δεδομένα και θα ενωθούν όσα λείπουν.\nΠριν γίνει, θα δημιουργηθεί emergency backup.')) return;
+                    const emergencyFile = await createEmergencyBackup('local');
+                    const stats = applyLocalMerge(localData);
+                    alert('✅ Η ασφαλής επαναφορά τοπικών δεδομένων ολοκληρώθηκε.\n\n' + statsText(stats) + '\n\nEmergency backup: ' + emergencyFile);
+                } catch (e) { alert('❌ Σφάλμα ασφαλούς επαναφοράς τοπικών δεδομένων: ' + e.message); }
             },
             async backupCloud() {
                 try {
@@ -1563,10 +1818,11 @@
                     const payload = await readFile(event);
                     if (!payload) return;
                     const cloudRecord = extractCloudPayload(payload) || payload;
-                    if (!confirm('Επαναφορά δεδομένων cloud από αυτό το αρχείο;')) return;
-                    await writeCloudRecord(cloudRecord);
-                    alert('✅ Η επαναφορά cloud ολοκληρώθηκε.');
-                } catch (e) { alert('❌ Σφάλμα επαναφοράς cloud: ' + e.message); }
+                    if (!confirm('Ασφαλής επαναφορά / Merge δεδομένων cloud;\n\nΘα διαβαστεί πρώτα το τωρινό cloud, θα ενωθεί με το backup και μετά θα γραφτεί το αποτέλεσμα.\nΠριν γίνει, θα δημιουργηθεί emergency backup.')) return;
+                    const emergencyFile = await createEmergencyBackup('cloud');
+                    const stats = await writeCloudRecordMerged(cloudRecord);
+                    alert('✅ Η ασφαλής επαναφορά cloud ολοκληρώθηκε.\n\n' + statsText(stats) + '\n\nEmergency backup: ' + emergencyFile);
+                } catch (e) { alert('❌ Σφάλμα ασφαλούς επαναφοράς cloud: ' + e.message); }
             },
             async backupAll() {
                 try {
@@ -1583,12 +1839,14 @@
                     const localData = extractLocalPayload(payload);
                     const cloudRecord = extractCloudPayload(payload);
                     if (!localData && !cloudRecord) throw new Error('Το αρχείο δεν έχει αναγνωρίσιμα τοπικά ή cloud δεδομένα.');
-                    if (!confirm('Πλήρης επαναφορά τοπικών + cloud δεδομένων;')) return;
-                    if (localData) applyLocal(localData);
-                    if (cloudRecord) await writeCloudRecord(cloudRecord);
-                    alert('✅ Η πλήρης επαναφορά ολοκληρώθηκε.');
+                    if (!confirm('Πλήρης ασφαλής επαναφορά / Merge;\n\nΘα ενωθούν τοπικά + cloud δεδομένα χωρίς τυφλή αντικατάσταση.\nΠριν γίνει, θα δημιουργηθεί emergency backup.')) return;
+                    const emergencyFile = await createEmergencyBackup('all');
+                    const results = [];
+                    if (localData) results.push('Τοπικά:\n' + statsText(applyLocalMerge(localData)));
+                    if (cloudRecord) results.push('Cloud:\n' + statsText(await writeCloudRecordMerged(cloudRecord)));
+                    alert('✅ Η πλήρης ασφαλής επαναφορά ολοκληρώθηκε.\n\n' + results.join('\n\n') + '\n\nEmergency backup: ' + emergencyFile);
                     location.reload();
-                } catch (e) { alert('❌ Σφάλμα πλήρους επαναφοράς: ' + e.message); }
+                } catch (e) { alert('❌ Σφάλμα πλήρους ασφαλούς επαναφοράς: ' + e.message); }
             }
         };
     })();
