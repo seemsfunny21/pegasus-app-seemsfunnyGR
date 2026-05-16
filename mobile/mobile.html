@@ -199,17 +199,13 @@
     <div id="parking_panel" class="view">
         <button class="btn-back" onclick="openView('home')">◀ Επιστροφή</button>
         <div class="section-title">ΕΝΤΟΠΙΣΜΟΣ ΟΧΗΜΑΤΟΣ</div>
-        <div class="mini-card parking-main-card">
-            <span class="mini-label">ΘΕΣΗ PARKING</span>
-            <div id="parkingAutoStatus" class="parking-auto-status">Πάτα ΑΠΟΘΗΚΕΥΣΗ ΘΕΣΗΣ όταν παρκάρεις. Το άνοιγμα του Parking δεν αλλάζει τη θέση.</div>
-            <div id="parkingLocationSummary" class="parking-location-summary"></div>
-            <div class="compact-grid parking-actions">
-                <button class="secondary-btn parking-action-btn" onclick="window.PegasusParking.openCurrentMap()" data-pegasus-fixed-text="true" aria-label="Άνοιγμα χάρτη">Χάρτης</button>
-                <button class="primary-btn parking-action-btn" onclick="window.PegasusParking.captureCurrentLocation('manual')">ΑΠΟΘΗΚΕΥΣΗ ΘΕΣΗΣ</button>
-            </div>
+        <div class="mini-card" style="border-left: 4px solid #ff9800;">
+            <span class="mini-label">ΝΕΑ ΠΕΡΙΟΧΗ / ΘΕΣΗ</span>
+            <input type="text" id="parkingInput" placeholder="π.χ. Γιάννενα, Κέντρο...">
+            <button class="primary-btn" onclick="window.PegasusParking.save()">Αποθήκευση στο cloud</button>
         </div>
-        <div class="section-title">ΤΕΛΕΥΤΑΙΕΣ 5 ΘΕΣΕΙΣ</div>
-        <div id="parkingHistoryList" class="parking-history-list"></div>
+        <div class="section-title">ΠΡΟΣΦΑΤΕΣ ΠΕΡΙΟΧΕΣ (TOP 10)</div>
+        <div id="parkingHistoryList" style="width:100%; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
     <div id="settings_panel" class="view">
@@ -643,7 +639,7 @@
     <script src="cardio-mobile.js"></script>
     <script src="profile-mobile.js"></script>
     <script src="car-mobile.js"></script>
-    <script src="parking-mobile.js?v=282"></script>
+    <script src="parking-mobile.js?v=283"></script>
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
     <script src="supplies-mobile.js"></script>
@@ -1194,10 +1190,6 @@
 
             if (id === 'tv_program') {
                 window.PegasusTV?.onOpen?.();
-            }
-
-            if (id === 'parking_panel') {
-                window.PegasusParking?.onOpen?.();
             }
 
             if (id === 'diet' && window.PegasusCloud?.isUnlocked && navigator.onLine) {

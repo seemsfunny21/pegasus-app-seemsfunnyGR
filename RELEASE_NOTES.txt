@@ -1,3 +1,14 @@
+PEGASUS 283 - Parking Original Manual Mode Restored
+
+- Restored Parking mobile to the original manual text/location form from before GPS/map experiments.
+- Parking again uses the simple input + recent locations list.
+- Removed GPS capture, address lookup, map buttons, map thumbnails, and manual-save GPS flow from Parking.
+- Parking history returns to TOP 10 recent text locations; tapping a location moves it to the top/current position.
+- Parking keys are synced again like the original cloud parking flow.
+- Silent weight-save behavior from 282 is preserved.
+- Desktop unchanged.
+- Cache bump to 283.
+
 
 PEGASUS 282 - Parking 10 History + Silent Weight Save
 - Mobile Parking now keeps the latest 10 saved locations instead of 5.
