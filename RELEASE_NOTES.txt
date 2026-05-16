@@ -480,3 +480,11 @@ PEGASUS 287 - Safe Merge Restore
 - Restore buttons now say “Ασφαλής επαναφορά”.
 - Desktop unchanged. No new files.
 - Cache bump to 287.
+
+PEGASUS 288 - Mobile restore no Save As
+- Fixed mobile Data Management restore flow that could show an Android “Save as” dialog immediately after selecting a restore file.
+- Emergency backup before restore is now stored silently in localStorage/sessionStorage instead of being downloaded during restore.
+- Restore buttons now use explicit hidden file inputs instead of label-wrapped file controls for cleaner Android/WebView behaviour.
+- Safe Merge Restore logic remains unchanged.
+- Desktop unchanged. No new files.
+- Cache bump to 288.

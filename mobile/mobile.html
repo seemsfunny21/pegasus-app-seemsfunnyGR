@@ -235,10 +235,8 @@
             <span class="mini-label pegasus-data-title">Διαχείριση τοπικών δεδομένων</span>
             <div class="compact-grid pegasus-data-actions">
                 <button class="secondary-btn" onclick="PegasusMobileDataManager.backupLocal()">Αντίγραφο</button>
-                <label class="secondary-btn pegasus-file-restore">
-                    Ασφαλής επαναφορά
-                    <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreLocal(event)">
-                </label>
+                <button class="secondary-btn pegasus-file-restore" type="button" onclick="document.getElementById('pegasusRestoreLocalFile')?.click()">Ασφαλής επαναφορά</button>
+                <input id="pegasusRestoreLocalFile" type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreLocal(event)">
             </div>
             <div class="pegasus-data-hint">Για έγγραφα, όχημα, parking και ό,τι μένει μόνο στη συσκευή. Η επαναφορά γίνεται με ασφαλές merge.</div>
         </div>
@@ -247,10 +245,8 @@
             <span class="mini-label pegasus-data-title">Διαχείριση δεδομένων cloud</span>
             <div class="compact-grid pegasus-data-actions">
                 <button class="secondary-btn" onclick="PegasusMobileDataManager.backupCloud()">Αντίγραφο</button>
-                <label class="secondary-btn pegasus-file-restore">
-                    Ασφαλής επαναφορά
-                    <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreCloud(event)">
-                </label>
+                <button class="secondary-btn pegasus-file-restore" type="button" onclick="document.getElementById('pegasusRestoreCloudFile')?.click()">Ασφαλής επαναφορά</button>
+                <input id="pegasusRestoreCloudFile" type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreCloud(event)">
             </div>
             <div class="pegasus-data-hint">Για τα συγχρονισμένα δεδομένα του Pegasus cloud. Η επαναφορά ενώνει πρώτα με το τωρινό cloud.</div>
         </div>
@@ -259,10 +255,8 @@
             <span class="mini-label pegasus-data-title">Πλήρες αντίγραφο & επαναφορά</span>
             <div class="compact-grid pegasus-data-actions">
                 <button class="primary-btn" onclick="PegasusMobileDataManager.backupAll()">Αντίγραφο</button>
-                <label class="primary-btn pegasus-file-restore">
-                    Ασφαλής επαναφορά
-                    <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreAll(event)">
-                </label>
+                <button class="primary-btn pegasus-file-restore" type="button" onclick="document.getElementById('pegasusRestoreAllFile')?.click()">Ασφαλής επαναφορά</button>
+                <input id="pegasusRestoreAllFile" type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreAll(event)">
             </div>
             <div class="pegasus-data-hint">Παίρνει μαζί τοπικά δεδομένα και cloud snapshot. Η επαναφορά κάνει merge, όχι τυφλή αντικατάσταση.</div>
         </div>
@@ -1406,7 +1400,7 @@
 
 
     window.PegasusMobileDataManager = (function() {
-        const SCHEMA = 'PEGASUS_MOBILE_DATA_MANAGER_V287_SAFE_MERGE';
+        const SCHEMA = 'PEGASUS_MOBILE_DATA_MANAGER_V288_SAFE_MERGE_NO_SAVEAS';
         const SECURITY_RE = /(vault|pin|master|secret|hash|wrapped|api[_-]?key|gemini|openai|openrouter|token|saved_master)/i;
         const LOCATION_RE = /mobile_last_location/i;
 
@@ -1689,10 +1683,19 @@
                 localData,
                 cloudRecord
             };
-            const filename = `pegasus_emergency_before_restore_${scope}_${stamp()}.json`;
-            try { downloadJSON(filename, emergency); } catch (_) {}
-            try { localStorage.setItem(`pegasus_emergency_restore_backup_${Date.now()}`, JSON.stringify(emergency)); } catch (_) {}
-            return filename;
+            const storageKey = `pegasus_emergency_restore_backup_${Date.now()}`;
+
+            // v288: στο restore ΔΕΝ κατεβάζουμε emergency .json, γιατί στο κινητό/Android
+            // άνοιγε παράθυρο “Save as” αμέσως μετά την επιλογή του αρχείου επαναφοράς.
+            // Το emergency backup μένει σιωπηλά στο localStorage της συσκευής.
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(emergency));
+            } catch (e) {
+                console.warn('Emergency backup localStorage failed:', e);
+                try { sessionStorage.setItem(storageKey, JSON.stringify(emergency)); } catch (_) {}
+            }
+
+            return storageKey;
         }
         function refreshAfterRestore() {
             try { window.PegasusProfile?.load?.(true); } catch (_) {}
@@ -1803,7 +1806,7 @@
                     if (!confirm('Ασφαλής επαναφορά / Merge τοπικών δεδομένων;\n\nΘα κρατηθούν τα νεότερα/υπάρχοντα δεδομένα και θα ενωθούν όσα λείπουν.\nΠριν γίνει, θα δημιουργηθεί emergency backup.')) return;
                     const emergencyFile = await createEmergencyBackup('local');
                     const stats = applyLocalMerge(localData);
-                    alert('✅ Η ασφαλής επαναφορά τοπικών δεδομένων ολοκληρώθηκε.\n\n' + statsText(stats) + '\n\nEmergency backup: ' + emergencyFile);
+                    alert('✅ Η ασφαλής επαναφορά τοπικών δεδομένων ολοκληρώθηκε.\n\n' + statsText(stats) + '\n\nEmergency backup κρατήθηκε τοπικά: ' + emergencyFile);
                 } catch (e) { alert('❌ Σφάλμα ασφαλούς επαναφοράς τοπικών δεδομένων: ' + e.message); }
             },
             async backupCloud() {
@@ -1821,7 +1824,7 @@
                     if (!confirm('Ασφαλής επαναφορά / Merge δεδομένων cloud;\n\nΘα διαβαστεί πρώτα το τωρινό cloud, θα ενωθεί με το backup και μετά θα γραφτεί το αποτέλεσμα.\nΠριν γίνει, θα δημιουργηθεί emergency backup.')) return;
                     const emergencyFile = await createEmergencyBackup('cloud');
                     const stats = await writeCloudRecordMerged(cloudRecord);
-                    alert('✅ Η ασφαλής επαναφορά cloud ολοκληρώθηκε.\n\n' + statsText(stats) + '\n\nEmergency backup: ' + emergencyFile);
+                    alert('✅ Η ασφαλής επαναφορά cloud ολοκληρώθηκε.\n\n' + statsText(stats) + '\n\nEmergency backup κρατήθηκε τοπικά: ' + emergencyFile);
                 } catch (e) { alert('❌ Σφάλμα ασφαλούς επαναφοράς cloud: ' + e.message); }
             },
             async backupAll() {
@@ -1844,7 +1847,7 @@
                     const results = [];
                     if (localData) results.push('Τοπικά:\n' + statsText(applyLocalMerge(localData)));
                     if (cloudRecord) results.push('Cloud:\n' + statsText(await writeCloudRecordMerged(cloudRecord)));
-                    alert('✅ Η πλήρης ασφαλής επαναφορά ολοκληρώθηκε.\n\n' + results.join('\n\n') + '\n\nEmergency backup: ' + emergencyFile);
+                    alert('✅ Η πλήρης ασφαλής επαναφορά ολοκληρώθηκε.\n\n' + results.join('\n\n') + '\n\nEmergency backup κρατήθηκε τοπικά: ' + emergencyFile);
                     location.reload();
                 } catch (e) { alert('❌ Σφάλμα πλήρους ασφαλούς επαναφοράς: ' + e.message); }
             }
@@ -1974,7 +1977,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('../sw.js?v=3.36.285')
+                navigator.serviceWorker.register('../sw.js?v=3.36.288')
                     .then(reg => {
                         console.log('📡 PEGASUS: Service Worker Registered.');
                         // No forced reg.update() on every open; this keeps refresh fast after the first local download.
