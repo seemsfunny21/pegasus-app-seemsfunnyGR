@@ -1097,3 +1097,59 @@ body .ghost-nav-overlay,
     margin-bottom: 0 !important;
 }
 
+
+/* PEGASUS v286: centered create buttons + clean data management cards */
+.pegasus-data-card {
+    margin-top: 14px !important;
+    padding: 18px !important;
+    border-color: rgba(0,255,65,0.28) !important;
+    background: rgba(0,255,65,0.035) !important;
+    box-sizing: border-box !important;
+}
+
+.pegasus-data-card-all {
+    border-color: var(--main) !important;
+    background: rgba(0,255,65,0.055) !important;
+}
+
+.pegasus-data-title {
+    display: block !important;
+    margin-bottom: 12px !important;
+    text-align: center !important;
+    text-transform: none !important;
+    letter-spacing: .4px !important;
+    font-size: 11px !important;
+}
+
+.pegasus-data-actions {
+    gap: 10px !important;
+}
+
+.pegasus-file-restore {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+}
+
+.pegasus-data-hint {
+    margin-top: 10px !important;
+    color: #777 !important;
+    font-size: 9px !important;
+    line-height: 1.35 !important;
+    font-weight: 800 !important;
+    text-transform: none !important;
+    letter-spacing: .25px !important;
+    text-align: center !important;
+}
+
+#supplies .primary-btn[id^="btnAdd"],
+#movies .primary-btn[id^="btnAdd"],
+#missions .primary-btn[id^="btnAdd"],
+#biometrics .primary-btn,
+#maintenance .primary-btn[id^="btnAdd"] {
+    align-self: center !important;
+    text-align: center !important;
+}

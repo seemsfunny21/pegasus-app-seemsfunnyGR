@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Pegasus Mobile v18.67</title>
+    <title>Pegasus Mobile v18.86</title>
     <link rel="icon" type="image/png" href="../images/favicon.png">
     <link rel="apple-touch-icon" href="../images/favicon.png">
 
@@ -30,7 +30,7 @@
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=277">
+    <link rel="stylesheet" href="style.css?v=286">
 </head>
 <body>
 
@@ -136,11 +136,6 @@
             <button class="secondary-btn" onclick="unlockFields('profile')">Επεξεργασία</button>
             <button class="primary-btn" onclick="PegasusProfile.saveSpecs()">Αποθήκευση</button>
         </div>
-        <div class="compact-grid" style="margin-top:10px;">
-            <button class="secondary-btn" onclick="PegasusProfile.backupSpecs()">Αντίγραφο</button>
-            <button class="secondary-btn" onclick="PegasusProfile.restoreSpecs()">Επαναφορά</button>
-        </div>
-        <div id="profileBackupStatus" style="min-height:16px; margin-top:8px; color:#777; font-size:10px; font-weight:800; letter-spacing:.5px;"></div>
     </div>
 
     <div id="car" class="view">
@@ -161,11 +156,6 @@
             <button class="secondary-btn" onclick="unlockFields('car')">Επεξεργασία</button>
             <button class="primary-btn" onclick="window.PegasusCar.saveSpecs()">Αποθήκευση</button>
         </div>
-        <div class="compact-grid" style="margin-top:10px;">
-            <button class="secondary-btn" onclick="window.PegasusCar.backupLocal()">Αντίγραφο</button>
-            <button class="secondary-btn" onclick="window.PegasusCar.restoreLocal()">Επαναφορά</button>
-        </div>
-        <div id="carBackupStatus" style="min-height:16px; margin-top:8px; color:#777; font-size:10px; font-weight:800; letter-spacing:.5px;"></div>
         <div class="section-title">Ιστορικό σέρβις</div>
         <div class="mini-card">
             <input type="text" id="srvTask" placeholder="Εργασία (π.χ. Λάδια)">
@@ -239,37 +229,47 @@
             <button id="btnLangToggle" class="secondary-btn pegasus-lang-toggle" style="width:100%; margin:0;">En/Gr</button>
         </div>
 
-        <div class="mini-card" id="mobileLastLocationCard" style="margin-top: 18px; padding: 20px; border-color: rgba(0,255,65,0.35); background: rgba(0,255,65,0.035);">
-            <span class="mini-label" style="margin-bottom: 12px; display: block;">ΤΕΛΕΥΤΑΙΑ ΤΟΠΟΘΕΣΙΑ ΚΙΝΗΤΟΥ</span>
-            <div id="mobileLastLocationStatus" style="font-size:11px; line-height:1.55; color:#aaa; font-weight:800; text-transform:none; letter-spacing:.4px; margin-bottom: 12px;">--</div>
-            <div class="compact-grid" style="gap: 10px; margin-bottom: 10px;">
-                <button class="primary-btn" id="mobileLastLocationEnableBtn" style="font-size:9px; padding:14px 8px;" onclick="window.PegasusMobileLastLocation?.enable?.()">ΕΝΕΡΓΟΠΟΙΗΣΗ / ΕΝΗΜΕΡΩΣΗ</button>
-                <button class="secondary-btn" style="font-size:9px; padding:14px 8px; border-color:#ff4444; color:#ff4444;" onclick="window.PegasusMobileLastLocation?.forget?.()">ΔΙΑΓΡΑΦΗ</button>
-            </div>
-            <button class="secondary-btn" id="mobileLastLocationMapBtn" style="display:none; width:100%; font-size:9px; padding:13px 8px; border-color:#2196F3; color:#2196F3;" onclick="window.PegasusMobileLastLocation?.openMap?.()">ΑΝΟΙΓΜΑ ΣΕ ΧΑΡΤΗ</button>
-            <div style="margin-top:10px; color:#666; font-size:9px; font-weight:800; line-height:1.4; text-transform:none; letter-spacing:.3px;">Αποθηκεύεται μόνο σε αυτό το κινητό. Δεν ανεβαίνει στο cloud.</div>
-        </div>
-
         <div class="section-title" style="margin-top: 30px;">Διαχείριση δεδομένων</div>
 
-        <div class="mini-card" style="padding: 20px; border-color: #222; background: rgba(20,20,20,0.8);">
-            <div class="compact-grid">
-                <button class="secondary-btn" style="border-color: #4CAF50; color: #4CAF50; display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 20px 10px;" onclick="exportData()">
-                    <span style="font-size: 24px;">⬇️</span>
-                    <span style="font-size: 9px; font-weight: 900;">Λήψη αντιγράφου</span>
-                </button>
-
-                <label class="secondary-btn" style="border-color: #2196F3; color: #2196F3; display: flex; flex-direction: column; gap: 10px; align-items: center; padding: 20px 10px; cursor: pointer; margin: 0;">
-                    <span style="font-size: 24px;">⬆️</span>
-                    <span style="font-size: 9px; font-weight: 900;">Επαναφορά δεδομένων</span>
-                    <input type="file" id="importFile" style="display:none;" onchange="importData(event)" accept=".json">
+        <div class="mini-card pegasus-data-card">
+            <span class="mini-label pegasus-data-title">Διαχείριση τοπικών δεδομένων</span>
+            <div class="compact-grid pegasus-data-actions">
+                <button class="secondary-btn" onclick="PegasusMobileDataManager.backupLocal()">Αντίγραφο</button>
+                <label class="secondary-btn pegasus-file-restore">
+                    Επαναφορά
+                    <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreLocal(event)">
                 </label>
             </div>
-            <hr style="border: none; border-top: 1px solid #222; margin: 20px 0;">
-            <button class="primary-btn" style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; box-shadow: none; font-size: 11px; padding: 18px;" onclick="hardResetSystem()">
-                🚨 ΓΕΝΙΚΟ RESET ΣΥΣΤΗΜΑΤΟΣ
-            </button>
+            <div class="pegasus-data-hint">Για έγγραφα, όχημα, parking και ό,τι μένει μόνο στη συσκευή.</div>
         </div>
+
+        <div class="mini-card pegasus-data-card">
+            <span class="mini-label pegasus-data-title">Διαχείριση δεδομένων cloud</span>
+            <div class="compact-grid pegasus-data-actions">
+                <button class="secondary-btn" onclick="PegasusMobileDataManager.backupCloud()">Αντίγραφο</button>
+                <label class="secondary-btn pegasus-file-restore">
+                    Επαναφορά
+                    <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreCloud(event)">
+                </label>
+            </div>
+            <div class="pegasus-data-hint">Για τα συγχρονισμένα δεδομένα του Pegasus cloud.</div>
+        </div>
+
+        <div class="mini-card pegasus-data-card pegasus-data-card-all">
+            <span class="mini-label pegasus-data-title">Πλήρες αντίγραφο & επαναφορά</span>
+            <div class="compact-grid pegasus-data-actions">
+                <button class="primary-btn" onclick="PegasusMobileDataManager.backupAll()">Αντίγραφο</button>
+                <label class="primary-btn pegasus-file-restore">
+                    Επαναφορά
+                    <input type="file" style="display:none;" accept=".json,application/json" onchange="PegasusMobileDataManager.restoreAll(event)">
+                </label>
+            </div>
+            <div class="pegasus-data-hint">Παίρνει μαζί τοπικά δεδομένα και cloud snapshot.</div>
+        </div>
+
+        <button class="primary-btn" style="background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff4444; box-shadow: none; font-size: 11px; padding: 18px; margin-top: 16px;" onclick="hardResetSystem()">
+            🚨 Γενικό reset συστήματος
+        </button>
     </div>
 
     <script>
@@ -648,23 +648,22 @@
 
     <script src="diet-mobile.js?v=263"></script>
     <script src="cardio-mobile.js"></script>
-    <script src="profile-mobile.js"></script>
-    <script src="car-mobile.js"></script>
+    <script src="profile-mobile.js?v=286"></script>
+    <script src="car-mobile.js?v=286"></script>
     <script src="parking-mobile.js?v=283"></script>
     <script src="inventory-mobile.js"></script>
     <script src="ems-mobile.js"></script>
-    <script src="supplies-mobile.js"></script>
+    <script src="supplies-mobile.js?v=286"></script>
     <script src="finance-mobile.js?v=250"></script>
     <script src="social-mobile.js"></script>
-    <script src="movies-mobile.js"></script>
-    <script src="missions-mobile.js"></script>
-    <script src="biometrics-mobile.js"></script>
-    <script src="maintenance-mobile.js"></script>
+    <script src="movies-mobile.js?v=286"></script>
+    <script src="missions-mobile.js?v=286"></script>
+    <script src="biometrics-mobile.js?v=286"></script>
+    <script src="maintenance-mobile.js?v=286"></script>
     <script src="oracle-mobile.js"></script>
     <script src="lifting-mobile.js?v=250"></script>
     <script src="youtube-mobile.js"></script>
     <script src="weather-mobile.js"></script>
-    <script src="tv-mobile.js?v=264"></script>
     <script src="biometric-unlock-mobile.js"></script>
     <script src="shell-layout-mobile.js?v=262"></script>
 
@@ -873,250 +872,6 @@
 
         console.log('🔑 PEGASUS MOBILE SAVED MASTER KEY: ready v1.1.268 silent local save');
     })();
-
-
-    /* ============================================================================
-       PEGASUS MOBILE LAST LOCATION - v1.1.269
-       Purpose: local-only last phone location when opening Pegasus mobile.
-       Notes: coordinates stay only on this device; never synced to cloud.
-       ============================================================================ */
-    (function installPegasusMobileLastLocation() {
-        if (window.PegasusMobileLastLocation?.version === '1.1.269') return;
-
-        const STORAGE = {
-            enabled: 'pegasus_mobile_last_location_enabled_v1',
-            prompted: 'pegasus_mobile_last_location_prompted_v1',
-            data: 'pegasus_mobile_last_location_v1',
-            lastAttempt: 'pegasus_mobile_last_location_last_attempt_v1'
-        };
-
-        const MIN_AUTO_ATTEMPT_MS = 90 * 1000;
-        let inFlight = false;
-        let lastUiMessage = '';
-
-        function safeParse(raw, fallback = null) {
-            try { return raw ? JSON.parse(raw) : fallback; } catch (_) { return fallback; }
-        }
-
-        function isEnabled() {
-            return localStorage.getItem(STORAGE.enabled) === 'true';
-        }
-
-        function isAvailable() {
-            return !!(navigator.geolocation && window.isSecureContext);
-        }
-
-        function readLocation() {
-            const data = safeParse(localStorage.getItem(STORAGE.data), null);
-            if (!data || typeof data !== 'object') return null;
-            const lat = Number(data.lat);
-            const lon = Number(data.lon);
-            if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-            return data;
-        }
-
-        function formatTime(ts) {
-            if (!ts) return '--';
-            try {
-                return new Date(Number(ts)).toLocaleString('el-GR', {
-                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-                });
-            } catch (_) {
-                return '--';
-            }
-        }
-
-        function formatCoords(loc) {
-            return `${Number(loc.lat).toFixed(5)}, ${Number(loc.lon).toFixed(5)}`;
-        }
-
-        function mapUrl(loc) {
-            return `https://www.google.com/maps?q=${encodeURIComponent(Number(loc.lat).toFixed(6) + ',' + Number(loc.lon).toFixed(6))}`;
-        }
-
-        function setStatus(message, tone = 'muted') {
-            lastUiMessage = message || '';
-            const el = document.getElementById('mobileLastLocationStatus');
-            if (!el) return;
-            const color = tone === 'ok' ? '#00ff41' : (tone === 'warn' ? '#ffb300' : (tone === 'bad' ? '#ff4444' : '#aaa'));
-            el.style.color = color;
-            el.innerHTML = message || '--';
-        }
-
-        function render() {
-            const loc = readLocation();
-            const mapBtn = document.getElementById('mobileLastLocationMapBtn');
-            const enableBtn = document.getElementById('mobileLastLocationEnableBtn');
-
-            if (mapBtn) mapBtn.style.display = loc ? 'block' : 'none';
-            if (enableBtn) enableBtn.textContent = isEnabled() ? 'ΕΝΗΜΕΡΩΣΗ ΤΩΡΑ' : 'ΕΝΕΡΓΟΠΟΙΗΣΗ';
-
-            if (!isAvailable()) {
-                setStatus('Μη διαθέσιμο εδώ. Χρειάζεται ασφαλές περιβάλλον HTTPS / Chrome για τοποθεσία.', 'warn');
-                return;
-            }
-
-            if (!isEnabled() && !loc) {
-                setStatus('Αν το ενεργοποιήσεις, θα κρατάει τοπικά την τελευταία θέση του κινητού όταν ανοίγεις το Pegasus.', 'muted');
-                return;
-            }
-
-            if (loc) {
-                const acc = Number.isFinite(Number(loc.accuracy)) ? ` · ακρίβεια ±${Math.round(Number(loc.accuracy))}m` : '';
-                const statusPrefix = isEnabled() ? 'Ενεργό' : 'Ανενεργό';
-                setStatus(
-                    `${statusPrefix}<br>` +
-                    `📍 ${formatCoords(loc)}<br>` +
-                    `🕒 ${formatTime(loc.capturedAt)}${acc}`,
-                    isEnabled() ? 'ok' : 'warn'
-                );
-                return;
-            }
-
-            if (lastUiMessage) return;
-            setStatus('Ενεργό. Περιμένω άδεια τοποθεσίας από το κινητό.', 'warn');
-        }
-
-        function storePosition(position, source = 'auto') {
-            const coords = position?.coords || {};
-            const payload = {
-                lat: Number(coords.latitude),
-                lon: Number(coords.longitude),
-                accuracy: Number(coords.accuracy || 0),
-                altitude: Number.isFinite(Number(coords.altitude)) ? Number(coords.altitude) : null,
-                heading: Number.isFinite(Number(coords.heading)) ? Number(coords.heading) : null,
-                speed: Number.isFinite(Number(coords.speed)) ? Number(coords.speed) : null,
-                capturedAt: Date.now(),
-                iso: new Date().toISOString(),
-                source,
-                localOnly: true,
-                sync: 'never'
-            };
-
-            if (!Number.isFinite(payload.lat) || !Number.isFinite(payload.lon)) {
-                throw new Error('invalid_coordinates');
-            }
-
-            localStorage.setItem(STORAGE.data, JSON.stringify(payload));
-            localStorage.setItem(STORAGE.enabled, 'true');
-            localStorage.setItem(STORAGE.prompted, 'true');
-            render();
-            return payload;
-        }
-
-        function requestPosition(source = 'manual') {
-            if (inFlight) return Promise.resolve(readLocation());
-            if (!isAvailable()) {
-                render();
-                return Promise.resolve(null);
-            }
-
-            inFlight = true;
-            localStorage.setItem(STORAGE.lastAttempt, String(Date.now()));
-            setStatus('Ζητάω τοποθεσία από το κινητό...', 'warn');
-
-            return new Promise(resolve => {
-                navigator.geolocation.getCurrentPosition(
-                    position => {
-                        inFlight = false;
-                        try {
-                            const saved = storePosition(position, source);
-                            resolve(saved);
-                        } catch (e) {
-                            setStatus('Δεν μπόρεσε να αποθηκευτεί η τοποθεσία.', 'bad');
-                            resolve(null);
-                        }
-                    },
-                    error => {
-                        inFlight = false;
-                        const msg = error?.code === 1
-                            ? 'Η άδεια τοποθεσίας δεν δόθηκε. Μπορείς να την ενεργοποιήσεις από τις άδειες του Chrome/site.'
-                            : 'Δεν μπόρεσε να βρεθεί η τοποθεσία τώρα.';
-                        setStatus(msg, 'warn');
-                        render();
-                        resolve(null);
-                    },
-                    { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
-                );
-            });
-        }
-
-        async function enable() {
-            localStorage.setItem(STORAGE.enabled, 'true');
-            localStorage.setItem(STORAGE.prompted, 'true');
-            render();
-            const saved = await requestPosition('manual');
-            if (saved) render();
-            return saved;
-        }
-
-        function forget() {
-            localStorage.removeItem(STORAGE.data);
-            localStorage.removeItem(STORAGE.enabled);
-            localStorage.removeItem(STORAGE.prompted);
-            localStorage.removeItem(STORAGE.lastAttempt);
-            lastUiMessage = '';
-            render();
-            setStatus('Διαγράφηκε η τοπική τοποθεσία από αυτό το κινητό.', 'warn');
-        }
-
-        function openMap() {
-            const loc = readLocation();
-            if (!loc) return;
-            window.open(mapUrl(loc), '_blank', 'noopener,noreferrer');
-        }
-
-        function updateOnEntry(source = 'entry') {
-            if (!isEnabled() || !isAvailable()) {
-                render();
-                return Promise.resolve(null);
-            }
-            const lastAttempt = Number(localStorage.getItem(STORAGE.lastAttempt) || 0);
-            if (Date.now() - lastAttempt < MIN_AUTO_ATTEMPT_MS) {
-                render();
-                return Promise.resolve(readLocation());
-            }
-            return requestPosition(source);
-        }
-
-        function maybeAskFirstTime() {
-            // v268: no custom Pegasus popup. The browser/Android location permission
-            // prompt is enough. Users can still enable/update manually from Settings,
-            // and Parking can request GPS on entry.
-            render();
-        }
-
-        function init() {
-            render();
-            maybeAskFirstTime();
-            updateOnEntry('boot');
-        }
-
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) updateOnEntry('visible');
-        });
-        window.addEventListener('pageshow', () => updateOnEntry('pageshow'));
-        window.addEventListener('pegasus_sync_complete', render);
-
-        window.PegasusMobileLastLocation = {
-            version: '1.1.269',
-            enable,
-            updateNow: () => requestPosition('manual'),
-            requestPosition,
-            storePosition,
-            forget,
-            openMap,
-            render,
-            read: readLocation,
-            isEnabled
-        };
-
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
-        else init();
-
-        console.log('📍 PEGASUS MOBILE LAST LOCATION: ready v1.1.269 local-only silent');
-    })();
-
     function getMobileDateStr() {
         if (typeof window.getPegasusTodayDateStr === "function") {
             return window.getPegasusTodayDateStr();
@@ -1648,6 +1403,195 @@
         setSyncStatus('locked');
         refreshAllUI();
     }
+
+
+    window.PegasusMobileDataManager = (function() {
+        const SCHEMA = 'PEGASUS_MOBILE_DATA_MANAGER_V286';
+        const SECURITY_RE = /(vault|pin|master|secret|hash|wrapped|api[_-]?key|gemini|openai|openrouter|token|saved_master)/i;
+        const LOCATION_RE = /mobile_last_location/i;
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function stamp() {
+            const d = new Date();
+            return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+        }
+        function downloadJSON(filename, payload) {
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+        function readFile(event) {
+            const input = event?.target;
+            const file = input?.files?.[0];
+            if (!file) return Promise.resolve(null);
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try { resolve(JSON.parse(e.target.result)); }
+                    catch (err) { reject(err); }
+                    finally { if (input) input.value = ''; }
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+        function isBlockedKey(key) {
+            if (!key) return true;
+            if (SECURITY_RE.test(key)) return true;
+            if (LOCATION_RE.test(key)) return true;
+            try {
+                const cloud = window.PegasusCloud;
+                if (cloud?.isInternalStorageKey?.(key)) return true;
+            } catch (_) {}
+            return false;
+        }
+        function isPegasusKey(key) {
+            return key && (
+                key.startsWith('pegasus_') || key.startsWith('peg_') || key.startsWith('food_log_') ||
+                key.startsWith('cardio_log_') || key.startsWith('weight_') || key.startsWith('kouki_')
+            );
+        }
+        function isLocalKey(key) {
+            if (!isPegasusKey(key) || isBlockedKey(key)) return false;
+            try {
+                if (window.PegasusCloud?.isLocalOnlyStorageKey?.(key)) return true;
+            } catch (_) {}
+            return [
+                'pegasus_user_specs', 'pegasus_car_identity', 'pegasus_car_dates', 'pegasus_car_specs',
+                'pegasus_car_service', 'peg_car_dates', 'peg_car_service', 'pegasus_parking_loc',
+                'pegasus_parking_history', 'pegasus_notes'
+            ].includes(key);
+        }
+        function collectLocal(mode = 'local') {
+            const out = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key || isBlockedKey(key)) continue;
+                if (mode === 'all') {
+                    if (isPegasusKey(key)) out[key] = localStorage.getItem(key);
+                } else if (isLocalKey(key)) {
+                    out[key] = localStorage.getItem(key);
+                }
+            }
+            return out;
+        }
+        async function ensureCloudReady() {
+            const cloud = window.PegasusCloud;
+            if (!cloud) throw new Error('Δεν βρέθηκε PegasusCloud.');
+            if (!cloud.isUnlocked && cloud.canRestoreApprovedDevice?.()) {
+                try { await cloud.tryApprovedDeviceUnlock(); } catch (_) {}
+            }
+            if (!cloud.isUnlocked && !cloud.userKey && !cloud.config?.encryptedPart) {
+                throw new Error('Πρώτα ξεκλείδωσε το Pegasus cloud.');
+            }
+            return cloud;
+        }
+        async function fetchCloudRecord() {
+            const cloud = await ensureCloudReady();
+            return await cloud.fetchLatestRecord();
+        }
+        function extractLocalPayload(payload) {
+            if (!payload || typeof payload !== 'object') return null;
+            return payload.localData || payload.localStorage || payload.local || payload?.data?.localData || null;
+        }
+        function extractCloudPayload(payload) {
+            if (!payload || typeof payload !== 'object') return null;
+            return payload.cloudRecord || payload.cloudData || payload.cloud || payload?.data?.cloudRecord || null;
+        }
+        function applyLocal(localData) {
+            if (!localData || typeof localData !== 'object') throw new Error('Δεν βρέθηκαν τοπικά δεδομένα στο αρχείο.');
+            Object.entries(localData).forEach(([key, value]) => {
+                if (!key || isBlockedKey(key)) return;
+                localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+            });
+            try { window.PegasusProfile?.load?.(true); } catch (_) {}
+            try { window.PegasusCar?.load?.(); } catch (_) {}
+            try { window.PegasusParking?.updateUI?.(); } catch (_) {}
+            try { refreshAllUI?.(); } catch (_) {}
+        }
+        async function writeCloudRecord(record) {
+            if (!record || typeof record !== 'object') throw new Error('Δεν βρέθηκαν δεδομένα cloud στο αρχείο.');
+            const cloud = await ensureCloudReady();
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${cloud.config.binId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': cloud.userKey || cloud.config.encryptedPart,
+                    'X-Bin-Meta': 'false'
+                },
+                body: JSON.stringify(record)
+            });
+            if (!res.ok) throw new Error('Αποτυχία επαναφοράς cloud: ' + res.status);
+            if (record.last_update_ts && cloud.storage?.lastPush) {
+                localStorage.setItem(cloud.storage.lastPush, String(record.last_update_ts));
+            }
+            cloud.clearPendingChanges?.();
+            cloud.hasSuccessfullyPulled = false;
+            try { await cloud.pull(true); } catch (_) {}
+        }
+        function status(msg) { console.log('🧩 PEGASUS DATA MANAGER:', msg); }
+        return {
+            async backupLocal() {
+                const localData = collectLocal('local');
+                downloadJSON(`pegasus_local_backup_${stamp()}.json`, { schema: SCHEMA, mode: 'local', createdAt: new Date().toISOString(), localData });
+                status('Local backup OK');
+            },
+            async restoreLocal(event) {
+                try {
+                    const payload = await readFile(event);
+                    if (!payload) return;
+                    const localData = extractLocalPayload(payload) || payload;
+                    if (!confirm('Επαναφορά τοπικών δεδομένων σε αυτή τη συσκευή;')) return;
+                    applyLocal(localData);
+                    alert('✅ Η επαναφορά τοπικών δεδομένων ολοκληρώθηκε.');
+                } catch (e) { alert('❌ Σφάλμα επαναφοράς τοπικών δεδομένων: ' + e.message); }
+            },
+            async backupCloud() {
+                try {
+                    const cloudRecord = await fetchCloudRecord();
+                    downloadJSON(`pegasus_cloud_backup_${stamp()}.json`, { schema: SCHEMA, mode: 'cloud', createdAt: new Date().toISOString(), cloudRecord });
+                    status('Cloud backup OK');
+                } catch (e) { alert('❌ Δεν έγινε αντίγραφο cloud: ' + e.message); }
+            },
+            async restoreCloud(event) {
+                try {
+                    const payload = await readFile(event);
+                    if (!payload) return;
+                    const cloudRecord = extractCloudPayload(payload) || payload;
+                    if (!confirm('Επαναφορά δεδομένων cloud από αυτό το αρχείο;')) return;
+                    await writeCloudRecord(cloudRecord);
+                    alert('✅ Η επαναφορά cloud ολοκληρώθηκε.');
+                } catch (e) { alert('❌ Σφάλμα επαναφοράς cloud: ' + e.message); }
+            },
+            async backupAll() {
+                try {
+                    const localData = collectLocal('all');
+                    const cloudRecord = await fetchCloudRecord();
+                    downloadJSON(`pegasus_full_backup_${stamp()}.json`, { schema: SCHEMA, mode: 'all', createdAt: new Date().toISOString(), localData, cloudRecord });
+                    status('Full backup OK');
+                } catch (e) { alert('❌ Δεν έγινε πλήρες αντίγραφο: ' + e.message); }
+            },
+            async restoreAll(event) {
+                try {
+                    const payload = await readFile(event);
+                    if (!payload) return;
+                    const localData = extractLocalPayload(payload);
+                    const cloudRecord = extractCloudPayload(payload);
+                    if (!localData && !cloudRecord) throw new Error('Το αρχείο δεν έχει αναγνωρίσιμα τοπικά ή cloud δεδομένα.');
+                    if (!confirm('Πλήρης επαναφορά τοπικών + cloud δεδομένων;')) return;
+                    if (localData) applyLocal(localData);
+                    if (cloudRecord) await writeCloudRecord(cloudRecord);
+                    alert('✅ Η πλήρης επαναφορά ολοκληρώθηκε.');
+                    location.reload();
+                } catch (e) { alert('❌ Σφάλμα πλήρους επαναφοράς: ' + e.message); }
+            }
+        };
+    })();
 
     async function hardResetSystem() {
         if (confirm("🚨 ΠΡΟΣΟΧΗ: Διαγραφή Cache;")) {

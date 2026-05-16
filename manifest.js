@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.85)
+   PEGASUS OS - MASTER MANIFEST & REGISTRY (v18.86)
    Protocol: Global Variable Re-declaration (Unlock M)
    Status: THE SINGLE SOURCE OF TRUTH | HARDENED: KEY CONSISTENCY + AUDIT SAFETY
    ========================================================================== */
@@ -13,7 +13,7 @@ window.PegasusManifest = {
         author: "Angelos & Gemini",
         last_update: "2026-05-09",
         logic_protocol: "Zero-Bug Simulation & Global Scope Shielding",
-        engine_version: "v18.85 Greek UI polish for local backup, restore and Taxisnet"
+        engine_version: "v18.86 mobile cleanup, centered actions and data manager"
     },
 
     // ---------------------------------------------------------
@@ -111,13 +111,6 @@ window.PegasusManifest = {
         history: "pegasus_parking_history"
     },
 
-    mobileLocal: {
-        lastLocation: "pegasus_mobile_last_location_v1",
-        lastLocationEnabled: "pegasus_mobile_last_location_enabled_v1",
-        lastLocationPrompted: "pegasus_mobile_last_location_prompted_v1",
-        lastLocationLastAttempt: "pegasus_mobile_last_location_last_attempt_v1"
-    },
-
     // ---------------------------------------------------------
     // 3. SYSTEM ARCHITECTURE
     // ---------------------------------------------------------
@@ -136,7 +129,7 @@ window.PegasusManifest = {
         "debug.js": "Tracer, health checks, calorie audit and runtime diagnostics.",
         "car.js": "Vehicle Management Module.",
         "parking.js": "Geolocation Tracking Module.",
-        "mobile/mobile.html": "Mobile shell, unlock flow, silent local master-key and last-location helper.",
+        "mobile/mobile.html": "Mobile shell, unlock flow, silent local master-key and data management hub.",
         "dragDrop.js": "UI Window Positioning Memory.",
         "ems.js": "Electro-Muscle Stimulation Tracker & Sync.",
         "partner.js": "Smart Co-Lifter Logic & Dual Weight Memory.",
@@ -217,4 +210,4 @@ window.PegasusManifest = {
 // 🛡️ ΤΟ ΚΛΕΙΔΙ ΤΟΥ UNLOCK
 var M = window.PegasusManifest;
 
-console.log("🏛️ PEGASUS MANIFEST v18.85 LOADED. GREEK DOCS/VEHICLE UI + TAXISNET READY.");
+console.log("🏛️ PEGASUS MANIFEST v18.86 LOADED. MOBILE CLEANUP + DATA MANAGER READY.");

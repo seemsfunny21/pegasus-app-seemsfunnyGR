@@ -354,10 +354,6 @@ const PegasusCloud = {
             "peg_car_service",
             "pegasus_master_pin",
             "pegasus_mobile_ghost_order_v1",
-            "pegasus_mobile_last_location_enabled_v1",
-            "pegasus_mobile_last_location_prompted_v1",
-            "pegasus_mobile_last_location_v1",
-            "pegasus_mobile_last_location_last_attempt_v1",
         ];
         const dynamicKeys = window.PegasusMobileDataRegistry?.getLocalOnlyExactKeys?.() || [];
         return Array.from(new Set([...baseKeys, ...dynamicKeys]));

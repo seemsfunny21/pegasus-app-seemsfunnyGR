@@ -458,3 +458,15 @@ PEGASUS 281 - Parking Strict Street Labels
 - The “Χάρτης” label remains fixed/small in the 5-location history.
 - Mobile only. Desktop unchanged. No new files.
 - Cache bump to 281.
+
+PEGASUS 286
+- Mobile cleanup pass.
+- Removed the mobile TV module completely because Athinorama fetch is not reliable enough in production.
+- Removed the last phone location card/helper from Settings & Weight.
+- Centered the create buttons in Supplies, Movies, Activities/Missions, Body measurements and Maintenance.
+- Removed per-module Backup/Restore buttons from Documents and Vehicle.
+- Added a central Data Management section with three cards:
+  * Local data backup/restore
+  * Cloud data backup/restore
+  * Full local + cloud backup/restore
+- Kept desktop unchanged.
